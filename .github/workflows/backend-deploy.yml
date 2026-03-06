@@ -261,6 +261,33 @@ jobs:
       packages: read
 
     steps:
+      - name: Validate required secrets
+        run: |
+          MISSING=""
+          [ -z "$PRODUCTION_DATABASE_URL" ]  && MISSING="$MISSING PRODUCTION_DATABASE_URL"
+          [ -z "$PRODUCTION_SUPABASE_URL" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_URL"
+          [ -z "$PRODUCTION_SUPABASE_KEY" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_KEY"
+          [ -z "$OPENROUTER_API_KEY" ]        && MISSING="$MISSING OPENROUTER_API_KEY"
+          [ -z "$SECRET_KEY" ]               && MISSING="$MISSING SECRET_KEY"
+          [ -z "$NEO4J_URI" ]                && MISSING="$MISSING NEO4J_URI"
+          [ -z "$NEO4J_USER" ]               && MISSING="$MISSING NEO4J_USER"
+          [ -z "$NEO4J_PASSWORD" ]           && MISSING="$MISSING NEO4J_PASSWORD"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing required secrets:$MISSING"
+            echo "Set these in the 'production' GitHub environment before deploying."
+            exit 1
+          fi
+          echo "All required secrets are present."
+        env:
+          PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+          PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          PRODUCTION_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          NEO4J_URI: ${{ secrets.NEO4J_URI }}
+          NEO4J_USER: ${{ secrets.NEO4J_USER }}
+          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
