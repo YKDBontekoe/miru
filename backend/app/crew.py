@@ -42,7 +42,7 @@ from typing import Literal
 
 from crewai import LLM, Agent, Crew, Process, Task
 
-from app.config import settings
+from app.config import get_settings
 
 # ---------------------------------------------------------------------------
 # Task-type detection
@@ -82,13 +82,13 @@ def detect_task_type(message: str) -> TaskType:
 
 def _make_llm(model: str | None = None) -> LLM:
     """Return a CrewAI LLM backed by OpenRouter."""
-    chosen = model or settings.default_chat_model
+    chosen = model or get_settings().default_chat_model
     # CrewAI uses LiteLLM under the hood; prefix with "openrouter/" so
     # LiteLLM routes to the OpenRouter gateway automatically.
     litellm_model = f"openrouter/{chosen}" if not chosen.startswith("openrouter/") else chosen
     return LLM(
         model=litellm_model,
-        api_key=settings.openrouter_api_key,
+        api_key=get_settings().openrouter_api_key,
         base_url="https://openrouter.ai/api/v1",
         temperature=0.7,
     )

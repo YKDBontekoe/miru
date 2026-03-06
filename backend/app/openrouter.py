@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 from openrouter import OpenRouter
 from openrouter.operations import CreateEmbeddingsResponseBody
 
-from app.config import settings
+from app.config import get_settings
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -35,7 +35,7 @@ def get_client() -> OpenRouter:
     global _client
     if _client is None:
         _client = OpenRouter(
-            api_key=settings.openrouter_api_key,
+            api_key=get_settings().openrouter_api_key,
             http_referer="https://github.com/miru-app/miru",
             x_title="Miru AI Assistant",
         )
@@ -87,7 +87,7 @@ async def embed(text: str) -> list[float]:
     """
     client = get_client()
     response = await client.embeddings.generate_async(
-        model=settings.embedding_model,
+        model=get_settings().embedding_model,
         input=text,
         encoding_format="float",
     )
@@ -122,7 +122,7 @@ async def stream_chat(
         Individual text delta strings as they arrive.
     """
     client = get_client()
-    chosen_model = model or settings.default_chat_model
+    chosen_model = model or get_settings().default_chat_model
 
     event_stream = await client.chat.send_async(
         model=chosen_model,
@@ -153,7 +153,7 @@ async def chat_completion(
     Intended for internal use by CrewAI agent tasks.
     """
     client = get_client()
-    chosen_model = model or settings.default_chat_model
+    chosen_model = model or get_settings().default_chat_model
 
     response = await client.chat.send_async(
         model=chosen_model,
