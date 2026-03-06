@@ -135,12 +135,12 @@ async def search_memories_by_content(search_query: str) -> list[dict[str, Any]]:
     async with driver.session() as session:
         result = await session.run(
             """
-            CALL db.index.fulltext.queryNodes('memoryContent', $query)
+            CALL db.index.fulltext.queryNodes('memoryContent', $search_query)
             YIELD node, score
             RETURN node.id as id, node.content as content, score
             LIMIT 10
             """,
-            query=search_query,
+            {"search_query": search_query},
         )
         return [record.data() async for record in result]
 

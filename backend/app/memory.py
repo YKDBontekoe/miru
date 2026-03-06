@@ -151,6 +151,8 @@ async def initialize_graph_connections() -> None:
     # (This is a simplified version - in production you'd use a more efficient algorithm)
     for i, mem1 in enumerate(memories):
         for mem2 in memories[i + 1 :]:
+            if not isinstance(mem1, dict) or not isinstance(mem2, dict):
+                continue
             # Calculate cosine similarity
             emb1 = cast("list[float]", mem1.get("embedding", []))
             emb2 = cast("list[float]", mem2.get("embedding", []))
