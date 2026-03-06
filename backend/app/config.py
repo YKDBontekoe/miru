@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     embedding_model: str = "openai/text-embedding-3-small"
     # Default chat model; can be overridden per-request by the frontend
     default_chat_model: str = "anthropic/claude-3.5-sonnet"
+    # Neo4j Graph Database configuration
+    neo4j_uri: str
+    neo4j_user: str = "neo4j"
+    neo4j_password: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

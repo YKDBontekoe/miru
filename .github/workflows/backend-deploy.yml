@@ -12,8 +12,8 @@ on:
       - 'backend/**'
 
 env:
-  CONTAINER_APP_NAME: miru-backend
-  RESOURCE_GROUP: miru-rg
+  CONTAINER_APP_NAME: aca-miru
+  RESOURCE_GROUP: rg-miru
   IMAGE_NAME: miru-backend
   REGISTRY: ghcr.io
 
@@ -223,6 +223,9 @@ jobs:
             SUPABASE_KEY=${{ secrets.PRODUCTION_SUPABASE_KEY }}
             OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
             SECRET_KEY=${{ secrets.SECRET_KEY }}
+            NEO4J_URI=${{ secrets.NEO4J_URI }}
+            NEO4J_USER=${{ secrets.NEO4J_USER }}
+            NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }}
 
       - name: Verify deployment
         run: |

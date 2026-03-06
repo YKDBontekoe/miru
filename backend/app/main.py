@@ -5,14 +5,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.graph import close_neo4j_driver, get_neo4j_driver
 from app.routes import router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # App startup - no pool initialization needed with Supabase
+    # App startup - initialize Neo4j connection
+    await get_neo4j_driver()
     yield
-    # App shutdown
+    # App shutdown - close Neo4j connection
+    await close_neo4j_driver()
 
 
 app = FastAPI(title="Miru", version="0.1.0", lifespan=lifespan)
