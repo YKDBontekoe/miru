@@ -1,0 +1,215 @@
+name: Nightly Build and Dependency Check
+
+on:
+  schedule:
+    # Run every day at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.19.0'
+
+jobs:
+  # Backend dependency check
+  backend-dependencies:
+    name: Check Python Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependency checkers
+        run: |
+          pip install pip-review safety pip-audit
+
+      - name: Check for outdated dependencies
+        working-directory: ./backend
+        run: |
+          echo "### Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          pip list --outdated --format=columns >> $GITHUB_STEP_SUMMARY || true
+
+      - name: Run safety check
+        working-directory: ./backend
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Security Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          safety check -r requirements.txt --json || true
+        continue-on-error: true
+
+      - name: Run pip-audit
+        working-directory: ./backend
+        run: |
+          pip-audit -r requirements.txt --format=json || true
+        continue-on-error: true
+
+      - name: Create issue if vulnerabilities found
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🔒 Security: Vulnerabilities found in Python dependencies';
+            const body = `## Security Alert
+            
+            Automated security scan found vulnerabilities in Python dependencies.
+            
+            **Run Date:** ${new Date().toISOString()}
+            **Workflow:** ${{ github.workflow }}
+            
+            Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+            
+            ### Recommended Actions:
+            1. Run \`safety check\` locally
+            2. Update vulnerable dependencies
+            3. Run tests to ensure compatibility
+            4. Create a PR with the updates
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'dependencies', 'backend']
+            });
+
+  # Flutter dependency check
+  flutter-dependencies:
+    name: Check Flutter Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Check for outdated dependencies
+        working-directory: ./frontend
+        run: |
+          flutter pub get
+          echo "### Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          flutter pub outdated >> $GITHUB_STEP_SUMMARY || true
+
+      - name: Check for discontinued packages
+        working-directory: ./frontend
+        run: |
+          flutter pub deps --style=tree > deps.txt
+          # Check for any discontinued packages
+          flutter pub publish --dry-run 2>&1 | grep -i "discontinued" || echo "No discontinued packages found"
+        continue-on-error: true
+
+  # Nightly build test
+  nightly-build:
+    name: Nightly Build Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: web
+          - os: macos-latest
+            target: ios
+          - os: windows-latest
+            target: windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: flutter pub get
+
+      - name: Build Web
+        if: matrix.target == 'web'
+        working-directory: ./frontend
+        run: flutter build web --release
+
+      - name: Setup Xcode
+        if: matrix.target == 'ios'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+
+      - name: Build iOS (no signing)
+        if: matrix.target == 'ios'
+        working-directory: ./frontend
+        run: flutter build ios --release --no-codesign
+
+      - name: Build Windows
+        if: matrix.target == 'windows'
+        working-directory: ./frontend
+        run: flutter build windows --release
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🔥 Nightly Build Failed: ${{ matrix.target }}`;
+            const body = `## Build Failure
+            
+            The nightly build for **${{ matrix.target }}** failed.
+            
+            **Run Date:** ${new Date().toISOString()}
+            **OS:** ${{ matrix.os }}
+            **Workflow:** ${{ github.workflow }}
+            
+            Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['bug', 'ci/cd']
+            });
+
+  # Backend build test
+  backend-build-test:
+    name: Backend Build Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: miru-backend:nightly
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run -d -p 8000:8000 --name miru-backend-test miru-backend:nightly
+          sleep 5
+          curl -f http://localhost:8000/health || (docker logs miru-backend-test && exit 1)
+          docker stop miru-backend-test
+          docker rm miru-backend-test

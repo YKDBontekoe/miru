@@ -1,0 +1,78 @@
+name: Cleanup and Maintenance
+
+on:
+  schedule:
+    # Run every Sunday at 2:00 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  cleanup-artifacts:
+    name: Cleanup Old Artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 30
+          keep_minimum_runs: 10
+
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          name: |
+            flutter-web-build
+            ios-ipa
+          failOnError: false
+
+  cleanup-packages:
+    name: Cleanup Old Packages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Delete old container images
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'miru-backend'
+          package-type: 'container'
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
+        continue-on-error: true
+
+  stale-branches:
+    name: Cleanup Stale Branches
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete stale branches
+        run: |
+          # List branches that haven't been updated in 90 days
+          git branch -r --merged origin/main | grep -v "HEAD\|main\|develop" | while read branch; do
+            BRANCH_NAME=$(echo $branch | sed 's/origin\///')
+            LAST_COMMIT=$(git log -1 --format=%ct origin/$BRANCH_NAME)
+            CURRENT_TIME=$(date +%s)
+            DAYS_OLD=$(( (CURRENT_TIME - LAST_COMMIT) / 86400 ))
+            
+            if [ $DAYS_OLD -gt 90 ]; then
+              echo "Branch $BRANCH_NAME is $DAYS_OLD days old, considering deletion"
+              # Uncomment to actually delete
+              # git push origin --delete $BRANCH_NAME
+            fi
+          done

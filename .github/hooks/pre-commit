@@ -1,0 +1,59 @@
+#!/bin/bash
+# Pre-commit hook for Miru project
+
+echo "Running pre-commit checks..."
+
+# Store the exit code
+EXIT_CODE=0
+
+# Backend checks
+if [ -d "backend" ]; then
+    echo "Checking backend..."
+    cd backend
+    
+    # Run ruff
+    echo "Running ruff..."
+    if ! ruff check .; then
+        echo "Ruff found issues. Run 'ruff check --fix .' to auto-fix."
+        EXIT_CODE=1
+    fi
+    
+    # Run black check
+    echo "Running black check..."
+    if ! black --check .; then
+        echo "Black formatting issues found. Run 'black .' to fix."
+        EXIT_CODE=1
+    fi
+    
+    cd ..
+fi
+
+# Frontend checks
+if [ -d "frontend" ]; then
+    echo "Checking frontend..."
+    cd frontend
+    
+    # Run flutter analyze
+    echo "Running flutter analyze..."
+    if ! flutter analyze; then
+        echo "Flutter analyze found issues."
+        EXIT_CODE=1
+    fi
+    
+    # Run dart format check
+    echo "Running dart format check..."
+    if ! dart format --output=none --set-exit-if-changed .; then
+        echo "Dart format issues found. Run 'dart format .' to fix."
+        EXIT_CODE=1
+    fi
+    
+    cd ..
+fi
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo "Pre-commit checks failed. Please fix the issues above."
+    exit 1
+else
+    echo "All pre-commit checks passed!"
+    exit 0
+fi

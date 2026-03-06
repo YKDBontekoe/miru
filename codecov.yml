@@ -1,0 +1,65 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+    after_n_builds: 2
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+        if_not_found: success
+        if_ci_failed: error
+        informational: false
+        only_pulls: false
+      backend:
+        target: 75%
+        flags:
+          - backend
+      flutter:
+        target: 70%
+        flags:
+          - flutter
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+        if_not_found: success
+        if_ci_failed: error
+        informational: false
+        only_pulls: false
+
+flags:
+  backend:
+    paths:
+      - backend/app/
+    carryforward: true
+  flutter:
+    paths:
+      - frontend/lib/
+    carryforward: true
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  hide_project_coverage: false
+
+ignore:
+  - "backend/.venv/**/*"
+  - "backend/**/__pycache__/**/*"
+  - "backend/**/test*/**/*"
+  - "backend/tests/**/*"
+  - "frontend/.dart_tool/**/*"
+  - "frontend/build/**/*"
+  - "frontend/test/**/*"
+  - "frontend/integration_test/**/*"

@@ -1,0 +1,80 @@
+# Default labels for the repository
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+
+- name: duplicate
+  color: cfd3d7
+  description: This issue or pull request already exists
+
+- name: enhancement
+  color: a2eeef
+  description: New feature or request
+
+- name: help wanted
+  color: 008672
+  description: Extra attention is needed
+
+- name: invalid
+  color: e4e669
+  description: This doesn't seem right
+
+- name: question
+  color: d876e3
+  description: Further information is requested
+
+- name: wontfix
+  color: ffffff
+  description: This won't be worked on
+
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+
+- name: documentation
+  color: 0075ca
+  description: Improvements or additions to documentation
+
+- name: dependencies
+  color: 0366d6
+  description: Pull requests that update a dependency file
+
+- name: security
+  color: ee0701
+  description: Security related issues
+
+- name: performance
+  color: ff9f43
+  description: Performance improvements
+
+- name: refactor
+  color: fef2c0
+  description: Code refactoring
+
+- name: testing
+  color: b60205
+  description: Test related changes
+
+- name: infrastructure
+  color: 5319e7
+  description: Infrastructure, CI/CD, deployment
+
+- name: breaking change
+  color: b60205
+  description: Changes that break backward compatibility
+
+- name: backend
+  color: 0052cc
+  description: Backend related changes
+
+- name: frontend
+  color: 5319e7
+  description: Frontend related changes
+
+- name: flutter
+  color: 025e8c
+  description: Flutter specific changes
+
+- name: python
+  color: 2b67c6
+  description: Python specific changes
