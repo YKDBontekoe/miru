@@ -48,42 +48,4 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
 
-  analyze-dart:
-    name: Analyze Dart/Flutter Frontend
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.0'
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: flutter pub get
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: 'javascript'  # Dart not directly supported, use JS for analysis
-          queries: security-extended
-          config: |
-            paths:
-              - frontend/lib
-            paths-ignore:
-              - frontend/.dart_tool
-              - frontend/build
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:dart"
+  # Note: Dart/Flutter is not supported by CodeQL.
