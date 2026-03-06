@@ -5,4 +5,4 @@ pgvector==0.3.2
 mistralai==1.2.5
 pydantic-settings==2.2.1
 python-dotenv==1.0.1
-httpx==0.27.0
+httpx==0.28.1
