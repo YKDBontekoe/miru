@@ -124,7 +124,7 @@ async def stream_chat(
     client = get_client()
     chosen_model = model or settings.default_chat_model
 
-    event_stream = await client.chat.send_async(  # type: ignore[call-overload]
+    event_stream = await client.chat.send_async(
         model=chosen_model,
         messages=messages,
         stream=True,
@@ -155,7 +155,7 @@ async def chat_completion(
     client = get_client()
     chosen_model = model or settings.default_chat_model
 
-    response = await client.chat.send_async(  # type: ignore[call-overload]
+    response = await client.chat.send_async(
         model=chosen_model,
         messages=messages,
         stream=False,
