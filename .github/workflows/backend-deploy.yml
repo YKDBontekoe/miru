@@ -302,20 +302,20 @@ jobs:
 
       - name: Deploy to Azure Container Apps
         id: deploy
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          containerAppName: ${{ env.CONTAINER_APP_NAME }}
-          resourceGroup: ${{ env.RESOURCE_GROUP }}
-          imageToDeploy: ${{ needs.build.outputs.image-tag }}
-          environmentVariables: |
-            DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}
-            SUPABASE_URL=${{ secrets.PRODUCTION_SUPABASE_URL }}
-            SUPABASE_KEY=${{ secrets.PRODUCTION_SUPABASE_KEY }}
-            OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            NEO4J_URI=${{ secrets.NEO4J_URI }}
-            NEO4J_USER=${{ secrets.NEO4J_USER }}
-            NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }}
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ needs.build.outputs.image-tag }} \
+            --set-env-vars \
+              DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
+              SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" \
+              SUPABASE_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" \
+              OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
+              SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+              NEO4J_URI="${{ secrets.NEO4J_URI }}" \
+              NEO4J_USER="${{ secrets.NEO4J_USER }}" \
+              NEO4J_PASSWORD="${{ secrets.NEO4J_PASSWORD }}"
 
       - name: Verify deployment
         run: |
