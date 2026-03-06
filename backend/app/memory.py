@@ -1,26 +1,22 @@
-"""Memory layer: embed, store, and retrieve user memories using pgvector."""
+"""Memory layer: embed, store, and retrieve user memories using pgvector.
+
+Embeddings are produced via OpenRouter's OpenAI-compatible embedding endpoint
+(default: ``openai/text-embedding-3-small``, 1536 dimensions).
+"""
+
 from __future__ import annotations
 
 import numpy as np
-from mistralai import Mistral
 
-from app.config import settings
 from app.database import get_pool
+from app.openrouter import embed as openrouter_embed
 
-_mistral = Mistral(api_key=settings.mistral_api_key)
-
-EMBED_MODEL = "mistral-embed"
-CHAT_MODEL = "mistral-large-latest"
 TOP_K = 5  # number of memories to retrieve per message
 
 
 async def embed(text: str) -> list[float]:
-    """Return a 1024-dim embedding for *text* using Mistral embed model."""
-    response = _mistral.embeddings.create(
-        model=EMBED_MODEL,
-        inputs=[text],
-    )
-    return response.data[0].embedding
+    """Return an embedding vector for *text* via OpenRouter."""
+    return await openrouter_embed(text)
 
 
 async def store_memory(content: str) -> None:
@@ -35,7 +31,7 @@ async def store_memory(content: str) -> None:
 
 
 async def retrieve_memories(query: str) -> list[str]:
-    """Return the top-K memories most similar to *query*."""
+    """Return the top-K memories most similar to *query* via cosine ANN search."""
     vector = await embed(query)
     pool = await get_pool()
     rows = await pool.fetch(
@@ -49,7 +45,3 @@ async def retrieve_memories(query: str) -> list[str]:
         TOP_K,
     )
     return [r["content"] for r in rows]
-
-
-def get_mistral_client() -> Mistral:
-    return _mistral

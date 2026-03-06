@@ -1,19 +1,23 @@
 """FastAPI routes for Miru."""
+
 from __future__ import annotations
 
 import asyncio
-import json
+from typing import TYPE_CHECKING
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Query
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.memory import get_mistral_client, retrieve_memories, store_memory
-from app.config import settings
+from app.crew import detect_task_type, run_crew
+from app.database import get_pool
+from app.memory import retrieve_memories, store_memory
+from app.openrouter import list_models, stream_chat
 
 router = APIRouter()
-
-CHAT_MODEL = "mistral-large-latest"
 
 SYSTEM_PROMPT = """You are Miru, a warm and thoughtful personal AI assistant.
 You remember things the user has told you in the past.
@@ -21,53 +25,119 @@ When relevant memories are provided, weave them naturally into your responses.
 Be concise, helpful, and human."""
 
 
+# ---------------------------------------------------------------------------
+# Request / response models
+# ---------------------------------------------------------------------------
+
+
 class ChatRequest(BaseModel):
+    message: str
+    model: str | None = None  # OpenRouter model ID; uses default if omitted
+    use_crew: bool = False  # Set True to route through CrewAI agents
+
+
+class MemoryRequest(BaseModel):
     message: str
 
 
-async def _stream_response(message: str) -> None:
-    """Generator that streams the Mistral response and stores the memory."""
-    # 1. Retrieve relevant memories
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+async def _stream_response(message: str, model: str | None) -> AsyncIterator[str]:
+    """Retrieve memories, build context, then stream an OpenRouter response."""
     memories = await retrieve_memories(message)
 
-    # 2. Build context block
     memory_block = ""
     if memories:
         joined = "\n- ".join(memories)
         memory_block = f"\n\nRelevant things I remember about you:\n- {joined}\n"
 
-    # 3. Stream from Mistral
-    client = get_mistral_client()
-    full_reply: list[str] = []
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT + memory_block},
+        {"role": "user", "content": message},
+    ]
 
-    with client.chat.stream(
-        model=CHAT_MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT + memory_block},
-            {"role": "user", "content": message},
-        ],
-    ) as stream:
-        for chunk in stream:
-            delta = chunk.data.choices[0].delta.content if chunk.data.choices else None
-            if delta:
-                full_reply.append(delta)
-                yield delta
+    async for chunk in stream_chat(messages, model=model):
+        yield chunk
 
-    # 4. Store the user message as a memory after streaming completes
     asyncio.create_task(store_memory(message))
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
 
 @router.post("/chat")
 async def chat(req: ChatRequest) -> StreamingResponse:
-    """Stream a chat response, injecting relevant memories into context."""
+    """Stream a chat response via OpenRouter, injecting relevant memories.
+
+    Pass ``use_crew=true`` to route the message through a dynamically
+    composed CrewAI crew instead of a single-turn completion.
+    """
+    if req.use_crew:
+        # CrewAI path — returns a complete string; we stream it as a single chunk
+        async def _crew_stream() -> AsyncIterator[str]:
+            memories = await retrieve_memories(req.message)
+            result = await run_crew(req.message, model=req.model, memories=memories)
+            yield result
+            asyncio.create_task(store_memory(req.message))
+
+        return StreamingResponse(
+            _crew_stream(),
+            media_type="text/plain; charset=utf-8",
+        )
+
     return StreamingResponse(
-        _stream_response(req.message),
+        _stream_response(req.message, model=req.model),
         media_type="text/plain; charset=utf-8",
     )
 
 
+@router.post("/crew")
+async def crew_run(req: ChatRequest) -> dict:
+    """Run a CrewAI crew for the given message and return the full result.
+
+    Unlike ``/chat``, this endpoint waits for the entire crew to finish and
+    returns a JSON body with the output and detected task type.
+    """
+    memories = await retrieve_memories(req.message)
+    task_type = detect_task_type(req.message)
+
+    result = await run_crew(req.message, model=req.model, memories=memories)
+    asyncio.create_task(store_memory(req.message))
+
+    return {
+        "task_type": task_type,
+        "model": req.model,
+        "result": result,
+    }
+
+
+@router.get("/models")
+async def get_models(
+    search: str | None = Query(default=None, description="Filter models by name or ID"),
+) -> dict:
+    """Return the list of models available on OpenRouter.
+
+    An optional ``search`` query parameter filters results by model ID or name.
+    """
+    try:
+        models = await list_models()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch models: {exc}") from exc
+
+    if search:
+        q = search.lower()
+        models = [m for m in models if q in m["id"].lower() or q in m["name"].lower()]
+
+    return {"models": models, "count": len(models)}
+
+
 @router.post("/memories")
-async def add_memory(req: ChatRequest) -> dict:
+async def add_memory(req: MemoryRequest) -> dict:
     """Manually store a memory."""
     await store_memory(req.message)
     return {"status": "stored"}
@@ -76,13 +146,15 @@ async def add_memory(req: ChatRequest) -> dict:
 @router.get("/memories")
 async def list_memories() -> dict:
     """Return all stored memories (for debugging)."""
-    from app.database import get_pool
-
     pool = await get_pool()
     rows = await pool.fetch("SELECT id, content, created_at FROM memories ORDER BY created_at DESC")
     return {
         "memories": [
-            {"id": r["id"], "content": r["content"], "created_at": r["created_at"].isoformat()}
+            {
+                "id": r["id"],
+                "content": r["content"],
+                "created_at": r["created_at"].isoformat(),
+            }
             for r in rows
         ]
     }

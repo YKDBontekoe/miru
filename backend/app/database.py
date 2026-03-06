@@ -1,4 +1,5 @@
 """Async PostgreSQL connection pool via asyncpg."""
+
 from __future__ import annotations
 
 import asyncpg
