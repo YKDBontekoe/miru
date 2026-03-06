@@ -79,17 +79,27 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-          cache: true
-          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache: false
 
       - name: Clean and install dependencies
         run: |
           flutter clean
-          flutter pub get
+          flutter pub get --verbose 2>&1 | tail -100
+
+      - name: Verify project structure
+        run: |
+          pwd
+          ls -la
+          ls -la lib/
+          cat pubspec.yaml | head -5
+          git status
 
       - name: Verify dependencies
         run: |
-          ls -la .dart_tool/
+          ls -la .dart_tool/ || echo "No .dart_tool directory"
+          if [ -f .dart_tool/package_config.json ]; then
+            cat .dart_tool/package_config.json | grep -A5 '"miru"' || echo "miru package not found in config"
+          fi
           flutter pub deps
 
       - name: Verify formatting

@@ -121,11 +121,11 @@ async def find_related_memories(
         return [record.data() async for record in result]
 
 
-async def search_memories_by_content(query: str) -> list[dict[str, Any]]:
+async def search_memories_by_content(search_query: str) -> list[dict[str, Any]]:
     """Search memories by content (full-text search).
 
     Args:
-        query: Search query string
+        search_query: Search query string
 
     Returns:
         List of matching memories
@@ -140,7 +140,7 @@ async def search_memories_by_content(query: str) -> list[dict[str, Any]]:
             RETURN node.id as id, node.content as content, score
             LIMIT 10
             """,
-            query=query,
+            query=search_query,
         )
         return [record.data() async for record in result]
 

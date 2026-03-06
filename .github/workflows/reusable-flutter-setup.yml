@@ -47,8 +47,7 @@ jobs:
         with:
           flutter-version: ${{ inputs.flutter-version }}
           channel: 'stable'
-          cache: true
-          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache: false
 
       - name: Clean and install dependencies
         run: |

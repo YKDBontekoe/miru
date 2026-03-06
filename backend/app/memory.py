@@ -10,6 +10,7 @@ contextual retrieval and reasoning.
 from __future__ import annotations
 
 import uuid
+from typing import Any, cast
 
 from app.database import get_supabase
 from app.graph import (
@@ -66,7 +67,7 @@ async def retrieve_memories(query: str) -> list[str]:
         "match_memories",
         {"query_embedding": vector, "match_threshold": 0.0, "match_count": TOP_K},
     ).execute()
-    return [r["content"] for r in response.data]
+    return [cast(str, r["content"]) for r in cast(list[dict[str, Any]], response.data)]
 
 
 async def retrieve_memories_with_graph(query: str) -> dict:
@@ -93,11 +94,11 @@ async def retrieve_memories_with_graph(query: str) -> dict:
         {"query_embedding": vector, "match_threshold": 0.0, "match_count": TOP_K},
     ).execute()
 
-    for record in response.data:
+    for record in cast(list[dict[str, Any]], response.data):
         memory_id = record.get("id")
         if memory_id:
             # Find related memories via graph
-            related = await find_related_memories(memory_id, depth=1)
+            related = await find_related_memories(str(memory_id), depth=1)
             graph_context.append(
                 {
                     "memory": record["content"],
@@ -151,14 +152,17 @@ async def initialize_graph_connections() -> None:
     for i, mem1 in enumerate(memories):
         for mem2 in memories[i + 1 :]:
             # Calculate cosine similarity
-            emb1 = mem1.get("embedding", [])
-            emb2 = mem2.get("embedding", [])
+            emb1 = cast(list[float], mem1.get("embedding", []))
+            emb2 = cast(list[float], mem2.get("embedding", []))
 
             if emb1 and emb2:
                 similarity = _cosine_similarity(emb1, emb2)
                 if similarity > 0.85:  # High similarity threshold
                     await create_relationship(
-                        mem1["id"], mem2["id"], "SIMILAR_TO", {"similarity": similarity}
+                        cast(str, mem1["id"]),
+                        cast(str, mem2["id"]),
+                        "SIMILAR_TO",
+                        {"similarity": similarity},
                     )
 
 

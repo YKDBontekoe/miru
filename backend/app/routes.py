@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -156,10 +156,10 @@ async def list_memories() -> dict:
     return {
         "memories": [
             {
-                "id": r["id"],
-                "content": r["content"],
-                "created_at": r["created_at"],
+                "id": cast(str, r["id"]),
+                "content": cast(str, r["content"]),
+                "created_at": cast(str, r["created_at"]),
             }
-            for r in response.data
+            for r in cast(list[dict[str, Any]], response.data)
         ]
     }
