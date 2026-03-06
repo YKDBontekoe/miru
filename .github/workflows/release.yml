@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload Web Artifact
         if: matrix.target == 'web'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-release
           path: frontend/build/web/
@@ -92,7 +92,7 @@ jobs:
 
       - name: Upload iOS Artifact
         if: matrix.target == 'ios'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-release
           path: frontend/build/ios/iphoneos/
