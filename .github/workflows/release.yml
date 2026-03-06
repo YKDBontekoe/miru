@@ -10,6 +10,9 @@ permissions:
   contents: write
   packages: write
 
+env:
+  FLUTTER_VERSION: '3.19.0'
+
 jobs:
   create-release:
     name: Create Release
@@ -56,7 +59,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
 
@@ -80,7 +83,7 @@ jobs:
         if: matrix.target == 'ios'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.2'
+          xcode-version: latest-stable
 
       - name: Build iOS
         if: matrix.target == 'ios'

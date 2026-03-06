@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 env:
+  PYTHON_VERSION: '3.11'
   FLUTTER_VERSION: '3.19.0'
 
 jobs:
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependency checkers
         run: |
@@ -149,7 +150,7 @@ jobs:
         if: matrix.target == 'ios'
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.2'
+          xcode-version: latest-stable
 
       - name: Build iOS (no signing)
         if: matrix.target == 'ios'

@@ -1,0 +1,74 @@
+name: Reusable - Flutter Setup and Test
+
+on:
+  workflow_call:
+    inputs:
+      flutter-version:
+        description: 'Flutter version to use'
+        type: string
+        default: '3.19.0'
+      working-directory:
+        description: 'Working directory'
+        type: string
+        default: './frontend'
+      run-tests:
+        description: 'Whether to run flutter test'
+        type: boolean
+        default: true
+      run-lint:
+        description: 'Whether to run flutter analyze'
+        type: boolean
+        default: true
+      upload-coverage:
+        description: 'Whether to upload coverage to Codecov'
+        type: boolean
+        default: false
+      runs-on:
+        description: 'Runner OS'
+        type: string
+        default: 'ubuntu-latest'
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+jobs:
+  flutter-ci:
+    name: Flutter CI
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter-version }}
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        if: inputs.run-lint
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze project source
+        if: inputs.run-lint
+        run: flutter analyze --fatal-infos
+
+      - name: Run tests with coverage
+        if: inputs.run-tests
+        run: flutter test --coverage
+
+      - name: Upload coverage to Codecov
+        if: inputs.upload-coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ${{ inputs.working-directory }}/coverage/lcov.info
+          flags: flutter
+          name: flutter-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}

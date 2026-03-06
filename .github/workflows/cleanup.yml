@@ -9,6 +9,7 @@ on:
 permissions:
   actions: write
   contents: write
+  packages: write
 
 jobs:
   cleanup-artifacts:
@@ -34,6 +35,8 @@ jobs:
           name: |
             flutter-web-build
             ios-ipa
+            android-aab
+            android-apk-debug
           failOnError: false
 
   cleanup-packages:
@@ -54,25 +57,39 @@ jobs:
   stale-branches:
     name: Cleanup Stale Branches
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    # Runs on both the weekly schedule and manual dispatch
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Delete stale branches
+      - name: Delete stale merged branches (older than 90 days)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # List branches that haven't been updated in 90 days
-          git branch -r --merged origin/main | grep -v "HEAD\|main\|develop" | while read branch; do
-            BRANCH_NAME=$(echo $branch | sed 's/origin\///')
-            LAST_COMMIT=$(git log -1 --format=%ct origin/$BRANCH_NAME)
-            CURRENT_TIME=$(date +%s)
-            DAYS_OLD=$(( (CURRENT_TIME - LAST_COMMIT) / 86400 ))
-            
-            if [ $DAYS_OLD -gt 90 ]; then
-              echo "Branch $BRANCH_NAME is $DAYS_OLD days old, considering deletion"
-              # Uncomment to actually delete
-              # git push origin --delete $BRANCH_NAME
-            fi
-          done
+          STALENESS_DAYS=90
+          CURRENT_TIME=$(date +%s)
+
+          echo "### Stale Branch Cleanup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Branches merged into \`main\` and older than ${STALENESS_DAYS} days:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          git fetch --prune origin
+
+          git branch -r --merged origin/main \
+            | grep -v "HEAD\|origin/main\|origin/develop" \
+            | sed 's|origin/||' \
+            | while read BRANCH_NAME; do
+              LAST_COMMIT=$(git log -1 --format=%ct "origin/$BRANCH_NAME" 2>/dev/null || echo 0)
+              DAYS_OLD=$(( (CURRENT_TIME - LAST_COMMIT) / 86400 ))
+
+              if [ "$DAYS_OLD" -gt "$STALENESS_DAYS" ]; then
+                echo "- Deleting \`$BRANCH_NAME\` (${DAYS_OLD} days old)" >> $GITHUB_STEP_SUMMARY
+                git push origin --delete "$BRANCH_NAME" || echo "  (failed to delete $BRANCH_NAME, skipping)"
+              fi
+            done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Cleanup complete." >> $GITHUB_STEP_SUMMARY

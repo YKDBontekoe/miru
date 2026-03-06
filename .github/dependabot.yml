@@ -8,8 +8,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "${{ github.repository_owner }}"
     labels:
       - "dependencies"
       - "python"
@@ -28,8 +26,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "${{ github.repository_owner }}"
     labels:
       - "dependencies"
       - "flutter"
@@ -45,8 +41,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "${{ github.repository_owner }}"
     labels:
       - "dependencies"
       - "github-actions"

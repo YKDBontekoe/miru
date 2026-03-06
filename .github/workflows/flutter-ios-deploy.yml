@@ -143,17 +143,12 @@ jobs:
             --build-number=${{ steps.build_number.outputs.number }}
 
       - name: Upload to TestFlight
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          xcrun altool --upload-app \
-            --type ios \
-            --file build/ios/ipa/*.ipa \
-            --username "$APPLE_ID" \
-            --password "$APP_SPECIFIC_PASSWORD" \
-            --asc-provider "$TEAM_ID"
+        uses: apple-actions/upload-testflight-build@v1
+        with:
+          app-path: frontend/build/ios/ipa/*.ipa
+          issuer-id: ${{ secrets.APPLE_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPLE_API_PRIVATE_KEY }}
 
       - name: Clean up keychain
         if: always()

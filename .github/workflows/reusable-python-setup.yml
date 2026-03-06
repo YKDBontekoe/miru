@@ -1,0 +1,111 @@
+name: Reusable - Python Setup and Test
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to use'
+        type: string
+        default: '3.11'
+      working-directory:
+        description: 'Working directory'
+        type: string
+        default: './backend'
+      run-tests:
+        description: 'Whether to run pytest'
+        type: boolean
+        default: true
+      run-lint:
+        description: 'Whether to run linting'
+        type: boolean
+        default: true
+      database-url:
+        description: 'Database URL for tests (use secrets in calling workflow)'
+        type: string
+        default: ''
+    secrets:
+      DATABASE_URL:
+        required: false
+      SUPABASE_URL:
+        required: false
+      SUPABASE_KEY:
+        required: false
+      OPENROUTER_API_KEY:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+
+jobs:
+  python-ci:
+    name: Python CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+          cache-dependency-path: |
+            ${{ inputs.working-directory }}/requirements.txt
+            ${{ inputs.working-directory }}/requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run Ruff linter
+        if: inputs.run-lint
+        run: ruff check --output-format=github .
+
+      - name: Run Ruff formatter check
+        if: inputs.run-lint
+        run: ruff format --check .
+
+      - name: Run isort check
+        if: inputs.run-lint
+        run: isort --check-only --diff .
+
+      - name: Run MyPy type checker
+        if: inputs.run-lint
+        run: mypy --ignore-missing-imports app/
+
+      - name: Run tests with coverage
+        if: inputs.run-tests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://test:test@localhost:5432/test' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'http://localhost:54321' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'test-key' }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || 'test-key' }}
+        run: pytest --cov=app --cov-report=xml --cov-report=term -v
+
+      - name: Upload coverage to Codecov
+        if: inputs.run-tests
+        uses: codecov/codecov-action@v4
+        with:
+          files: ${{ inputs.working-directory }}/coverage.xml
+          flags: backend
+          name: backend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
