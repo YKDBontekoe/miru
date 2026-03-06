@@ -94,6 +94,8 @@ jobs:
           python -c "import configparser; c = configparser.ConfigParser(); c.read('alembic.ini'); print('✓ alembic.ini is valid')"
 
       - name: Dry-run migration SQL (offline, no DB required)
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: |
           echo "### Migration SQL dry-run" >> $GITHUB_STEP_SUMMARY
           echo '```sql' >> $GITHUB_STEP_SUMMARY
