@@ -156,10 +156,10 @@ async def list_memories() -> dict:
     return {
         "memories": [
             {
-                "id": cast(str, r["id"]),
-                "content": cast(str, r["content"]),
-                "created_at": cast(str, r["created_at"]),
+                "id": cast("str", r["id"]),
+                "content": cast("str", r["content"]),
+                "created_at": cast("str", r["created_at"]),
             }
-            for r in cast(list[dict[str, Any]], response.data)
+            for r in cast("list[dict[str, Any]]", response.data)
         ]
     }
