@@ -19,7 +19,8 @@ select = [
     "TC",  # flake8-type-checking (new alias)
 ]
 ignore = [
-    "E501",  # Line too long (handled by formatter)
+    "E501",   # Line too long (handled by formatter)
+    "TC006",  # cast() type expressions don't need quoting
 ]
 
 [tool.ruff.lint.isort]

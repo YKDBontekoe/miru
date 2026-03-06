@@ -13,30 +13,15 @@ Provides three public helpers consumed by the rest of the application:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from openrouter import OpenRouter
-from openrouter.components import (
-    AssistantMessageTypedDict,
-    DeveloperMessageTypedDict,
-    SystemMessageTypedDict,
-    ToolResponseMessageTypedDict,
-    UserMessageTypedDict,
-)
 from openrouter.operations import CreateEmbeddingsResponseBody
+
+from app.config import settings
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
-
-MessageTypedDict = (
-    SystemMessageTypedDict
-    | UserMessageTypedDict
-    | DeveloperMessageTypedDict
-    | AssistantMessageTypedDict
-    | ToolResponseMessageTypedDict
-)
-
-from app.config import settings
 
 # ---------------------------------------------------------------------------
 # Singleton client
@@ -123,7 +108,7 @@ async def embed(text: str) -> list[float]:
 
 
 async def stream_chat(
-    messages: list[MessageTypedDict],
+    messages: list[dict[str, Any]],
     model: str | None = None,
 ) -> AsyncIterator[str]:
     """Async generator that yields chat completion text chunks from OpenRouter.
@@ -139,7 +124,7 @@ async def stream_chat(
     client = get_client()
     chosen_model = model or settings.default_chat_model
 
-    event_stream = await client.chat.send_async(
+    event_stream = await client.chat.send_async(  # type: ignore[call-overload]
         model=chosen_model,
         messages=messages,
         stream=True,
@@ -160,7 +145,7 @@ async def stream_chat(
 
 
 async def chat_completion(
-    messages: list[MessageTypedDict],
+    messages: list[dict[str, Any]],
     model: str | None = None,
 ) -> str:
     """Return the full assistant reply as a string (non-streaming).
@@ -170,7 +155,7 @@ async def chat_completion(
     client = get_client()
     chosen_model = model or settings.default_chat_model
 
-    response = await client.chat.send_async(
+    response = await client.chat.send_async(  # type: ignore[call-overload]
         model=chosen_model,
         messages=messages,
         stream=False,
