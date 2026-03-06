@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from logging.config import fileConfig
 from typing import TYPE_CHECKING
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-from app.config import settings
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
@@ -32,25 +31,12 @@ target_metadata = None
 # my_important_option = config.get_main_option("my_important_option")
 
 
-# Override sqlalchemy.url with our DATABASE_URL (if available)
-# Otherwise fall back to supabase connection string format
 def get_database_url() -> str:
-    """Get database URL from settings."""
-    # Check if we have a direct DATABASE_URL (for Supabase direct connection)
-    if hasattr(settings, "database_url") and settings.database_url:
-        return settings.database_url
-
-    # Construct from Supabase URL if needed
-    # Supabase provides a direct PostgreSQL connection string
-    # Format: postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
-    if hasattr(settings, "supabase_url") and settings.supabase_url:
-        # Extract project ref from supabase_url
-        # https://[project-ref].supabase.co -> db.[project-ref].supabase.co
-        supabase_url = settings.supabase_url.replace("https://", "").replace(".supabase.co", "")
-        # This is a placeholder - actual connection string should be in DATABASE_URL env var
-        return f"postgresql://postgres:password@db.{supabase_url}.supabase.co:5432/postgres"
-
-    raise ValueError("No database URL configured. Set DATABASE_URL or SUPABASE_URL.")
+    """Get database URL from the DATABASE_URL environment variable."""
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise ValueError("DATABASE_URL environment variable is not set.")
+    return url
 
 
 def run_migrations_offline() -> None:
