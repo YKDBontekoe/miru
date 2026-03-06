@@ -2,9 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-
-// Change this to your machine's IP when running on a physical device.
-const String _baseUrl = 'http://localhost:8000/api';
+import 'backend_service.dart';
 
 /// A single OpenRouter model entry returned by [ApiService.fetchModels].
 class OpenRouterModel {
@@ -51,6 +49,8 @@ class CrewResult {
 }
 
 class ApiService {
+  static String get _baseUrl => BackendService.baseUrl.value;
+
   /// Streams a chat response from the backend.
   ///
   /// Pass [model] to override the server default.
@@ -66,18 +66,24 @@ class ApiService {
     final body = <String, dynamic>{'message': message, 'use_crew': useCrew};
     if (model != null) body['model'] = model;
 
-    final request = http.Request('POST', uri)
-      ..headers['Content-Type'] = 'application/json; charset=utf-8'
-      ..body = jsonEncode(body);
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', uri)
+        ..headers['Content-Type'] = 'application/json; charset=utf-8'
+        ..body = jsonEncode(body);
 
-    final streamedResponse = await http.Client().send(request);
+      final streamedResponse = await client.send(request);
 
-    if (streamedResponse.statusCode != 200) {
-      throw Exception('Server error: ${streamedResponse.statusCode}');
-    }
+      if (streamedResponse.statusCode != 200) {
+        final errorBody = await streamedResponse.stream.bytesToString();
+        throw Exception('Server error (${streamedResponse.statusCode}): $errorBody');
+      }
 
-    await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
-      yield chunk;
+      await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+        yield chunk;
+      }
+    } finally {
+      client.close();
     }
   }
 

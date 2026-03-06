@@ -36,7 +36,12 @@ except ValidationError as exc:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # App startup - initialize Neo4j connection
-    await get_neo4j_driver()
+    try:
+        await get_neo4j_driver()
+        logger.info("Successfully connected to Neo4j")
+    except Exception as exc:
+        logger.error("Failed to connect to Neo4j at startup: %s. Continuing without graph features.", exc)
+    
     yield
     # App shutdown - close Neo4j connection
     await close_neo4j_driver()

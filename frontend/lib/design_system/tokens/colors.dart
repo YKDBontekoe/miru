@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Miru Design System -- Color Palette
 ///
-/// A strict, semantic color system built on a refined purple/indigo foundation.
+/// A strict, semantic color system built on a modern blue foundation.
 /// All colors are intentionally curated -- never use raw Color literals
 /// outside this file.
 abstract final class AppColors {
@@ -10,17 +10,20 @@ abstract final class AppColors {
   // Brand
   // ---------------------------------------------------------------------------
 
-  /// Primary brand purple -- used for key actions, active states, and accents.
-  static const Color primary = Color(0xFF7C6FFF);
+  /// Primary brand blue -- used for key actions, active states, and accents.
+  static const Color primary = Color(0xFF2563EB);
 
   /// Lighter tint for hover/focus states and subtle highlights.
-  static const Color primaryLight = Color(0xFFA49AFF);
+  static const Color primaryLight = Color(0xFF60A5FA);
 
   /// Darker shade for pressed states and text on light backgrounds.
-  static const Color primaryDark = Color(0xFF5549CC);
+  static const Color primaryDark = Color(0xFF1E40AF);
 
   /// Faintest brand wash -- used for tinted backgrounds, selection states.
-  static const Color primarySurface = Color(0xFF1E1B2E);
+  static const Color primarySurface = Color(0xFF1E293B);
+
+  /// Light brand wash for light mode.
+  static const Color primarySurfaceLight = Color(0xFFEFF6FF);
 
   // ---------------------------------------------------------------------------
   // Neutral -- Dark theme palette (primary surface system)
@@ -85,26 +88,38 @@ abstract final class AppColors {
   /// Success -- confirmations, online indicators, positive trends.
   static const Color success = Color(0xFF34D399);
 
-  /// Success background tint.
-  static const Color successSurface = Color(0xFF0D2E1F);
+  /// Success background tint (dark mode).
+  static const Color successSurfaceDark = Color(0xFF0D2E1F);
+
+  /// Success background tint (light mode).
+  static const Color successSurfaceLight = Color(0xFFF0FDF4);
 
   /// Warning -- caution states, degraded status.
   static const Color warning = Color(0xFFFBBF24);
 
-  /// Warning background tint.
-  static const Color warningSurface = Color(0xFF2E2610);
+  /// Warning background tint (dark mode).
+  static const Color warningSurfaceDark = Color(0xFF2E2610);
+
+  /// Warning background tint (light mode).
+  static const Color warningSurfaceLight = Color(0xFFFFFBEB);
 
   /// Error -- destructive actions, failures, offline.
   static const Color error = Color(0xFFF87171);
 
-  /// Error background tint.
-  static const Color errorSurface = Color(0xFF2E1212);
+  /// Error background tint (dark mode).
+  static const Color errorSurfaceDark = Color(0xFF2E1212);
+
+  /// Error background tint (light mode).
+  static const Color errorSurfaceLight = Color(0xFFFEF2F2);
 
   /// Informational -- tips, neutral alerts.
   static const Color info = Color(0xFF60A5FA);
 
-  /// Info background tint.
-  static const Color infoSurface = Color(0xFF121E2E);
+  /// Info background tint (dark mode).
+  static const Color infoSurfaceDark = Color(0xFF121E2E);
+
+  /// Info background tint (light mode).
+  static const Color infoSurfaceLight = Color(0xFFEFF6FF);
 
   // ---------------------------------------------------------------------------
   // On-color (text/icons on filled backgrounds)

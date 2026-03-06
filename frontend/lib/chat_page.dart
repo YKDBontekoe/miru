@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'api_service.dart';
 import 'design_system/components/model_selector_sheet.dart';
+import 'design_system/components/onboarding_visuals.dart';
 import 'design_system/design_system.dart';
+import 'settings_page.dart';
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -152,22 +155,18 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      appBar: AppBar(
-        backgroundColor: colors.surfaceHigh,
-        centerTitle: true,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppStatusDot.online(),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Miru',
-              style: AppTypography.headingMedium.copyWith(
-                color: colors.onSurface,
+      appBar: _MiruAppBar(
+        colors: colors,
+        onSettingsPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => SettingsPage(
+                currentModel: _selectedModel,
+                onModelChanged: (id) => setState(() => _selectedModel = id),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
       body: Column(
         children: [
@@ -217,3 +216,83 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Premium App Bar
+// ---------------------------------------------------------------------------
+
+class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final dynamic colors;
+  final VoidCallback onSettingsPressed;
+  const _MiruAppBar({required this.colors, required this.onSettingsPressed});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final appColors = colors as AppThemeColors;
+
+    // Gradient: dark → white-to-indigo, light → charcoal-to-primary
+    final gradientColors = isDark
+        ? const [Color(0xFFFFFFFF), Color(0xFFADB5FA)]
+        : const [Color(0xFF12121A), Color(0xFF4F46E5)];
+
+    return AppBar(
+      backgroundColor: appColors.surfaceHigh,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: true,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Mini orb logo
+          const MiruOrbVisual(size: 30),
+          const SizedBox(width: 8),
+          // Theme-aware gradient title
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(bounds),
+            child: Text(
+              'Miru',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white, // ShaderMask paints over this
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const AppStatusDot.online(),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: onSettingsPressed,
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                appColors.border.withValues(alpha: 0.6),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

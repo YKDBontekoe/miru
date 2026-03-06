@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../tokens/colors.dart';
+import '../extensions/build_context_extensions.dart';
 import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
 
@@ -15,42 +15,43 @@ class CrewTaskBadge extends StatelessWidget {
 
   const CrewTaskBadge({super.key, required this.taskType});
 
-  _TaskStyle get _style {
+  _TaskStyle _resolveStyle(BuildContext context) {
+    final colors = context.colors;
     switch (taskType.toLowerCase()) {
       case 'research':
-        return const _TaskStyle(
+        return _TaskStyle(
           label: 'Research',
           icon: Icons.search_rounded,
-          color: AppColors.info,
-          surface: AppColors.infoSurface,
+          color: colors.info,
+          surface: colors.infoSurface,
         );
       case 'planning':
-        return const _TaskStyle(
+        return _TaskStyle(
           label: 'Planning',
           icon: Icons.checklist_rounded,
-          color: AppColors.warning,
-          surface: AppColors.warningSurface,
+          color: colors.warning,
+          surface: colors.warningSurface,
         );
       case 'summarisation':
-        return const _TaskStyle(
+        return _TaskStyle(
           label: 'Summary',
           icon: Icons.notes_rounded,
-          color: AppColors.success,
-          surface: AppColors.successSurface,
+          color: colors.success,
+          surface: colors.successSurface,
         );
       default:
-        return const _TaskStyle(
+        return _TaskStyle(
           label: 'Crew',
           icon: Icons.groups_rounded,
-          color: AppColors.primaryLight,
-          surface: AppColors.primarySurface,
+          color: colors.primaryLight,
+          surface: colors.primarySurface,
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final s = _style;
+    final s = _resolveStyle(context);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../extensions/build_context_extensions.dart';
 import '../tokens/colors.dart';
 import '../tokens/spacing.dart';
 
@@ -34,11 +36,11 @@ class AppIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.colors;
 
     final ButtonStyle style = switch (variant) {
       AppIconButtonVariant.filled => IconButton.styleFrom(
-          backgroundColor: color ?? AppColors.primary,
+          backgroundColor: color ?? colors.primary,
           foregroundColor: AppColors.onPrimary,
           minimumSize: Size(size, size),
           shape: RoundedRectangleBorder(
@@ -46,15 +48,15 @@ class AppIconButton extends StatelessWidget {
           ),
         ),
       AppIconButtonVariant.tonal => IconButton.styleFrom(
-          backgroundColor: AppColors.primarySurface,
-          foregroundColor: AppColors.primaryLight,
+          backgroundColor: colors.primarySurface,
+          foregroundColor: colors.primary,
           minimumSize: Size(size, size),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           ),
         ),
       AppIconButtonVariant.ghost => IconButton.styleFrom(
-          foregroundColor: color ?? colorScheme.onSurface,
+          foregroundColor: color ?? colors.onSurface,
           minimumSize: Size(size, size),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),

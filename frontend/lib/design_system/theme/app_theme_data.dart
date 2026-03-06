@@ -13,11 +13,11 @@ abstract final class AppTheme {
   // Public API
   // ---------------------------------------------------------------------------
 
-  /// Dark theme (default).
-  static ThemeData get dark => _buildTheme(Brightness.dark);
-
-  /// Light theme.
+  /// Light theme (default).
   static ThemeData get light => _buildTheme(Brightness.light);
+
+  /// Dark theme.
+  static ThemeData get dark => _buildTheme(Brightness.dark);
 
   // ---------------------------------------------------------------------------
   // Builder
@@ -265,9 +265,9 @@ abstract final class AppTheme {
       ),
 
       // Progress Indicator
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: AppColors.primary,
-        linearTrackColor: AppColors.primarySurface,
+        linearTrackColor: colors.primarySurface,
       ),
 
       // Switch
@@ -331,6 +331,9 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
   final Color onSurface;
   final Color onSurfaceMuted;
   final Color onSurfaceDisabled;
+  final Color primary;
+  final Color primaryLight;
+  final Color primarySurface;
   final Color userBubble;
   final Color assistantBubble;
   final Color success;
@@ -351,6 +354,9 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     required this.onSurface,
     required this.onSurfaceMuted,
     required this.onSurfaceDisabled,
+    required this.primary,
+    required this.primaryLight,
+    required this.primarySurface,
     required this.userBubble,
     required this.assistantBubble,
     required this.success,
@@ -373,16 +379,19 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
         onSurface = AppColors.onSurfaceDark,
         onSurfaceMuted = AppColors.onSurfaceMutedDark,
         onSurfaceDisabled = AppColors.onSurfaceDisabledDark,
+        primary = AppColors.primary,
+        primaryLight = AppColors.primaryLight,
+        primarySurface = AppColors.primarySurface,
         userBubble = AppColors.userBubbleDark,
         assistantBubble = AppColors.assistantBubbleDark,
         success = AppColors.success,
-        successSurface = AppColors.successSurface,
+        successSurface = AppColors.successSurfaceDark,
         warning = AppColors.warning,
-        warningSurface = AppColors.warningSurface,
+        warningSurface = AppColors.warningSurfaceDark,
         error = AppColors.error,
-        errorSurface = AppColors.errorSurface,
+        errorSurface = AppColors.errorSurfaceDark,
         info = AppColors.info,
-        infoSurface = AppColors.infoSurface;
+        infoSurface = AppColors.infoSurfaceDark;
 
   /// Light mode color set.
   const AppThemeColors.light()
@@ -394,16 +403,19 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
         onSurface = AppColors.onSurfaceLight,
         onSurfaceMuted = AppColors.onSurfaceMutedLight,
         onSurfaceDisabled = AppColors.onSurfaceDisabledLight,
+        primary = AppColors.primary,
+        primaryLight = AppColors.primaryLight,
+        primarySurface = AppColors.primarySurfaceLight,
         userBubble = AppColors.userBubbleLight,
         assistantBubble = AppColors.assistantBubbleLight,
         success = AppColors.success,
-        successSurface = AppColors.successSurface,
+        successSurface = AppColors.successSurfaceLight,
         warning = AppColors.warning,
-        warningSurface = AppColors.warningSurface,
+        warningSurface = AppColors.warningSurfaceLight,
         error = AppColors.error,
-        errorSurface = AppColors.errorSurface,
+        errorSurface = AppColors.errorSurfaceLight,
         info = AppColors.info,
-        infoSurface = AppColors.infoSurface;
+        infoSurface = AppColors.infoSurfaceLight;
 
   @override
   AppThemeColors copyWith({
@@ -415,6 +427,9 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     Color? onSurface,
     Color? onSurfaceMuted,
     Color? onSurfaceDisabled,
+    Color? primary,
+    Color? primaryLight,
+    Color? primarySurface,
     Color? userBubble,
     Color? assistantBubble,
     Color? success,
@@ -435,6 +450,9 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       onSurface: onSurface ?? this.onSurface,
       onSurfaceMuted: onSurfaceMuted ?? this.onSurfaceMuted,
       onSurfaceDisabled: onSurfaceDisabled ?? this.onSurfaceDisabled,
+      primary: primary ?? this.primary,
+      primaryLight: primaryLight ?? this.primaryLight,
+      primarySurface: primarySurface ?? this.primarySurface,
       userBubble: userBubble ?? this.userBubble,
       assistantBubble: assistantBubble ?? this.assistantBubble,
       success: success ?? this.success,
@@ -464,6 +482,9 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
         other.onSurfaceDisabled,
         t,
       )!,
+      primary: Color.lerp(primary, other.primary, t)!,
+      primaryLight: Color.lerp(primaryLight, other.primaryLight, t)!,
+      primarySurface: Color.lerp(primarySurface, other.primarySurface, t)!,
       userBubble: Color.lerp(userBubble, other.userBubble, t)!,
       assistantBubble: Color.lerp(assistantBubble, other.assistantBubble, t)!,
       success: Color.lerp(success, other.success, t)!,

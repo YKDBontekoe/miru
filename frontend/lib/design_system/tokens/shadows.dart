@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'colors.dart';
 
 /// Miru Design System -- Elevation Shadows
 ///
@@ -39,7 +40,7 @@ abstract final class AppShadows {
   /// Colored glow -- primary action buttons, focus rings.
   static List<BoxShadow> primaryGlow = [
     BoxShadow(
-      color: const Color(0xFF7C6FFF).withAlpha(60),
+      color: AppColors.primary.withAlpha(60),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),

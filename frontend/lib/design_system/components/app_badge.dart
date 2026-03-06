@@ -61,8 +61,8 @@ class AppBadge extends StatelessWidget {
     final colors = context.colors;
     return switch (variant) {
       AppBadgeVariant.primary => (
-          AppColors.primarySurface,
-          AppColors.primaryLight,
+          colors.primarySurface,
+          colors.primaryLight,
         ),
       AppBadgeVariant.success => (colors.successSurface, colors.success),
       AppBadgeVariant.warning => (colors.warningSurface, colors.warning),

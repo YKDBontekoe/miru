@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../extensions/build_context_extensions.dart';
 import '../tokens/colors.dart';
@@ -10,9 +11,10 @@ import 'typing_indicator.dart';
 
 /// A themed chat bubble that adapts to user vs. assistant messages.
 ///
-/// Assistant messages are rendered as Markdown (via `flutter_markdown`).
-/// When a [crewTaskType] is provided, a [CrewTaskBadge] is shown above
-/// the bubble to indicate which CrewAI agent pipeline was used.
+/// User bubbles have a gradient fill. Assistant messages are rendered as
+/// Markdown (via `flutter_markdown`). When a [crewTaskType] is provided,
+/// a [CrewTaskBadge] is shown above the bubble to indicate which CrewAI
+/// agent pipeline was used.
 ///
 /// ```dart
 /// ChatBubble(text: 'Hello!', isUser: true)
@@ -37,7 +39,6 @@ class ChatBubble extends StatelessWidget {
     final colors = context.colors;
     final screenWidth = context.screenWidth;
 
-    final bubbleColor = isUser ? colors.userBubble : colors.assistantBubble;
     final textColor = isUser ? AppColors.onPrimary : colors.onSurface;
 
     return Align(
@@ -58,21 +59,9 @@ class ChatBubble extends StatelessWidget {
             ],
 
             // Bubble
-            Container(
-              decoration: BoxDecoration(
-                color: bubbleColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(AppSpacing.radiusXl),
-                  topRight: const Radius.circular(AppSpacing.radiusXl),
-                  bottomLeft: Radius.circular(
-                    isUser ? AppSpacing.radiusXl : AppSpacing.radiusXs,
-                  ),
-                  bottomRight: Radius.circular(
-                    isUser ? AppSpacing.radiusXs : AppSpacing.radiusXl,
-                  ),
-                ),
-              ),
-              padding: AppSpacing.bubblePadding,
+            _BubbleContainer(
+              isUser: isUser,
+              colors: colors,
               child: _buildContent(context, textColor),
             ),
           ],
@@ -87,11 +76,16 @@ class ChatBubble extends StatelessWidget {
       return const TypingIndicator();
     }
 
-    // User messages: plain text.
+    // User messages: plain text with Inter font.
     if (isUser) {
       return Text(
         text,
-        style: AppTypography.bodyMedium.copyWith(color: textColor),
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          height: 1.5,
+          color: textColor,
+        ),
       );
     }
 
@@ -108,7 +102,12 @@ class ChatBubble extends StatelessWidget {
     Color textColor,
   ) {
     final colors = context.colors;
-    final base = AppTypography.bodyMedium.copyWith(color: textColor);
+    final base = GoogleFonts.inter(
+      fontSize: 15,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      color: textColor,
+    );
 
     return MarkdownStyleSheet(
       p: base,
@@ -120,7 +119,7 @@ class ChatBubble extends StatelessWidget {
       h4: AppTypography.labelMedium.copyWith(color: textColor),
       listBullet: base,
       code: AppTypography.code.copyWith(
-        color: AppColors.primaryLight,
+        color: colors.primaryLight,
         backgroundColor: colors.surfaceHighest,
       ),
       codeblockDecoration: BoxDecoration(
@@ -129,7 +128,7 @@ class ChatBubble extends StatelessWidget {
       ),
       blockquoteDecoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: AppColors.primary.withAlpha(120), width: 3),
+          left: BorderSide(color: colors.primary.withValues(alpha: 0.5), width: 3),
         ),
       ),
       blockquotePadding: const EdgeInsets.only(left: AppSpacing.md),
@@ -140,6 +139,72 @@ class ChatBubble extends StatelessWidget {
       horizontalRuleDecoration: BoxDecoration(
         border: Border(top: BorderSide(color: colors.border)),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bubble container
+// ---------------------------------------------------------------------------
+
+class _BubbleContainer extends StatelessWidget {
+  final bool isUser;
+  final dynamic colors;
+  final Widget child;
+
+  const _BubbleContainer({
+    required this.isUser,
+    required this.colors,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isUser) {
+      // Gradient user bubble
+      return Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF3B5BF5), Color(0xFF6366F1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(AppSpacing.radiusXl),
+            topRight: Radius.circular(AppSpacing.radiusXl),
+            bottomLeft: Radius.circular(AppSpacing.radiusXl),
+            bottomRight: Radius.circular(AppSpacing.radiusXs),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF3B5BF5).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: AppSpacing.bubblePadding,
+        child: child,
+      );
+    }
+
+    // Flat assistant bubble
+    return Container(
+      decoration: BoxDecoration(
+        color: (colors as dynamic).assistantBubble as Color,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(AppSpacing.radiusXl),
+          topRight: Radius.circular(AppSpacing.radiusXl),
+          bottomLeft: Radius.circular(AppSpacing.radiusXs),
+          bottomRight: Radius.circular(AppSpacing.radiusXl),
+        ),
+        border: Border.all(
+          color: (colors as dynamic).border as Color,
+          width: 0.5,
+        ),
+      ),
+      padding: AppSpacing.bubblePadding,
+      child: child,
     );
   }
 }
