@@ -80,9 +80,17 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Clean and install dependencies
+        run: |
+          flutter clean
+          flutter pub get
+
+      - name: Verify dependencies
+        run: |
+          ls -la .dart_tool/
+          flutter pub deps
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .

@@ -48,9 +48,15 @@ jobs:
           flutter-version: ${{ inputs.flutter-version }}
           channel: 'stable'
           cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Clean and install dependencies
+        run: |
+          flutter clean
+          flutter pub get
+
+      - name: Verify dependencies
+        run: flutter pub deps
 
       - name: Verify formatting
         if: inputs.run-lint
