@@ -16,10 +16,25 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from openrouter import OpenRouter
+from openrouter.components import (
+    AssistantMessageTypedDict,
+    DeveloperMessageTypedDict,
+    SystemMessageTypedDict,
+    ToolResponseMessageTypedDict,
+    UserMessageTypedDict,
+)
 from openrouter.operations import CreateEmbeddingsResponseBody
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
+
+MessageTypedDict = (
+    SystemMessageTypedDict
+    | UserMessageTypedDict
+    | DeveloperMessageTypedDict
+    | AssistantMessageTypedDict
+    | ToolResponseMessageTypedDict
+)
 
 from app.config import settings
 
@@ -108,7 +123,7 @@ async def embed(text: str) -> list[float]:
 
 
 async def stream_chat(
-    messages: list[dict],
+    messages: list[MessageTypedDict],
     model: str | None = None,
 ) -> AsyncIterator[str]:
     """Async generator that yields chat completion text chunks from OpenRouter.
@@ -126,7 +141,7 @@ async def stream_chat(
 
     event_stream = await client.chat.send_async(
         model=chosen_model,
-        messages=messages,  # type: ignore[call-overload]
+        messages=messages,
         stream=True,
     )
 
@@ -145,7 +160,7 @@ async def stream_chat(
 
 
 async def chat_completion(
-    messages: list[dict],
+    messages: list[MessageTypedDict],
     model: str | None = None,
 ) -> str:
     """Return the full assistant reply as a string (non-streaming).
@@ -157,7 +172,7 @@ async def chat_completion(
 
     response = await client.chat.send_async(
         model=chosen_model,
-        messages=messages,  # type: ignore[call-overload]
+        messages=messages,
         stream=False,
     )
 

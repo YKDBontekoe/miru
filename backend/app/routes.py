@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from app.crew import detect_task_type, run_crew
 from app.database import get_supabase
 from app.memory import retrieve_memories, store_memory
-from app.openrouter import list_models, stream_chat
+from app.openrouter import MessageTypedDict, list_models, stream_chat
 
 router = APIRouter()
 
@@ -54,10 +54,13 @@ async def _stream_response(message: str, model: str | None) -> AsyncIterator[str
         joined = "\n- ".join(memories)
         memory_block = f"\n\nRelevant things I remember about you:\n- {joined}\n"
 
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT + memory_block},
-        {"role": "user", "content": message},
-    ]
+    messages = cast(
+        list[MessageTypedDict],
+        [
+            {"role": "system", "content": SYSTEM_PROMPT + memory_block},
+            {"role": "user", "content": message},
+        ],
+    )
 
     async for chunk in stream_chat(messages, model=model):
         yield chunk
