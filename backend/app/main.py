@@ -1,5 +1,8 @@
 """Miru FastAPI application entry point."""
 
+from __future__ import annotations
+
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,7 +13,7 @@ from app.routes import router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # App startup - initialize Neo4j connection
     await get_neo4j_driver()
     yield

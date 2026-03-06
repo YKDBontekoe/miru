@@ -126,7 +126,7 @@ async def stream_chat(
 
     event_stream = await client.chat.send_async(
         model=chosen_model,
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,  # type: ignore[call-overload]
         stream=True,
     )
 
@@ -157,11 +157,11 @@ async def chat_completion(
 
     response = await client.chat.send_async(
         model=chosen_model,
-        messages=messages,  # type: ignore[arg-type]
+        messages=messages,  # type: ignore[call-overload]
         stream=False,
     )
 
-    content = response.choices[0].message.content  # type: ignore[union-attr]
+    content = response.choices[0].message.content
     if isinstance(content, str):
         return content
     return ""
