@@ -1,34 +1,20 @@
-"""Async PostgreSQL connection pool via asyncpg."""
+"""Supabase client initialization."""
 
 from __future__ import annotations
 
-import asyncpg
-from pgvector.asyncpg import register_vector
+from supabase import Client, create_client
 
 from app.config import settings
 
-_pool: asyncpg.Pool | None = None
+_supabase: Client | None = None
 
 
-async def get_pool() -> asyncpg.Pool:
-    global _pool
-    if _pool is None:
-        _pool = await asyncpg.create_pool(
-            dsn=settings.database_url,
-            min_size=2,
-            max_size=10,
-            init=_init_connection,
+def get_supabase() -> Client:
+    """Return the initialized Supabase client (singleton)."""
+    global _supabase
+    if _supabase is None:
+        _supabase = create_client(
+            supabase_url=settings.supabase_url,
+            supabase_key=settings.supabase_key,
         )
-    return _pool
-
-
-async def _init_connection(conn: asyncpg.Connection) -> None:
-    """Register pgvector codec for every new connection."""
-    await register_vector(conn)
-
-
-async def close_pool() -> None:
-    global _pool
-    if _pool is not None:
-        await _pool.close()
-        _pool = None
+    return _supabase

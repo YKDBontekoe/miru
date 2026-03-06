@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.crew import detect_task_type, run_crew
-from app.database import get_pool
+from app.database import get_supabase
 from app.memory import retrieve_memories, store_memory
 from app.openrouter import list_models, stream_chat
 
@@ -146,15 +146,20 @@ async def add_memory(req: MemoryRequest) -> dict:
 @router.get("/memories")
 async def list_memories() -> dict:
     """Return all stored memories (for debugging)."""
-    pool = await get_pool()
-    rows = await pool.fetch("SELECT id, content, created_at FROM memories ORDER BY created_at DESC")
+    supabase = get_supabase()
+    response = (
+        supabase.table("memories")
+        .select("id, content, created_at")
+        .order("created_at", desc=True)
+        .execute()
+    )
     return {
         "memories": [
             {
                 "id": r["id"],
                 "content": r["content"],
-                "created_at": r["created_at"].isoformat(),
+                "created_at": r["created_at"],
             }
-            for r in rows
+            for r in response.data
         ]
     }

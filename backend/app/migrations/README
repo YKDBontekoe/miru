@@ -1,0 +1,50 @@
+"""Database migrations using Alembic.
+
+This package contains database migration scripts managed by Alembic.
+
+## Usage
+
+### Create a new migration
+
+```bash
+alembic revision -m "description of changes"
+```
+
+### Run migrations (upgrade to latest)
+
+```bash
+alembic upgrade head
+```
+
+### Run migrations (upgrade specific version)
+
+```bash
+alembic upgrade <revision>
+```
+
+### Downgrade migrations
+
+```bash
+alembic downgrade -1  # Downgrade one revision
+alembic downgrade <revision>  # Downgrade to specific revision
+```
+
+### View current revision
+
+```bash
+alembic current
+```
+
+### View migration history
+
+```bash
+alembic history
+```
+
+## Environment Variables
+
+- `DATABASE_URL` - Direct PostgreSQL connection string (preferred for migrations)
+- `SUPABASE_URL` and `SUPABASE_KEY` - Used as fallback if DATABASE_URL not set
+
+For Supabase, use the direct connection string from your Supabase dashboard:
+Settings > Database > Connection string > URI (direct connection)

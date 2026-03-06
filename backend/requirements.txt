@@ -1,7 +1,8 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.29.0
-asyncpg==0.29.0
-pgvector==0.3.2
+supabase>=2.3.0
+alembic>=1.13.0
+psycopg2-binary>=2.9.9
 openrouter>=0.7.11
 crewai[tools]>=1.10.1
 numpy>=1.26.0

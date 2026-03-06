@@ -15,3 +15,30 @@ CREATE INDEX IF NOT EXISTS memories_embedding_idx
     ON memories
     USING ivfflat (embedding vector_cosine_ops)
     WITH (lists = 100);
+
+-- RPC function for vector similarity search
+-- Run this in your Supabase SQL Editor to enable match_memories RPC
+CREATE OR REPLACE FUNCTION match_memories(
+    query_embedding vector(1536),
+    match_threshold float,
+    match_count int
+)
+RETURNS TABLE(
+    id bigint,
+    content text,
+    similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        memories.id,
+        memories.content,
+        1 - (memories.embedding <=> query_embedding) AS similarity
+    FROM memories
+    WHERE 1 - (memories.embedding <=> query_embedding) > match_threshold
+    ORDER BY memories.embedding <=> query_embedding
+    LIMIT match_count;
+END;
+$$;
