@@ -251,7 +251,7 @@ jobs:
   deploy:
     name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
-    needs: [migrate]
+    needs: [migrate, build]
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
@@ -261,21 +261,25 @@ jobs:
       packages: read
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Deploy to Azure Container Apps
         id: deploy
         uses: azure/container-apps-deploy-action@v1
         with:
-          appSourcePath: ${{ github.workspace }}/backend
           containerAppName: ${{ env.CONTAINER_APP_NAME }}
           resourceGroup: ${{ env.RESOURCE_GROUP }}
-          imageToBuild: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          imageToDeploy: ${{ needs.build.outputs.image-tag }}
           environmentVariables: |
             DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }}
             SUPABASE_URL=${{ secrets.PRODUCTION_SUPABASE_URL }}
