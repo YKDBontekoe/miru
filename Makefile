@@ -10,10 +10,10 @@ db-stop:
 
 # Create venv and install backend dependencies
 setup-backend:
-	python3.11 -m venv backend/.venv
+	python3.12 -m venv backend/.venv
 	backend/.venv/bin/pip install --upgrade pip
-	backend/.venv/bin/pip install -r backend/requirements.txt
-	@echo "Done. Copy backend/.env.example to backend/.env and fill in MISTRAL_API_KEY."
+	backend/.venv/bin/pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+	@echo "Done. Copy backend/.env.example to backend/.env and fill in API keys."
 
 # Install pre-commit hooks
 setup-hooks:

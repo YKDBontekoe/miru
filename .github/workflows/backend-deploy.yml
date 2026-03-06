@@ -12,7 +12,7 @@ on:
       - 'backend/**'
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.12'
   CONTAINER_APP_NAME: aca-miru
   RESOURCE_GROUP: rg-miru
   IMAGE_NAME: miru-backend
