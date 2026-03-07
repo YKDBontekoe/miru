@@ -18,19 +18,22 @@ class _IntroductionPageState extends State<IntroductionPage> {
   final List<OnboardingData> _pages = [
     OnboardingData(
       title: 'Meet Miru',
-      description: 'Your personal AI assistant that remembers you and grows with you.',
+      description:
+          'Your personal AI assistant that remembers you and grows with you.',
       visual: const MiruOrbVisual(),
       color: AppColors.primary,
     ),
     OnboardingData(
       title: 'Context Aware',
-      description: 'Miru understands your past conversations to provide better help.',
+      description:
+          'Miru understands your past conversations to provide better help.',
       visual: const ContextMemoryVisual(),
       color: AppColors.success,
     ),
     OnboardingData(
       title: 'Privacy First',
-      description: 'Your data is yours. Miru is designed with security and privacy in mind.',
+      description:
+          'Your data is yours. Miru is designed with security and privacy in mind.',
       visual: const PrivacyShieldVisual(),
       color: AppColors.info,
     ),
@@ -107,7 +110,8 @@ class _IntroductionPageState extends State<IntroductionPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.onPrimary,
-                            shadowColor: AppColors.primary.withOpacity(0.5),
+                            shadowColor:
+                                AppColors.primary.withValues(alpha: 0.5),
                             elevation: 8,
                           ),
                           child: Text(
@@ -147,7 +151,9 @@ class _IntroductionPageState extends State<IntroductionPage> {
       height: 8,
       width: isActive ? 24 : 8,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primary : AppColors.borderDark.withOpacity(0.3),
+        color: isActive
+            ? AppColors.primary
+            : AppColors.borderDark.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
       ),
     );
@@ -186,7 +192,8 @@ class OnboardingContent extends StatelessWidget {
           Expanded(
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300, maxHeight: 300),
+                constraints:
+                    const BoxConstraints(maxWidth: 300, maxHeight: 300),
                 child: data.visual,
               ),
             ),

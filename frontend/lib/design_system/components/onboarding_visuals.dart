@@ -70,8 +70,8 @@ class _OrbPainter extends CustomPainter {
     final bloomPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          AppColors.primary.withOpacity(0.4),
-          AppColors.primary.withOpacity(0.0),
+          AppColors.primary.withValues(alpha: 0.4),
+          AppColors.primary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(center: center, radius: radius * 2.5))
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, radius * 0.4);
@@ -79,26 +79,26 @@ class _OrbPainter extends CustomPainter {
 
     // 2. Core Glow
     final corePaint = Paint()
-      ..shader = RadialGradient(
+      ..shader = const RadialGradient(
         colors: [
           Colors.white,
           AppColors.primary,
           AppColors.primaryDark,
         ],
-        stops: const [0.0, 0.4, 1.0],
+        stops: [0.0, 0.4, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, corePaint);
 
     // 3. Rotating "Neural" Rings
     final ringPaint = Paint()
-      ..color = Colors.white.withOpacity(0.4)
+      ..color = Colors.white.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.006;
 
     for (var i = 0; i < 3; i++) {
       final rotation = (progress * 2 * math.pi) + (i * math.pi / 1.5);
       final ringRadius = radius * (0.9 + i * 0.15);
-      
+
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(rotation);
@@ -171,12 +171,13 @@ class _MemoryPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final scale = size.width / 280;
-    
+
     for (var i = 0; i < 4; i++) {
-      final yOffset = (i - 1.5) * 45.0 * scale + (progress * 10 * scale * (i.isEven ? 1 : -1));
+      final yOffset = (i - 1.5) * 45.0 * scale +
+          (progress * 10 * scale * (i.isEven ? 1 : -1));
       final opacity = 1.0 - (i * 0.2);
       final width = (160.0 - (i * 15)) * scale;
-      
+
       final rect = Rect.fromCenter(
         center: center.translate(0, yOffset),
         width: width,
@@ -184,12 +185,12 @@ class _MemoryPainter extends CustomPainter {
       );
 
       final rrect = RRect.fromRectAndRadius(rect, Radius.circular(8 * scale));
-      
+
       // Shadow/Glow
       canvas.drawRRect(
         rrect,
         Paint()
-          ..color = AppColors.success.withOpacity(0.15 * opacity)
+          ..color = AppColors.success.withValues(alpha: 0.15 * opacity)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10 * scale),
       );
 
@@ -199,8 +200,8 @@ class _MemoryPainter extends CustomPainter {
         Paint()
           ..shader = LinearGradient(
             colors: [
-              AppColors.success.withOpacity(0.6 * opacity),
-              AppColors.success.withOpacity(0.1 * opacity),
+              AppColors.success.withValues(alpha: 0.6 * opacity),
+              AppColors.success.withValues(alpha: 0.1 * opacity),
             ],
           ).createShader(rect),
       );
@@ -209,7 +210,7 @@ class _MemoryPainter extends CustomPainter {
       canvas.drawRRect(
         rrect,
         Paint()
-          ..color = AppColors.success.withOpacity(0.4 * opacity)
+          ..color = AppColors.success.withValues(alpha: 0.4 * opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1 * scale,
       );
@@ -287,27 +288,31 @@ class _ShieldPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5 * scale
-        ..color = AppColors.info.withOpacity(pulseOpacity * 0.5),
+        ..color = AppColors.info.withValues(alpha: pulseOpacity * 0.5),
     );
 
     // 2. Main Shield Shape
     final path = Path();
     final w = 80.0 * scale;
     final h = 100.0 * scale;
-    
-    path.moveTo(center.dx, center.dy - h/2);
-    path.quadraticBezierTo(center.dx + w/2, center.dy - h/2, center.dx + w/2, center.dy);
-    path.quadraticBezierTo(center.dx + w/2, center.dy + h/2, center.dx, center.dy + h*0.7);
-    path.quadraticBezierTo(center.dx - w/2, center.dy + h/2, center.dx - w/2, center.dy);
-    path.quadraticBezierTo(center.dx - w/2, center.dy - h/2, center.dx, center.dy - h/2);
+
+    path.moveTo(center.dx, center.dy - h / 2);
+    path.quadraticBezierTo(
+        center.dx + w / 2, center.dy - h / 2, center.dx + w / 2, center.dy);
+    path.quadraticBezierTo(
+        center.dx + w / 2, center.dy + h / 2, center.dx, center.dy + h * 0.7);
+    path.quadraticBezierTo(
+        center.dx - w / 2, center.dy + h / 2, center.dx - w / 2, center.dy);
+    path.quadraticBezierTo(
+        center.dx - w / 2, center.dy - h / 2, center.dx, center.dy - h / 2);
 
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.info.withOpacity(0.15)
+        ..color = AppColors.info.withValues(alpha: 0.15)
         ..style = PaintingStyle.fill,
     );
-    
+
     canvas.drawPath(path, paint..strokeWidth = 2.5 * scale);
 
     // 3. Central "Core"
@@ -316,14 +321,14 @@ class _ShieldPainter extends CustomPainter {
       12 * scale,
       Paint()..color = AppColors.info,
     );
-    
+
     canvas.drawCircle(
       center,
       (20 + (math.sin(progress * math.pi) * 5)) * scale,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1 * scale
-        ..color = AppColors.info.withOpacity(0.4),
+        ..color = AppColors.info.withValues(alpha: 0.4),
     );
   }
 

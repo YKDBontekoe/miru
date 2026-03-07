@@ -307,6 +307,7 @@ jobs:
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ needs.build.outputs.image-tag }} \
+            --target-port 8000 \
             --set-env-vars \
               DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
               SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" \

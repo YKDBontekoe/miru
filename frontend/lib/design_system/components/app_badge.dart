@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../extensions/build_context_extensions.dart';
-import '../tokens/colors.dart';
 import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
 

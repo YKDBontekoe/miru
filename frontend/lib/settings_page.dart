@@ -25,7 +25,8 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _backendController = TextEditingController(text: BackendService.baseUrl.value);
+    _backendController =
+        TextEditingController(text: BackendService.baseUrl.value);
   }
 
   @override
@@ -50,7 +51,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final url = await showDialog<String>(
       context: context,
       builder: (context) {
-        final controller = TextEditingController(text: BackendService.baseUrl.value);
+        final controller =
+            TextEditingController(text: BackendService.baseUrl.value);
         return AlertDialog(
           title: const Text('Backend URL'),
           content: TextField(
@@ -68,9 +70,10 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             TextButton(
               onPressed: () {
+                final navigator = Navigator.of(context);
                 BackendService.reset().then((_) {
                   if (mounted) {
-                    Navigator.pop(context);
+                    navigator.pop();
                     setState(() {});
                   }
                 });
@@ -89,18 +92,20 @@ class _SettingsPageState extends State<SettingsPage> {
     if (url != null && url.isNotEmpty) {
       try {
         await BackendService.setBaseUrl(url);
-        if (mounted) {
-          setState(() {});
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Backend URL updated to: ${BackendService.baseUrl.value}')),
-          );
-        }
+        if (!mounted) return;
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Backend URL updated to: ${BackendService.baseUrl.value}',
+            ),
+          ),
+        );
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
       }
     }
   }
@@ -152,7 +157,8 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: 'Get alerts for long-running tasks',
             trailing: Switch(
               value: _notificationsEnabled,
-              onChanged: (value) => setState(() => _notificationsEnabled = value),
+              onChanged: (value) =>
+                  setState(() => _notificationsEnabled = value),
             ),
           ),
           const Divider(),
@@ -224,7 +230,8 @@ class _SettingsPageState extends State<SettingsPage> {
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
+              style: AppTypography.bodySmall
+                  .copyWith(color: colors.onSurfaceMuted),
             )
           : null,
       trailing: trailing,

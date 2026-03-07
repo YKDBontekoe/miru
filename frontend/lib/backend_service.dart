@@ -3,17 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class BackendService {
   static const String _storageKey = 'miru_backend_url';
-  
-  /// Default URL for local development.
-  static String get _default_local_url {
-    if (kIsWeb) return 'http://localhost:8000/api';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000/api';
-    }
-    return 'http://localhost:8000/api';
-  }
 
-  static const String _azureUrl = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api';
+  static const String _azureUrl =
+      'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api';
 
   static String get _defaultUrl => _azureUrl;
 
@@ -34,8 +26,9 @@ class BackendService {
     }
 
     // Strip trailing slash for consistency
-    final sanitized = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
-    
+    final sanitized =
+        url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+
     // Append /api if not present
     final finalUrl = sanitized.endsWith('/api') ? sanitized : '$sanitized/api';
 

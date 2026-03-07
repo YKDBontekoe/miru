@@ -128,7 +128,8 @@ class ChatBubble extends StatelessWidget {
       ),
       blockquoteDecoration: BoxDecoration(
         border: Border(
-          left: BorderSide(color: colors.primary.withValues(alpha: 0.5), width: 3),
+          left: BorderSide(
+              color: colors.primary.withValues(alpha: 0.5), width: 3),
         ),
       ),
       blockquotePadding: const EdgeInsets.only(left: AppSpacing.md),

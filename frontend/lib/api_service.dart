@@ -76,10 +76,12 @@ class ApiService {
 
       if (streamedResponse.statusCode != 200) {
         final errorBody = await streamedResponse.stream.bytesToString();
-        throw Exception('Server error (${streamedResponse.statusCode}): $errorBody');
+        throw Exception(
+            'Server error (${streamedResponse.statusCode}): $errorBody');
       }
 
-      await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+      await for (final chunk
+          in streamedResponse.stream.transform(utf8.decoder)) {
         yield chunk;
       }
     } finally {

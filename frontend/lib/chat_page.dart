@@ -295,4 +295,3 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
-
