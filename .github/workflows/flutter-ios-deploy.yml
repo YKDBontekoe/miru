@@ -15,7 +15,7 @@ on:
 
 env:
   FLUTTER_VERSION: '3.41.0'
-  XCODE_VERSION: '15.2'
+  XCODE_VERSION: '16.4.0'
   IOS_DESTINATION: 'platform=iOS Simulator,name=iPhone 15 Pro'
 
 jobs:
