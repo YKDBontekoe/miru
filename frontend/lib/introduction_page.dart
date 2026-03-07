@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'design_system/design_system.dart';
 import 'design_system/components/onboarding_visuals.dart';
 import 'chat_page.dart';
+import 'backend_service.dart';
 
 class IntroductionPage extends StatefulWidget {
   const IntroductionPage({super.key});
@@ -51,6 +52,7 @@ class _IntroductionPageState extends State<IntroductionPage> {
   }
 
   void _finishOnboarding() {
+    BackendService.setOnboardingComplete(true);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const ChatPage()),
     );

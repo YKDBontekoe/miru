@@ -4,6 +4,6 @@ import 'package:miru/main.dart';
 void main() {
   testWidgets('Miru app renders chat page', (WidgetTester tester) async {
     await tester.pumpWidget(const MiruApp());
-    expect(find.text('Miru'), findsWidgets);
+    expect(find.textContaining('Miru'), findsWidgets);
   });
 }

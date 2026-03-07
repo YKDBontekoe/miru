@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'design_system/design_system.dart';
 import 'introduction_page.dart';
+import 'chat_page.dart';
 import 'backend_service.dart';
 
 void main() async {
@@ -20,7 +21,9 @@ class MiruApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: const IntroductionPage(),
+      home: BackendService.onboardingComplete.value
+          ? const ChatPage()
+          : const IntroductionPage(),
     );
   }
 }
