@@ -15,12 +15,19 @@ determine what constitutes a meaningful personal detail.
 Semantic deduplication is still applied after extraction: if a near-identical
 memory already exists (cosine similarity >= ``DEDUP_THRESHOLD``) the new
 content is discarded to prevent redundant entries.
+
+All public functions accept an optional ``user_id`` parameter.  When provided
+the memory is scoped to that user (and the match_memories RPC filters by it).
+Passing ``None`` is reserved for internal / migration use where no user is set.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 from app.database import get_supabase
 from app.graph import (
@@ -92,6 +99,7 @@ async def store_memory(
     user_message: str,
     assistant_reply: str,
     related_to: list[str] | None = None,
+    user_id: UUID | None = None,
 ) -> str | None:
     """Extract and persist a memory from a conversation exchange.
 
@@ -105,6 +113,7 @@ async def store_memory(
         user_message: The raw user message from the exchange.
         assistant_reply: The full assistant response to the user.
         related_to: Optional list of memory IDs to link in Neo4j.
+        user_id: The UUID of the authenticated user who owns this memory.
 
     Returns:
         The assigned memory ID, or ``None`` if nothing was stored.
@@ -117,14 +126,15 @@ async def store_memory(
 
     # Semantic deduplication — skip if a near-identical memory exists.
     supabase = get_supabase()
-    existing = supabase.rpc(
-        "match_memories",
-        {
-            "query_embedding": vector,
-            "match_threshold": DEDUP_THRESHOLD,
-            "match_count": 1,
-        },
-    ).execute()
+    rpc_params: dict[str, Any] = {
+        "query_embedding": vector,
+        "match_threshold": DEDUP_THRESHOLD,
+        "match_count": 1,
+    }
+    if user_id is not None:
+        rpc_params["p_user_id"] = str(user_id)
+
+    existing = supabase.rpc("match_memories", rpc_params).execute()
 
     existing_data = cast("list[dict[str, Any]]", existing.data)
     if existing_data:
@@ -136,9 +146,11 @@ async def store_memory(
         return None
 
     # Insert — let the DB assign the uuid primary key.
-    response = (
-        supabase.table("memories").insert({"content": content, "embedding": vector}).execute()
-    )
+    insert_data: dict[str, Any] = {"content": content, "embedding": vector}
+    if user_id is not None:
+        insert_data["user_id"] = str(user_id)
+
+    response = supabase.table("memories").insert(insert_data).execute()
 
     memory_id = cast("str", cast("list[dict[str, Any]]", response.data)[0]["id"])
     logger.info("Stored memory %s: %.80s", memory_id, content)
@@ -156,26 +168,35 @@ async def store_memory(
     return memory_id
 
 
-async def _search_memories_by_vector(query: str, count: int = TOP_K) -> list[dict[str, Any]]:
+async def _search_memories_by_vector(
+    query: str,
+    count: int = TOP_K,
+    user_id: UUID | None = None,
+) -> list[dict[str, Any]]:
     """Embed *query* and search Supabase pgvector for the closest memories."""
     vector = await embed(query)
     supabase = get_supabase()
-    response = supabase.rpc(
-        "match_memories",
-        {"query_embedding": vector, "match_threshold": 0.0, "match_count": count},
-    ).execute()
+    rpc_params: dict[str, Any] = {
+        "query_embedding": vector,
+        "match_threshold": 0.0,
+        "match_count": count,
+    }
+    if user_id is not None:
+        rpc_params["p_user_id"] = str(user_id)
+
+    response = supabase.rpc("match_memories", rpc_params).execute()
     return cast("list[dict[str, Any]]", response.data)
 
 
-async def retrieve_memories(query: str) -> list[str]:
+async def retrieve_memories(query: str, user_id: UUID | None = None) -> list[str]:
     """Return the top-K memories most similar to *query* via cosine ANN search."""
-    data = await _search_memories_by_vector(query)
+    data = await _search_memories_by_vector(query, user_id=user_id)
     return [cast("str", r["content"]) for r in data]
 
 
-async def retrieve_memories_with_graph(query: str) -> dict:
+async def retrieve_memories_with_graph(query: str, user_id: UUID | None = None) -> dict:
     """Return memories combined with their Neo4j graph relationships."""
-    data = await _search_memories_by_vector(query)
+    data = await _search_memories_by_vector(query, user_id=user_id)
     direct_matches = [cast("str", r["content"]) for r in data]
     graph_context = []
 

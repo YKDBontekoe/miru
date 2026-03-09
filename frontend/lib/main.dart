@@ -1,17 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'auth_page.dart';
+import 'backend_service.dart';
+import 'chat_page.dart';
 import 'design_system/design_system.dart';
 import 'introduction_page.dart';
-import 'chat_page.dart';
-import 'backend_service.dart';
+import 'services/supabase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialise local prefs (backend URL, onboarding state).
   await BackendService.init();
+
+  // Initialise Supabase auth (session persistence, deep-link handling).
+  await SupabaseService.initialize();
+
   runApp(const MiruApp());
 }
 
-class MiruApp extends StatelessWidget {
+class MiruApp extends StatefulWidget {
   const MiruApp({super.key});
+
+  @override
+  State<MiruApp> createState() => _MiruAppState();
+}
+
+class _MiruAppState extends State<MiruApp> {
+  late final Stream<AuthState> _authStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _authStream = SupabaseService.authStateChanges;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +44,24 @@ class MiruApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: BackendService.onboardingComplete.value
-          ? const ChatPage()
-          : const IntroductionPage(),
+      home: StreamBuilder<AuthState>(
+        stream: _authStream,
+        builder: (context, snapshot) {
+          // While we wait for the first auth state event, show the correct
+          // initial page synchronously from the cached session.
+          final isAuthenticated = SupabaseService.isAuthenticated;
+
+          if (isAuthenticated) {
+            // Show onboarding on first launch, then chat.
+            if (!BackendService.onboardingComplete.value) {
+              return const IntroductionPage();
+            }
+            return const ChatPage();
+          }
+
+          return const AuthPage();
+        },
+      ),
     );
   }
 }

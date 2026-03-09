@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from app.config import get_settings
 from app.graph import close_neo4j_driver, get_neo4j_driver
-from app.routes import router
+from app.routes import passkey_router, router
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -51,14 +51,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Miru", version="0.1.0", lifespan=lifespan)
 
+_cors_origins = get_settings().cors_allowed_origins.split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten in production
+    allow_origins=_cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(router, prefix="/api")
+app.include_router(passkey_router, prefix="/api")
 
 
 @app.get("/health")

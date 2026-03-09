@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+
 import 'backend_service.dart';
+import 'services/supabase_service.dart';
 
 /// Result returned by [ApiService.runCrew].
 class CrewResult {
@@ -20,6 +22,18 @@ class CrewResult {
 class ApiService {
   static String get _baseUrl => BackendService.baseUrl.value;
 
+  /// Common headers for all authenticated requests.
+  ///
+  /// Includes the Supabase JWT as a Bearer token so the backend can validate
+  /// the request and scope data to the current user.
+  static Map<String, String> get _headers {
+    final token = SupabaseService.accessToken;
+    return {
+      'Content-Type': 'application/json; charset=utf-8',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   /// Streams a chat response from the backend.
   static Stream<String> sendMessage(String message) async* {
     final uri = Uri.parse('$_baseUrl/chat');
@@ -27,13 +41,17 @@ class ApiService {
     final client = http.Client();
     try {
       final request = http.Request('POST', uri)
-        ..headers['Content-Type'] = 'application/json; charset=utf-8'
+        ..headers.addAll(_headers)
         ..body = jsonEncode(<String, dynamic>{
           'message': message,
           'use_crew': false,
         });
 
       final streamedResponse = await client.send(request);
+
+      if (streamedResponse.statusCode == 401) {
+        throw ApiAuthException('Session expired. Please sign in again.');
+      }
 
       if (streamedResponse.statusCode != 200) {
         final errorBody = await streamedResponse.stream.bytesToString();
@@ -56,9 +74,13 @@ class ApiService {
 
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json; charset=utf-8'},
+      headers: _headers,
       body: jsonEncode(<String, dynamic>{'message': message}),
     );
+
+    if (response.statusCode == 401) {
+      throw ApiAuthException('Session expired. Please sign in again.');
+    }
 
     if (response.statusCode != 200) {
       throw Exception('Server error: ${response.statusCode}');
@@ -67,4 +89,15 @@ class ApiService {
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return CrewResult.fromJson(json);
   }
+}
+
+/// Thrown when the backend responds with 401 Unauthorized.
+///
+/// The UI layer should catch this and redirect to [AuthPage].
+class ApiAuthException implements Exception {
+  final String message;
+  const ApiAuthException(this.message);
+
+  @override
+  String toString() => 'ApiAuthException: $message';
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'design_system/design_system.dart';
-import 'design_system/components/onboarding_visuals.dart';
 import 'chat_page.dart';
 import 'backend_service.dart';
 

@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     # Supabase configuration (replaces local PostgreSQL)
     supabase_url: str
     supabase_key: str
+    # Service role key — used ONLY on the backend for admin operations (e.g. minting
+    # sessions after passkey login). Never exposed to the client.
+    supabase_service_role_key: str
+    # JWT secret for verifying Supabase-issued tokens.
+    # Get this from Supabase Dashboard > Settings > API > JWT Settings > JWT Secret
+    supabase_jwt_secret: str
     # Direct database URL for migrations (Supabase direct connection string)
     # Get this from Supabase Dashboard > Settings > Database > Connection string > URI
     database_url: str | None = None
@@ -23,6 +29,16 @@ class Settings(BaseSettings):
     neo4j_uri: str
     neo4j_user: str = "neo4j"
     neo4j_password: str
+    # WebAuthn / Passkey configuration
+    # rp_id must match the domain of your app exactly (no scheme, no port for standard ports)
+    # e.g. "miru.app" for production, "localhost" for local dev
+    webauthn_rp_id: str = "localhost"
+    webauthn_rp_name: str = "Miru"
+    # Comma-separated list of allowed origins for WebAuthn ceremonies
+    # e.g. "https://miru.app,https://www.miru.app"
+    webauthn_expected_origin: str = "http://localhost"
+    # Comma-separated allowed CORS origins — tighten in production
+    cors_allowed_origins: str = "*"
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart';
-import 'design_system/components/onboarding_visuals.dart';
 import 'design_system/design_system.dart';
 import 'models/chat_message.dart';
 import 'settings_page.dart';

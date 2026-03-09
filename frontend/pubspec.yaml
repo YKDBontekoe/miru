@@ -36,6 +36,9 @@ dependencies:
   google_fonts: ^8.0.2
   shared_preferences: ^2.5.4
   flutter_markdown_plus: ^1.0.7
+  # Authentication
+  supabase_flutter: ^2.12.0
+  flutter_secure_storage: ^9.0.0
 
 dev_dependencies:
   flutter_test:

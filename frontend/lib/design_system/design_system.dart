@@ -32,3 +32,4 @@ export 'components/chat_input_bar.dart';
 export 'components/crew_task_badge.dart';
 export 'components/typing_indicator.dart';
 export 'components/empty_state.dart';
+export 'components/onboarding_visuals.dart';

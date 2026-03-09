@@ -63,10 +63,19 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           SUPABASE_URL: http://localhost:54321
-          SUPABASE_KEY: test-key
+          SUPABASE_KEY: test-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
+          SUPABASE_JWT_SECRET: test-jwt-secret-that-is-long-enough-32ch
           OPENROUTER_API_KEY: test-key
           DEFAULT_CHAT_MODEL: google/gemma-3-27b-it:free
           EMBEDDING_MODEL: openai/text-embedding-3-small
+          WEBAUTHN_RP_ID: localhost
+          WEBAUTHN_RP_NAME: Miru Test
+          WEBAUTHN_EXPECTED_ORIGIN: http://localhost
+          CORS_ALLOWED_ORIGINS: "*"
+          NEO4J_URI: bolt://localhost:7687
+          NEO4J_USER: neo4j
+          NEO4J_PASSWORD: test-password
         run: |
           pytest --cov=app --cov-report=xml --cov-report=term
 
@@ -266,16 +275,20 @@ jobs:
       - name: Validate required secrets
         run: |
           MISSING=""
-          [ -z "$PRODUCTION_DATABASE_URL" ]  && MISSING="$MISSING PRODUCTION_DATABASE_URL"
-          [ -z "$PRODUCTION_SUPABASE_URL" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_URL"
-          [ -z "$PRODUCTION_SUPABASE_KEY" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_KEY"
-          [ -z "$OPENROUTER_API_KEY" ]        && MISSING="$MISSING OPENROUTER_API_KEY"
-          [ -z "$DEFAULT_CHAT_MODEL" ]        && MISSING="$MISSING DEFAULT_CHAT_MODEL"
-          [ -z "$EMBEDDING_MODEL" ]           && MISSING="$MISSING EMBEDDING_MODEL"
-          [ -z "$SECRET_KEY" ]               && MISSING="$MISSING SECRET_KEY"
-          [ -z "$NEO4J_URI" ]                && MISSING="$MISSING NEO4J_URI"
-          [ -z "$NEO4J_USER" ]               && MISSING="$MISSING NEO4J_USER"
-          [ -z "$NEO4J_PASSWORD" ]           && MISSING="$MISSING NEO4J_PASSWORD"
+          [ -z "$PRODUCTION_DATABASE_URL" ]           && MISSING="$MISSING PRODUCTION_DATABASE_URL"
+          [ -z "$PRODUCTION_SUPABASE_URL" ]           && MISSING="$MISSING PRODUCTION_SUPABASE_URL"
+          [ -z "$PRODUCTION_SUPABASE_KEY" ]           && MISSING="$MISSING PRODUCTION_SUPABASE_KEY"
+          [ -z "$PRODUCTION_SUPABASE_SERVICE_ROLE_KEY" ] && MISSING="$MISSING PRODUCTION_SUPABASE_SERVICE_ROLE_KEY"
+          [ -z "$PRODUCTION_SUPABASE_JWT_SECRET" ]    && MISSING="$MISSING PRODUCTION_SUPABASE_JWT_SECRET"
+          [ -z "$OPENROUTER_API_KEY" ]                && MISSING="$MISSING OPENROUTER_API_KEY"
+          [ -z "$DEFAULT_CHAT_MODEL" ]                && MISSING="$MISSING DEFAULT_CHAT_MODEL"
+          [ -z "$EMBEDDING_MODEL" ]                   && MISSING="$MISSING EMBEDDING_MODEL"
+          [ -z "$SECRET_KEY" ]                        && MISSING="$MISSING SECRET_KEY"
+          [ -z "$NEO4J_URI" ]                         && MISSING="$MISSING NEO4J_URI"
+          [ -z "$NEO4J_USER" ]                        && MISSING="$MISSING NEO4J_USER"
+          [ -z "$NEO4J_PASSWORD" ]                    && MISSING="$MISSING NEO4J_PASSWORD"
+          [ -z "$WEBAUTHN_RP_ID" ]                    && MISSING="$MISSING WEBAUTHN_RP_ID"
+          [ -z "$WEBAUTHN_EXPECTED_ORIGIN" ]          && MISSING="$MISSING WEBAUTHN_EXPECTED_ORIGIN"
           if [ -n "$MISSING" ]; then
             echo "::error::Missing required secrets:$MISSING"
             echo "Set these in the 'production' GitHub environment before deploying."
@@ -292,6 +305,8 @@ jobs:
           PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
           PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           PRODUCTION_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+          PRODUCTION_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY }}
+          PRODUCTION_SUPABASE_JWT_SECRET: ${{ secrets.PRODUCTION_SUPABASE_JWT_SECRET }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           DEFAULT_CHAT_MODEL: ${{ secrets.DEFAULT_CHAT_MODEL }}
           EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
@@ -299,6 +314,8 @@ jobs:
           NEO4J_URI: ${{ secrets.NEO4J_URI }}
           NEO4J_USER: ${{ secrets.NEO4J_USER }}
           NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+          WEBAUTHN_RP_ID: ${{ secrets.WEBAUTHN_RP_ID }}
+          WEBAUTHN_EXPECTED_ORIGIN: ${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -335,13 +352,19 @@ jobs:
               DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
               SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" \
               SUPABASE_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" \
+              SUPABASE_SERVICE_ROLE_KEY="${{ secrets.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY }}" \
+              SUPABASE_JWT_SECRET="${{ secrets.PRODUCTION_SUPABASE_JWT_SECRET }}" \
               OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
               DEFAULT_CHAT_MODEL="${{ secrets.DEFAULT_CHAT_MODEL }}" \
               EMBEDDING_MODEL="${{ secrets.EMBEDDING_MODEL }}" \
               SECRET_KEY="${{ secrets.SECRET_KEY }}" \
               NEO4J_URI="${{ secrets.NEO4J_URI }}" \
               NEO4J_USER="${{ secrets.NEO4J_USER }}" \
-              NEO4J_PASSWORD="${{ secrets.NEO4J_PASSWORD }}"
+              NEO4J_PASSWORD="${{ secrets.NEO4J_PASSWORD }}" \
+              WEBAUTHN_RP_ID="${{ secrets.WEBAUTHN_RP_ID }}" \
+              WEBAUTHN_RP_NAME="${{ secrets.WEBAUTHN_RP_NAME }}" \
+              WEBAUTHN_EXPECTED_ORIGIN="${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}" \
+              CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
 
       - name: Verify deployment
         run: |

@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'design_system/design_system.dart';
 import 'backend_service.dart';
+import 'services/passkey_service.dart';
+import 'services/supabase_service.dart';
 
 class SettingsPage extends StatefulWidget {
   /// Called when the user clears chat history from settings.
@@ -20,6 +22,21 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool _isPrivacyMode = false;
   bool _notificationsEnabled = true;
+
+  // Passkey management state
+  List<PasskeyInfo> _passkeys = [];
+  bool _loadingPasskeys = false;
+  bool _addingPasskey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPasskeys();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Backend URL
+  // ---------------------------------------------------------------------------
 
   Future<void> _updateBackendUrl() async {
     final url = await showDialog<String>(
@@ -84,9 +101,152 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Passkey management
+  // ---------------------------------------------------------------------------
+
+  Future<void> _loadPasskeys() async {
+    if (!SupabaseService.isAuthenticated) return;
+    setState(() => _loadingPasskeys = true);
+    try {
+      final passkeys = await PasskeyService.listPasskeys();
+      if (mounted) setState(() => _passkeys = passkeys);
+    } catch (e) {
+      // Non-fatal — user may not have any passkeys yet.
+    } finally {
+      if (mounted) setState(() => _loadingPasskeys = false);
+    }
+  }
+
+  Future<void> _addPasskey() async {
+    setState(() => _addingPasskey = true);
+    try {
+      // Step 1: Get registration options from the backend.
+      final optionsData = await PasskeyService.getRegistrationOptions(
+        deviceName: _getDeviceLabel(),
+      );
+      final challengeId = optionsData['challenge_id'] as String;
+      final options = optionsData['options'] as Map<String, dynamic>;
+
+      // Step 2: Create credential via platform API.
+      final credentialJson =
+          await PasskeyService.platformCreateCredential(options);
+
+      // Step 3: Verify with the backend.
+      await PasskeyService.verifyRegistration(
+        challengeId: challengeId,
+        credentialJson: credentialJson,
+        deviceName: _getDeviceLabel(),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passkey registered successfully')),
+      );
+      await _loadPasskeys();
+    } on PasskeyException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add passkey: ${e.detail}')),
+      );
+    } on UnsupportedError catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Passkeys not supported on this device'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _addingPasskey = false);
+    }
+  }
+
+  Future<void> _deletePasskey(PasskeyInfo passkey) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove passkey'),
+        content: Text(
+          'Remove "${passkey.deviceName ?? 'this passkey'}"?\n\n'
+          'You will no longer be able to sign in with it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await PasskeyService.deletePasskey(passkey.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Passkey removed')));
+      await _loadPasskeys();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to remove: $e')));
+    }
+  }
+
+  String _getDeviceLabel() {
+    // A simple heuristic — apps can improve this with device_info_plus.
+    return 'My device';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sign out
+  // ---------------------------------------------------------------------------
+
+  Future<void> _signOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign out'),
+        content: const Text('You will need to sign in again to access Miru.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await SupabaseService.signOut();
+    // main.dart StreamBuilder will detect the auth-state change and navigate
+    // back to AuthPage automatically.
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final user = SupabaseService.currentUser;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -96,7 +256,112 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: ListView(
         children: [
-          const SizedBox(height: AppSpacing.md),
+          // Account section
+          if (user != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _buildSectionHeader('Account'),
+            ListTile(
+              leading: Icon(
+                Icons.person_outline_rounded,
+                color: colors.onSurfaceMuted,
+                size: AppSpacing.iconMd,
+              ),
+              title: Text(
+                user.email ?? 'Signed in',
+                style:
+                    AppTypography.labelLarge.copyWith(color: colors.onSurface),
+              ),
+              subtitle: Text(
+                'Signed in',
+                style: AppTypography.bodySmall
+                    .copyWith(color: colors.onSurfaceMuted),
+              ),
+            ),
+            _buildSettingTile(
+              icon: Icons.logout_rounded,
+              title: 'Sign out',
+              subtitle: 'Sign out of your Miru account',
+              onTap: _signOut,
+              destructive: true,
+            ),
+          ],
+
+          // Passkeys section
+          const Divider(),
+          _buildSectionHeader('Passkeys'),
+          if (_loadingPasskeys)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else ...[
+            // List existing passkeys
+            ..._passkeys.map(
+              (passkey) => ListTile(
+                leading: Icon(
+                  Icons.fingerprint_rounded,
+                  color: colors.onSurfaceMuted,
+                  size: AppSpacing.iconMd,
+                ),
+                title: Text(
+                  passkey.deviceName ?? 'Passkey',
+                  style: AppTypography.labelLarge
+                      .copyWith(color: colors.onSurface),
+                ),
+                subtitle: Text(
+                  'Added ${_formatDate(passkey.createdAt)}',
+                  style: AppTypography.bodySmall
+                      .copyWith(color: colors.onSurfaceMuted),
+                ),
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.error,
+                    size: 20,
+                  ),
+                  onPressed: () => _deletePasskey(passkey),
+                  tooltip: 'Remove passkey',
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.xs,
+                ),
+              ),
+            ),
+            if (_passkeys.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Text(
+                  'No passkeys registered. Add one to sign in faster with biometrics.',
+                  style: AppTypography.bodySmall
+                      .copyWith(color: colors.onSurfaceMuted),
+                ),
+              ),
+            // Add passkey button
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
+              child: OutlinedButton.icon(
+                onPressed: _addingPasskey ? null : _addPasskey,
+                icon: _addingPasskey
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_rounded),
+                label: const Text('Add passkey'),
+              ),
+            ),
+          ],
+
+          // Connection
+          const Divider(),
           _buildSectionHeader('Connection'),
           _buildSettingTile(
             icon: Icons.lan_outlined,
@@ -105,6 +370,8 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _updateBackendUrl,
             trailing: const Icon(Icons.edit_outlined, size: 20),
           ),
+
+          // Preferences
           const Divider(),
           _buildSectionHeader('Preferences'),
           _buildSettingTile(
@@ -126,6 +393,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   setState(() => _notificationsEnabled = value),
             ),
           ),
+
+          // Data
           const Divider(),
           _buildSectionHeader('Data'),
           _buildSettingTile(
@@ -168,6 +437,8 @@ class _SettingsPageState extends State<SettingsPage> {
             },
             destructive: true,
           ),
+
+          // About
           const Divider(),
           _buildSectionHeader('About'),
           _buildSettingTile(
@@ -179,6 +450,19 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  String _formatDate(String isoDate) {
+    try {
+      final date = DateTime.parse(isoDate).toLocal();
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (_) {
+      return isoDate;
+    }
   }
 
   Widget _buildSectionHeader(String title) {
