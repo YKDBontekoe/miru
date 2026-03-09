@@ -13,6 +13,7 @@ import logging
 from typing import Annotated, Any
 from uuid import UUID
 
+import base64
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
@@ -41,10 +42,24 @@ def decode_supabase_jwt(token: str) -> dict[str, Any]:
         HTTPException 401: If the token is missing, expired, or invalid.
     """
     settings = get_settings()
+    secret = settings.supabase_jwt_secret
+    
+    # Supabase JWT secrets are often base64 encoded.
+    # If the secret looks like base64, decode it.
+    try:
+        if secret and (len(secret) % 4 == 0) and ("=" in secret or len(secret) > 40):
+            decoded_secret = base64.b64decode(secret)
+            # Only use if it actually looks like valid bytes
+            secret_to_use = decoded_secret
+        else:
+            secret_to_use = secret
+    except Exception:
+        secret_to_use = secret
+
     try:
         payload: dict[str, Any] = jwt.decode(
             token,
-            settings.supabase_jwt_secret,
+            secret_to_use,
             algorithms=[_ALGORITHM],
             # Supabase sets audience to "authenticated" for logged-in users.
             options={"verify_aud": False},
@@ -57,10 +72,11 @@ def decode_supabase_jwt(token: str) -> dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
     except JWTError as exc:
-        logger.debug("JWT validation failed: %s", exc)
+        print(f"CRITICAL JWT FAILURE: {exc} | Secret length: {len(secret)}")
+        logger.error("JWT validation failed: %s (Secret length: %d)", exc, len(secret))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token",
+            detail=f"Invalid authentication token: {exc}",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
