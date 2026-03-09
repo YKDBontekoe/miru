@@ -101,3 +101,104 @@ class ApiAuthException implements Exception {
   @override
   String toString() => 'ApiAuthException: $message';
 }
+
+  // --- Agents API ---
+
+  Future<List<Map<String, dynamic>>> getAgents() async {
+    final response = await _client.get(Uri.parse('$_baseUrl/api/agents'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    } else {
+      throw Exception('Failed to load agents: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> createAgent(String name, String personality) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/api/agents'),
+      body: jsonEncode({'name': name, 'personality': personality}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to create agent: ${response.statusCode}');
+    }
+  }
+
+  // --- Chat Rooms API ---
+
+  Future<List<Map<String, dynamic>>> getRooms() async {
+    final response = await _client.get(Uri.parse('$_baseUrl/api/rooms'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    } else {
+      throw Exception('Failed to load rooms: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> createRoom(String name) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/api/rooms'),
+      body: jsonEncode({'name': name}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to create room: ${response.statusCode}');
+    }
+  }
+
+  Future<void> addAgentToRoom(String roomId, String agentId) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/api/rooms/$roomId/agents'),
+      body: jsonEncode({'agent_id': agentId}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to add agent to room: ${response.statusCode}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRoomAgents(String roomId) async {
+    final response = await _client.get(Uri.parse('$_baseUrl/api/rooms/$roomId/agents'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    } else {
+      throw Exception('Failed to load room agents: ${response.statusCode}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRoomMessages(String roomId) async {
+    final response = await _client.get(Uri.parse('$_baseUrl/api/rooms/$roomId/messages'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    } else {
+      throw Exception('Failed to load room messages: ${response.statusCode}');
+    }
+  }
+
+  Stream<String> streamRoomChat(String roomId, String message) async* {
+    final request = http.Request('POST', Uri.parse('$_baseUrl/api/rooms/$roomId/chat'));
+
+    // Add auth header manually since we're using raw http.Request
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.headers['Content-Type'] = 'application/json';
+    request.body = jsonEncode({'content': message});
+
+    final response = await request.send();
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to connect: ${response.statusCode}');
+    }
+
+    await for (final chunk in response.stream.transform(utf8.decoder)) {
+      yield chunk;
+    }
+  }

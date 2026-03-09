@@ -15,6 +15,23 @@ if TYPE_CHECKING:
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.agents import (
+    AgentCreate,
+    AgentResponse,
+    ChatMessageCreate,
+    ChatMessageResponse,
+    RoomAgentAdd,
+    RoomCreate,
+    RoomResponse,
+    add_agent_to_room,
+    create_agent,
+    create_room,
+    get_agents,
+    get_room_agents,
+    get_room_messages,
+    get_rooms,
+    stream_room_responses,
+)
 from app.auth import CurrentUser  # noqa: TC001
 from app.crew import detect_task_type, run_crew
 from app.database import get_supabase
@@ -341,3 +358,61 @@ def _get_user_email_from_jwt(user_id: UUID) -> str:
             detail="User not found",
         )
     return str(user.user.email)
+
+
+# ---------------------------------------------------------------------------
+# Agents and Rooms Routes
+# ---------------------------------------------------------------------------
+
+
+@router.post("/agents", response_model=AgentResponse)
+async def create_agent_route(request: AgentCreate, user_id: CurrentUser) -> Any:
+    """Create a new agent."""
+    return await create_agent(request, user_id)
+
+
+@router.get("/agents", response_model=list[AgentResponse])
+async def list_agents_route(user_id: CurrentUser) -> Any:
+    """List all agents for the authenticated user."""
+    return await get_agents(user_id)
+
+
+@router.post("/rooms", response_model=RoomResponse)
+async def create_room_route(request: RoomCreate, user_id: CurrentUser) -> Any:
+    """Create a new chat room."""
+    return await create_room(request, user_id)
+
+
+@router.get("/rooms", response_model=list[RoomResponse])
+async def list_rooms_route(user_id: CurrentUser) -> Any:
+    """List all chat rooms for the authenticated user."""
+    return await get_rooms(user_id)
+
+
+@router.post("/rooms/{room_id}/agents")
+async def add_agent_to_room_route(room_id: str, request: RoomAgentAdd, user_id: CurrentUser) -> Any:
+    """Add an agent to a chat room."""
+    return await add_agent_to_room(room_id, request.agent_id, user_id)
+
+
+@router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
+async def get_room_agents_route(room_id: str, user_id: CurrentUser) -> Any:
+    """List all agents in a chat room."""
+    return await get_room_agents(room_id, user_id)
+
+
+@router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
+async def list_room_messages_route(room_id: str, user_id: CurrentUser) -> Any:
+    """List all messages in a chat room."""
+    return await get_room_messages(room_id, user_id)
+
+
+@router.post("/rooms/{room_id}/chat")
+async def room_chat_route(
+    room_id: str, request: ChatMessageCreate, user_id: CurrentUser
+) -> StreamingResponse:
+    """Send a message to a chat room and stream responses from all agents."""
+    return StreamingResponse(
+        stream_room_responses(room_id, request.content, user_id),
+        media_type="text/plain; charset=utf-8",
+    )
