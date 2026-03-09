@@ -57,16 +57,16 @@ async def list_models() -> list[dict]:
     response = await client.models.list_async()
 
     models: list[dict] = []
-    for m in response.data:
+    for model_data in response.data:
         models.append(
             {
-                "id": m.id,
-                "name": m.name,
-                "context_length": m.context_length,
-                "description": m.description or "",
+                "id": model_data.id,
+                "name": model_data.name,
+                "context_length": model_data.context_length,
+                "description": model_data.description or "",
                 "pricing": {
-                    "prompt": m.pricing.prompt,
-                    "completion": m.pricing.completion,
+                    "prompt": model_data.pricing.prompt,
+                    "completion": model_data.pricing.completion,
                 },
             }
         )
@@ -103,6 +103,18 @@ async def embed(text: str) -> list[float]:
 
 
 # ---------------------------------------------------------------------------
+# Client and Model Helper
+# ---------------------------------------------------------------------------
+
+
+def _get_client_and_model(model: str | None = None) -> tuple[OpenRouter, str]:
+    """Return an initialized OpenRouter client and the appropriate chat model ID."""
+    client = get_client()
+    chosen_model = model or get_settings().default_chat_model
+    return client, chosen_model
+
+
+# ---------------------------------------------------------------------------
 # Streaming chat
 # ---------------------------------------------------------------------------
 
@@ -121,8 +133,7 @@ async def stream_chat(
     Yields:
         Individual text delta strings as they arrive.
     """
-    client = get_client()
-    chosen_model = model or get_settings().default_chat_model
+    client, chosen_model = _get_client_and_model(model)
 
     event_stream = await client.chat.send_async(
         model=chosen_model,
@@ -152,8 +163,7 @@ async def chat_completion(
 
     Intended for internal use by CrewAI agent tasks.
     """
-    client = get_client()
-    chosen_model = model or get_settings().default_chat_model
+    client, chosen_model = _get_client_and_model(model)
 
     response = await client.chat.send_async(
         model=chosen_model,
