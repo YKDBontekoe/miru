@@ -29,6 +29,7 @@ Challenge storage:
 from __future__ import annotations
 
 import base64
+import json
 import logging
 import secrets
 import time
@@ -39,9 +40,7 @@ import webauthn
 from webauthn.helpers import bytes_to_base64url
 from webauthn.helpers.exceptions import InvalidAuthenticatorDataStructure, InvalidCBORData
 from webauthn.helpers.structs import (
-    AuthenticationCredential,
     PublicKeyCredentialDescriptor,
-    RegistrationCredential,
 )
 
 from app.config import get_settings
@@ -172,9 +171,8 @@ def verify_registration(
     user_id = entry["user_id"]
 
     try:
-        credential = RegistrationCredential.parse_raw(credential_json)
         verification = webauthn.verify_registration_response(
-            credential=credential,
+            credential=credential_json,
             expected_challenge=expected_challenge,
             expected_rp_id=settings.webauthn_rp_id,
             expected_origin=settings.webauthn_expected_origin.split(","),
@@ -297,12 +295,10 @@ def verify_authentication(
         raise ValueError("Invalid challenge — no associated user")
 
     try:
-        credential = AuthenticationCredential.parse_raw(credential_json)
+        credential_data = json.loads(credential_json)
+        raw_id = webauthn.base64url_to_bytes(credential_data["rawId"])
     except Exception as exc:
         raise ValueError(f"Malformed credential: {exc}") from exc
-
-    # Find the matching stored passkey by credential ID.
-    raw_id = bytes(credential.raw_id)
     rows = (
         supabase.table("passkeys")
         .select("id, credential_id, public_key, sign_count, user_id")
@@ -334,7 +330,7 @@ def verify_authentication(
 
     try:
         verification = webauthn.verify_authentication_response(
-            credential=credential,
+            credential=credential_json,
             expected_challenge=expected_challenge,
             expected_rp_id=settings.webauthn_rp_id,
             expected_origin=settings.webauthn_expected_origin.split(","),
