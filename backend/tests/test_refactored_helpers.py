@@ -15,7 +15,6 @@ async def test_search_memories_by_vector():
         patch("app.memory.embed", new_callable=AsyncMock) as mock_embed,
         patch("app.memory.get_supabase") as mock_supabase_getter,
     ):
-
         mock_embed.return_value = [0.1, 0.2, 0.3]
         mock_supabase = MagicMock()
         mock_supabase_getter.return_value = mock_supabase
@@ -39,7 +38,6 @@ def test_get_client_and_model():
         patch("app.openrouter.get_client") as mock_get_client,
         patch("app.openrouter.get_settings") as mock_settings,
     ):
-
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
         mock_settings.return_value = MagicMock(default_chat_model="default-model")
