@@ -49,8 +49,9 @@ class SupabaseService {
       url: _supabaseUrl,
       anonKey: _supabaseAnonKey,
       debug: true,
-      authOptions: const FlutterAuthClientOptions(
+      authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
+        localStorage: localStorage,
       ),
     );
   }
