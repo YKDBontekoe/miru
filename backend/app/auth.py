@@ -43,16 +43,13 @@ def decode_supabase_jwt(token: str) -> dict[str, Any]:
     """
     settings = get_settings()
     secret = settings.supabase_jwt_secret
+    secret_to_use: str | bytes = secret
 
     # Supabase JWT secrets are often base64 encoded.
     # If the secret looks like base64, decode it.
     try:
         if secret and (len(secret) % 4 == 0) and ("=" in secret or len(secret) > 40):
-            decoded_secret = base64.b64decode(secret)
-            # Only use if it actually looks like valid bytes
-            secret_to_use = decoded_secret
-        else:
-            secret_to_use = secret
+            secret_to_use = base64.b64decode(secret)
     except Exception:
         secret_to_use = secret
 
