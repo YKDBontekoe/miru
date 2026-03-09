@@ -141,7 +141,7 @@ def generate_registration_options(
 
     return {
         "challenge_id": challenge_id,
-        "options": webauthn.options_to_json(options),
+        "options": json.loads(webauthn.options_to_json(options)),
     }
 
 
@@ -264,7 +264,7 @@ def generate_authentication_options(
 
     return {
         "challenge_id": challenge_id,
-        "options": webauthn.options_to_json(options),
+        "options": json.loads(webauthn.options_to_json(options)),
     }
 
 
