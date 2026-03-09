@@ -137,7 +137,9 @@ def test_register_options_with_valid_auth(
     """Authenticated users can fetch registration options."""
     mock_email.return_value = "test@example.com"
     mock_supabase = MagicMock()
-    mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
+    mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = (
+        []
+    )
     mock_get_supabase.return_value = mock_supabase
     mock_gen.return_value = {
         "challenge_id": "test-challenge-id",
@@ -236,7 +238,9 @@ def test_passkey_delete_not_found(
 ) -> None:
     """Deleting a non-existent passkey returns 404."""
     mock_supabase = MagicMock()
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = []
+    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = (
+        []
+    )
     mock_get_supabase.return_value = mock_supabase
 
     response = client.delete(

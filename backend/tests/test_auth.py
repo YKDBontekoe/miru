@@ -122,7 +122,9 @@ def test_valid_token_passes_auth(
     """A valid Bearer token reaches the route handler (no 401/403)."""
     # Mock Supabase to return an empty list for memories.
     mock_supabase = MagicMock()
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = []
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = (
+        []
+    )
     mock_get_supabase.return_value = mock_supabase
 
     response = client.get("/api/memories", headers=authed_headers)
