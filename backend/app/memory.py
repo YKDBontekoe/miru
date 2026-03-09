@@ -58,16 +58,21 @@ async def store_memory(content: str, related_to: list[str] | None = None) -> str
     return memory_id
 
 
-async def retrieve_memories(query: str) -> list[str]:
-    """Return the top-K memories most similar to *query* via cosine ANN search."""
+async def _search_memories_by_vector(query: str, count: int = TOP_K) -> list[dict[str, Any]]:
+    """Helper to embed a query and search Supabase pgvector for similar memories."""
     vector = await embed(query)
     supabase = get_supabase()
-    # Use RPC function for vector similarity search
     response = supabase.rpc(
         "match_memories",
-        {"query_embedding": vector, "match_threshold": 0.0, "match_count": TOP_K},
+        {"query_embedding": vector, "match_threshold": 0.0, "match_count": count},
     ).execute()
-    return [cast("str", r["content"]) for r in cast("list[dict[str, Any]]", response.data)]
+    return cast("list[dict[str, Any]]", response.data)
+
+
+async def retrieve_memories(query: str) -> list[str]:
+    """Return the top-K memories most similar to *query* via cosine ANN search."""
+    data = await _search_memories_by_vector(query)
+    return [cast("str", r["content"]) for r in data]
 
 
 async def retrieve_memories_with_graph(query: str) -> dict:
@@ -82,19 +87,12 @@ async def retrieve_memories_with_graph(query: str) -> dict:
     Returns:
         Dictionary with direct matches and related memories from graph
     """
-    # Get vector-based matches from Supabase
-    direct_matches = await retrieve_memories(query)
+    data = await _search_memories_by_vector(query)
 
-    # For each match, find related memories in graph
+    direct_matches = [cast("str", r["content"]) for r in data]
     graph_context = []
-    supabase = get_supabase()
-    vector = await embed(query)
-    response = supabase.rpc(
-        "match_memories",
-        {"query_embedding": vector, "match_threshold": 0.0, "match_count": TOP_K},
-    ).execute()
 
-    for record in cast("list[dict[str, Any]]", response.data):
+    for record in data:
         memory_id = record.get("id")
         if memory_id:
             # Find related memories via graph
@@ -149,20 +147,20 @@ async def initialize_graph_connections() -> None:
 
     # Create relationships based on embedding similarity
     # (This is a simplified version - in production you'd use a more efficient algorithm)
-    for i, mem1 in enumerate(memories):
-        for mem2 in memories[i + 1 :]:
-            if not isinstance(mem1, dict) or not isinstance(mem2, dict):
+    for i, first_memory in enumerate(memories):
+        for second_memory in memories[i + 1 :]:
+            if not isinstance(first_memory, dict) or not isinstance(second_memory, dict):
                 continue
             # Calculate cosine similarity
-            emb1 = cast("list[float]", mem1.get("embedding", []))
-            emb2 = cast("list[float]", mem2.get("embedding", []))
+            first_embedding = cast("list[float]", first_memory.get("embedding", []))
+            second_embedding = cast("list[float]", second_memory.get("embedding", []))
 
-            if emb1 and emb2:
-                similarity = _cosine_similarity(emb1, emb2)
+            if first_embedding and second_embedding:
+                similarity = _cosine_similarity(first_embedding, second_embedding)
                 if similarity > 0.85:  # High similarity threshold
                     await create_relationship(
-                        cast("str", mem1["id"]),
-                        cast("str", mem2["id"]),
+                        cast("str", first_memory["id"]),
+                        cast("str", second_memory["id"]),
                         "SIMILAR_TO",
                         {"similarity": similarity},
                     )

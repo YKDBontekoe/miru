@@ -72,19 +72,19 @@ async def create_relationship(
         properties: Optional relationship properties
     """
     driver = await get_neo4j_driver()
-    props = properties or {}
+    relationship_properties = properties or {}
 
     async with driver.session() as session:
         await session.run(
             f"""
             MATCH (from:Memory {{id: $from_id}})
             MATCH (to:Memory {{id: $to_id}})
-            CREATE (from)-[r:{relation_type} $props]->(to)
+            CREATE (from)-[r:{relation_type} $relationship_properties]->(to)
             SET r.created_at = datetime()
             """,
             from_id=from_memory_id,
             to_id=to_memory_id,
-            props=props,
+            relationship_properties=relationship_properties,
         )
 
 
@@ -118,7 +118,7 @@ async def find_related_memories(
             """,
             memory_id=memory_id,
         )
-        return [record.data() async for record in result]
+        return [related_node.data() async for related_node in result]
 
 
 async def search_memories_by_content(search_query: str) -> list[dict[str, Any]]:
@@ -142,7 +142,7 @@ async def search_memories_by_content(search_query: str) -> list[dict[str, Any]]:
             """,
             {"search_query": search_query},
         )
-        return [record.data() async for record in result]
+        return [related_node.data() async for related_node in result]
 
 
 async def create_conversation_turn(
@@ -239,4 +239,4 @@ async def get_conversation_context(
             conversation_id=conversation_id,
             limit=limit,
         )
-        return [record.data() async for record in result]
+        return [related_node.data() async for related_node in result]

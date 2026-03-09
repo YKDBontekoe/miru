@@ -71,19 +71,19 @@ async def _stream_response(message: str, model: str | None) -> AsyncIterator[str
 
 
 @router.post("/chat")
-async def chat(req: ChatRequest) -> StreamingResponse:
+async def chat(request: ChatRequest) -> StreamingResponse:
     """Stream a chat response via OpenRouter, injecting relevant memories.
 
     Pass ``use_crew=true`` to route the message through a dynamically
     composed CrewAI crew instead of a single-turn completion.
     """
-    if req.use_crew:
+    if request.use_crew:
         # CrewAI path — returns a complete string; we stream it as a single chunk
         async def _crew_stream() -> AsyncIterator[str]:
-            memories = await retrieve_memories(req.message)
-            result = await run_crew(req.message, model=req.model, memories=memories)
+            memories = await retrieve_memories(request.message)
+            result = await run_crew(request.message, model=request.model, memories=memories)
             yield result
-            asyncio.create_task(store_memory(req.message))
+            asyncio.create_task(store_memory(request.message))
 
         return StreamingResponse(
             _crew_stream(),
@@ -91,27 +91,27 @@ async def chat(req: ChatRequest) -> StreamingResponse:
         )
 
     return StreamingResponse(
-        _stream_response(req.message, model=req.model),
+        _stream_response(request.message, model=request.model),
         media_type="text/plain; charset=utf-8",
     )
 
 
 @router.post("/crew")
-async def crew_run(req: ChatRequest) -> dict:
+async def crew_run(request: ChatRequest) -> dict:
     """Run a CrewAI crew for the given message and return the full result.
 
     Unlike ``/chat``, this endpoint waits for the entire crew to finish and
     returns a JSON body with the output and detected task type.
     """
-    memories = await retrieve_memories(req.message)
-    task_type = detect_task_type(req.message)
+    memories = await retrieve_memories(request.message)
+    task_type = detect_task_type(request.message)
 
-    result = await run_crew(req.message, model=req.model, memories=memories)
-    asyncio.create_task(store_memory(req.message))
+    result = await run_crew(request.message, model=request.model, memories=memories)
+    asyncio.create_task(store_memory(request.message))
 
     return {
         "task_type": task_type,
-        "model": req.model,
+        "model": request.model,
         "result": result,
     }
 
@@ -130,16 +130,20 @@ async def get_models(
         raise HTTPException(status_code=502, detail=f"Failed to fetch models: {exc}") from exc
 
     if search:
-        q = search.lower()
-        models = [m for m in models if q in m["id"].lower() or q in m["name"].lower()]
+        search_term = search.lower()
+        models = [
+            model
+            for model in models
+            if search_term in model["id"].lower() or search_term in model["name"].lower()
+        ]
 
     return {"models": models, "count": len(models)}
 
 
 @router.post("/memories")
-async def add_memory(req: MemoryRequest) -> dict:
+async def add_memory(request: MemoryRequest) -> dict:
     """Manually store a memory."""
-    await store_memory(req.message)
+    await store_memory(request.message)
     return {"status": "stored"}
 
 
@@ -156,10 +160,10 @@ async def list_memories() -> dict:
     return {
         "memories": [
             {
-                "id": cast("str", r["id"]),
-                "content": cast("str", r["content"]),
-                "created_at": cast("str", r["created_at"]),
+                "id": cast("str", record["id"]),
+                "content": cast("str", record["content"]),
+                "created_at": cast("str", record["created_at"]),
             }
-            for r in cast("list[dict[str, Any]]", response.data)
+            for record in cast("list[dict[str, Any]]", response.data)
         ]
     }

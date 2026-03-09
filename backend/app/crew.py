@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Literal
+from typing import Any, Literal
 
 from crewai import LLM, Agent, Crew, Process, Task
 
@@ -63,15 +63,18 @@ _SUMMARY_KEYWORDS = re.compile(
     re.IGNORECASE,
 )
 
+_KEYWORD_TO_TASK_TYPE: tuple[tuple[re.Pattern, TaskType], ...] = (
+    (_SUMMARY_KEYWORDS, "summarisation"),
+    (_PLANNING_KEYWORDS, "planning"),
+    (_RESEARCH_KEYWORDS, "research"),
+)
+
 
 def detect_task_type(message: str) -> TaskType:
     """Infer the most appropriate task type from *message* content."""
-    if _SUMMARY_KEYWORDS.search(message):
-        return "summarisation"
-    if _PLANNING_KEYWORDS.search(message):
-        return "planning"
-    if _RESEARCH_KEYWORDS.search(message):
-        return "research"
+    for pattern, task_type in _KEYWORD_TO_TASK_TYPE:
+        if pattern.search(message):
+            return task_type
     return "general"
 
 
@@ -97,6 +100,16 @@ def _make_llm(model: str | None = None) -> LLM:
 # ---------------------------------------------------------------------------
 # Crew builders
 # ---------------------------------------------------------------------------
+
+
+def _create_sequential_crew(agents: list[Any], tasks: list[Any]) -> Crew:
+    """Helper to initialize a sequential Crew object."""
+    return Crew(
+        agents=agents,
+        tasks=tasks,
+        process=Process.sequential,
+        verbose=False,
+    )
 
 
 def _build_research_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Task]:
@@ -142,12 +155,7 @@ def _build_research_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Ta
         context=[research_task],
     )
 
-    crew = Crew(
-        agents=[researcher, synthesiser],
-        tasks=[research_task, synthesis_task],
-        process=Process.sequential,
-        verbose=False,
-    )
+    crew = _create_sequential_crew([researcher, synthesiser], [research_task, synthesis_task])
     return crew, synthesis_task
 
 
@@ -194,12 +202,7 @@ def _build_planning_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Ta
         context=[plan_task],
     )
 
-    crew = Crew(
-        agents=[planner, reviewer],
-        tasks=[plan_task, review_task],
-        process=Process.sequential,
-        verbose=False,
-    )
+    crew = _create_sequential_crew([planner, reviewer], [plan_task, review_task])
     return crew, review_task
 
 
@@ -244,12 +247,7 @@ def _build_summarisation_crew(message: str, context: str, llm: LLM) -> tuple[Cre
         context=[summary_task],
     )
 
-    crew = Crew(
-        agents=[summariser, editor],
-        tasks=[summary_task, edit_task],
-        process=Process.sequential,
-        verbose=False,
-    )
+    crew = _create_sequential_crew([summariser, editor], [summary_task, edit_task])
     return crew, edit_task
 
 
@@ -297,12 +295,7 @@ def _build_general_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Tas
         context=[think_task],
     )
 
-    crew = Crew(
-        agents=[thinker, responder],
-        tasks=[think_task, respond_task],
-        process=Process.sequential,
-        verbose=False,
-    )
+    crew = _create_sequential_crew([thinker, responder], [think_task, respond_task])
     return crew, respond_task
 
 
