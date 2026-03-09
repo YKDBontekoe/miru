@@ -9,11 +9,11 @@ We validate the token locally (no network round-trip) using python-jose.
 
 from __future__ import annotations
 
+import base64
 import logging
 from typing import Annotated, Any
 from uuid import UUID
 
-import base64
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import ExpiredSignatureError, JWTError, jwt
@@ -43,7 +43,7 @@ def decode_supabase_jwt(token: str) -> dict[str, Any]:
     """
     settings = get_settings()
     secret = settings.supabase_jwt_secret
-    
+
     # Supabase JWT secrets are often base64 encoded.
     # If the secret looks like base64, decode it.
     try:
