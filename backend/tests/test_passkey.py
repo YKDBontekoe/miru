@@ -137,9 +137,7 @@ def test_register_options_with_valid_auth(
     """Authenticated users can fetch registration options."""
     mock_email.return_value = "test@example.com"
     mock_supabase = MagicMock()
-    mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = (
-        []
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []  # fmt: skip
     mock_get_supabase.return_value = mock_supabase
     mock_gen.return_value = {
         "challenge_id": "test-challenge-id",
@@ -212,6 +210,7 @@ def test_passkey_list_returns_passkeys(
 ) -> None:
     """Authenticated users get their passkeys list."""
     mock_supabase = MagicMock()
+    # fmt: off
     mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = [
         {
             "id": "pk-1",
@@ -221,6 +220,7 @@ def test_passkey_list_returns_passkeys(
             "last_used_at": None,
         }
     ]
+    # fmt: on
     mock_get_supabase.return_value = mock_supabase
 
     response = client.get("/api/auth/passkey/list", headers=authed_headers)
@@ -238,9 +238,7 @@ def test_passkey_delete_not_found(
 ) -> None:
     """Deleting a non-existent passkey returns 404."""
     mock_supabase = MagicMock()
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = (
-        []
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = []  # fmt: skip
     mock_get_supabase.return_value = mock_supabase
 
     response = client.delete(
