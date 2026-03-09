@@ -48,10 +48,9 @@ class SupabaseService {
     await Supabase.initialize(
       url: _supabaseUrl,
       anonKey: _supabaseAnonKey,
-      authOptions: FlutterAuthClientOptions(
-        localStorage: localStorage,
-        // Persist sessions across restarts.
-        autoRefreshToken: true,
+      debug: true,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
       ),
     );
   }

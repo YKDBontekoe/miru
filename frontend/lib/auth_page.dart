@@ -9,9 +9,10 @@ import 'services/supabase_service.dart';
 
 /// The login screen for Miru.
 ///
-/// Supports two flows:
+/// Supports three flows:
 ///   1. **Magic link** — user enters their email and receives a sign-in link.
-///   2. **Passkey** — user authenticates with a registered passkey (biometrics /
+///   2. **Password** — user authenticates with an email and password.
+///   3. **Passkey** — user authenticates with a registered passkey (biometrics /
 ///      security key).
 ///
 /// On successful authentication the [StreamBuilder] in [main.dart] detects the
@@ -26,11 +27,14 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage>
     with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _magicLinkSent = false;
   bool _isLoadingMagicLink = false;
   bool _isLoadingPasskey = false;
+  bool _isLoadingPassword = false;
+  bool _showPasswordField = false;
   String? _errorMessage;
 
   late final AnimationController _fadeController;
@@ -64,6 +68,7 @@ class _AuthPageState extends State<AuthPage>
   @override
   void dispose() {
     _emailController.dispose();
+    _passwordController.dispose();
     _fadeController.dispose();
     _authSubscription?.cancel();
     super.dispose();
@@ -102,6 +107,39 @@ class _AuthPageState extends State<AuthPage>
     } finally {
       if (mounted) {
         setState(() => _isLoadingMagicLink = false);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Password sign in
+  // ---------------------------------------------------------------------------
+
+  Future<void> _signInWithPassword() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() {
+      _isLoadingPassword = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+    } on AuthException catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = e.message);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(
+            () => _errorMessage = 'Something went wrong. Please try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingPassword = false);
       }
     }
   }
@@ -211,7 +249,9 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Sign in with a magic link or your passkey.',
+            _showPasswordField
+                ? 'Sign in with your email and password.'
+                : 'Sign in with a magic link or your passkey.',
             style: AppTypography.bodyMedium.copyWith(
               color: colors.onSurfaceMuted,
             ),
@@ -223,7 +263,8 @@ class _AuthPageState extends State<AuthPage>
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
+            textInputAction:
+                _showPasswordField ? TextInputAction.next : TextInputAction.done,
             autocorrect: false,
             autofillHints: const [AutofillHints.email],
             style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
@@ -245,9 +286,35 @@ class _AuthPageState extends State<AuthPage>
               }
               return null;
             },
-            onFieldSubmitted: (_) => _sendMagicLink(),
+            onFieldSubmitted: _showPasswordField ? null : (_) => _sendMagicLink(),
           ),
           const SizedBox(height: AppSpacing.lg),
+
+          // Password field
+          if (_showPasswordField) ...[
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: Icon(
+                  Icons.lock_outline_rounded,
+                  color: colors.onSurfaceMuted,
+                  size: AppSpacing.iconMd,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your password';
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) => _signInWithPassword(),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
 
           // Error message
           if (_errorMessage != null) ...[
@@ -277,19 +344,31 @@ class _AuthPageState extends State<AuthPage>
             const SizedBox(height: AppSpacing.md),
           ],
 
-          // Magic link button (primary action)
-          FilledButton(
-            onPressed: _isLoadingMagicLink || _isLoadingPasskey
-                ? null
-                : _sendMagicLink,
-            child: _isLoadingMagicLink
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Send magic link'),
-          ),
+          // Action button
+          if (_showPasswordField)
+            FilledButton(
+              onPressed: _isLoadingPassword ? null : _signInWithPassword,
+              child: _isLoadingPassword
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Sign in'),
+            )
+          else
+            FilledButton(
+              onPressed: _isLoadingMagicLink || _isLoadingPasskey
+                  ? null
+                  : _sendMagicLink,
+              child: _isLoadingMagicLink
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Send magic link'),
+            ),
           const SizedBox(height: AppSpacing.md),
 
           // Divider
@@ -310,7 +389,7 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Passkey button (secondary action)
+          // Passkey button
           OutlinedButton.icon(
             onPressed: _isLoadingMagicLink || _isLoadingPasskey
                 ? null
@@ -323,6 +402,17 @@ class _AuthPageState extends State<AuthPage>
                   )
                 : const Icon(Icons.fingerprint_rounded),
             label: const Text('Sign in with passkey'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Toggle password sign in
+          TextButton(
+            onPressed: () => setState(() => _showPasswordField = !_showPasswordField),
+            child: Text(
+              _showPasswordField
+                  ? 'Use magic link instead'
+                  : 'Sign in with password instead',
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
 
@@ -376,6 +466,20 @@ class _AuthPageState extends State<AuthPage>
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xxl),
+        FilledButton.icon(
+          onPressed: () {
+            if (SupabaseService.isAuthenticated) {
+              setState(() {});
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Still waiting for sign-in...')),
+              );
+            }
+          },
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Refresh login status'),
+        ),
+        const SizedBox(height: AppSpacing.md),
         OutlinedButton(
           onPressed: () => setState(() {
             _magicLinkSent = false;
