@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Literal
+from typing import Any, Literal
 
 from crewai import LLM, Agent, Crew, Process, Task
 
@@ -102,7 +102,7 @@ def _make_llm(model: str | None = None) -> LLM:
 # ---------------------------------------------------------------------------
 
 
-def _create_sequential_crew(agents: list[Agent], tasks: list[Task]) -> Crew:
+def _create_sequential_crew(agents: list[Any], tasks: list[Any]) -> Crew:
     """Helper to initialize a sequential Crew object."""
     return Crew(
         agents=agents,
