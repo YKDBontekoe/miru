@@ -28,8 +28,11 @@ CREATE INDEX memories_embedding_idx
     USING ivfflat (embedding vector_cosine_ops)
     WITH (lists = 100);
 
+-- Drop the old function first — CREATE OR REPLACE cannot change the return type
+DROP FUNCTION IF EXISTS match_memories(vector, float, int);
+
 -- Recreate RPC with uuid return type
-CREATE OR REPLACE FUNCTION match_memories(
+CREATE FUNCTION match_memories(
     query_embedding vector(1536),
     match_threshold float,
     match_count int
