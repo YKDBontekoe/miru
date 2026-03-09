@@ -16,19 +16,21 @@ from tests.conftest import make_jwt
 # ---------------------------------------------------------------------------
 
 
-def test_decode_valid_jwt() -> None:
+@pytest.mark.asyncio
+async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
     from app.auth import decode_supabase_jwt
 
     user_id = str(uuid4())
     token = make_jwt(user_id=user_id)
-    payload = decode_supabase_jwt(token)
+    payload = await decode_supabase_jwt(token)
 
     assert payload["sub"] == user_id
     assert payload["role"] == "authenticated"
 
 
-def test_decode_expired_jwt_raises_401() -> None:
+@pytest.mark.asyncio
+async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises HTTPException 401."""
     from fastapi import HTTPException
 
@@ -36,13 +38,14 @@ def test_decode_expired_jwt_raises_401() -> None:
 
     token = make_jwt(expired=True)
     with pytest.raises(HTTPException) as exc_info:
-        decode_supabase_jwt(token)
+        await decode_supabase_jwt(token)
 
     assert exc_info.value.status_code == 401
     assert "expired" in exc_info.value.detail.lower()
 
 
-def test_decode_tampered_jwt_raises_401() -> None:
+@pytest.mark.asyncio
+async def test_decode_tampered_jwt_raises_401() -> None:
     """A JWT signed with a different secret raises HTTPException 401."""
     from fastapi import HTTPException
     from jose import jwt
@@ -53,19 +56,20 @@ def test_decode_tampered_jwt_raises_401() -> None:
     bad_token = jwt.encode(payload, "wrong-secret", algorithm="HS256")
 
     with pytest.raises(HTTPException) as exc_info:
-        decode_supabase_jwt(bad_token)
+        await decode_supabase_jwt(bad_token)
 
     assert exc_info.value.status_code == 401
 
 
-def test_decode_garbage_token_raises_401() -> None:
+@pytest.mark.asyncio
+async def test_decode_garbage_token_raises_401() -> None:
     """A completely malformed token raises HTTPException 401."""
     from fastapi import HTTPException
 
     from app.auth import decode_supabase_jwt
 
     with pytest.raises(HTTPException) as exc_info:
-        decode_supabase_jwt("not.a.jwt")
+        await decode_supabase_jwt("not.a.jwt")
 
     assert exc_info.value.status_code == 401
 
