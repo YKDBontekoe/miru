@@ -13,8 +13,9 @@ class Settings(BaseSettings):
     # Direct database URL for migrations (Supabase direct connection string)
     # Get this from Supabase Dashboard > Settings > Database > Connection string > URI
     database_url: str | None = None
-    # Default model used for embeddings (OpenAI-compatible via OpenRouter)
-    embedding_model: str = "openai/text-embedding-3-small"
+    # Embedding model used for memory storage/retrieval — required, no fallback.
+    # Must be a valid OpenRouter embedding model ID, e.g. "openai/text-embedding-3-small"
+    embedding_model: str
     # Chat model used for all responses — required, no fallback.
     # Must be a valid OpenRouter model ID, e.g. "google/gemma-3-27b-it:free"
     default_chat_model: str

@@ -66,6 +66,7 @@ jobs:
           SUPABASE_KEY: test-key
           OPENROUTER_API_KEY: test-key
           DEFAULT_CHAT_MODEL: google/gemma-3-27b-it:free
+          EMBEDDING_MODEL: openai/text-embedding-3-small
         run: |
           pytest --cov=app --cov-report=xml --cov-report=term
 
@@ -270,6 +271,7 @@ jobs:
           [ -z "$PRODUCTION_SUPABASE_KEY" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_KEY"
           [ -z "$OPENROUTER_API_KEY" ]        && MISSING="$MISSING OPENROUTER_API_KEY"
           [ -z "$DEFAULT_CHAT_MODEL" ]        && MISSING="$MISSING DEFAULT_CHAT_MODEL"
+          [ -z "$EMBEDDING_MODEL" ]           && MISSING="$MISSING EMBEDDING_MODEL"
           [ -z "$SECRET_KEY" ]               && MISSING="$MISSING SECRET_KEY"
           [ -z "$NEO4J_URI" ]                && MISSING="$MISSING NEO4J_URI"
           [ -z "$NEO4J_USER" ]               && MISSING="$MISSING NEO4J_USER"
@@ -292,6 +294,7 @@ jobs:
           PRODUCTION_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           DEFAULT_CHAT_MODEL: ${{ secrets.DEFAULT_CHAT_MODEL }}
+          EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           NEO4J_URI: ${{ secrets.NEO4J_URI }}
           NEO4J_USER: ${{ secrets.NEO4J_USER }}
@@ -334,6 +337,7 @@ jobs:
               SUPABASE_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" \
               OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
               DEFAULT_CHAT_MODEL="${{ secrets.DEFAULT_CHAT_MODEL }}" \
+              EMBEDDING_MODEL="${{ secrets.EMBEDDING_MODEL }}" \
               SECRET_KEY="${{ secrets.SECRET_KEY }}" \
               NEO4J_URI="${{ secrets.NEO4J_URI }}" \
               NEO4J_USER="${{ secrets.NEO4J_USER }}" \
