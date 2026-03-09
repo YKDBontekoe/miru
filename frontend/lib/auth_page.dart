@@ -263,8 +263,9 @@ class _AuthPageState extends State<AuthPage>
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            textInputAction:
-                _showPasswordField ? TextInputAction.next : TextInputAction.done,
+            textInputAction: _showPasswordField
+                ? TextInputAction.next
+                : TextInputAction.done,
             autocorrect: false,
             autofillHints: const [AutofillHints.email],
             style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
@@ -286,7 +287,8 @@ class _AuthPageState extends State<AuthPage>
               }
               return null;
             },
-            onFieldSubmitted: _showPasswordField ? null : (_) => _sendMagicLink(),
+            onFieldSubmitted:
+                _showPasswordField ? null : (_) => _sendMagicLink(),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -407,7 +409,8 @@ class _AuthPageState extends State<AuthPage>
 
           // Toggle password sign in
           TextButton(
-            onPressed: () => setState(() => _showPasswordField = !_showPasswordField),
+            onPressed: () =>
+                setState(() => _showPasswordField = !_showPasswordField),
             child: Text(
               _showPasswordField
                   ? 'Use magic link instead'
