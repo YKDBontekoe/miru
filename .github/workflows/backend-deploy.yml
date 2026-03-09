@@ -65,6 +65,7 @@ jobs:
           SUPABASE_URL: http://localhost:54321
           SUPABASE_KEY: test-key
           OPENROUTER_API_KEY: test-key
+          DEFAULT_CHAT_MODEL: google/gemma-3-27b-it:free
         run: |
           pytest --cov=app --cov-report=xml --cov-report=term
 
@@ -268,6 +269,7 @@ jobs:
           [ -z "$PRODUCTION_SUPABASE_URL" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_URL"
           [ -z "$PRODUCTION_SUPABASE_KEY" ]  && MISSING="$MISSING PRODUCTION_SUPABASE_KEY"
           [ -z "$OPENROUTER_API_KEY" ]        && MISSING="$MISSING OPENROUTER_API_KEY"
+          [ -z "$DEFAULT_CHAT_MODEL" ]        && MISSING="$MISSING DEFAULT_CHAT_MODEL"
           [ -z "$SECRET_KEY" ]               && MISSING="$MISSING SECRET_KEY"
           [ -z "$NEO4J_URI" ]                && MISSING="$MISSING NEO4J_URI"
           [ -z "$NEO4J_USER" ]               && MISSING="$MISSING NEO4J_USER"
@@ -277,12 +279,19 @@ jobs:
             echo "Set these in the 'production' GitHub environment before deploying."
             exit 1
           fi
-          echo "All required secrets are present."
+          # Validate SUPABASE_URL is an HTTP URL, not a PostgreSQL connection string.
+          # The Supabase client requires: https://<project-ref>.supabase.co
+          if [[ "$PRODUCTION_SUPABASE_URL" == postgresql://* ]] || [[ "$PRODUCTION_SUPABASE_URL" == postgres://* ]]; then
+            echo "::error::PRODUCTION_SUPABASE_URL must be the Supabase HTTP project URL (https://<ref>.supabase.co), not a PostgreSQL connection string."
+            exit 1
+          fi
+          echo "All required secrets are present and valid."
         env:
           PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
           PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           PRODUCTION_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DEFAULT_CHAT_MODEL: ${{ secrets.DEFAULT_CHAT_MODEL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           NEO4J_URI: ${{ secrets.NEO4J_URI }}
           NEO4J_USER: ${{ secrets.NEO4J_USER }}
@@ -300,19 +309,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Ensure ingress target port is 8000
+        run: |
+          # --target-port is an ingress property, not a containerapp update flag.
+          # This step is idempotent -- it only applies a change when the port drifts.
+          az containerapp ingress update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --target-port 8000
+
       - name: Deploy to Azure Container Apps
         id: deploy
         run: |
+          # PRODUCTION_SUPABASE_URL must be the Supabase HTTP project URL:
+          #   https://<project-ref>.supabase.co
+          # NOT the PostgreSQL connection string (postgresql://...).
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ needs.build.outputs.image-tag }} \
-            --target-port 8000 \
             --set-env-vars \
               DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
               SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" \
               SUPABASE_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" \
               OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
+              DEFAULT_CHAT_MODEL="${{ secrets.DEFAULT_CHAT_MODEL }}" \
               SECRET_KEY="${{ secrets.SECRET_KEY }}" \
               NEO4J_URI="${{ secrets.NEO4J_URI }}" \
               NEO4J_USER="${{ secrets.NEO4J_USER }}" \

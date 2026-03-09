@@ -15,8 +15,9 @@ class Settings(BaseSettings):
     database_url: str | None = None
     # Default model used for embeddings (OpenAI-compatible via OpenRouter)
     embedding_model: str = "openai/text-embedding-3-small"
-    # Default chat model; can be overridden per-request by the frontend
-    default_chat_model: str = "anthropic/claude-3.5-sonnet"
+    # Chat model used for all responses — required, no fallback.
+    # Must be a valid OpenRouter model ID, e.g. "google/gemma-3-27b-it:free"
+    default_chat_model: str
     # Neo4j Graph Database configuration
     neo4j_uri: str
     neo4j_user: str = "neo4j"

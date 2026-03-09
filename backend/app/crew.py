@@ -29,7 +29,6 @@ Usage
 
     result = await run_crew(
         message="Summarise the key points of ...",
-        model="anthropic/claude-3.5-sonnet",
         memories=["User prefers bullet points"],
     )
 """
@@ -83,12 +82,12 @@ def detect_task_type(message: str) -> TaskType:
 # ---------------------------------------------------------------------------
 
 
-def _make_llm(model: str | None = None) -> LLM:
-    """Return a CrewAI LLM backed by OpenRouter."""
-    chosen = model or get_settings().default_chat_model
+def _make_llm() -> LLM:
+    """Return a CrewAI LLM backed by OpenRouter using the configured default model."""
+    model = get_settings().default_chat_model
     # CrewAI uses LiteLLM under the hood; prefix with "openrouter/" so
     # LiteLLM routes to the OpenRouter gateway automatically.
-    litellm_model = f"openrouter/{chosen}" if not chosen.startswith("openrouter/") else chosen
+    litellm_model = f"openrouter/{model}" if not model.startswith("openrouter/") else model
     return LLM(
         model=litellm_model,
         api_key=get_settings().openrouter_api_key,
@@ -313,15 +312,12 @@ _CREW_BUILDERS = {
 
 async def run_crew(
     message: str,
-    model: str | None = None,
     memories: list[str] | None = None,
 ) -> str:
     """Run a dynamically composed CrewAI crew and return the final output.
 
     Args:
         message: The user's message.
-        model: OpenRouter model ID to use for all agents (falls back to
-               ``settings.default_chat_model``).
         memories: Relevant memories retrieved from pgvector, injected into
                   the task context.
 
@@ -329,7 +325,7 @@ async def run_crew(
         The crew's final output as a plain string.
     """
     task_type = detect_task_type(message)
-    llm = _make_llm(model)
+    llm = _make_llm()
 
     # Build memory context block
     if memories:

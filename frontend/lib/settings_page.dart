@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'design_system/design_system.dart';
-import 'design_system/components/model_selector_sheet.dart';
 import 'backend_service.dart';
 
 class SettingsPage extends StatefulWidget {
-  final String? currentModel;
-  final ValueChanged<String?> onModelChanged;
+  /// Called when the user clears chat history from settings.
+  final VoidCallback? onClearHistory;
 
   const SettingsPage({
     super.key,
-    this.currentModel,
-    required this.onModelChanged,
+    this.onClearHistory,
   });
 
   @override
@@ -20,32 +20,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool _isPrivacyMode = false;
   bool _notificationsEnabled = true;
-  late TextEditingController _backendController;
-
-  @override
-  void initState() {
-    super.initState();
-    _backendController =
-        TextEditingController(text: BackendService.baseUrl.value);
-  }
-
-  @override
-  void dispose() {
-    _backendController.dispose();
-    super.dispose();
-  }
-
-  void _openModelSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ModelSelectorSheet(
-        currentModel: widget.currentModel,
-        onSelected: widget.onModelChanged,
-      ),
-    );
-  }
 
   Future<void> _updateBackendUrl() async {
     final url = await showDialog<String>(
@@ -123,15 +97,6 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         children: [
           const SizedBox(height: AppSpacing.md),
-          _buildSectionHeader('AI Model'),
-          _buildSettingTile(
-            icon: Icons.smart_toy_outlined,
-            title: 'Current Model',
-            subtitle: widget.currentModel ?? 'Default (Server-side)',
-            onTap: _openModelSheet,
-            trailing: const Icon(Icons.chevron_right_rounded),
-          ),
-          const Divider(),
           _buildSectionHeader('Connection'),
           _buildSettingTile(
             icon: Icons.lan_outlined,
@@ -167,11 +132,39 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.delete_outline_rounded,
             title: 'Clear Chat History',
             subtitle: 'Permanently delete all conversations',
-            onTap: () {
-              // TODO: Implement clear history
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat history cleared')),
+            onTap: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Clear Chat History'),
+                  content: const Text(
+                    'This will permanently delete all conversations. '
+                    'This action cannot be undone.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                      ),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Clear'),
+                    ),
+                  ],
+                ),
               );
+              if (confirmed == true) {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('miru_chat_messages');
+                widget.onClearHistory?.call();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Chat history cleared')),
+                );
+              }
             },
             destructive: true,
           ),

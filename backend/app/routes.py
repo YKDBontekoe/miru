@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from app.crew import detect_task_type, run_crew
 from app.database import get_supabase
 from app.memory import retrieve_memories, store_memory
-from app.openrouter import list_models, stream_chat
+from app.openrouter import stream_chat
 
 router = APIRouter()
 
@@ -32,7 +32,6 @@ Be concise, helpful, and human."""
 
 class ChatRequest(BaseModel):
     message: str
-    model: str | None = None  # OpenRouter model ID; uses default if omitted
     use_crew: bool = False  # Set True to route through CrewAI agents
 
 
@@ -45,7 +44,7 @@ class MemoryRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-async def _stream_response(message: str, model: str | None) -> AsyncIterator[str]:
+async def _stream_response(message: str) -> AsyncIterator[str]:
     """Retrieve memories, build context, then stream an OpenRouter response."""
     memories = await retrieve_memories(message)
 
@@ -59,7 +58,7 @@ async def _stream_response(message: str, model: str | None) -> AsyncIterator[str
         {"role": "user", "content": message},
     ]
 
-    async for chunk in stream_chat(messages, model=model):
+    async for chunk in stream_chat(messages):
         yield chunk
 
     asyncio.create_task(store_memory(message))
@@ -81,7 +80,7 @@ async def chat(request: ChatRequest) -> StreamingResponse:
         # CrewAI path — returns a complete string; we stream it as a single chunk
         async def _crew_stream() -> AsyncIterator[str]:
             memories = await retrieve_memories(request.message)
-            result = await run_crew(request.message, model=request.model, memories=memories)
+            result = await run_crew(request.message, memories=memories)
             yield result
             asyncio.create_task(store_memory(request.message))
 
@@ -91,7 +90,7 @@ async def chat(request: ChatRequest) -> StreamingResponse:
         )
 
     return StreamingResponse(
-        _stream_response(request.message, model=request.model),
+        _stream_response(request.message),
         media_type="text/plain; charset=utf-8",
     )
 
@@ -106,38 +105,13 @@ async def crew_run(request: ChatRequest) -> dict:
     memories = await retrieve_memories(request.message)
     task_type = detect_task_type(request.message)
 
-    result = await run_crew(request.message, model=request.model, memories=memories)
+    result = await run_crew(request.message, memories=memories)
     asyncio.create_task(store_memory(request.message))
 
     return {
         "task_type": task_type,
-        "model": request.model,
         "result": result,
     }
-
-
-@router.get("/models")
-async def get_models(
-    search: str | None = Query(default=None, description="Filter models by name or ID"),
-) -> dict:
-    """Return the list of models available on OpenRouter.
-
-    An optional ``search`` query parameter filters results by model ID or name.
-    """
-    try:
-        models = await list_models()
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Failed to fetch models: {exc}") from exc
-
-    if search:
-        search_term = search.lower()
-        models = [
-            model
-            for model in models
-            if search_term in model["id"].lower() or search_term in model["name"].lower()
-        ]
-
-    return {"models": models, "count": len(models)}
 
 
 @router.post("/memories")

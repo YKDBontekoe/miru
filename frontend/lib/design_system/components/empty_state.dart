@@ -1,31 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../extensions/build_context_extensions.dart';
+import '../theme/app_theme_data.dart';
+import '../tokens/colors.dart';
 import '../tokens/spacing.dart';
+import '../tokens/typography.dart';
 import 'onboarding_visuals.dart';
 
 /// A centered empty-state placeholder with a custom animated AI orb, title,
-/// and subtitle.
+/// subtitle, and optional suggestion chips.
 ///
 /// ```dart
 /// AppEmptyState(
-///   icon: Icons.auto_awesome_rounded,
 ///   title: "Hi, I'm Miru.",
 ///   subtitle: 'I remember things about you over time.\nTell me something!',
+///   suggestions: ['What can you help with?', 'Tell me a joke'],
+///   onSuggestionTap: (text) => _sendMessage(text),
 /// )
 /// ```
 class AppEmptyState extends StatelessWidget {
-  final IconData icon;
   final String title;
   final String? subtitle;
   final Widget? action;
 
+  /// Optional list of suggestion prompts displayed as tappable chips.
+  final List<String> suggestions;
+
+  /// Called when the user taps a suggestion chip.
+  final ValueChanged<String>? onSuggestionTap;
+
   const AppEmptyState({
     super.key,
-    required this.icon,
     required this.title,
     this.subtitle,
     this.action,
+    this.suggestions = const [],
+    this.onSuggestionTap,
   });
 
   @override
@@ -40,18 +51,24 @@ class AppEmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Glowing animated orb
-              const MiruOrbVisual(size: 160),
+              const MiruOrbVisual(size: 140),
 
               const SizedBox(height: AppSpacing.xl),
 
-              // Title — gradient adapts to theme
+              // Title -- gradient adapts to theme
               ShaderMask(
                 shaderCallback: (bounds) {
                   final isDark = context.isDark;
                   return LinearGradient(
                     colors: isDark
-                        ? const [Color(0xFFFFFFFF), Color(0xFFADB5FA)]
-                        : const [Color(0xFF12121A), Color(0xFF4F46E5)],
+                        ? [
+                            AppColors.onSurfaceDark,
+                            AppColors.primaryLight,
+                          ]
+                        : [
+                            AppColors.onSurfaceLight,
+                            AppColors.primaryDark,
+                          ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ).createShader(bounds);
@@ -83,6 +100,16 @@ class AppEmptyState extends StatelessWidget {
                 ),
               ],
 
+              // Suggestion chips
+              if (suggestions.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xxl),
+                _SuggestionChips(
+                  suggestions: suggestions,
+                  onTap: onSuggestionTap,
+                  colors: colors,
+                ),
+              ],
+
               // Optional action
               if (action != null) ...[
                 const SizedBox(height: AppSpacing.xxl),
@@ -92,6 +119,70 @@ class AppEmptyState extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Suggestion chips grid
+// ---------------------------------------------------------------------------
+
+class _SuggestionChips extends StatelessWidget {
+  final List<String> suggestions;
+  final ValueChanged<String>? onTap;
+  final AppThemeColors colors;
+
+  const _SuggestionChips({
+    required this.suggestions,
+    required this.onTap,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      alignment: WrapAlignment.center,
+      children: suggestions.map((text) {
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap != null ? () => onTap!(text) : null,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: colors.surfaceHigh,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: AppSpacing.iconSm,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: colors.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
