@@ -45,7 +45,12 @@ class MemoryRequest(BaseModel):
 
 
 async def _stream_response(message: str) -> AsyncIterator[str]:
-    """Retrieve memories, build context, then stream an OpenRouter response."""
+    """Retrieve memories, build context, stream a response, then store memory.
+
+    The full assistant reply is accumulated while streaming so that both the
+    user message and the complete response can be passed to ``store_memory``.
+    The memory extraction task is fired after the last chunk is yielded.
+    """
     memories = await retrieve_memories(message)
 
     memory_block = ""
@@ -58,10 +63,14 @@ async def _stream_response(message: str) -> AsyncIterator[str]:
         {"role": "user", "content": message},
     ]
 
+    reply_chunks: list[str] = []
     async for chunk in stream_chat(messages):
+        reply_chunks.append(chunk)
         yield chunk
 
-    asyncio.create_task(store_memory(message))
+    # Fire memory extraction in the background after streaming completes.
+    full_reply = "".join(reply_chunks)
+    asyncio.create_task(store_memory(message, full_reply))
 
 
 # ---------------------------------------------------------------------------
@@ -71,18 +80,14 @@ async def _stream_response(message: str) -> AsyncIterator[str]:
 
 @router.post("/chat")
 async def chat(request: ChatRequest) -> StreamingResponse:
-    """Stream a chat response via OpenRouter, injecting relevant memories.
-
-    Pass ``use_crew=true`` to route the message through a dynamically
-    composed CrewAI crew instead of a single-turn completion.
-    """
+    """Stream a chat response via OpenRouter, injecting relevant memories."""
     if request.use_crew:
-        # CrewAI path — returns a complete string; we stream it as a single chunk
+
         async def _crew_stream() -> AsyncIterator[str]:
             memories = await retrieve_memories(request.message)
             result = await run_crew(request.message, memories=memories)
             yield result
-            asyncio.create_task(store_memory(request.message))
+            asyncio.create_task(store_memory(request.message, result))
 
         return StreamingResponse(
             _crew_stream(),
@@ -97,16 +102,12 @@ async def chat(request: ChatRequest) -> StreamingResponse:
 
 @router.post("/crew")
 async def crew_run(request: ChatRequest) -> dict:
-    """Run a CrewAI crew for the given message and return the full result.
-
-    Unlike ``/chat``, this endpoint waits for the entire crew to finish and
-    returns a JSON body with the output and detected task type.
-    """
+    """Run a CrewAI crew and return the full structured result."""
     memories = await retrieve_memories(request.message)
     task_type = detect_task_type(request.message)
 
     result = await run_crew(request.message, memories=memories)
-    asyncio.create_task(store_memory(request.message))
+    asyncio.create_task(store_memory(request.message, result))
 
     return {
         "task_type": task_type,
@@ -116,8 +117,8 @@ async def crew_run(request: ChatRequest) -> dict:
 
 @router.post("/memories")
 async def add_memory(request: MemoryRequest) -> dict:
-    """Manually store a memory."""
-    await store_memory(request.message)
+    """Manually store a memory (uses empty assistant reply)."""
+    await store_memory(request.message, "")
     return {"status": "stored"}
 
 
