@@ -24,15 +24,16 @@ class PasskeyInfo {
   });
 
   factory PasskeyInfo.fromJson(Map<String, dynamic> json) => PasskeyInfo(
-        id: json['id'] as String,
-        deviceName: json['device_name'] as String?,
-        transports: (json['transports'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            [],
-        createdAt: json['created_at'] as String,
-        lastUsedAt: json['last_used_at'] as String?,
-      );
+    id: json['id'] as String,
+    deviceName: json['device_name'] as String?,
+    transports:
+        (json['transports'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        [],
+    createdAt: json['created_at'] as String,
+    lastUsedAt: json['last_used_at'] as String?,
+  );
 }
 
 /// Handles the WebAuthn passkey registration and authentication flows.
@@ -60,10 +61,10 @@ class PasskeyService {
   static String get _baseUrl => BackendService.baseUrl.value;
 
   static Map<String, String> get _authHeaders => {
-        'Content-Type': 'application/json; charset=utf-8',
-        if (SupabaseService.accessToken != null)
-          'Authorization': 'Bearer ${SupabaseService.accessToken}',
-      };
+    'Content-Type': 'application/json; charset=utf-8',
+    if (SupabaseService.accessToken != null)
+      'Authorization': 'Bearer ${SupabaseService.accessToken}',
+  };
 
   // ---------------------------------------------------------------------------
   // Registration
@@ -266,15 +267,15 @@ class PasskeyService {
     if (!kIsWeb) throw UnsupportedError('Web only');
 
     // Defer to the JS helper (see web/index.html for the implementation).
-    final result =
-        await _callJsHelper('miruWebauthnCreate', jsonEncode(options));
+    final result = await _callJsHelper(
+      'miruWebauthnCreate',
+      jsonEncode(options),
+    );
     return result;
   }
 
   /// Calls `navigator.credentials.get({ publicKey: options })` on web.
-  static Future<String> _webGetCredential(
-    Map<String, dynamic> options,
-  ) async {
+  static Future<String> _webGetCredential(Map<String, dynamic> options) async {
     if (!kIsWeb) throw UnsupportedError('Web only');
     final result = await _callJsHelper('miruWebauthnGet', jsonEncode(options));
     return result;

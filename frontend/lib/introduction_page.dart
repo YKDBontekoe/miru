@@ -52,9 +52,9 @@ class _IntroductionPageState extends State<IntroductionPage> {
 
   void _finishOnboarding() {
     BackendService.setOnboardingComplete(true);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const ChatPage()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const ChatPage()));
   }
 
   @override
@@ -111,8 +111,9 @@ class _IntroductionPageState extends State<IntroductionPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.onPrimary,
-                            shadowColor:
-                                AppColors.primary.withValues(alpha: 0.5),
+                            shadowColor: AppColors.primary.withValues(
+                              alpha: 0.5,
+                            ),
                             elevation: 8,
                           ),
                           child: Text(
@@ -178,10 +179,7 @@ class OnboardingData {
 class OnboardingContent extends StatelessWidget {
   final OnboardingData data;
 
-  const OnboardingContent({
-    super.key,
-    required this.data,
-  });
+  const OnboardingContent({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -193,8 +191,10 @@ class OnboardingContent extends StatelessWidget {
           Expanded(
             child: Center(
               child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxWidth: 300, maxHeight: 300),
+                constraints: const BoxConstraints(
+                  maxWidth: 300,
+                  maxHeight: 300,
+                ),
                 child: data.visual,
               ),
             ),

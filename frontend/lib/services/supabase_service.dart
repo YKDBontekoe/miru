@@ -24,14 +24,17 @@ class SupabaseService {
 
   /// Your Supabase project URL.
   /// Set via --dart-define=SUPABASE_URL=https://xxx.supabase.co
-  static const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL',
-      defaultValue: 'https://your-project.supabase.co');
+  static const String _supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://your-project.supabase.co',
+  );
 
   /// The anon key (safe for client-side use).
   /// Set via --dart-define=SUPABASE_ANON_KEY=eyJ...
   static const String _supabaseAnonKey = String.fromEnvironment(
-      'SUPABASE_ANON_KEY',
-      defaultValue: 'your-anon-key');
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'your-anon-key',
+  );
 
   // ---------------------------------------------------------------------------
   // Initialisation

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import 'design_system/design_system.dart';
 import 'models/chat_message.dart';
+import 'models/message_status.dart';
 import 'settings_page.dart';
 
 // ---------------------------------------------------------------------------
@@ -62,9 +63,11 @@ class _ChatPageState extends State<ChatPage> {
         final loaded = ChatMessage.decodeList(jsonString);
         // Filter out streaming/sending messages from a previous session.
         final restored = loaded
-            .where((m) =>
-                m.status != MessageStatus.streaming &&
-                m.status != MessageStatus.sending)
+            .where(
+              (m) =>
+                  m.status != MessageStatus.streaming &&
+                  m.status != MessageStatus.sending,
+            )
             .toList();
         if (restored.isNotEmpty) {
           setState(() => _messages.addAll(restored));
@@ -80,8 +83,11 @@ class _ChatPageState extends State<ChatPage> {
     final prefs = await SharedPreferences.getInstance();
     // Only persist sent and failed messages (not transient states).
     final toPersist = _messages
-        .where((m) =>
-            m.status == MessageStatus.sent || m.status == MessageStatus.failed)
+        .where(
+          (m) =>
+              m.status == MessageStatus.sent ||
+              m.status == MessageStatus.failed,
+        )
         .toList();
     await prefs.setString(_messagesKey, ChatMessage.encodeList(toPersist));
   }
@@ -92,7 +98,8 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isAtBottom = _scrollController.position.pixels >=
+    final isAtBottom =
+        _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 80;
     if (_showScrollToBottom == isAtBottom) {
       setState(() => _showScrollToBottom = !isAtBottom);
@@ -287,9 +294,7 @@ class _ChatPageState extends State<ChatPage> {
         onSettingsPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => SettingsPage(
-                onClearHistory: _newChat,
-              ),
+              builder: (context) => SettingsPage(onClearHistory: _newChat),
             ),
           );
         },
@@ -384,10 +389,7 @@ class _ScrollToBottomButton extends StatelessWidget {
   final VoidCallback onPressed;
   final AppThemeColors colors;
 
-  const _ScrollToBottomButton({
-    required this.onPressed,
-    required this.colors,
-  });
+  const _ScrollToBottomButton({required this.onPressed, required this.colors});
 
   @override
   Widget build(BuildContext context) {

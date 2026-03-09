@@ -10,7 +10,7 @@ class AgentsPage extends StatefulWidget {
 }
 
 class _AgentsPageState extends State<AgentsPage> {
-  final ApiService _apiService = ApiService();
+
   List<Agent> _agents = [];
   bool _isLoading = true;
 
@@ -23,13 +23,15 @@ class _AgentsPageState extends State<AgentsPage> {
   Future<void> _loadAgents() async {
     setState(() => _isLoading = true);
     try {
-      final data = await _apiService.getAgents();
+      final data = await ApiService.getAgents();
       setState(() {
-        _agents = data.map((e) => Agent.fromJson(e)).toList();
+        _agents = data.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -54,7 +56,9 @@ class _AgentsPageState extends State<AgentsPage> {
               ),
               TextField(
                 controller: personalityController,
-                decoration: const InputDecoration(labelText: 'Personality (System Prompt)'),
+                decoration: const InputDecoration(
+                  labelText: 'Personality (System Prompt)',
+                ),
                 maxLines: 3,
               ),
             ],
@@ -66,13 +70,21 @@ class _AgentsPageState extends State<AgentsPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (nameController.text.isEmpty || personalityController.text.isEmpty) return;
+                if (nameController.text.isEmpty ||
+                    personalityController.text.isEmpty)
+                  return;
                 Navigator.pop(context);
                 try {
-                  await _apiService.createAgent(nameController.text, personalityController.text);
+                  await ApiService.createAgent(
+                    nameController.text,
+                    personalityController.text,
+                  );
                   _loadAgents();
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  if (mounted)
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               child: const Text('Create'),
@@ -90,17 +102,21 @@ class _AgentsPageState extends State<AgentsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _agents.isEmpty
-              ? const Center(child: Text('No agents created yet.'))
-              : ListView.builder(
-                  itemCount: _agents.length,
-                  itemBuilder: (context, index) {
-                    final agent = _agents[index];
-                    return ListTile(
-                      title: Text(agent.name),
-                      subtitle: Text(agent.personality, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    );
-                  },
-                ),
+          ? const Center(child: Text('No agents created yet.'))
+          : ListView.builder(
+              itemCount: _agents.length,
+              itemBuilder: (context, index) {
+                final agent = _agents[index];
+                return ListTile(
+                  title: Text(agent.name),
+                  subtitle: Text(
+                    agent.personality,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateAgentDialog,
         child: const Icon(Icons.add),

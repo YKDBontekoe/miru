@@ -10,11 +10,7 @@ class MiruOrbVisual extends StatefulWidget {
   final double size;
   final bool animate;
 
-  const MiruOrbVisual({
-    super.key,
-    this.size = 280,
-    this.animate = true,
-  });
+  const MiruOrbVisual({super.key, this.size = 280, this.animate = true});
 
   @override
   State<MiruOrbVisual> createState() => _MiruOrbVisualState();
@@ -80,11 +76,7 @@ class _OrbPainter extends CustomPainter {
     // 2. Core Glow
     final corePaint = Paint()
       ..shader = const RadialGradient(
-        colors: [
-          Colors.white,
-          AppColors.primary,
-          AppColors.primaryDark,
-        ],
+        colors: [Colors.white, AppColors.primary, AppColors.primaryDark],
         stops: [0.0, 0.4, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, corePaint);
@@ -173,7 +165,8 @@ class _MemoryPainter extends CustomPainter {
     final scale = size.width / 280;
 
     for (var i = 0; i < 4; i++) {
-      final yOffset = (i - 1.5) * 45.0 * scale +
+      final yOffset =
+          (i - 1.5) * 45.0 * scale +
           (progress * 10 * scale * (i.isEven ? 1 : -1));
       final opacity = 1.0 - (i * 0.2);
       final width = (160.0 - (i * 15)) * scale;
@@ -298,13 +291,29 @@ class _ShieldPainter extends CustomPainter {
 
     path.moveTo(center.dx, center.dy - h / 2);
     path.quadraticBezierTo(
-        center.dx + w / 2, center.dy - h / 2, center.dx + w / 2, center.dy);
+      center.dx + w / 2,
+      center.dy - h / 2,
+      center.dx + w / 2,
+      center.dy,
+    );
     path.quadraticBezierTo(
-        center.dx + w / 2, center.dy + h / 2, center.dx, center.dy + h * 0.7);
+      center.dx + w / 2,
+      center.dy + h / 2,
+      center.dx,
+      center.dy + h * 0.7,
+    );
     path.quadraticBezierTo(
-        center.dx - w / 2, center.dy + h / 2, center.dx - w / 2, center.dy);
+      center.dx - w / 2,
+      center.dy + h / 2,
+      center.dx - w / 2,
+      center.dy,
+    );
     path.quadraticBezierTo(
-        center.dx - w / 2, center.dy - h / 2, center.dx, center.dy - h / 2);
+      center.dx - w / 2,
+      center.dy - h / 2,
+      center.dx,
+      center.dy - h / 2,
+    );
 
     canvas.drawPath(
       path,
@@ -316,11 +325,7 @@ class _ShieldPainter extends CustomPainter {
     canvas.drawPath(path, paint..strokeWidth = 2.5 * scale);
 
     // 3. Central "Core"
-    canvas.drawCircle(
-      center,
-      12 * scale,
-      Paint()..color = AppColors.info,
-    );
+    canvas.drawCircle(center, 12 * scale, Paint()..color = AppColors.info);
 
     canvas.drawCircle(
       center,

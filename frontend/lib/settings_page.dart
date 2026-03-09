@@ -10,10 +10,7 @@ class SettingsPage extends StatefulWidget {
   /// Called when the user clears chat history from settings.
   final VoidCallback? onClearHistory;
 
-  const SettingsPage({
-    super.key,
-    this.onClearHistory,
-  });
+  const SettingsPage({super.key, this.onClearHistory});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -42,8 +39,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final url = await showDialog<String>(
       context: context,
       builder: (context) {
-        final controller =
-            TextEditingController(text: BackendService.baseUrl.value);
+        final controller = TextEditingController(
+          text: BackendService.baseUrl.value,
+        );
         return AlertDialog(
           title: const Text('Backend URL'),
           content: TextField(
@@ -94,9 +92,9 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -129,8 +127,9 @@ class _SettingsPageState extends State<SettingsPage> {
       final options = optionsData['options'] as Map<String, dynamic>;
 
       // Step 2: Create credential via platform API.
-      final credentialJson =
-          await PasskeyService.platformCreateCredential(options);
+      final credentialJson = await PasskeyService.platformCreateCredential(
+        options,
+      );
 
       // Step 3: Verify with the backend.
       await PasskeyService.verifyRegistration(
@@ -158,9 +157,9 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _addingPasskey = false);
     }
@@ -181,9 +180,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Remove'),
           ),
@@ -196,13 +193,15 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       await PasskeyService.deletePasskey(passkey.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Passkey removed')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passkey removed')));
       await _loadPasskeys();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed to remove: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to remove: $e')));
     }
   }
 
@@ -268,13 +267,15 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               title: Text(
                 user.email ?? 'Signed in',
-                style:
-                    AppTypography.labelLarge.copyWith(color: colors.onSurface),
+                style: AppTypography.labelLarge.copyWith(
+                  color: colors.onSurface,
+                ),
               ),
               subtitle: Text(
                 'Signed in',
-                style: AppTypography.bodySmall
-                    .copyWith(color: colors.onSurfaceMuted),
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.onSurfaceMuted,
+                ),
               ),
             ),
             _buildSettingTile(
@@ -305,13 +306,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 title: Text(
                   passkey.deviceName ?? 'Passkey',
-                  style: AppTypography.labelLarge
-                      .copyWith(color: colors.onSurface),
+                  style: AppTypography.labelLarge.copyWith(
+                    color: colors.onSurface,
+                  ),
                 ),
                 subtitle: Text(
                   'Added ${_formatDate(passkey.createdAt)}',
-                  style: AppTypography.bodySmall
-                      .copyWith(color: colors.onSurfaceMuted),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onSurfaceMuted,
+                  ),
                 ),
                 trailing: IconButton(
                   icon: Icon(
@@ -336,8 +339,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 child: Text(
                   'No passkeys registered. Add one to sign in faster with biometrics.',
-                  style: AppTypography.bodySmall
-                      .copyWith(color: colors.onSurfaceMuted),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onSurfaceMuted,
+                  ),
                 ),
               ),
             // Add passkey button
@@ -507,8 +511,9 @@ class _SettingsPageState extends State<SettingsPage> {
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: AppTypography.bodySmall
-                  .copyWith(color: colors.onSurfaceMuted),
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.onSurfaceMuted,
+              ),
             )
           : null,
       trailing: trailing,

@@ -1,105 +1,30 @@
-import 'dart:async';
-import 'dart:convert';
+import re
 
+with open("frontend/lib/api_service.dart", "r") as f:
+    content = f.read()
 
-import 'package:http/http.dart' as http;
+# Fix the missing brace and missing class wrapper issue
+content = content.replace("""  factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
+    taskType: json['task_type'] as String? ?? 'general',
+    result: json['result'] as String? ?? '',
+  );
 
-import 'backend_service.dart';
-import 'services/supabase_service.dart';
-
-/// Result returned by [ApiService.runCrew].
-class CrewResult {
-  final String taskType;
-  final String result;
-
-  const CrewResult({required this.taskType, required this.result});
-
-  factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
+class ApiService {""", """  factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
     taskType: json['task_type'] as String? ?? 'general',
     result: json['result'] as String? ?? '',
   );
 }
 
-class ApiService {
-  static String get baseUrl => BackendService.baseUrl.value;
+class ApiService {""")
 
-  /// Common headers for all authenticated requests.
-  ///
-  /// Includes the Supabase JWT as a Bearer token so the backend can validate
-  /// the request and scope data to the current user.
-  static Map<String, String> get _headers {
-    final token = SupabaseService.accessToken;
-    return {
-      'Content-Type': 'application/json; charset=utf-8',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  /// Streams a chat response from the backend.
-  static Stream<String> sendMessage(String message) async* {
-    final uri = Uri.parse('$baseUrl/chat');
-
-    final client = http.Client();
-    try {
-      final request = http.Request('POST', uri)
-        ..headers.addAll(_headers)
-        ..body = jsonEncode(<String, dynamic>{
-          'message': message,
-          'use_crew': false,
-        });
-
-      final streamedResponse = await client.send(request);
-
-      if (streamedResponse.statusCode == 401) {
-        throw ApiAuthException('Session expired. Please sign in again.');
-      }
-
-      if (streamedResponse.statusCode != 200) {
-        final errorBody = await streamedResponse.stream.bytesToString();
-        throw Exception(
-          'Server error (${streamedResponse.statusCode}): $errorBody',
-        );
-      }
-
-      await for (final chunk in streamedResponse.stream.transform(
-        utf8.decoder,
-      )) {
-        yield chunk;
-      }
-    } finally {
-      client.close();
-    }
-  }
-
-  /// Runs a CrewAI crew for [message] and returns the full structured result.
-  static Future<CrewResult> runCrew(String message) async {
-    final uri = Uri.parse('$baseUrl/crew');
-
-    final response = await http.post(
-      uri,
-      headers: _headers,
-      body: jsonEncode(<String, dynamic>{'message': message}),
-    );
-
-    if (response.statusCode == 401) {
-      throw ApiAuthException('Session expired. Please sign in again.');
-    }
-
-    if (response.statusCode != 200) {
-      throw Exception('Server error: ${response.statusCode}');
-    }
-
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return CrewResult.fromJson(json);
-  }
-
+content = content.replace("class ApiAuthException implements Exception {", """
 
   // --- Agents API ---
 
   static Future<List<Map<String, dynamic>>> getAgents() async {
     final response = await http.get(Uri.parse('$baseUrl/api/agents'), headers: _headers);
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => e as Map<String, dynamic>).toList();
     } else {
       throw Exception('Failed to load agents: ${response.statusCode}');
@@ -126,7 +51,7 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getRooms() async {
     final response = await http.get(Uri.parse('$baseUrl/api/rooms'), headers: _headers);
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => e as Map<String, dynamic>).toList();
     } else {
       throw Exception('Failed to load rooms: ${response.statusCode}');
@@ -160,7 +85,7 @@ class ApiService {
       Uri.parse('$baseUrl/api/rooms/$roomId/agents'), headers: _headers,
     );
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => e as Map<String, dynamic>).toList();
     } else {
       throw Exception('Failed to load room agents: ${response.statusCode}');
@@ -172,7 +97,7 @@ class ApiService {
       Uri.parse('$baseUrl/api/rooms/$roomId/messages'), headers: _headers,
     );
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => e as Map<String, dynamic>).toList();
     } else {
       throw Exception('Failed to load room messages: ${response.statusCode}');
@@ -214,14 +139,9 @@ class ApiService {
   }
 }
 
-class ApiAuthException implements Exception {
-  final String message;
-  const ApiAuthException(this.message);
+class ApiAuthException implements Exception {""")
 
-  @override
-  String toString() => 'ApiAuthException: $message';
-}
+content = re.sub(r"// --- Agents API ---.*", "", content, flags=re.DOTALL)
 
-/// Thrown when the backend responds with 401 Unauthorized.
-///
-/// The UI layer should catch this and redirect to [AuthPage].
+with open("frontend/lib/api_service.dart", "w") as f:
+    f.write(content)

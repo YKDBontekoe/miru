@@ -13,10 +13,10 @@ class Agent {
 
   factory Agent.fromJson(Map<String, dynamic> json) {
     return Agent(
-      id: json['id'],
-      name: json['name'],
-      personality: json['personality'],
-      createdAt: json['created_at'],
+      id: json['id'].toString(),
+      name: json['name'].toString(),
+      personality: json['personality'].toString(),
+      createdAt: json['created_at'].toString(),
     );
   }
 

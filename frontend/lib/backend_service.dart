@@ -37,8 +37,9 @@ class BackendService {
     }
 
     // Strip trailing slash for consistency
-    final sanitized =
-        url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    final sanitized = url.endsWith('/')
+        ? url.substring(0, url.length - 1)
+        : url;
 
     // Append /api if not present
     final finalUrl = sanitized.endsWith('/api') ? sanitized : '$sanitized/api';

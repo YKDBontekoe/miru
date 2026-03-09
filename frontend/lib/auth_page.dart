@@ -102,7 +102,8 @@ class _AuthPageState extends State<AuthPage>
     } catch (e) {
       if (mounted) {
         setState(
-            () => _errorMessage = 'Something went wrong. Please try again.');
+          () => _errorMessage = 'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) {
@@ -135,7 +136,8 @@ class _AuthPageState extends State<AuthPage>
     } catch (e) {
       if (mounted) {
         setState(
-            () => _errorMessage = 'Something went wrong. Please try again.');
+          () => _errorMessage = 'Something went wrong. Please try again.',
+        );
       }
     } finally {
       if (mounted) {
@@ -167,8 +169,9 @@ class _AuthPageState extends State<AuthPage>
       final options = optionsData['options'] as Map<String, dynamic>;
 
       // Step 2: Invoke the platform passkey API.
-      final credentialJson =
-          await PasskeyService.platformGetCredential(options);
+      final credentialJson = await PasskeyService.platformGetCredential(
+        options,
+      );
 
       // Step 3: Verify with the backend — this also sets the Supabase session.
       await PasskeyService.verifyAuthentication(
@@ -183,13 +186,17 @@ class _AuthPageState extends State<AuthPage>
       }
     } on UnsupportedError catch (e) {
       if (mounted) {
-        setState(() => _errorMessage =
-            e.message ?? 'Passkeys are not supported on this device.');
+        setState(
+          () => _errorMessage =
+              e.message ?? 'Passkeys are not supported on this device.',
+        );
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage =
-            'Passkey sign-in failed. Please try magic link instead.');
+        setState(
+          () => _errorMessage =
+              'Passkey sign-in failed. Please try magic link instead.',
+        );
       }
     } finally {
       if (mounted) {
@@ -242,9 +249,7 @@ class _AuthPageState extends State<AuthPage>
           const SizedBox(height: AppSpacing.xl),
           Text(
             'Welcome to Miru',
-            style: AppTypography.headingLarge.copyWith(
-              color: colors.onSurface,
-            ),
+            style: AppTypography.headingLarge.copyWith(color: colors.onSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -287,8 +292,9 @@ class _AuthPageState extends State<AuthPage>
               }
               return null;
             },
-            onFieldSubmitted:
-                _showPasswordField ? null : (_) => _sendMagicLink(),
+            onFieldSubmitted: _showPasswordField
+                ? null
+                : (_) => _sendMagicLink(),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -325,8 +331,9 @@ class _AuthPageState extends State<AuthPage>
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSpacing.sm),
-                border:
-                    Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.error.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
@@ -446,9 +453,7 @@ class _AuthPageState extends State<AuthPage>
         const SizedBox(height: AppSpacing.xl),
         Text(
           'Check your email',
-          style: AppTypography.headingLarge.copyWith(
-            color: colors.onSurface,
-          ),
+          style: AppTypography.headingLarge.copyWith(color: colors.onSurface),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.md),
@@ -463,9 +468,7 @@ class _AuthPageState extends State<AuthPage>
         Text(
           'Tap the link in the email to sign in. '
           'It will expire in 1 hour.',
-          style: AppTypography.bodySmall.copyWith(
-            color: colors.onSurfaceMuted,
-          ),
+          style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xxl),

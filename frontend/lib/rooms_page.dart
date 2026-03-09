@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'models/chat_room.dart';
-import 'models/agent.dart';
+
 import 'group_chat_page.dart';
 
 class RoomsPage extends StatefulWidget {
@@ -12,7 +12,7 @@ class RoomsPage extends StatefulWidget {
 }
 
 class _RoomsPageState extends State<RoomsPage> {
-  final ApiService _apiService = ApiService();
+
   List<ChatRoom> _rooms = [];
   bool _isLoading = true;
 
@@ -25,12 +25,15 @@ class _RoomsPageState extends State<RoomsPage> {
   Future<void> _loadRooms() async {
     setState(() => _isLoading = true);
     try {
-      final data = await _apiService.getRooms();
+      final data = await ApiService.getRooms();
       setState(() {
-        _rooms = data.map((e) => ChatRoom.fromJson(e)).toList();
+        _rooms = data.map((dynamic e) => ChatRoom.fromJson(e as Map<String, dynamic>)).toList();
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -57,10 +60,13 @@ class _RoomsPageState extends State<RoomsPage> {
                 if (nameController.text.isEmpty) return;
                 Navigator.pop(context);
                 try {
-                  await _apiService.createRoom(nameController.text);
+                  await ApiService.createRoom(nameController.text);
                   _loadRooms();
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  if (mounted)
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               child: const Text('Create'),
@@ -74,9 +80,7 @@ class _RoomsPageState extends State<RoomsPage> {
   void _openRoom(ChatRoom room) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => GroupChatPage(room: room),
-      ),
+      MaterialPageRoute(builder: (context) => GroupChatPage(room: room)),
     );
   }
 
@@ -87,18 +91,18 @@ class _RoomsPageState extends State<RoomsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _rooms.isEmpty
-              ? const Center(child: Text('No group chats yet.'))
-              : ListView.builder(
-                  itemCount: _rooms.length,
-                  itemBuilder: (context, index) {
-                    final room = _rooms[index];
-                    return ListTile(
-                      title: Text(room.name),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => _openRoom(room),
-                    );
-                  },
-                ),
+          ? const Center(child: Text('No group chats yet.'))
+          : ListView.builder(
+              itemCount: _rooms.length,
+              itemBuilder: (context, index) {
+                final room = _rooms[index];
+                return ListTile(
+                  title: Text(room.name),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () => _openRoom(room),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateRoomDialog,
         child: const Icon(Icons.add),

@@ -13,7 +13,7 @@ class GroupChatPage extends StatefulWidget {
 }
 
 class _GroupChatPageState extends State<GroupChatPage> {
-  final ApiService _apiService = ApiService();
+
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -32,16 +32,19 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final agentsData = await _apiService.getRoomAgents(widget.room.id);
-      final messagesData = await _apiService.getRoomMessages(widget.room.id);
+      final agentsData = await ApiService.getRoomAgents(widget.room.id);
+      final messagesData = await ApiService.getRoomMessages(widget.room.id);
 
       setState(() {
-        _roomAgents = agentsData.map((e) => Agent.fromJson(e)).toList();
-        _messages = messagesData.map((e) => ChatMessage.fromJson(e)).toList();
+        _roomAgents = agentsData.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
+        _messages = messagesData.map((dynamic e) => ChatMessage.fromJson(e as Map<String, dynamic>)).toList();
       });
       _scrollToBottom();
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -68,20 +71,25 @@ class _GroupChatPageState extends State<GroupChatPage> {
     // Optimistically add user message
     final fakeId = DateTime.now().millisecondsSinceEpoch.toString();
     setState(() {
-      _messages.add(ChatMessage(
-        id: fakeId,
-        roomId: widget.room.id,
-        userId: 'temp', // This indicates it's from the user
-        content: userMessageText,
-        createdAt: DateTime.now().toIso8601String(),
-      ));
+      _messages.add(
+        ChatMessage(
+          id: fakeId,
+          roomId: widget.room.id,
+          userId: 'temp', // This indicates it's from the user
+          text: userMessageText,
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
       _isSending = true;
       _streamingMessage = '';
     });
     _scrollToBottom();
 
     try {
-      final stream = _apiService.streamRoomChat(widget.room.id, userMessageText);
+      final stream = ApiService.streamRoomChat(
+        widget.room.id,
+        userMessageText,
+      );
       await for (final chunk in stream) {
         if (!mounted) break;
         setState(() {
@@ -92,9 +100,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
       // Reload to get real saved messages instead of trying to parse the text stream
       await _loadData();
-
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -107,8 +117,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   void _showAddAgentDialog() async {
     try {
-      final allAgentsData = await _apiService.getAgents();
-      final allAgents = allAgentsData.map((e) => Agent.fromJson(e)).toList();
+      final allAgentsData = await ApiService.getAgents();
+      final allAgents = allAgentsData.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
 
       if (!mounted) return;
 
@@ -124,21 +134,31 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 itemCount: allAgents.length,
                 itemBuilder: (context, index) {
                   final agent = allAgents[index];
-                  final isAlreadyInRoom = _roomAgents.any((a) => a.id == agent.id);
+                  final isAlreadyInRoom = _roomAgents.any(
+                    (a) => a.id == agent.id,
+                  );
                   return ListTile(
                     title: Text(agent.name),
                     trailing: isAlreadyInRoom
                         ? const Icon(Icons.check, color: Colors.green)
                         : const Icon(Icons.add),
-                    onTap: isAlreadyInRoom ? null : () async {
-                      Navigator.pop(context);
-                      try {
-                        await _apiService.addAgentToRoom(widget.room.id, agent.id);
-                        _loadData();
-                      } catch (e) {
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding: $e')));
-                      }
-                    },
+                    onTap: isAlreadyInRoom
+                        ? null
+                        : () async {
+                            Navigator.pop(context);
+                            try {
+                              await ApiService.addAgentToRoom(
+                                widget.room.id,
+                                agent.id,
+                              );
+                              _loadData();
+                            } catch (e) {
+                              if (mounted)
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error adding: $e')),
+                                );
+                            }
+                          },
                   );
                 },
               ),
@@ -147,7 +167,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
         },
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
     }
   }
 
@@ -170,7 +193,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
             icon: const Icon(Icons.group_add),
             onPressed: _showAddAgentDialog,
             tooltip: 'Add Agent',
-          )
+          ),
         ],
       ),
       body: Column(
@@ -198,26 +221,40 @@ class _GroupChatPageState extends State<GroupChatPage> {
                       final isMe = msg.isUser;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Column(
-                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          crossAxisAlignment: isMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
                           children: [
                             Text(
                               _getSenderName(msg),
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
                             ),
                             const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
                                 color: isMe
-                                    ? Theme.of(context).colorScheme.primaryContainer
-                                    : Theme.of(context).colorScheme.secondaryContainer,
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.secondaryContainer,
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(msg.content),
+                              child: Text(msg.text),
                             ),
                           ],
                         ),
@@ -231,7 +268,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
               padding: const EdgeInsets.all(16.0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Agents typing... \n$_streamingMessage', style: const TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Agents typing... \n$_streamingMessage',
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ),
             ),
 
