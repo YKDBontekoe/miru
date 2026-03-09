@@ -69,7 +69,13 @@ def decode_supabase_jwt(token: str) -> dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
     except JWTError as exc:
-        print(f"CRITICAL JWT FAILURE: {exc} | Secret length: {len(secret)}")
+        try:
+            from jose import jwt as jose_jwt
+            header = jwt.get_unverified_header(token)
+            print(f"CRITICAL JWT FAILURE: {exc} | Header: {header} | Secret length: {len(secret)}")
+        except Exception:
+            print(f"CRITICAL JWT FAILURE: {exc} | Secret length: {len(secret)}")
+        
         logger.error("JWT validation failed: %s (Secret length: %d)", exc, len(secret))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
