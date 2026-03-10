@@ -7,11 +7,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.agents import AgentResponse, ChatMessageResponse, RoomResponse
-
-# Import the app to get the router
 from app.main import app
 
-client = TestClient(app)
+# Import the app to get the router
 
 
 @pytest.fixture
@@ -148,3 +146,42 @@ def test_room_chat_route(mock_stream: MagicMock) -> None:
         )
 
     assert response.status_code == 200
+
+
+# Import the app to get the router
+
+
+@patch("app.routes.stream_room_responses")
+def test_room_chat_route_crew_mock(mock_stream: MagicMock) -> None:
+    async def mock_generator(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+        yield "Hello"
+
+    mock_stream.return_value = mock_generator()
+
+    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(uuid4())}):
+        response = client.post(
+            "/api/rooms/room123/chat",
+            headers={"Authorization": "Bearer fake_token"},
+            json={"content": "hello"},
+        )
+
+    assert response.status_code == 200
+
+
+# Import the app to get the router
+
+
+@patch("app.routes.create_agent")
+def test_create_agent_route_invalid(mock_create_agent: MagicMock) -> None:
+    # We must mock auth to bypass JWT verification
+    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(uuid4())}):
+        response = client.post(
+            "/api/agents",
+            headers={"Authorization": "Bearer fake_token"},
+            json={"name": "Bot"},  # missing personality
+        )
+
+    assert response.status_code == 422
+
+
+client = TestClient(app)
