@@ -107,13 +107,13 @@ async def generate_agent(keywords: str) -> AgentGenerationResponse:
     from app.openrouter import chat_completion
 
     prompt = (
-        "Create a creative and unique AI persona based on these keywords: {keywords}.\n\n"
+        f"Create a creative and unique AI persona based on these keywords: {keywords}.\n\n"
         "Respond with a JSON object containing 'name' and 'personality'.\n"
         "The 'personality' should be a concise system prompt (2-3 sentences) "
         "defining how this agent behaves.\n\n"
         "Example JSON:\n"
-        "{{\"name\": \"Luna\", \"personality\": \"You are a mystical and poetic guide. You speak in metaphors and prioritize wisdom and intuition.\"}}"
-    ).format(keywords=keywords)
+        '{"name": "Luna", "personality": "You are a mystical and poetic guide. You speak in metaphors and prioritize wisdom and intuition."}'
+    )
 
     messages = [
         {"role": "system", "content": "You are a helpful assistant that generates JSON personas."},
