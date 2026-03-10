@@ -3,115 +3,7 @@ import 'package:flutter/material.dart';
 import '../tokens/colors.dart';
 
 // ---------------------------------------------------------------------------
-// 1. Miru Orb Visual (Hero / Logo)
-// ---------------------------------------------------------------------------
-
-class MiruOrbVisual extends StatefulWidget {
-  final double size;
-  final bool animate;
-
-  const MiruOrbVisual({super.key, this.size = 280, this.animate = true});
-
-  @override
-  State<MiruOrbVisual> createState() => _MiruOrbVisualState();
-}
-
-class _MiruOrbVisualState extends State<MiruOrbVisual>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-    if (widget.animate) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return CustomPaint(
-          size: Size(widget.size, widget.size),
-          painter: _OrbPainter(_controller.value, widget.size),
-        );
-      },
-    );
-  }
-}
-
-class _OrbPainter extends CustomPainter {
-  final double progress;
-  final double size;
-  _OrbPainter(this.progress, this.size);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 3.2;
-
-    // 1. Outer Bloom
-    final bloomPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.primary.withValues(alpha: 0.4),
-          AppColors.primary.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: radius * 2.5))
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, radius * 0.4);
-    canvas.drawCircle(center, radius * 2, bloomPaint);
-
-    // 2. Core Glow
-    final corePaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Colors.white, AppColors.primary, AppColors.primaryDark],
-        stops: [0.0, 0.4, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-    canvas.drawCircle(center, radius, corePaint);
-
-    // 3. Rotating "Neural" Rings
-    final ringPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.006;
-
-    for (var i = 0; i < 3; i++) {
-      final rotation = (progress * 2 * math.pi) + (i * math.pi / 1.5);
-      final ringRadius = radius * (0.9 + i * 0.15);
-
-      canvas.save();
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(rotation);
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset.zero,
-          width: ringRadius * 2,
-          height: ringRadius * 0.4,
-        ),
-        ringPaint,
-      );
-      canvas.restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _OrbPainter oldDelegate) => true;
-}
-
-// ---------------------------------------------------------------------------
-// 2. Context Memory Visual
+// 1. Context Memory Visual
 // ---------------------------------------------------------------------------
 
 class ContextMemoryVisual extends StatefulWidget {
@@ -214,7 +106,7 @@ class _MemoryPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Privacy Shield Visual
+// 2. Privacy Shield Visual
 // ---------------------------------------------------------------------------
 
 class PrivacyShieldVisual extends StatefulWidget {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:credential_manager/credential_manager.dart';
 
 import 'design_system/design_system.dart';
 import 'services/passkey_service.dart';
@@ -90,7 +91,7 @@ class _AuthPageState extends State<AuthPage>
       await SupabaseService.signInWithMagicLink(
         email: _emailController.text.trim(),
         // Deep-link URI — configure in Supabase Dashboard and app_links.
-        redirectTo: 'io.miru.app://login-callback',
+        redirectTo: 'io.miru.app://login-callback/oauth/consent',
       );
       if (mounted) {
         setState(() => _magicLinkSent = true);
@@ -180,6 +181,10 @@ class _AuthPageState extends State<AuthPage>
       );
 
       // Auth state change triggers navigation via main.dart StreamBuilder.
+    } on CredentialException catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = e.message);
+      }
     } on PasskeyException catch (e) {
       if (mounted) {
         setState(() => _errorMessage = e.detail);
@@ -245,11 +250,27 @@ class _AuthPageState extends State<AuthPage>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Logo / branding
-          const MiruOrbVisual(size: 80),
-          const SizedBox(height: AppSpacing.xl),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.blur_on_rounded,
+                size: 48,
+                color: colors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
-            'Welcome to Miru',
-            style: AppTypography.headingLarge.copyWith(color: colors.onSurface),
+            'Miru',
+            style: AppTypography.displaySmall.copyWith(
+              color: colors.onSurface,
+              letterSpacing: -1,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -264,163 +285,175 @@ class _AuthPageState extends State<AuthPage>
           ),
           const SizedBox(height: AppSpacing.xxl),
 
-          // Email field
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: _showPasswordField
-                ? TextInputAction.next
-                : TextInputAction.done,
-            autocorrect: false,
-            autofillHints: const [AutofillHints.email],
-            style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
-            decoration: InputDecoration(
-              labelText: 'Email address',
-              hintText: 'you@example.com',
-              prefixIcon: Icon(
-                Icons.email_outlined,
-                color: colors.onSurfaceMuted,
-                size: AppSpacing.iconMd,
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value.trim())) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
-            onFieldSubmitted:
-                _showPasswordField ? null : (_) => _sendMagicLink(),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Password field
-          if (_showPasswordField) ...[
-            TextFormField(
-              controller: _passwordController,
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(
-                  Icons.lock_outline_rounded,
-                  color: colors.onSurfaceMuted,
-                  size: AppSpacing.iconMd,
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your password';
-                }
-                return null;
-              },
-              onFieldSubmitted: (_) => _signInWithPassword(),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-
-          // Error message
-          if (_errorMessage != null) ...[
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSpacing.sm),
-                border: Border.all(
-                  color: AppColors.error.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, color: AppColors.error, size: 16),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.error,
-                      ),
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Email field
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: _showPasswordField
+                      ? TextInputAction.next
+                      : TextInputAction.done,
+                  autocorrect: false,
+                  autofillHints: const [AutofillHints.email],
+                  style:
+                      AppTypography.bodyMedium.copyWith(color: colors.onSurface),
+                  decoration: InputDecoration(
+                    labelText: 'Email address',
+                    hintText: 'you@example.com',
+                    prefixIcon: Icon(
+                      Icons.email_outlined,
+                      color: colors.onSurfaceMuted,
+                      size: AppSpacing.iconMd,
                     ),
                   ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value.trim())) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                  onFieldSubmitted:
+                      _showPasswordField ? null : (_) => _sendMagicLink(),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Password field
+                if (_showPasswordField) ...[
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    textInputAction: TextInputAction.done,
+                    style:
+                        AppTypography.bodyMedium.copyWith(color: colors.onSurface),
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(
+                        Icons.lock_outline_rounded,
+                        color: colors.onSurfaceMuted,
+                        size: AppSpacing.iconMd,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      return null;
+                    },
+                    onFieldSubmitted: (_) => _signInWithPassword(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
 
-          // Action button
-          if (_showPasswordField)
-            FilledButton(
-              onPressed: _isLoadingPassword ? null : _signInWithPassword,
-              child: _isLoadingPassword
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Sign in'),
-            )
-          else
-            FilledButton(
-              onPressed: _isLoadingMagicLink || _isLoadingPasskey
-                  ? null
-                  : _sendMagicLink,
-              child: _isLoadingMagicLink
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Send magic link'),
-            ),
-          const SizedBox(height: AppSpacing.md),
+                // Error message
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppSpacing.sm),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline,
+                            color: AppColors.error, size: 16),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
 
-          // Divider
-          Row(
-            children: [
-              Expanded(child: Divider(color: colors.border)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Text(
-                  'or',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: colors.onSurfaceMuted,
+                // Action button
+                if (_showPasswordField)
+                  FilledButton(
+                    onPressed: _isLoadingPassword ? null : _signInWithPassword,
+                    child: _isLoadingPassword
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Sign in'),
+                  )
+                else
+                  FilledButton(
+                    onPressed: _isLoadingMagicLink || _isLoadingPasskey
+                        ? null
+                        : _sendMagicLink,
+                    child: _isLoadingMagicLink
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Send magic link'),
+                  ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Divider
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: colors.border)),
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      child: Text(
+                        'or',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onSurfaceMuted,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: colors.border)),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Passkey button
+                OutlinedButton.icon(
+                  onPressed: _isLoadingMagicLink || _isLoadingPasskey
+                      ? null
+                      : _signInWithPasskey,
+                  icon: _isLoadingPasskey
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.fingerprint_rounded),
+                  label: const Text('Sign in with passkey'),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Toggle password sign in
+                TextButton(
+                  onPressed: () =>
+                      setState(() => _showPasswordField = !_showPasswordField),
+                  child: Text(
+                    _showPasswordField
+                        ? 'Use magic link instead'
+                        : 'Sign in with password instead',
                   ),
                 ),
-              ),
-              Expanded(child: Divider(color: colors.border)),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Passkey button
-          OutlinedButton.icon(
-            onPressed: _isLoadingMagicLink || _isLoadingPasskey
-                ? null
-                : _signInWithPasskey,
-            icon: _isLoadingPasskey
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.fingerprint_rounded),
-            label: const Text('Sign in with passkey'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // Toggle password sign in
-          TextButton(
-            onPressed: () =>
-                setState(() => _showPasswordField = !_showPasswordField),
-            child: Text(
-              _showPasswordField
-                  ? 'Use magic link instead'
-                  : 'Sign in with password instead',
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.xl),

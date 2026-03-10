@@ -28,6 +28,15 @@ class AgentCreate(BaseModel):
     personality: str
 
 
+class AgentGenerate(BaseModel):
+    keywords: str
+
+
+class AgentGenerationResponse(BaseModel):
+    name: str
+    personality: str
+
+
 class AgentResponse(BaseModel):
     id: str
     name: str
@@ -36,6 +45,10 @@ class AgentResponse(BaseModel):
 
 
 class RoomCreate(BaseModel):
+    name: str
+
+
+class RoomUpdate(BaseModel):
     name: str
 
 
@@ -90,6 +103,40 @@ async def get_agents(user_id: UUID) -> list[AgentResponse]:
     return [AgentResponse(**record) for record in cast("list[dict[str, Any]]", response.data)]
 
 
+async def generate_agent(keywords: str) -> AgentGenerationResponse:
+    from app.openrouter import chat_completion
+
+    prompt = (
+        "Create a creative and unique AI persona based on these keywords: {keywords}.\n\n"
+        "Respond with a JSON object containing 'name' and 'personality'.\n"
+        "The 'personality' should be a concise system prompt (2-3 sentences) "
+        "defining how this agent behaves.\n\n"
+        "Example JSON:\n"
+        "{{\"name\": \"Luna\", \"personality\": \"You are a mystical and poetic guide. You speak in metaphors and prioritize wisdom and intuition.\"}}"
+    ).format(keywords=keywords)
+
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that generates JSON personas."},
+        {"role": "user", "content": prompt},
+    ]
+
+    response_text = await chat_completion(messages)
+
+    # Clean the response to ensure it's valid JSON
+    # (some LLMs might wrap it in markdown blocks)
+    cleaned_json = response_text.strip()
+    if cleaned_json.startswith("```json"):
+        cleaned_json = cleaned_json[7:]
+    if cleaned_json.endswith("```"):
+        cleaned_json = cleaned_json[:-3]
+    cleaned_json = cleaned_json.strip()
+
+    import json
+
+    data = json.loads(cleaned_json)
+    return AgentGenerationResponse(name=data["name"], personality=data["personality"])
+
+
 async def create_room(room_data: RoomCreate, user_id: UUID) -> RoomResponse:
     supabase = get_supabase()
     response = (
@@ -105,6 +152,23 @@ async def get_rooms(user_id: UUID) -> list[RoomResponse]:
     supabase = get_supabase()
     response = supabase.table("chat_rooms").select("*").eq("user_id", str(user_id)).execute()
     return [RoomResponse(**record) for record in cast("list[dict[str, Any]]", response.data)]
+
+
+async def update_room(room_id: str, room_data: RoomUpdate, user_id: UUID) -> RoomResponse:
+    supabase = get_supabase()
+    response = (
+        supabase.table("chat_rooms")
+        .update({"name": room_data.name})
+        .eq("id", room_id)
+        .eq("user_id", str(user_id))
+        .execute()
+    )
+    if not response.data:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Room not found or unauthorized")
+    data = cast("list[dict[str, Any]]", response.data)[0]
+    return RoomResponse(**data)
 
 
 async def add_agent_to_room(room_id: str, agent_id: str, user_id: UUID) -> dict:

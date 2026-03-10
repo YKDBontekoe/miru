@@ -3,6 +3,7 @@ import 'api_service.dart';
 import 'models/chat_room.dart';
 import 'models/agent.dart';
 import 'models/chat_message.dart';
+import 'design_system/design_system.dart';
 
 class GroupChatPage extends StatefulWidget {
   final ChatRoom room;
@@ -16,6 +17,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  late String _roomName;
   List<ChatMessage> _messages = [];
   List<Agent> _roomAgents = [];
   bool _isLoading = true;
@@ -25,7 +27,40 @@ class _GroupChatPageState extends State<GroupChatPage> {
   @override
   void initState() {
     super.initState();
+    _roomName = widget.room.name;
     _loadData();
+  }
+
+  Future<void> _renameRoom() async {
+    final controller = TextEditingController(text: _roomName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename Group'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Group Name'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty && newName != _roomName) {
+      try {
+        await ApiService.updateRoom(widget.room.id, newName);
+        setState(() => _roomName = newName);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Rename failed: $e')));
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -199,7 +234,17 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.room.name),
+        title: GestureDetector(
+          onTap: _renameRoom,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_roomName, style: AppTypography.headingSmall),
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(Icons.edit_outlined, size: 14),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.group_add),

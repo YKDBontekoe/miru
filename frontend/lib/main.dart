@@ -6,6 +6,9 @@ import 'backend_service.dart';
 import 'chat_page.dart';
 import 'design_system/design_system.dart';
 import 'introduction_page.dart';
+import 'rooms_page.dart';
+import 'main_scaffold.dart';
+import 'services/passkey_service.dart';
 import 'services/supabase_service.dart';
 
 void main() async {
@@ -16,6 +19,9 @@ void main() async {
 
   // Initialise Supabase auth (session persistence, deep-link handling).
   await SupabaseService.initialize();
+
+  // Initialise Passkey support.
+  await PasskeyService.initialize();
 
   runApp(const MiruApp());
 }
@@ -56,7 +62,7 @@ class _MiruAppState extends State<MiruApp> {
             if (!BackendService.onboardingComplete.value) {
               return const IntroductionPage();
             }
-            return const ChatPage();
+            return const MainScaffold();
           }
 
           return const AuthPage();

@@ -50,8 +50,19 @@ class AppEmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Glowing animated orb
-              const MiruOrbVisual(size: 140),
+              // Sleek icon logo
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.blur_on_rounded,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+              ),
 
               const SizedBox(height: AppSpacing.xl),
 

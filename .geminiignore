@@ -1,0 +1,10 @@
+frontend/build/
+backend/.venv/
+**/__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.dart_tool/
+.idea/
+.vscode/
+node_modules/

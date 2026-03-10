@@ -17,20 +17,25 @@ from pydantic import BaseModel
 
 from app.agents import (
     AgentCreate,
+    AgentGenerate,
+    AgentGenerationResponse,
     AgentResponse,
     ChatMessageCreate,
     ChatMessageResponse,
     RoomAgentAdd,
     RoomCreate,
     RoomResponse,
+    RoomUpdate,
     add_agent_to_room,
     create_agent,
     create_room,
+    generate_agent,
     get_agents,
     get_room_agents,
     get_room_messages,
     get_rooms,
     stream_room_responses,
+    update_room,
 )
 from app.auth import CurrentUser  # noqa: TC001
 from app.crew import detect_task_type, run_crew
@@ -377,6 +382,12 @@ async def list_agents_route(user_id: CurrentUser) -> Any:
     return await get_agents(user_id)
 
 
+@router.post("/agents/generate", response_model=AgentGenerationResponse)
+async def generate_agent_route(request: AgentGenerate, user_id: CurrentUser) -> Any:
+    """Generate an agent from keywords."""
+    return await generate_agent(request.keywords)
+
+
 @router.post("/rooms", response_model=RoomResponse)
 async def create_room_route(request: RoomCreate, user_id: CurrentUser) -> Any:
     """Create a new chat room."""
@@ -387,6 +398,12 @@ async def create_room_route(request: RoomCreate, user_id: CurrentUser) -> Any:
 async def list_rooms_route(user_id: CurrentUser) -> Any:
     """List all chat rooms for the authenticated user."""
     return await get_rooms(user_id)
+
+
+@router.patch("/rooms/{room_id}", response_model=RoomResponse)
+async def update_room_route(room_id: str, request: RoomUpdate, user_id: CurrentUser) -> Any:
+    """Update a chat room's details."""
+    return await update_room(room_id, request, user_id)
 
 
 @router.post("/rooms/{room_id}/agents")

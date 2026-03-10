@@ -20,7 +20,20 @@ class _IntroductionPageState extends State<IntroductionPage> {
       title: 'Meet Miru',
       description:
           'Your personal AI assistant that remembers you and grows with you.',
-      visual: const MiruOrbVisual(),
+      visual: Center(
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.blur_on_rounded,
+            size: 120,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
       color: AppColors.primary,
     ),
     OnboardingData(

@@ -50,7 +50,7 @@ class ApiService {
       final streamedResponse = await client.send(request);
 
       if (streamedResponse.statusCode == 401) {
-        throw ApiAuthException('Session expired. Please sign in again.');
+        throw const ApiAuthException('Session expired. Please sign in again.');
       }
 
       if (streamedResponse.statusCode != 200) {
@@ -81,7 +81,7 @@ class ApiService {
     );
 
     if (response.statusCode == 401) {
-      throw ApiAuthException('Session expired. Please sign in again.');
+      throw const ApiAuthException('Session expired. Please sign in again.');
     }
 
     if (response.statusCode != 200) {
@@ -96,7 +96,7 @@ class ApiService {
 
   static Future<List<Map<String, dynamic>>> getAgents() async {
     final response =
-        await http.get(Uri.parse('$baseUrl/api/agents'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/agents'), headers: _headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
       return data.map((e) => e as Map<String, dynamic>).toList();
@@ -110,7 +110,7 @@ class ApiService {
     String personality,
   ) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/agents'),
+      Uri.parse('$baseUrl/agents'),
       headers: _headers,
       body: jsonEncode({'name': name, 'personality': personality}),
     );
@@ -121,11 +121,24 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> generateAgent(String keywords) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/agents/generate'),
+      headers: _headers,
+      body: jsonEncode({'keywords': keywords}),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to generate agent: ${response.statusCode}');
+    }
+  }
+
   // --- Chat Rooms API ---
 
   static Future<List<Map<String, dynamic>>> getRooms() async {
     final response =
-        await http.get(Uri.parse('$baseUrl/api/rooms'), headers: _headers);
+        await http.get(Uri.parse('$baseUrl/rooms'), headers: _headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
       return data.map((e) => e as Map<String, dynamic>).toList();
@@ -136,7 +149,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> createRoom(String name) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/rooms'),
+      Uri.parse('$baseUrl/rooms'),
       headers: _headers,
       body: jsonEncode({'name': name}),
     );
@@ -147,9 +160,20 @@ class ApiService {
     }
   }
 
+  static Future<void> updateRoom(String roomId, String name) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/rooms/$roomId'),
+      headers: _headers,
+      body: jsonEncode({'name': name}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update room: ${response.statusCode}');
+    }
+  }
+
   static Future<void> addAgentToRoom(String roomId, String agentId) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/rooms/$roomId/agents'),
+      Uri.parse('$baseUrl/rooms/$roomId/agents'),
       headers: _headers,
       body: jsonEncode({'agent_id': agentId}),
     );
@@ -160,7 +184,7 @@ class ApiService {
 
   static Future<List<Map<String, dynamic>>> getRoomAgents(String roomId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/rooms/$roomId/agents'),
+      Uri.parse('$baseUrl/rooms/$roomId/agents'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
@@ -174,7 +198,7 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> getRoomMessages(
       String roomId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/rooms/$roomId/messages'),
+      Uri.parse('$baseUrl/rooms/$roomId/messages'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
@@ -186,7 +210,7 @@ class ApiService {
   }
 
   static Stream<String> streamRoomChat(String roomId, String message) async* {
-    final uri = Uri.parse('$baseUrl/api/rooms/$roomId/chat');
+    final uri = Uri.parse('$baseUrl/rooms/$roomId/chat');
 
     final client = http.Client();
     try {
@@ -227,7 +251,3 @@ class ApiAuthException implements Exception {
   @override
   String toString() => 'ApiAuthException: $message';
 }
-
-/// Thrown when the backend responds with 401 Unauthorized.
-///
-/// The UI layer should catch this and redirect to [AuthPage].

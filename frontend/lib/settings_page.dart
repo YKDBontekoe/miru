@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:credential_manager/credential_manager.dart';
 
 import 'design_system/design_system.dart';
-import 'backend_service.dart';
 import 'services/passkey_service.dart';
 import 'services/supabase_service.dart';
 
@@ -29,74 +29,6 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _loadPasskeys();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Backend URL
-  // ---------------------------------------------------------------------------
-
-  Future<void> _updateBackendUrl() async {
-    final url = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final controller = TextEditingController(
-          text: BackendService.baseUrl.value,
-        );
-        return AlertDialog(
-          title: const Text('Backend URL'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'http://10.0.2.2:8000',
-              helperText: 'Enter the base URL of your Miru backend.',
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final navigator = Navigator.of(context);
-                BackendService.reset().then((_) {
-                  if (mounted) {
-                    navigator.pop();
-                    setState(() {});
-                  }
-                });
-              },
-              child: const Text('Reset Default'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (url != null && url.isNotEmpty) {
-      try {
-        await BackendService.setBaseUrl(url);
-        if (!mounted) return;
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Backend URL updated to: ${BackendService.baseUrl.value}',
-            ),
-          ),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -143,6 +75,11 @@ class _SettingsPageState extends State<SettingsPage> {
         const SnackBar(content: Text('Passkey registered successfully')),
       );
       await _loadPasskeys();
+    } on CredentialException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add passkey: ${e.message}')),
+      );
     } on PasskeyException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -363,17 +300,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ],
-
-          // Connection
-          const Divider(),
-          _buildSectionHeader('Connection'),
-          _buildSettingTile(
-            icon: Icons.lan_outlined,
-            title: 'Backend URL',
-            subtitle: BackendService.baseUrl.value,
-            onTap: _updateBackendUrl,
-            trailing: const Icon(Icons.edit_outlined, size: 20),
-          ),
 
           // Preferences
           const Divider(),

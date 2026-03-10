@@ -461,8 +461,19 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Mini orb logo
-          const MiruOrbVisual(size: 30),
+          // Sleek icon logo
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.xs),
+            decoration: BoxDecoration(
+              color: colors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.blur_on_rounded,
+              size: 20,
+              color: colors.primary,
+            ),
+          ),
           const SizedBox(width: AppSpacing.sm),
           // Theme-aware gradient title
           ShaderMask(
