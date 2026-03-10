@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'message_status.dart';
 
 /// Data model for a single chat message.
 ///
@@ -6,8 +7,10 @@ import 'dart:convert';
 /// its delivery state, and optional [crewTaskType] for CrewAI responses.
 class ChatMessage {
   final String id;
+  final String roomId;
+  final String? userId;
+  final String? agentId;
   final String text;
-  final bool isUser;
   final DateTime timestamp;
   final MessageStatus status;
 
@@ -16,18 +19,23 @@ class ChatMessage {
 
   const ChatMessage({
     required this.id,
+    this.roomId = 'temp',
+    this.userId,
+    this.agentId,
     required this.text,
-    required this.isUser,
     required this.timestamp,
     this.status = MessageStatus.sent,
     this.crewTaskType,
   });
 
+  bool get isUser => userId != null;
+  bool get isAgent => agentId != null;
+
   /// Creates a user message with auto-generated ID and current timestamp.
   factory ChatMessage.user(String text) => ChatMessage(
         id: _generateId(),
         text: text,
-        isUser: true,
+        userId: 'temp',
         timestamp: DateTime.now(),
         status: MessageStatus.sent,
       );
@@ -36,21 +44,28 @@ class ChatMessage {
   factory ChatMessage.assistantPlaceholder() => ChatMessage(
         id: _generateId(),
         text: '',
-        isUser: false,
+        agentId: 'temp',
         timestamp: DateTime.now(),
         status: MessageStatus.streaming,
       );
 
   ChatMessage copyWith({
+    String? id,
+    String? roomId,
+    String? userId,
+    String? agentId,
     String? text,
+    DateTime? timestamp,
     MessageStatus? status,
     String? crewTaskType,
   }) =>
       ChatMessage(
-        id: id,
+        id: id ?? this.id,
+        roomId: roomId ?? this.roomId,
+        userId: userId ?? this.userId,
+        agentId: agentId ?? this.agentId,
         text: text ?? this.text,
-        isUser: isUser,
-        timestamp: timestamp,
+        timestamp: timestamp ?? this.timestamp,
         status: status ?? this.status,
         crewTaskType: crewTaskType ?? this.crewTaskType,
       );
@@ -61,19 +76,33 @@ class ChatMessage {
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'text': text,
-        'isUser': isUser,
+        'room_id': roomId,
+        'user_id': userId,
+        'agent_id': agentId,
+        'content': text, // we map text to content for API
+        'created_at': timestamp.toIso8601String(),
         'timestamp': timestamp.toIso8601String(),
         'status': status.name,
         'crewTaskType': crewTaskType,
+        'isUser': isUser,
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
-        id: json['id'] as String,
-        text: json['text'] as String,
-        isUser: json['isUser'] as bool,
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        status: MessageStatus.values.byName(json['status'] as String),
+        id: json['id'].toString(),
+        roomId: (json['room_id'] ?? 'temp').toString(),
+        userId: json['user_id']?.toString() ??
+            (json['isUser'] == true ? 'temp' : null),
+        agentId: json['agent_id']?.toString() ??
+            (json['isUser'] == false ? 'temp' : null),
+        text: (json['content'] ?? json['text'] ?? '').toString(),
+        timestamp: json['created_at'] != null
+            ? DateTime.parse(json['created_at'].toString())
+            : (json['timestamp'] != null
+                ? DateTime.parse(json['timestamp'].toString())
+                : DateTime.now()),
+        status: json['status'] != null
+            ? MessageStatus.values.byName(json['status'] as String)
+            : MessageStatus.sent,
         crewTaskType: json['crewTaskType'] as String?,
       );
 
@@ -97,19 +126,4 @@ class ChatMessage {
     _counter++;
     return '${DateTime.now().millisecondsSinceEpoch}_$_counter';
   }
-}
-
-/// The delivery/processing status of a [ChatMessage].
-enum MessageStatus {
-  /// Message is being sent to the server.
-  sending,
-
-  /// Message has been sent and acknowledged.
-  sent,
-
-  /// Assistant response is actively streaming.
-  streaming,
-
-  /// Message delivery or generation failed.
-  failed,
 }

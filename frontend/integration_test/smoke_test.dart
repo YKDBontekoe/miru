@@ -3,13 +3,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:miru/main.dart';
+import 'package:miru/backend_service.dart';
+import 'package:miru/services/supabase_service.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Smoke tests', () {
     testWidgets('App launches and renders the chat page', (tester) async {
+      await BackendService.init();
+      await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
+
       await tester.pumpAndSettle();
 
       // App bar title is visible
@@ -18,7 +23,13 @@ void main() {
 
     testWidgets('Empty state is shown when there are no messages',
         (tester) async {
+      await BackendService.init();
+      await SupabaseService.initialize();
+
+      await BackendService.init();
+      await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
+
       await tester.pumpAndSettle();
 
       // Empty state copy
@@ -26,7 +37,13 @@ void main() {
     });
 
     testWidgets('Chat input bar is present', (tester) async {
+      await BackendService.init();
+      await SupabaseService.initialize();
+
+      await BackendService.init();
+      await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
+
       await tester.pumpAndSettle();
 
       // The text field for composing a message should exist
@@ -34,7 +51,13 @@ void main() {
     });
 
     testWidgets('Typing a message shows it in the input field', (tester) async {
+      await BackendService.init();
+      await SupabaseService.initialize();
+
+      await BackendService.init();
+      await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
+
       await tester.pumpAndSettle();
 
       const testInput = 'Hello, Miru!';

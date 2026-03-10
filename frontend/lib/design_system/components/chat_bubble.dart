@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../models/chat_message.dart';
+import '../../models/message_status.dart';
 import '../extensions/build_context_extensions.dart';
 import '../theme/app_theme_data.dart';
 import '../tokens/colors.dart';

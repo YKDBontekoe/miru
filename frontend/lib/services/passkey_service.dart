@@ -266,15 +266,15 @@ class PasskeyService {
     if (!kIsWeb) throw UnsupportedError('Web only');
 
     // Defer to the JS helper (see web/index.html for the implementation).
-    final result =
-        await _callJsHelper('miruWebauthnCreate', jsonEncode(options));
+    final result = await _callJsHelper(
+      'miruWebauthnCreate',
+      jsonEncode(options),
+    );
     return result;
   }
 
   /// Calls `navigator.credentials.get({ publicKey: options })` on web.
-  static Future<String> _webGetCredential(
-    Map<String, dynamic> options,
-  ) async {
+  static Future<String> _webGetCredential(Map<String, dynamic> options) async {
     if (!kIsWeb) throw UnsupportedError('Web only');
     final result = await _callJsHelper('miruWebauthnGet', jsonEncode(options));
     return result;

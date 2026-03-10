@@ -20,7 +20,7 @@ class CrewResult {
 }
 
 class ApiService {
-  static String get _baseUrl => BackendService.baseUrl.value;
+  static String get baseUrl => BackendService.baseUrl.value;
 
   /// Common headers for all authenticated requests.
   ///
@@ -36,7 +36,7 @@ class ApiService {
 
   /// Streams a chat response from the backend.
   static Stream<String> sendMessage(String message) async* {
-    final uri = Uri.parse('$_baseUrl/chat');
+    final uri = Uri.parse('$baseUrl/chat');
 
     final client = http.Client();
     try {
@@ -56,11 +56,13 @@ class ApiService {
       if (streamedResponse.statusCode != 200) {
         final errorBody = await streamedResponse.stream.bytesToString();
         throw Exception(
-            'Server error (${streamedResponse.statusCode}): $errorBody');
+          'Server error (${streamedResponse.statusCode}): $errorBody',
+        );
       }
 
-      await for (final chunk
-          in streamedResponse.stream.transform(utf8.decoder)) {
+      await for (final chunk in streamedResponse.stream.transform(
+        utf8.decoder,
+      )) {
         yield chunk;
       }
     } finally {
@@ -70,7 +72,7 @@ class ApiService {
 
   /// Runs a CrewAI crew for [message] and returns the full structured result.
   static Future<CrewResult> runCrew(String message) async {
-    final uri = Uri.parse('$_baseUrl/crew');
+    final uri = Uri.parse('$baseUrl/crew');
 
     final response = await http.post(
       uri,
@@ -89,11 +91,135 @@ class ApiService {
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return CrewResult.fromJson(json);
   }
+
+  // --- Agents API ---
+
+  static Future<List<Map<String, dynamic>>> getAgents() async {
+    final response =
+        await http.get(Uri.parse('$baseUrl/api/agents'), headers: _headers);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load agents: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createAgent(
+    String name,
+    String personality,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/agents'),
+      headers: _headers,
+      body: jsonEncode({'name': name, 'personality': personality}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to create agent: ${response.statusCode}');
+    }
+  }
+
+  // --- Chat Rooms API ---
+
+  static Future<List<Map<String, dynamic>>> getRooms() async {
+    final response =
+        await http.get(Uri.parse('$baseUrl/api/rooms'), headers: _headers);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load rooms: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createRoom(String name) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/rooms'),
+      headers: _headers,
+      body: jsonEncode({'name': name}),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to create room: ${response.statusCode}');
+    }
+  }
+
+  static Future<void> addAgentToRoom(String roomId, String agentId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/rooms/$roomId/agents'),
+      headers: _headers,
+      body: jsonEncode({'agent_id': agentId}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to add agent to room: ${response.statusCode}');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getRoomAgents(String roomId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/rooms/$roomId/agents'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load room agents: ${response.statusCode}');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getRoomMessages(
+      String roomId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/rooms/$roomId/messages'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load room messages: ${response.statusCode}');
+    }
+  }
+
+  static Stream<String> streamRoomChat(String roomId, String message) async* {
+    final uri = Uri.parse('$baseUrl/api/rooms/$roomId/chat');
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', uri)
+        ..headers.addAll(_headers)
+        ..body = jsonEncode(<String, dynamic>{
+          'content': message,
+        });
+
+      final streamedResponse = await client.send(request);
+
+      if (streamedResponse.statusCode == 401) {
+        throw const ApiAuthException('Session expired. Please sign in again.');
+      }
+
+      if (streamedResponse.statusCode != 200) {
+        final errorBody = await streamedResponse.stream.bytesToString();
+        throw Exception(
+          'Server error (${streamedResponse.statusCode}): $errorBody',
+        );
+      }
+
+      await for (final chunk in streamedResponse.stream.transform(
+        utf8.decoder,
+      )) {
+        yield chunk;
+      }
+    } finally {
+      client.close();
+    }
+  }
 }
 
-/// Thrown when the backend responds with 401 Unauthorized.
-///
-/// The UI layer should catch this and redirect to [AuthPage].
 class ApiAuthException implements Exception {
   final String message;
   const ApiAuthException(this.message);
@@ -101,3 +227,7 @@ class ApiAuthException implements Exception {
   @override
   String toString() => 'ApiAuthException: $message';
 }
+
+/// Thrown when the backend responds with 401 Unauthorized.
+///
+/// The UI layer should catch this and redirect to [AuthPage].

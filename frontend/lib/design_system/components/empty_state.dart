@@ -61,14 +61,8 @@ class AppEmptyState extends StatelessWidget {
                   final isDark = context.isDark;
                   return LinearGradient(
                     colors: isDark
-                        ? [
-                            AppColors.onSurfaceDark,
-                            AppColors.primaryLight,
-                          ]
-                        : [
-                            AppColors.onSurfaceLight,
-                            AppColors.primaryDark,
-                          ],
+                        ? [AppColors.onSurfaceDark, AppColors.primaryLight]
+                        : [AppColors.onSurfaceLight, AppColors.primaryDark],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ).createShader(bounds);
