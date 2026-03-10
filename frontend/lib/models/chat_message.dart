@@ -81,8 +81,10 @@ class ChatMessage {
         'agent_id': agentId,
         'content': text, // we map text to content for API
         'created_at': timestamp.toIso8601String(),
+        'timestamp': timestamp.toIso8601String(),
         'status': status.name,
         'crewTaskType': crewTaskType,
+        'isUser': isUser,
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(

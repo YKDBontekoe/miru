@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -27,7 +27,7 @@ def override_auth() -> Any:
     app.dependency_overrides.pop("app.auth.get_current_user", None)
 
 
-@patch("app.routes.create_agent")
+@patch("app.routes.create_agent", new_callable=AsyncMock)
 def test_create_agent_route(mock_create_agent: MagicMock) -> None:
     mock_create_agent.return_value = AgentResponse(
         id="123", name="Bot", personality="Nice", created_at="now"
@@ -45,7 +45,7 @@ def test_create_agent_route(mock_create_agent: MagicMock) -> None:
     assert response.json()["name"] == "Bot"
 
 
-@patch("app.routes.get_agents")
+@patch("app.routes.get_agents", new_callable=AsyncMock)
 def test_get_agents_route(mock_get_agents: MagicMock) -> None:
     mock_get_agents.return_value = [
         AgentResponse(id="123", name="Bot", personality="Nice", created_at="now")
@@ -59,7 +59,7 @@ def test_get_agents_route(mock_get_agents: MagicMock) -> None:
     assert response.json()[0]["name"] == "Bot"
 
 
-@patch("app.routes.create_room")
+@patch("app.routes.create_room", new_callable=AsyncMock)
 def test_create_room_route(mock_create_room: MagicMock) -> None:
     mock_create_room.return_value = RoomResponse(id="room123", name="Chat", created_at="now")
 
@@ -72,7 +72,7 @@ def test_create_room_route(mock_create_room: MagicMock) -> None:
     assert response.json()["name"] == "Chat"
 
 
-@patch("app.routes.get_rooms")
+@patch("app.routes.get_rooms", new_callable=AsyncMock)
 def test_get_rooms_route(mock_get_rooms: MagicMock) -> None:
     mock_get_rooms.return_value = [RoomResponse(id="room123", name="Chat", created_at="now")]
 
@@ -84,7 +84,7 @@ def test_get_rooms_route(mock_get_rooms: MagicMock) -> None:
     assert response.json()[0]["name"] == "Chat"
 
 
-@patch("app.routes.add_agent_to_room")
+@patch("app.routes.add_agent_to_room", new_callable=AsyncMock)
 def test_add_agent_to_room_route(mock_add: MagicMock) -> None:
     mock_add.return_value = {"status": "added"}
 
@@ -99,7 +99,7 @@ def test_add_agent_to_room_route(mock_add: MagicMock) -> None:
     assert response.json() == {"status": "added"}
 
 
-@patch("app.routes.get_room_agents")
+@patch("app.routes.get_room_agents", new_callable=AsyncMock)
 def test_get_room_agents_route(mock_get: MagicMock) -> None:
     mock_get.return_value = [
         AgentResponse(id="123", name="Bot", personality="Nice", created_at="now")
@@ -114,7 +114,7 @@ def test_get_room_agents_route(mock_get: MagicMock) -> None:
     assert len(response.json()) == 1
 
 
-@patch("app.routes.get_room_messages")
+@patch("app.routes.get_room_messages", new_callable=AsyncMock)
 def test_get_room_messages_route(mock_get: MagicMock) -> None:
     mock_get.return_value = [
         ChatMessageResponse(
@@ -171,7 +171,7 @@ def test_room_chat_route_crew_mock(mock_stream: MagicMock) -> None:
 # Import the app to get the router
 
 
-@patch("app.routes.create_agent")
+@patch("app.routes.create_agent", new_callable=AsyncMock)
 def test_create_agent_route_invalid(mock_create_agent: MagicMock) -> None:
     # We must mock auth to bypass JWT verification
     with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(uuid4())}):
