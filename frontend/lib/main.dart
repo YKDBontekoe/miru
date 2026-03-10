@@ -65,6 +65,3 @@ class _MiruAppState extends State<MiruApp> {
     );
   }
 }
-
-// Update routes or menu to access AgentsPage and RoomsPage
-// Note: as I cannot reliably sed the main file without breaking it, I'll provide instructions if it was real.

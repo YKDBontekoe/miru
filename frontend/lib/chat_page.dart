@@ -10,6 +10,8 @@ import 'design_system/design_system.dart';
 import 'models/chat_message.dart';
 import 'models/message_status.dart';
 import 'settings_page.dart';
+import 'rooms_page.dart';
+import 'agents_page.dart';
 
 // ---------------------------------------------------------------------------
 // Page
@@ -297,6 +299,20 @@ class _ChatPageState extends State<ChatPage> {
             ),
           );
         },
+        onRoomsPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const RoomsPage(),
+            ),
+          );
+        },
+        onAgentsPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AgentsPage(),
+            ),
+          );
+        },
       ),
       body: Stack(
         children: [
@@ -426,12 +442,16 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showNewChat;
   final VoidCallback onNewChat;
   final VoidCallback onSettingsPressed;
+  final VoidCallback? onRoomsPressed;
+  final VoidCallback? onAgentsPressed;
 
   const _MiruAppBar({
     required this.colors,
     required this.showNewChat,
     required this.onNewChat,
     required this.onSettingsPressed,
+    this.onRoomsPressed,
+    this.onAgentsPressed,
   });
 
   @override
@@ -487,7 +507,18 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
+          icon: const Icon(Icons.group),
+          tooltip: 'Rooms',
+          onPressed: onRoomsPressed,
+        ),
+        IconButton(
+          icon: const Icon(Icons.smart_toy),
+          tooltip: 'Agents',
+          onPressed: onAgentsPressed,
+        ),
+        IconButton(
           icon: const Icon(Icons.settings_outlined),
+          tooltip: 'Settings',
           onPressed: onSettingsPressed,
         ),
       ],
