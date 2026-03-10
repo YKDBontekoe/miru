@@ -6,7 +6,7 @@ from app.crew import _create_sequential_crew, detect_task_type
 
 
 @patch("app.crew.Crew")
-def test_create_sequential_crew(mock_crew_class):
+def test_create_sequential_crew(mock_crew_class: MagicMock) -> None:
     agent1 = MagicMock(spec=Agent)
     task1 = MagicMock(spec=Task)
 
@@ -17,7 +17,7 @@ def test_create_sequential_crew(mock_crew_class):
     )
 
 
-def test_detect_task_type():
+def test_detect_task_type() -> None:
     assert detect_task_type("I want to research something") == "research"
     assert detect_task_type("Help me plan my day") == "planning"
     assert detect_task_type("Please summarize this text") == "summarisation"

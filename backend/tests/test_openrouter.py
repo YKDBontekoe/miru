@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from app.openrouter import _get_client_and_model
 
 
-def test_get_client_and_model():
+def test_get_client_and_model() -> None:
     with (
         patch("app.openrouter.get_client") as mock_get_client,
         patch("app.openrouter.get_settings") as mock_settings,

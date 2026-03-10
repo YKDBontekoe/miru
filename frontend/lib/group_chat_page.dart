@@ -41,12 +41,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
       });
       _scrollToBottom();
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -63,7 +63,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || _isSending) return;
+    if (_messageController.text.trim().isEmpty || _isSending) {
+      return;
+    }
 
     final userMessageText = _messageController.text.trim();
     _messageController.clear();
@@ -91,7 +93,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
         userMessageText,
       );
       await for (final chunk in stream) {
-        if (!mounted) break;
+        if (!mounted) {
+          break;
+        }
         setState(() {
           _streamingMessage += chunk;
         });
@@ -101,10 +105,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
       // Reload to get real saved messages instead of trying to parse the text stream
       await _loadData();
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -120,11 +122,13 @@ class _GroupChatPageState extends State<GroupChatPage> {
       final allAgentsData = await ApiService.getAgents();
       final allAgents = allAgentsData.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       showDialog(
         context: context,
-        builder: (context) {
+        builder: (dialogContext) {
           return AlertDialog(
             title: const Text('Add Agent to Room'),
             content: SizedBox(
@@ -145,7 +149,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     onTap: isAlreadyInRoom
                         ? null
                         : () async {
-                            Navigator.pop(context);
+                            Navigator.pop(dialogContext);
                             try {
                               await ApiService.addAgentToRoom(
                                 widget.room.id,
@@ -153,10 +157,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                               );
                               _loadData();
                             } catch (e) {
-                              if (mounted)
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error adding: $e')),
-                                );
+                              if (!dialogContext.mounted) return;
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                SnackBar(content: Text('Error adding: $e')),
+                              );
                             }
                           },
                   );
@@ -167,15 +171,15 @@ class _GroupChatPageState extends State<GroupChatPage> {
         },
       );
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
     }
   }
 
   String _getSenderName(ChatMessage msg) {
-    if (msg.isUser) return 'Me';
+    if (msg.isUser) {
+      return 'Me';
+    }
     if (msg.isAgent) {
       final agent = _roomAgents.where((a) => a.id == msg.agentId).firstOrNull;
       return agent?.name ?? 'Agent';
@@ -201,7 +205,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           // Agents in room indicator
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            color: Theme.of(context).colorScheme.surfaceVariant,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             width: double.infinity,
             child: Text(
               'Members: You, ${_roomAgents.map((a) => a.name).join(', ')}',

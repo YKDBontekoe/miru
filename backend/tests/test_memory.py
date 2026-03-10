@@ -6,7 +6,7 @@ from app.memory import _search_memories_by_vector
 
 
 @pytest.mark.asyncio
-async def test_search_memories_by_vector():
+async def test_search_memories_by_vector() -> None:
     # Mock embed and get_supabase
     with (
         patch("app.memory.embed", new_callable=AsyncMock) as mock_embed,

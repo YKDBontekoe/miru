@@ -44,7 +44,7 @@ class _AgentsPageState extends State<AgentsPage> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Create New Persona'),
           content: Column(
@@ -71,9 +71,10 @@ class _AgentsPageState extends State<AgentsPage> {
             ElevatedButton(
               onPressed: () async {
                 if (nameController.text.isEmpty ||
-                    personalityController.text.isEmpty)
+                    personalityController.text.isEmpty) {
                   return;
-                Navigator.pop(context);
+                }
+                Navigator.pop(dialogContext);
                 try {
                   await ApiService.createAgent(
                     nameController.text,
@@ -81,10 +82,10 @@ class _AgentsPageState extends State<AgentsPage> {
                   );
                   _loadAgents();
                 } catch (e) {
-                  if (mounted)
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(
+                    dialogContext,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               child: const Text('Create'),

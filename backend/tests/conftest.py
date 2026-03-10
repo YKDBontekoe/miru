@@ -57,7 +57,7 @@ def make_jwt(user_id: str | None = None, expired: bool = False) -> str:
         "iat": now,
         "exp": exp,
     }
-    return jwt.encode(payload, _JWT_SECRET, algorithm=_JWT_ALGORITHM)
+    return str(jwt.encode(payload, _JWT_SECRET, algorithm=_JWT_ALGORITHM))
 
 
 def auth_headers(user_id: str | None = None) -> dict[str, str]:
@@ -79,12 +79,12 @@ def client() -> TestClient:
 
 
 @pytest.fixture()
-def test_user_id() -> str:
+def test_user_id() -> Any:
     """A stable UUID used as the authenticated user in tests."""
     return "11111111-1111-1111-1111-111111111111"
 
 
 @pytest.fixture()
-def authed_headers(test_user_id: str) -> dict[str, str]:
+def authed_headers(test_user_id: Any) -> dict[str, str]:
     """Authorization headers for the test user."""
     return auth_headers(user_id=test_user_id)

@@ -30,12 +30,14 @@ class _RoomsPageState extends State<RoomsPage> {
         _rooms = data.map((dynamic e) => ChatRoom.fromJson(e as Map<String, dynamic>)).toList();
       });
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -43,7 +45,7 @@ class _RoomsPageState extends State<RoomsPage> {
     final nameController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Create Group Chat'),
           content: TextField(
@@ -57,16 +59,16 @@ class _RoomsPageState extends State<RoomsPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (nameController.text.isEmpty) return;
-                Navigator.pop(context);
+                if (nameController.text.isEmpty) {
+                  return;
+                }
+                Navigator.pop(dialogContext);
                 try {
                   await ApiService.createRoom(nameController.text);
                   _loadRooms();
                 } catch (e) {
-                  if (mounted)
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               child: const Text('Create'),
@@ -105,8 +107,8 @@ class _RoomsPageState extends State<RoomsPage> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateRoomDialog,
-        child: const Icon(Icons.add),
         tooltip: 'New Group Chat',
+        child: const Icon(Icons.add),
       ),
     );
   }
