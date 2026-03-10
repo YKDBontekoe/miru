@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-
 import 'package:http/http.dart' as http;
 
 import 'backend_service.dart';
@@ -15,9 +14,9 @@ class CrewResult {
   const CrewResult({required this.taskType, required this.result});
 
   factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
-    taskType: json['task_type'] as String? ?? 'general',
-    result: json['result'] as String? ?? '',
-  );
+        taskType: json['task_type'] as String? ?? 'general',
+        result: json['result'] as String? ?? '',
+      );
 }
 
 class ApiService {
@@ -93,11 +92,11 @@ class ApiService {
     return CrewResult.fromJson(json);
   }
 
-
   // --- Agents API ---
 
   static Future<List<Map<String, dynamic>>> getAgents() async {
-    final response = await http.get(Uri.parse('$baseUrl/api/agents'), headers: _headers);
+    final response =
+        await http.get(Uri.parse('$baseUrl/api/agents'), headers: _headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
       return data.map((e) => e as Map<String, dynamic>).toList();
@@ -111,7 +110,8 @@ class ApiService {
     String personality,
   ) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/agents'), headers: _headers,
+      Uri.parse('$baseUrl/api/agents'),
+      headers: _headers,
       body: jsonEncode({'name': name, 'personality': personality}),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -124,7 +124,8 @@ class ApiService {
   // --- Chat Rooms API ---
 
   static Future<List<Map<String, dynamic>>> getRooms() async {
-    final response = await http.get(Uri.parse('$baseUrl/api/rooms'), headers: _headers);
+    final response =
+        await http.get(Uri.parse('$baseUrl/api/rooms'), headers: _headers);
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
       return data.map((e) => e as Map<String, dynamic>).toList();
@@ -135,7 +136,8 @@ class ApiService {
 
   static Future<Map<String, dynamic>> createRoom(String name) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/rooms'), headers: _headers,
+      Uri.parse('$baseUrl/api/rooms'),
+      headers: _headers,
       body: jsonEncode({'name': name}),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -147,7 +149,8 @@ class ApiService {
 
   static Future<void> addAgentToRoom(String roomId, String agentId) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/rooms/$roomId/agents'), headers: _headers,
+      Uri.parse('$baseUrl/api/rooms/$roomId/agents'),
+      headers: _headers,
       body: jsonEncode({'agent_id': agentId}),
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -157,7 +160,8 @@ class ApiService {
 
   static Future<List<Map<String, dynamic>>> getRoomAgents(String roomId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/rooms/$roomId/agents'), headers: _headers,
+      Uri.parse('$baseUrl/api/rooms/$roomId/agents'),
+      headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
@@ -167,9 +171,11 @@ class ApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getRoomMessages(String roomId) async {
+  static Future<List<Map<String, dynamic>>> getRoomMessages(
+      String roomId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/rooms/$roomId/messages'), headers: _headers,
+      Uri.parse('$baseUrl/api/rooms/$roomId/messages'),
+      headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;

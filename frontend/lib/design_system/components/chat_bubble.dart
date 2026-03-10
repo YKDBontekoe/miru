@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 import '../../models/message_status.dart';
 import '../extensions/build_context_extensions.dart';
 import '../theme/app_theme_data.dart';
@@ -70,9 +69,8 @@ class ChatBubble extends StatelessWidget {
           maxWidth: screenWidth * AppSpacing.bubbleMaxWidthFraction,
         ),
         child: Column(
-          crossAxisAlignment: isUser
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             // Crew task type badge (assistant only)
             if (!isUser && crewTaskType != null) ...[
@@ -273,9 +271,8 @@ class _BubbleContainer extends StatelessWidget {
           bottomRight: Radius.circular(AppSpacing.radiusXl),
         ),
         border: Border.all(
-          color: isFailed
-              ? AppColors.error.withValues(alpha: 0.5)
-              : colors.border,
+          color:
+              isFailed ? AppColors.error.withValues(alpha: 0.5) : colors.border,
           width: 0.5,
         ),
       ),

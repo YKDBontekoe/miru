@@ -10,7 +10,6 @@ class AgentsPage extends StatefulWidget {
 }
 
 class _AgentsPageState extends State<AgentsPage> {
-
   List<Agent> _agents = [];
   bool _isLoading = true;
 
@@ -25,7 +24,9 @@ class _AgentsPageState extends State<AgentsPage> {
     try {
       final data = await ApiService.getAgents();
       setState(() {
-        _agents = data.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
+        _agents = data
+            .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
+            .toList();
       });
     } catch (e) {
       if (mounted) {
@@ -103,21 +104,21 @@ class _AgentsPageState extends State<AgentsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _agents.isEmpty
-          ? const Center(child: Text('No agents created yet.'))
-          : ListView.builder(
-              itemCount: _agents.length,
-              itemBuilder: (context, index) {
-                final agent = _agents[index];
-                return ListTile(
-                  title: Text(agent.name),
-                  subtitle: Text(
-                    agent.personality,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              },
-            ),
+              ? const Center(child: Text('No agents created yet.'))
+              : ListView.builder(
+                  itemCount: _agents.length,
+                  itemBuilder: (context, index) {
+                    final agent = _agents[index];
+                    return ListTile(
+                      title: Text(agent.name),
+                      subtitle: Text(
+                        agent.personality,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateAgentDialog,
         child: const Icon(Icons.add),

@@ -98,8 +98,7 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isAtBottom =
-        _scrollController.position.pixels >=
+    final isAtBottom = _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 80;
     if (_showScrollToBottom == isAtBottom) {
       setState(() => _showScrollToBottom = !isAtBottom);

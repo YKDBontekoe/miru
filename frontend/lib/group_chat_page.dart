@@ -13,7 +13,6 @@ class GroupChatPage extends StatefulWidget {
 }
 
 class _GroupChatPageState extends State<GroupChatPage> {
-
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -36,13 +35,18 @@ class _GroupChatPageState extends State<GroupChatPage> {
       final messagesData = await ApiService.getRoomMessages(widget.room.id);
 
       setState(() {
-        _roomAgents = agentsData.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
-        _messages = messagesData.map((dynamic e) => ChatMessage.fromJson(e as Map<String, dynamic>)).toList();
+        _roomAgents = agentsData
+            .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
+            .toList();
+        _messages = messagesData
+            .map((dynamic e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+            .toList();
       });
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -79,7 +83,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           roomId: widget.room.id,
           userId: 'temp', // This indicates it's from the user
           text: userMessageText,
-          createdAt: DateTime.now().toIso8601String(),
+          timestamp: DateTime.now(),
         ),
       );
       _isSending = true;
@@ -106,7 +110,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
       await _loadData();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to send: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -120,7 +125,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
   void _showAddAgentDialog() async {
     try {
       final allAgentsData = await ApiService.getAgents();
-      final allAgents = allAgentsData.map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>)).toList();
+      final allAgents = allAgentsData
+          .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
+          .toList();
 
       if (!mounted) {
         return;
@@ -172,7 +179,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error loading agents: $e')));
     }
   }
 
@@ -225,9 +233,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                       final isMe = msg.isUser;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        alignment: isMe
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
+                        alignment:
+                            isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: Column(
                           crossAxisAlignment: isMe
                               ? CrossAxisAlignment.end
@@ -235,7 +242,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
                           children: [
                             Text(
                               _getSenderName(msg),
-                              style: Theme.of(context).textTheme.bodySmall
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
                                       context,

@@ -12,7 +12,6 @@ class RoomsPage extends StatefulWidget {
 }
 
 class _RoomsPageState extends State<RoomsPage> {
-
   List<ChatRoom> _rooms = [];
   bool _isLoading = true;
 
@@ -27,7 +26,9 @@ class _RoomsPageState extends State<RoomsPage> {
     try {
       final data = await ApiService.getRooms();
       setState(() {
-        _rooms = data.map((dynamic e) => ChatRoom.fromJson(e as Map<String, dynamic>)).toList();
+        _rooms = data
+            .map((dynamic e) => ChatRoom.fromJson(e as Map<String, dynamic>))
+            .toList();
       });
     } catch (e) {
       if (!mounted) return;
@@ -68,7 +69,8 @@ class _RoomsPageState extends State<RoomsPage> {
                   _loadRooms();
                 } catch (e) {
                   if (!dialogContext.mounted) return;
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(dialogContext)
+                      .showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               child: const Text('Create'),
@@ -93,18 +95,18 @@ class _RoomsPageState extends State<RoomsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _rooms.isEmpty
-          ? const Center(child: Text('No group chats yet.'))
-          : ListView.builder(
-              itemCount: _rooms.length,
-              itemBuilder: (context, index) {
-                final room = _rooms[index];
-                return ListTile(
-                  title: Text(room.name),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _openRoom(room),
-                );
-              },
-            ),
+              ? const Center(child: Text('No group chats yet.'))
+              : ListView.builder(
+                  itemCount: _rooms.length,
+                  itemBuilder: (context, index) {
+                    final room = _rooms[index];
+                    return ListTile(
+                      title: Text(room.name),
+                      trailing: const Icon(Icons.arrow_forward_ios),
+                      onTap: () => _openRoom(room),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateRoomDialog,
         tooltip: 'New Group Chat',

@@ -1,4 +1,7 @@
-import 'dart:convert';
+import re
+
+with open("frontend/lib/models/chat_message.dart", "w") as f:
+    f.write("""import 'dart:convert';
 import 'message_status.dart';
 
 /// Data model for a single chat message.
@@ -88,19 +91,11 @@ class ChatMessage {
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
         id: json['id'].toString(),
         roomId: (json['room_id'] ?? 'temp').toString(),
-        userId: json['user_id']?.toString() ??
-            (json['isUser'] == true ? 'temp' : null),
-        agentId: json['agent_id']?.toString() ??
-            (json['isUser'] == false ? 'temp' : null),
+        userId: json['user_id']?.toString() ?? (json['isUser'] == true ? 'temp' : null),
+        agentId: json['agent_id']?.toString() ?? (json['isUser'] == false ? 'temp' : null),
         text: (json['content'] ?? json['text'] ?? '').toString(),
-        timestamp: json['created_at'] != null
-            ? DateTime.parse(json['created_at'].toString())
-            : (json['timestamp'] != null
-                ? DateTime.parse(json['timestamp'].toString())
-                : DateTime.now()),
-        status: json['status'] != null
-            ? MessageStatus.values.byName(json['status'] as String)
-            : MessageStatus.sent,
+        timestamp: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : (json['timestamp'] != null ? DateTime.parse(json['timestamp'].toString()) : DateTime.now()),
+        status: json['status'] != null ? MessageStatus.values.byName(json['status'] as String) : MessageStatus.sent,
         crewTaskType: json['crewTaskType'] as String?,
       );
 
@@ -125,3 +120,4 @@ class ChatMessage {
     return '${DateTime.now().millisecondsSinceEpoch}_$_counter';
   }
 }
+""")
