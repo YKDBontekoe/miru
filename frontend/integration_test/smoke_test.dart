@@ -10,58 +10,38 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Smoke tests', () {
-    testWidgets('App launches and renders the chat page', (tester) async {
+    testWidgets('App launches and renders the auth page', (tester) async {
       await BackendService.init();
       await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
 
       await tester.pumpAndSettle();
 
-      // App bar title is visible
+      // Auth page title is visible
       expect(find.text('Miru'), findsWidgets);
     });
 
-    testWidgets('Empty state is shown when there are no messages', (
-      tester,
-    ) async {
+    testWidgets('Email input bar is present', (tester) async {
       await BackendService.init();
       await SupabaseService.initialize();
 
-      await BackendService.init();
-      await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
 
       await tester.pumpAndSettle();
 
-      // Empty state copy
-      expect(find.text("Hi, I'm Miru."), findsOneWidget);
-    });
-
-    testWidgets('Chat input bar is present', (tester) async {
-      await BackendService.init();
-      await SupabaseService.initialize();
-
-      await BackendService.init();
-      await SupabaseService.initialize();
-      await tester.pumpWidget(const MiruApp());
-
-      await tester.pumpAndSettle();
-
-      // The text field for composing a message should exist
+      // The text field for email
       expect(find.byType(TextField), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('Typing a message shows it in the input field', (tester) async {
+    testWidgets('Typing an email shows it in the input field', (tester) async {
       await BackendService.init();
       await SupabaseService.initialize();
 
-      await BackendService.init();
-      await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
 
       await tester.pumpAndSettle();
 
-      const testInput = 'Hello, Miru!';
+      const testInput = 'test@example.com';
       await tester.enterText(find.byType(TextField).first, testInput);
       await tester.pump();
 
