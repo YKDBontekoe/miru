@@ -36,7 +36,7 @@ jobs:
         working-directory: ./frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -78,7 +78,7 @@ jobs:
         working-directory: ./frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -166,7 +166,7 @@ jobs:
       name: staging-android
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download AAB artifact
         uses: actions/download-artifact@v4
@@ -192,7 +192,7 @@ jobs:
       name: production-android
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download AAB artifact
         uses: actions/download-artifact@v4
