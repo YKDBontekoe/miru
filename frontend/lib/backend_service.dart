@@ -15,6 +15,10 @@ class BackendService {
   static final ValueNotifier<String> baseUrl = ValueNotifier(_defaultUrl);
   static final ValueNotifier<bool> onboardingComplete = ValueNotifier(false);
 
+  // A visible-for-testing flag to bypass the backend wait in tests
+  @visibleForTesting
+  static bool bypassWaitForBackend = false;
+
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -62,6 +66,11 @@ class BackendService {
     int maxAttempts = 30,
     Duration initialDelay = const Duration(seconds: 1),
   }) async {
+    if (bypassWaitForBackend) {
+      debugPrint('Bypassing backend wait for testing');
+      return;
+    }
+
     final client = http.Client();
     Duration currentDelay = initialDelay;
 
