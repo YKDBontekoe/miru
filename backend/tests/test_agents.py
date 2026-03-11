@@ -206,6 +206,7 @@ async def test_save_message_agent(mock_supabase: MagicMock) -> None:
     )
 
 
+@patch("app.agents.chat_completion")
 @pytest.mark.asyncio
 @patch("app.agents.save_message")
 @patch("app.agents.get_room_messages")
@@ -220,6 +221,7 @@ async def test_stream_room_responses(
     mock_get_agents: MagicMock,
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
+    mock_chat_completion: MagicMock,
 ) -> None:
     user_id = uuid4()
 
@@ -238,7 +240,10 @@ async def test_stream_room_responses(
     mock_msg.agent_id = None
     mock_msg.content = "Hi there"
     mock_get_room_messages.return_value = [mock_msg]
-    mock_get_agents.return_value = []
+    mock_get_agents.return_value = [mock_agent]
+
+    # Mock orchestrator behavior: agent-123 speaks, then stop
+    mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
 
     # Mock stream chat to yield strings
     async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
@@ -295,6 +300,7 @@ async def test_stream_room_responses_no_agents(
     assert chunks == ["No agents in this room to respond."]
 
 
+@patch("app.agents.chat_completion")
 @pytest.mark.asyncio
 @patch("app.agents.save_message")
 @patch("app.agents.get_room_messages")
@@ -309,6 +315,7 @@ async def test_stream_room_responses_no_history(
     mock_get_agents: MagicMock,
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
+    mock_chat_completion: MagicMock,
 ) -> None:
     user_id = uuid4()
     mock_retrieve_memories.return_value = []
@@ -320,7 +327,10 @@ async def test_stream_room_responses_no_history(
     mock_get_room_agents.return_value = [mock_agent]
 
     mock_get_room_messages.return_value = []
-    mock_get_agents.return_value = []
+    mock_get_agents.return_value = [mock_agent]
+
+    # Mock orchestrator behavior: agent-123 speaks, then stop
+    mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
 
     async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
         yield "Hello"
@@ -334,6 +344,7 @@ async def test_stream_room_responses_no_history(
     assert chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
 
 
+@patch("app.agents.chat_completion")
 @pytest.mark.asyncio
 @patch("app.agents.save_message")
 @patch("app.agents.get_room_messages")
@@ -348,6 +359,7 @@ async def test_stream_room_responses_with_agent_history(
     mock_get_agents: MagicMock,
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
+    mock_chat_completion: MagicMock,
 ) -> None:
     user_id = uuid4()
     mock_retrieve_memories.return_value = []
@@ -364,6 +376,9 @@ async def test_stream_room_responses_with_agent_history(
     mock_msg.content = "Hi there"
     mock_get_room_messages.return_value = [mock_msg]
     mock_get_agents.return_value = [mock_agent]
+
+    # Mock orchestrator behavior: agent-123 speaks, then stop
+    mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
 
     async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
         yield "Hello"
