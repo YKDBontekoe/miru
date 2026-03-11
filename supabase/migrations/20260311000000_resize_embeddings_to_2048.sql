@@ -23,11 +23,10 @@ TRUNCATE public.memories;
 ALTER TABLE public.memories
     ALTER COLUMN embedding TYPE vector(2048);
 
--- Step 4: Recreate the IVFFlat index for the new dimension
+-- Step 4: Recreate the HNSW index for the new dimension (IVFFlat limit is 2000)
 CREATE INDEX memories_embedding_idx
     ON public.memories
-    USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
+    USING hnsw (embedding vector_cosine_ops);
 
 -- Step 5: Recreate the match_memories RPC with vector(2048) and all three optional filters
 CREATE FUNCTION public.match_memories(

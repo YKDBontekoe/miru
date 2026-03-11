@@ -20,9 +20,7 @@ def test_list_memories_route(mock_get_supabase: MagicMock) -> None:
     ]
 
     # Chain the mocks correctly
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-        mock_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_execute
 
     with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
         response = client.get("/api/memories", headers={"Authorization": "Bearer fake_token"})
@@ -48,9 +46,7 @@ def test_delete_memory_route(mock_get_supabase: MagicMock) -> None:
     mock_delete_execute.data = []
 
     # Chain for verify
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = (
-        mock_verify_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = mock_verify_execute
     # Chain for delete
     mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value = (
         mock_delete_execute
@@ -75,9 +71,7 @@ def test_delete_memory_route_not_found(mock_get_supabase: MagicMock) -> None:
     mock_verify_execute = MagicMock()
     mock_verify_execute.data = []
 
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = (
-        mock_verify_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = mock_verify_execute
 
     with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
         response = client.delete(
@@ -112,9 +106,7 @@ def test_list_memory_graph_route(
         },
     ]
 
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-        mock_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_execute
 
     mock_get_memory_relationships.return_value = [
         {
@@ -170,9 +162,7 @@ def test_list_memory_graph_route_with_graph_error(
             "created_at": "2024-01-01T00:00:00Z",
         }
     ]
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-        mock_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_execute
 
     mock_get_memory_relationships.side_effect = RuntimeError("Neo4j offline")
 
