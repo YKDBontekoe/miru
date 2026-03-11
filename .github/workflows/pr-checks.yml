@@ -6,24 +6,50 @@ on:
   push:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: '3.11'
   FLUTTER_VERSION: '3.41.0'
 
 jobs:
-  # Backend checks — only runs when backend files change
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            workflows:
+              - '.github/workflows/pr-checks.yml'
+              - '.github/workflows/reusable-*.yml'
+
   backend-checks:
     name: Backend PR Checks
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
     defaults:
       run:
         working-directory: ./backend
-
-    # Only run when backend files are touched (or on pushes to main/develop without path filter)
-    if: |
-      github.event_name == 'push' ||
-      contains(github.event.pull_request.changed_files, 'backend') ||
-      true
 
     steps:
       - uses: actions/checkout@v6
@@ -78,6 +104,8 @@ jobs:
   flutter-checks:
     name: Flutter PR Checks
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
     defaults:
       run:
         working-directory: ./frontend
@@ -95,23 +123,7 @@ jobs:
       - name: Clean and install dependencies
         run: |
           flutter clean
-          flutter pub get --verbose 2>&1 | tail -100
-
-      - name: Verify project structure
-        run: |
-          pwd
-          ls -la
-          ls -la lib/
-          cat pubspec.yaml | head -5
-          git status
-
-      - name: Verify dependencies
-        run: |
-          ls -la .dart_tool/ || echo "No .dart_tool directory"
-          if [ -f .dart_tool/package_config.json ]; then
-            cat .dart_tool/package_config.json | grep -A5 '"miru"' || echo "miru package not found in config"
-          fi
-          flutter pub deps
+          flutter pub get
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -130,8 +142,10 @@ jobs:
   flutter-web-build-check:
     name: Flutter Web Build Check
     runs-on: ubuntu-latest
+    needs: changes
     if: |
       github.event_name == 'pull_request' &&
+      (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true') &&
       (
         startsWith(github.event.pull_request.head.ref, 'feature/') ||
         github.base_ref == 'main' ||

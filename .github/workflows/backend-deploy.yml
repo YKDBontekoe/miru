@@ -11,6 +11,13 @@ on:
     paths:
       - 'backend/**'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: '3.12'
   CONTAINER_APP_NAME: aca-miru
@@ -22,6 +29,7 @@ jobs:
   test:
     name: Test Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: ./backend
@@ -90,6 +98,7 @@ jobs:
   lint:
     name: Lint Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./backend
@@ -125,6 +134,7 @@ jobs:
   build:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [test, lint]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     permissions:
@@ -181,6 +191,7 @@ jobs:
   scan:
     name: Scan Docker Image for Vulnerabilities
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [build]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     permissions:
@@ -202,7 +213,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ needs.build.outputs.image-tag }}
           format: 'sarif'
@@ -218,7 +229,7 @@ jobs:
           category: 'trivy-container'
 
       - name: Fail on CRITICAL vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ needs.build.outputs.image-tag }}
           format: 'table'
@@ -229,6 +240,7 @@ jobs:
   migrate:
     name: Run Database Migrations
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     environment:
@@ -262,6 +274,7 @@ jobs:
   deploy:
     name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [migrate, build]
     if: github.ref == 'refs/heads/main'
     environment:

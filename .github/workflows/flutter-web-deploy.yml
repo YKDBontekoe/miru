@@ -11,14 +11,21 @@ on:
     paths:
       - 'frontend/**'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-web-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FLUTTER_VERSION: '3.41.0'
-  NODE_VERSION: '18'
 
 jobs:
   test:
     name: Test Flutter App
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./frontend
@@ -53,6 +60,7 @@ jobs:
   build:
     name: Build Web App
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: test
     defaults:
       run:
@@ -85,6 +93,7 @@ jobs:
   deploy:
     name: Deploy to Azure Static Web Apps
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     if: github.ref == 'refs/heads/main'
     environment:
@@ -92,20 +101,11 @@ jobs:
       url: ${{ steps.deploy.outputs.static_web_app_url }}
 
     steps:
-      - uses: actions/checkout@v6
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: flutter-web-build
           path: .
-
-      - name: Check artifact structure
-        run: |
-          echo "=== Root directory ==="
-          ls -la
-          echo "=== Checking for nested structure ==="
-          find . -name "index.html" -type f 2>/dev/null | head -5
 
       - name: Deploy to Azure Static Web Apps
         id: deploy
@@ -122,26 +122,18 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: build
     if: github.ref == 'refs/heads/develop'
     environment:
       name: staging
 
     steps:
-      - uses: actions/checkout@v6
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: flutter-web-build
           path: .
-
-      - name: Check artifact structure
-        run: |
-          echo "=== Root directory ==="
-          ls -la
-          echo "=== Checking for nested structure ==="
-          find . -name "index.html" -type f 2>/dev/null | head -5
 
       - name: Deploy to Azure Static Web Apps (Staging)
         uses: Azure/static-web-apps-deploy@v1
