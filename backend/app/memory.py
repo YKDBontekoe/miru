@@ -142,13 +142,10 @@ async def store_memory(
         "query_embedding": vector,
         "match_threshold": DEDUP_THRESHOLD,
         "match_count": 1,
+        "p_user_id": str(user_id) if user_id is not None else None,
+        "p_agent_id": agent_id if agent_id is not None else None,
+        "p_room_id": room_id if room_id is not None else None,
     }
-    if user_id is not None:
-        rpc_params["p_user_id"] = str(user_id)
-    if agent_id is not None:
-        rpc_params["p_agent_id"] = agent_id
-    if room_id is not None:
-        rpc_params["p_room_id"] = room_id
 
     existing = supabase.rpc("match_memories", rpc_params).execute()
 
@@ -199,13 +196,10 @@ async def _search_memories_by_vector(
         "query_embedding": vector,
         "match_threshold": 0.0,
         "match_count": count,
+        "p_user_id": str(user_id) if user_id is not None else None,
+        "p_agent_id": agent_id if agent_id is not None else None,
+        "p_room_id": room_id if room_id is not None else None,
     }
-    if user_id is not None:
-        rpc_params["p_user_id"] = str(user_id)
-    if agent_id is not None:
-        rpc_params["p_agent_id"] = agent_id
-    if room_id is not None:
-        rpc_params["p_room_id"] = room_id
 
     response = supabase.rpc("match_memories", rpc_params).execute()
     return cast("list[dict[str, Any]]", response.data)
