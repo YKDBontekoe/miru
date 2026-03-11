@@ -66,31 +66,35 @@ class BackendService {
     Duration currentDelay = initialDelay;
 
     // The health endpoint is at the root, so we strip /api
-    final uri = Uri.parse(baseUrl.value.replaceAll(RegExp(r'/api$'), '/health'));
+    final uri =
+        Uri.parse(baseUrl.value.replaceAll(RegExp(r'/api$'), '/health'));
 
     try {
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           final response = await client.get(uri).timeout(
-            const Duration(seconds: 5),
-          );
+                const Duration(seconds: 5),
+              );
 
           if (response.statusCode == 200) {
             debugPrint('Backend is awake after $attempt attempts');
             return;
           }
         } catch (e) {
-          debugPrint('Backend not awake yet (attempt $attempt/$maxAttempts): $e');
+          debugPrint(
+              'Backend not awake yet (attempt $attempt/$maxAttempts): $e');
         }
 
         if (attempt < maxAttempts) {
           await Future<void>.delayed(currentDelay);
           // Simple backoff: double the delay up to a maximum of 5 seconds
           currentDelay = Duration(
-            milliseconds: (currentDelay.inMilliseconds * 1.5).clamp(
-              initialDelay.inMilliseconds,
-              5000,
-            ).toInt(),
+            milliseconds: (currentDelay.inMilliseconds * 1.5)
+                .clamp(
+                  initialDelay.inMilliseconds,
+                  5000,
+                )
+                .toInt(),
           );
         }
       }
