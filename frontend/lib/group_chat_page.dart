@@ -304,7 +304,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           .firstWhere(
             (a) => a.id == msg.agentId,
             orElse: () =>
-                Agent(id: '', name: 'Agent', personality: '', createdAt: ''),
+                Agent(id: '', name: 'Agent', personality: '', createdAt: '', themeColor: '#3B82F6'),
           )
           .name;
     }
@@ -316,7 +316,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         .firstWhere(
           (a) => a.id == id,
           orElse: () =>
-              Agent(id: '', name: 'Agent', personality: '', createdAt: ''),
+              Agent(id: '', name: 'Agent', personality: '', createdAt: '', themeColor: '#3B82F6'),
         )
         .name;
   }

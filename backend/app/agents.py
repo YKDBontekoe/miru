@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
 from crewai_tools import TavilySearchTool
+from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
@@ -203,6 +204,7 @@ class AgentCreate(BaseModel):
     capabilities: list[str] = Field(default_factory=list)
     integrations: list[str] = Field(default_factory=list)
     system_prompt: str | None = None
+    theme_color: str = Field(default="#3B82F6", max_length=7)
 
 
 class AgentGenerate(BaseModel):
@@ -220,6 +222,7 @@ class AgentGenerationResponse(BaseModel):
     goals: list[str]
     capabilities: list[str]
     suggested_integrations: list[str]
+    theme_color: str
 
 
 class AgentResponse(BaseModel):
@@ -237,6 +240,7 @@ class AgentResponse(BaseModel):
     mood: str = "Neutral"
     message_count: int = 0
     created_at: str
+    theme_color: str = "#3B82F6"
 
 
 class IntegrationInfo(BaseModel):
@@ -355,6 +359,7 @@ async def create_agent(agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
         "capabilities": agent_data.capabilities,
         "integrations": agent_data.integrations,
         "system_prompt": system_prompt,
+        "theme_color": agent_data.theme_color,
     }
 
     response = supabase.table("agents").insert(insert_data).execute()
@@ -396,6 +401,7 @@ def _agent_from_row(data: dict[str, Any]) -> AgentResponse:
         mood=data.get("mood", "Neutral"),
         message_count=data.get("message_count", 0),
         created_at=str(data["created_at"]),
+        theme_color=data.get("theme_color", "#3B82F6"),
     )
 
 
@@ -436,6 +442,7 @@ async def generate_agent(keywords: str) -> AgentGenerationResponse:
         '"Create mood-based playlists", "Track listening habits and suggest '
         'improvements"],\n'
         '  "capabilities": ["web_search", "memory_recall"],\n'
+        '  "theme_color": "#9b59b6",\n'
         '  "suggested_integrations": ["spotify"]\n'
         "}"
     )
@@ -478,6 +485,7 @@ async def generate_agent(keywords: str) -> AgentGenerationResponse:
         suggested_integrations=[
             i for i in data.get("suggested_integrations", []) if i in valid_integrations
         ],
+        theme_color=data.get("theme_color", "#3B82F6"),
     )
 
 
@@ -826,3 +834,45 @@ async def stream_room_responses(
         turn_count += 1
 
     yield "[[STATUS:done]]\n"
+
+class GraphExplorerTool(BaseTool):
+    name: str = "Graph Explorer"
+    description: str = "Use this tool to traverse the memory graph to find deeper, multi-hop relationships between memories. Input should be a memory ID or keyword."
+
+    def _run(self, query: str) -> str:
+        # We need an event loop to run the async graph queries
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        from app.graph import find_related_memories
+        from app.memory import _search_memories_by_vector
+
+        async def explore():
+            # If query is a UUID-like string, assume it's a memory ID
+            import re
+            if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', query):
+                related = await find_related_memories(query, depth=2)
+                if not related:
+                    return f"No deeper memories found for ID {query}."
+                return "Related memories:\n" + "\n".join([f"- {r['content']}" for r in related])
+            else:
+                # Search by text first, then get related
+                results = await _search_memories_by_vector(query, count=1)
+                if not results:
+                    return f"No memories found matching '{query}'."
+
+                mem_id = results[0]['id']
+                content = results[0]['content']
+                related = await find_related_memories(str(mem_id), depth=2)
+
+                output = f"Initial match: {content}\n\nDeeper related memories:\n"
+                if related:
+                    output += "\n".join([f"- {r['content']}" for r in related])
+                else:
+                    output += "None."
+                return output
+
+        result = loop.run_until_complete(explore())
+        loop.close()
+        return result

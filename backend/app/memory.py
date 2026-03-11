@@ -84,7 +84,7 @@ async def store_memory(
         )
         return None
 
-    insert_data: dict[str, Any] = {"content": content, "embedding": vector}
+    insert_data: dict[str, Any] = {"content": content, "embedding": vector, "relevance_score": 1.0}
     if user_id is not None:
         insert_data["user_id"] = str(user_id)
     if agent_id is not None:

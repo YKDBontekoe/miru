@@ -14,9 +14,9 @@ class CrewResult {
   const CrewResult({required this.taskType, required this.result});
 
   factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
-        taskType: json['task_type'] as String? ?? 'general',
-        result: json['result'] as String? ?? '',
-      );
+    taskType: json['task_type'] as String? ?? 'general',
+    result: json['result'] as String? ?? '',
+  );
 }
 
 class ApiService {
@@ -98,7 +98,7 @@ class ApiService {
   }
 
   static Future<Map<String, List<Map<String, dynamic>>>>
-      getMemoryGraph() async {
+  getMemoryGraph() async {
     final response = await http.get(
       Uri.parse('$baseUrl/memories/graph'),
       headers: _headers,
@@ -111,10 +111,12 @@ class ApiService {
       final List<dynamic> edgesRaw = data['edges'] as List<dynamic>? ?? [];
 
       return {
-        'nodes':
-            nodesRaw.map((entry) => entry as Map<String, dynamic>).toList(),
-        'edges':
-            edgesRaw.map((entry) => entry as Map<String, dynamic>).toList(),
+        'nodes': nodesRaw
+            .map((entry) => entry as Map<String, dynamic>)
+            .toList(),
+        'edges': edgesRaw
+            .map((entry) => entry as Map<String, dynamic>)
+            .toList(),
       };
     }
 
@@ -165,6 +167,7 @@ class ApiService {
     List<String> goals = const <String>[],
     List<String> capabilities = const <String>[],
     List<String> integrations = const <String>[],
+    String themeColor = "#3B82F6",
     String? systemPrompt,
   }) async {
     final response = await http.post(
@@ -176,6 +179,7 @@ class ApiService {
         'description': description,
         'goals': goals,
         'capabilities': capabilities,
+        'theme_color': themeColor,
         'integrations': integrations,
         'system_prompt': systemPrompt,
       }),

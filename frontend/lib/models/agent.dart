@@ -8,6 +8,7 @@ class Agent {
   final List<String> goals;
   final List<String> capabilities;
   final List<String> integrations;
+  final String themeColor;
   final String? systemPrompt;
   final String status;
   final String mood;
@@ -22,6 +23,7 @@ class Agent {
     this.description,
     this.goals = const <String>[],
     this.capabilities = const <String>[],
+    required this.themeColor,
     this.integrations = const <String>[],
     this.systemPrompt,
     this.status = 'active',
@@ -61,6 +63,7 @@ class Agent {
       mood: (json['mood'] as String?) ?? 'Neutral',
       messageCount: (json['message_count'] as num?)?.toInt() ?? 0,
       avatarUrl: json['avatar_url'] as String?,
+      themeColor: json['theme_color'] as String? ?? '#3B82F6',
       createdAt: json['created_at'].toString(),
     );
   }

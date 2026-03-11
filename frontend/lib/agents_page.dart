@@ -46,7 +46,7 @@ class _AgentsPageState extends State<AgentsPage> {
         "Hello there!",
         "What's next?",
         "I'm ready",
-        "Thinking..."
+        "Thinking...",
       ];
       final targetThought = thoughts[random.nextInt(thoughts.length)];
 
@@ -109,6 +109,7 @@ class _AgentsPageState extends State<AgentsPage> {
     List<String> selectedCapabilities = [];
     List<String> selectedIntegrations = [];
     bool isGenerating = false;
+    String themeColor = "#3B82F6";
 
     showDialog(
       context: context,
@@ -164,22 +165,23 @@ class _AgentsPageState extends State<AgentsPage> {
                                     try {
                                       final result =
                                           await ApiService.generateAgent(
-                                        keywordsController.text,
-                                      );
+                                            keywordsController.text,
+                                          );
                                       setDialogState(() {
                                         nameController.text =
                                             result['name'] as String? ?? '';
                                         personalityController.text =
                                             result['personality'] as String? ??
-                                                '';
+                                            '';
                                         descriptionController.text =
                                             result['description'] as String? ??
-                                                '';
+                                            '';
                                         final goals =
                                             result['goals'] as List<dynamic>?;
                                         if (goals != null) {
-                                          goalsController.text =
-                                              goals.join('\n');
+                                          goalsController.text = goals.join(
+                                            '\n',
+                                          );
                                         }
 
                                         selectedCapabilities =
@@ -200,13 +202,16 @@ class _AgentsPageState extends State<AgentsPage> {
                                       });
                                     } catch (e) {
                                       setDialogState(
-                                          () => isGenerating = false);
+                                        () => isGenerating = false,
+                                      );
                                       if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         SnackBar(
-                                          content:
-                                              Text('Generation failed: $e'),
+                                          content: Text(
+                                            'Generation failed: $e',
+                                          ),
                                         ),
                                       );
                                     }
@@ -250,6 +255,22 @@ class _AgentsPageState extends State<AgentsPage> {
                         maxLines: 3,
                       ),
                       const SizedBox(height: 24),
+
+                      Row(
+                        children: [
+                          const Text('Theme Color: '),
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Color(int.parse(themeColor.replaceFirst('#', '0xFF'))),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       const Text(
                         'Capabilities',
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -287,8 +308,9 @@ class _AgentsPageState extends State<AgentsPage> {
                         children: _availableIntegrations.map((integration) {
                           final type = integration['type'] as String;
                           final name = integration['display_name'] as String;
-                          final isSelected =
-                              selectedIntegrations.contains(type);
+                          final isSelected = selectedIntegrations.contains(
+                            type,
+                          );
                           final isComingSoon =
                               integration['status'] == 'coming_soon';
 
@@ -344,6 +366,7 @@ class _AgentsPageState extends State<AgentsPage> {
                         goals: goals,
                         capabilities: selectedCapabilities,
                         integrations: selectedIntegrations,
+                        themeColor: themeColor,
                       );
                       _loadAgents();
                     } catch (e) {
@@ -369,187 +392,200 @@ class _AgentsPageState extends State<AgentsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _agents.isEmpty
-              ? const Center(child: Text('No agents created yet.'))
-              : ListView.builder(
-                  itemCount: _agents.length,
-                  itemBuilder: (context, index) {
-                    final agent = _agents[index];
-                    final String? chatter = _activeChatter[agent.id];
+          ? const Center(child: Text('No agents created yet.'))
+          : ListView.builder(
+              itemCount: _agents.length,
+              itemBuilder: (context, index) {
+                final agent = _agents[index];
+                final String? chatter = _activeChatter[agent.id];
 
-                    final isDark =
-                        Theme.of(context).brightness == Brightness.dark;
-                    final baseColors = [
-                      Colors.blue,
-                      Colors.teal,
-                      Colors.red,
-                      Colors.indigo,
-                      Colors.deepPurple,
-                      Colors.orange
-                    ];
-                    final themeColor = baseColors[
-                        agent.name.hashCode.abs() % baseColors.length];
-                    final bgColors = isDark
-                        ? [
-                            themeColor.withValues(alpha: 0.2),
-                            themeColor.withValues(alpha: 0.05)
-                          ]
-                        : [
-                            themeColor.withValues(alpha: 0.15),
-                            themeColor.withValues(alpha: 0.05)
-                          ];
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final baseColors = [
+                  Colors.blue,
+                  Colors.teal,
+                  Colors.red,
+                  Colors.indigo,
+                  Colors.deepPurple,
+                  Colors.orange,
+                ];
+                final themeColor =
+                    baseColors[agent.name.hashCode.abs() % baseColors.length];
+                final bgColors = isDark
+                    ? [
+                        themeColor.withValues(alpha: 0.2),
+                        themeColor.withValues(alpha: 0.05),
+                      ]
+                    : [
+                        themeColor.withValues(alpha: 0.15),
+                        themeColor.withValues(alpha: 0.05),
+                      ];
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: themeColor.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: bgColors,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                            color: themeColor.withValues(alpha: 0.3), width: 1),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: bgColors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundImage: agent.avatarImage,
-                                    radius: 28,
-                                    child: agent.avatarUrl == null
-                                        ? null
-                                        : Text(agent.name[0].toUpperCase()),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                              CircleAvatar(
+                                backgroundImage: agent.avatarImage,
+                                radius: 28,
+                                child: agent.avatarUrl == null
+                                    ? null
+                                    : Text(agent.name[0].toUpperCase()),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                agent.name,
-                                                style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
+                                        Expanded(
+                                          child: Text(
+                                            agent.name,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (chatter != null)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.surface,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: themeColor.withValues(
+                                                  alpha: 0.5,
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            if (chatter != null)
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .surface,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                      color:
-                                                          themeColor.withValues(
-                                                              alpha: 0.5)),
-                                                ),
-                                                child: Text(
-                                                  chatter,
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: themeColor),
-                                                ),
+                                            child: Text(
+                                              chatter,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: themeColor,
                                               ),
-                                          ],
-                                        ),
-                                        if (agent.description != null) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            agent.description!,
-                                            style: TextStyle(
-                                              color: isDark
-                                                  ? Colors.grey[400]
-                                                  : Colors.grey[700],
                                             ),
                                           ),
-                                        ],
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.military_tech,
-                                                size: 16, color: themeColor),
-                                            const SizedBox(width: 4),
-                                            Text('Lvl ${agent.connectionLevel}',
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: themeColor,
-                                                    fontSize: 13)),
-                                            const SizedBox(width: 12),
-                                            Icon(Icons.mood,
-                                                size: 16,
-                                                color: isDark
-                                                    ? Colors.grey[400]
-                                                    : Colors.grey[700]),
-                                            const SizedBox(width: 4),
-                                            Text(agent.mood,
-                                                style: TextStyle(
-                                                    color: isDark
-                                                        ? Colors.grey[400]
-                                                        : Colors.grey[700],
-                                                    fontSize: 13)),
-                                          ],
+                                      ],
+                                    ),
+                                    if (agent.description != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        agent.description!,
+                                        style: TextStyle(
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.military_tech,
+                                          size: 16,
+                                          color: themeColor,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Lvl ${agent.connectionLevel}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: themeColor,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Icon(
+                                          Icons.mood,
+                                          size: 16,
+                                          color: isDark
+                                              ? Colors.grey[400]
+                                              : Colors.grey[700],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          agent.mood,
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? Colors.grey[400]
+                                                : Colors.grey[700],
+                                            fontSize: 13,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                agent.personality,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              if (agent.capabilities.isNotEmpty) ...[
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 4,
-                                  children: agent.capabilities.map((cap) {
-                                    return Chip(
-                                      label: Text(
-                                        cap,
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                      materialTapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      padding: EdgeInsets.zero,
-                                    );
-                                  }).toList(),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ],
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          Text(
+                            agent.personality,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          if (agent.capabilities.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: agent.capabilities.map((cap) {
+                                return Chip(
+                                  label: Text(
+                                    cap,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  padding: EdgeInsets.zero,
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateAgentDialog,
         child: const Icon(Icons.add),
