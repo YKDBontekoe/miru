@@ -42,56 +42,112 @@ class _AgentsPageState extends State<AgentsPage> {
   void _showCreateAgentDialog() {
     final nameController = TextEditingController();
     final personalityController = TextEditingController();
+    final keywordsController = TextEditingController();
+    bool isGenerating = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Create New Persona'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Agent Name'),
-              ),
-              TextField(
-                controller: personalityController,
-                decoration: const InputDecoration(
-                  labelText: 'Personality (System Prompt)',
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Create New Persona'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: keywordsController,
+                            decoration: const InputDecoration(
+                              labelText: 'AI Generation Keywords',
+                              hintText: 'e.g. pirate, funny, space',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        isGenerating
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.auto_awesome),
+                                tooltip: 'Generate with AI',
+                                onPressed: () async {
+                                  if (keywordsController.text.isEmpty) return;
+                                  setDialogState(() => isGenerating = true);
+                                  try {
+                                    final result = await ApiService.generateAgent(
+                                      keywordsController.text,
+                                    );
+                                    setDialogState(() {
+                                      nameController.text =
+                                          result['name'] as String? ?? '';
+                                      personalityController.text =
+                                          result['personality'] as String? ?? '';
+                                      isGenerating = false;
+                                    });
+                                  } catch (e) {
+                                    setDialogState(() => isGenerating = false);
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Generation failed: $e')),
+                                    );
+                                  }
+                                },
+                              ),
+                      ],
+                    ),
+                    const Divider(height: 32),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Agent Name'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: personalityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Personality (System Prompt)',
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
                 ),
-                maxLines: 3,
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isEmpty ||
-                    personalityController.text.isEmpty) {
-                  return;
-                }
-                Navigator.pop(dialogContext);
-                try {
-                  await ApiService.createAgent(
-                    nameController.text,
-                    personalityController.text,
-                  );
-                  _loadAgents();
-                } catch (e) {
-                  if (!dialogContext.mounted) return;
-                  ScaffoldMessenger.of(
-                    dialogContext,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.isEmpty ||
+                        personalityController.text.isEmpty) {
+                      return;
+                    }
+                    Navigator.pop(dialogContext);
+                    try {
+                      await ApiService.createAgent(
+                        nameController.text,
+                        personalityController.text,
+                      );
+                      _loadAgents();
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  },
+                  child: const Text('Create'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
