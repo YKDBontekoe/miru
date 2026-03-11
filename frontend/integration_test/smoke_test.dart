@@ -21,8 +21,9 @@ void main() {
       expect(find.text('Miru'), findsWidgets);
     });
 
-    testWidgets('Empty state is shown when there are no messages',
-        (tester) async {
+    testWidgets('Empty state is shown when there are no messages', (
+      tester,
+    ) async {
       await BackendService.init();
       await SupabaseService.initialize();
 

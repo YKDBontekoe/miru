@@ -39,10 +39,7 @@ class _RoomsPageState extends State<RoomsPage> {
   }
 
   Future<void> _refreshData() async {
-    await Future.wait([
-      _loadRooms(),
-      _loadAgents(),
-    ]);
+    await Future.wait([_loadRooms(), _loadAgents()]);
   }
 
   Future<void> _loadRooms() async {
@@ -60,8 +57,9 @@ class _RoomsPageState extends State<RoomsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error loading rooms: $e'),
-              backgroundColor: AppColors.error),
+            content: Text('Error loading rooms: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -84,8 +82,9 @@ class _RoomsPageState extends State<RoomsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error loading agents: $e'),
-              backgroundColor: AppColors.error),
+            content: Text('Error loading agents: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -110,7 +109,8 @@ class _RoomsPageState extends State<RoomsPage> {
     if (_agents.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please create at least one persona first.')),
+          content: Text('Please create at least one persona first.'),
+        ),
       );
       _showCreatePersonaDialog();
       return;
@@ -129,10 +129,8 @@ class _RoomsPageState extends State<RoomsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _PersonaDetailSheet(
-        agent: agent,
-        onDeleted: _loadAgents,
-      ),
+      builder: (context) =>
+          _PersonaDetailSheet(agent: agent, onDeleted: _loadAgents),
     );
   }
 
@@ -181,10 +179,7 @@ class _RoomsPageState extends State<RoomsPage> {
                 context,
                 action: IconButton(
                   onPressed: _showCreateRoomFlow,
-                  icon: Icon(
-                    Icons.add_rounded,
-                    color: colors.primaryLight,
-                  ),
+                  icon: Icon(Icons.add_rounded, color: colors.primaryLight),
                   visualDensity: VisualDensity.compact,
                   tooltip: 'New group',
                 ),
@@ -209,22 +204,19 @@ class _RoomsPageState extends State<RoomsPage> {
                   AppSpacing.massive, // space for floating nav bar
                 ),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final room = _rooms[index];
-                      return _RoomCard(
-                        room: room,
-                        agents: _agents,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => GroupChatPage(room: room),
-                          ),
-                        ).then((_) => _loadRooms()),
-                      );
-                    },
-                    childCount: _rooms.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final room = _rooms[index];
+                    return _RoomCard(
+                      room: room,
+                      agents: _agents,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => GroupChatPage(room: room),
+                        ),
+                      ).then((_) => _loadRooms()),
+                    );
+                  }, childCount: _rooms.length),
                 ),
               ),
           ],
@@ -264,8 +256,9 @@ class _RoomsPageState extends State<RoomsPage> {
               Expanded(
                 child: Text(
                   'No personas yet. Tap + to create one.',
-                  style: AppTypography.bodySmall
-                      .copyWith(color: colors.onSurfaceMuted),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onSurfaceMuted,
+                  ),
                 ),
               ),
             ],
@@ -292,8 +285,9 @@ class _RoomsPageState extends State<RoomsPage> {
                 decoration: BoxDecoration(
                   color: colors.surfaceHigh,
                   borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  border:
-                      Border.all(color: colors.border.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: colors.border.withValues(alpha: 0.5),
+                  ),
                   boxShadow: AppShadows.sm,
                 ),
                 child: Column(
@@ -301,19 +295,22 @@ class _RoomsPageState extends State<RoomsPage> {
                   children: [
                     CircleAvatar(
                       radius: 22,
-                      backgroundColor:
-                          colors.primaryLight.withValues(alpha: 0.15),
+                      backgroundColor: colors.primaryLight.withValues(
+                        alpha: 0.15,
+                      ),
                       child: Text(
                         agent.name.substring(0, 1).toUpperCase(),
-                        style: AppTypography.labelLarge
-                            .copyWith(color: colors.primaryLight),
+                        style: AppTypography.labelLarge.copyWith(
+                          color: colors.primaryLight,
+                        ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       agent.name,
-                      style: AppTypography.labelSmall
-                          .copyWith(color: colors.onSurface),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: colors.onSurface,
+                      ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -383,8 +380,9 @@ class _RoomsPageState extends State<RoomsPage> {
           Text(
             'Create a group to start collaborating with your AI personas.',
             textAlign: TextAlign.center,
-            style:
-                AppTypography.bodyMedium.copyWith(color: colors.onSurfaceMuted),
+            style: AppTypography.bodyMedium.copyWith(
+              color: colors.onSurfaceMuted,
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
           FilledButton.icon(
@@ -456,8 +454,9 @@ class _RoomCard extends StatelessWidget {
                   child: Center(
                     child: Text(
                       room.name.substring(0, 1).toUpperCase(),
-                      style: AppTypography.labelLarge
-                          .copyWith(color: colors.primary),
+                      style: AppTypography.labelLarge.copyWith(
+                        color: colors.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -541,9 +540,9 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
     setState(() => _isDeleting = false);
     Navigator.pop(context);
     widget.onDeleted();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Persona deleted')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Persona deleted')));
   }
 
   @override
@@ -589,8 +588,9 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
                 backgroundColor: colors.primaryLight.withValues(alpha: 0.15),
                 child: Text(
                   widget.agent.name.substring(0, 1).toUpperCase(),
-                  style: AppTypography.headingSmall
-                      .copyWith(color: colors.primaryLight),
+                  style: AppTypography.headingSmall.copyWith(
+                    color: colors.primaryLight,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -598,14 +598,12 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.agent.name,
-                      style: AppTypography.headingSmall,
-                    ),
+                    Text(widget.agent.name, style: AppTypography.headingSmall),
                     Text(
                       'Persona',
-                      style: AppTypography.caption
-                          .copyWith(color: colors.onSurfaceMuted),
+                      style: AppTypography.caption.copyWith(
+                        color: colors.onSurfaceMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -978,8 +976,9 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Failed to create group: $e'),
-              backgroundColor: AppColors.error),
+            content: Text('Failed to create group: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -993,14 +992,20 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      constraints:
-          BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg,
-          AppSpacing.xl + bottomPadding),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl + bottomPadding,
+      ),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppSpacing.radiusLg)),
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1008,9 +1013,12 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
         children: [
           Text('New Group', style: AppTypography.headingSmall),
           const SizedBox(height: AppSpacing.md),
-          Text('SELECT PERSONAS',
-              style: AppTypography.labelSmall
-                  .copyWith(color: colors.onSurfaceMuted)),
+          Text(
+            'SELECT PERSONAS',
+            style: AppTypography.labelSmall.copyWith(
+              color: colors.onSurfaceMuted,
+            ),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Flexible(
             child: ListView.builder(

@@ -64,7 +64,11 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildLiquidGlassNavBar(AppThemeColors colors) {
     return Container(
       margin: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+        AppSpacing.xl,
+        0,
+        AppSpacing.xl,
+        AppSpacing.xl,
+      ),
       height: 72, // increased height slightly for the new button
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSpacing.radiusXxl),
@@ -122,7 +126,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: isActive
               ? colors.primary.withValues(alpha: 0.15)
