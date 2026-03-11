@@ -257,7 +257,20 @@ async def test_stream_room_responses(
     async for chunk in stream_room_responses("room-123", "How are you?", user_id):
         chunks.append(chunk)
 
-    assert chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", " World", "\n\n"]
+    # Filter out status events to check only the content-bearing chunks.
+    content_chunks = [c for c in chunks if not c.startswith("[[STATUS:")]
+    assert content_chunks == [
+        "[[AGENT:agent-123:Test Agent]]\n",
+        "Hello",
+        " World",
+        "\n\n",
+    ]
+    # Verify that status events were indeed emitted.
+    status_chunks = [c for c in chunks if c.startswith("[[STATUS:")]
+    assert "[[STATUS:retrieving_memories]]\n" in status_chunks
+    assert "[[STATUS:orchestrating]]\n" in status_chunks
+    assert any(c.startswith("[[STATUS:loading_agent:") for c in status_chunks)
+    assert "[[STATUS:done]]\n" in status_chunks
 
     assert mock_save_message.call_count == 2  # 1 for user, 1 for agent
 
@@ -341,7 +354,12 @@ async def test_stream_room_responses_no_history(
     async for chunk in stream_room_responses("room-123", "How are you?", user_id):
         chunks.append(chunk)
 
-    assert chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
+    content_chunks = [c for c in chunks if not c.startswith("[[STATUS:")]
+    assert content_chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
+    status_chunks = [c for c in chunks if c.startswith("[[STATUS:")]
+    assert "[[STATUS:retrieving_memories]]\n" in status_chunks
+    assert "[[STATUS:orchestrating]]\n" in status_chunks
+    assert "[[STATUS:done]]\n" in status_chunks
 
 
 @patch("app.agents.chat_completion")
@@ -389,4 +407,9 @@ async def test_stream_room_responses_with_agent_history(
     async for chunk in stream_room_responses("room-123", "How are you?", user_id):
         chunks.append(chunk)
 
-    assert chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
+    content_chunks = [c for c in chunks if not c.startswith("[[STATUS:")]
+    assert content_chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
+    status_chunks = [c for c in chunks if c.startswith("[[STATUS:")]
+    assert "[[STATUS:retrieving_memories]]\n" in status_chunks
+    assert "[[STATUS:orchestrating]]\n" in status_chunks
+    assert "[[STATUS:done]]\n" in status_chunks

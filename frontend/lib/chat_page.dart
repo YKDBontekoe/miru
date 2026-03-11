@@ -32,6 +32,9 @@ class _ChatPageState extends State<ChatPage> {
   bool _isStreaming = false;
   bool _showScrollToBottom = false;
 
+  /// Human-readable status shown while the assistant is processing.
+  String? _streamingStatus;
+
   /// Active stream subscription for cancellation support.
   StreamSubscription<String>? _activeStreamSubscription;
 
@@ -137,7 +140,7 @@ class _ChatPageState extends State<ChatPage> {
     _scrollToBottom();
 
     try {
-      await _sendCrewMessage(text);
+      await _sendStreamingMessage(text);
     } catch (e) {
       // Don't overwrite if already cancelled.
       if (_messages.isNotEmpty) {
@@ -155,23 +158,72 @@ class _ChatPageState extends State<ChatPage> {
       }
     } finally {
       _activeStreamSubscription = null;
-      setState(() => _isStreaming = false);
+      setState(() {
+        _isStreaming = false;
+        _streamingStatus = null;
+      });
       unawaited(_saveMessages());
     }
   }
 
-  /// Sends a message through the CrewAI crew and waits for the full result.
-  Future<void> _sendCrewMessage(String text) async {
-    final result = await ApiService.runCrew(text);
-    setState(() {
-      final lastIndex = _messages.length - 1;
-      _messages[lastIndex] = _messages[lastIndex].copyWith(
-        text: result.result,
-        status: MessageStatus.sent,
-        crewTaskType: result.taskType,
-      );
-    });
-    _scrollToBottom();
+  /// Streams a response from the backend, handling [[STATUS:...]] events.
+  Future<void> _sendStreamingMessage(String text) async {
+    final statusRegex = RegExp(r'\[\[STATUS:([^\]]+)\]\]');
+
+    final stream = ApiService.sendMessage(text);
+    _activeStreamSubscription = stream.listen(
+      (chunk) {
+        if (!mounted) return;
+
+        // Handle status events.
+        final statusMatch = statusRegex.firstMatch(chunk);
+        if (statusMatch != null) {
+          final payload = statusMatch.group(1)!;
+          setState(() => _streamingStatus = _statusLabel(payload));
+          return;
+        }
+
+        // Regular text chunk — clear status and append to the reply.
+        setState(() {
+          _streamingStatus = null;
+          final lastIndex = _messages.length - 1;
+          _messages[lastIndex] = _messages[lastIndex].copyWith(
+            text: _messages[lastIndex].text + chunk,
+            status: MessageStatus.streaming,
+          );
+        });
+        _scrollToBottom();
+      },
+      onDone: () {
+        if (!mounted) return;
+        setState(() {
+          _streamingStatus = null;
+          final lastIndex = _messages.length - 1;
+          if (_messages[lastIndex].status == MessageStatus.streaming) {
+            _messages[lastIndex] = _messages[lastIndex].copyWith(
+              status: MessageStatus.sent,
+            );
+          }
+        });
+      },
+    );
+
+    // Await the subscription completing.
+    await _activeStreamSubscription!.asFuture<void>();
+  }
+
+  /// Maps a raw backend status payload to a human-readable label.
+  String? _statusLabel(String payload) {
+    switch (payload) {
+      case 'retrieving_memories':
+        return 'Recalling memories...';
+      case 'thinking':
+        return 'Thinking...';
+      case 'done':
+        return null;
+      default:
+        return null;
+    }
   }
 
   /// Stop the current streaming response.
@@ -180,6 +232,7 @@ class _ChatPageState extends State<ChatPage> {
     _activeStreamSubscription = null;
     setState(() {
       _isStreaming = false;
+      _streamingStatus = null;
       final lastIndex = _messages.length - 1;
       if (lastIndex >= 0 &&
           !_messages[lastIndex].isUser &&
@@ -285,11 +338,18 @@ class _ChatPageState extends State<ChatPage> {
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final msg = _messages[index];
+                          // Show streaming status label in the placeholder
+                          // bubble while we're waiting for the first token.
+                          final isPlaceholder = !msg.isUser &&
+                              msg.text.isEmpty &&
+                              _streamingStatus != null;
                           return ChatBubble(
-                            text: msg.text,
+                            text: isPlaceholder ? _streamingStatus! : msg.text,
                             isUser: msg.isUser,
                             crewTaskType: msg.crewTaskType,
-                            status: msg.status,
+                            status: isPlaceholder
+                                ? MessageStatus.streaming
+                                : msg.status,
                             onCopy: () => _copyMessage(msg),
                             onRetry: msg.status == MessageStatus.failed
                                 ? _retryLastMessage

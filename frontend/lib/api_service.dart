@@ -70,6 +70,57 @@ class ApiService {
     }
   }
 
+  // --- Memories API ---
+
+  static Future<List<Map<String, dynamic>>> getMemories() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/memories'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data =
+          jsonDecode(response.body) as Map<String, dynamic>;
+      final List<dynamic> memories = data['memories'] as List<dynamic>;
+      return memories.map((e) => e as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load memories: ${response.statusCode}');
+    }
+  }
+
+  static Future<void> deleteMemory(String id) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/memories/$id'),
+      headers: _headers,
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete memory: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, List<Map<String, dynamic>>>>
+      getMemoryGraph() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/memories/graph'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data =
+          jsonDecode(response.body) as Map<String, dynamic>;
+      final List<dynamic> nodesRaw = data['nodes'] as List<dynamic>? ?? [];
+      final List<dynamic> edgesRaw = data['edges'] as List<dynamic>? ?? [];
+
+      return {
+        'nodes':
+            nodesRaw.map((entry) => entry as Map<String, dynamic>).toList(),
+        'edges':
+            edgesRaw.map((entry) => entry as Map<String, dynamic>).toList(),
+      };
+    }
+
+    throw Exception('Failed to load memory graph: ${response.statusCode}');
+  }
+
   /// Runs a CrewAI crew for [message] and returns the full structured result.
   static Future<CrewResult> runCrew(String message) async {
     final uri = Uri.parse('$baseUrl/crew');

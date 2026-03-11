@@ -240,3 +240,52 @@ async def get_conversation_context(
             limit=limit,
         )
         return [related_node.data() async for related_node in result]
+
+
+async def get_memory_relationships(memory_ids: list[str]) -> list[dict[str, str]]:
+    """Return relationships between the provided memory IDs.
+
+    The output only includes edges where both source and target IDs are in
+    ``memory_ids`` so callers can render a focused subgraph.
+    """
+    if not memory_ids:
+        return []
+
+    driver = await get_neo4j_driver()
+    async with driver.session() as session:
+        result = await session.run(
+            """
+            UNWIND $memory_ids AS memory_id
+            MATCH (source:Memory {id: memory_id})-[r]-(target:Memory)
+            WHERE target.id IN $memory_ids
+            RETURN source.id AS source,
+                   target.id AS target,
+                   type(r) AS relationship_type
+            """,
+            memory_ids=memory_ids,
+        )
+
+        raw_edges = [record.data() async for record in result]
+
+    deduped_edges: list[dict[str, str]] = []
+    seen_pairs: set[tuple[str, str, str]] = set()
+    for edge in raw_edges:
+        source = str(edge["source"])
+        target = str(edge["target"])
+        relationship_type = str(edge["relationship_type"])
+
+        ordered_pair = tuple(sorted((source, target)))
+        edge_key = (ordered_pair[0], ordered_pair[1], relationship_type)
+        if edge_key in seen_pairs:
+            continue
+
+        seen_pairs.add(edge_key)
+        deduped_edges.append(
+            {
+                "source": source,
+                "target": target,
+                "relationship_type": relationship_type,
+            }
+        )
+
+    return deduped_edges

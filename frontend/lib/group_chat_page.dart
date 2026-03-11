@@ -30,6 +30,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
   // Tracks per-agent streaming messages keyed by agent ID.
   final Map<String, String> _streamingBuffers = {};
 
+  // Human-readable status shown while agents are processing.
+  String? _streamingStatus;
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +110,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       _messages.add(ChatMessage.user(text));
       _isSending = true;
       _streamingBuffers.clear();
+      _streamingStatus = null;
     });
     _scrollToBottom();
 
@@ -116,24 +120,39 @@ class _GroupChatPageState extends State<GroupChatPage> {
       // Current agent being streamed — tracked via [[AGENT:id:name]] markers.
       String? activeAgentId;
 
+      // Regex patterns for control events.
+      final agentRegex = RegExp(r'\[\[AGENT:([^:]+):([^\]]+)\]\]');
+      final statusRegex = RegExp(r'\[\[STATUS:([^\]]+)\]\]');
+
       await for (final chunk in stream) {
         if (!mounted) break;
 
-        // Detect agent-switch markers emitted by the backend.
-        // Format: [[AGENT:<id>:<name>]]
-        final agentMatch = RegExp(
-          r'\[\[AGENT:([^:]+):([^\]]+)\]\]',
-        ).firstMatch(chunk);
+        // Detect status events: [[STATUS:<kind>]] or [[STATUS:loading_agent:<id>:<name>]]
+        final statusMatch = statusRegex.firstMatch(chunk);
+        if (statusMatch != null) {
+          final statusPayload = statusMatch.group(1)!;
+          setState(() {
+            activeAgentId = null; // status events reset active streaming agent
+            _streamingStatus = _statusLabel(statusPayload);
+          });
+          continue;
+        }
 
+        // Detect agent-switch markers: [[AGENT:<id>:<name>]]
+        final agentMatch = agentRegex.firstMatch(chunk);
         if (agentMatch != null) {
-          activeAgentId = agentMatch.group(1);
-          // Ensure a streaming placeholder exists for this agent.
-          if (activeAgentId != null &&
-              !_streamingBuffers.containsKey(activeAgentId)) {
-            _streamingBuffers[activeAgentId] = '';
+          final matchedId = agentMatch.group(1);
+          if (matchedId != null) {
+            activeAgentId = matchedId;
+            if (!_streamingBuffers.containsKey(activeAgentId)) {
+              _streamingBuffers[activeAgentId!] = '';
+            }
           }
-          setState(() {});
-        } else if (activeAgentId != null) {
+          setState(() => _streamingStatus = null);
+          continue;
+        }
+
+        if (activeAgentId != null) {
           setState(() {
             _streamingBuffers[activeAgentId!] =
                 (_streamingBuffers[activeAgentId] ?? '') + chunk;
@@ -157,6 +176,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         setState(() {
           _isSending = false;
           _streamingBuffers.clear();
+          _streamingStatus = null;
         });
       }
     }
@@ -267,6 +287,19 @@ class _GroupChatPageState extends State<GroupChatPage> {
         .name;
   }
 
+  /// Maps a raw backend status payload to a human-readable label.
+  String _statusLabel(String payload) {
+    if (payload == 'retrieving_memories') return 'Recalling memories...';
+    if (payload == 'orchestrating') return 'Deciding who speaks next...';
+    if (payload == 'done') return '';
+    if (payload.startsWith('loading_agent:')) {
+      final parts = payload.split(':');
+      final name = parts.length >= 3 ? parts[2] : 'agent';
+      return '$name is thinking...';
+    }
+    return '';
+  }
+
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
@@ -283,7 +316,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
           children: [
             _buildMembersBar(colors),
             Expanded(child: _buildMessageList(colors)),
-            if (_isSending && _streamingBuffers.isNotEmpty)
+            if (_isSending &&
+                (_streamingBuffers.isNotEmpty ||
+                    (_streamingStatus != null && _streamingStatus!.isNotEmpty)))
               _buildStreamingBubbles(colors),
             ChatInputBar(
               controller: _messageController,
@@ -419,14 +454,101 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Widget _buildStreamingBubbles(AppThemeColors colors) {
+    final hasStatus = _streamingStatus != null && _streamingStatus!.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: _streamingBuffers.entries.map((entry) {
-          final agentName = _agentNameById(entry.key);
-          return StreamingBubble(agentName: agentName, text: entry.value);
-        }).toList(),
+        children: [
+          if (hasStatus) StatusPill(label: _streamingStatus!, colors: colors),
+          ..._streamingBuffers.entries.map((entry) {
+            final agentName = _agentNameById(entry.key);
+            return StreamingBubble(agentName: agentName, text: entry.value);
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status pill widget
+// ---------------------------------------------------------------------------
+
+/// A small animated pill that shows the current processing status.
+class StatusPill extends StatefulWidget {
+  final String label;
+  final AppThemeColors colors;
+
+  const StatusPill({super.key, required this.label, required this.colors});
+
+  @override
+  State<StatusPill> createState() => _StatusPillState();
+}
+
+class _StatusPillState extends State<StatusPill>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+    _fade = Tween<double>(begin: 0.5, end: 1.0).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: FadeTransition(
+        opacity: _fade,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xxs,
+          ),
+          decoration: BoxDecoration(
+            color: widget.colors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppSpacing.sm),
+            border: Border.all(
+              color: widget.colors.primary.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 10,
+                height: 10,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: widget.colors.primary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                widget.label,
+                style: AppTypography.caption.copyWith(
+                  color: widget.colors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

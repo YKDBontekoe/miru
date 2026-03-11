@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:credential_manager/credential_manager.dart';
@@ -5,6 +7,7 @@ import 'package:credential_manager/credential_manager.dart';
 import 'design_system/design_system.dart';
 import 'services/passkey_service.dart';
 import 'services/supabase_service.dart';
+import 'api_service.dart';
 
 class SettingsPage extends StatefulWidget {
   /// Called when the user clears chat history from settings.
@@ -25,10 +28,17 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _loadingPasskeys = false;
   bool _addingPasskey = false;
 
+  // Memories state
+  List<Map<String, dynamic>> _memories = [];
+  List<Map<String, dynamic>> _memoryEdges = [];
+  bool _loadingMemories = false;
+  bool _showMemoryGraph = false;
+
   @override
   void initState() {
     super.initState();
     _loadPasskeys();
+    _loadMemories();
   }
 
   // ---------------------------------------------------------------------------
@@ -148,6 +158,76 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ---------------------------------------------------------------------------
+  // Memories management
+  // ---------------------------------------------------------------------------
+
+  Future<void> _loadMemories() async {
+    if (!SupabaseService.isAuthenticated) return;
+    setState(() => _loadingMemories = true);
+    try {
+      final graphData = await ApiService.getMemoryGraph();
+      if (!mounted) return;
+
+      setState(() {
+        _memories = graphData['nodes'] ?? [];
+        _memoryEdges = graphData['edges'] ?? [];
+      });
+    } catch (e) {
+      try {
+        final memories = await ApiService.getMemories();
+        if (!mounted) return;
+        setState(() {
+          _memories = memories;
+          _memoryEdges = [];
+        });
+      } catch (_) {
+        // Non-fatal
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMemories = false);
+    }
+  }
+
+  Future<void> _deleteMemory(Map<String, dynamic> memory) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Forget memory?'),
+        content: Text(
+          'Should I forget this detail?\n\n"${memory['content']}"',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Forget'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ApiService.deleteMemory(memory['id'] as String);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Memory forgotten')));
+      await _loadMemories();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Sign out
   // ---------------------------------------------------------------------------
 
@@ -222,6 +302,37 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: _signOut,
               destructive: true,
             ),
+          ],
+
+          // Memories section
+          const Divider(),
+          _buildSectionHeader('Personal Memories'),
+          if (_loadingMemories)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else ...[
+            if (_memories.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Text(
+                  'No memories stored yet. As you talk to Miru, she will learn more about you.',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.onSurfaceMuted,
+                  ),
+                ),
+              )
+            else ...[
+              _buildMemoryViewToggle(),
+              if (_showMemoryGraph)
+                _buildMemoryGraph()
+              else
+                ..._memories.map(_buildMemoryListItem),
+            ],
           ],
 
           // Passkeys section
@@ -395,6 +506,124 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Widget _buildMemoryViewToggle() {
+    final colors = context.colors;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xs,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: SegmentedButton<bool>(
+        segments: const [
+          ButtonSegment<bool>(
+            value: false,
+            icon: Icon(Icons.view_list_rounded),
+            label: Text('List'),
+          ),
+          ButtonSegment<bool>(
+            value: true,
+            icon: Icon(Icons.hub_rounded),
+            label: Text('Graph'),
+          ),
+        ],
+        selected: {_showMemoryGraph},
+        showSelectedIcon: false,
+        style: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll(colors.onSurface),
+        ),
+        onSelectionChanged: (selection) {
+          if (selection.isEmpty) return;
+          setState(() => _showMemoryGraph = selection.first);
+        },
+      ),
+    );
+  }
+
+  Widget _buildMemoryListItem(Map<String, dynamic> memory) {
+    final colors = context.colors;
+    return ListTile(
+      leading: Icon(
+        Icons.auto_awesome_rounded,
+        color: colors.primary,
+        size: 20,
+      ),
+      title: Text(
+        memory['content'] as String? ?? '',
+        style: AppTypography.bodyMedium.copyWith(
+          color: colors.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        'Learned ${_formatDate(memory['created_at'] as String? ?? '')}',
+        style: AppTypography.bodySmall.copyWith(
+          color: colors.onSurfaceMuted,
+        ),
+      ),
+      trailing: IconButton(
+        icon: Icon(
+          Icons.delete_outline_rounded,
+          color: colors.onSurfaceMuted,
+          size: 20,
+        ),
+        onPressed: () => _deleteMemory(memory),
+        tooltip: 'Forget memory',
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+    );
+  }
+
+  Widget _buildMemoryGraph() {
+    final colors = context.colors;
+
+    if (_memories.length == 1) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
+        child: Text(
+          'Only one memory available. More connections appear as Miru learns.',
+          style: AppTypography.bodySmall.copyWith(
+            color: colors.onSurfaceMuted,
+          ),
+        ),
+      );
+    }
+
+    final nodes = _memories.map(_GraphNode.fromMemory).toList();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xs,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Container(
+        height: 280,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.md),
+          border: Border.all(color: colors.border.withValues(alpha: 0.3)),
+        ),
+        child: CustomPaint(
+          painter: _MemoryGraphPainter(
+            colors: colors,
+            nodes: nodes,
+            edges: _memoryEdges,
+          ),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -449,5 +678,112 @@ class _SettingsPageState extends State<SettingsPage> {
         vertical: AppSpacing.xs,
       ),
     );
+  }
+}
+
+class _GraphNode {
+  final String id;
+  final String content;
+
+  const _GraphNode({required this.id, required this.content});
+
+  factory _GraphNode.fromMemory(Map<String, dynamic> memory) {
+    return _GraphNode(
+      id: memory['id'] as String? ?? '',
+      content: memory['content'] as String? ?? '',
+    );
+  }
+}
+
+class _MemoryGraphPainter extends CustomPainter {
+  final AppThemeColors colors;
+  final List<_GraphNode> nodes;
+  final List<Map<String, dynamic>> edges;
+
+  const _MemoryGraphPainter({
+    required this.colors,
+    required this.nodes,
+    required this.edges,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (nodes.isEmpty) {
+      return;
+    }
+
+    final nodePositions = <String, Offset>{};
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) * 0.33;
+
+    for (var i = 0; i < nodes.length; i++) {
+      final angle = (2 * math.pi * i) / nodes.length;
+      nodePositions[nodes[i].id] = Offset(
+        center.dx + radius * math.cos(angle),
+        center.dy + radius * math.sin(angle),
+      );
+    }
+
+    final edgePaint = Paint()
+      ..color = colors.primary.withValues(alpha: 0.32)
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke;
+
+    for (final edge in edges) {
+      final sourceId = edge['source'] as String?;
+      final targetId = edge['target'] as String?;
+      if (sourceId == null || targetId == null) {
+        continue;
+      }
+
+      final sourcePoint = nodePositions[sourceId];
+      final targetPoint = nodePositions[targetId];
+      if (sourcePoint == null || targetPoint == null) {
+        continue;
+      }
+
+      canvas.drawLine(sourcePoint, targetPoint, edgePaint);
+    }
+
+    for (final node in nodes) {
+      final point = nodePositions[node.id];
+      if (point == null) {
+        continue;
+      }
+
+      final nodePaint = Paint()..color = colors.primary;
+      canvas.drawCircle(point, 8, nodePaint);
+
+      final label = _shortLabel(node.content);
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: AppTypography.bodySmall.copyWith(
+            color: colors.onSurface,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+        ellipsis: '...',
+      )..layout(maxWidth: 110);
+
+      final dx = point.dx - textPainter.width / 2;
+      final dy = point.dy + 12;
+
+      textPainter.paint(canvas, Offset(dx, dy));
+    }
+  }
+
+  String _shortLabel(String content) {
+    final trimmed = content.trim();
+    if (trimmed.length <= 18) {
+      return trimmed;
+    }
+    return '${trimmed.substring(0, 18)}...';
+  }
+
+  @override
+  bool shouldRepaint(covariant _MemoryGraphPainter oldDelegate) {
+    return oldDelegate.nodes != nodes || oldDelegate.edges != edges;
   }
 }

@@ -296,6 +296,7 @@ async def stream_room_responses(
             history_lines.append(f"{agent_name}: {msg.content}")
 
     # Memory context
+    yield "[[STATUS:retrieving_memories]]\n"
     user_memories = await retrieve_memories(user_message, user_id=user_id)
     user_memory_block = ""
     if user_memories:
@@ -315,6 +316,7 @@ async def stream_room_responses(
         history_text = "\n".join(
             history_lines[-10:]
         )  # Pass only recent history to keep context size manageable
+        yield "[[STATUS:orchestrating]]\n"
         next_speakers = await orchestrate_turn(history_text, room_agents)
 
         if not next_speakers:
@@ -327,6 +329,7 @@ async def stream_room_responses(
             agent = agent_map[agent_id]
 
             # Fetch persona memories specific to this agent
+            yield f"[[STATUS:loading_agent:{agent.id}:{agent.name}]]\n"
             agent_memories = await retrieve_memories(user_message, agent_id=agent.id)
             agent_memory_block = ""
             if agent_memories:
@@ -373,3 +376,5 @@ async def stream_room_responses(
             )
 
         turn_count += 1
+
+    yield "[[STATUS:done]]\n"

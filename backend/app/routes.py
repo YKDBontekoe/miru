@@ -40,6 +40,7 @@ from app.agents import (
 from app.auth import CurrentUser  # noqa: TC001
 from app.crew import detect_task_type, run_crew
 from app.database import get_supabase
+from app.graph import get_memory_relationships
 from app.memory import retrieve_memories, store_memory
 from app.openrouter import stream_chat
 from app.passkey import (
@@ -105,12 +106,15 @@ async def _stream_response(message: str, user_id: UUID) -> AsyncIterator[str]:
     user message and the complete response can be passed to ``store_memory``.
     The memory extraction task is fired after the last chunk is yielded.
     """
+    yield "[[STATUS:retrieving_memories]]\n"
     memories = await retrieve_memories(message, user_id=user_id)
 
     memory_block = ""
     if memories:
         joined = "\n- ".join(memories)
         memory_block = f"\n\nRelevant things I remember about you:\n- {joined}\n"
+
+    yield "[[STATUS:thinking]]\n"
 
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": SYSTEM_PROMPT + memory_block},
@@ -197,6 +201,63 @@ async def list_memories(user_id: CurrentUser) -> dict:
             for record in cast("list[dict[str, Any]]", response.data)
         ]
     }
+
+
+@router.get("/memories/graph")
+async def list_memory_graph(user_id: CurrentUser) -> dict:
+    """Return user memories as graph nodes and edges."""
+    supabase = get_supabase()
+    response = (
+        supabase.table("memories")
+        .select("id, content, created_at")
+        .eq("user_id", str(user_id))
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    memory_rows = cast("list[dict[str, Any]]", response.data)
+    nodes = [
+        {
+            "id": cast("str", record["id"]),
+            "content": cast("str", record["content"]),
+            "created_at": cast("str", record["created_at"]),
+        }
+        for record in memory_rows
+    ]
+
+    memory_ids = [cast("str", record["id"]) for record in memory_rows]
+    edges: list[dict[str, str]] = []
+
+    try:
+        edges = await get_memory_relationships(memory_ids)
+    except Exception:
+        logger.exception("Failed to load memory graph relationships for user %s", user_id)
+
+    return {
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
+@router.delete("/memories/{memory_id}")
+async def delete_memory(memory_id: str, user_id: CurrentUser) -> dict:
+    """Delete a memory by ID (must belong to the authenticated user)."""
+    supabase = get_supabase()
+    # Verify ownership before deleting.
+    rows = (
+        supabase.table("memories")
+        .select("id")
+        .eq("id", memory_id)
+        .eq("user_id", str(user_id))
+        .execute()
+    )
+    if not cast("list[dict[str, Any]]", rows.data):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Memory not found",
+        )
+    supabase.table("memories").delete().eq("id", memory_id).execute()
+    return {"status": "deleted"}
 
 
 # ---------------------------------------------------------------------------
