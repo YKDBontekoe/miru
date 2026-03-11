@@ -6,39 +6,57 @@ echo "Running pre-commit checks..."
 # Store the exit code
 EXIT_CODE=0
 
+# Use absolute path to the project root
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
 # Backend checks
-if [ -d "backend" ]; then
+if [ -d "$ROOT_DIR/backend" ]; then
     echo "Checking backend..."
-    cd backend
+    cd "$ROOT_DIR/backend"
     
+    # Check if venv exists
+    if [ -f ".venv/bin/activate" ]; then
+        # Use venv binaries directly
+        VENV_BIN=".venv/bin"
+    else
+        VENV_BIN=""
+    fi
+
     # Run ruff
     echo "Running ruff..."
-    if ! ruff check .; then
+    if ! ${VENV_BIN}/ruff check .; then
         echo "Ruff found issues. Run 'ruff check --fix .' to auto-fix."
         EXIT_CODE=1
     fi
     
     # Run black check
     echo "Running black check..."
-    if ! black --check .; then
+    if ! ${VENV_BIN}/black --check .; then
         echo "Black formatting issues found. Run 'black .' to fix."
         EXIT_CODE=1
     fi
     
-    cd ..
+    # Run isort check
+    echo "Running isort check..."
+    if ! ${VENV_BIN}/isort --check-only .; then
+        echo "Isort sorting issues found. Run 'isort .' to fix."
+        EXIT_CODE=1
+    fi
+
+    # Run mypy
+    echo "Running mypy..."
+    if ! ${VENV_BIN}/mypy --ignore-missing-imports app/; then
+        echo "MyPy found type issues."
+        EXIT_CODE=1
+    fi
+    
+    cd "$ROOT_DIR"
 fi
 
 # Frontend checks
-if [ -d "frontend" ]; then
+if [ -d "$ROOT_DIR/frontend" ]; then
     echo "Checking frontend..."
-    cd frontend
-    
-    # Run flutter analyze
-    echo "Running flutter analyze..."
-    if ! flutter analyze; then
-        echo "Flutter analyze found issues."
-        EXIT_CODE=1
-    fi
+    cd "$ROOT_DIR/frontend"
     
     # Run dart format check
     echo "Running dart format check..."
@@ -47,7 +65,14 @@ if [ -d "frontend" ]; then
         EXIT_CODE=1
     fi
     
-    cd ..
+    # Run flutter analyze
+    echo "Running flutter analyze..."
+    if ! flutter analyze --fatal-infos; then
+        echo "Flutter analyze found issues."
+        EXIT_CODE=1
+    fi
+    
+    cd "$ROOT_DIR"
 fi
 
 if [ $EXIT_CODE -ne 0 ]; then

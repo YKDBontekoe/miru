@@ -76,22 +76,6 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Run Ruff linter
-        if: inputs.run-lint
-        run: ruff check --output-format=github .
-
-      - name: Run Ruff formatter check
-        if: inputs.run-lint
-        run: ruff format --check .
-
-      - name: Run isort check
-        if: inputs.run-lint
-        run: isort --check-only --diff .
-
-      - name: Run MyPy type checker
-        if: inputs.run-lint
-        run: mypy --ignore-missing-imports app/
-
       - name: Run tests with coverage
         if: inputs.run-tests
         env:
