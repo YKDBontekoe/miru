@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:credential_manager/credential_manager.dart';
 import 'package:flutter/foundation.dart';
@@ -196,7 +195,8 @@ class PasskeyService {
 
     if (_credentialManager.isSupportedPlatform) {
       final challenge = options['challenge'] as String;
-      final rpId = (options['rpId'] ?? options['rp_id'] ?? options['rp']?['id']) as String?;
+      final rpId = (options['rpId'] ?? options['rp_id'] ?? options['rp']?['id'])
+          as String?;
 
       final credential = await _credentialManager.getCredentials(
         passKeyOption: CredentialLoginOptions(

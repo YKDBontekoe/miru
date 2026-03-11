@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../tokens/colors.dart';
 import '../tokens/typography.dart';
 import '../tokens/spacing.dart';
@@ -293,7 +294,7 @@ abstract final class AppTheme {
   // ---------------------------------------------------------------------------
 
   static TextTheme _buildTextTheme(Color defaultColor) {
-    return TextTheme(
+    final notoSans = GoogleFonts.notoSansTextTheme().copyWith(
       displayLarge: AppTypography.displayLarge.copyWith(color: defaultColor),
       displayMedium: AppTypography.displayMedium.copyWith(color: defaultColor),
       displaySmall: AppTypography.displaySmall.copyWith(color: defaultColor),
@@ -310,6 +311,7 @@ abstract final class AppTheme {
       labelMedium: AppTypography.labelMedium.copyWith(color: defaultColor),
       labelSmall: AppTypography.labelSmall.copyWith(color: defaultColor),
     );
+    return notoSans;
   }
 }
 

@@ -3,10 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_page.dart';
 import 'backend_service.dart';
-import 'chat_page.dart';
 import 'design_system/design_system.dart';
 import 'introduction_page.dart';
-import 'rooms_page.dart';
 import 'main_scaffold.dart';
 import 'services/passkey_service.dart';
 import 'services/supabase_service.dart';

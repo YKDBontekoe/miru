@@ -6,7 +6,6 @@ import '../theme/app_theme_data.dart';
 import '../tokens/colors.dart';
 import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
-import 'onboarding_visuals.dart';
 
 /// A centered empty-state placeholder with a custom animated AI orb, title,
 /// subtitle, and optional suggestion chips.

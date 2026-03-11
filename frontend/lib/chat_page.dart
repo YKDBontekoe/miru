@@ -32,9 +32,6 @@ class _ChatPageState extends State<ChatPage> {
   bool _isStreaming = false;
   bool _showScrollToBottom = false;
 
-  /// Whether to route messages through the CrewAI multi-agent pipeline.
-  bool _useCrew = false;
-
   /// Active stream subscription for cancellation support.
   StreamSubscription<String>? _activeStreamSubscription;
 
@@ -140,11 +137,7 @@ class _ChatPageState extends State<ChatPage> {
     _scrollToBottom();
 
     try {
-      if (_useCrew) {
-        await _sendCrewMessage(text);
-      } else {
-        await _sendStreamMessage(text);
-      }
+      await _sendCrewMessage(text);
     } catch (e) {
       // Don't overwrite if already cancelled.
       if (_messages.isNotEmpty) {
@@ -165,40 +158,6 @@ class _ChatPageState extends State<ChatPage> {
       setState(() => _isStreaming = false);
       unawaited(_saveMessages());
     }
-  }
-
-  /// Streams a single-turn response token by token.
-  Future<void> _sendStreamMessage(String text) async {
-    final completer = Completer<void>();
-    final stream = ApiService.sendMessage(text);
-
-    _activeStreamSubscription = stream.listen(
-      (chunk) {
-        setState(() {
-          final lastIndex = _messages.length - 1;
-          _messages[lastIndex] = _messages[lastIndex].copyWith(
-            text: _messages[lastIndex].text + chunk,
-          );
-        });
-        _scrollToBottom();
-      },
-      onError: (Object e) {
-        completer.completeError(e);
-      },
-      onDone: () {
-        // Mark as sent once streaming completes.
-        setState(() {
-          final lastIndex = _messages.length - 1;
-          _messages[lastIndex] = _messages[lastIndex].copyWith(
-            status: MessageStatus.sent,
-          );
-        });
-        if (!completer.isCompleted) completer.complete();
-      },
-      cancelOnError: true,
-    );
-
-    return completer.future;
   }
 
   /// Sends a message through the CrewAI crew and waits for the full result.
@@ -347,8 +306,6 @@ class _ChatPageState extends State<ChatPage> {
                 onSend: _sendMessage,
                 isStreaming: _isStreaming,
                 onStopStreaming: _stopGeneration,
-                useCrew: _useCrew,
-                onToggleCrew: (v) => setState(() => _useCrew = v),
               ),
             ],
           ),

@@ -72,7 +72,8 @@ class _AgentsPageState extends State<AgentsPage> {
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : IconButton(
                                 icon: const Icon(Icons.auto_awesome),
@@ -81,21 +82,25 @@ class _AgentsPageState extends State<AgentsPage> {
                                   if (keywordsController.text.isEmpty) return;
                                   setDialogState(() => isGenerating = true);
                                   try {
-                                    final result = await ApiService.generateAgent(
+                                    final result =
+                                        await ApiService.generateAgent(
                                       keywordsController.text,
                                     );
                                     setDialogState(() {
                                       nameController.text =
                                           result['name'] as String? ?? '';
                                       personalityController.text =
-                                          result['personality'] as String? ?? '';
+                                          result['personality'] as String? ??
+                                              '';
                                       isGenerating = false;
                                     });
                                   } catch (e) {
                                     setDialogState(() => isGenerating = false);
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Generation failed: $e')),
+                                      SnackBar(
+                                          content:
+                                              Text('Generation failed: $e')),
                                     );
                                   }
                                 },
@@ -105,7 +110,8 @@ class _AgentsPageState extends State<AgentsPage> {
                     const Divider(height: 32),
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Agent Name'),
+                      decoration:
+                          const InputDecoration(labelText: 'Agent Name'),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -129,6 +135,7 @@ class _AgentsPageState extends State<AgentsPage> {
                         personalityController.text.isEmpty) {
                       return;
                     }
+                    final messenger = ScaffoldMessenger.of(context);
                     Navigator.pop(dialogContext);
                     try {
                       await ApiService.createAgent(
@@ -137,10 +144,9 @@ class _AgentsPageState extends State<AgentsPage> {
                       );
                       _loadAgents();
                     } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      messenger.showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
                     }
                   },
                   child: const Text('Create'),

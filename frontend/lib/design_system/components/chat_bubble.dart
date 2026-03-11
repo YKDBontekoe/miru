@@ -8,7 +8,6 @@ import '../theme/app_theme_data.dart';
 import '../tokens/colors.dart';
 import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
-import 'crew_task_badge.dart';
 import 'typing_indicator.dart';
 
 /// A themed chat bubble that adapts to user vs. assistant messages.
@@ -72,12 +71,6 @@ class ChatBubble extends StatelessWidget {
           crossAxisAlignment:
               isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            // Crew task type badge (assistant only)
-            if (!isUser && crewTaskType != null) ...[
-              CrewTaskBadge(taskType: crewTaskType!),
-              const SizedBox(height: AppSpacing.xs),
-            ],
-
             // Bubble with long-press to copy
             GestureDetector(
               onLongPress: onCopy,

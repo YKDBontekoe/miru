@@ -13,11 +13,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    const RoomsPage(),
-    const SettingsPage(),
-  ];
+  final ValueNotifier<int> _personaRefreshNotifier = ValueNotifier<int>(0);
 
   void _onItemTapped(int index) {
     if (index == 1) {
@@ -29,13 +25,23 @@ class _MainScaffoldState extends State<MainScaffold> {
     });
   }
 
-  void _showCreatePersona() {
-    showModalBottomSheet(
+  Future<void> _showCreatePersona() async {
+    final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const CreatePersonaSheet(),
     );
+
+    if (created == true) {
+      _personaRefreshNotifier.value++;
+    }
+  }
+
+  @override
+  void dispose() {
+    _personaRefreshNotifier.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,7 +52,10 @@ class _MainScaffoldState extends State<MainScaffold> {
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: [
+          RoomsPage(personaRefreshListenable: _personaRefreshNotifier),
+          const SettingsPage(),
+        ],
       ),
       bottomNavigationBar: _buildLiquidGlassNavBar(colors),
     );
@@ -54,7 +63,8 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Widget _buildLiquidGlassNavBar(AppThemeColors colors) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+      margin: const EdgeInsets.fromLTRB(
+          AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
       height: 72, // increased height slightly for the new button
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSpacing.radiusXxl),
@@ -111,9 +121,12 @@ class _MainScaffoldState extends State<MainScaffold> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: isActive ? colors.primary.withValues(alpha: 0.15) : Colors.transparent,
+          color: isActive
+              ? colors.primary.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         ),
         child: Column(
@@ -121,7 +134,8 @@ class _MainScaffoldState extends State<MainScaffold> {
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
               child: Icon(
                 isActive ? activeIcon : icon,
                 key: ValueKey<bool>(isActive),
