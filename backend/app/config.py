@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     webauthn_expected_origin: str = "http://localhost"
     # Comma-separated allowed CORS origins — tighten in production
     cors_allowed_origins: str = "*"
+    # Tavily Search API key for web search capabilities
+    tavily_api_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

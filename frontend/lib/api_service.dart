@@ -160,12 +160,25 @@ class ApiService {
 
   static Future<Map<String, dynamic>> createAgent(
     String name,
-    String personality,
-  ) async {
+    String personality, {
+    String? description,
+    List<String> goals = const <String>[],
+    List<String> capabilities = const <String>[],
+    List<String> integrations = const <String>[],
+    String? systemPrompt,
+  }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/agents'),
       headers: _headers,
-      body: jsonEncode({'name': name, 'personality': personality}),
+      body: jsonEncode({
+        'name': name,
+        'personality': personality,
+        'description': description,
+        'goals': goals,
+        'capabilities': capabilities,
+        'integrations': integrations,
+        'system_prompt': systemPrompt,
+      }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -185,6 +198,30 @@ class ApiService {
     } else {
       throw Exception('Failed to generate agent: ${response.statusCode}');
     }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAgentCapabilities() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/agents/capabilities'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data.map((dynamic e) => e as Map<String, dynamic>).toList();
+    }
+    throw Exception('Failed to load capabilities: ${response.statusCode}');
+  }
+
+  static Future<List<Map<String, dynamic>>> getAgentIntegrations() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/agents/integrations'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data.map((dynamic e) => e as Map<String, dynamic>).toList();
+    }
+    throw Exception('Failed to load integrations: ${response.statusCode}');
   }
 
   // --- Chat Rooms API ---

@@ -40,6 +40,7 @@ import re
 from typing import Any, Literal
 
 from crewai import LLM, Agent, Crew, Process, Task
+from crewai_tools import TavilySearchResults
 
 from app.config import get_settings
 
@@ -82,7 +83,7 @@ def detect_task_type(message: str) -> TaskType:
 # ---------------------------------------------------------------------------
 
 
-def _make_llm() -> LLM:
+def make_llm() -> LLM:
     """Return a CrewAI LLM backed by OpenRouter using the configured default model."""
     model = get_settings().default_chat_model
     # CrewAI uses LiteLLM under the hood; prefix with "openrouter/" so
@@ -112,6 +113,7 @@ def _create_sequential_crew(agents: list[Any], tasks: list[Any]) -> Crew:
 
 
 def _build_research_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Task]:
+    search_tool = TavilySearchResults(api_key=get_settings().tavily_api_key)
     researcher = Agent(
         role="Research Analyst",
         goal="Gather comprehensive, accurate information to answer the user's question.",
@@ -121,6 +123,7 @@ def _build_research_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Ta
             "that are factual, nuanced, and easy to follow."
         ),
         llm=llm,
+        tools=[search_tool] if get_settings().tavily_api_key else [],
         verbose=False,
     )
     synthesiser = Agent(
@@ -325,7 +328,7 @@ async def run_crew(
         The crew's final output as a plain string.
     """
     task_type = detect_task_type(message)
-    llm = _make_llm()
+    llm = make_llm()
 
     # Build memory context block
     if memories:

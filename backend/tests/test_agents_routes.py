@@ -59,6 +59,47 @@ def test_get_agents_route(mock_get_agents: MagicMock) -> None:
     assert response.json()[0]["name"] == "Bot"
 
 
+@patch("app.routes.get_available_capabilities")
+def test_get_agent_capabilities_route(mock_get_capabilities: MagicMock) -> None:
+    mock_get_capabilities.return_value = [
+        {
+            "id": "web_search",
+            "name": "Web Search",
+            "description": "Search online",
+            "icon": "search",
+        }
+    ]
+
+    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(uuid4())}):
+        response = client.get(
+            "/api/agents/capabilities", headers={"Authorization": "Bearer fake_token"}
+        )
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == "web_search"
+
+
+@patch("app.routes.get_available_integrations")
+def test_get_agent_integrations_route(mock_get_integrations: MagicMock) -> None:
+    mock_get_integrations.return_value = [
+        {
+            "type": "spotify",
+            "display_name": "Spotify",
+            "description": "Music integration",
+            "icon": "music_note",
+            "status": "coming_soon",
+        }
+    ]
+
+    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(uuid4())}):
+        response = client.get(
+            "/api/agents/integrations", headers={"Authorization": "Bearer fake_token"}
+        )
+
+    assert response.status_code == 200
+    assert response.json()[0]["type"] == "spotify"
+
+
 @patch("app.routes.create_room", new_callable=AsyncMock)
 def test_create_room_route(mock_create_room: MagicMock) -> None:
     mock_create_room.return_value = RoomResponse(id="room123", name="Chat", created_at="now")

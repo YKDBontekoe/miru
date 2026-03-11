@@ -545,6 +545,36 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
     ).showSnackBar(const SnackBar(content: Text('Persona deleted')));
   }
 
+  Widget _buildSection(String title, String content, AppThemeColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          style: AppTypography.labelSmall.copyWith(
+            color: colors.onSurfaceMuted,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: colors.surfaceHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          ),
+          child: Text(
+            content,
+            style: AppTypography.bodySmall.copyWith(
+              color: colors.onSurface,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -599,12 +629,13 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(widget.agent.name, style: AppTypography.headingSmall),
-                    Text(
-                      'Persona',
-                      style: AppTypography.caption.copyWith(
-                        color: colors.onSurfaceMuted,
+                    if (widget.agent.description != null)
+                      Text(
+                        widget.agent.description!,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.onSurfaceMuted,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -613,28 +644,59 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
           const SizedBox(height: AppSpacing.xl),
 
           // Personality section
-          Text(
-            'PERSONALITY',
-            style: AppTypography.labelSmall.copyWith(
-              color: colors.onSurfaceMuted,
-              letterSpacing: 1.2,
-            ),
+          _buildSection(
+            'PERSONALITY & BEHAVIOR',
+            widget.agent.personality,
+            colors,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: colors.surfaceHigh,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+
+          if (widget.agent.goals.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _buildSection(
+              'GOALS',
+              widget.agent.goals.join('\n'),
+              colors,
             ),
-            child: Text(
-              widget.agent.personality,
-              style: AppTypography.bodySmall.copyWith(
-                color: colors.onSurface,
-                height: 1.5,
+          ],
+
+          if (widget.agent.capabilities.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'CAPABILITIES',
+              style: AppTypography.labelSmall.copyWith(
+                color: colors.onSurfaceMuted,
+                letterSpacing: 1.2,
               ),
             ),
-          ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: widget.agent.capabilities.map((cap) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primaryLight.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                    border: Border.all(
+                      color: colors.primaryLight.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    cap,
+                    style: AppTypography.caption.copyWith(
+                      color: colors.primaryLight,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
           const SizedBox(height: AppSpacing.xl),
 
           // Delete button
@@ -677,8 +739,19 @@ class CreatePersonaSheet extends StatefulWidget {
 
 class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
   final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _personalityController = TextEditingController();
+  final _goalsController = TextEditingController();
   final _keywordController = TextEditingController();
+
+  final Set<String> _selectedCapabilities = <String>{};
+  final Set<String> _selectedIntegrations = <String>{};
+
+  List<Map<String, dynamic>> _availableCapabilities = [];
+  List<Map<String, dynamic>> _availableIntegrations = [];
+
+  int _step = 0;
+  bool _isLoadingOptions = true;
   bool _isGenerating = false;
   bool _isSaving = false;
 
@@ -687,9 +760,42 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _descriptionController.dispose();
     _personalityController.dispose();
+    _goalsController.dispose();
     _keywordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAgentOptions();
+  }
+
+  Future<void> _loadAgentOptions() async {
+    setState(() => _isLoadingOptions = true);
+    try {
+      final results = await Future.wait([
+        ApiService.getAgentCapabilities(),
+        ApiService.getAgentIntegrations(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _availableCapabilities = results[0];
+        _availableIntegrations = results[1];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load agent options: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoadingOptions = false);
+    }
   }
 
   Future<void> _generateAI() async {
@@ -702,6 +808,27 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
       setState(() {
         _nameController.text = (res['name'] as String?) ?? '';
         _personalityController.text = (res['personality'] as String?) ?? '';
+        _descriptionController.text = (res['description'] as String?) ?? '';
+
+        final goals = (res['goals'] as List<dynamic>? ?? [])
+            .map((dynamic e) => e.toString())
+            .where((goal) => goal.trim().isNotEmpty)
+            .toList();
+        _goalsController.text = goals.join('\n');
+
+        _selectedCapabilities
+          ..clear()
+          ..addAll(
+            (res['capabilities'] as List<dynamic>? ?? [])
+                .map((dynamic e) => e.toString()),
+          );
+
+        _selectedIntegrations
+          ..clear()
+          ..addAll(
+            (res['suggested_integrations'] as List<dynamic>? ?? [])
+                .map((dynamic e) => e.toString()),
+          );
       });
     } catch (e) {
       if (mounted) {
@@ -719,12 +846,26 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
 
   Future<void> _save() async {
     final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
     final personality = _personalityController.text.trim();
+    final goals = _goalsController.text
+        .split('\n')
+        .map((String line) => line.trim())
+        .where((String line) => line.isNotEmpty)
+        .toList();
+
     if (name.isEmpty || personality.isEmpty) return;
 
     setState(() => _isSaving = true);
     try {
-      await ApiService.createAgent(name, personality);
+      await ApiService.createAgent(
+        name,
+        personality,
+        description: description.isEmpty ? null : description,
+        goals: goals,
+        capabilities: _selectedCapabilities.toList(),
+        integrations: _selectedIntegrations.toList(),
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -789,129 +930,260 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // --- Name field ---
-          TextField(
-            controller: _nameController,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              hintText: 'e.g. Luna, Captain Rex',
-            ),
+          LinearProgressIndicator(
+            value: (_step + 1) / 3,
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
           ),
-          const SizedBox(height: AppSpacing.md),
-
-          // --- Personality field with char counter ---
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _personalityController,
-            builder: (context, value, _) {
-              final count = value.text.length;
-              final overLimit = count > _maxPersonalityChars;
-              return TextField(
-                controller: _personalityController,
-                maxLines: 4,
-                maxLength: _maxPersonalityChars,
-                decoration: InputDecoration(
-                  labelText: 'Personality / Instructions',
-                  hintText: 'Describe how this persona speaks and behaves...',
-                  counterStyle: AppTypography.caption.copyWith(
-                    color: overLimit ? AppColors.error : colors.onSurfaceMuted,
-                  ),
-                ),
-              );
-            },
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            _stepLabel(),
+            style: AppTypography.caption.copyWith(color: colors.onSurfaceMuted),
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // --- AI generation section ---
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: colors.surfaceHigh,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              border: Border.all(color: colors.border.withValues(alpha: 0.5)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.auto_awesome_rounded,
-                      size: 14,
-                      color: colors.primaryLight,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      'GENERATE WITH AI',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: colors.primaryLight,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _keywordController,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. funny pirate, stern scientist',
-                          isDense: true,
-                          fillColor: colors.surfaceHighest,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: FilledButton(
-                        onPressed: _isGenerating ? null : _generateAI,
-                        style: FilledButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusMd,
-                            ),
-                          ),
-                        ),
-                        child: _isGenerating
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.onPrimary,
-                                ),
-                              )
-                            : const Icon(Icons.auto_awesome_rounded, size: 20),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
+          if (_step == 0) _buildIdentityStep(colors),
+          if (_step == 1) _buildGoalsAndCapabilitiesStep(colors),
+          if (_step == 2) _buildIntegrationsStep(colors),
+          const SizedBox(height: AppSpacing.lg),
 
-          // --- Save button ---
-          FilledButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.onPrimary,
-                    ),
-                  )
-                : const Text('Save Persona'),
+          Row(
+            children: [
+              if (_step > 0)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => _step--),
+                    child: const Text('Back'),
+                  ),
+                ),
+              if (_step > 0) const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _isSaving || _isLoadingOptions
+                      ? null
+                      : (_step == 2 ? _save : () => setState(() => _step++)),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.onPrimary,
+                          ),
+                        )
+                      : Text(_step == 2 ? 'Create Agent' : 'Continue'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  String _stepLabel() {
+    if (_step == 0) return 'Step 1 of 3 · Identity & behavior';
+    if (_step == 1) return 'Step 2 of 3 · Goals & capabilities';
+    return 'Step 3 of 3 · Integrations (future-ready)';
+  }
+
+  Widget _buildIdentityStep(AppThemeColors colors) {
+    return Column(
+      children: [
+        TextField(
+          controller: _nameController,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Agent Name',
+            hintText: 'e.g. Luna Strategist',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        TextField(
+          controller: _descriptionController,
+          maxLines: 2,
+          decoration: const InputDecoration(
+            labelText: 'Description',
+            hintText: 'What this agent is designed to do',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _personalityController,
+          builder: (context, value, _) {
+            final count = value.text.length;
+            final overLimit = count > _maxPersonalityChars;
+            return TextField(
+              controller: _personalityController,
+              maxLines: 4,
+              maxLength: _maxPersonalityChars,
+              decoration: InputDecoration(
+                labelText: 'Personality / Instructions',
+                hintText: 'How this agent thinks, speaks, and behaves...',
+                counterStyle: AppTypography.caption.copyWith(
+                  color: overLimit ? AppColors.error : colors.onSurfaceMuted,
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: colors.surfaceHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(color: colors.border.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'GENERATE FULL PROFILE WITH AI',
+                style: AppTypography.labelSmall.copyWith(
+                  color: colors.primaryLight,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _keywordController,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. music coach, productivity, calm tone',
+                        isDense: true,
+                        fillColor: colors.surfaceHighest,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: FilledButton(
+                      onPressed: _isGenerating ? null : _generateAI,
+                      style: FilledButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusMd,
+                          ),
+                        ),
+                      ),
+                      child: _isGenerating
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome_rounded, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalsAndCapabilitiesStep(AppThemeColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _goalsController,
+          maxLines: 5,
+          decoration: const InputDecoration(
+            labelText: 'Goals (one per line)',
+            hintText:
+                'Help me stay focused\nPrioritize daily tasks\nSummarize key takeaways',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          'Capabilities',
+          style: AppTypography.labelLarge.copyWith(color: colors.onSurface),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (_isLoadingOptions)
+          const Center(child: CircularProgressIndicator())
+        else
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: _availableCapabilities.map((capability) {
+              final id = capability['id'] as String;
+              final selected = _selectedCapabilities.contains(id);
+              return FilterChip(
+                selected: selected,
+                label: Text(capability['name'] as String? ?? id),
+                onSelected: (_) {
+                  setState(() {
+                    if (selected) {
+                      _selectedCapabilities.remove(id);
+                    } else {
+                      _selectedCapabilities.add(id);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildIntegrationsStep(AppThemeColors colors) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Connect services this agent should work with',
+          style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (_isLoadingOptions)
+          const Center(child: CircularProgressIndicator())
+        else
+          ..._availableIntegrations.map((integration) {
+            final type = integration['type'] as String;
+            final selected = _selectedIntegrations.contains(type);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: CheckboxListTile(
+                value: selected,
+                onChanged: (_) {
+                  setState(() {
+                    if (selected) {
+                      _selectedIntegrations.remove(type);
+                    } else {
+                      _selectedIntegrations.add(type);
+                    }
+                  });
+                },
+                title: Text(integration['display_name'] as String? ?? type),
+                subtitle: Text(
+                  integration['description'] as String? ?? '',
+                  style: AppTypography.caption.copyWith(
+                    color: colors.onSurfaceMuted,
+                  ),
+                ),
+                secondary: Icon(Icons.link_rounded, color: colors.primaryLight),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                ),
+                dense: true,
+              ),
+            );
+          }),
+      ],
     );
   }
 }

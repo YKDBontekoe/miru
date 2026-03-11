@@ -1,6 +1,7 @@
+import json
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -11,6 +12,7 @@ from app.agents import (
     add_agent_to_room,
     create_agent,
     create_room,
+    generate_agent,
     get_agents,
     get_room_agents,
     get_room_messages,
@@ -47,9 +49,35 @@ async def test_create_agent(mock_supabase: MagicMock) -> None:
     result = await create_agent(agent_data, user_id)
     assert result.name == "Test Agent"
     assert result.personality == "Friendly"
-    mock_supabase.table().insert.assert_called_with(
-        {"user_id": str(user_id), "name": "Test Agent", "personality": "Friendly"}
+    insert_args = mock_supabase.table().insert.call_args.args[0]
+    assert insert_args["user_id"] == str(user_id)
+    assert insert_args["name"] == "Test Agent"
+    assert insert_args["personality"] == "Friendly"
+    assert insert_args["goals"] == []
+    assert insert_args["capabilities"] == []
+    assert insert_args["integrations"] == []
+    assert "system_prompt" in insert_args
+
+
+@patch("app.agents.chat_completion", new_callable=AsyncMock)
+@pytest.mark.asyncio
+async def test_generate_agent(mock_chat_completion: AsyncMock) -> None:
+    mock_chat_completion.return_value = json.dumps(
+        {
+            "name": "Orbit",
+            "personality": "You are a strategic planning assistant.",
+            "description": "Helps users map goals into execution plans",
+            "goals": ["Clarify priorities", "Build weekly action plans"],
+            "capabilities": ["task_planning", "summarization"],
+            "suggested_integrations": ["discord", "spotify"],
+        }
     )
+
+    result = await generate_agent("planner")
+    assert result.name == "Orbit"
+    assert result.description == "Helps users map goals into execution plans"
+    assert "task_planning" in result.capabilities
+    assert "discord" in result.suggested_integrations
 
 
 @pytest.mark.asyncio

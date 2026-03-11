@@ -20,8 +20,10 @@ from app.agents import (
     AgentGenerate,
     AgentGenerationResponse,
     AgentResponse,
+    CapabilityInfo,
     ChatMessageCreate,
     ChatMessageResponse,
+    IntegrationInfo,
     RoomAgentAdd,
     RoomCreate,
     RoomResponse,
@@ -31,6 +33,8 @@ from app.agents import (
     create_room,
     generate_agent,
     get_agents,
+    get_available_capabilities,
+    get_available_integrations,
     get_room_agents,
     get_room_messages,
     get_rooms,
@@ -447,6 +451,18 @@ async def list_agents_route(user_id: CurrentUser) -> Any:
 async def generate_agent_route(request: AgentGenerate, user_id: CurrentUser) -> Any:
     """Generate an agent from keywords."""
     return await generate_agent(request.keywords)
+
+
+@router.get("/agents/capabilities", response_model=list[CapabilityInfo])
+async def list_agent_capabilities_route(user_id: CurrentUser) -> Any:
+    """List available built-in capabilities for agent creation."""
+    return get_available_capabilities()
+
+
+@router.get("/agents/integrations", response_model=list[IntegrationInfo])
+async def list_agent_integrations_route(user_id: CurrentUser) -> Any:
+    """List available external integrations for agent connections."""
+    return get_available_integrations()
 
 
 @router.post("/rooms", response_model=RoomResponse)
