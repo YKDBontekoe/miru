@@ -4,7 +4,7 @@
 -- By using `halfvec` (2-byte floats), we can index up to 4000 dimensions while saving 50% storage
 -- with negligible loss in retrieval recall.
 
--- Step 1: Drop the problematic index and function from the previous (failed) attempt
+-- Step 1: Drop the problematic index and function from the previous schema
 DROP INDEX IF EXISTS public.memories_embedding_idx;
 
 -- Drop all potential overloaded versions of match_memories to ensure a clean slate
@@ -15,17 +15,20 @@ DROP FUNCTION IF EXISTS public.match_memories(vector(2048), float, int, text, te
 DROP FUNCTION IF EXISTS public.match_memories(halfvec, float, int, text, text, text);
 DROP FUNCTION IF EXISTS public.match_memories(halfvec(2048), float, int, text, text, text);
 
--- Step 2: Convert the column to halfvec(2048)
--- We use USING to cast the existing vector (which is empty anyway due to the TRUNCATE in the previous migration)
+-- Step 2: Clear all existing memories (incompatible dimensions/types)
+TRUNCATE public.memories;
+
+-- Step 3: Convert the column to halfvec(2048)
+-- We use USING to cast the existing vector (which is empty anyway due to the TRUNCATE above)
 ALTER TABLE public.memories
     ALTER COLUMN embedding TYPE halfvec(2048);
 
--- Step 3: Create the HNSW index using halfvec_cosine_ops
+-- Step 4: Create the HNSW index using halfvec_cosine_ops
 CREATE INDEX memories_embedding_idx
     ON public.memories
     USING hnsw (embedding halfvec_cosine_ops);
 
--- Step 4: Recreate the match_memories RPC to accept halfvec(2048)
+-- Step 5: Recreate the match_memories RPC to accept halfvec(2048)
 -- This allows the application to continue passing vectors which will be implicitly cast
 CREATE OR REPLACE FUNCTION public.match_memories(
     query_embedding halfvec(2048),
