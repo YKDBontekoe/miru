@@ -26,5 +26,12 @@ async def test_search_memories_by_vector() -> None:
         mock_embed.assert_awaited_once_with("test query")
         mock_supabase.rpc.assert_called_once_with(
             "match_memories",
-            {"query_embedding": [0.1, 0.2, 0.3], "match_threshold": 0.0, "match_count": 2},
+            {
+                "query_embedding": [0.1, 0.2, 0.3],
+                "match_threshold": 0.0,
+                "match_count": 2,
+                "p_user_id": None,
+                "p_agent_id": None,
+                "p_room_id": None,
+            },
         )
