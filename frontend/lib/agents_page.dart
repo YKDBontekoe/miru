@@ -72,8 +72,9 @@ class _AgentsPageState extends State<AgentsPage> {
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : IconButton(
                                 icon: const Icon(Icons.auto_awesome),
@@ -99,8 +100,8 @@ class _AgentsPageState extends State<AgentsPage> {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content:
-                                              Text('Generation failed: $e')),
+                                        content: Text('Generation failed: $e'),
+                                      ),
                                     );
                                   }
                                 },
@@ -110,8 +111,9 @@ class _AgentsPageState extends State<AgentsPage> {
                     const Divider(height: 32),
                     TextField(
                       controller: nameController,
-                      decoration:
-                          const InputDecoration(labelText: 'Agent Name'),
+                      decoration: const InputDecoration(
+                        labelText: 'Agent Name',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(

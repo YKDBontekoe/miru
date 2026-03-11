@@ -299,8 +299,9 @@ class _AuthPageState extends State<AuthPage>
                       : TextInputAction.done,
                   autocorrect: false,
                   autofillHints: const [AutofillHints.email],
-                  style:
-                      AppTypography.bodyMedium.copyWith(color: colors.onSurface),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: colors.onSurface,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Email address',
                     hintText: 'you@example.com',
@@ -314,7 +315,9 @@ class _AuthPageState extends State<AuthPage>
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value.trim())) {
+                    if (!RegExp(
+                      r'^[^@]+@[^@]+\.[^@]+$',
+                    ).hasMatch(value.trim())) {
                       return 'Please enter a valid email';
                     }
                     return null;
@@ -330,8 +333,9 @@ class _AuthPageState extends State<AuthPage>
                     controller: _passwordController,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
-                    style:
-                        AppTypography.bodyMedium.copyWith(color: colors.onSurface),
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: colors.onSurface,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Password',
                       prefixIcon: Icon(
@@ -364,8 +368,11 @@ class _AuthPageState extends State<AuthPage>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline,
-                            color: AppColors.error, size: 16),
+                        Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 16,
+                        ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
@@ -413,8 +420,9 @@ class _AuthPageState extends State<AuthPage>
                   children: [
                     Expanded(child: Divider(color: colors.border)),
                     Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
                       child: Text(
                         'or',
                         style: AppTypography.bodySmall.copyWith(

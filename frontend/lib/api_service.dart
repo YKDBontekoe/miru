@@ -95,8 +95,10 @@ class ApiService {
   // --- Agents API ---
 
   static Future<List<Map<String, dynamic>>> getAgents() async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/agents'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl/agents'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
       return data.map((e) => e as Map<String, dynamic>).toList();
@@ -137,8 +139,10 @@ class ApiService {
   // --- Chat Rooms API ---
 
   static Future<List<Map<String, dynamic>>> getRooms() async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/rooms'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl/rooms'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
       return data.map((e) => e as Map<String, dynamic>).toList();
@@ -196,7 +200,8 @@ class ApiService {
   }
 
   static Future<List<Map<String, dynamic>>> getRoomMessages(
-      String roomId) async {
+    String roomId,
+  ) async {
     final response = await http.get(
       Uri.parse('$baseUrl/rooms/$roomId/messages'),
       headers: _headers,
@@ -216,9 +221,7 @@ class ApiService {
     try {
       final request = http.Request('POST', uri)
         ..headers.addAll(_headers)
-        ..body = jsonEncode(<String, dynamic>{
-          'content': message,
-        });
+        ..body = jsonEncode(<String, dynamic>{'content': message});
 
       final streamedResponse = await client.send(request);
 

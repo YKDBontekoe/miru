@@ -247,12 +247,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
       return _roomAgents
           .firstWhere(
             (a) => a.id == msg.agentId,
-            orElse: () => Agent(
-              id: '',
-              name: 'Agent',
-              personality: '',
-              createdAt: '',
-            ),
+            orElse: () =>
+                Agent(id: '', name: 'Agent', personality: '', createdAt: ''),
           )
           .name;
     }
@@ -317,11 +313,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           children: [
             Text(_roomName, style: AppTypography.headingSmall),
             const SizedBox(width: AppSpacing.xs),
-            Icon(
-              Icons.edit_outlined,
-              size: 14,
-              color: colors.onSurfaceMuted,
-            ),
+            Icon(Icons.edit_outlined, size: 14, color: colors.onSurfaceMuted),
           ],
         ),
       ),
@@ -352,10 +344,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Widget _buildMembersBar(AppThemeColors colors) {
-    final names = [
-      'You',
-      ..._roomAgents.map((a) => a.name),
-    ];
+    final names = ['You', ..._roomAgents.map((a) => a.name)];
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -365,11 +354,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       color: colors.surfaceHigh,
       child: Row(
         children: [
-          Icon(
-            Icons.group_outlined,
-            size: 14,
-            color: colors.onSurfaceMuted,
-          ),
+          Icon(Icons.group_outlined, size: 14, color: colors.onSurfaceMuted),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
@@ -426,10 +411,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final msg = _messages[index];
-        return _MessageItem(
-          message: msg,
-          senderName: _getSenderName(msg),
-        );
+        return _MessageItem(message: msg, senderName: _getSenderName(msg));
       },
     );
   }
@@ -441,10 +423,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: _streamingBuffers.entries.map((entry) {
           final agentName = _agentNameById(entry.key);
-          return _StreamingBubble(
-            agentName: agentName,
-            text: entry.value,
-          );
+          return _StreamingBubble(agentName: agentName, text: entry.value);
         }).toList(),
       ),
     );
@@ -570,10 +549,7 @@ class _AddAgentSheetState extends State<_AddAgentSheet> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: AppColors.error,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _addingId = null);
@@ -649,10 +625,7 @@ class _AddAgentSheetState extends State<_AddAgentSheet> {
                       ),
                     ),
                   ),
-                  title: Text(
-                    agent.name,
-                    style: AppTypography.bodyMedium,
-                  ),
+                  title: Text(agent.name, style: AppTypography.bodyMedium),
                   subtitle: Text(
                     agent.personality,
                     maxLines: 1,
@@ -669,10 +642,8 @@ class _AddAgentSheetState extends State<_AddAgentSheet> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(
-                              Icons.add_rounded,
-                              color: colors.onSurfaceMuted,
-                            ),
+                          : Icon(Icons.add_rounded,
+                              color: colors.onSurfaceMuted),
                   onTap: isInRoom || isAdding
                       ? null
                       : () {
