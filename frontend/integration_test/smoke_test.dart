@@ -6,12 +6,19 @@ import 'package:miru/main.dart';
 import 'package:miru/backend_service.dart';
 import 'package:miru/services/supabase_service.dart';
 
+// Create a mock BackendService for tests
+void _setupMockBackend() {
+  BackendService.baseUrl.value = 'http://127.0.0.1:8000/api';
+  BackendService.bypassWaitForBackend = true;
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Smoke tests', () {
     testWidgets('App launches and renders the auth page', (tester) async {
       await BackendService.init();
+      _setupMockBackend();
       await SupabaseService.initialize();
       await tester.pumpWidget(const MiruApp());
 
@@ -23,6 +30,7 @@ void main() {
 
     testWidgets('Email input bar is present', (tester) async {
       await BackendService.init();
+      _setupMockBackend();
       await SupabaseService.initialize();
 
       await tester.pumpWidget(const MiruApp());
@@ -35,6 +43,7 @@ void main() {
 
     testWidgets('Typing an email shows it in the input field', (tester) async {
       await BackendService.init();
+      _setupMockBackend();
       await SupabaseService.initialize();
 
       await tester.pumpWidget(const MiruApp());

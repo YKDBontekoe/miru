@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BackendService {
@@ -12,6 +14,10 @@ class BackendService {
 
   static final ValueNotifier<String> baseUrl = ValueNotifier(_defaultUrl);
   static final ValueNotifier<bool> onboardingComplete = ValueNotifier(false);
+
+  // A visible-for-testing flag to bypass the backend wait in tests
+  @visibleForTesting
+  static bool bypassWaitForBackend = false;
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -52,5 +58,59 @@ class BackendService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey);
     baseUrl.value = _defaultUrl;
+  }
+
+  /// Waits for the backend to start up by polling the /health endpoint.
+  /// Uses a simple exponential backoff strategy.
+  static Future<void> waitForBackend({
+    int maxAttempts = 30,
+    Duration initialDelay = const Duration(seconds: 1),
+  }) async {
+    if (bypassWaitForBackend) {
+      debugPrint('Bypassing backend wait for testing');
+      return;
+    }
+
+    final client = http.Client();
+    Duration currentDelay = initialDelay;
+
+    // The health endpoint is at the root, so we strip /api
+    final uri =
+        Uri.parse(baseUrl.value.replaceAll(RegExp(r'/api$'), '/health'));
+
+    try {
+      for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          final response = await client.get(uri).timeout(
+                const Duration(seconds: 5),
+              );
+
+          if (response.statusCode == 200) {
+            debugPrint('Backend is awake after $attempt attempts');
+            return;
+          }
+        } catch (e) {
+          debugPrint(
+              'Backend not awake yet (attempt $attempt/$maxAttempts): $e');
+        }
+
+        if (attempt < maxAttempts) {
+          await Future<void>.delayed(currentDelay);
+          // Simple backoff: double the delay up to a maximum of 5 seconds
+          currentDelay = Duration(
+            milliseconds: (currentDelay.inMilliseconds * 1.5)
+                .clamp(
+                  initialDelay.inMilliseconds,
+                  5000,
+                )
+                .toInt(),
+          );
+        }
+      }
+
+      throw Exception('Failed to reach backend after $maxAttempts attempts');
+    } finally {
+      client.close();
+    }
   }
 }
