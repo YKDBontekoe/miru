@@ -5,6 +5,7 @@ import 'auth_page.dart';
 import 'backend_service.dart';
 import 'design_system/design_system.dart';
 import 'introduction_page.dart';
+import 'loading_page.dart';
 import 'main_scaffold.dart';
 import 'services/passkey_service.dart';
 import 'services/supabase_service.dart';
@@ -48,27 +49,26 @@ class _MiruAppState extends State<MiruApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: StreamBuilder<AuthState>(
-        stream: _authStream,
-        builder: (context, snapshot) {
-          // While we wait for the first auth state event, show the correct
-          // initial page synchronously from the cached session.
-          final isAuthenticated = SupabaseService.isAuthenticated;
+      home: LoadingPage(
+        child: StreamBuilder<AuthState>(
+          stream: _authStream,
+          builder: (context, snapshot) {
+            // While we wait for the first auth state event, show the correct
+            // initial page synchronously from the cached session.
+            final isAuthenticated = SupabaseService.isAuthenticated;
 
-          if (isAuthenticated) {
-            // Show onboarding on first launch, then chat.
-            if (!BackendService.onboardingComplete.value) {
-              return const IntroductionPage();
+            if (isAuthenticated) {
+              // Show onboarding on first launch, then chat.
+              if (!BackendService.onboardingComplete.value) {
+                return const IntroductionPage();
+              }
+              return const MainScaffold();
             }
-            return const MainScaffold();
-          }
 
-          return const AuthPage();
-        },
+            return const AuthPage();
+          },
+        ),
       ),
     );
   }
 }
-
-// Update routes or menu to access AgentsPage and RoomsPage
-// Note: as I cannot reliably sed the main file without breaking it, I'll provide instructions if it was real.
