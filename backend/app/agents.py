@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
-from crewai_tools import TavilySearchResults  # type: ignore
+from crewai_tools import TavilySearchTool
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
@@ -647,7 +647,7 @@ async def stream_room_responses(
             agent_reply_chunks = []
             if has_web_search:
                 yield f"[[STATUS:thinking_with_tools:{agent.name}]]\n"
-                search_tool = TavilySearchResults(api_key=get_settings().tavily_api_key)
+                search_tool = TavilySearchTool(api_key=get_settings().tavily_api_key)
 
                 crew_agent = CrewAgent(
                     role=agent.name,

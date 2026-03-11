@@ -40,7 +40,7 @@ import re
 from typing import Any, Literal
 
 from crewai import LLM, Agent, Crew, Process, Task
-from crewai_tools import TavilySearchResults  # type: ignore
+from crewai_tools import TavilySearchTool
 
 from app.config import get_settings
 
@@ -113,7 +113,7 @@ def _create_sequential_crew(agents: list[Any], tasks: list[Any]) -> Crew:
 
 
 def _build_research_crew(message: str, context: str, llm: LLM) -> tuple[Crew, Task]:
-    search_tool = TavilySearchResults(api_key=get_settings().tavily_api_key)
+    search_tool = TavilySearchTool(api_key=get_settings().tavily_api_key)
     researcher = Agent(
         role="Research Analyst",
         goal="Gather comprehensive, accurate information to answer the user's question.",
