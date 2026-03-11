@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
-from crewai_tools import TavilySearchResults
+from crewai_tools import TavilySearchResults  # type: ignore
 from pydantic import BaseModel, Field
 
 from app.config import get_settings

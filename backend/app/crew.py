@@ -40,7 +40,7 @@ import re
 from typing import Any, Literal
 
 from crewai import LLM, Agent, Crew, Process, Task
-from crewai_tools import TavilySearchResults
+from crewai_tools import TavilySearchResults  # type: ignore
 
 from app.config import get_settings
 
