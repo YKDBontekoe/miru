@@ -138,6 +138,7 @@ class _ChatPageState extends State<ChatPage> {
       _isStreaming = true;
     });
     _scrollToBottom();
+    HapticFeedback.lightImpact();
 
     try {
       await _sendStreamingMessage(text);
@@ -205,6 +206,7 @@ class _ChatPageState extends State<ChatPage> {
             );
           }
         });
+        HapticFeedback.mediumImpact();
       },
     );
 

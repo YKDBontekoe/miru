@@ -20,7 +20,7 @@ async def test_search_memories_by_vector() -> None:
         mock_rpc.execute.return_value.data = [{"id": "1", "content": "mock_memory"}]
         mock_supabase.rpc.return_value = mock_rpc
 
-        result = await _search_memories_by_vector("test query", 2)
+        result = await _search_memories_by_vector("test query", count=2)
 
         assert result == [{"id": "1", "content": "mock_memory"}]
         mock_embed.assert_awaited_once_with("test query")

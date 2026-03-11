@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 class Agent {
   final String id;
   final String name;
@@ -8,6 +10,9 @@ class Agent {
   final List<String> integrations;
   final String? systemPrompt;
   final String status;
+  final String mood;
+  final int messageCount;
+  final String? avatarUrl;
   final String createdAt;
 
   Agent({
@@ -20,8 +25,21 @@ class Agent {
     this.integrations = const <String>[],
     this.systemPrompt,
     this.status = 'active',
+    this.mood = 'Neutral',
+    this.messageCount = 0,
+    this.avatarUrl,
     required this.createdAt,
   });
+
+  ImageProvider get avatarImage {
+    if (avatarUrl != null) {
+      return NetworkImage(avatarUrl!);
+    }
+    final int seed = (id.hashCode.abs() % 5) + 1;
+    return AssetImage('assets/images/corp_ai_avatar_$seed.png');
+  }
+
+  int get connectionLevel => (messageCount / 10).floor() + 1;
 
   factory Agent.fromJson(Map<String, dynamic> json) {
     return Agent(
@@ -40,6 +58,9 @@ class Agent {
           .toList(),
       systemPrompt: json['system_prompt'] as String?,
       status: (json['status'] as String?) ?? 'active',
+      mood: (json['mood'] as String?) ?? 'Neutral',
+      messageCount: (json['message_count'] as num?)?.toInt() ?? 0,
+      avatarUrl: json['avatar_url'] as String?,
       createdAt: json['created_at'].toString(),
     );
   }
@@ -55,6 +76,9 @@ class Agent {
       'integrations': integrations,
       'system_prompt': systemPrompt,
       'status': status,
+      'mood': mood,
+      'message_count': messageCount,
+      'avatar_url': avatarUrl,
       'created_at': createdAt,
     };
   }

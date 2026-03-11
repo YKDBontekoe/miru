@@ -234,6 +234,8 @@ async def test_save_message_agent(mock_supabase: MagicMock) -> None:
     )
 
 
+@patch("app.agents.update_agent_mood", new_callable=AsyncMock)
+@patch("app.agents.get_agent_relationships", new_callable=AsyncMock)
 @patch("app.agents.chat_completion")
 @pytest.mark.asyncio
 @patch("app.agents.save_message")
@@ -242,7 +244,9 @@ async def test_save_message_agent(mock_supabase: MagicMock) -> None:
 @patch("app.agents.get_room_agents")
 @patch("app.agents.retrieve_memories")
 @patch("app.agents.stream_chat")
+@patch("app.agents.embed", new_callable=AsyncMock)
 async def test_stream_room_responses(
+    mock_embed: AsyncMock,
     mock_stream_chat: MagicMock,
     mock_retrieve_memories: MagicMock,
     mock_get_room_agents: MagicMock,
@@ -250,7 +254,11 @@ async def test_stream_room_responses(
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
     mock_chat_completion: MagicMock,
+    mock_get_agent_relationships: AsyncMock,
+    mock_update_agent_mood: AsyncMock,
 ) -> None:
+    mock_embed.return_value = [0.1, 0.2]
+    mock_get_agent_relationships.return_value = ""
     user_id = uuid4()
 
     # Mock retrieve memories
@@ -261,14 +269,20 @@ async def test_stream_room_responses(
     mock_agent.id = "agent-123"
     mock_agent.name = "Test Agent"
     mock_agent.personality = "Friendly"
-    mock_get_room_agents.return_value = [mock_agent]
+    mock_agent.capabilities = []
+    mock_agent2 = MagicMock()
+    mock_agent2.id = "agent-456"
+    mock_agent2.name = "Test Agent 2"
+    mock_agent2.personality = "Quiet"
+    mock_agent2.capabilities = []
+    mock_get_room_agents.return_value = [mock_agent, mock_agent2]
 
     mock_msg = MagicMock()
     mock_msg.user_id = str(user_id)
     mock_msg.agent_id = None
     mock_msg.content = "Hi there"
     mock_get_room_messages.return_value = [mock_msg]
-    mock_get_agents.return_value = [mock_agent]
+    mock_get_agents.return_value = [mock_agent, mock_agent2]
 
     # Mock orchestrator behavior: agent-123 speaks, then stop
     mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
@@ -296,7 +310,7 @@ async def test_stream_room_responses(
     # Verify that status events were indeed emitted.
     status_chunks = [c for c in chunks if c.startswith("[[STATUS:")]
     assert "[[STATUS:retrieving_memories]]\n" in status_chunks
-    assert "[[STATUS:orchestrating]]\n" in status_chunks
+    assert any(c.startswith("[[STATUS:glance:") for c in status_chunks)
     assert any(c.startswith("[[STATUS:loading_agent:") for c in status_chunks)
     assert "[[STATUS:done]]\n" in status_chunks
 
@@ -341,6 +355,8 @@ async def test_stream_room_responses_no_agents(
     assert chunks == ["No agents in this room to respond."]
 
 
+@patch("app.agents.update_agent_mood", new_callable=AsyncMock)
+@patch("app.agents.get_agent_relationships", new_callable=AsyncMock)
 @patch("app.agents.chat_completion")
 @pytest.mark.asyncio
 @patch("app.agents.save_message")
@@ -349,7 +365,9 @@ async def test_stream_room_responses_no_agents(
 @patch("app.agents.get_room_agents")
 @patch("app.agents.retrieve_memories")
 @patch("app.agents.stream_chat")
+@patch("app.agents.embed", new_callable=AsyncMock)
 async def test_stream_room_responses_no_history(
+    mock_embed: AsyncMock,
     mock_stream_chat: MagicMock,
     mock_retrieve_memories: MagicMock,
     mock_get_room_agents: MagicMock,
@@ -357,7 +375,11 @@ async def test_stream_room_responses_no_history(
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
     mock_chat_completion: MagicMock,
+    mock_get_agent_relationships: AsyncMock,
+    mock_update_agent_mood: AsyncMock,
 ) -> None:
+    mock_embed.return_value = [0.1, 0.2]
+    mock_get_agent_relationships.return_value = ""
     user_id = uuid4()
     mock_retrieve_memories.return_value = []
 
@@ -365,10 +387,16 @@ async def test_stream_room_responses_no_history(
     mock_agent.id = "agent-123"
     mock_agent.name = "Test Agent"
     mock_agent.personality = "Friendly"
-    mock_get_room_agents.return_value = [mock_agent]
+    mock_agent.capabilities = []
+    mock_agent2 = MagicMock()
+    mock_agent2.id = "agent-456"
+    mock_agent2.name = "Test Agent 2"
+    mock_agent2.personality = "Quiet"
+    mock_agent2.capabilities = []
+    mock_get_room_agents.return_value = [mock_agent, mock_agent2]
 
     mock_get_room_messages.return_value = []
-    mock_get_agents.return_value = [mock_agent]
+    mock_get_agents.return_value = [mock_agent, mock_agent2]
 
     # Mock orchestrator behavior: agent-123 speaks, then stop
     mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
@@ -386,10 +414,12 @@ async def test_stream_room_responses_no_history(
     assert content_chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
     status_chunks = [c for c in chunks if c.startswith("[[STATUS:")]
     assert "[[STATUS:retrieving_memories]]\n" in status_chunks
-    assert "[[STATUS:orchestrating]]\n" in status_chunks
+    assert any(c.startswith("[[STATUS:glance:") for c in status_chunks)
     assert "[[STATUS:done]]\n" in status_chunks
 
 
+@patch("app.agents.update_agent_mood", new_callable=AsyncMock)
+@patch("app.agents.get_agent_relationships", new_callable=AsyncMock)
 @patch("app.agents.chat_completion")
 @pytest.mark.asyncio
 @patch("app.agents.save_message")
@@ -398,7 +428,9 @@ async def test_stream_room_responses_no_history(
 @patch("app.agents.get_room_agents")
 @patch("app.agents.retrieve_memories")
 @patch("app.agents.stream_chat")
+@patch("app.agents.embed", new_callable=AsyncMock)
 async def test_stream_room_responses_with_agent_history(
+    mock_embed: AsyncMock,
     mock_stream_chat: MagicMock,
     mock_retrieve_memories: MagicMock,
     mock_get_room_agents: MagicMock,
@@ -406,7 +438,11 @@ async def test_stream_room_responses_with_agent_history(
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
     mock_chat_completion: MagicMock,
+    mock_get_agent_relationships: AsyncMock,
+    mock_update_agent_mood: AsyncMock,
 ) -> None:
+    mock_embed.return_value = [0.1, 0.2]
+    mock_get_agent_relationships.return_value = ""
     user_id = uuid4()
     mock_retrieve_memories.return_value = []
 
@@ -414,14 +450,20 @@ async def test_stream_room_responses_with_agent_history(
     mock_agent.id = "agent-123"
     mock_agent.name = "Test Agent"
     mock_agent.personality = "Friendly"
-    mock_get_room_agents.return_value = [mock_agent]
+    mock_agent.capabilities = []
+    mock_agent2 = MagicMock()
+    mock_agent2.id = "agent-456"
+    mock_agent2.name = "Test Agent 2"
+    mock_agent2.personality = "Quiet"
+    mock_agent2.capabilities = []
+    mock_get_room_agents.return_value = [mock_agent, mock_agent2]
 
     mock_msg = MagicMock()
     mock_msg.user_id = None
     mock_msg.agent_id = "agent-123"
     mock_msg.content = "Hi there"
     mock_get_room_messages.return_value = [mock_msg]
-    mock_get_agents.return_value = [mock_agent]
+    mock_get_agents.return_value = [mock_agent, mock_agent2]
 
     # Mock orchestrator behavior: agent-123 speaks, then stop
     mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
@@ -439,5 +481,5 @@ async def test_stream_room_responses_with_agent_history(
     assert content_chunks == ["[[AGENT:agent-123:Test Agent]]\n", "Hello", "\n\n"]
     status_chunks = [c for c in chunks if c.startswith("[[STATUS:")]
     assert "[[STATUS:retrieving_memories]]\n" in status_chunks
-    assert "[[STATUS:orchestrating]]\n" in status_chunks
+    assert any(c.startswith("[[STATUS:glance:") for c in status_chunks)
     assert "[[STATUS:done]]\n" in status_chunks

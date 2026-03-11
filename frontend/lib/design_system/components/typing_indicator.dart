@@ -7,7 +7,8 @@ import '../tokens/spacing.dart';
 ///
 /// Used inside [ChatBubble] when the assistant is composing a response.
 class TypingIndicator extends StatelessWidget {
-  const TypingIndicator({super.key});
+  final String? agentName;
+  const TypingIndicator({super.key, this.agentName});
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +18,7 @@ class TypingIndicator extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.only(right: i < 2 ? AppSpacing.xs : 0),
           child: _BouncingDot(
+            agentName: agentName,
             delay: Duration(
               milliseconds: i * AppDurations.typingStagger.inMilliseconds,
             ),
@@ -30,8 +32,9 @@ class TypingIndicator extends StatelessWidget {
 /// Internal animated dot used by [TypingIndicator].
 class _BouncingDot extends StatefulWidget {
   final Duration delay;
+  final String? agentName;
 
-  const _BouncingDot({required this.delay});
+  const _BouncingDot({required this.delay, this.agentName});
 
   @override
   State<_BouncingDot> createState() => _BouncingDotState();
@@ -59,7 +62,19 @@ class _BouncingDotState extends State<_BouncingDot>
 
   @override
   Widget build(BuildContext context) {
-    final dotColor = context.colors.onSurfaceMuted;
+    Color dotColor = context.colors.onSurfaceMuted;
+    if (widget.agentName != null && widget.agentName!.isNotEmpty) {
+      final baseColors = [
+        Colors.blue,
+        Colors.teal,
+        Colors.red,
+        Colors.indigo,
+        Colors.deepPurple,
+        Colors.orange
+      ];
+      dotColor =
+          baseColors[widget.agentName!.hashCode.abs() % baseColors.length];
+    }
 
     return AnimatedBuilder(
       animation: _animation,

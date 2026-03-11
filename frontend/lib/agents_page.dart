@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'models/agent.dart';
@@ -14,12 +16,53 @@ class _AgentsPageState extends State<AgentsPage> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _availableCapabilities = [];
   List<Map<String, dynamic>> _availableIntegrations = [];
+  Timer? _chatterTimer;
+  final Map<String, String> _activeChatter = {};
 
   @override
   void initState() {
     super.initState();
     _loadAgents();
     _loadAvailableOptions();
+    _startIdleChatter();
+  }
+
+  @override
+  void dispose() {
+    _chatterTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startIdleChatter() {
+    _chatterTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
+      if (_agents.isEmpty || !mounted) return;
+
+      final random = Random();
+      final targetAgent = _agents[random.nextInt(_agents.length)];
+
+      final thoughts = [
+        "Hmm...",
+        "Interesting...",
+        "Hello there!",
+        "What's next?",
+        "I'm ready",
+        "Thinking..."
+      ];
+      final targetThought = thoughts[random.nextInt(thoughts.length)];
+
+      setState(() {
+        _activeChatter.clear();
+        _activeChatter[targetAgent.id] = targetThought;
+      });
+
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted) {
+          setState(() {
+            _activeChatter.remove(targetAgent.id);
+          });
+        }
+      });
+    });
   }
 
   Future<void> _loadAgents() async {
@@ -96,10 +139,20 @@ class _AgentsPageState extends State<AgentsPage> {
                           const SizedBox(width: 8),
                           isGenerating
                               ? const SizedBox(
-                                  width: 24,
+                                  width: 110,
                                   height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text('Decoding...'),
+                                    ],
                                   ),
                                 )
                               : IconButton(
@@ -321,72 +374,177 @@ class _AgentsPageState extends State<AgentsPage> {
                   itemCount: _agents.length,
                   itemBuilder: (context, index) {
                     final agent = _agents[index];
+                    final String? chatter = _activeChatter[agent.id];
+
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+                    final baseColors = [
+                      Colors.blue,
+                      Colors.teal,
+                      Colors.red,
+                      Colors.indigo,
+                      Colors.deepPurple,
+                      Colors.orange
+                    ];
+                    final themeColor = baseColors[
+                        agent.name.hashCode.abs() % baseColors.length];
+                    final bgColors = isDark
+                        ? [
+                            themeColor.withValues(alpha: 0.2),
+                            themeColor.withValues(alpha: 0.05)
+                          ]
+                        : [
+                            themeColor.withValues(alpha: 0.15),
+                            themeColor.withValues(alpha: 0.05)
+                          ];
+
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  child: Text(agent.name[0].toUpperCase()),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        agent.name,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      if (agent.description != null)
-                                        Text(
-                                          agent.description!,
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                    ],
+                      clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                            color: themeColor.withValues(alpha: 0.3), width: 1),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: bgColors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundImage: agent.avatarImage,
+                                    radius: 28,
+                                    child: agent.avatarUrl == null
+                                        ? null
+                                        : Text(agent.name[0].toUpperCase()),
                                   ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                agent.name,
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (chatter != null)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surface,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                      color:
+                                                          themeColor.withValues(
+                                                              alpha: 0.5)),
+                                                ),
+                                                child: Text(
+                                                  chatter,
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: themeColor),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        if (agent.description != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            agent.description!,
+                                            style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.grey[400]
+                                                  : Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.military_tech,
+                                                size: 16, color: themeColor),
+                                            const SizedBox(width: 4),
+                                            Text('Lvl ${agent.connectionLevel}',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: themeColor,
+                                                    fontSize: 13)),
+                                            const SizedBox(width: 12),
+                                            Icon(Icons.mood,
+                                                size: 16,
+                                                color: isDark
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[700]),
+                                            const SizedBox(width: 4),
+                                            Text(agent.mood,
+                                                style: TextStyle(
+                                                    color: isDark
+                                                        ? Colors.grey[400]
+                                                        : Colors.grey[700],
+                                                    fontSize: 13)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                agent.personality,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              if (agent.capabilities.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: agent.capabilities.map((cap) {
+                                    return Chip(
+                                      label: Text(
+                                        cap,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      padding: EdgeInsets.zero,
+                                    );
+                                  }).toList(),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              agent.personality,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            if (agent.capabilities.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: agent.capabilities.map((cap) {
-                                  return Chip(
-                                    label: Text(
-                                      cap,
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    padding: EdgeInsets.zero,
-                                  );
-                                }).toList(),
-                              ),
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     );

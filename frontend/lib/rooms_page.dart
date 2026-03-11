@@ -298,12 +298,15 @@ class _RoomsPageState extends State<RoomsPage> {
                       backgroundColor: colors.primaryLight.withValues(
                         alpha: 0.15,
                       ),
-                      child: Text(
-                        agent.name.substring(0, 1).toUpperCase(),
-                        style: AppTypography.labelLarge.copyWith(
-                          color: colors.primaryLight,
-                        ),
-                      ),
+                      backgroundImage: agent.avatarImage,
+                      child: agent.avatarUrl == null
+                          ? null
+                          : Text(
+                              agent.name.substring(0, 1).toUpperCase(),
+                              style: AppTypography.labelLarge.copyWith(
+                                color: colors.primaryLight,
+                              ),
+                            ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
@@ -616,12 +619,15 @@ class _PersonaDetailSheetState extends State<_PersonaDetailSheet> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: colors.primaryLight.withValues(alpha: 0.15),
-                child: Text(
-                  widget.agent.name.substring(0, 1).toUpperCase(),
-                  style: AppTypography.headingSmall.copyWith(
-                    color: colors.primaryLight,
-                  ),
-                ),
+                backgroundImage: widget.agent.avatarImage,
+                child: widget.agent.avatarUrl == null
+                    ? null
+                    : Text(
+                        widget.agent.name.substring(0, 1).toUpperCase(),
+                        style: AppTypography.headingSmall.copyWith(
+                          color: colors.primaryLight,
+                        ),
+                      ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -1302,7 +1308,10 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: colors.primary.withValues(alpha: 0.1),
-                    child: Text(agent.name[0].toUpperCase()),
+                    backgroundImage: agent.avatarImage,
+                    child: agent.avatarUrl == null
+                        ? null
+                        : Text(agent.name[0].toUpperCase()),
                   ),
                   title: Text(agent.name),
                   trailing: Checkbox(

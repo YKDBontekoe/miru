@@ -190,12 +190,15 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                             backgroundColor: colors.primaryLight.withValues(
                               alpha: 0.15,
                             ),
-                            child: Text(
-                              agent.name.substring(0, 1).toUpperCase(),
-                              style: textTheme.titleSmall?.copyWith(
-                                color: colors.primaryLight,
-                              ),
-                            ),
+                            backgroundImage: agent.avatarImage,
+                            child: agent.avatarUrl == null
+                                ? null
+                                : Text(
+                                    agent.name.substring(0, 1).toUpperCase(),
+                                    style: textTheme.titleSmall?.copyWith(
+                                      color: colors.primaryLight,
+                                    ),
+                                  ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(

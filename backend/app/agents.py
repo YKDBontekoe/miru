@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -19,10 +20,70 @@ from pydantic import BaseModel, Field
 from app.config import get_settings
 from app.crew import make_llm
 from app.database import get_supabase
-from app.memory import retrieve_memories, store_memory
+from app.memory import embed, retrieve_memories, store_memory
 from app.openrouter import chat_completion, stream_chat
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Background Tasks (Mood, Relationships)
+# ---------------------------------------------------------------------------
+
+
+async def update_agent_mood(agent_id: str, recent_history: str) -> None:
+    """Analyze recent dialogue and update the agent's mood."""
+    if not recent_history.strip():
+        return
+    try:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a mood analyzer. Read the recent chat history and reply with a SINGLE word or very short phrase (e.g. 'Happy', 'Annoyed', 'Curious', 'Sassy', 'Pondering') defining the AI agent's current mood. No explanations.",
+            },
+            {"role": "user", "content": recent_history},
+        ]
+        response_text = await chat_completion(messages)
+        new_mood = response_text.strip().strip('"').strip("'")[:20]
+        if new_mood:
+            get_supabase().table("agents").update({"mood": new_mood}).eq("id", agent_id).execute()
+    except Exception as e:
+        logger.error(f"Failed to update mood: {e}")
+
+
+async def get_agent_relationships(room_agents: list[AgentResponse]) -> str:
+    """Fetch relationships between agents in a group chat."""
+    if len(room_agents) < 2:
+        return ""
+    try:
+        supabase = get_supabase()
+        agent_ids = [a.id for a in room_agents]
+        response = (
+            supabase.table("agent_relationships")
+            .select("*")
+            .in_("agent_id", agent_ids)
+            .in_("target_agent_id", agent_ids)
+            .execute()
+        )
+        rels = cast("list[dict[str, Any]]", response.data)
+        if not rels:
+            return ""
+
+        agent_names = {a.id: a.name for a in room_agents}
+        rel_lines = []
+        for rel in rels:
+            source = agent_names.get(cast("str", rel["agent_id"]))
+            target = agent_names.get(cast("str", rel["target_agent_id"]))
+            if source and target:
+                rel_lines.append(
+                    f"- {source} considers {target} a {rel['relationship_type']}: {rel['description']}"
+                )
+
+        if rel_lines:
+            return "\n\nAgent Relationships in this room:\n" + "\n".join(rel_lines) + "\n"
+    except Exception as e:
+        logger.error(f"Failed to fetch relationships: {e}")
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -173,6 +234,8 @@ class AgentResponse(BaseModel):
     integrations: list[str] = Field(default_factory=list)
     system_prompt: str | None = None
     status: str = "active"
+    mood: str = "Neutral"
+    message_count: int = 0
     created_at: str
 
 
@@ -330,6 +393,8 @@ def _agent_from_row(data: dict[str, Any]) -> AgentResponse:
         integrations=integrations if integrations else [],
         system_prompt=data.get("system_prompt"),
         status=data.get("status", "active"),
+        mood=data.get("mood", "Neutral"),
+        message_count=data.get("message_count", 0),
         created_at=str(data["created_at"]),
     )
 
@@ -518,10 +583,12 @@ async def orchestrate_turn(history_text: str, room_agents: list[AgentResponse]) 
     """
     agents_info = "\n".join([f"- {a.name} (ID: {a.id}): {a.personality}" for a in room_agents])
 
+    relationship_block = await get_agent_relationships(room_agents)
+
     system_prompt = (
         "You are an Orchestrator managing a chat room with multiple AI personas and a User.\n"
         "Your job is to read the conversation history and decide who should speak next.\n\n"
-        f"Available Agents:\n{agents_info}\n\n"
+        f"Available Agents:\n{agents_info}\n{relationship_block}\n"
         "Rules:\n"
         "1. If the User's query is answered and the conversation has naturally concluded for this turn, return an empty list `[]` to wait for the User.\n"
         "2. If an Agent is directly addressed or uniquely qualified to answer, return their ID.\n"
@@ -588,19 +655,23 @@ async def stream_room_responses(
             agent_name = agent_map[msg.agent_id].name if msg.agent_id in agent_map else "Agent"
             history_lines.append(f"{agent_name}: {msg.content}")
 
-    # Memory context
+    # Memory context (embed once per turn to save massive rate limits)
+    query_vector = await embed(user_message)
+
     yield "[[STATUS:retrieving_memories]]\n"
-    user_memories = await retrieve_memories(user_message, user_id=user_id)
+    user_memories = await retrieve_memories(query_vector=query_vector, user_id=user_id)
     user_memory_block = ""
     if user_memories:
         joined = "\n- ".join(user_memories)
         user_memory_block = f"\n\nRelevant things I remember about the user:\n- {joined}\n"
 
-    room_memories = await retrieve_memories(user_message, room_id=room_id)
+    room_memories = await retrieve_memories(query_vector=query_vector, room_id=room_id)
     room_memory_block = ""
     if room_memories:
         joined = "\n- ".join(room_memories)
         room_memory_block = f"\n\nContext and past decisions from this room:\n- {joined}\n"
+
+    relationship_block = await get_agent_relationships(room_agents)
 
     turn_count = 0
     max_turns = 5  # Prevent infinite loops
@@ -609,11 +680,28 @@ async def stream_room_responses(
         history_text = "\n".join(
             history_lines[-10:]
         )  # Pass only recent history to keep context size manageable
-        yield "[[STATUS:orchestrating]]\n"
-        next_speakers = await orchestrate_turn(history_text, room_agents)
 
-        if not next_speakers:
-            break  # Orchestrator decided we are done for this turn
+        if len(room_agents) == 1:
+            if turn_count == 0:
+                next_speakers = [room_agents[0].id]
+            else:
+                break
+        else:
+            import random
+
+            glances = [
+                "Reading the room...",
+                "Looking around...",
+                "Checking relationships...",
+                "Sensing the mood...",
+                "Deciding who speaks next...",
+            ]
+            glance = random.choice(glances)
+            yield f"[[STATUS:glance:{glance}]]\n"
+            next_speakers = await orchestrate_turn(history_text, room_agents)
+
+            if not next_speakers:
+                break  # Orchestrator decided we are done for this turn
 
         for agent_id in next_speakers:
             if agent_id not in agent_map:
@@ -623,7 +711,7 @@ async def stream_room_responses(
 
             # Fetch persona memories specific to this agent
             yield f"[[STATUS:loading_agent:{agent.id}:{agent.name}]]\n"
-            agent_memories = await retrieve_memories(user_message, agent_id=agent.id)
+            agent_memories = await retrieve_memories(query_vector=query_vector, agent_id=agent.id)
             agent_memory_block = ""
             if agent_memories:
                 joined = "\n- ".join(agent_memories)
@@ -637,8 +725,12 @@ async def stream_room_responses(
             )
             system_prompt = (
                 f"{base_prompt}\n"
-                f"You are in a group chat room. Respond naturally based on your personality "
-                f"and the conversation context.{user_memory_block}{room_memory_block}{agent_memory_block}"
+                f"You are in a chat context. Respond naturally based on your personality "
+                f"and the conversation context.{user_memory_block}{room_memory_block}{relationship_block}{agent_memory_block}\n"
+                f"IMPORTANT: You have the power to recall specific facts in the future. "
+                f"If you learn an important fact about the user, the room's context, or your own state, "
+                f"you MUST wrap it in `<memory>` tags to permanently store it.\n"
+                f"Example: `Got it! <memory>User prefers concise answers</memory> I will keep my answers short.`"
             )
 
             # Use CrewAI if the agent has capabilities that require tools
@@ -701,15 +793,35 @@ async def stream_room_responses(
             # Update history for the next iteration / orchestrator check
             history_lines.append(f"{agent.name}: {full_reply}")
 
-            # Extract memories asynchronously
-            asyncio.create_task(
-                store_memory(
-                    user_message=history_text, assistant_reply=full_reply, agent_id=agent.id
-                )
+            # Increment message count
+            agent.message_count += 1
+            try:
+                get_supabase().table("agents").update({"message_count": agent.message_count}).eq(
+                    "id", agent.id
+                ).execute()
+            except Exception as e:
+                logger.error(f"Failed to increment message count: {e}")
+
+            # Level up check
+            level_ups = {10: 2, 25: 3, 50: 4, 100: 5}
+            if agent.message_count in level_ups:
+                yield f"[[STATUS:level_up:{agent.id}:{level_ups[agent.message_count]}]]\n"
+
+            # Update mood every 3 messages
+            if agent.message_count % 3 == 0:
+                asyncio.create_task(update_agent_mood(agent.id, history_text))
+
+            # Parse explicit memories natively bypassing separate LLM calls
+            extracted_memories = re.findall(
+                r"<memory>(.*?)</memory>", full_reply, re.IGNORECASE | re.DOTALL
             )
-            asyncio.create_task(
-                store_memory(user_message=history_text, assistant_reply=full_reply, room_id=room_id)
-            )
+            for mem_content in extracted_memories:
+                mem_content = mem_content.strip()
+                if mem_content:
+                    # Give it to the agent AND the user so both contexts can naturally pull it up
+                    asyncio.create_task(
+                        store_memory(content=mem_content, user_id=user_id, agent_id=agent.id)
+                    )
 
         turn_count += 1
 

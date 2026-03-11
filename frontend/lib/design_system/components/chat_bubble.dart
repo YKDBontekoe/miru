@@ -33,6 +33,7 @@ class ChatBubble extends StatelessWidget {
   final String text;
   final bool isUser;
   final MessageStatus status;
+  final String? agentName;
 
   /// If set, shows a [CrewTaskBadge] above the bubble.
   final String? crewTaskType;
@@ -47,6 +48,7 @@ class ChatBubble extends StatelessWidget {
     super.key,
     required this.text,
     required this.isUser,
+    this.agentName,
     this.status = MessageStatus.sent,
     this.crewTaskType,
     this.onCopy,
@@ -76,6 +78,7 @@ class ChatBubble extends StatelessWidget {
               onLongPress: onCopy,
               child: _BubbleContainer(
                 isUser: isUser,
+                agentName: agentName,
                 isFailed: status == MessageStatus.failed,
                 colors: colors,
                 child: _buildContent(context, textColor),
@@ -94,7 +97,7 @@ class ChatBubble extends StatelessWidget {
     // Show typing indicator for empty assistant messages (waiting for
     // response).
     if (text.isEmpty && !isUser) {
-      return const TypingIndicator();
+      return TypingIndicator(agentName: agentName);
     }
 
     // User messages: plain text with Inter font.
@@ -212,12 +215,14 @@ class ChatBubble extends StatelessWidget {
 
 class _BubbleContainer extends StatelessWidget {
   final bool isUser;
+  final String? agentName;
   final bool isFailed;
   final AppThemeColors colors;
   final Widget child;
 
   const _BubbleContainer({
     required this.isUser,
+    this.agentName,
     required this.isFailed,
     required this.colors,
     required this.child,
@@ -247,6 +252,53 @@ class _BubbleContainer extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
           ],
+        ),
+        padding: AppSpacing.bubblePadding,
+        child: child,
+      );
+    }
+
+    if (agentName != null && agentName!.isNotEmpty) {
+      final baseColors = [
+        Colors.blue,
+        Colors.teal,
+        Colors.red,
+        Colors.indigo,
+        Colors.deepPurple,
+        Colors.orange
+      ];
+      final themeColor =
+          baseColors[agentName!.hashCode.abs() % baseColors.length];
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final bgColors = isDark
+          ? [
+              themeColor.withValues(alpha: 0.2),
+              themeColor.withValues(alpha: 0.05)
+            ]
+          : [
+              themeColor.withValues(alpha: 0.15),
+              themeColor.withValues(alpha: 0.05)
+            ];
+
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: bgColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(AppSpacing.radiusXl),
+            topRight: Radius.circular(AppSpacing.radiusXl),
+            bottomLeft: Radius.circular(AppSpacing.radiusXs),
+            bottomRight: Radius.circular(AppSpacing.radiusXl),
+          ),
+          border: Border.all(
+            color: isFailed
+                ? AppColors.error.withValues(alpha: 0.5)
+                : themeColor.withValues(alpha: 0.3),
+            width: 1.0,
+          ),
         ),
         padding: AppSpacing.bubblePadding,
         child: child,

@@ -31,7 +31,6 @@ from app.graph import (
     create_relationship,
     find_related_memories,
 )
-from app.openrouter import chat_completion
 from app.openrouter import embed as openrouter_embed
 
 logger = logging.getLogger(__name__)
@@ -39,69 +38,7 @@ logger = logging.getLogger(__name__)
 TOP_K = 5  # memories returned per retrieval query
 DEDUP_THRESHOLD = 0.97  # cosine similarity above which we skip insert
 
-_EXTRACTION_PROMPTS = {
-    "user": """\
-You are a memory extraction assistant. Given a conversation exchange, extract a single concise \
-memory fact about the user that is worth remembering for future conversations.
-
-Rules:
-- Only extract something if the user reveals a personal detail, preference, goal, opinion, or fact about themselves.
-- Write the memory as a short, third-person statement about the user, e.g. "The user enjoys hiking on weekends."
-- If there is nothing personal or meaningful to remember, respond with exactly: NOTHING
-- Do not include anything else in your response — just the memory fact or NOTHING.\
-""",
-    "agent": """\
-You are a memory extraction assistant for an AI Persona. Given a conversation exchange, extract a single concise \
-memory fact about the agent's actions, skills demonstrated, or persona development worth remembering.
-
-Rules:
-- Only extract something if the agent demonstrates a specific skill, makes a firm decision, or establishes a persona trait.
-- Write the memory as a short, third-person statement about the agent, e.g. "The agent successfully diagnosed a React rendering bug."
-- If there is nothing meaningful to remember about the agent's skills/actions, respond with exactly: NOTHING
-- Do not include anything else in your response — just the memory fact or NOTHING.\
-""",
-    "room": """\
-You are a memory extraction assistant for a chat room. Given a conversation exchange, extract a single concise \
-memory fact summarizing a key decision, agreement, or contextual fact established in this specific conversation.
-
-Rules:
-- Only extract something if a key piece of context, agreement, or decision was reached by the participants.
-- Write the memory as a short statement about the context, e.g. "The team decided to use PostgreSQL for the database."
-- If there is no key contextual fact to remember, respond with exactly: NOTHING
-- Do not include anything else in your response — just the memory fact or NOTHING.\
-""",
-}
-
-
-async def _extract_memory_content(
-    user_message: str, assistant_reply: str, memory_type: str = "user"
-) -> str | None:
-    """Ask the LLM to extract a memory fact from the exchange."""
-    prompt = (
-        f"Message/Context: {user_message}\n"
-        f"Reply/Action: {assistant_reply}\n\n"
-        "Extract a memory fact from this exchange, or respond with NOTHING."
-    )
-    system_prompt = _EXTRACTION_PROMPTS.get(memory_type, _EXTRACTION_PROMPTS["user"])
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": prompt},
-    ]
-
-    try:
-        result = await chat_completion(messages)
-    except Exception as exc:
-        logger.warning("Memory extraction LLM call failed: %s", exc)
-        return None
-
-    result = result.strip()
-    if not result or result.upper() == "NOTHING":
-        logger.debug("Memory extraction: nothing to store for message: %.60s", user_message)
-        return None
-
-    logger.debug("Memory extracted [%s]: %s", memory_type, result)
-    return result
+# _EXTRACTION_PROMPTS and _extract_memory_content removed. Memories are now explicitly extracted from agent outputs.
 
 
 async def embed(text: str) -> list[float]:
@@ -110,29 +47,18 @@ async def embed(text: str) -> list[float]:
 
 
 async def store_memory(
-    user_message: str,
-    assistant_reply: str,
+    content: str,
     related_to: list[str] | None = None,
     user_id: UUID | str | None = None,
     agent_id: str | None = None,
     room_id: str | None = None,
 ) -> str | None:
-    """Extract and persist a memory from a conversation exchange.
-
-    The LLM first decides whether the exchange contains anything worth
-    remembering and distils it into a concise fact. If there is nothing to
-    store, returns ``None`` immediately without any database write.
+    """Persist an explicit memory fact.
 
     Semantic deduplication is applied before the final insert.
     """
-    memory_type = "user"
-    if room_id and not user_id and not agent_id:
-        memory_type = "room"
-    elif agent_id:
-        memory_type = "agent"
-
-    content = await _extract_memory_content(user_message, assistant_reply, memory_type)
-    if content is None:
+    content = content.strip()
+    if not content:
         return None
 
     vector = await embed(content)
@@ -184,13 +110,14 @@ async def store_memory(
 
 async def _search_memories_by_vector(
     query: str,
+    query_vector: list[float] | None = None,
     count: int = TOP_K,
     user_id: UUID | str | None = None,
     agent_id: str | None = None,
     room_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Embed *query* and search Supabase pgvector for the closest memories."""
-    vector = await embed(query)
+    vector = query_vector if query_vector is not None else await embed(query)
     supabase = get_supabase()
     rpc_params: dict[str, Any] = {
         "query_embedding": vector,
@@ -206,15 +133,30 @@ async def _search_memories_by_vector(
 
 
 async def retrieve_memories(
-    query: str,
+    query: str | None = None,
+    query_vector: list[float] | None = None,
     user_id: UUID | str | None = None,
     agent_id: str | None = None,
     room_id: str | None = None,
 ) -> list[str]:
     """Return the top-K memories most similar to *query* via cosine ANN search."""
-    data = await _search_memories_by_vector(
-        query, user_id=user_id, agent_id=agent_id, room_id=room_id
-    )
+    if query_vector is None:
+        if not query:
+            return []
+        query_vector = await embed(query)
+
+    supabase = get_supabase()
+    rpc_params: dict[str, Any] = {
+        "query_embedding": query_vector,
+        "match_threshold": 0.0,
+        "match_count": TOP_K,
+        "p_user_id": str(user_id) if user_id is not None else None,
+        "p_agent_id": agent_id if agent_id is not None else None,
+        "p_room_id": room_id if room_id is not None else None,
+    }
+
+    response = supabase.rpc("match_memories", rpc_params).execute()
+    data = cast("list[dict[str, Any]]", response.data)
     return [cast("str", r["content"]) for r in data]
 
 

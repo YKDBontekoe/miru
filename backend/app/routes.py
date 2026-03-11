@@ -132,7 +132,7 @@ async def _stream_response(message: str, user_id: UUID) -> AsyncIterator[str]:
 
     # Fire memory extraction in the background after streaming completes.
     full_reply = "".join(reply_chunks)
-    asyncio.create_task(store_memory(message, full_reply, user_id=user_id))
+    asyncio.create_task(store_memory(full_reply, user_id=user_id))
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ async def chat(request: ChatRequest, user_id: CurrentUser) -> StreamingResponse:
             memories = await retrieve_memories(request.message, user_id=user_id)
             result = await run_crew(request.message, memories=memories)
             yield result
-            asyncio.create_task(store_memory(request.message, result, user_id=user_id))
+            asyncio.create_task(store_memory(result, user_id=user_id))
 
         return StreamingResponse(
             _crew_stream(),
@@ -169,7 +169,7 @@ async def crew_run(request: ChatRequest, user_id: CurrentUser) -> dict:
     task_type = detect_task_type(request.message)
 
     result = await run_crew(request.message, memories=memories)
-    asyncio.create_task(store_memory(request.message, result, user_id=user_id))
+    asyncio.create_task(store_memory(result, user_id=user_id))
 
     return {
         "task_type": task_type,
@@ -180,7 +180,7 @@ async def crew_run(request: ChatRequest, user_id: CurrentUser) -> dict:
 @router.post("/memories")
 async def add_memory(request: MemoryRequest, user_id: CurrentUser) -> dict:
     """Manually store a memory (uses empty assistant reply)."""
-    await store_memory(request.message, "", user_id=user_id)
+    await store_memory(request.message, user_id=user_id)
     return {"status": "stored"}
 
 

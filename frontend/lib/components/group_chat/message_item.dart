@@ -39,6 +39,7 @@ class MessageItem extends StatelessWidget {
           ChatBubble(
             text: message.text,
             isUser: isUser,
+            agentName: isUser ? null : senderName,
             status: message.status,
           ),
         ],

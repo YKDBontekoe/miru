@@ -73,12 +73,15 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: colors.primaryLight.withValues(alpha: 0.15),
-                child: Text(
-                  widget.agent.name.substring(0, 1).toUpperCase(),
-                  style: AppTypography.headingSmall.copyWith(
-                    color: colors.primaryLight,
-                  ),
-                ),
+                backgroundImage: widget.agent.avatarImage,
+                child: widget.agent.avatarUrl == null
+                    ? null
+                    : Text(
+                        widget.agent.name.substring(0, 1).toUpperCase(),
+                        style: AppTypography.headingSmall.copyWith(
+                          color: colors.primaryLight,
+                        ),
+                      ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -93,6 +96,66 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.primaryLight.withValues(alpha: 0.1),
+                    border: Border.all(
+                        color: colors.primaryLight.withValues(alpha: 0.5)),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.military_tech, color: colors.primaryLight),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Lvl ${widget.agent.connectionLevel}',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: colors.primaryLight),
+                      ),
+                      Text(
+                        'Connection',
+                        style: TextStyle(
+                            fontSize: 10, color: colors.onSurfaceMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.mood, color: colors.onSurfaceMuted),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.agent.mood,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface),
+                      ),
+                      Text(
+                        'Current Mood',
+                        style: TextStyle(
+                            fontSize: 10, color: colors.onSurfaceMuted),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

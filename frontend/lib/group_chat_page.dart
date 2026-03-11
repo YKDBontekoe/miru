@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:confetti/confetti.dart';
 
 import 'api_service.dart';
 import 'design_system/design_system.dart';
 import 'models/agent.dart';
+import 'models/message_status.dart';
 import 'models/chat_message.dart';
 import 'components/group_chat/message_item.dart';
 import 'components/group_chat/streaming_bubble.dart';
@@ -33,10 +36,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
   // Human-readable status shown while agents are processing.
   String? _streamingStatus;
 
+  late final ConfettiController _confettiController;
+
   @override
   void initState() {
     super.initState();
     _roomName = widget.room.name;
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 2));
     _loadData();
   }
 
@@ -44,6 +51,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -113,6 +121,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       _streamingStatus = null;
     });
     _scrollToBottom();
+    HapticFeedback.lightImpact();
 
     try {
       final stream = ApiService.streamRoomChat(widget.room.id, text);
@@ -131,6 +140,30 @@ class _GroupChatPageState extends State<GroupChatPage> {
         final statusMatch = statusRegex.firstMatch(chunk);
         if (statusMatch != null) {
           final statusPayload = statusMatch.group(1)!;
+          if (statusPayload.startsWith('level_up:')) {
+            final parts = statusPayload.split(':');
+            if (parts.length >= 3) {
+              final agentId = parts[1];
+              final level = parts[2];
+              final agentName = _agentNameById(agentId);
+              HapticFeedback.heavyImpact();
+              _confettiController.play();
+              setState(() {
+                _messages.add(ChatMessage(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  roomId: widget.room.id,
+                  userId: null,
+                  agentId: null, // System message conceptually
+                  text:
+                      '🎉 **Level Up!** You reached Connection Level $level with $agentName!',
+                  timestamp: DateTime.now(),
+                  status: MessageStatus.sent,
+                ));
+              });
+              _scrollToBottom();
+            }
+            continue;
+          }
           setState(() {
             activeAgentId = null; // status events reset active streaming agent
             _streamingStatus = _statusLabel(statusPayload);
@@ -163,6 +196,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
       // Reload persisted messages once streaming finishes.
       await _loadData();
+      HapticFeedback.mediumImpact();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -291,6 +325,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
   String _statusLabel(String payload) {
     if (payload == 'retrieving_memories') return 'Recalling memories...';
     if (payload == 'orchestrating') return 'Deciding who speaks next...';
+    if (payload.startsWith('glance:')) {
+      return payload.substring('glance:'.length);
+    }
     if (payload == 'done') return '';
     if (payload.startsWith('loading_agent:')) {
       final parts = payload.split(':');
@@ -312,20 +349,40 @@ class _GroupChatPageState extends State<GroupChatPage> {
       backgroundColor: colors.background,
       appBar: _buildAppBar(colors),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            _buildMembersBar(colors),
-            Expanded(child: _buildMessageList(colors)),
-            if (_isSending &&
-                (_streamingBuffers.isNotEmpty ||
-                    (_streamingStatus != null && _streamingStatus!.isNotEmpty)))
-              _buildStreamingBubbles(colors),
-            ChatInputBar(
-              controller: _messageController,
-              onSend: _sendMessage,
-              isStreaming: _isSending,
-              onStopStreaming: null, // group chat doesn't support stop yet
-              hintText: 'Message the group...',
+            Column(
+              children: [
+                _buildMembersBar(colors),
+                Expanded(child: _buildMessageList(colors)),
+                if (_isSending &&
+                    (_streamingBuffers.isNotEmpty ||
+                        (_streamingStatus != null &&
+                            _streamingStatus!.isNotEmpty)))
+                  _buildStreamingBubbles(colors),
+                ChatInputBar(
+                  controller: _messageController,
+                  onSend: _sendMessage,
+                  isStreaming: _isSending,
+                  onStopStreaming: null, // group chat doesn't support stop yet
+                  hintText: 'Message the group...',
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: const [
+                  Colors.green,
+                  Colors.blue,
+                  Colors.pink,
+                  Colors.orange,
+                  Colors.purple
+                ],
+              ),
             ),
           ],
         ),

@@ -104,12 +104,15 @@ class AddAgentSheetState extends State<AddAgentSheet> {
                   ),
                   leading: CircleAvatar(
                     backgroundColor: colors.primary.withValues(alpha: 0.1),
-                    child: Text(
-                      agent.name[0].toUpperCase(),
-                      style: AppTypography.labelMedium.copyWith(
-                        color: colors.primary,
-                      ),
-                    ),
+                    backgroundImage: agent.avatarImage,
+                    child: agent.avatarUrl == null
+                        ? null
+                        : Text(
+                            agent.name[0].toUpperCase(),
+                            style: AppTypography.labelMedium.copyWith(
+                              color: colors.primary,
+                            ),
+                          ),
                   ),
                   title: Text(agent.name, style: AppTypography.bodyMedium),
                   subtitle: Text(

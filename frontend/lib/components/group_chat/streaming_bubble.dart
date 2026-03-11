@@ -33,6 +33,7 @@ class StreamingBubble extends StatelessWidget {
           ChatBubble(
             text: text,
             isUser: false,
+            agentName: agentName,
             status: MessageStatus.streaming,
           ),
         ],
