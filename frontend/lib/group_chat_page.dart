@@ -431,4 +431,3 @@ class _GroupChatPageState extends State<GroupChatPage> {
     );
   }
 }
-

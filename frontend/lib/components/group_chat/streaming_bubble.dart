@@ -6,7 +6,8 @@ class StreamingBubble extends StatelessWidget {
   final String agentName;
   final String text;
 
-  const StreamingBubble({super.key, required this.agentName, required this.text});
+  const StreamingBubble(
+      {super.key, required this.agentName, required this.text});
 
   @override
   Widget build(BuildContext context) {
