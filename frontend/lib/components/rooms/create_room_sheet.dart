@@ -204,7 +204,7 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                               children: [
                                 Text(agent.name, style: textTheme.titleSmall),
                                 Text(
-                                  agent.role,
+                                  agent.personality,
                                   style: AppTypography.caption.copyWith(
                                     color: colors.onSurfaceMuted,
                                   ),
