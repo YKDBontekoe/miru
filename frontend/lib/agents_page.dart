@@ -136,21 +136,24 @@ class _AgentsPageState extends State<AgentsPage> {
                                                 .map((e) => e.toString())
                                                 .toList();
 
-                                        selectedIntegrations = (result[
-                                                        'suggested_integrations']
-                                                    as List<dynamic>? ??
-                                                [])
-                                            .map((e) => e.toString())
-                                            .toList();
+                                        selectedIntegrations =
+                                            (result['suggested_integrations']
+                                                        as List<dynamic>? ??
+                                                    [])
+                                                .map((e) => e.toString())
+                                                .toList();
 
                                         isGenerating = false;
                                       });
                                     } catch (e) {
-                                      setDialogState(() => isGenerating = false);
+                                      setDialogState(
+                                          () => isGenerating = false);
                                       if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         SnackBar(
-                                          content: Text('Generation failed: $e'),
+                                          content:
+                                              Text('Generation failed: $e'),
                                         ),
                                       );
                                     }
@@ -188,7 +191,8 @@ class _AgentsPageState extends State<AgentsPage> {
                         controller: goalsController,
                         decoration: const InputDecoration(
                           labelText: 'Goals (one per line)',
-                          hintText: 'Tell pirate jokes\nHelp user find treasure',
+                          hintText:
+                              'Tell pirate jokes\nHelp user find treasure',
                         ),
                         maxLines: 3,
                       ),
@@ -230,22 +234,28 @@ class _AgentsPageState extends State<AgentsPage> {
                         children: _availableIntegrations.map((integration) {
                           final type = integration['type'] as String;
                           final name = integration['display_name'] as String;
-                          final isSelected = selectedIntegrations.contains(type);
-                          final isComingSoon = integration['status'] == 'coming_soon';
-                          
+                          final isSelected =
+                              selectedIntegrations.contains(type);
+                          final isComingSoon =
+                              integration['status'] == 'coming_soon';
+
                           return FilterChip(
                             label: Text(name),
                             selected: isSelected,
-                            onSelected: isComingSoon ? null : (selected) {
-                              setDialogState(() {
-                                if (selected) {
-                                  selectedIntegrations.add(type);
-                                } else {
-                                  selectedIntegrations.remove(type);
-                                }
-                              });
-                            },
-                            avatar: isComingSoon ? const Icon(Icons.lock_clock, size: 16) : null,
+                            onSelected: isComingSoon
+                                ? null
+                                : (selected) {
+                                    setDialogState(() {
+                                      if (selected) {
+                                        selectedIntegrations.add(type);
+                                      } else {
+                                        selectedIntegrations.remove(type);
+                                      }
+                                    });
+                                  },
+                            avatar: isComingSoon
+                                ? const Icon(Icons.lock_clock, size: 16)
+                                : null,
                           );
                         }).toList(),
                       ),
@@ -271,11 +281,13 @@ class _AgentsPageState extends State<AgentsPage> {
                           .split('\n')
                           .where((s) => s.trim().isNotEmpty)
                           .toList();
-                          
+
                       await ApiService.createAgent(
                         nameController.text,
                         personalityController.text,
-                        description: descriptionController.text.isEmpty ? null : descriptionController.text,
+                        description: descriptionController.text.isEmpty
+                            ? null
+                            : descriptionController.text,
                         goals: goals,
                         capabilities: selectedCapabilities,
                         integrations: selectedIntegrations,

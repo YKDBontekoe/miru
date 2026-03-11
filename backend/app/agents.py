@@ -11,11 +11,10 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
-from pydantic import BaseModel, Field
-
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
 from crewai_tools import TavilySearchResults
+from pydantic import BaseModel, Field
 
 from app.config import get_settings
 from app.crew import make_llm
