@@ -19,18 +19,18 @@ DROP FUNCTION IF EXISTS public.match_memories(vector, float, int, text, text, te
 -- Step 2: Clear all existing memories (incompatible dimensions)
 TRUNCATE public.memories;
 
--- Step 3: Resize the column
+-- Step 3: Resize the column to halfvec (supports > 2000 dimensions)
 ALTER TABLE public.memories
-    ALTER COLUMN embedding TYPE vector(2048);
+    ALTER COLUMN embedding TYPE halfvec(2048);
 
--- Step 4: Recreate the HNSW index for the new dimension (IVFFlat limit is 2000)
+-- Step 4: Recreate the HNSW index for the new dimension
 CREATE INDEX memories_embedding_idx
     ON public.memories
-    USING hnsw (embedding vector_cosine_ops);
+    USING hnsw (embedding halfvec_cosine_ops);
 
--- Step 5: Recreate the match_memories RPC with vector(2048) and all three optional filters
+-- Step 5: Recreate the match_memories RPC with halfvec(2048) and all three optional filters
 CREATE FUNCTION public.match_memories(
-    query_embedding vector(2048),
+    query_embedding halfvec(2048),
     match_threshold float,
     match_count     int,
     p_user_id       text DEFAULT NULL,
