@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import text
 
+from app.domain.memory.models import Memory, MemoryRelationship
+
 if TYPE_CHECKING:
     from uuid import UUID
 
     from neo4j import AsyncDriver
     from sqlmodel.ext.asyncio.session import AsyncSession
-
-    from app.domain.memory.models import Memory
 
 
 class MemoryRepository:
@@ -37,9 +37,8 @@ class MemoryRepository:
         user_id: UUID | None = None,
         agent_id: UUID | None = None,
         room_id: UUID | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[Memory]:
         """Search for memories by vector similarity using the match_memories RPC."""
-        # Use raw SQL to call the PostgreSQL function
         statement = text(
             """
             SELECT * FROM match_memories(
@@ -53,9 +52,7 @@ class MemoryRepository:
             """
         )
         params = {
-            "query_embedding": str(
-                vector
-            ),  # pgvector expects string or list, asyncpg handles list/str
+            "query_embedding": str(vector),
             "match_threshold": threshold,
             "match_count": count,
             "p_user_id": user_id,
@@ -63,7 +60,7 @@ class MemoryRepository:
             "p_room_id": room_id,
         }
         result = await self.session.execute(statement, params)
-        return [dict(row) for row in result.mappings()]
+        return [Memory(**row) for row in result.mappings()]
 
     # --- Neo4j (Graph) Operations ---
 
@@ -105,9 +102,7 @@ class MemoryRepository:
                 to_id=str(to_id),
             )
 
-    async def find_related(
-        self, memory_id: UUID, rel_type: str | None = None
-    ) -> list[dict[str, Any]]:
+    async def find_related(self, memory_id: UUID, rel_type: str | None = None) -> list[Memory]:
         """Find related memories in the graph."""
         rel_filter = f"[:{rel_type}]" if rel_type else ""
         async with self.graph.session() as session:
@@ -121,7 +116,7 @@ class MemoryRepository:
                 """,
                 memory_id=str(memory_id),
             )
-            return [node.data() async for node in result]
+            return [Memory(**node.data()) async for node in result]
 
     async def search_fulltext(self, query: str) -> list[dict[str, Any]]:
         """Full-text search for memories in Neo4j."""
@@ -198,7 +193,7 @@ class MemoryRepository:
             )
             return [node.data() async for node in result]
 
-    async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[dict[str, Any]]:
+    async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[MemoryRelationship]:
         """Fetch relationships between a set of memory IDs."""
         ids_str = [str(mid) for mid in memory_ids]
         async with self.graph.session() as session:
@@ -213,4 +208,4 @@ class MemoryRepository:
                 """,
                 memory_ids=ids_str,
             )
-            return [record.data() async for record in result]
+            return [MemoryRelationship(**record.data()) async for record in result]

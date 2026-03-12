@@ -40,7 +40,9 @@ def test_create_agent_route(mock_create_agent: MagicMock, client: TestClient) ->
     mock_create_agent.return_value = MagicMock()
 
     # We must mock auth to bypass JWT verification
-    with patch("app.domain.auth.service.AuthService.decode_jwt", return_value={"sub": str(uuid4())}):
+    with patch(
+        "app.domain.auth.service.AuthService.decode_jwt", return_value={"sub": str(uuid4())}
+    ):
         response = client.post(
             "/api/v1/agents",
             headers={"Authorization": "Bearer fake_token"},
@@ -54,7 +56,9 @@ def test_create_agent_route(mock_create_agent: MagicMock, client: TestClient) ->
 def test_get_agents_route(mock_get_agents: MagicMock, client: TestClient) -> None:
     mock_get_agents.return_value = []
 
-    with patch("app.domain.auth.service.AuthService.decode_jwt", return_value={"sub": str(uuid4())}):
+    with patch(
+        "app.domain.auth.service.AuthService.decode_jwt", return_value={"sub": str(uuid4())}
+    ):
         response = client.get("/api/v1/agents", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code in (200, 404)

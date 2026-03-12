@@ -26,3 +26,11 @@ class Memory(SQLModel, table=True):
 
 class MemoryRequest(SQLModel):
     message: str
+
+
+class MemoryRelationship(SQLModel):
+    """Represents a relationship between two memories in the graph."""
+
+    source: str
+    target: str
+    relationship_type: str

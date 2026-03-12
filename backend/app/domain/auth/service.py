@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import jwt
 
 from app.core.config import get_settings
+from app.domain.auth.models import JWTPayload
 
 if TYPE_CHECKING:
     from app.infrastructure.repositories.auth_repo import AuthRepository
@@ -27,11 +28,10 @@ class AuthService:
             self._jwks_client = jwt.PyJWKClient(jwks_url)
         return self._jwks_client
 
-    async def decode_jwt(self, token: str) -> dict[str, Any]:
+    async def decode_jwt(self, token: str) -> JWTPayload:
         """Decode and verify a Supabase JWT."""
         settings = get_settings()
         try:
-            # Using standard PyJWT here as it's already integrated
             header = jwt.get_unverified_header(token)
             alg = header.get("alg")
 
@@ -51,18 +51,14 @@ class AuthService:
                     algorithms=["ES256", "RS256"],
                     options={"verify_aud": False},
                 )
-            return payload
+            return JWTPayload(**payload)
         except Exception as exc:
             logger.error("JWT validation failed: %s", exc)
             raise
 
     # --- WebAuthn / Passkey Logic (Authlib Integration) ---
 
-    # Note: Authlib's WebAuthn implementation requires a metadata store and specific
-    # configuration. This is a skeletal transition showing the usage of Authlib's JOSE
-    # and potential for WebAuthn migration.
-
-    async def verify_registration(self, challenge: str, credential: Any) -> None:
+    async def verify_registration(self, challenge: str, credential_json: str) -> None:
         """Skeleton for Authlib WebAuthn registration verification."""
-        # Authlib implementation would go here, replacing manual WebAuthn logic
+        # Implementation would use Authlib to validate credential_json
         pass
