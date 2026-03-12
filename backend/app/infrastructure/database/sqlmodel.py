@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -23,20 +24,31 @@ elif raw_url.startswith("postgresql://"):
 else:
     db_url = raw_url
 
+# Parse the URL to safely check hostnames and modify query parameters
+parsed_url = urlparse(db_url)
+
 # asyncpg does NOT support 'sslmode' in the connection string.
 # We must remove it if present to avoid TypeError.
-if "sslmode=" in db_url:
-    from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
-
-    parsed = urlparse(db_url)
-    query = parse_qs(parsed.query)
+if parsed_url.query and "sslmode" in parse_qs(parsed_url.query):
+    query = parse_qs(parsed_url.query)
     query.pop("sslmode", None)
     new_query = urlencode(query, doseq=True)
-    db_url = urlunparse(parsed._replace(query=new_query))
+    parsed_url = parsed_url._replace(query=new_query)
+    db_url = urlunparse(parsed_url)
 
 # Explicitly set SSL for asyncpg if enabled and it's a Supabase URL
 connect_args = {}
-if get_settings().database_ssl and ("supabase.co" in db_url or "pooler.supabase.com" in db_url):
+host = parsed_url.hostname or ""
+
+# Check if the host ends with supabase.co or pooler.supabase.com securely
+is_supabase_host = (
+    host.endswith(".supabase.co")
+    or host == "supabase.co"
+    or host.endswith(".pooler.supabase.com")
+    or host == "pooler.supabase.com"
+)
+
+if get_settings().database_ssl and is_supabase_host:
     # For asyncpg, the parameter is 'ssl', not 'sslmode'
     connect_args["ssl"] = "require"
 
