@@ -16,6 +16,7 @@ def client():
     yield TestClient(app)
     app.dependency_overrides = {}
 
+
 def test_list_memories_route(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
@@ -30,9 +31,7 @@ def test_list_memories_route(client) -> None:
     ]
 
     # Chain the mocks correctly
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-        mock_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_execute
 
     response = client.get("/api/memories", headers={"Authorization": "Bearer fake_token"})
 
@@ -58,17 +57,13 @@ def test_delete_memory_route(client) -> None:
     mock_delete_execute.data = []
 
     # Chain for verify
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = (
-        mock_verify_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = mock_verify_execute
     # Chain for delete
     mock_supabase.table.return_value.delete.return_value.eq.return_value.execute.return_value = (
         mock_delete_execute
     )
 
-    response = client.delete(
-        "/api/memories/mem1", headers={"Authorization": "Bearer fake_token"}
-    )
+    response = client.delete("/api/memories/mem1", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
     assert response.json() == {"status": "deleted"}
@@ -85,23 +80,16 @@ def test_delete_memory_route_not_found(client) -> None:
     mock_verify_execute = MagicMock()
     mock_verify_execute.data = []
 
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = (
-        mock_verify_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value = mock_verify_execute
 
-    response = client.delete(
-        "/api/memories/mem1", headers={"Authorization": "Bearer fake_token"}
-    )
+    response = client.delete("/api/memories/mem1", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Memory not found"
 
 
 @patch("app.routes.get_memory_relationships", new_callable=AsyncMock)
-def test_list_memory_graph_route(
-    mock_get_memory_relationships: AsyncMock,
-    client
-) -> None:
+def test_list_memory_graph_route(mock_get_memory_relationships: AsyncMock, client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
 
@@ -122,9 +110,7 @@ def test_list_memory_graph_route(
         },
     ]
 
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-        mock_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_execute
 
     mock_get_memory_relationships.return_value = [
         {
@@ -163,8 +149,7 @@ def test_list_memory_graph_route(
 
 @patch("app.routes.get_memory_relationships", new_callable=AsyncMock)
 def test_list_memory_graph_route_with_graph_error(
-    mock_get_memory_relationships: AsyncMock,
-    client
+    mock_get_memory_relationships: AsyncMock, client
 ) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
@@ -180,9 +165,7 @@ def test_list_memory_graph_route_with_graph_error(
             "created_at": "2024-01-01T00:00:00Z",
         }
     ]
-    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = (
-        mock_execute
-    )
+    mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = mock_execute
 
     mock_get_memory_relationships.side_effect = RuntimeError("Neo4j offline")
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, SQLModel
@@ -10,16 +10,18 @@ from sqlmodel import Field, SQLModel
 
 class ChatRoom(SQLModel, table=True):
     """Database entity for Chat Rooms."""
+
     __tablename__ = "chat_rooms"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(index=True)
     name: str = Field(max_length=255)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class ChatMessage(SQLModel, table=True):
     """Database entity for Chat Messages."""
+
     __tablename__ = "chat_messages"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -27,7 +29,7 @@ class ChatMessage(SQLModel, table=True):
     user_id: UUID | None = Field(default=None, index=True)
     agent_id: UUID | None = Field(default=None, index=True)
     content: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class RoomCreate(SQLModel):

@@ -2,25 +2,26 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlmodel import Column, Field, SQLModel, JSON
+from sqlmodel import JSON, Column, Field, SQLModel
 
 
 class Memory(SQLModel, table=True):
     """Database entity for Memories (Vector Store)."""
+
     __tablename__ = "memories"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID | None = Field(default=None, index=True)
     agent_id: UUID | None = Field(default=None, index=True)
     room_id: UUID | None = Field(default=None, index=True)
-    
+
     content: str
     embedding: list[float] = Field(sa_column=Column(JSON))
-    
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class MemoryRequest(SQLModel):

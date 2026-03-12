@@ -200,7 +200,9 @@ async def test_save_message_user(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await save_message("room-123", "Hello", "user-123", is_agent=False, supabase=mock_supabase)
+    result = await save_message(
+        "room-123", "Hello", "user-123", is_agent=False, supabase=mock_supabase
+    )
     assert result.content == "Hello"
     assert result.user_id == "user-123"
     mock_supabase.table().insert.assert_called_with(
@@ -223,7 +225,9 @@ async def test_save_message_agent(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await save_message("room-123", "Hello", "agent-123", is_agent=True, supabase=mock_supabase)
+    result = await save_message(
+        "room-123", "Hello", "agent-123", is_agent=True, supabase=mock_supabase
+    )
     assert result.content == "Hello"
     assert result.agent_id == "agent-123"
     mock_supabase.table().insert.assert_called_with(
@@ -294,7 +298,9 @@ async def test_stream_room_responses(
 
     # Test streaming
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id, supabase=mock_supabase):
+    async for chunk in stream_room_responses(
+        "room-123", "How are you?", user_id, supabase=mock_supabase
+    ):
         chunks.append(chunk)
 
     # Filter out status events to check only the content-bearing chunks.
@@ -348,7 +354,9 @@ async def test_stream_room_responses_no_agents(
     mock_get_room_messages.return_value = []
 
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id, supabase=mock_supabase):
+    async for chunk in stream_room_responses(
+        "room-123", "How are you?", user_id, supabase=mock_supabase
+    ):
         chunks.append(chunk)
 
     assert chunks == ["No agents in this room to respond."]
@@ -407,7 +415,9 @@ async def test_stream_room_responses_no_history(
     mock_stream_chat.side_effect = mock_stream
 
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id, supabase=mock_supabase):
+    async for chunk in stream_room_responses(
+        "room-123", "How are you?", user_id, supabase=mock_supabase
+    ):
         chunks.append(chunk)
 
     content_chunks = [c for c in chunks if not c.startswith("[[STATUS:")]

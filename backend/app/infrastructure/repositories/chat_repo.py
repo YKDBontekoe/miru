@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from uuid import UUID
 
 from sqlmodel import select
 
 from app.domain.chat.models import ChatMessage, ChatRoom
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
     from sqlmodel.ext.asyncio.session import AsyncSession
 
 
@@ -33,7 +34,11 @@ class ChatRepository:
 
     async def get_room_messages(self, room_id: UUID) -> list[ChatMessage]:
         """Fetch all messages in a room."""
-        statement = select(ChatMessage).where(ChatMessage.room_id == room_id).order_by(ChatMessage.created_at)
+        statement = (
+            select(ChatMessage)
+            .where(ChatMessage.room_id == room_id)
+            .order_by(ChatMessage.created_at)
+        )
         result = await self.session.exec(statement)
         return list(result.all())
 

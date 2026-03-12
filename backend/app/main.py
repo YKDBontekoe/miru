@@ -32,11 +32,13 @@ if settings.sentry_dsn:
         profiles_sample_rate=1.0,
     )
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Manage application startup and shutdown events."""
     yield
     await close_neo4j_driver()
+
 
 app = FastAPI(
     title="Miru Backend",
@@ -57,6 +59,7 @@ app.add_middleware(
 app.include_router(agents_router, prefix="/api/v1/agents")
 app.include_router(chat_router, prefix="/api/v1/chat")
 app.include_router(memory_router, prefix="/api/v1/memory")
+
 
 @app.get("/health")
 async def health() -> dict:

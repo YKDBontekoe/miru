@@ -23,11 +23,14 @@ if TYPE_CHECKING:
 
 # Repositories
 
+
 def get_agent_repo(db: Annotated[Client, Depends(get_supabase)]) -> AgentRepository:
     return AgentRepository(db)
 
+
 def get_chat_repo(db: Annotated[Client, Depends(get_supabase)]) -> ChatRepository:
     return ChatRepository(db)
+
 
 async def get_memory_repo(
     db: Annotated[Client, Depends(get_supabase)],
@@ -35,25 +38,31 @@ async def get_memory_repo(
 ) -> MemoryRepository:
     return MemoryRepository(db, graph_driver)
 
+
 def get_auth_repo(db: Annotated[Client, Depends(get_supabase)]) -> AuthRepository:
     return AuthRepository(db)
 
+
 # Services
+
 
 def get_agent_service(repo: Annotated[AgentRepository, Depends(get_agent_repo)]) -> AgentService:
     return AgentService(repo)
 
+
 def get_chat_service(
     chat_repo: Annotated[ChatRepository, Depends(get_chat_repo)],
     agent_repo: Annotated[AgentRepository, Depends(get_agent_repo)],
-    memory_repo: Annotated[MemoryRepository, Depends(get_memory_repo)]
+    memory_repo: Annotated[MemoryRepository, Depends(get_memory_repo)],
 ) -> ChatService:
     return ChatService(chat_repo, agent_repo, memory_repo)
 
+
 async def get_memory_service(
-    repo: Annotated[MemoryRepository, Depends(get_memory_repo)]
+    repo: Annotated[MemoryRepository, Depends(get_memory_repo)],
 ) -> MemoryService:
     return MemoryService(repo)
+
 
 def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
     return AuthService(repo)

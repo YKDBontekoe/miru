@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any
-from uuid import UUID
 
 import jwt
-from authlib.jose import jwt as jose_jwt
-from authlib.integrations.base_client.errors import OAuthError
 
 from app.core.config import get_settings
-from app.infrastructure.repositories.auth_repo import AuthRepository
+
+if TYPE_CHECKING:
+    from app.infrastructure.repositories.auth_repo import AuthRepository
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +57,12 @@ class AuthService:
             raise
 
     # --- WebAuthn / Passkey Logic (Authlib Integration) ---
-    
-    # Note: Authlib's WebAuthn implementation requires a metadata store and specific 
-    # configuration. This is a skeletal transition showing the usage of Authlib's JOSE 
+
+    # Note: Authlib's WebAuthn implementation requires a metadata store and specific
+    # configuration. This is a skeletal transition showing the usage of Authlib's JOSE
     # and potential for WebAuthn migration.
-    
-    async def verify_registration(self, challenge: str, credential: Any):
+
+    async def verify_registration(self, challenge: str, credential: Any) -> None:
         """Skeleton for Authlib WebAuthn registration verification."""
         # Authlib implementation would go here, replacing manual WebAuthn logic
         pass

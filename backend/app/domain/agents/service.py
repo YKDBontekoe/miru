@@ -4,28 +4,53 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from uuid import UUID
 
 from app.domain.agents.models import (
+    Agent,
     AgentCreate,
     AgentGenerationResponse,
-    AgentResponse,
 )
 from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
+    from openai.types.chat import ChatCompletionMessageParam
+
     from app.infrastructure.repositories.agent_repo import AgentRepository
 
 logger = logging.getLogger(__name__)
 
 AVAILABLE_INTEGRATIONS = [
-    {"type": "spotify", "display_name": "Spotify", "description": "Play music...", "icon": "music_note", "status": "coming_soon"},
-    {"type": "discord", "display_name": "Discord", "description": "Send messages...", "icon": "forum", "status": "coming_soon"},
+    {
+        "type": "spotify",
+        "display_name": "Spotify",
+        "description": "Play music...",
+        "icon": "music_note",
+        "status": "coming_soon",
+    },
+    {
+        "type": "discord",
+        "display_name": "Discord",
+        "description": "Send messages...",
+        "icon": "forum",
+        "status": "coming_soon",
+    },
 ]
 
 AVAILABLE_CAPABILITIES = [
-    {"id": "web_search", "name": "Web Search", "description": "Search the internet...", "icon": "search"},
-    {"id": "code_execution", "name": "Code Execution", "description": "Write and run code...", "icon": "terminal"},
+    {
+        "id": "web_search",
+        "name": "Web Search",
+        "description": "Search the internet...",
+        "icon": "search",
+    },
+    {
+        "id": "code_execution",
+        "name": "Code Execution",
+        "description": "Write and run code...",
+        "icon": "terminal",
+    },
 ]
 
 
@@ -55,7 +80,7 @@ class AgentService:
             sections.append(f"\nYou have the following capabilities: {cap_list}.")
         return "\n".join(sections)
 
-    async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
+    async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> Agent:
         """Onboard a new agent with a built system prompt."""
         system_prompt = agent_data.system_prompt or self.build_system_prompt(
             name=agent_data.name,
@@ -65,25 +90,25 @@ class AgentService:
             capabilities=agent_data.capabilities,
         )
 
-        insert_data = {
-            "user_id": str(user_id),
-            "name": agent_data.name,
-            "personality": agent_data.personality,
-            "description": agent_data.description,
-            "goals": agent_data.goals,
-            "capabilities": agent_data.capabilities,
-            "integrations": agent_data.integrations,
-            "system_prompt": system_prompt,
-        }
-        return await self.repo.create(insert_data)
+        agent = Agent(
+            user_id=user_id,
+            name=agent_data.name,
+            personality=agent_data.personality,
+            description=agent_data.description,
+            goals=agent_data.goals,
+            capabilities=agent_data.capabilities,
+            integrations=agent_data.integrations,
+            system_prompt=system_prompt,
+        )
+        return await self.repo.create(agent)
 
-    async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
+    async def list_agents(self, user_id: UUID) -> list[Agent]:
         """List all agents for a user."""
         return await self.repo.list_by_user(user_id)
 
     async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
         """Use Instructor to generate a validated agent profile."""
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
                 "content": "You are a creative director for AI personas. Create a unique, high-quality persona based on the user's keywords.",
@@ -91,16 +116,13 @@ class AgentService:
             {"role": "user", "content": f"Keywords: {keywords}"},
         ]
 
-        # No manual parsing! Instructor returns a validated AgentGenerationResponse object.
         return await structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
         )
 
-    async def update_mood(self, agent_id: str, recent_history: str) -> None:
+    async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
         """Analyze history and update agent mood via repository."""
-        # This could also be structured with a 'MoodModel'
         if not recent_history.strip():
             return
-        # Simplified example
         await self.repo.update_mood(agent_id, "Optimistic")

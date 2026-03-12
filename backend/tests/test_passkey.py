@@ -20,6 +20,7 @@ def client_with_overrides():
     yield TestClient(app)
     app.dependency_overrides = {}
 
+
 # ---------------------------------------------------------------------------
 # Challenge store unit tests
 # ---------------------------------------------------------------------------
@@ -219,7 +220,9 @@ def test_passkey_list_returns_passkeys(
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: uuid4()
 
-    response = client_with_overrides.get("/api/auth/passkey/list", headers={"Authorization": "Bearer fake_token"})
+    response = client_with_overrides.get(
+        "/api/auth/passkey/list", headers={"Authorization": "Bearer fake_token"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["passkeys"]) == 1

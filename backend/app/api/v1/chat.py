@@ -11,35 +11,40 @@ from app.api.dependencies import get_chat_service
 from app.domain.chat.models import ChatRequest, RoomCreate, RoomResponse
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
     from app.core.security.auth import CurrentUser
     from app.domain.chat.service import ChatService
 
 router = APIRouter(tags=["Chat"])
 
+
 @router.get("/rooms", response_model=list[RoomResponse])
 async def list_rooms(
     user_id: CurrentUser,
-    service: Annotated[ChatService, Depends(get_chat_service)]
-):
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> list[RoomResponse]:
     return await service.list_rooms(user_id)
+
 
 @router.post("/rooms", response_model=RoomResponse)
 async def create_room(
     data: RoomCreate,
     user_id: CurrentUser,
-    service: Annotated[ChatService, Depends(get_chat_service)]
-):
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> RoomResponse:
     return await service.create_room(data.name, user_id)
+
 
 @router.post("/rooms/{room_id}/chat")
 async def chat_in_room(
-    room_id: str,
+    room_id: UUID,
     request: ChatRequest,
     user_id: CurrentUser,
-    service: Annotated[ChatService, Depends(get_chat_service)]
-):
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> StreamingResponse:
     """Stream responses from agents in the room."""
     return StreamingResponse(
         service.stream_room_responses(room_id, request.message, user_id),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
     )
