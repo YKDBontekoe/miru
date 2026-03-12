@@ -351,15 +351,15 @@ class _AssistantBubbleContainer extends StatelessWidget {
     final bgColor = isFailed
         ? colors.errorSurface.withValues(alpha: 0.8)
         : hasAgentName
-        ? accentColor.withValues(alpha: isDark ? 0.12 : 0.08)
-        : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight)
-              .withValues(alpha: 0.6);
+            ? accentColor.withValues(alpha: isDark ? 0.12 : 0.08)
+            : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight)
+                .withValues(alpha: 0.6);
 
     final borderColor = isFailed
         ? AppColors.error.withValues(alpha: 0.35)
         : hasAgentName
-        ? accentColor.withValues(alpha: isDark ? 0.3 : 0.2)
-        : colors.border.withValues(alpha: 0.5);
+            ? accentColor.withValues(alpha: isDark ? 0.3 : 0.2)
+            : colors.border.withValues(alpha: 0.5);
 
     return ClipRRect(
       borderRadius: const BorderRadius.only(
