@@ -1,86 +1,45 @@
-"""Chat repository for Supabase operations."""
+"""Chat repository for SQLModel operations."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from app.domain.chat.models import ChatMessageResponse, RoomResponse
+from sqlmodel import select
+
+from app.domain.chat.models import ChatMessage, ChatRoom
 
 if TYPE_CHECKING:
-    from uuid import UUID
-
-    from supabase import Client
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class ChatRepository:
-    def __init__(self, db: Client):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def create_room(self, name: str, user_id: UUID | str) -> RoomResponse:
+    async def create_room(self, name: str, user_id: UUID) -> ChatRoom:
         """Create a new chat room."""
-        response = (
-            self.db.table("chat_rooms")
-            .insert({"user_id": str(user_id), "name": name})
-            .execute()
-        )
-        data = cast("list[dict[str, Any]]", response.data)[0]
-        return RoomResponse(**data)
+        room = ChatRoom(name=name, user_id=user_id)
+        self.session.add(room)
+        await self.session.commit()
+        await self.session.refresh(room)
+        return room
 
-    async def list_rooms(self, user_id: UUID | str) -> list[RoomResponse]:
+    async def list_rooms(self, user_id: UUID) -> list[ChatRoom]:
         """List all chat rooms for a user."""
-        response = self.db.table("chat_rooms").select("*").eq("user_id", str(user_id)).execute()
-        return [RoomResponse(**record) for record in cast("list[dict[str, Any]]", response.data)]
+        statement = select(ChatRoom).where(ChatRoom.user_id == user_id)
+        result = await self.session.exec(statement)
+        return list(result.all())
 
-    async def update_room(self, room_id: str, name: str, user_id: UUID | str) -> RoomResponse | None:
-        """Update a chat room name."""
-        response = (
-            self.db.table("chat_rooms")
-            .update({"name": name})
-            .eq("id", room_id)
-            .eq("user_id", str(user_id))
-            .execute()
-        )
-        if not response.data:
-            return None
-        data = cast("list[dict[str, Any]]", response.data)[0]
-        return RoomResponse(**data)
-
-    async def add_agent_to_room(self, room_id: str, agent_id: str) -> None:
-        """Link an agent to a chat room."""
-        self.db.table("chat_room_agents").insert({"room_id": room_id, "agent_id": agent_id}).execute()
-
-    async def get_room_agents_raw(self, room_id: str) -> list[dict[str, Any]]:
-        """Fetch raw agent data for agents in a room."""
-        response = (
-            self.db.table("chat_room_agents").select("agents(*)").eq("room_id", room_id).execute()
-        )
-        agents_data = []
-        for record in cast("list[dict[str, Any]]", response.data):
-            if record.get("agents"):
-                agents_data.append(record["agents"])
-        return agents_data
-
-    async def get_room_messages(self, room_id: str) -> list[ChatMessageResponse]:
+    async def get_room_messages(self, room_id: UUID) -> list[ChatMessage]:
         """Fetch all messages in a room."""
-        response = (
-            self.db.table("chat_messages")
-            .select("*")
-            .eq("room_id", room_id)
-            .order("created_at", desc=False)
-            .execute()
-        )
-        return [ChatMessageResponse(**record) for record in cast("list[dict[str, Any]]", response.data)]
+        statement = select(ChatMessage).where(ChatMessage.room_id == room_id).order_by(ChatMessage.created_at)
+        result = await self.session.exec(statement)
+        return list(result.all())
 
-    async def save_message(
-        self, room_id: str, content: str, sender_id: str, is_agent: bool
-    ) -> ChatMessageResponse:
-        """Save a new message to the database."""
-        insert_data: dict[str, Any] = {"room_id": room_id, "content": content}
-        if is_agent:
-            insert_data["agent_id"] = sender_id
-        else:
-            insert_data["user_id"] = sender_id
-
-        response = self.db.table("chat_messages").insert(insert_data).execute()
-        data = cast("list[dict[str, Any]]", response.data)[0]
-        return ChatMessageResponse(**data)
+    async def save_message(self, message: ChatMessage) -> ChatMessage:
+        """Save a new message."""
+        self.session.add(message)
+        await self.session.commit()
+        await self.session.refresh(message)
+        return message

@@ -1,40 +1,54 @@
-"""Chat domain models."""
+"""Chat domain models and database entities."""
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from datetime import datetime, timezone
+from uuid import UUID, uuid4
+
+from sqlmodel import Field, SQLModel
 
 
-class RoomCreate(BaseModel):
-    name: str
+class ChatRoom(SQLModel, table=True):
+    """Database entity for Chat Rooms."""
+    __tablename__ = "chat_rooms"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(index=True)
+    name: str = Field(max_length=255)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class RoomUpdate(BaseModel):
-    name: str
+class ChatMessage(SQLModel, table=True):
+    """Database entity for Chat Messages."""
+    __tablename__ = "chat_messages"
 
-
-class RoomResponse(BaseModel):
-    id: str
-    name: str
-    created_at: str
-
-
-class RoomAgentAdd(BaseModel):
-    agent_id: str
-
-
-class ChatMessageCreate(BaseModel):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    room_id: UUID = Field(foreign_key="chat_rooms.id", index=True)
+    user_id: UUID | None = Field(default=None, index=True)
+    agent_id: UUID | None = Field(default=None, index=True)
     content: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class ChatMessageResponse(BaseModel):
-    id: str
-    room_id: str
-    user_id: str | None
-    agent_id: str | None
+class RoomCreate(SQLModel):
+    name: str
+
+
+class RoomResponse(SQLModel):
+    id: UUID
+    name: str
+    created_at: datetime
+
+
+class ChatMessageResponse(SQLModel):
+    id: UUID
+    room_id: UUID
+    user_id: UUID | None
+    agent_id: UUID | None
     content: str
+    created_at: datetime
 
 
-class ChatRequest(BaseModel):
+class ChatRequest(SQLModel):
     message: str
-    use_crew: bool = False  # Set True to route through CrewAI agents
+    use_crew: bool = False

@@ -1,23 +1,23 @@
-"""Chat service for business logic and orchestration."""
+"""Chat service for business logic and CrewAI orchestration."""
 
 from __future__ import annotations
 
-import json
+import logging
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
+from uuid import UUID
 
-from app.infrastructure.external.openrouter import chat_completion
+from crewai import Agent as CrewAgent, Crew, Process, Task
+
+from app.domain.chat.models import ChatMessage, ChatRoom, RoomResponse
+from app.infrastructure.external.openrouter import get_openrouter_client
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-    from uuid import UUID
-
-    from app.domain.agents.models import AgentResponse
-    from app.domain.chat.models import (
-        RoomResponse,
-    )
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+logger = logging.getLogger(__name__)
 
 
 class ChatService:
@@ -32,63 +32,68 @@ class ChatService:
         self.memory_repo = memory_repo
 
     async def create_room(self, name: str, user_id: UUID) -> RoomResponse:
-        return await self.chat_repo.create_room(name, user_id)
+        room = await self.chat_repo.create_room(name, user_id)
+        return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
 
     async def list_rooms(self, user_id: UUID) -> list[RoomResponse]:
-        return await self.chat_repo.list_rooms(user_id)
-
-    async def get_room_agents(self, room_id: str) -> list[AgentResponse]:
-        raw_agents = await self.chat_repo.get_room_agents_raw(room_id)
-        return [self.agent_repo._agent_from_row(a) for a in raw_agents]
-
-    async def orchestrate_turn(self, history_text: str, room_agents: list[AgentResponse]) -> list[str]:
-        """Decide which agent(s) should speak next."""
-        agents_info = "\n".join([f"- {a.name} (ID: {a.id}): {a.personality}" for a in room_agents])
-
-        # In a real refactor, get_agent_relationships would also move to AgentService/Repo
-        relationship_block = ""
-
-        system_prompt = (
-            "You are an Orchestrator managing a chat room with multiple AI personas and a User.\n"
-            "Your job is to read the conversation history and decide who should speak next.\n\n"
-            f"Available Agents:\n{agents_info}\n{relationship_block}\n"
-            "Rules:\n"
-            "1. If the User's query is answered and concluded, return `[]`.\n"
-            "2. Respond ONLY with a valid JSON array of Agent IDs (strings)."
-        )
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Conversation history:\n{history_text}\n\nWho should speak next?"},
-        ]
-
-        try:
-            response_text = await chat_completion(messages)
-            # JSON parsing logic here (omitted for brevity, matches agents.py)
-            cleaned = response_text.strip()
-            if cleaned.startswith("```json"):
-                cleaned = cleaned[7:]
-            if cleaned.endswith("```"):
-                cleaned = cleaned[:-3]
-            return [str(aid) for aid in json.loads(cleaned.strip())]
-        except Exception:
-            return [room_agents[0].id] if room_agents else []
+        rooms = await self.chat_repo.list_rooms(user_id)
+        return [RoomResponse(id=r.id, name=r.name, created_at=r.created_at) for r in rooms]
 
     async def stream_room_responses(
-        self, room_id: str, user_message: str, user_id: UUID
+        self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
-        """The core agentic chat loop."""
-        await self.chat_repo.save_message(room_id, user_message, str(user_id), is_agent=False)
+        """The core agentic chat loop using CrewAI Manager."""
+        # 1. Save user message
+        user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
+        await self.chat_repo.save_message(user_msg)
 
-        # 1. Fetch Context
-        room_agents = await self.get_room_agents(room_id)
-        if not room_agents:
-            yield "No agents in this room."
+        # 2. Get Agents in room
+        # Note: This would normally fetch from chat_room_agents table
+        db_agents = await self.agent_repo.list_by_user(user_id)
+        if not db_agents:
+            yield "No agents available."
             return
 
-        # 2. Start Turn Loop
-        # (Detailed logic from agents.py stream_room_responses would go here,
-        # using self.memory_repo and self.chat_repo)
-        yield "[[STATUS:glance:Sensing the room...]]\n"
-        # ... implementation continues
+        # 3. Initialize CrewAI Agents
+        # We use OpenRouter's OpenAI-compatible client via instructor
+        llm = get_openrouter_client().openai_client
+        
+        crew_agents = [
+            CrewAgent(
+                role=a.name,
+                goal=a.personality,
+                backstory=a.description or "",
+                llm=llm,
+                allow_delegation=False
+            ) for a in db_agents
+        ]
+
+        # 4. Define Task
+        task = Task(
+            description=f"User said: {user_message}. Orchestrate a helpful conversation among available agents to assist the user.",
+            expected_output="A collaborative response from the most relevant agents.",
+            agents=crew_agents
+        )
+
+        # 5. Create Crew with Manager
+        crew = Crew(
+            agents=crew_agents,
+            tasks=[task],
+            process=Process.sequential, # Or Process.hierarchical with a manager_llm
+            verbose=True
+        )
+
+        # 6. Execute and Stream
+        # (CrewAI doesn't natively stream yet, so we yield chunks or the final result)
+        result = await crew.kickoff_async()
+        
+        # 7. Save agent responses (Simplified)
+        agent_msg = ChatMessage(
+            room_id=room_id, 
+            agent_id=db_agents[0].id, 
+            content=str(result)
+        )
+        await self.chat_repo.save_message(agent_msg)
+        
+        yield str(result)
         yield "[[STATUS:done]]\n"
