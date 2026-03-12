@@ -67,6 +67,7 @@ select = [
 ]
 ignore = [
     "E501",  # Line too long (handled by formatter)
+    "UP047", # generic function should use type parameters (not supported in 3.11)
 ]
 
 [tool.ruff.lint.isort]
