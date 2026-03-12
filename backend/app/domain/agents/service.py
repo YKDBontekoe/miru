@@ -23,6 +23,13 @@ logger = logging.getLogger(__name__)
 
 AVAILABLE_INTEGRATIONS = [
     {
+        "type": "steam",
+        "display_name": "Steam",
+        "description": "View Steam games and activity...",
+        "icon": "videogame_asset",
+        "status": "active",
+    },
+    {
         "type": "spotify",
         "display_name": "Spotify",
         "description": "Play music...",
