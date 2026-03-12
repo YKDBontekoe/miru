@@ -1,3 +1,4 @@
+import typing
 """Tests for Steam Web API client."""
 
 from __future__ import annotations
@@ -11,14 +12,14 @@ from app.infrastructure.external.steam import get_owned_games, get_player_summar
 
 
 @pytest.fixture
-def mock_settings():
+def mock_settings() -> typing.Generator[typing.Any, None, None]:
     with patch("app.infrastructure.external.steam.get_settings") as mock:
         mock.return_value.steam_api_key = "test_steam_key"
         yield mock
 
 
 @pytest.mark.asyncio
-async def test_get_player_summaries(mock_settings):
+async def test_get_player_summaries(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
     mock_response = MagicMock()
     mock_response.json.return_value = {
@@ -39,7 +40,7 @@ async def test_get_player_summaries(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_get_owned_games(mock_settings):
+async def test_get_owned_games(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
     mock_response = MagicMock()
     mock_response.json.return_value = {
@@ -66,7 +67,7 @@ async def test_get_owned_games(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_get_player_summaries_no_key():
+async def test_get_player_summaries_no_key() -> None:
     with patch("app.infrastructure.external.steam.get_settings") as mock:
         mock.return_value.steam_api_key = None
         summaries = await get_player_summaries(["76561197960435530"])
@@ -74,7 +75,7 @@ async def test_get_player_summaries_no_key():
 
 
 @pytest.mark.asyncio
-async def test_get_player_summaries_http_error(mock_settings):
+async def test_get_player_summaries_http_error(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
 
     mock_response = MagicMock()
@@ -90,7 +91,7 @@ async def test_get_player_summaries_http_error(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_get_player_summaries_exception(mock_settings):
+async def test_get_player_summaries_exception(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
 
     with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
@@ -100,13 +101,13 @@ async def test_get_player_summaries_exception(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_get_player_summaries_no_ids(mock_settings):
+async def test_get_player_summaries_no_ids(mock_settings: typing.Any) -> None:
     summaries = await get_player_summaries([])
     assert summaries == []
 
 
 @pytest.mark.asyncio
-async def test_get_owned_games_http_error(mock_settings):
+async def test_get_owned_games_http_error(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
 
     mock_response = MagicMock()
@@ -121,7 +122,7 @@ async def test_get_owned_games_http_error(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_get_owned_games_exception(mock_settings):
+async def test_get_owned_games_exception(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
 
     with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
@@ -131,7 +132,7 @@ async def test_get_owned_games_exception(mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_get_owned_games_no_key():
+async def test_get_owned_games_no_key() -> None:
     with patch("app.infrastructure.external.steam.get_settings") as mock:
         mock.return_value.steam_api_key = None
         games = await get_owned_games("76561197960435530")

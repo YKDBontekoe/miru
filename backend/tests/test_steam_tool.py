@@ -1,3 +1,4 @@
+import typing
 """Tests for Steam CrewAI tools."""
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ def steam_id() -> str:
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
-async def test_steam_player_summary_tool(mock_get_summaries, steam_id):
+async def test_steam_player_summary_tool(mock_get_summaries: typing.Any, steam_id: str) -> None:
     """Test fetching player summary."""
     mock_get_summaries.return_value = [
         {
@@ -36,7 +37,7 @@ async def test_steam_player_summary_tool(mock_get_summaries, steam_id):
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
-async def test_steam_player_summary_tool_not_found(mock_get_summaries, steam_id):
+async def test_steam_player_summary_tool_not_found(mock_get_summaries: typing.Any, steam_id: str) -> None:
     """Test handling when player is not found."""
     mock_get_summaries.return_value = []
 
@@ -48,7 +49,7 @@ async def test_steam_player_summary_tool_not_found(mock_get_summaries, steam_id)
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
-async def test_steam_owned_games_tool(mock_get_games, steam_id):
+async def test_steam_owned_games_tool(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test fetching owned games."""
     mock_get_games.return_value = [
         {"appid": 440, "name": "Team Fortress 2", "playtime_forever": 600},
@@ -67,7 +68,7 @@ async def test_steam_owned_games_tool(mock_get_games, steam_id):
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
-async def test_steam_owned_games_tool_empty(mock_get_games, steam_id):
+async def test_steam_owned_games_tool_empty(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test handling when profile has no games or is private."""
     mock_get_games.return_value = []
 
@@ -79,7 +80,7 @@ async def test_steam_owned_games_tool_empty(mock_get_games, steam_id):
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
-async def test_steam_player_summary_tool_exception(mock_get_summaries, steam_id):
+async def test_steam_player_summary_tool_exception(mock_get_summaries: typing.Any, steam_id: str) -> None:
     mock_get_summaries.side_effect = Exception("API error")
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
     result = await tool._arun()
@@ -88,7 +89,7 @@ async def test_steam_player_summary_tool_exception(mock_get_summaries, steam_id)
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
-async def test_steam_owned_games_tool_exception(mock_get_games, steam_id):
+async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, steam_id: str) -> None:
     mock_get_games.side_effect = Exception("API error")
     tool = SteamOwnedGamesTool(steam_id=steam_id)
     result = await tool._arun()
@@ -96,7 +97,7 @@ async def test_steam_owned_games_tool_exception(mock_get_games, steam_id):
 
 
 @patch("app.infrastructure.external.steam_tool.get_player_summaries")
-def test_steam_player_summary_tool_sync(mock_get_summaries, steam_id):
+def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id: str) -> None:
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
 
     with patch("asyncio.run") as mock_run:
@@ -107,7 +108,7 @@ def test_steam_player_summary_tool_sync(mock_get_summaries, steam_id):
 
 
 @patch("app.infrastructure.external.steam_tool.get_owned_games")
-def test_steam_owned_games_tool_sync(mock_get_games, steam_id):
+def test_steam_owned_games_tool_sync(mock_get_games: typing.Any, steam_id: str) -> None:
     tool = SteamOwnedGamesTool(steam_id=steam_id)
 
     with patch("asyncio.run") as mock_run:

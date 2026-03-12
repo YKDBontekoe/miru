@@ -1,3 +1,4 @@
+import typing
 """Tests for ChatService logic."""
 
 from __future__ import annotations
@@ -12,14 +13,14 @@ from app.domain.chat.service import ChatService
 
 
 @pytest.fixture
-def chat_service():
+def chat_service() -> ChatService:
     chat_repo = AsyncMock()
     agent_repo = AsyncMock()
     memory_repo = AsyncMock()
     return ChatService(chat_repo, agent_repo, memory_repo)
 
 
-def test_get_agent_tools(chat_service):
+def test_get_agent_tools(chat_service: typing.Any) -> None:
     # Agent with no integrations
     agent1 = Agent(
         id=uuid4(), user_id=uuid4(), name="Agent 1", personality="Helpful", integrations=[]
