@@ -76,6 +76,7 @@ async def test_steam_owned_games_tool_empty(mock_get_games, steam_id):
 
     assert "No games found or profile is private" in result
 
+
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
 async def test_steam_player_summary_tool_exception(mock_get_summaries, steam_id):
@@ -83,6 +84,7 @@ async def test_steam_player_summary_tool_exception(mock_get_summaries, steam_id)
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
     result = await tool._arun()
     assert "Error fetching player summary" in result
+
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
@@ -92,14 +94,17 @@ async def test_steam_owned_games_tool_exception(mock_get_games, steam_id):
     result = await tool._arun()
     assert "Error fetching owned games" in result
 
+
 @patch("app.infrastructure.external.steam_tool.get_player_summaries")
 def test_steam_player_summary_tool_sync(mock_get_summaries, steam_id):
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
 
     with patch("asyncio.run") as mock_run:
         mock_run.return_value = "sync result"
-        with patch.object(tool, "_arun", return_value="sync result"): result = tool._run()
+        with patch.object(tool, "_arun", return_value="sync result"):
+            result = tool._run()
         assert result == "sync result"
+
 
 @patch("app.infrastructure.external.steam_tool.get_owned_games")
 def test_steam_owned_games_tool_sync(mock_get_games, steam_id):
@@ -107,5 +112,6 @@ def test_steam_owned_games_tool_sync(mock_get_games, steam_id):
 
     with patch("asyncio.run") as mock_run:
         mock_run.return_value = "sync games result"
-        with patch.object(tool, "_arun", return_value="sync result"): result = tool._run()
+        with patch.object(tool, "_arun", return_value="sync result"):
+            result = tool._run()
         assert result == "sync games result"

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import pytest
+from unittest.mock import AsyncMock
 from uuid import uuid4
-from unittest.mock import AsyncMock, patch, MagicMock
 
-from app.domain.chat.service import ChatService
+import pytest
+
 from app.domain.agents.models import Agent
+from app.domain.chat.service import ChatService
+
 
 @pytest.fixture
 def chat_service():
@@ -16,14 +18,11 @@ def chat_service():
     memory_repo = AsyncMock()
     return ChatService(chat_repo, agent_repo, memory_repo)
 
+
 def test_get_agent_tools(chat_service):
     # Agent with no integrations
     agent1 = Agent(
-        id=uuid4(),
-        user_id=uuid4(),
-        name="Agent 1",
-        personality="Helpful",
-        integrations=[]
+        id=uuid4(), user_id=uuid4(), name="Agent 1", personality="Helpful", integrations=[]
     )
     tools = chat_service._get_agent_tools(agent1)
     assert len(tools) == 0
@@ -35,7 +34,7 @@ def test_get_agent_tools(chat_service):
         user_id=uuid4(),
         name="Agent 2",
         personality="Gamer",
-        integrations=[f"steam:{steam_id}", "other"]
+        integrations=[f"steam:{steam_id}", "other"],
     )
     tools = chat_service._get_agent_tools(agent2)
     assert len(tools) == 2
