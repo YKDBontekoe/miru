@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class ChatService:
-
     def _get_agent_tools(self, agent: Agent) -> list:
         tools = []
         # Steam integration checks for strings like "steam:<steam_id>"

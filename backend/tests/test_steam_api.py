@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import httpx
 
 from app.infrastructure.external.steam import get_owned_games, get_player_summaries
 
@@ -70,3 +71,58 @@ async def test_get_player_summaries_no_key():
         mock.return_value.steam_api_key = None
         summaries = await get_player_summaries(["76561197960435530"])
         assert summaries == []
+
+@pytest.mark.asyncio
+async def test_get_player_summaries_http_error(mock_settings):
+    steam_id = "76561197960435530"
+
+    mock_response = MagicMock()
+    # Ensure raise_for_status raises HTTPError
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("Error", request=MagicMock(), response=MagicMock())
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_response
+        summaries = await get_player_summaries([steam_id])
+        assert summaries == []
+
+@pytest.mark.asyncio
+async def test_get_player_summaries_exception(mock_settings):
+    steam_id = "76561197960435530"
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.side_effect = Exception("Unexpected error")
+        summaries = await get_player_summaries([steam_id])
+        assert summaries == []
+
+@pytest.mark.asyncio
+async def test_get_player_summaries_no_ids(mock_settings):
+    summaries = await get_player_summaries([])
+    assert summaries == []
+
+@pytest.mark.asyncio
+async def test_get_owned_games_http_error(mock_settings):
+    steam_id = "76561197960435530"
+
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError("Error", request=MagicMock(), response=MagicMock())
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_response
+        games = await get_owned_games(steam_id)
+        assert games == []
+
+@pytest.mark.asyncio
+async def test_get_owned_games_exception(mock_settings):
+    steam_id = "76561197960435530"
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.side_effect = Exception("Unexpected error")
+        games = await get_owned_games(steam_id)
+        assert games == []
+
+@pytest.mark.asyncio
+async def test_get_owned_games_no_key():
+    with patch("app.infrastructure.external.steam.get_settings") as mock:
+        mock.return_value.steam_api_key = None
+        games = await get_owned_games("76561197960435530")
+        assert games == []
