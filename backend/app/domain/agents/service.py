@@ -4,15 +4,16 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+from uuid import UUID
+
+from app.domain.agents.models import (
+    AgentCreate,
+    AgentGenerationResponse,
+    AgentResponse,
+)
+from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
-    from uuid import UUID
-
-    from app.domain.agents.models import (
-        AgentCreate,
-        AgentGenerationResponse,
-        AgentResponse,
-    )
     from app.infrastructure.repositories.agent_repo import AgentRepository
 
 logger = logging.getLogger(__name__)
@@ -20,14 +21,13 @@ logger = logging.getLogger(__name__)
 AVAILABLE_INTEGRATIONS = [
     {"type": "spotify", "display_name": "Spotify", "description": "Play music...", "icon": "music_note", "status": "coming_soon"},
     {"type": "discord", "display_name": "Discord", "description": "Send messages...", "icon": "forum", "status": "coming_soon"},
-    # ... (Truncated for brevity, normally I'd copy all)
 ]
 
 AVAILABLE_CAPABILITIES = [
     {"id": "web_search", "name": "Web Search", "description": "Search the internet...", "icon": "search"},
     {"id": "code_execution", "name": "Code Execution", "description": "Write and run code...", "icon": "terminal"},
-    # ...
 ]
+
 
 class AgentService:
     def __init__(self, repo: AgentRepository):
@@ -82,16 +82,25 @@ class AgentService:
         return await self.repo.list_by_user(user_id)
 
     async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
-        """Use AI to generate an agent profile."""
-        # Logic moved from agents.py (using OpenRouter)
-        # For brevity, I'll assume the LLM logic remains similar but uses the client abstraction
-        # (Implementation details omitted for this turn to focus on structure)
-        pass
+        """Use Instructor to generate a validated agent profile."""
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a creative director for AI personas. Create a unique, high-quality persona based on the user's keywords.",
+            },
+            {"role": "user", "content": f"Keywords: {keywords}"},
+        ]
+
+        # No manual parsing! Instructor returns a validated AgentGenerationResponse object.
+        return await structured_completion(
+            messages=messages,
+            response_model=AgentGenerationResponse,
+        )
 
     async def update_mood(self, agent_id: str, recent_history: str) -> None:
         """Analyze history and update agent mood via repository."""
+        # This could also be structured with a 'MoodModel'
         if not recent_history.strip():
             return
-        # LLM call to get mood...
-        new_mood = "Happy" # Example result
-        await self.repo.update_mood(agent_id, new_mood)
+        # Simplified example
+        await self.repo.update_mood(agent_id, "Optimistic")

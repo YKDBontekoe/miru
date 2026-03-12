@@ -1,65 +1,68 @@
-"""OpenRouter external API client."""
+"""OpenRouter external API client with Instructor support."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar, Type
 
-from openrouter import OpenRouter
+import instructor
+from openai import AsyncOpenAI
 from openrouter.operations import CreateEmbeddingsResponseBody
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
+T = TypeVar("T", bound=BaseModel)
+
 class OpenRouterClient:
     def __init__(self, api_key: str):
-        self.client = OpenRouter(
+        # We use the AsyncOpenAI client because Instructor is built on top of it.
+        # OpenRouter is OpenAI-compatible.
+        self.openai_client = AsyncOpenAI(
             api_key=api_key,
-            http_referer="https://github.com/miru-app/miru",
-            x_title="Miru AI Assistant",
+            base_url="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "https://github.com/miru-app/miru",
+                "X-Title": "Miru AI Assistant",
+            },
         )
+        # Patch the client with Instructor
+        self.instructor_client = instructor.from_openai(self.openai_client)
 
     async def embed(self, text: str, model: str) -> list[float]:
         """Generate a text embedding vector."""
-        response = await self.client.embeddings.generate_async(
+        response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
             encoding_format="float",
         )
-        if isinstance(response, CreateEmbeddingsResponseBody):
-            embedding = response.data[0].embedding
-            if isinstance(embedding, list):
-                return embedding
-        raise ValueError(f"Unexpected embeddings response: {type(response)}")
-
-    async def stream_chat(
-        self, messages: list[dict[str, Any]], model: str
-    ) -> AsyncIterator[str]:
-        """Stream chat completion chunks."""
-        event_stream = await self.client.chat.send_async(
-            model=model,
-            messages=messages,
-            stream=True,
-        )
-        async with event_stream as stream:
-            async for chunk in stream:
-                if chunk.choices:
-                    content = chunk.choices[0].delta.content
-                    if content and isinstance(content, str):
-                        yield content
+        return response.data[0].embedding
 
     async def chat_completion(
         self, messages: list[dict[str, Any]], model: str
     ) -> str:
-        """Get a full chat completion response."""
-        response = await self.client.chat.send_async(
+        """Get a full chat completion response (raw string)."""
+        response = await self.openai_client.chat.completions.create(
             model=model,
             messages=messages,
             stream=False,
         )
-        content = response.choices[0].message.content
-        return str(content) if content else ""
+        return str(response.choices[0].message.content) or ""
+
+    async def structured_completion(
+        self, 
+        messages: list[dict[str, Any]], 
+        model: str, 
+        response_model: Type[T]
+    ) -> T:
+        """Get a validated Pydantic model response from the LLM."""
+        return await self.instructor_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            response_model=response_model,
+        )
 
 # Singleton client for internal use
 _client: OpenRouterClient | None = None
@@ -70,11 +73,20 @@ def get_openrouter_client() -> OpenRouterClient:
         _client = OpenRouterClient(get_settings().openrouter_api_key)
     return _client
 
-# Functional helpers for backward compatibility/simplicity
+# Functional helpers
 async def chat_completion(messages: list[dict[str, Any]], model: str | None = None) -> str:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
     return await client.chat_completion(messages, chosen_model)
+
+async def structured_completion(
+    messages: list[dict[str, Any]], 
+    response_model: Type[T],
+    model: str | None = None, 
+) -> T:
+    client = get_openrouter_client()
+    chosen_model = model or get_settings().default_chat_model
+    return await client.structured_completion(messages, chosen_model, response_model)
 
 async def embed(text: str) -> list[float]:
     client = get_openrouter_client()
