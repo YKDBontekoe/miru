@@ -61,6 +61,7 @@ async def test_decode_expired_jwt_raises_401() -> None:
     with pytest.raises(jwt.ExpiredSignatureError):
         await service.decode_jwt(token)
 
+
 def test_memories_requires_auth(client: TestClient) -> None:
     """GET /api/v1/memory without a token returns 401."""
     response = client.get("/api/v1/memory")

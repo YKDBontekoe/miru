@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from app.domain.memory.models import Memory
@@ -68,18 +68,31 @@ class MemoryService:
 
         return memory_id
 
+    async def delete_memory(self, memory_id: UUID) -> bool:
+        return await self.repo.delete_memory(memory_id)
+
+    async def get_memory_graph(self, user_id: UUID) -> dict[str, Any]:
+        """Fetch all memories and their relationships for the graph view."""
+        memories = await self.repo.list_all_memories(user_id)
+        m_ids = [m.id for m in memories]
+        edges = await self.repo.get_relationships_subgraph(m_ids)
+
+        return {
+            "nodes": memories,
+            "edges": edges,
+        }
+
     async def retrieve_memories(
         self,
         query: str,
         user_id: UUID | str | None = None,
         agent_id: UUID | str | None = None,
         room_id: UUID | str | None = None,
-    ) -> list[str]:
+    ) -> list[Memory]:
         """Fetch similar memories from the vector store."""
-        vector = await embed(query)
+        vector = await embed(query) if query else [0.0] * 1536  # Default vector for blank list
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
 
-        data = await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
-        return [r.content for r in data]
+        return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)

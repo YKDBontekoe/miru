@@ -8,13 +8,18 @@ from typing import TYPE_CHECKING
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
 
-from app.domain.chat.models import ChatMessage, RoomResponse
+from app.domain.chat.models import (
+    ChatMessage,
+    ChatMessageResponse,
+    RoomResponse,
+)
 from app.infrastructure.external.openrouter import get_openrouter_client
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
+    from app.domain.agents.models import Agent
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -41,6 +46,94 @@ class ChatService:
         rooms = await self.chat_repo.list_rooms(user_id)
         return [RoomResponse(id=r.id, name=r.name, created_at=r.created_at) for r in rooms]
 
+    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, name)
+        if room:
+            return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
+        return None
+
+    async def delete_room(self, room_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id)
+
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
+        await self.chat_repo.add_agent_to_room(room_id, agent_id)
+
+    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+        return await self.chat_repo.list_room_agents(room_id)
+
+    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
+        msgs = await self.chat_repo.get_room_messages(room_id)
+        return [
+            ChatMessageResponse(
+                id=m.id,
+                room_id=m.room_id,
+                user_id=m.user_id,
+                agent_id=m.agent_id,
+                content=m.content,
+                created_at=m.created_at,
+            )
+            for m in msgs
+        ]
+
+    async def stream_responses(self, user_message: str, user_id: UUID) -> AsyncIterator[str]:
+        """A simple non-room chat stream for general queries."""
+        # 1. Get User Agents
+        db_agents = await self.agent_repo.list_by_user(user_id)
+        if not db_agents:
+            yield "No agents available. Please create one first."
+            return
+
+        # 2. Simple response (as a placeholder for a full agentic loop)
+        # In a real scenario, this would orchestrate among agents like stream_room_responses
+        llm = get_openrouter_client().openai_client
+
+        # We'll just use the first agent for general chat if no room is specified
+        agent = db_agents[0]
+        response = await llm.chat.completions.create(
+            model="openai/gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": agent.personality},
+                {"role": "user", "content": user_message},
+            ],
+        )
+
+        content = response.choices[0].message.content or "Error: No response from agent."
+        yield content
+        yield "[[STATUS:done]]\n"
+
+    async def run_crew(self, user_message: str, user_id: UUID) -> dict[str, str]:
+        """Execute a full CrewAI orchestration and return structured result."""
+        db_agents = await self.agent_repo.list_by_user(user_id)
+        if not db_agents:
+            return {"task_type": "error", "result": "No agents available."}
+
+        llm = get_openrouter_client().openai_client
+        crew_agents = [
+            CrewAgent(
+                role=a.name,
+                goal=a.personality,
+                backstory=a.description or "",
+                llm=llm,
+                allow_delegation=True,
+            )
+            for a in db_agents
+        ]
+
+        task = Task(
+            description=user_message,
+            expected_output="A comprehensive multi-agent analysis.",
+            agents=list(crew_agents),
+        )
+
+        crew = Crew(
+            agents=list(crew_agents),
+            tasks=[task],
+            process=Process.sequential,
+        )
+
+        result = await crew.kickoff_async()
+        return {"task_type": "general", "result": str(result)}
+
     async def stream_room_responses(
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
@@ -50,9 +143,9 @@ class ChatService:
         await self.chat_repo.save_message(user_msg)
 
         # 2. Get Agents in room
-        db_agents = await self.agent_repo.list_by_user(user_id)
+        db_agents = await self.chat_repo.list_room_agents(room_id)
         if not db_agents:
-            yield "No agents available."
+            yield "No agents in this room. Please add some first."
             return
 
         # 3. Initialize CrewAI Agents

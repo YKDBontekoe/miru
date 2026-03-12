@@ -28,9 +28,7 @@ engine = create_async_engine(db_url, echo=False, future=True)
 
 async def get_session() -> AsyncGenerator[AsyncSession]:
     """FastAPI dependency to provide an async database session."""
-    async_session = sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         yield session
 

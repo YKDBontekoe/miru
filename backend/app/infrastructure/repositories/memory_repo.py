@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import text
+from sqlmodel import select
 
 from app.domain.memory.models import Memory, MemoryRelationship
 
@@ -29,6 +30,28 @@ class MemoryRepository:
         await self.session.refresh(memory)
         return memory
 
+    async def delete_memory(self, memory_id: UUID) -> bool:
+        """Delete a memory from both SQLModel and Neo4j."""
+        # 1. SQLModel Delete
+        memory = await self.session.get(Memory, memory_id)
+        if memory:
+            await self.session.delete(memory)
+            await self.session.commit()
+
+        # 2. Neo4j Delete
+        async with self.graph.session() as session:
+            await session.run(
+                "MATCH (m:Memory {id: $memory_id}) DETACH DELETE m",
+                memory_id=str(memory_id),
+            )
+        return memory is not None
+
+    async def list_all_memories(self, user_id: UUID, limit: int = 100) -> list[Memory]:
+        """Fetch all memories for a user (no vector match)."""
+        statement = select(Memory).where(Memory.user_id == user_id).limit(limit)
+        result = await self.session.exec(statement)
+        return list(result.all())
+
     async def match_memories(
         self,
         vector: list[float],
@@ -39,8 +62,7 @@ class MemoryRepository:
         room_id: UUID | None = None,
     ) -> list[Memory]:
         """Search for memories by vector similarity using the match_memories RPC."""
-        statement = text(
-            """
+        statement = text("""
             SELECT * FROM match_memories(
                 query_embedding := :query_embedding,
                 match_threshold := :match_threshold,
@@ -49,8 +71,7 @@ class MemoryRepository:
                 p_agent_id := :p_agent_id,
                 p_room_id := :p_room_id
             )
-            """
-        )
+            """)
         params = {
             "query_embedding": str(vector),
             "match_threshold": threshold,

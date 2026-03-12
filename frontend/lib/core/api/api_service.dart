@@ -29,8 +29,7 @@ class ApiService {
   static Dio _getDio() {
     // Note: ensure baseUrl ends with a slash so that relative paths
     // (without leading slash) work correctly.
-    final effectiveBaseUrl =
-        baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+    final effectiveBaseUrl = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
 
     final dio = Dio(BaseOptions(
       baseUrl: effectiveBaseUrl,
@@ -207,8 +206,8 @@ class ApiService {
   }
 
   static Future<void> addAgentToRoom(String roomId, String agentId) async {
-    await _handleError((dio) =>
-        dio.post('rooms/$roomId/agents', data: {'agent_id': agentId}));
+    await _handleError(
+        (dio) => dio.post('rooms/$roomId/agents', data: {'agent_id': agentId}));
   }
 
   static Future<List<Agent>> getRoomAgents(String roomId) async {

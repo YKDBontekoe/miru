@@ -19,6 +19,16 @@ class ChatRoom(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
+class ChatRoomAgent(SQLModel, table=True):
+    """Junction table for Chat Rooms and Agents."""
+
+    __tablename__ = "chat_room_agents"
+
+    room_id: UUID = Field(foreign_key="chat_rooms.id", primary_key=True)
+    agent_id: UUID = Field(foreign_key="agents.id", primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class ChatMessage(SQLModel, table=True):
     """Database entity for Chat Messages."""
 
@@ -34,6 +44,14 @@ class ChatMessage(SQLModel, table=True):
 
 class RoomCreate(SQLModel):
     name: str
+
+
+class RoomUpdate(SQLModel):
+    name: str
+
+
+class AddAgentToRoom(SQLModel):
+    agent_id: UUID
 
 
 class RoomResponse(SQLModel):
@@ -52,5 +70,6 @@ class ChatMessageResponse(SQLModel):
 
 
 class ChatRequest(SQLModel):
-    message: str
+    message: str | None = None
+    content: str | None = None
     use_crew: bool = False

@@ -23,15 +23,17 @@ def test_create_agent_route(client: TestClient) -> None:
     user_id = uuid4()
 
     # Mock the return value of the service
-    mock_service.create_agent = AsyncMock(return_value=Agent(
-        id=uuid4(),
-        user_id=user_id,
-        name="Bot",
-        personality="Friendly",
-        goals=[],
-        capabilities=[],
-        integrations=[]
-    ))
+    mock_service.create_agent = AsyncMock(
+        return_value=Agent(
+            id=uuid4(),
+            user_id=user_id,
+            name="Bot",
+            personality="Friendly",
+            goals=[],
+            capabilities=[],
+            integrations=[],
+        )
+    )
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service
@@ -55,10 +57,7 @@ def test_get_agents_route(client: TestClient) -> None:
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service
 
-    response = client.get(
-        "/api/v1/agents",
-        headers={"Authorization": "Bearer fake_token"}
-    )
+    response = client.get("/api/v1/agents", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
     assert response.json() == []

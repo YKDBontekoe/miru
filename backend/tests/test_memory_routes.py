@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -7,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import get_current_user
+from app.domain.memory.models import Memory
 from app.main import app
 
 
@@ -19,8 +21,16 @@ def client() -> Generator[TestClient]:
 
 def test_list_memories_route(client: TestClient) -> None:
     user_id = uuid4()
+    memory_id = uuid4()
+    mock_memory = Memory(
+        id=memory_id,
+        user_id=user_id,
+        content="Memory 1",
+        embedding=[0.1, 0.2],
+        created_at=datetime.now(UTC),
+    )
     mock_service = MagicMock()
-    mock_service.retrieve_memories = AsyncMock(return_value=["Memory 1"])
+    mock_service.retrieve_memories = AsyncMock(return_value=[mock_memory])
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_memory_service] = lambda: mock_service
@@ -28,7 +38,11 @@ def test_list_memories_route(client: TestClient) -> None:
     response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
-    assert response.json() == ["Memory 1"]
+    data = response.json()
+    assert "memories" in data
+    assert len(data["memories"]) == 1
+    assert data["memories"][0]["content"] == "Memory 1"
+    assert data["memories"][0]["id"] == str(memory_id)
 
 
 def test_store_memory_route(client: TestClient) -> None:
@@ -43,7 +57,7 @@ def test_store_memory_route(client: TestClient) -> None:
     response = client.post(
         "/api/v1/memory",
         headers={"Authorization": "Bearer fake_token"},
-        json={"message": "Important fact"}
+        json={"message": "Important fact"},
     )
 
     assert response.status_code == 200
