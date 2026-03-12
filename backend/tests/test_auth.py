@@ -50,7 +50,7 @@ async def test_decode_expired_jwt_raises_401() -> None:
 async def test_decode_tampered_jwt_raises_401() -> None:
     """A JWT signed with a different secret raises HTTPException 401."""
     from fastapi import HTTPException
-    from jose import jwt
+    import jwt
 
     from app.auth import decode_supabase_jwt
 

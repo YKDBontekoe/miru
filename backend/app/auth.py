@@ -2,22 +2,17 @@
 
 Provides JWT validation for Supabase-issued tokens and a FastAPI dependency
 (``get_current_user``) that enforces authentication on protected routes.
-
-Modern Supabase projects issue standard JWTs signed with ES256 (asymmetric).
-We validate the token using the project's JWKS endpoint.
 """
 
 from __future__ import annotations
 
-import base64
 import logging
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 from uuid import UUID
 
-import httpx
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import ExpiredSignatureError, JWTError, jwt
 
 from app.config import get_settings
 
@@ -26,29 +21,18 @@ logger = logging.getLogger(__name__)
 # HTTPBearer extracts the Bearer token from the Authorization header.
 _bearer = HTTPBearer(auto_error=True)
 
-# Cache for JWKS to avoid fetching on every request.
-_jwks_cache: dict[str, dict[str, Any]] = {}
+# Global JWK Client for asymmetric verification.
+_jwks_client: jwt.PyJWKClient | None = None
 
 
-async def get_jwks(supabase_url: str) -> dict[str, Any]:
-    """Fetch the JSON Web Key Set from Supabase."""
-    if supabase_url in _jwks_cache:
-        return _jwks_cache[supabase_url]
-
-    jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(jwks_url)
-            response.raise_for_status()
-            jwks = cast("dict[str, Any]", response.json())
-            _jwks_cache[supabase_url] = jwks
-            return jwks
-    except Exception as exc:
-        logger.error("Failed to fetch JWKS from %s: %s", jwks_url, exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not verify authentication tokens",
-        ) from exc
+def get_jwks_client() -> jwt.PyJWKClient:
+    """Return the lazy-initialized JWKS client."""
+    global _jwks_client
+    if _jwks_client is None:
+        settings = get_settings()
+        jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+        _jwks_client = jwt.PyJWKClient(jwks_url)
+    return _jwks_client
 
 
 async def decode_supabase_jwt(token: str) -> dict[str, Any]:
@@ -66,46 +50,38 @@ async def decode_supabase_jwt(token: str) -> dict[str, Any]:
     settings = get_settings()
 
     try:
-        # First, get the header to see which key/algorithm is used.
+        # Get the unverified header to check the algorithm.
         header = jwt.get_unverified_header(token)
         alg = header.get("alg")
 
         if alg == "HS256":
             # Symmetric verification using secret.
-            secret = settings.supabase_jwt_secret
-            # Handle potential base64 encoding for legacy secrets.
-            try:
-                if secret and (len(secret) % 4 == 0) and ("=" in secret or len(secret) > 40):
-                    secret_to_use: str | bytes = base64.b64decode(secret)
-                else:
-                    secret_to_use = secret
-            except Exception:
-                secret_to_use = secret
-
+            # Supabase usually provides the JWT secret as a plain string.
             payload = jwt.decode(
                 token,
-                secret_to_use,
+                settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 options={"verify_aud": False},
             )
         else:
             # Asymmetric verification using JWKS.
-            jwks = await get_jwks(settings.supabase_url)
+            jwks_client = get_jwks_client()
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
             payload = jwt.decode(
                 token,
-                jwks,
+                signing_key.key,
                 algorithms=["ES256", "RS256"],
                 options={"verify_aud": False},
             )
-        return cast("dict[str, Any]", payload)
+        return payload
 
-    except ExpiredSignatureError as exc:
+    except jwt.ExpiredSignatureError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-    except JWTError as exc:
+    except (jwt.InvalidTokenError, Exception) as exc:
         logger.error("JWT validation failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

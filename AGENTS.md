@@ -7,7 +7,7 @@ This document provides essential information for AI agents working on the Miru c
 Miru is a personal AI assistant with a **FastAPI backend** (Python) and **Flutter frontend** (Dart). It uses Supabase (PostgreSQL + pgvector) as the primary database, Neo4j for memory graph relationships, and OpenRouter for LLM and embeddings.
 
 **Key Technologies:**
-- **Backend:** FastAPI, Supabase Python SDK, Neo4j, CrewAI, python-jose, webauthn
+- **Backend:** FastAPI, Supabase Python SDK, Neo4j, CrewAI, PyJWT, Sentry, webauthn
 - **Frontend:** Flutter, Dart, supabase_flutter, credential_manager
 - **AI:** OpenRouter (LLM + embeddings)
 - **Database:** Supabase (PostgreSQL + pgvector), Neo4j

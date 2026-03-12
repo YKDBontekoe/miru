@@ -7,6 +7,7 @@ import sys
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
@@ -19,6 +20,15 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
 logger = logging.getLogger(__name__)
+
+# Initialize Sentry
+settings = get_settings()
+if settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
 
 # Validate settings eagerly at startup so a missing env var produces a clear
 # error message in the container logs instead of a cryptic import-time crash.

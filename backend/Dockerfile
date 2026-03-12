@@ -1,5 +1,5 @@
 # Backend Dockerfile for Azure Container Apps
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy pyproject.toml first for better caching
+COPY pyproject.toml README.md ./
+RUN pip install --no-cache-dir .
 
 # Copy application code
 COPY app/ ./app/
