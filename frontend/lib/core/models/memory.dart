@@ -4,8 +4,8 @@ part 'memory.freezed.dart';
 part 'memory.g.dart';
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class Memory with _$Memory {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Memory({
     required String id,
     required String content,
@@ -26,13 +26,16 @@ class MemoryGraph with _$MemoryGraph {
       _$MemoryGraphFromJson(json);
 }
 
-@freezed
-class MemoryEdge with _$MemoryEdge {
-  const factory MemoryEdge({
-    required String source,
-    required String target,
-    String? type,
-  }) = _MemoryEdge;
+class MemoryEdge {
+  final String source;
+  final String target;
+  final String? type;
+
+  const MemoryEdge({
+    required this.source,
+    required this.target,
+    this.type,
+  });
 
   factory MemoryEdge.fromJson(Map<String, dynamic> json) {
     return MemoryEdge(

@@ -17,8 +17,8 @@ class Capability with _$Capability {
 }
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class Integration with _$Integration {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Integration({
     required String type,
     required String displayName,
@@ -32,8 +32,8 @@ class Integration with _$Integration {
 }
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class AgentGenerationResponse with _$AgentGenerationResponse {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory AgentGenerationResponse({
     required String name,
     required String personality,

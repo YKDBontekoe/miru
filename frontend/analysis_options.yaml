@@ -133,6 +133,7 @@ analyzer:
     invalid_return_type_for_catch_error: warning
     dead_code: info
     deprecated_member_use_from_same_package: info
+    invalid_annotation_target: ignore
   plugins:
     - dart_code_metrics
 

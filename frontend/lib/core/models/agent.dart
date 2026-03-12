@@ -4,11 +4,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'agent.freezed.dart';
 part 'agent.g.dart';
 
-@Freezed()
-@JsonSerializable(fieldRename: FieldRename.snake)
+@freezed
 class Agent with _$Agent {
   const Agent._();
 
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Agent({
     required String id,
     required String name,

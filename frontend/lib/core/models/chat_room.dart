@@ -4,8 +4,8 @@ part 'chat_room.freezed.dart';
 part 'chat_room.g.dart';
 
 @freezed
-@JsonSerializable(fieldRename: FieldRename.snake)
 class ChatRoom with _$ChatRoom {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ChatRoom({
     required String id,
     required String name,
