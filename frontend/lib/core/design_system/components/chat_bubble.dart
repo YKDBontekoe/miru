@@ -368,7 +368,7 @@ class _AssistantBubbleContainer extends StatelessWidget {
         bottomLeft: Radius.circular(AppSpacing.radiusXl),
         bottomRight: Radius.circular(AppSpacing.radiusXl),
       ),
-      child: BackdropFilter(
+      child: BackdropFilter.grouped(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(

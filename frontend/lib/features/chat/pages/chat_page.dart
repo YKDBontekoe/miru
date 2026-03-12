@@ -29,9 +29,11 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode();
+  final GlobalKey _inputBarKey = GlobalKey();
 
   bool _isStreaming = false;
   bool _showScrollToBottom = false;
+  double _inputBarHeight = 120.0; // Default fallback
 
   /// Human-readable status shown while the assistant is processing.
   String? _streamingStatus;
@@ -49,6 +51,26 @@ class _ChatPageState extends State<ChatPage> {
     // Auto-focus the input field on load.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _inputFocusNode.requestFocus();
+      _measureInputBarHeight();
+    });
+    // Listen to keyboard changes to remeasure
+    _inputFocusNode.addListener(_measureInputBarHeight);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Input bar height measurement
+  // ---------------------------------------------------------------------------
+
+  void _measureInputBarHeight() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final renderBox = _inputBarKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final newHeight = renderBox.size.height;
+        if ((newHeight - _inputBarHeight).abs() > 1) {
+          setState(() => _inputBarHeight = newHeight);
+        }
+      }
     });
   }
 
@@ -352,7 +374,7 @@ class _ChatPageState extends State<ChatPage> {
                   padding: EdgeInsets.only(
                     top: kToolbarHeight + MediaQuery.paddingOf(context).top,
                     // Give enough bottom padding for the floating input bar
-                    bottom: 120,
+                    bottom: _inputBarHeight,
                   ),
                   child: _MessageList(
                     messages: _messages,
@@ -367,7 +389,7 @@ class _ChatPageState extends State<ChatPage> {
           // Scroll-to-bottom FAB
           if (_showScrollToBottom && _messages.isNotEmpty)
             Positioned(
-              bottom: 120,
+              bottom: _inputBarHeight,
               right: AppSpacing.lg,
               child: _ScrollToBottomButton(
                 onPressed: _scrollToBottom,
@@ -380,19 +402,13 @@ class _ChatPageState extends State<ChatPage> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_isStreaming && _streamingStatus != null)
-                  _StreamingStatusPill(label: _streamingStatus!),
-                ChatInputBar(
-                  controller: _inputController,
-                  focusNode: _inputFocusNode,
-                  onSend: _sendMessage,
-                  isStreaming: _isStreaming,
-                  onStopStreaming: _stopGeneration,
-                ),
-              ],
+            child: ChatInputBar(
+              key: _inputBarKey,
+              controller: _inputController,
+              focusNode: _inputFocusNode,
+              onSend: _sendMessage,
+              isStreaming: _isStreaming,
+              onStopStreaming: _stopGeneration,
             ),
           ),
         ],
@@ -407,7 +423,9 @@ class _ChatPageState extends State<ChatPage> {
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
-    _inputFocusNode.dispose();
+    _inputFocusNode
+      ..removeListener(_measureInputBarHeight)
+      ..dispose();
     super.dispose();
   }
 }
@@ -435,33 +453,35 @@ class _MessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.lg,
+    return BackdropGroup(
+      child: ListView.builder(
+        controller: scrollController,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.lg,
+        ),
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final msg = messages[index];
+
+          // Show streaming status label in the placeholder bubble while we're
+          // waiting for the first token.
+          final isPlaceholder =
+              !msg.isUser && msg.text.isEmpty && streamingStatus != null;
+
+          return _AnimatedMessageItem(
+            key: ValueKey(msg.id),
+            child: ChatBubble(
+              text: isPlaceholder ? streamingStatus! : msg.text,
+              isUser: msg.isUser,
+              crewTaskType: msg.crewTaskType,
+              status: isPlaceholder ? MessageStatus.streaming : msg.status,
+              onCopy: () => onCopy(msg),
+              onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+            ),
+          );
+        },
       ),
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final msg = messages[index];
-
-        // Show streaming status label in the placeholder bubble while we're
-        // waiting for the first token.
-        final isPlaceholder =
-            !msg.isUser && msg.text.isEmpty && streamingStatus != null;
-
-        return _AnimatedMessageItem(
-          key: ValueKey(msg.id),
-          child: ChatBubble(
-            text: isPlaceholder ? streamingStatus! : msg.text,
-            isUser: msg.isUser,
-            crewTaskType: msg.crewTaskType,
-            status: isPlaceholder ? MessageStatus.streaming : msg.status,
-            onCopy: () => onCopy(msg),
-            onRetry: msg.status == MessageStatus.failed ? onRetry : null,
-          ),
-        );
-      },
     );
   }
 }
