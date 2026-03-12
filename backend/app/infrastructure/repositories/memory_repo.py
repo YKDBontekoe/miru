@@ -76,9 +76,9 @@ class MemoryRepository:
             "query_embedding": str(vector),
             "match_threshold": threshold,
             "match_count": count,
-            "p_user_id": user_id,
-            "p_agent_id": agent_id,
-            "p_room_id": room_id,
+            "p_user_id": str(user_id) if user_id else None,
+            "p_agent_id": str(agent_id) if agent_id else None,
+            "p_room_id": str(room_id) if room_id else None,
         }
         result = await self.session.execute(statement, params)
         return [Memory(**row) for row in result.mappings()]
