@@ -36,7 +36,7 @@ if "sslmode=" in db_url:
 
 # Explicitly set SSL for asyncpg if enabled and it's a Supabase URL
 connect_args = {}
-if get_settings().database_ssl and "supabase.co" in db_url:
+if get_settings().database_ssl and ("supabase.co" in db_url or "pooler.supabase.com" in db_url):
     # For asyncpg, the parameter is 'ssl', not 'sslmode'
     connect_args["ssl"] = "require"
 
