@@ -12,9 +12,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
-from app.config import get_settings
-from app.graph import close_neo4j_driver, get_neo4j_driver
-from app.routes import passkey_router, router
+from app.core.config import get_settings
+from app.infrastructure.database.neo4j import close_neo4j_driver
+from app.api.v1.agents import router as agents_router
+from app.api.v1.chat import router as chat_router
+from app.api.v1.memory import router as memory_router
+# from app.api.v1.auth import router as auth_router # placeholder
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -30,49 +33,31 @@ if settings.sentry_dsn:
         profiles_sample_rate=1.0,
     )
 
-# Validate settings eagerly at startup so a missing env var produces a clear
-# error message in the container logs instead of a cryptic import-time crash.
-try:
-    get_settings()
-except ValidationError as exc:
-    missing = [e["loc"][0] for e in exc.errors() if e["type"] == "missing"]
-    logger.critical(
-        "Container startup failed: missing required environment variables: %s",
-        ", ".join(str(f) for f in missing),
-    )
-    sys.exit(1)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # App startup - initialize Neo4j connection
-    try:
-        await get_neo4j_driver()
-        logger.info("Successfully connected to Neo4j")
-    except Exception as exc:
-        logger.error(
-            "Failed to connect to Neo4j at startup: %s. Continuing without graph features.", exc
-        )
-
+    """Manage application startup and shutdown events."""
     yield
-    # App shutdown - close Neo4j connection
     await close_neo4j_driver()
 
-
-app = FastAPI(title="Miru", version="0.1.0", lifespan=lifespan)
-
-_cors_origins = get_settings().cors_allowed_origins.split(",")
+app = FastAPI(
+    title="Miru Backend",
+    description="Refactored Layered API",
+    version="0.2.0",
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=settings.cors_allowed_origins.split(","),
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api")
-app.include_router(passkey_router, prefix="/api")
-
+# API v1 registration
+app.include_router(agents_router, prefix="/api/v1/agents")
+app.include_router(chat_router, prefix="/api/v1/chat")
+app.include_router(memory_router, prefix="/api/v1/memory")
 
 @app.get("/health")
 async def health() -> dict:
