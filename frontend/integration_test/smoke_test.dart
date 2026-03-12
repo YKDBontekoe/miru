@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:miru/main.dart';
-import 'package:miru/backend_service.dart';
-import 'package:miru/services/supabase_service.dart';
+import 'package:miru/core/api/backend_service.dart';
+import 'package:miru/core/services/supabase_service.dart';
 
 // Create a mock BackendService for tests
 void _setupMockBackend() {
@@ -20,7 +21,7 @@ void main() {
       await BackendService.init();
       _setupMockBackend();
       await SupabaseService.initialize();
-      await tester.pumpWidget(const MiruApp());
+      await tester.pumpWidget(const ProviderScope(child: MiruApp()));
 
       await tester.pumpAndSettle();
 
@@ -33,7 +34,7 @@ void main() {
       _setupMockBackend();
       await SupabaseService.initialize();
 
-      await tester.pumpWidget(const MiruApp());
+      await tester.pumpWidget(const ProviderScope(child: MiruApp()));
 
       await tester.pumpAndSettle();
 
@@ -46,7 +47,7 @@ void main() {
       _setupMockBackend();
       await SupabaseService.initialize();
 
-      await tester.pumpWidget(const MiruApp());
+      await tester.pumpWidget(const ProviderScope(child: MiruApp()));
 
       await tester.pumpAndSettle();
 

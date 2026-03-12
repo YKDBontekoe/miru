@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:miru/design_system/design_system.dart';
+import 'package:miru/core/design_system/design_system.dart';
 
 void main() {
   testWidgets('Miru design system renders correctly',

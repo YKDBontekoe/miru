@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'auth_page.dart';
-import 'backend_service.dart';
-import 'design_system/design_system.dart';
-import 'introduction_page.dart';
-import 'loading_page.dart';
-import 'main_scaffold.dart';
-import 'services/passkey_service.dart';
-import 'services/supabase_service.dart';
+import 'package:miru/core/api/backend_service.dart';
+import 'package:miru/core/design_system/design_system.dart';
+import 'package:miru/core/services/passkey_service.dart';
+import 'package:miru/core/services/supabase_service.dart';
+import 'package:miru/features/auth/pages/auth_page.dart';
+import 'package:miru/features/auth/pages/loading_page.dart';
+import 'package:miru/features/chat/pages/main_scaffold.dart';
+import 'package:miru/features/onboarding/pages/introduction_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,11 @@ void main() async {
   // Initialise Passkey support.
   await PasskeyService.initialize();
 
-  runApp(const MiruApp());
+  runApp(
+    const ProviderScope(
+      child: MiruApp(),
+    ),
+  );
 }
 
 class MiruApp extends StatefulWidget {
