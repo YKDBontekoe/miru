@@ -9,7 +9,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient  # noqa: TC002
 
-from app.database import get_supabase
+from app.infrastructure.database.supabase import get_supabase
 from app.main import app
 from tests.conftest import make_jwt
 

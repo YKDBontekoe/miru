@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import jwt
 import pytest
 from fastapi.testclient import TestClient
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 # ---------------------------------------------------------------------------
 # Required env vars — set before importing the app so Settings initialises.
@@ -71,7 +74,7 @@ def auth_headers(user_id: str | None = None) -> dict[str, str]:
 
 
 @pytest.fixture()
-def client() -> TestClient:
+def client() -> Generator[TestClient]:
     """Return a test client for the FastAPI app."""
     from app.main import app
 
