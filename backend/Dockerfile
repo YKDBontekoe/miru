@@ -11,9 +11,11 @@ RUN apt-get update && apt-get install -y \
 
 # Copy pyproject.toml first for better caching
 COPY pyproject.toml README.md ./
+# Create a dummy app directory so pip install . can resolve the package structure
+RUN mkdir app && touch app/__init__.py
 RUN pip install --no-cache-dir .
 
-# Copy application code
+# Copy application code (this will overwrite the dummy __init__.py)
 COPY app/ ./app/
 COPY sql/ ./sql/
 
