@@ -68,7 +68,7 @@ class ChatRepository:
         """Fetch all agents associated with a room."""
         statement = (
             select(Agent)
-            .join(ChatRoomAgent, Agent.id == ChatRoomAgent.agent_id)
+            .join(ChatRoomAgent, col(Agent.id) == col(ChatRoomAgent.agent_id))
             .where(ChatRoomAgent.room_id == room_id)
         )
         result = await self.session.exec(statement)

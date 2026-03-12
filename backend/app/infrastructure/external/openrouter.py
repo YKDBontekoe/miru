@@ -89,7 +89,7 @@ async def chat_completion(
     return await client.chat_completion(messages, chosen_model)
 
 
-async def structured_completion[T: BaseModel](
+async def structured_completion(
     messages: list[ChatCompletionMessageParam],
     response_model: type[T],
     model: str | None = None,
