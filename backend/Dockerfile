@@ -1,34 +1,60 @@
-# Backend Dockerfile for Azure Container Apps
-FROM python:3.13-slim
+# Stage 1: Builder
+FROM python:3.13-slim AS builder
 
-WORKDIR /app
-
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy pyproject.toml first for better caching
-COPY pyproject.toml README.md ./
-# Create a dummy app directory so pip install . can resolve the package structure
-RUN mkdir app && touch app/__init__.py
-RUN pip install --no-cache-dir .
+WORKDIR /app
 
-# Copy application code (this will overwrite the dummy __init__.py)
+# Install uv for extremely fast dependency management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uv/bin/uv
+
+# Copy configuration files
+COPY pyproject.toml README.md ./
+
+# Create a virtualenv and install dependencies
+# We create a dummy app to allow uv to satisfy package structure requirements
+# while caching dependencies independently of the actual code changes.
+RUN mkdir app && touch app/__init__.py
+RUN /uv/bin/uv venv /opt/venv && \
+    . /opt/venv/bin/activate && \
+    /uv/bin/uv pip install .
+
+# Stage 2: Runtime
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Set production environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+# Install only the runtime libraries (e.g., libpq5 for PostgreSQL/Supabase)
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the virtualenv from the builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy application code and SQL scripts
 COPY app/ ./app/
 COPY sql/ ./sql/
 
-# Create non-root user for security
+# Security: Run as a non-privileged user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Expose port
+# Expose the FastAPI port
 EXPOSE 8000
 
-# Health check
+# Health check using the venv's httpx
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health', timeout=5)"
+    CMD ["python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5)"]
 
-# Run the application
+# Start the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
