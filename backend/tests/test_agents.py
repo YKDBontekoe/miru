@@ -23,11 +23,8 @@ from app.agents import (
 
 
 @pytest.fixture
-def mock_supabase() -> Any:
-    with patch("app.agents.get_supabase") as mock_get_supabase:
-        mock_client = MagicMock()
-        mock_get_supabase.return_value = mock_client
-        yield mock_client
+def mock_supabase() -> MagicMock:
+    return MagicMock()
 
 
 @pytest.mark.asyncio
@@ -46,7 +43,7 @@ async def test_create_agent(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await create_agent(agent_data, user_id)
+    result = await create_agent(agent_data, user_id, supabase=mock_supabase)
     assert result.name == "Test Agent"
     assert result.personality == "Friendly"
     insert_args = mock_supabase.table().insert.call_args.args[0]
@@ -95,7 +92,7 @@ async def test_get_agents(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().select().eq.return_value = mock_execute
 
-    results = await get_agents(user_id)
+    results = await get_agents(user_id, supabase=mock_supabase)
     assert len(results) == 1
     assert results[0].name == "Test Agent"
 
@@ -111,7 +108,7 @@ async def test_create_room(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await create_room(room_data, user_id)
+    result = await create_room(room_data, user_id, supabase=mock_supabase)
     assert result.name == "Test Room"
 
 
@@ -125,7 +122,7 @@ async def test_get_rooms(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().select().eq.return_value = mock_execute
 
-    results = await get_rooms(user_id)
+    results = await get_rooms(user_id, supabase=mock_supabase)
     assert len(results) == 1
     assert results[0].name == "Test Room"
 
@@ -137,7 +134,7 @@ async def test_add_agent_to_room(mock_supabase: MagicMock) -> None:
     mock_execute = MagicMock()
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await add_agent_to_room("room-123", "agent-123", user_id)
+    result = await add_agent_to_room("room-123", "agent-123", user_id, supabase=mock_supabase)
     assert result == {"status": "added"}
     mock_supabase.table().insert.assert_called_with(
         {"room_id": "room-123", "agent_id": "agent-123"}
@@ -161,7 +158,7 @@ async def test_get_room_agents(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().select().eq.return_value = mock_execute
 
-    results = await get_room_agents("room-123", user_id)
+    results = await get_room_agents("room-123", user_id, supabase=mock_supabase)
     assert len(results) == 1
     assert results[0].name == "Test Agent"
 
@@ -183,7 +180,7 @@ async def test_get_room_messages(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().select().eq().order.return_value = mock_execute
 
-    results = await get_room_messages("room-123", user_id)
+    results = await get_room_messages("room-123", user_id, supabase=mock_supabase)
     assert len(results) == 1
     assert results[0].content == "Hello"
 
@@ -203,7 +200,7 @@ async def test_save_message_user(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await save_message("room-123", "Hello", "user-123", is_agent=False)
+    result = await save_message("room-123", "Hello", "user-123", is_agent=False, supabase=mock_supabase)
     assert result.content == "Hello"
     assert result.user_id == "user-123"
     mock_supabase.table().insert.assert_called_with(
@@ -226,7 +223,7 @@ async def test_save_message_agent(mock_supabase: MagicMock) -> None:
     ]
     mock_supabase.table().insert.return_value = mock_execute
 
-    result = await save_message("room-123", "Hello", "agent-123", is_agent=True)
+    result = await save_message("room-123", "Hello", "agent-123", is_agent=True, supabase=mock_supabase)
     assert result.content == "Hello"
     assert result.agent_id == "agent-123"
     mock_supabase.table().insert.assert_called_with(
@@ -256,6 +253,7 @@ async def test_stream_room_responses(
     mock_chat_completion: MagicMock,
     mock_get_agent_relationships: AsyncMock,
     mock_update_agent_mood: AsyncMock,
+    mock_supabase: MagicMock,
 ) -> None:
     mock_embed.return_value = [0.1, 0.2]
     mock_get_agent_relationships.return_value = ""
@@ -296,7 +294,7 @@ async def test_stream_room_responses(
 
     # Test streaming
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id):
+    async for chunk in stream_room_responses("room-123", "How are you?", user_id, supabase=mock_supabase):
         chunks.append(chunk)
 
     # Filter out status events to check only the content-bearing chunks.
@@ -325,7 +323,7 @@ async def test_get_room_agents_no_agents(mock_supabase: MagicMock) -> None:
     mock_execute.execute.return_value.data = [{"agents": None}]
     mock_supabase.table().select().eq.return_value = mock_execute
 
-    results = await get_room_agents("room-123", user_id)
+    results = await get_room_agents("room-123", user_id, supabase=mock_supabase)
     assert len(results) == 0
 
 
@@ -343,13 +341,14 @@ async def test_stream_room_responses_no_agents(
     mock_get_agents: MagicMock,
     mock_get_room_messages: MagicMock,
     mock_save_message: MagicMock,
+    mock_supabase: MagicMock,
 ) -> None:
     user_id = uuid4()
     mock_get_room_agents.return_value = []
     mock_get_room_messages.return_value = []
 
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id):
+    async for chunk in stream_room_responses("room-123", "How are you?", user_id, supabase=mock_supabase):
         chunks.append(chunk)
 
     assert chunks == ["No agents in this room to respond."]
@@ -377,6 +376,7 @@ async def test_stream_room_responses_no_history(
     mock_chat_completion: MagicMock,
     mock_get_agent_relationships: AsyncMock,
     mock_update_agent_mood: AsyncMock,
+    mock_supabase: MagicMock,
 ) -> None:
     mock_embed.return_value = [0.1, 0.2]
     mock_get_agent_relationships.return_value = ""
@@ -407,7 +407,7 @@ async def test_stream_room_responses_no_history(
     mock_stream_chat.side_effect = mock_stream
 
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id):
+    async for chunk in stream_room_responses("room-123", "How are you?", user_id, supabase=mock_supabase):
         chunks.append(chunk)
 
     content_chunks = [c for c in chunks if not c.startswith("[[STATUS:")]
@@ -440,6 +440,7 @@ async def test_stream_room_responses_with_agent_history(
     mock_chat_completion: MagicMock,
     mock_get_agent_relationships: AsyncMock,
     mock_update_agent_mood: AsyncMock,
+    mock_supabase: MagicMock,
 ) -> None:
     mock_embed.return_value = [0.1, 0.2]
     mock_get_agent_relationships.return_value = ""
@@ -473,8 +474,11 @@ async def test_stream_room_responses_with_agent_history(
 
     mock_stream_chat.side_effect = mock_stream
 
+    # Test streaming
     chunks = []
-    async for chunk in stream_room_responses("room-123", "How are you?", user_id):
+    async for chunk in stream_room_responses(
+        "room-123", "How are you?", user_id, supabase=mock_supabase
+    ):
         chunks.append(chunk)
 
     content_chunks = [c for c in chunks if not c.startswith("[[STATUS:")]

@@ -75,7 +75,9 @@ def client() -> TestClient:
     """Return a test client for the FastAPI app."""
     from app.main import app
 
-    return TestClient(app, raise_server_exceptions=False)
+    app.dependency_overrides = {}
+    yield TestClient(app, raise_server_exceptions=False)
+    app.dependency_overrides = {}
 
 
 @pytest.fixture()

@@ -10,6 +10,8 @@ import pytest
 from fastapi.testclient import TestClient  # noqa: TC002
 
 from tests.conftest import make_jwt
+from app.main import app
+from app.database import get_supabase
 
 # ---------------------------------------------------------------------------
 # decode_supabase_jwt unit tests
@@ -111,9 +113,7 @@ def test_expired_token_returns_401(client: TestClient) -> None:
 
 
 @patch("app.routes.retrieve_memories", return_value=[])
-@patch("app.routes.get_supabase")
 def test_valid_token_passes_auth(
-    mock_get_supabase: MagicMock,
     mock_retrieve: MagicMock,
     client: TestClient,
     test_user_id: str,
@@ -123,7 +123,8 @@ def test_valid_token_passes_auth(
     # Mock Supabase to return an empty list for memories.
     mock_supabase = MagicMock()
     mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = []  # fmt: skip
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
 
     response = client.get("/api/memories", headers=authed_headers)
     # 200 = auth passed (even if Supabase is mocked empty)

@@ -7,7 +7,17 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient  # noqa: TC002
+from fastapi.testclient import TestClient
+
+from app.main import app
+from app.database import get_supabase
+from app.auth import get_current_user
+
+@pytest.fixture
+def client_with_overrides():
+    app.dependency_overrides = {}
+    yield TestClient(app)
+    app.dependency_overrides = {}
 
 # ---------------------------------------------------------------------------
 # Challenge store unit tests
@@ -106,15 +116,7 @@ def test_decode_credential_id_list() -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("app.routes.generate_registration_options")
-@patch("app.routes._get_user_email_from_jwt")
-@patch("app.routes.get_supabase")
-def test_register_options_requires_auth(
-    mock_supabase: MagicMock,
-    mock_email: MagicMock,
-    mock_gen: MagicMock,
-    client: TestClient,
-) -> None:
+def test_register_options_requires_auth(client: TestClient) -> None:
     """GET registration options without auth returns 403."""
     response = client.post(
         "/api/auth/passkey/register/options",
@@ -125,29 +127,29 @@ def test_register_options_requires_auth(
 
 @patch("app.routes.generate_registration_options")
 @patch("app.routes._get_user_email_from_jwt")
-@patch("app.routes.get_supabase")
 def test_register_options_with_valid_auth(
-    mock_get_supabase: MagicMock,
     mock_email: MagicMock,
     mock_gen: MagicMock,
-    client: TestClient,
+    client_with_overrides: TestClient,
     test_user_id: str,
-    authed_headers: dict[str, str],
 ) -> None:
     """Authenticated users can fetch registration options."""
     mock_email.return_value = "test@example.com"
     mock_supabase = MagicMock()
     mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []  # fmt: skip
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: uuid4()
+
     mock_gen.return_value = {
         "challenge_id": "test-challenge-id",
         "options": {"challenge": "abc", "rp": {"name": "Miru"}},
     }
 
-    response = client.post(
+    response = client_with_overrides.post(
         "/api/auth/passkey/register/options",
         json={"device_name": "My MacBook"},
-        headers=authed_headers,
+        headers={"Authorization": "Bearer fake_token"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -191,22 +193,14 @@ def test_login_verify_bad_credential(
     assert response.status_code == 401
 
 
-@patch("app.routes.get_supabase")
-def test_passkey_list_requires_auth(
-    mock_supabase: MagicMock,
-    client: TestClient,
-) -> None:
+def test_passkey_list_requires_auth(client: TestClient) -> None:
     """Listing passkeys without auth returns 403."""
     response = client.get("/api/auth/passkey/list")
     assert response.status_code in (401, 403)
 
 
-@patch("app.routes.get_supabase")
 def test_passkey_list_returns_passkeys(
-    mock_get_supabase: MagicMock,
-    client: TestClient,
-    authed_headers: dict[str, str],
-    test_user_id: str,
+    client_with_overrides: TestClient,
 ) -> None:
     """Authenticated users get their passkeys list."""
     mock_supabase = MagicMock()
@@ -221,28 +215,28 @@ def test_passkey_list_returns_passkeys(
         }
     ]
     # fmt: on
-    mock_get_supabase.return_value = mock_supabase
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: uuid4()
 
-    response = client.get("/api/auth/passkey/list", headers=authed_headers)
+    response = client_with_overrides.get("/api/auth/passkey/list", headers={"Authorization": "Bearer fake_token"})
     assert response.status_code == 200
     data = response.json()
     assert len(data["passkeys"]) == 1
     assert data["passkeys"][0]["device_name"] == "My iPhone"
 
 
-@patch("app.routes.get_supabase")
 def test_passkey_delete_not_found(
-    mock_get_supabase: MagicMock,
-    client: TestClient,
-    authed_headers: dict[str, str],
+    client_with_overrides: TestClient,
 ) -> None:
     """Deleting a non-existent passkey returns 404."""
     mock_supabase = MagicMock()
     mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = []  # fmt: skip
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: uuid4()
 
-    response = client.delete(
+    response = client_with_overrides.delete(
         "/api/auth/passkey/nonexistent-id",
-        headers=authed_headers,
+        headers={"Authorization": "Bearer fake_token"},
     )
     assert response.status_code == 404

@@ -1,18 +1,27 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.database import get_supabase
+from app.auth import get_current_user
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    # Clear overrides before each test
+    app.dependency_overrides = {}
+    yield TestClient(app)
+    app.dependency_overrides = {}
 
-
-@patch("app.routes.get_supabase")
-def test_list_memories_route(mock_get_supabase: MagicMock) -> None:
+def test_list_memories_route(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    mock_get_supabase.return_value = mock_supabase
+    
+    # Setup dependency overrides
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     mock_execute = MagicMock()
     mock_execute.data = [
@@ -24,8 +33,7 @@ def test_list_memories_route(mock_get_supabase: MagicMock) -> None:
         mock_execute
     )
 
-    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
-        response = client.get("/api/memories", headers={"Authorization": "Bearer fake_token"})
+    response = client.get("/api/memories", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
     assert "memories" in response.json()
@@ -33,11 +41,12 @@ def test_list_memories_route(mock_get_supabase: MagicMock) -> None:
     assert response.json()["memories"][0]["id"] == "mem1"
 
 
-@patch("app.routes.get_supabase")
-def test_delete_memory_route(mock_get_supabase: MagicMock) -> None:
+def test_delete_memory_route(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     # Mock verify ownership
     mock_verify_execute = MagicMock()
@@ -56,20 +65,20 @@ def test_delete_memory_route(mock_get_supabase: MagicMock) -> None:
         mock_delete_execute
     )
 
-    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
-        response = client.delete(
-            "/api/memories/mem1", headers={"Authorization": "Bearer fake_token"}
-        )
+    response = client.delete(
+        "/api/memories/mem1", headers={"Authorization": "Bearer fake_token"}
+    )
 
     assert response.status_code == 200
     assert response.json() == {"status": "deleted"}
 
 
-@patch("app.routes.get_supabase")
-def test_delete_memory_route_not_found(mock_get_supabase: MagicMock) -> None:
+def test_delete_memory_route_not_found(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     # Mock verify ownership (not found)
     mock_verify_execute = MagicMock()
@@ -79,24 +88,24 @@ def test_delete_memory_route_not_found(mock_get_supabase: MagicMock) -> None:
         mock_verify_execute
     )
 
-    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
-        response = client.delete(
-            "/api/memories/mem1", headers={"Authorization": "Bearer fake_token"}
-        )
+    response = client.delete(
+        "/api/memories/mem1", headers={"Authorization": "Bearer fake_token"}
+    )
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Memory not found"
 
 
 @patch("app.routes.get_memory_relationships", new_callable=AsyncMock)
-@patch("app.routes.get_supabase")
 def test_list_memory_graph_route(
-    mock_get_supabase: MagicMock,
     mock_get_memory_relationships: AsyncMock,
+    client
 ) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     mock_execute = MagicMock()
     mock_execute.data = [
@@ -124,8 +133,7 @@ def test_list_memory_graph_route(
         }
     ]
 
-    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
-        response = client.get("/api/memories/graph", headers={"Authorization": "Bearer fake_token"})
+    response = client.get("/api/memories/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
     assert response.json() == {
@@ -153,14 +161,15 @@ def test_list_memory_graph_route(
 
 
 @patch("app.routes.get_memory_relationships", new_callable=AsyncMock)
-@patch("app.routes.get_supabase")
 def test_list_memory_graph_route_with_graph_error(
-    mock_get_supabase: MagicMock,
     mock_get_memory_relationships: AsyncMock,
+    client
 ) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    mock_get_supabase.return_value = mock_supabase
+    
+    app.dependency_overrides[get_supabase] = lambda: mock_supabase
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     mock_execute = MagicMock()
     mock_execute.data = [
@@ -176,8 +185,7 @@ def test_list_memory_graph_route_with_graph_error(
 
     mock_get_memory_relationships.side_effect = RuntimeError("Neo4j offline")
 
-    with patch("app.auth.decode_supabase_jwt", return_value={"sub": str(user_id)}):
-        response = client.get("/api/memories/graph", headers={"Authorization": "Bearer fake_token"})
+    response = client.get("/api/memories/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
     assert response.json() == {
