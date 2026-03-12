@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
+from uuid import UUID  # noqa: TCH003
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import get_chat_service
+from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.chat.models import ChatRequest, RoomCreate, RoomResponse
-
-if TYPE_CHECKING:
-    from uuid import UUID
-
-    from app.core.security.auth import CurrentUser
-    from app.domain.chat.service import ChatService
+from app.domain.chat.service import ChatService  # noqa: TCH001
 
 router = APIRouter(tags=["Chat"])
 

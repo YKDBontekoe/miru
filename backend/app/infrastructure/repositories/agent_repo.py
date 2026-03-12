@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlmodel import select
@@ -21,9 +21,7 @@ class AgentRepository:
         """Fetch a single agent by ID."""
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
-        # Cast to ensure mypy knows this returns an Agent or None
-        result = await self.session.get(Agent, agent_id)
-        return cast("Agent | None", result)
+        return await self.session.get(Agent, agent_id)
 
     async def list_by_user(self, user_id: UUID | str) -> list[Agent]:
         """List all agents for a user."""

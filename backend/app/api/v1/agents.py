@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_agent_service
+from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import (
     Agent,
     AgentCreate,
@@ -14,10 +15,7 @@ from app.domain.agents.models import (
     AgentGenerationResponse,
     AgentResponse,
 )
-
-if TYPE_CHECKING:
-    from app.core.security.auth import CurrentUser
-    from app.domain.agents.service import AgentService
+from app.domain.agents.service import AgentService  # noqa: TCH001
 
 router = APIRouter(tags=["Agents"])
 

@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.api.dependencies import get_auth_service
-
-if TYPE_CHECKING:
-    from app.domain.auth.service import AuthService
+from app.domain.auth.service import AuthService  # noqa: TCH001
 
 # HTTPBearer extracts the Bearer token from the Authorization header.
 _bearer = HTTPBearer(auto_error=True)

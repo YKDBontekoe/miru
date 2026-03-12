@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlmodel import select
+from sqlmodel import col, select
 
 from app.domain.chat.models import ChatMessage, ChatRoom
 
@@ -34,11 +34,8 @@ class ChatRepository:
 
     async def get_room_messages(self, room_id: UUID) -> list[ChatMessage]:
         """Fetch all messages in a room."""
-        statement = (
-            select(ChatMessage)
-            .where(ChatMessage.room_id == room_id)
-            .order_by(ChatMessage.created_at)
-        )
+        # Use col() to ensure it is treated as a ColumnElement by mypy
+        statement = select(ChatMessage).where(ChatMessage.room_id == room_id).order_by(col(ChatMessage.created_at))
         result = await self.session.exec(statement)
         return list(result.all())
 

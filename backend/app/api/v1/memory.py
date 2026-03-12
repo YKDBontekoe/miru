@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_memory_service
-
-if TYPE_CHECKING:
-    from app.core.security.auth import CurrentUser
-    from app.domain.memory.models import MemoryRequest
-    from app.domain.memory.service import MemoryService
+from app.core.security.auth import CurrentUser  # noqa: TCH001
+from app.domain.memory.models import MemoryRequest  # noqa: TCH001
+from app.domain.memory.service import MemoryService  # noqa: TCH001
 
 router = APIRouter(tags=["Memory"])
 

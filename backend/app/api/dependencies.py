@@ -2,44 +2,45 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import Depends
+from neo4j import AsyncDriver  # noqa: TCH002
+from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: TCH002
+from supabase import Client  # noqa: TCH002
 
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
 from app.infrastructure.database.neo4j import get_neo4j_driver
+from app.infrastructure.database.sqlmodel import get_session
 from app.infrastructure.database.supabase import get_supabase
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
-if TYPE_CHECKING:
-    from neo4j import AsyncDriver
-    from supabase import Client
-
 # Repositories
 
 
-def get_agent_repo(db: Annotated[Client, Depends(get_supabase)]) -> AgentRepository:
-    return AgentRepository(db)
+def get_agent_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> AgentRepository:
+    return AgentRepository(session)
 
 
-def get_chat_repo(db: Annotated[Client, Depends(get_supabase)]) -> ChatRepository:
-    return ChatRepository(db)
+def get_chat_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> ChatRepository:
+    return ChatRepository(session)
 
 
 async def get_memory_repo(
-    db: Annotated[Client, Depends(get_supabase)],
+    session: Annotated[AsyncSession, Depends(get_session)],
     graph_driver: Annotated[AsyncDriver, Depends(get_neo4j_driver)],
 ) -> MemoryRepository:
-    return MemoryRepository(db, graph_driver)
+    return MemoryRepository(session, graph_driver)
 
 
 def get_auth_repo(db: Annotated[Client, Depends(get_supabase)]) -> AuthRepository:
+    # AuthRepository still uses Supabase client for WebAuthn/Passkey tables for now
     return AuthRepository(db)
 
 
@@ -58,7 +59,7 @@ def get_chat_service(
     return ChatService(chat_repo, agent_repo, memory_repo)
 
 
-async def get_memory_service(
+def get_memory_service(
     repo: Annotated[MemoryRepository, Depends(get_memory_repo)],
 ) -> MemoryService:
     return MemoryService(repo)

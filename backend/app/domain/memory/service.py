@@ -82,4 +82,4 @@ class MemoryService:
         r_id = UUID(str(room_id)) if room_id else None
 
         data = await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
-        return [r["content"] for r in data]
+        return [r.content for r in data]
