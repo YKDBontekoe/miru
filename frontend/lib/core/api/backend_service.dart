@@ -8,7 +8,7 @@ class BackendService {
   static const String _onboardingKey = 'miru_onboarding_complete';
 
   static const String _azureUrl =
-      'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api';
+      'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
 
   static String get _defaultUrl => _azureUrl;
 
@@ -46,8 +46,15 @@ class BackendService {
     final sanitized =
         url.endsWith('/') ? url.substring(0, url.length - 1) : url;
 
-    // Append /api if not present
-    final finalUrl = sanitized.endsWith('/api') ? sanitized : '$sanitized/api';
+    // Append /api/v1 if not present
+    String finalUrl = sanitized;
+    if (!sanitized.endsWith('/api/v1')) {
+      if (sanitized.endsWith('/api')) {
+        finalUrl = '$sanitized/v1';
+      } else {
+        finalUrl = '$sanitized/api/v1';
+      }
+    }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_storageKey, finalUrl);
@@ -74,9 +81,9 @@ class BackendService {
     final client = http.Client();
     Duration currentDelay = initialDelay;
 
-    // The health endpoint is at the root, so we strip /api
+    // The health endpoint is at the root, so we strip /api/v1
     final uri =
-        Uri.parse(baseUrl.value.replaceAll(RegExp(r'/api$'), '/health'));
+        Uri.parse(baseUrl.value.replaceAll(RegExp(r'/api/v1$'), '/health'));
 
     try {
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {

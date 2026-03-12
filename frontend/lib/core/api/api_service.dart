@@ -27,8 +27,13 @@ class ApiService {
   static String get baseUrl => BackendService.baseUrl.value;
 
   static Dio _getDio() {
+    // Note: ensure baseUrl ends with a slash so that relative paths
+    // (without leading slash) work correctly.
+    final effectiveBaseUrl =
+        baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+
     final dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: effectiveBaseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       contentType: 'application/json; charset=utf-8',
@@ -59,7 +64,7 @@ class ApiService {
     try {
       final dio = _getDio();
       final response = await dio.post<ResponseBody>(
-        '/chat',
+        'chat', // No leading slash
         data: {'message': message, 'use_crew': false},
         options: Options(responseType: ResponseType.stream),
       );
@@ -82,7 +87,7 @@ class ApiService {
 
   static Future<List<Memory>> getMemories() async {
     return _handleError((dio) async {
-      final response = await dio.get('/memories');
+      final response = await dio.get('memory');
       final data = response.data as Map<String, dynamic>;
       final memories = data['memories'] as List<dynamic>;
       return memories
@@ -92,12 +97,12 @@ class ApiService {
   }
 
   static Future<void> deleteMemory(String id) async {
-    await _handleError((dio) => dio.delete('/memories/$id'));
+    await _handleError((dio) => dio.delete('memory/$id'));
   }
 
   static Future<MemoryGraph> getMemoryGraph() async {
     return _handleError((dio) async {
-      final response = await dio.get('/memories/graph');
+      final response = await dio.get('memory/graph');
       return MemoryGraph.fromJson(response.data as Map<String, dynamic>);
     });
   }
@@ -105,7 +110,7 @@ class ApiService {
   /// Runs a CrewAI crew for [message] and returns the full structured result.
   static Future<CrewResult> runCrew(String message) async {
     return _handleError((dio) async {
-      final response = await dio.post('/crew', data: {'message': message});
+      final response = await dio.post('crew', data: {'message': message});
       return CrewResult.fromJson(response.data as Map<String, dynamic>);
     });
   }
@@ -114,7 +119,7 @@ class ApiService {
 
   static Future<List<Agent>> getAgents() async {
     return _handleError((dio) async {
-      final response = await dio.get('/agents');
+      final response = await dio.get('agents');
       final data = response.data as List<dynamic>;
       return data
           .map((e) => Agent.fromJson(e as Map<String, dynamic>))
@@ -133,7 +138,7 @@ class ApiService {
   }) async {
     return _handleError((dio) async {
       final response = await dio.post(
-        '/agents',
+        'agents',
         data: {
           'name': name,
           'personality': personality,
@@ -151,7 +156,7 @@ class ApiService {
   static Future<AgentGenerationResponse> generateAgent(String keywords) async {
     return _handleError((dio) async {
       final response =
-          await dio.post('/agents/generate', data: {'keywords': keywords});
+          await dio.post('agents/generate', data: {'keywords': keywords});
       return AgentGenerationResponse.fromJson(
           response.data as Map<String, dynamic>);
     });
@@ -159,7 +164,7 @@ class ApiService {
 
   static Future<List<Capability>> getAgentCapabilities() async {
     return _handleError((dio) async {
-      final response = await dio.get('/agents/capabilities');
+      final response = await dio.get('agents/capabilities');
       final data = response.data as List<dynamic>;
       return data
           .map((dynamic e) => Capability.fromJson(e as Map<String, dynamic>))
@@ -169,7 +174,7 @@ class ApiService {
 
   static Future<List<Integration>> getAgentIntegrations() async {
     return _handleError((dio) async {
-      final response = await dio.get('/agents/integrations');
+      final response = await dio.get('agents/integrations');
       final data = response.data as List<dynamic>;
       return data
           .map((dynamic e) => Integration.fromJson(e as Map<String, dynamic>))
@@ -181,7 +186,7 @@ class ApiService {
 
   static Future<List<ChatRoom>> getRooms() async {
     return _handleError((dio) async {
-      final response = await dio.get('/rooms');
+      final response = await dio.get('rooms');
       final data = response.data as List<dynamic>;
       return data
           .map((e) => ChatRoom.fromJson(e as Map<String, dynamic>))
@@ -191,24 +196,24 @@ class ApiService {
 
   static Future<ChatRoom> createRoom(String name) async {
     return _handleError((dio) async {
-      final response = await dio.post('/rooms', data: {'name': name});
+      final response = await dio.post('rooms', data: {'name': name});
       return ChatRoom.fromJson(response.data as Map<String, dynamic>);
     });
   }
 
   static Future<void> updateRoom(String roomId, String name) async {
     await _handleError(
-        (dio) => dio.patch('/rooms/$roomId', data: {'name': name}));
+        (dio) => dio.patch('rooms/$roomId', data: {'name': name}));
   }
 
   static Future<void> addAgentToRoom(String roomId, String agentId) async {
     await _handleError((dio) =>
-        dio.post('/rooms/$roomId/agents', data: {'agent_id': agentId}));
+        dio.post('rooms/$roomId/agents', data: {'agent_id': agentId}));
   }
 
   static Future<List<Agent>> getRoomAgents(String roomId) async {
     return _handleError((dio) async {
-      final response = await dio.get('/rooms/$roomId/agents');
+      final response = await dio.get('rooms/$roomId/agents');
       final data = response.data as List<dynamic>;
       return data
           .map((e) => Agent.fromJson(e as Map<String, dynamic>))
@@ -218,7 +223,7 @@ class ApiService {
 
   static Future<List<ChatMessage>> getRoomMessages(String roomId) async {
     return _handleError((dio) async {
-      final response = await dio.get('/rooms/$roomId/messages');
+      final response = await dio.get('rooms/$roomId/messages');
       final data = response.data as List<dynamic>;
       return data
           .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
@@ -230,7 +235,7 @@ class ApiService {
     try {
       final dio = _getDio();
       final response = await dio.post<ResponseBody>(
-        '/rooms/$roomId/chat',
+        'rooms/$roomId/chat',
         data: {'content': message},
         options: Options(responseType: ResponseType.stream),
       );
