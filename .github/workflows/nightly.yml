@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.13'
   FLUTTER_VERSION: '3.41.0'
 
 jobs:
@@ -51,13 +51,13 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Security Check" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          safety check -r requirements.txt
+          safety check
         continue-on-error: true
 
       - name: Run pip-audit
         id: pip_audit
         working-directory: ./backend
-        run: pip-audit -r requirements.txt
+        run: pip-audit
         continue-on-error: true
 
       - name: Create issue if vulnerabilities found
