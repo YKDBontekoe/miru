@@ -1,7 +1,5 @@
 """Tests for Steam CrewAI tools."""
 
-from __future__ import annotations
-
 import typing
 from unittest.mock import AsyncMock, patch
 

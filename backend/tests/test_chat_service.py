@@ -1,7 +1,5 @@
 """Tests for ChatService logic."""
 
-from __future__ import annotations
-
 import typing
 from unittest.mock import AsyncMock
 from uuid import uuid4
