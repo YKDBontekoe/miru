@@ -23,14 +23,21 @@ elif raw_url.startswith("postgresql://"):
 else:
     db_url = raw_url
 
-# Supabase direct connection (port 5432) often requires SSL for asyncpg
-if "supabase.co" in db_url and "sslmode=" not in db_url:
-    separator = "&" if "?" in db_url else "?"
-    db_url += f"{separator}sslmode=require"
+# asyncpg does NOT support 'sslmode' in the connection string.
+# We must remove it if present to avoid TypeError.
+if "sslmode=" in db_url:
+    from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-# Explicitly set SSL for asyncpg if it's a Supabase URL
+    parsed = urlparse(db_url)
+    query = parse_qs(parsed.query)
+    query.pop("sslmode", None)
+    new_query = urlencode(query, doseq=True)
+    db_url = urlunparse(parsed._replace(query=new_query))
+
+# Explicitly set SSL for asyncpg if enabled and it's a Supabase URL
 connect_args = {}
-if "supabase.co" in db_url:
+if get_settings().database_ssl and "supabase.co" in db_url:
+    # For asyncpg, the parameter is 'ssl', not 'sslmode'
     connect_args["ssl"] = "require"
 
 engine = create_async_engine(db_url, echo=False, future=True, connect_args=connect_args)
