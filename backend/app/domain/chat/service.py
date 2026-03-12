@@ -14,6 +14,7 @@ from app.domain.chat.models import (
     RoomResponse,
 )
 from app.infrastructure.external.openrouter import get_openrouter_client
+from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -28,6 +29,21 @@ logger = logging.getLogger(__name__)
 
 
 class ChatService:
+    def _get_agent_tools(self, agent: Agent) -> list:
+        tools = []
+        if "steam" in agent.integrations:
+            # Look up steam_id in the new integration_configs dictionary
+            steam_config = agent.integration_configs.get("steam", {})
+            steam_id = steam_config.get("steam_id")
+            if steam_id:
+                tools.extend(
+                    [
+                        SteamPlayerSummaryTool(steam_id=steam_id),
+                        SteamOwnedGamesTool(steam_id=steam_id),
+                    ]
+                )
+        return tools
+
     def __init__(
         self,
         chat_repo: ChatRepository,
@@ -115,6 +131,7 @@ class ChatService:
                 backstory=a.description or "",
                 llm=llm,
                 allow_delegation=True,
+                tools=self._get_agent_tools(a),
             )
             for a in db_agents
         ]
@@ -158,6 +175,7 @@ class ChatService:
                 backstory=a.description or "",
                 llm=llm,
                 allow_delegation=False,
+                tools=self._get_agent_tools(a),
             )
             for a in db_agents
         ]

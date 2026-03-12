@@ -18,12 +18,44 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
 
   static const int _maxPersonalityChars = 300;
 
+  bool _enableSteam = false;
+  final _steamUserController = TextEditingController();
+  bool _isResolvingSteam = false;
+  String? _resolvedSteamId;
+  String? _resolvedSteamName;
+
   @override
   void dispose() {
     _nameController.dispose();
     _personalityController.dispose();
     _keywordController.dispose();
+    _steamUserController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveSteamUser() async {
+    final query = _steamUserController.text.trim();
+    if (query.isEmpty) return;
+
+    setState(() => _isResolvingSteam = true);
+    try {
+      final res = await ApiService.resolveSteamUser(query);
+      setState(() {
+        _resolvedSteamId = res['steam_id'] as String?;
+        _resolvedSteamName = res['persona_name'] as String?;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not find Steam user'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isResolvingSteam = false);
+    }
   }
 
   Future<void> _generateAI() async {
@@ -56,9 +88,33 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
     final personality = _personalityController.text.trim();
     if (name.isEmpty || personality.isEmpty) return;
 
+    if (_enableSteam && _resolvedSteamId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please connect your Steam account or disable the integration.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
-      await ApiService.createAgent(name, personality);
+      final integrations = <String>[];
+      final Map<String, dynamic> configs = {};
+
+      if (_enableSteam && _resolvedSteamId != null) {
+        integrations.add('steam');
+        configs['steam'] = {'steam_id': _resolvedSteamId};
+      }
+
+      await ApiService.createAgent(
+        name,
+        personality,
+        integrations: integrations,
+        integrationConfigs: configs,
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -156,6 +212,105 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
             },
           ),
           const SizedBox(height: AppSpacing.lg),
+
+          // --- Steam Integration section ---
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colors.surfaceHigh,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              border: Border.all(color: colors.border.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.videogame_asset,
+                          size: 14,
+                          color: colors.onSurface,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'STEAM INTEGRATION',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colors.onSurface,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: _enableSteam,
+                      onChanged: (v) => setState(() => _enableSteam = v),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+                if (_enableSteam) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _steamUserController,
+                          decoration: InputDecoration(
+                            hintText: 'Steam Username or Steam64 ID',
+                            isDense: true,
+                            fillColor: colors.surfaceHighest,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      SizedBox(
+                        height: 44,
+                        child: FilledButton(
+                          onPressed:
+                              _isResolvingSteam || _resolvedSteamId != null
+                                  ? null
+                                  : _resolveSteamUser,
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.radiusMd),
+                            ),
+                          ),
+                          child: _isResolvingSteam
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.onPrimary,
+                                  ),
+                                )
+                              : Text(_resolvedSteamId != null
+                                  ? 'Connected'
+                                  : 'Connect'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_resolvedSteamName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: Text(
+                        'Connected to: $_resolvedSteamName',
+                        style: AppTypography.bodySmall
+                            .copyWith(color: AppColors.success),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
 
           // --- AI generation section ---
           Container(

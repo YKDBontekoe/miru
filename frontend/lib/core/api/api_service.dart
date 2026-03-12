@@ -133,6 +133,7 @@ class ApiService {
     List<String> goals = const <String>[],
     List<String> capabilities = const <String>[],
     List<String> integrations = const <String>[],
+    Map<String, dynamic> integrationConfigs = const <String, dynamic>{},
     String? systemPrompt,
   }) async {
     return _handleError((dio) async {
@@ -145,10 +146,19 @@ class ApiService {
           'goals': goals,
           'capabilities': capabilities,
           'integrations': integrations,
+          'integration_configs': integrationConfigs,
           'system_prompt': systemPrompt,
         },
       );
       return Agent.fromJson(response.data as Map<String, dynamic>);
+    });
+  }
+
+  static Future<Map<String, dynamic>> resolveSteamUser(String username) async {
+    return _handleError((dio) async {
+      final response = await dio.get('integrations/steam/resolve-user',
+          queryParameters: {'username': username});
+      return response.data as Map<String, dynamic>;
     });
   }
 

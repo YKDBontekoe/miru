@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     cors_allowed_origins: str = "*"
     # Tavily Search API key for web search capabilities
     tavily_api_key: str | None = None
+    # Steam Web API key for Steam games integration
+    steam_api_key: str | None = None
     # Sentry DSN for error tracking
     sentry_dsn: str | None = None
 

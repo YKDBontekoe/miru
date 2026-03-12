@@ -23,6 +23,22 @@ logger = logging.getLogger(__name__)
 
 AVAILABLE_INTEGRATIONS = [
     {
+        "type": "steam",
+        "display_name": "Steam",
+        "description": "View Steam games and activity...",
+        "icon": "videogame_asset",
+        "status": "active",
+        "config_schema": [
+            {
+                "key": "steam_id",
+                "label": "Steam ID (Steam64)",
+                "type": "string",
+                "required": True,
+                "description": "Your 17-digit Steam ID",
+            }
+        ],
+    },
+    {
         "type": "spotify",
         "display_name": "Spotify",
         "description": "Play music...",
@@ -98,6 +114,7 @@ class AgentService:
             goals=agent_data.goals,
             capabilities=agent_data.capabilities,
             integrations=agent_data.integrations,
+            integration_configs=agent_data.integration_configs,
             system_prompt=system_prompt,
         )
         return await self.repo.create(agent)

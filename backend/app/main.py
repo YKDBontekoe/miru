@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.chat import router as chat_router
+from app.api.v1.integrations import router as integrations_router
 from app.api.v1.memory import router as memory_router
 from app.core.config import get_settings
 from app.infrastructure.database.neo4j import close_neo4j_driver
@@ -59,6 +60,7 @@ app.include_router(agents_router, prefix="/api/v1/agents")
 app.include_router(auth_router, prefix="/api/v1/auth")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(memory_router, prefix="/api/v1/memory")
+app.include_router(integrations_router, prefix="/api/v1/integrations")
 
 
 @app.get("/health")
