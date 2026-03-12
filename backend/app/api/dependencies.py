@@ -18,6 +18,7 @@ from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 if TYPE_CHECKING:
+    from neo4j import AsyncDriver
     from supabase import Client
 
 # Repositories
@@ -30,7 +31,7 @@ def get_chat_repo(db: Annotated[Client, Depends(get_supabase)]) -> ChatRepositor
 
 async def get_memory_repo(
     db: Annotated[Client, Depends(get_supabase)],
-    graph_driver=Depends(get_neo4j_driver)
+    graph_driver: Annotated[AsyncDriver, Depends(get_neo4j_driver)],
 ) -> MemoryRepository:
     return MemoryRepository(db, graph_driver)
 

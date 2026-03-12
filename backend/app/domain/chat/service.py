@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 from app.infrastructure.external.openrouter import chat_completion
@@ -18,12 +19,13 @@ if TYPE_CHECKING:
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
+
 class ChatService:
     def __init__(
         self,
         chat_repo: ChatRepository,
         agent_repo: AgentRepository,
-        memory_repo: MemoryRepository
+        memory_repo: MemoryRepository,
     ):
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
@@ -63,10 +65,11 @@ class ChatService:
         try:
             response_text = await chat_completion(messages)
             # JSON parsing logic here (omitted for brevity, matches agents.py)
-            import json
             cleaned = response_text.strip()
-            if cleaned.startswith("```json"): cleaned = cleaned[7:]
-            if cleaned.endswith("```"): cleaned = cleaned[:-3]
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
             return [str(aid) for aid in json.loads(cleaned.strip())]
         except Exception:
             return [room_agents[0].id] if room_agents else []

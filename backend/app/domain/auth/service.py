@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 _CHALLENGE_TTL_SECONDS = 300
 _challenge_store: dict[str, dict[str, Any]] = {}
 
+
 class AuthService:
     def __init__(self, repo: AuthRepository):
         self.repo = repo
@@ -47,15 +48,19 @@ class AuthService:
 
             if alg == "HS256":
                 payload = jwt.decode(
-                    token, settings.supabase_jwt_secret,
-                    algorithms=["HS256"], options={"verify_aud": False}
+                    token,
+                    settings.supabase_jwt_secret,
+                    algorithms=["HS256"],
+                    options={"verify_aud": False},
                 )
             else:
                 jwks_client = self._get_jwks_client()
                 signing_key = jwks_client.get_signing_key_from_jwt(token)
                 payload = jwt.decode(
-                    token, signing_key.key,
-                    algorithms=["ES256", "RS256"], options={"verify_aud": False}
+                    token,
+                    signing_key.key,
+                    algorithms=["ES256", "RS256"],
+                    options={"verify_aud": False},
                 )
             return payload
         except Exception as exc:
@@ -125,30 +130,38 @@ class AuthService:
                 expected_origin=settings.webauthn_expected_origin.split(","),
             )
         except Exception as exc:
-            raise ValueError(f"Passkey registration verification failed: {exc}")
+            raise ValueError(f"Passkey registration verification failed: {exc}") from exc
 
         row = {
             "user_id": entry["user_id"],
             "credential_id": bytes_to_base64url(verification.credential_id),
             "public_key": bytes_to_base64url(verification.credential_public_key),
             "sign_count": verification.sign_count,
-            "transports": list(verification.credential_device_type.value) if verification.credential_device_type else [],
+            "transports": (
+                list(verification.credential_device_type.value)
+                if verification.credential_device_type
+                else []
+            ),
             "device_name": device_name,
         }
         return await self.repo.create_passkey(row)
 
     async def generate_authentication_options(self, user_email: str) -> dict[str, Any]:
-        get_settings()
         # This requires an admin client to look up user by email, or a repository method
         # For now, we'll assume the repository can handle user lookup or we pass the admin client
         # (Simplified for this refactor)
         raise NotImplementedError("Authentication options logic needs user lookup integration")
 
     def _decode_credential_id(self, value: Any) -> bytes:
-        if isinstance(value, bytes): return value
+        if isinstance(value, bytes):
+            return value
         if isinstance(value, str):
-            if value.startswith("\\x"): return bytes.fromhex(value[2:])
-            try: return base64.urlsafe_b64decode(value + "==")
-            except Exception: return value.encode()
-        if isinstance(value, list): return bytes(value)
+            if value.startswith("\\x"):
+                return bytes.fromhex(value[2:])
+            try:
+                return base64.urlsafe_b64decode(value + "==")
+            except Exception:
+                return value.encode()
+        if isinstance(value, list):
+            return bytes(value)
         raise TypeError(f"Cannot decode credential ID from {type(value)}")

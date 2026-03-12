@@ -11,11 +11,13 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from app.infrastructure.repositories.memory_repo import MemoryRepository
+    pass
 
 logger = logging.getLogger(__name__)
 
 TOP_K = 5
 DEDUP_THRESHOLD = 0.97
+
 
 class MemoryService:
     def __init__(self, repo: MemoryRepository):
@@ -31,7 +33,8 @@ class MemoryService:
     ) -> str | None:
         """Persist a memory fact with semantic deduplication and graph linkage."""
         content = content.strip()
-        if not content: return None
+        if not content:
+            return None
 
         vector = await embed(content)
 
@@ -44,9 +47,12 @@ class MemoryService:
 
         # 2. Supabase Insert
         insert_data = {"content": content, "embedding": vector}
-        if user_id: insert_data["user_id"] = str(user_id)
-        if agent_id: insert_data["agent_id"] = agent_id
-        if room_id: insert_data["room_id"] = room_id
+        if user_id:
+            insert_data["user_id"] = str(user_id)
+        if agent_id:
+            insert_data["agent_id"] = agent_id
+        if room_id:
+            insert_data["room_id"] = room_id
 
         memory_id = await self.repo.insert_memory(insert_data)
 
