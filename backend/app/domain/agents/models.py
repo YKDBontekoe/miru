@@ -32,6 +32,7 @@ class Agent(AgentBase, table=True):
     goals: list[str] = Field(default=[], sa_column=Column(JSON))
     capabilities: list[str] = Field(default=[], sa_column=Column(JSON))
     integrations: list[str] = Field(default=[], sa_column=Column(JSON))
+    integration_configs: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
     message_count: int = Field(default=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -43,6 +44,7 @@ class AgentCreate(AgentBase):
     goals: list[str] = []
     capabilities: list[str] = []
     integrations: list[str] = []
+    integration_configs: dict = Field(default_factory=dict)
 
 
 class AgentResponse(AgentBase):
@@ -52,6 +54,7 @@ class AgentResponse(AgentBase):
     goals: list[str]
     capabilities: list[str]
     integrations: list[str]
+    integration_configs: dict
     message_count: int
     created_at: datetime
 

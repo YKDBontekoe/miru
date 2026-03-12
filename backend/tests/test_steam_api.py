@@ -1,8 +1,8 @@
-import typing
 """Tests for Steam Web API client."""
 
 from __future__ import annotations
 
+import typing
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -12,7 +12,7 @@ from app.infrastructure.external.steam import get_owned_games, get_player_summar
 
 
 @pytest.fixture
-def mock_settings() -> typing.Generator[typing.Any, None, None]:
+def mock_settings() -> typing.Generator[typing.Any]:
     with patch("app.infrastructure.external.steam.get_settings") as mock:
         mock.return_value.steam_api_key = "test_steam_key"
         yield mock

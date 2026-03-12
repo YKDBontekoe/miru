@@ -28,6 +28,15 @@ AVAILABLE_INTEGRATIONS = [
         "description": "View Steam games and activity...",
         "icon": "videogame_asset",
         "status": "active",
+        "config_schema": [
+            {
+                "key": "steam_id",
+                "label": "Steam ID (Steam64)",
+                "type": "string",
+                "required": True,
+                "description": "Your 17-digit Steam ID",
+            }
+        ],
     },
     {
         "type": "spotify",
@@ -105,6 +114,7 @@ class AgentService:
             goals=agent_data.goals,
             capabilities=agent_data.capabilities,
             integrations=agent_data.integrations,
+            integration_configs=agent_data.integration_configs,
             system_prompt=system_prompt,
         )
         return await self.repo.create(agent)

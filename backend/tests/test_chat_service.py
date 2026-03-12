@@ -1,8 +1,8 @@
-import typing
 """Tests for ChatService logic."""
 
 from __future__ import annotations
 
+import typing
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -35,7 +35,8 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
         user_id=uuid4(),
         name="Agent 2",
         personality="Gamer",
-        integrations=[f"steam:{steam_id}", "other"],
+        integrations=["steam", "other"],
+        integration_configs={"steam": {"steam_id": steam_id}},
     )
     tools = chat_service._get_agent_tools(agent2)
     assert len(tools) == 2

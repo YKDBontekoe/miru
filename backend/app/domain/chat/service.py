@@ -31,10 +31,11 @@ logger = logging.getLogger(__name__)
 class ChatService:
     def _get_agent_tools(self, agent: Agent) -> list:
         tools = []
-        # Steam integration checks for strings like "steam:<steam_id>"
-        for integration in agent.integrations:
-            if integration.startswith("steam:"):
-                steam_id = integration.split(":", 1)[1]
+        if "steam" in agent.integrations:
+            # Look up steam_id in the new integration_configs dictionary
+            steam_config = agent.integration_configs.get("steam", {})
+            steam_id = steam_config.get("steam_id")
+            if steam_id:
                 tools.extend(
                     [
                         SteamPlayerSummaryTool(steam_id=steam_id),

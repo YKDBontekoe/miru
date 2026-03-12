@@ -1,8 +1,8 @@
-import typing
 """Tests for Steam CrewAI tools."""
 
 from __future__ import annotations
 
+import typing
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -37,7 +37,9 @@ async def test_steam_player_summary_tool(mock_get_summaries: typing.Any, steam_i
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
-async def test_steam_player_summary_tool_not_found(mock_get_summaries: typing.Any, steam_id: str) -> None:
+async def test_steam_player_summary_tool_not_found(
+    mock_get_summaries: typing.Any, steam_id: str
+) -> None:
     """Test handling when player is not found."""
     mock_get_summaries.return_value = []
 
@@ -80,7 +82,9 @@ async def test_steam_owned_games_tool_empty(mock_get_games: typing.Any, steam_id
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
-async def test_steam_player_summary_tool_exception(mock_get_summaries: typing.Any, steam_id: str) -> None:
+async def test_steam_player_summary_tool_exception(
+    mock_get_summaries: typing.Any, steam_id: str
+) -> None:
     mock_get_summaries.side_effect = Exception("API error")
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
     result = await tool._arun()
