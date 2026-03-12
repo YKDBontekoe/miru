@@ -46,7 +46,7 @@ class MemoryService:
         if existing:
             return None
 
-        # 2. SQLModel Insert
+        # 2. Insert Memory
         memory = Memory(
             content=content,
             embedding=vector,
@@ -57,14 +57,13 @@ class MemoryService:
         stored_memory = await self.repo.insert_memory(memory)
         memory_id = stored_memory.id
 
-        # 3. Neo4j Insert
-        try:
-            await self.repo.create_node(memory_id, content, vector)
-            if related_to:
+        # 3. Handle Relationships
+        if related_to:
+            try:
                 for rid in related_to:
                     await self.repo.create_relationship(memory_id, rid)
-        except Exception as e:
-            logger.warning(f"Neo4j link failed: {e}")
+            except Exception as e:
+                logger.warning(f"Relationship creation failed: {e}")
 
         return memory_id
 

@@ -27,10 +27,6 @@ class Settings(BaseSettings):
     # Chat model used for all responses — required, no fallback.
     # Must be a valid OpenRouter model ID, e.g. "google/gemma-3-27b-it:free"
     default_chat_model: str
-    # Neo4j Graph Database configuration
-    neo4j_uri: str
-    neo4j_user: str = "neo4j"
-    neo4j_password: str
     # WebAuthn / Passkey configuration
     # rp_id must match the domain of your app exactly (no scheme, no port for standard ports)
     # e.g. "miru.app" for production, "localhost" for local dev

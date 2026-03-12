@@ -28,9 +28,13 @@ class MemoryRequest(SQLModel):
     message: str
 
 
-class MemoryRelationship(SQLModel):
-    """Represents a relationship between two memories in the graph."""
+class MemoryRelationship(SQLModel, table=True):
+    """Represents a relationship between two memories in the database."""
 
-    source: str
-    target: str
-    relationship_type: str
+    __tablename__ = "memory_relationships"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    source_id: UUID = Field(foreign_key="memories.id", ondelete="CASCADE")
+    target_id: UUID = Field(foreign_key="memories.id", ondelete="CASCADE")
+    relationship_type: str = Field(default="RELATED_TO")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

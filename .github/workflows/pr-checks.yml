@@ -88,9 +88,6 @@ jobs:
           WEBAUTHN_RP_NAME: Miru Test
           WEBAUTHN_EXPECTED_ORIGIN: http://localhost
           CORS_ALLOWED_ORIGINS: "*"
-          NEO4J_URI: bolt://localhost:7687
-          NEO4J_USER: neo4j
-          NEO4J_PASSWORD: test-password
         run: pytest -v --tb=short
 
   # Flutter checks — only runs when frontend files change

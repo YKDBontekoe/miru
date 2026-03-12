@@ -78,9 +78,6 @@ jobs:
           WEBAUTHN_RP_NAME: Miru Test
           WEBAUTHN_EXPECTED_ORIGIN: http://localhost
           CORS_ALLOWED_ORIGINS: "*"
-          NEO4J_URI: bolt://localhost:7687
-          NEO4J_USER: neo4j
-          NEO4J_PASSWORD: test-password
           TAVILY_API_KEY: test-tavily-key
         run: |
           pytest --cov=app --cov-report=xml --cov-report=term
@@ -259,9 +256,6 @@ jobs:
           [ -z "$DEFAULT_CHAT_MODEL" ]                && MISSING="$MISSING DEFAULT_CHAT_MODEL"
           [ -z "$EMBEDDING_MODEL" ]                   && MISSING="$MISSING EMBEDDING_MODEL"
           [ -z "$SECRET_KEY" ]                        && MISSING="$MISSING SECRET_KEY"
-          [ -z "$NEO4J_URI" ]                         && MISSING="$MISSING NEO4J_URI"
-          [ -z "$NEO4J_USER" ]                        && MISSING="$MISSING NEO4J_USER"
-          [ -z "$NEO4J_PASSWORD" ]                    && MISSING="$MISSING NEO4J_PASSWORD"
           [ -z "$WEBAUTHN_RP_ID" ]                    && MISSING="$MISSING WEBAUTHN_RP_ID"
           [ -z "$WEBAUTHN_EXPECTED_ORIGIN" ]          && MISSING="$MISSING WEBAUTHN_EXPECTED_ORIGIN"
           [ -z "$TAVILY_API_KEY" ]                    && MISSING="$MISSING TAVILY_API_KEY"
@@ -293,9 +287,6 @@ jobs:
           DEFAULT_CHAT_MODEL: ${{ secrets.DEFAULT_CHAT_MODEL }}
           EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          NEO4J_URI: ${{ secrets.NEO4J_URI }}
-          NEO4J_USER: ${{ secrets.NEO4J_USER }}
-          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
           WEBAUTHN_RP_ID: ${{ secrets.WEBAUTHN_RP_ID }}
           WEBAUTHN_EXPECTED_ORIGIN: ${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
@@ -342,9 +333,6 @@ jobs:
               DEFAULT_CHAT_MODEL="${{ secrets.DEFAULT_CHAT_MODEL }}" \
               EMBEDDING_MODEL="${{ secrets.EMBEDDING_MODEL }}" \
               SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-              NEO4J_URI="${{ secrets.NEO4J_URI }}" \
-              NEO4J_USER="${{ secrets.NEO4J_USER }}" \
-              NEO4J_PASSWORD="${{ secrets.NEO4J_PASSWORD }}" \
               WEBAUTHN_RP_ID="${{ secrets.WEBAUTHN_RP_ID }}" \
               WEBAUTHN_RP_NAME="${{ secrets.WEBAUTHN_RP_NAME }}" \
               WEBAUTHN_EXPECTED_ORIGIN="${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}" \

@@ -1,25 +1,22 @@
-"""Memory repository for SQLModel and Neo4j operations."""
+"""Memory repository for SQLModel operations."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import text
-from sqlmodel import select
+from sqlmodel import select, or_
 
 from app.domain.memory.models import Memory, MemoryRelationship
 
 if TYPE_CHECKING:
     from uuid import UUID
-
-    from neo4j import AsyncDriver
     from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class MemoryRepository:
-    def __init__(self, session: AsyncSession, graph: AsyncDriver):
+    def __init__(self, session: AsyncSession):
         self.session = session
-        self.graph = graph
 
     # --- SQLModel (Vector Store) Operations ---
 
@@ -31,20 +28,13 @@ class MemoryRepository:
         return memory
 
     async def delete_memory(self, memory_id: UUID) -> bool:
-        """Delete a memory from both SQLModel and Neo4j."""
-        # 1. SQLModel Delete
+        """Delete a memory."""
         memory = await self.session.get(Memory, memory_id)
         if memory:
             await self.session.delete(memory)
             await self.session.commit()
-
-        # 2. Neo4j Delete
-        async with self.graph.session() as session:
-            await session.run(
-                "MATCH (m:Memory {id: $memory_id}) DETACH DELETE m",
-                memory_id=str(memory_id),
-            )
-        return memory is not None
+            return True
+        return False
 
     async def list_all_memories(self, user_id: UUID, limit: int = 100) -> list[Memory]:
         """Fetch all memories for a user (no vector match)."""
@@ -81,152 +71,66 @@ class MemoryRepository:
             "p_room_id": str(room_id) if room_id else None,
         }
         result = await self.session.execute(statement, params)
+        # Convert result mappings to Memory objects
         return [Memory(**row) for row in result.mappings()]
 
-    # --- Neo4j (Graph) Operations ---
-
-    async def create_node(
-        self, memory_id: UUID, content: str, embedding: list[float] | None = None
-    ) -> None:
-        """Create a Memory node in Neo4j."""
-        async with self.graph.session() as session:
-            await session.run(
-                """
-                CREATE (m:Memory {
-                    id: $memory_id,
-                    content: $content,
-                    created_at: datetime(),
-                    embedding: $embedding
-                })
-                """,
-                memory_id=str(memory_id),
-                content=content,
-                embedding=embedding,
-            )
+    # --- Relationship Operations ---
 
     async def create_relationship(
         self,
         from_id: UUID,
         to_id: UUID,
         rel_type: str = "RELATED_TO",
-    ) -> None:
+    ) -> MemoryRelationship:
         """Create a relationship between two memories."""
-        async with self.graph.session() as session:
-            await session.run(
-                f"""
-                MATCH (from:Memory {{id: $from_id}})
-                MATCH (to:Memory {{id: $to_id}})
-                CREATE (from)-[r:{rel_type}]->(to)
-                SET r.created_at = datetime()
-                """,
-                from_id=str(from_id),
-                to_id=str(to_id),
-            )
+        rel = MemoryRelationship(
+            source_id=from_id,
+            target_id=to_id,
+            relationship_type=rel_type
+        )
+        self.session.add(rel)
+        await self.session.commit()
+        await self.session.refresh(rel)
+        return rel
 
     async def find_related(self, memory_id: UUID, rel_type: str | None = None) -> list[Memory]:
-        """Find related memories in the graph."""
-        rel_filter = f"[:{rel_type}]" if rel_type else ""
-        async with self.graph.session() as session:
-            result = await session.run(
-                f"""
-                MATCH (m:Memory {{id: $memory_id}})-{rel_filter}-(related:Memory)
-                RETURN related.id as id,
-                       related.content as content,
-                       related.created_at as created_at
-                LIMIT 10
-                """,
-                memory_id=str(memory_id),
+        """Find related memories."""
+        statement = select(Memory).join(
+            MemoryRelationship,
+            or_(
+                MemoryRelationship.target_id == Memory.id,
+                MemoryRelationship.source_id == Memory.id
             )
-            return [Memory(**node.data()) async for node in result]
+        ).where(
+            or_(
+                MemoryRelationship.source_id == memory_id,
+                MemoryRelationship.target_id == memory_id
+            )
+        ).where(
+            Memory.id != memory_id
+        )
+        
+        if rel_type:
+            statement = statement.where(MemoryRelationship.relationship_type == rel_type)
+            
+        statement = statement.limit(10)
+        result = await self.session.exec(statement)
+        return list(result.all())
 
-    async def search_fulltext(self, query: str) -> list[dict[str, Any]]:
-        """Full-text search for memories in Neo4j."""
-        async with self.graph.session() as session:
-            result = await session.run(
-                """
-                CALL db.index.fulltext.queryNodes('memoryContent', $query)
-                YIELD node, score
-                RETURN node.id as id, node.content as content, score
-                LIMIT 10
-                """,
-                {"query": query},
-            )
-            return [node.data() async for node in result]
-
-    async def create_turn(
-        self, conversation_id: UUID, turn_number: int, role: str, content: str
-    ) -> None:
-        """Create a conversation turn node."""
-        async with self.graph.session() as session:
-            await session.run(
-                """
-                CREATE (t:ConversationTurn {
-                    conversation_id: $conversation_id,
-                    turn_number: $turn_number,
-                    role: $role,
-                    content: $content,
-                    created_at: datetime()
-                })
-                """,
-                conversation_id=str(conversation_id),
-                turn_number=turn_number,
-                role=role,
-                content=content,
-            )
-
-    async def link_turn_to_memory(
-        self, conversation_id: UUID, turn_number: int, memory_id: UUID
-    ) -> None:
-        """Link a turn to a memory."""
-        async with self.graph.session() as session:
-            await session.run(
-                """
-                MATCH (t:ConversationTurn {
-                    conversation_id: $conversation_id,
-                    turn_number: $turn_number
-                })
-                MATCH (m:Memory {id: $memory_id})
-                CREATE (t)-[r:REFERENCES]->(m)
-                """,
-                conversation_id=str(conversation_id),
-                turn_number=turn_number,
-                memory_id=str(memory_id),
-            )
-
-    async def get_conversation_context(
-        self, conversation_id: UUID, limit: int = 10
-    ) -> list[dict[str, Any]]:
-        """Fetch conversation turns and linked memories."""
-        async with self.graph.session() as session:
-            result = await session.run(
-                """
-                MATCH (t:ConversationTurn {conversation_id: $conversation_id})
-                OPTIONAL MATCH (t)-[:REFERENCES]->(m:Memory)
-                RETURN t.turn_number as turn,
-                       t.role as role,
-                       t.content as content,
-                       collect({id: m.id, content: m.content}) as memories
-                ORDER BY t.turn_number
-                LIMIT $limit
-                """,
-                conversation_id=str(conversation_id),
-                limit=limit,
-            )
-            return [node.data() async for node in result]
+    async def search_fulltext(self, query: str) -> list[Memory]:
+        """Full-text search for memories using PostgreSQL fts."""
+        statement = select(Memory).where(
+            text("fts @@ plainto_tsquery('english', :query)")
+        ).params(query=query).limit(10)
+        
+        result = await self.session.exec(statement)
+        return list(result.all())
 
     async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[MemoryRelationship]:
         """Fetch relationships between a set of memory IDs."""
-        ids_str = [str(mid) for mid in memory_ids]
-        async with self.graph.session() as session:
-            result = await session.run(
-                """
-                UNWIND $memory_ids AS memory_id
-                MATCH (source:Memory {id: memory_id})-[r]-(target:Memory)
-                WHERE target.id IN $memory_ids
-                RETURN source.id AS source,
-                       target.id AS target,
-                       type(r) AS relationship_type
-                """,
-                memory_ids=ids_str,
-            )
-            return [MemoryRelationship(**record.data()) async for record in result]
+        statement = select(MemoryRelationship).where(
+            MemoryRelationship.source_id.in_(memory_ids),
+            MemoryRelationship.target_id.in_(memory_ids)
+        )
+        result = await self.session.exec(statement)
+        return list(result.all())

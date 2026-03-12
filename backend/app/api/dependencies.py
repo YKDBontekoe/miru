@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import Depends
-from neo4j import AsyncDriver  # noqa: TCH002
 from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: TCH002
 from supabase import Client  # noqa: TCH002
 
@@ -13,7 +12,6 @@ from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
-from app.infrastructure.database.neo4j import get_neo4j_driver
 from app.infrastructure.database.sqlmodel import get_session
 from app.infrastructure.database.supabase import get_supabase
 from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -34,9 +32,8 @@ def get_chat_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> Cha
 
 async def get_memory_repo(
     session: Annotated[AsyncSession, Depends(get_session)],
-    graph_driver: Annotated[AsyncDriver, Depends(get_neo4j_driver)],
 ) -> MemoryRepository:
-    return MemoryRepository(session, graph_driver)
+    return MemoryRepository(session)
 
 
 def get_auth_repo(db: Annotated[Client, Depends(get_supabase)]) -> AuthRepository:

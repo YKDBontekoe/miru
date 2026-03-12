@@ -16,7 +16,6 @@ from app.api.v1.chat import router as chat_router
 from app.api.v1.integrations import router as integrations_router
 from app.api.v1.memory import router as memory_router
 from app.core.config import get_settings
-from app.infrastructure.database.neo4j import close_neo4j_driver
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -37,7 +36,6 @@ if settings.sentry_dsn:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Manage application startup and shutdown events."""
     yield
-    await close_neo4j_driver()
 
 
 app = FastAPI(
