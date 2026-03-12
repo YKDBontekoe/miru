@@ -1,23 +1,18 @@
 from unittest.mock import MagicMock, patch
 
-from app.openrouter import _get_client_and_model
+from app.infrastructure.external.openrouter import get_openrouter_client
 
 
-def test_get_client_and_model() -> None:
+def test_get_openrouter_client() -> None:
     with (
-        patch("app.openrouter.get_client") as mock_get_client,
-        patch("app.openrouter.get_settings") as mock_settings,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+        patch("app.infrastructure.external.openrouter.OpenRouterClient") as mock_client_class,
     ):
+        mock_settings.return_value = MagicMock(openrouter_api_key="test-key")
         mock_client = MagicMock()
-        mock_get_client.return_value = mock_client
-        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client_class.return_value = mock_client
 
-        # Test with no model provided
-        client, model = _get_client_and_model()
+        # Test getting the client
+        client = get_openrouter_client()
         assert client == mock_client
-        assert model == "default-model"
-
-        # Test with a specific model provided
-        client, model = _get_client_and_model("custom-model")
-        assert client == mock_client
-        assert model == "custom-model"
+        mock_client_class.assert_called_once_with("test-key")

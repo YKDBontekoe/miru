@@ -2,31 +2,26 @@
 
 from __future__ import annotations
 
-import asyncio
-import random
-from typing import TYPE_CHECKING, Any, AsyncIterator
-from uuid import UUID
+from typing import TYPE_CHECKING
 
-from app.domain.chat.models import (
-    ChatMessageResponse,
-    ChatRequest,
-    RoomCreate,
-    RoomResponse,
-    RoomUpdate,
-)
-from app.infrastructure.repositories.chat_repo import ChatRepository
-from app.infrastructure.repositories.agent_repo import AgentRepository
-from app.infrastructure.repositories.memory_repo import MemoryRepository
-from app.infrastructure.external.openrouter import chat_completion, get_openrouter_client
-from app.core.config import get_settings
+from app.infrastructure.external.openrouter import chat_completion
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+    from uuid import UUID
+
     from app.domain.agents.models import AgentResponse
+    from app.domain.chat.models import (
+        RoomResponse,
+    )
+    from app.infrastructure.repositories.agent_repo import AgentRepository
+    from app.infrastructure.repositories.chat_repo import ChatRepository
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 class ChatService:
     def __init__(
-        self, 
-        chat_repo: ChatRepository, 
+        self,
+        chat_repo: ChatRepository,
         agent_repo: AgentRepository,
         memory_repo: MemoryRepository
     ):
@@ -47,9 +42,9 @@ class ChatService:
     async def orchestrate_turn(self, history_text: str, room_agents: list[AgentResponse]) -> list[str]:
         """Decide which agent(s) should speak next."""
         agents_info = "\n".join([f"- {a.name} (ID: {a.id}): {a.personality}" for a in room_agents])
-        
+
         # In a real refactor, get_agent_relationships would also move to AgentService/Repo
-        relationship_block = "" 
+        relationship_block = ""
 
         system_prompt = (
             "You are an Orchestrator managing a chat room with multiple AI personas and a User.\n"
@@ -69,7 +64,6 @@ class ChatService:
             response_text = await chat_completion(messages)
             # JSON parsing logic here (omitted for brevity, matches agents.py)
             import json
-            import re
             cleaned = response_text.strip()
             if cleaned.startswith("```json"): cleaned = cleaned[7:]
             if cleaned.endswith("```"): cleaned = cleaned[:-3]
@@ -82,7 +76,7 @@ class ChatService:
     ) -> AsyncIterator[str]:
         """The core agentic chat loop."""
         await self.chat_repo.save_message(room_id, user_message, str(user_id), is_agent=False)
-        
+
         # 1. Fetch Context
         room_agents = await self.get_room_agents(room_id)
         if not room_agents:
@@ -90,8 +84,8 @@ class ChatService:
             return
 
         # 2. Start Turn Loop
-        # (Detailed logic from agents.py stream_room_responses would go here, 
+        # (Detailed logic from agents.py stream_room_responses would go here,
         # using self.memory_repo and self.chat_repo)
-        yield f"[[STATUS:glance:Sensing the room...]]\n"
+        yield "[[STATUS:glance:Sensing the room...]]\n"
         # ... implementation continues
         yield "[[STATUS:done]]\n"

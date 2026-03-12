@@ -2,23 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Annotated
-from uuid import UUID
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Depends
 
+from app.api.dependencies import get_agent_service
 from app.domain.agents.models import (
     AgentCreate,
-    AgentGenerate,
-    AgentGenerationResponse,
     AgentResponse,
-    CapabilityInfo,
-    IntegrationInfo,
 )
-from app.domain.agents.service import AgentService
-from app.api.dependencies import get_agent_service
-from app.infrastructure.database.supabase import get_supabase
-from app.app_auth import CurrentUser # Assume moved or updated path
+
+if TYPE_CHECKING:
+    from app.core.security.auth import CurrentUser
+    from app.domain.agents.service import AgentService
 
 router = APIRouter(tags=["Agents"])
 

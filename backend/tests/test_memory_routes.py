@@ -4,9 +4,10 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.database import get_supabase
 from app.auth import get_current_user
+from app.database import get_supabase
+from app.main import app
+
 
 @pytest.fixture
 def client():
@@ -18,7 +19,7 @@ def client():
 def test_list_memories_route(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    
+
     # Setup dependency overrides
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: user_id
@@ -44,7 +45,7 @@ def test_list_memories_route(client) -> None:
 def test_delete_memory_route(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: user_id
 
@@ -76,7 +77,7 @@ def test_delete_memory_route(client) -> None:
 def test_delete_memory_route_not_found(client) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: user_id
 
@@ -103,7 +104,7 @@ def test_list_memory_graph_route(
 ) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: user_id
 
@@ -167,7 +168,7 @@ def test_list_memory_graph_route_with_graph_error(
 ) -> None:
     user_id = uuid4()
     mock_supabase = MagicMock()
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: user_id
 

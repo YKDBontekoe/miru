@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
-from supabase import Client
 
-from app.infrastructure.database.supabase import get_supabase
-from app.infrastructure.database.neo4j import get_neo4j_driver
-from app.infrastructure.repositories.agent_repo import AgentRepository
-from app.infrastructure.repositories.chat_repo import ChatRepository
-from app.infrastructure.repositories.memory_repo import MemoryRepository
-from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.domain.agents.service import AgentService
+from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
-from app.domain.auth.service import AuthService
+from app.infrastructure.database.neo4j import get_neo4j_driver
+from app.infrastructure.database.supabase import get_supabase
+from app.infrastructure.repositories.agent_repo import AgentRepository
+from app.infrastructure.repositories.auth_repo import AuthRepository
+from app.infrastructure.repositories.chat_repo import ChatRepository
+from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+if TYPE_CHECKING:
+    from supabase import Client
 
 # Repositories
 

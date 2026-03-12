@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from typing import TYPE_CHECKING, Annotated
+
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from app.domain.chat.models import RoomCreate, RoomResponse, ChatRequest
-from app.domain.chat.service import ChatService
 from app.api.dependencies import get_chat_service
-from app.app_auth import CurrentUser
+from app.domain.chat.models import ChatRequest, RoomCreate, RoomResponse
+
+if TYPE_CHECKING:
+    from app.core.security.auth import CurrentUser
+    from app.domain.chat.service import ChatService
 
 router = APIRouter(tags=["Chat"])
 

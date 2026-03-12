@@ -286,7 +286,7 @@ async def test_stream_room_responses(
     mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
 
     # Mock stream chat to yield strings
-    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str]:
         yield "Hello"
         yield " World"
 
@@ -401,7 +401,7 @@ async def test_stream_room_responses_no_history(
     # Mock orchestrator behavior: agent-123 speaks, then stop
     mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
 
-    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str]:
         yield "Hello"
 
     mock_stream_chat.side_effect = mock_stream
@@ -469,7 +469,7 @@ async def test_stream_room_responses_with_agent_history(
     # Mock orchestrator behavior: agent-123 speaks, then stop
     mock_chat_completion.side_effect = ['["agent-123"]', "[]"]
 
-    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str]:
         yield "Hello"
 
     mock_stream_chat.side_effect = mock_stream

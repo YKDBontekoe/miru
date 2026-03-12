@@ -9,9 +9,10 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.database import get_supabase
 from app.auth import get_current_user
+from app.database import get_supabase
+from app.main import app
+
 
 @pytest.fixture
 def client_with_overrides():
@@ -137,7 +138,7 @@ def test_register_options_with_valid_auth(
     mock_email.return_value = "test@example.com"
     mock_supabase = MagicMock()
     mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []  # fmt: skip
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: uuid4()
 
@@ -231,7 +232,7 @@ def test_passkey_delete_not_found(
     """Deleting a non-existent passkey returns 404."""
     mock_supabase = MagicMock()
     mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = []  # fmt: skip
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
     app.dependency_overrides[get_current_user] = lambda: uuid4()
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, cast
 
-from neo4j import AsyncDriver
-from supabase import Client
+if TYPE_CHECKING:
+    from neo4j import AsyncDriver
+    from supabase import Client
 
 
 class MemoryRepository:

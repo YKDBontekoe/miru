@@ -174,7 +174,7 @@ def test_get_room_messages_route(mock_get: MagicMock) -> None:
 
 @patch("app.routes.stream_room_responses")
 def test_room_chat_route(mock_stream: MagicMock) -> None:
-    async def mock_generator(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+    async def mock_generator(*args: Any, **kwargs: Any) -> AsyncGenerator[str]:
         yield "Hello"
 
     mock_stream.return_value = mock_generator()
@@ -194,7 +194,7 @@ def test_room_chat_route(mock_stream: MagicMock) -> None:
 
 @patch("app.routes.stream_room_responses")
 def test_room_chat_route_crew_mock(mock_stream: MagicMock) -> None:
-    async def mock_generator(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+    async def mock_generator(*args: Any, **kwargs: Any) -> AsyncGenerator[str]:
         yield "Hello"
 
     mock_stream.return_value = mock_generator()

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
-from uuid import UUID
-
-from supabase import Client
+from typing import TYPE_CHECKING, Any, cast
 
 from app.domain.chat.models import ChatMessageResponse, RoomResponse
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from supabase import Client
 
 
 class ChatRepository:

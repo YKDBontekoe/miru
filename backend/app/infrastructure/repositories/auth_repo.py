@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, cast
 
-from supabase import Client
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from supabase import Client
 
 
 class AuthRepository:

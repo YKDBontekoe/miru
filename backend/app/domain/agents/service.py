@@ -2,23 +2,18 @@
 
 from __future__ import annotations
 
-import json
 import logging
-from typing import TYPE_CHECKING, Any
-from uuid import UUID
-
-from app.domain.agents.models import (
-    AgentCreate,
-    AgentGenerationResponse,
-    AgentResponse,
-    CapabilityInfo,
-    IntegrationInfo,
-)
-from app.infrastructure.repositories.agent_repo import AgentRepository
-from app.infrastructure.external.openrouter import chat_completion
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.infrastructure.external.openrouter import OpenRouterClient
+    from uuid import UUID
+
+    from app.domain.agents.models import (
+        AgentCreate,
+        AgentGenerationResponse,
+        AgentResponse,
+    )
+    from app.infrastructure.repositories.agent_repo import AgentRepository
 
 logger = logging.getLogger(__name__)
 

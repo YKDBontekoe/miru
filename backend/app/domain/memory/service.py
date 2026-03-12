@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
-from uuid import UUID
+from typing import TYPE_CHECKING
 
-from app.domain.memory.models import MemoryRequest
-from app.infrastructure.repositories.memory_repo import MemoryRepository
 from app.infrastructure.external.openrouter import embed
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ class MemoryService:
         if user_id: insert_data["user_id"] = str(user_id)
         if agent_id: insert_data["agent_id"] = agent_id
         if room_id: insert_data["room_id"] = room_id
-        
+
         memory_id = await self.repo.insert_memory(insert_data)
 
         # 3. Neo4j Insert

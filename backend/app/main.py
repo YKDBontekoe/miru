@@ -3,20 +3,19 @@
 from __future__ import annotations
 
 import logging
-import sys
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import ValidationError
 
-from app.core.config import get_settings
-from app.infrastructure.database.neo4j import close_neo4j_driver
 from app.api.v1.agents import router as agents_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.memory import router as memory_router
+from app.core.config import get_settings
+from app.infrastructure.database.neo4j import close_neo4j_driver
+
 # from app.api.v1.auth import router as auth_router # placeholder
 
 if TYPE_CHECKING:

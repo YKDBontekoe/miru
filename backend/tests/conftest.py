@@ -7,9 +7,9 @@ import time
 from typing import Any
 from uuid import uuid4
 
+import jwt
 import pytest
 from fastapi.testclient import TestClient
-import jwt
 
 # ---------------------------------------------------------------------------
 # Required env vars — set before importing the app so Settings initialises.

@@ -9,9 +9,9 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient  # noqa: TC002
 
-from tests.conftest import make_jwt
-from app.main import app
 from app.database import get_supabase
+from app.main import app
+from tests.conftest import make_jwt
 
 # ---------------------------------------------------------------------------
 # decode_supabase_jwt unit tests
@@ -49,8 +49,8 @@ async def test_decode_expired_jwt_raises_401() -> None:
 @pytest.mark.asyncio
 async def test_decode_tampered_jwt_raises_401() -> None:
     """A JWT signed with a different secret raises HTTPException 401."""
-    from fastapi import HTTPException
     import jwt
+    from fastapi import HTTPException
 
     from app.auth import decode_supabase_jwt
 
@@ -123,7 +123,7 @@ def test_valid_token_passes_auth(
     # Mock Supabase to return an empty list for memories.
     mock_supabase = MagicMock()
     mock_supabase.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = []  # fmt: skip
-    
+
     app.dependency_overrides[get_supabase] = lambda: mock_supabase
 
     response = client.get("/api/memories", headers=authed_headers)

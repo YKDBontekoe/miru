@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
-from typing import Any, cast
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, cast
 
-from supabase import Client
+from app.domain.agents.models import AgentResponse
 
-from app.domain.agents.models import AgentCreate, AgentResponse
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from supabase import Client
 
 
 class AgentRepository:
