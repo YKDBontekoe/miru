@@ -17,6 +17,7 @@ class Agent with _$Agent {
     @Default(<String>[]) List<String> goals,
     @Default(<String>[]) List<String> capabilities,
     @Default(<String>[]) List<String> integrations,
+    @Default(<String, dynamic>{}) Map<String, dynamic> integrationConfigs,
     String? systemPrompt,
     @Default('active') String status,
     @Default('Neutral') String mood,

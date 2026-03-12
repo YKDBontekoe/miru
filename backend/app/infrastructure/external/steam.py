@@ -75,3 +75,29 @@ async def get_owned_games(
         except Exception:
             logger.exception("Unexpected error fetching Steam owned games")
             return []
+
+
+async def resolve_vanity_url(vanityurl: str) -> str | None:
+    """Resolve a Steam vanity URL to a 64-bit Steam ID."""
+    settings = get_settings()
+    if not settings.steam_api_key:
+        logger.warning("Steam API key not configured")
+        return None
+
+    url = f"{STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v0001/"
+    params = {
+        "key": settings.steam_api_key,
+        "vanityurl": vanityurl,
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            if data.get("response", {}).get("success") == 1:
+                return str(data["response"]["steamid"])
+            return None
+        except Exception:
+            logger.exception("Error resolving Steam vanity URL")
+            return None
