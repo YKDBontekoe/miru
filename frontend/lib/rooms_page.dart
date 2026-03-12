@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'models/chat_room.dart';
 import 'models/agent.dart';
+import 'models/agent_info.dart';
 import 'group_chat_page.dart';
 import 'design_system/design_system.dart';
 
@@ -48,9 +49,7 @@ class _RoomsPageState extends State<RoomsPage> {
       final data = await ApiService.getRooms();
       if (mounted) {
         setState(() {
-          _rooms = data
-              .map((dynamic e) => ChatRoom.fromJson(e as Map<String, dynamic>))
-              .toList();
+          _rooms = data;
         });
       }
     } catch (e) {
@@ -73,9 +72,7 @@ class _RoomsPageState extends State<RoomsPage> {
       final data = await ApiService.getAgents();
       if (mounted) {
         setState(() {
-          _agents = data
-              .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
-              .toList();
+          _agents = data;
         });
       }
     } catch (e) {
@@ -753,8 +750,8 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
   final Set<String> _selectedCapabilities = <String>{};
   final Set<String> _selectedIntegrations = <String>{};
 
-  List<Map<String, dynamic>> _availableCapabilities = [];
-  List<Map<String, dynamic>> _availableIntegrations = [];
+  List<Capability> _availableCapabilities = [];
+  List<Integration> _availableIntegrations = [];
 
   int _step = 0;
   bool _isLoadingOptions = true;
@@ -788,8 +785,8 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
       ]);
       if (!mounted) return;
       setState(() {
-        _availableCapabilities = results[0];
-        _availableIntegrations = results[1];
+        _availableCapabilities = results[0] as List<Capability>;
+        _availableIntegrations = results[1] as List<Integration>;
       });
     } catch (e) {
       if (!mounted) return;
@@ -810,31 +807,23 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
 
     setState(() => _isGenerating = true);
     try {
-      final Map<String, dynamic> res = await ApiService.generateAgent(keywords);
+      final res = await ApiService.generateAgent(keywords);
       setState(() {
-        _nameController.text = (res['name'] as String?) ?? '';
-        _personalityController.text = (res['personality'] as String?) ?? '';
-        _descriptionController.text = (res['description'] as String?) ?? '';
+        _nameController.text = res.name;
+        _personalityController.text = res.personality;
+        _descriptionController.text = res.description;
 
-        final goals = (res['goals'] as List<dynamic>? ?? [])
-            .map((dynamic e) => e.toString())
-            .where((goal) => goal.trim().isNotEmpty)
-            .toList();
+        final goals =
+            res.goals.where((goal) => goal.trim().isNotEmpty).toList();
         _goalsController.text = goals.join('\n');
 
         _selectedCapabilities
           ..clear()
-          ..addAll(
-            (res['capabilities'] as List<dynamic>? ?? [])
-                .map((dynamic e) => e.toString()),
-          );
+          ..addAll(res.capabilities);
 
         _selectedIntegrations
           ..clear()
-          ..addAll(
-            (res['suggested_integrations'] as List<dynamic>? ?? [])
-                .map((dynamic e) => e.toString()),
-          );
+          ..addAll(res.suggestedIntegrations);
       });
     } catch (e) {
       if (mounted) {
@@ -1125,11 +1114,11 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: _availableCapabilities.map((capability) {
-              final id = capability['id'] as String;
+              final id = capability.id;
               final selected = _selectedCapabilities.contains(id);
               return FilterChip(
                 selected: selected,
-                label: Text(capability['name'] as String? ?? id),
+                label: Text(capability.name),
                 onSelected: (_) {
                   setState(() {
                     if (selected) {
@@ -1159,7 +1148,7 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
           const Center(child: CircularProgressIndicator())
         else
           ..._availableIntegrations.map((integration) {
-            final type = integration['type'] as String;
+            final type = integration.type;
             final selected = _selectedIntegrations.contains(type);
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.xs),
@@ -1174,9 +1163,9 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
                     }
                   });
                 },
-                title: Text(integration['display_name'] as String? ?? type),
+                title: Text(integration.displayName),
                 subtitle: Text(
-                  integration['description'] as String? ?? '',
+                  integration.description,
                   style: AppTypography.caption.copyWith(
                     color: colors.onSurfaceMuted,
                   ),
@@ -1241,8 +1230,8 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
 
     setState(() => _isCreating = true);
     try {
-      final Map<String, dynamic> roomData = await ApiService.createRoom(name);
-      final String roomId = roomData['id'] as String;
+      final ChatRoom room = await ApiService.createRoom(name);
+      final String roomId = room.id;
 
       // Add all selected agents
       for (final agentId in _selectedAgentIds) {

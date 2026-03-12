@@ -44,7 +44,7 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
     setState(() => _isCreating = true);
     try {
       final room = await ApiService.createRoom(name);
-      final roomId = room['id'] as String;
+      final roomId = room.id;
 
       if (_selectedAgentIds.isNotEmpty) {
         await Future.wait(

@@ -25,7 +25,8 @@ from typing import TYPE_CHECKING, Any, cast
 if TYPE_CHECKING:
     from uuid import UUID
 
-from app.database import get_supabase
+    from supabase import Client
+
 from app.graph import (
     create_memory_node,
     create_relationship,
@@ -48,6 +49,7 @@ async def embed(text: str) -> list[float]:
 
 async def store_memory(
     content: str,
+    supabase: Client,
     related_to: list[str] | None = None,
     user_id: UUID | str | None = None,
     agent_id: str | None = None,
@@ -63,7 +65,6 @@ async def store_memory(
 
     vector = await embed(content)
 
-    supabase = get_supabase()
     rpc_params: dict[str, Any] = {
         "query_embedding": vector,
         "match_threshold": DEDUP_THRESHOLD,
@@ -110,6 +111,7 @@ async def store_memory(
 
 async def _search_memories_by_vector(
     query: str,
+    supabase: Client,
     query_vector: list[float] | None = None,
     count: int = TOP_K,
     user_id: UUID | str | None = None,
@@ -118,7 +120,6 @@ async def _search_memories_by_vector(
 ) -> list[dict[str, Any]]:
     """Embed *query* and search Supabase pgvector for the closest memories."""
     vector = query_vector if query_vector is not None else await embed(query)
-    supabase = get_supabase()
     rpc_params: dict[str, Any] = {
         "query_embedding": vector,
         "match_threshold": 0.0,
@@ -133,6 +134,7 @@ async def _search_memories_by_vector(
 
 
 async def retrieve_memories(
+    supabase: Client,
     query: str | None = None,
     query_vector: list[float] | None = None,
     user_id: UUID | str | None = None,
@@ -145,7 +147,6 @@ async def retrieve_memories(
             return []
         query_vector = await embed(query)
 
-    supabase = get_supabase()
     rpc_params: dict[str, Any] = {
         "query_embedding": query_vector,
         "match_threshold": 0.0,
@@ -162,13 +163,14 @@ async def retrieve_memories(
 
 async def retrieve_memories_with_graph(
     query: str,
+    supabase: Client,
     user_id: UUID | str | None = None,
     agent_id: str | None = None,
     room_id: str | None = None,
 ) -> dict:
     """Return memories combined with their Neo4j graph relationships."""
     data = await _search_memories_by_vector(
-        query, user_id=user_id, agent_id=agent_id, room_id=room_id
+        query, supabase, user_id=user_id, agent_id=agent_id, room_id=room_id
     )
     direct_matches = [cast("str", r["content"]) for r in data]
     graph_context = []

@@ -4,6 +4,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'backend_service.dart';
+import 'models/agent.dart';
+import 'models/agent_info.dart';
+import 'models/chat_message.dart';
+import 'models/chat_room.dart';
+import 'models/memory.dart';
 import 'services/supabase_service.dart';
 
 /// Result returned by [ApiService.runCrew].
@@ -23,9 +28,6 @@ class ApiService {
   static String get baseUrl => BackendService.baseUrl.value;
 
   /// Common headers for all authenticated requests.
-  ///
-  /// Includes the Supabase JWT as a Bearer token so the backend can validate
-  /// the request and scope data to the current user.
   static Map<String, String> get _headers {
     final token = SupabaseService.accessToken;
     return {
@@ -72,7 +74,7 @@ class ApiService {
 
   // --- Memories API ---
 
-  static Future<List<Map<String, dynamic>>> getMemories() async {
+  static Future<List<Memory>> getMemories() async {
     final response = await http.get(
       Uri.parse('$baseUrl/memories'),
       headers: _headers,
@@ -81,7 +83,9 @@ class ApiService {
       final Map<String, dynamic> data =
           jsonDecode(response.body) as Map<String, dynamic>;
       final List<dynamic> memories = data['memories'] as List<dynamic>;
-      return memories.map((e) => e as Map<String, dynamic>).toList();
+      return memories
+          .map((e) => Memory.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       throw Exception('Failed to load memories: ${response.statusCode}');
     }
@@ -97,8 +101,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, List<Map<String, dynamic>>>>
-      getMemoryGraph() async {
+  static Future<MemoryGraph> getMemoryGraph() async {
     final response = await http.get(
       Uri.parse('$baseUrl/memories/graph'),
       headers: _headers,
@@ -107,15 +110,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final Map<String, dynamic> data =
           jsonDecode(response.body) as Map<String, dynamic>;
-      final List<dynamic> nodesRaw = data['nodes'] as List<dynamic>? ?? [];
-      final List<dynamic> edgesRaw = data['edges'] as List<dynamic>? ?? [];
-
-      return {
-        'nodes':
-            nodesRaw.map((entry) => entry as Map<String, dynamic>).toList(),
-        'edges':
-            edgesRaw.map((entry) => entry as Map<String, dynamic>).toList(),
-      };
+      return MemoryGraph.fromJson(data);
     }
 
     throw Exception('Failed to load memory graph: ${response.statusCode}');
@@ -145,20 +140,22 @@ class ApiService {
 
   // --- Agents API ---
 
-  static Future<List<Map<String, dynamic>>> getAgents() async {
+  static Future<List<Agent>> getAgents() async {
     final response = await http.get(
       Uri.parse('$baseUrl/agents'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((e) => e as Map<String, dynamic>).toList();
+      return data
+          .map((e) => Agent.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       throw Exception('Failed to load agents: ${response.statusCode}');
     }
   }
 
-  static Future<Map<String, dynamic>> createAgent(
+  static Future<Agent> createAgent(
     String name,
     String personality, {
     String? description,
@@ -181,72 +178,80 @@ class ApiService {
       }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return Agent.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     } else {
       throw Exception('Failed to create agent: ${response.statusCode}');
     }
   }
 
-  static Future<Map<String, dynamic>> generateAgent(String keywords) async {
+  static Future<AgentGenerationResponse> generateAgent(String keywords) async {
     final response = await http.post(
       Uri.parse('$baseUrl/agents/generate'),
       headers: _headers,
       body: jsonEncode({'keywords': keywords}),
     );
     if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return AgentGenerationResponse.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     } else {
       throw Exception('Failed to generate agent: ${response.statusCode}');
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getAgentCapabilities() async {
+  static Future<List<Capability>> getAgentCapabilities() async {
     final response = await http.get(
       Uri.parse('$baseUrl/agents/capabilities'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((dynamic e) => e as Map<String, dynamic>).toList();
+      return data
+          .map((dynamic e) => Capability.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
     throw Exception('Failed to load capabilities: ${response.statusCode}');
   }
 
-  static Future<List<Map<String, dynamic>>> getAgentIntegrations() async {
+  static Future<List<Integration>> getAgentIntegrations() async {
     final response = await http.get(
       Uri.parse('$baseUrl/agents/integrations'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((dynamic e) => e as Map<String, dynamic>).toList();
+      return data
+          .map((dynamic e) => Integration.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
     throw Exception('Failed to load integrations: ${response.statusCode}');
   }
 
   // --- Chat Rooms API ---
 
-  static Future<List<Map<String, dynamic>>> getRooms() async {
+  static Future<List<ChatRoom>> getRooms() async {
     final response = await http.get(
       Uri.parse('$baseUrl/rooms'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((e) => e as Map<String, dynamic>).toList();
+      return data
+          .map((e) => ChatRoom.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       throw Exception('Failed to load rooms: ${response.statusCode}');
     }
   }
 
-  static Future<Map<String, dynamic>> createRoom(String name) async {
+  static Future<ChatRoom> createRoom(String name) async {
     final response = await http.post(
       Uri.parse('$baseUrl/rooms'),
       headers: _headers,
       body: jsonEncode({'name': name}),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return ChatRoom.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     } else {
       throw Exception('Failed to create room: ${response.statusCode}');
     }
@@ -274,20 +279,22 @@ class ApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getRoomAgents(String roomId) async {
+  static Future<List<Agent>> getRoomAgents(String roomId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/rooms/$roomId/agents'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((e) => e as Map<String, dynamic>).toList();
+      return data
+          .map((e) => Agent.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       throw Exception('Failed to load room agents: ${response.statusCode}');
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getRoomMessages(
+  static Future<List<ChatMessage>> getRoomMessages(
     String roomId,
   ) async {
     final response = await http.get(
@@ -296,7 +303,9 @@ class ApiService {
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data.map((e) => e as Map<String, dynamic>).toList();
+      return data
+          .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       throw Exception('Failed to load room messages: ${response.statusCode}');
     }

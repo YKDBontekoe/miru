@@ -283,9 +283,17 @@ class _ChatPageState extends State<ChatPage> {
   void _copyMessage(ChatMessage msg) {
     Clipboard.setData(ClipboardData(text: msg.text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied to clipboard'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          'Copied to clipboard',
+          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.lg),
       ),
     );
   }
@@ -297,11 +305,13 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isDark = context.isDark;
 
     return Scaffold(
       backgroundColor: colors.background,
       appBar: _MiruAppBar(
         colors: colors,
+        isDark: isDark,
         showNewChat: _messages.isNotEmpty,
         onNewChat: _newChat,
         onSettingsPressed: () {
@@ -334,32 +344,19 @@ class _ChatPageState extends State<ChatPage> {
                           _sendMessage();
                         },
                       )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: AppSpacing.chatListPadding,
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = _messages[index];
-                          // Show streaming status label in the placeholder
-                          // bubble while we're waiting for the first token.
-                          final isPlaceholder = !msg.isUser &&
-                              msg.text.isEmpty &&
-                              _streamingStatus != null;
-                          return ChatBubble(
-                            text: isPlaceholder ? _streamingStatus! : msg.text,
-                            isUser: msg.isUser,
-                            crewTaskType: msg.crewTaskType,
-                            status: isPlaceholder
-                                ? MessageStatus.streaming
-                                : msg.status,
-                            onCopy: () => _copyMessage(msg),
-                            onRetry: msg.status == MessageStatus.failed
-                                ? _retryLastMessage
-                                : null,
-                          );
-                        },
+                    : _MessageList(
+                        messages: _messages,
+                        scrollController: _scrollController,
+                        isStreaming: _isStreaming,
+                        streamingStatus: _streamingStatus,
+                        onCopy: _copyMessage,
+                        onRetry: _retryLastMessage,
                       ),
               ),
+
+              // Streaming status pill (shown above input bar)
+              if (_isStreaming && _streamingStatus != null)
+                _StreamingStatusPill(label: _streamingStatus!),
 
               // Input bar
               ChatInputBar(
@@ -400,6 +397,207 @@ class _ChatPageState extends State<ChatPage> {
 }
 
 // ---------------------------------------------------------------------------
+// Message list
+// ---------------------------------------------------------------------------
+
+class _MessageList extends StatelessWidget {
+  final List<ChatMessage> messages;
+  final ScrollController scrollController;
+  final bool isStreaming;
+  final String? streamingStatus;
+  final void Function(ChatMessage) onCopy;
+  final VoidCallback onRetry;
+
+  const _MessageList({
+    required this.messages,
+    required this.scrollController,
+    required this.isStreaming,
+    required this.streamingStatus,
+    required this.onCopy,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: scrollController,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.lg,
+      ),
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final msg = messages[index];
+
+        // Show streaming status label in the placeholder bubble while we're
+        // waiting for the first token.
+        final isPlaceholder =
+            !msg.isUser && msg.text.isEmpty && streamingStatus != null;
+
+        return _AnimatedMessageItem(
+          key: ValueKey(msg.id),
+          child: ChatBubble(
+            text: isPlaceholder ? streamingStatus! : msg.text,
+            isUser: msg.isUser,
+            crewTaskType: msg.crewTaskType,
+            status: isPlaceholder ? MessageStatus.streaming : msg.status,
+            onCopy: () => onCopy(msg),
+            onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Animated message item — slides + fades in
+// ---------------------------------------------------------------------------
+
+class _AnimatedMessageItem extends StatefulWidget {
+  final Widget child;
+
+  const _AnimatedMessageItem({super.key, required this.child});
+
+  @override
+  State<_AnimatedMessageItem> createState() => _AnimatedMessageItemState();
+}
+
+class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: AppDurations.medium,
+    );
+    _opacity = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Streaming status pill
+// ---------------------------------------------------------------------------
+
+class _StreamingStatusPill extends StatefulWidget {
+  final String label;
+
+  const _StreamingStatusPill({required this.label});
+
+  @override
+  State<_StreamingStatusPill> createState() => _StreamingStatusPillState();
+}
+
+class _StreamingStatusPillState extends State<_StreamingStatusPill>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isDark = context.isDark;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: FadeTransition(
+        opacity: _opacity,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color:
+                isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+            border: Border.all(
+              color: colors.border.withValues(alpha: 0.5),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 10,
+                height: 10,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                widget.label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: colors.onSurfaceMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Scroll to bottom button
 // ---------------------------------------------------------------------------
 
@@ -414,21 +612,24 @@ class _ScrollToBottomButton extends StatelessWidget {
     return Material(
       color: colors.surfaceHigh,
       elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
       shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
-        customBorder: const CircleBorder(),
         child: Container(
-          width: 40,
-          height: 40,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: colors.border),
+            border: Border.all(
+              color: colors.border.withValues(alpha: 0.6),
+            ),
           ),
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: colors.onSurfaceMuted,
-            size: AppSpacing.iconLg,
+            size: AppSpacing.iconMd,
           ),
         ),
       ),
@@ -442,12 +643,14 @@ class _ScrollToBottomButton extends StatelessWidget {
 
 class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
   final AppThemeColors colors;
+  final bool isDark;
   final bool showNewChat;
   final VoidCallback onNewChat;
   final VoidCallback onSettingsPressed;
 
   const _MiruAppBar({
     required this.colors,
+    required this.isDark,
     required this.showNewChat,
     required this.onNewChat,
     required this.onSettingsPressed,
@@ -458,21 +661,24 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
-
     // Gradient uses design tokens instead of hardcoded colors.
     final gradientColors = isDark
         ? [AppColors.onSurfaceDark, AppColors.primaryLight]
         : [AppColors.onSurfaceLight, AppColors.primaryDark];
 
     return AppBar(
-      backgroundColor: colors.surfaceHigh,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
       leading: showNewChat
           ? IconButton(
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(
+                Icons.add_rounded,
+                color: colors.onSurfaceMuted,
+                size: 22,
+              ),
               tooltip: 'New chat',
               onPressed: onNewChat,
             )
@@ -480,17 +686,22 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Sleek icon logo
+          // Icon mark
           Container(
-            padding: const EdgeInsets.all(AppSpacing.xs),
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: colors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.blur_on_rounded, size: 20, color: colors.primary),
+            child: Icon(
+              Icons.blur_on_rounded,
+              size: 16,
+              color: colors.primary,
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          // Theme-aware gradient title
+          // Gradient wordmark
           ShaderMask(
             shaderCallback: (bounds) => LinearGradient(
               colors: gradientColors,
@@ -500,36 +711,35 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Text(
               'Miru',
               style: GoogleFonts.inter(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.white, // ShaderMask paints over this
-                letterSpacing: -0.3,
+                color: Colors.white,
+                letterSpacing: -0.5,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.xs),
           const AppStatusDot.online(),
         ],
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.settings_outlined),
+          icon: Icon(
+            Icons.settings_outlined,
+            color: colors.onSurfaceMuted,
+            size: 22,
+          ),
           onPressed: onSettingsPressed,
+          tooltip: 'Settings',
         ),
+        const SizedBox(width: AppSpacing.xs),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(
           height: 1,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.transparent,
-                colors.border.withValues(alpha: 0.6),
-                Colors.transparent,
-              ],
-            ),
-          ),
+          color: (isDark ? AppColors.borderDark : AppColors.borderLight)
+              .withValues(alpha: 0.4),
         ),
       ),
     );

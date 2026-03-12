@@ -67,12 +67,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
       if (!mounted) return;
       setState(() {
-        _roomAgents = agentsData
-            .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
-            .toList();
-        _messages = messagesData
-            .map((dynamic e) => ChatMessage.fromJson(e as Map<String, dynamic>))
-            .toList();
+        _roomAgents = agentsData;
+        _messages = messagesData;
       });
       _scrollToBottom();
     } catch (e) {
@@ -155,7 +151,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   userId: null,
                   agentId: null, // System message conceptually
                   text:
-                      '🎉 **Level Up!** You reached Connection Level $level with $agentName!',
+                      '**Level up!** You reached Connection Level $level with $agentName.',
                   timestamp: DateTime.now(),
                   status: MessageStatus.sent,
                 ));
@@ -263,9 +259,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Future<void> _showAddAgentDialog() async {
     try {
       final allAgentsData = await ApiService.getAgents();
-      final allAgents = allAgentsData
-          .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final allAgents = allAgentsData;
 
       if (!mounted) return;
 
@@ -348,44 +342,42 @@ class _GroupChatPageState extends State<GroupChatPage> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: _buildAppBar(colors),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                _buildMembersBar(colors),
-                Expanded(child: _buildMessageList(colors)),
-                if (_isSending &&
-                    (_streamingBuffers.isNotEmpty ||
-                        (_streamingStatus != null &&
-                            _streamingStatus!.isNotEmpty)))
-                  _buildStreamingBubbles(colors),
-                ChatInputBar(
-                  controller: _messageController,
-                  onSend: _sendMessage,
-                  isStreaming: _isSending,
-                  onStopStreaming: null, // group chat doesn't support stop yet
-                  hintText: 'Message the group...',
-                ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              _buildMembersBar(colors),
+              Expanded(child: _buildMessageList(colors)),
+              if (_isSending &&
+                  (_streamingBuffers.isNotEmpty ||
+                      (_streamingStatus != null &&
+                          _streamingStatus!.isNotEmpty)))
+                _buildStreamingBubbles(colors),
+              ChatInputBar(
+                controller: _messageController,
+                onSend: _sendMessage,
+                isStreaming: _isSending,
+                onStopStreaming: null, // group chat doesn't support stop yet
+                hintText: 'Message the group...',
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
               ],
             ),
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                shouldLoop: false,
-                colors: const [
-                  Colors.green,
-                  Colors.blue,
-                  Colors.pink,
-                  Colors.orange,
-                  Colors.purple
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

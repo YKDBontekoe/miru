@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
+    from supabase import Client
+
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
 from crewai_tools import TavilySearchTool
@@ -19,7 +21,6 @@ from pydantic import BaseModel, Field
 
 from app.config import get_settings
 from app.crew import make_llm
-from app.database import get_supabase
 from app.memory import embed, retrieve_memories, store_memory
 from app.openrouter import chat_completion, stream_chat
 
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-async def update_agent_mood(agent_id: str, recent_history: str) -> None:
+async def update_agent_mood(agent_id: str, recent_history: str, supabase: Client) -> None:
     """Analyze recent dialogue and update the agent's mood."""
     if not recent_history.strip():
         return
@@ -46,17 +47,16 @@ async def update_agent_mood(agent_id: str, recent_history: str) -> None:
         response_text = await chat_completion(messages)
         new_mood = response_text.strip().strip('"').strip("'")[:20]
         if new_mood:
-            get_supabase().table("agents").update({"mood": new_mood}).eq("id", agent_id).execute()
+            supabase.table("agents").update({"mood": new_mood}).eq("id", agent_id).execute()
     except Exception as e:
         logger.error(f"Failed to update mood: {e}")
 
 
-async def get_agent_relationships(room_agents: list[AgentResponse]) -> str:
+async def get_agent_relationships(room_agents: list[AgentResponse], supabase: Client) -> str:
     """Fetch relationships between agents in a group chat."""
     if len(room_agents) < 2:
         return ""
     try:
-        supabase = get_supabase()
         agent_ids = [a.id for a in room_agents]
         response = (
             supabase.table("agent_relationships")
@@ -333,9 +333,8 @@ def build_system_prompt(
 # ---------------------------------------------------------------------------
 
 
-async def create_agent(agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
+async def create_agent(agent_data: AgentCreate, user_id: UUID, supabase: Client) -> AgentResponse:
     """Create a new agent with full profile."""
-    supabase = get_supabase()
 
     # Build system prompt if not explicitly provided
     system_prompt = agent_data.system_prompt or build_system_prompt(
@@ -362,9 +361,8 @@ async def create_agent(agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
     return _agent_from_row(data)
 
 
-async def get_agents(user_id: UUID) -> list[AgentResponse]:
+async def get_agents(user_id: UUID, supabase: Client) -> list[AgentResponse]:
     """List all agents for a user."""
-    supabase = get_supabase()
     response = supabase.table("agents").select("*").eq("user_id", str(user_id)).execute()
     return [_agent_from_row(record) for record in cast("list[dict[str, Any]]", response.data)]
 
@@ -491,8 +489,7 @@ def get_available_capabilities() -> list[CapabilityInfo]:
     return [CapabilityInfo(**c) for c in AVAILABLE_CAPABILITIES]
 
 
-async def create_room(room_data: RoomCreate, user_id: UUID) -> RoomResponse:
-    supabase = get_supabase()
+async def create_room(room_data: RoomCreate, user_id: UUID, supabase: Client) -> RoomResponse:
     response = (
         supabase.table("chat_rooms")
         .insert({"user_id": str(user_id), "name": room_data.name})
@@ -502,14 +499,14 @@ async def create_room(room_data: RoomCreate, user_id: UUID) -> RoomResponse:
     return RoomResponse(**data)
 
 
-async def get_rooms(user_id: UUID) -> list[RoomResponse]:
-    supabase = get_supabase()
+async def get_rooms(user_id: UUID, supabase: Client) -> list[RoomResponse]:
     response = supabase.table("chat_rooms").select("*").eq("user_id", str(user_id)).execute()
     return [RoomResponse(**record) for record in cast("list[dict[str, Any]]", response.data)]
 
 
-async def update_room(room_id: str, room_data: RoomUpdate, user_id: UUID) -> RoomResponse:
-    supabase = get_supabase()
+async def update_room(
+    room_id: str, room_data: RoomUpdate, user_id: UUID, supabase: Client
+) -> RoomResponse:
     response = (
         supabase.table("chat_rooms")
         .update({"name": room_data.name})
@@ -525,14 +522,12 @@ async def update_room(room_id: str, room_data: RoomUpdate, user_id: UUID) -> Roo
     return RoomResponse(**data)
 
 
-async def add_agent_to_room(room_id: str, agent_id: str, user_id: UUID) -> dict:
-    supabase = get_supabase()
+async def add_agent_to_room(room_id: str, agent_id: str, user_id: UUID, supabase: Client) -> dict:
     supabase.table("chat_room_agents").insert({"room_id": room_id, "agent_id": agent_id}).execute()
     return {"status": "added"}
 
 
-async def get_room_agents(room_id: str, user_id: UUID) -> list[AgentResponse]:
-    supabase = get_supabase()
+async def get_room_agents(room_id: str, user_id: UUID, supabase: Client) -> list[AgentResponse]:
     response = (
         supabase.table("chat_room_agents").select("agents(*)").eq("room_id", room_id).execute()
     )
@@ -543,8 +538,9 @@ async def get_room_agents(room_id: str, user_id: UUID) -> list[AgentResponse]:
     return agents_data
 
 
-async def get_room_messages(room_id: str, user_id: UUID) -> list[ChatMessageResponse]:
-    supabase = get_supabase()
+async def get_room_messages(
+    room_id: str, user_id: UUID, supabase: Client
+) -> list[ChatMessageResponse]:
     response = (
         supabase.table("chat_messages")
         .select("*")
@@ -556,9 +552,8 @@ async def get_room_messages(room_id: str, user_id: UUID) -> list[ChatMessageResp
 
 
 async def save_message(
-    room_id: str, content: str, sender_id: str, is_agent: bool
+    room_id: str, content: str, sender_id: str, is_agent: bool, supabase: Client
 ) -> ChatMessageResponse:
-    supabase = get_supabase()
     insert_data = {"room_id": room_id, "content": content}
     if is_agent:
         insert_data["agent_id"] = sender_id
@@ -575,7 +570,9 @@ async def save_message(
 # ---------------------------------------------------------------------------
 
 
-async def orchestrate_turn(history_text: str, room_agents: list[AgentResponse]) -> list[str]:
+async def orchestrate_turn(
+    history_text: str, room_agents: list[AgentResponse], supabase: Client
+) -> list[str]:
     """Ask an LLM to decide which agent(s) should speak next.
 
     Returns a list of agent IDs. Returns an empty list if it decides the agents
@@ -583,7 +580,7 @@ async def orchestrate_turn(history_text: str, room_agents: list[AgentResponse]) 
     """
     agents_info = "\n".join([f"- {a.name} (ID: {a.id}): {a.personality}" for a in room_agents])
 
-    relationship_block = await get_agent_relationships(room_agents)
+    relationship_block = await get_agent_relationships(room_agents, supabase=supabase)
 
     system_prompt = (
         "You are an Orchestrator managing a chat room with multiple AI personas and a User.\n"
@@ -632,15 +629,15 @@ async def orchestrate_turn(history_text: str, room_agents: list[AgentResponse]) 
 
 
 async def stream_room_responses(
-    room_id: str, user_message: str, user_id: UUID
+    room_id: str, user_message: str, user_id: UUID, supabase: Client
 ) -> AsyncIterator[str]:
     """Process a user message in a room and generate agentic responses."""
-    await save_message(room_id, user_message, str(user_id), is_agent=False)
+    await save_message(room_id, user_message, str(user_id), is_agent=False, supabase=supabase)
 
-    messages = await get_room_messages(room_id, user_id)
-    agents = await get_agents(user_id)
+    messages = await get_room_messages(room_id, user_id, supabase=supabase)
+    agents = await get_agents(user_id, supabase=supabase)
     agent_map = {a.id: a for a in agents}
-    room_agents = await get_room_agents(room_id, user_id)
+    room_agents = await get_room_agents(room_id, user_id, supabase=supabase)
 
     if not room_agents:
         yield "No agents in this room to respond."
@@ -659,19 +656,23 @@ async def stream_room_responses(
     query_vector = await embed(user_message)
 
     yield "[[STATUS:retrieving_memories]]\n"
-    user_memories = await retrieve_memories(query_vector=query_vector, user_id=user_id)
+    user_memories = await retrieve_memories(
+        query_vector=query_vector, user_id=user_id, supabase=supabase
+    )
     user_memory_block = ""
     if user_memories:
         joined = "\n- ".join(user_memories)
         user_memory_block = f"\n\nRelevant things I remember about the user:\n- {joined}\n"
 
-    room_memories = await retrieve_memories(query_vector=query_vector, room_id=room_id)
+    room_memories = await retrieve_memories(
+        query_vector=query_vector, room_id=room_id, supabase=supabase
+    )
     room_memory_block = ""
     if room_memories:
         joined = "\n- ".join(room_memories)
         room_memory_block = f"\n\nContext and past decisions from this room:\n- {joined}\n"
 
-    relationship_block = await get_agent_relationships(room_agents)
+    relationship_block = await get_agent_relationships(room_agents, supabase=supabase)
 
     turn_count = 0
     max_turns = 5  # Prevent infinite loops
@@ -698,7 +699,7 @@ async def stream_room_responses(
             ]
             glance = random.choice(glances)
             yield f"[[STATUS:glance:{glance}]]\n"
-            next_speakers = await orchestrate_turn(history_text, room_agents)
+            next_speakers = await orchestrate_turn(history_text, room_agents, supabase=supabase)
 
             if not next_speakers:
                 break  # Orchestrator decided we are done for this turn
@@ -711,7 +712,9 @@ async def stream_room_responses(
 
             # Fetch persona memories specific to this agent
             yield f"[[STATUS:loading_agent:{agent.id}:{agent.name}]]\n"
-            agent_memories = await retrieve_memories(query_vector=query_vector, agent_id=agent.id)
+            agent_memories = await retrieve_memories(
+                query_vector=query_vector, agent_id=agent.id, supabase=supabase
+            )
             agent_memory_block = ""
             if agent_memories:
                 joined = "\n- ".join(agent_memories)
@@ -788,7 +791,7 @@ async def stream_room_responses(
             yield "\n\n"
 
             full_reply = "".join(agent_reply_chunks)
-            await save_message(room_id, full_reply, agent.id, is_agent=True)
+            await save_message(room_id, full_reply, agent.id, is_agent=True, supabase=supabase)
 
             # Update history for the next iteration / orchestrator check
             history_lines.append(f"{agent.name}: {full_reply}")
@@ -796,7 +799,7 @@ async def stream_room_responses(
             # Increment message count
             agent.message_count += 1
             try:
-                get_supabase().table("agents").update({"message_count": agent.message_count}).eq(
+                supabase.table("agents").update({"message_count": agent.message_count}).eq(
                     "id", agent.id
                 ).execute()
             except Exception as e:
@@ -809,7 +812,7 @@ async def stream_room_responses(
 
             # Update mood every 3 messages
             if agent.message_count % 3 == 0:
-                asyncio.create_task(update_agent_mood(agent.id, history_text))
+                asyncio.create_task(update_agent_mood(agent.id, history_text, supabase=supabase))
 
             # Parse explicit memories natively bypassing separate LLM calls
             extracted_memories = re.findall(
@@ -820,7 +823,12 @@ async def stream_room_responses(
                 if mem_content:
                     # Give it to the agent AND the user so both contexts can naturally pull it up
                     asyncio.create_task(
-                        store_memory(content=mem_content, user_id=user_id, agent_id=agent.id)
+                        store_memory(
+                            content=mem_content,
+                            user_id=user_id,
+                            agent_id=agent.id,
+                            supabase=supabase,
+                        )
                     )
 
         turn_count += 1

@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
+
+    from supabase import Client
 
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -43,7 +44,7 @@ from app.agents import (
 )
 from app.auth import CurrentUser  # noqa: TC001
 from app.crew import detect_task_type, run_crew
-from app.database import get_supabase
+from app.database import SupabaseClient  # noqa: TC001
 from app.graph import get_memory_relationships
 from app.memory import retrieve_memories, store_memory
 from app.openrouter import stream_chat
@@ -103,7 +104,9 @@ class PasskeyLoginVerifyRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-async def _stream_response(message: str, user_id: UUID) -> AsyncIterator[str]:
+async def _stream_response(
+    message: str, user_id: UUID, background_tasks: BackgroundTasks, supabase: Client
+) -> AsyncIterator[str]:
     """Retrieve memories, build context, stream a response, then store memory.
 
     The full assistant reply is accumulated while streaming so that both the
@@ -111,7 +114,7 @@ async def _stream_response(message: str, user_id: UUID) -> AsyncIterator[str]:
     The memory extraction task is fired after the last chunk is yielded.
     """
     yield "[[STATUS:retrieving_memories]]\n"
-    memories = await retrieve_memories(message, user_id=user_id)
+    memories = await retrieve_memories(supabase, message, user_id=user_id)
 
     memory_block = ""
     if memories:
@@ -132,7 +135,7 @@ async def _stream_response(message: str, user_id: UUID) -> AsyncIterator[str]:
 
     # Fire memory extraction in the background after streaming completes.
     full_reply = "".join(reply_chunks)
-    asyncio.create_task(store_memory(full_reply, user_id=user_id))
+    background_tasks.add_task(store_memory, full_reply, user_id=user_id, supabase=supabase)
 
 
 # ---------------------------------------------------------------------------
@@ -141,15 +144,20 @@ async def _stream_response(message: str, user_id: UUID) -> AsyncIterator[str]:
 
 
 @router.post("/chat")
-async def chat(request: ChatRequest, user_id: CurrentUser) -> StreamingResponse:
+async def chat(
+    request: ChatRequest,
+    user_id: CurrentUser,
+    background_tasks: BackgroundTasks,
+    supabase: SupabaseClient,
+) -> StreamingResponse:
     """Stream a chat response via OpenRouter, injecting relevant memories."""
     if request.use_crew:
 
         async def _crew_stream() -> AsyncIterator[str]:
-            memories = await retrieve_memories(request.message, user_id=user_id)
+            memories = await retrieve_memories(supabase, request.message, user_id=user_id)
             result = await run_crew(request.message, memories=memories)
             yield result
-            asyncio.create_task(store_memory(result, user_id=user_id))
+            background_tasks.add_task(store_memory, result, user_id=user_id, supabase=supabase)
 
         return StreamingResponse(
             _crew_stream(),
@@ -157,19 +165,29 @@ async def chat(request: ChatRequest, user_id: CurrentUser) -> StreamingResponse:
         )
 
     return StreamingResponse(
-        _stream_response(request.message, user_id=user_id),
+        _stream_response(
+            request.message,
+            user_id=user_id,
+            background_tasks=background_tasks,
+            supabase=supabase,
+        ),
         media_type="text/plain; charset=utf-8",
     )
 
 
 @router.post("/crew")
-async def crew_run(request: ChatRequest, user_id: CurrentUser) -> dict:
+async def crew_run(
+    request: ChatRequest,
+    user_id: CurrentUser,
+    background_tasks: BackgroundTasks,
+    supabase: SupabaseClient,
+) -> dict:
     """Run a CrewAI crew and return the full structured result."""
-    memories = await retrieve_memories(request.message, user_id=user_id)
+    memories = await retrieve_memories(supabase, request.message, user_id=user_id)
     task_type = detect_task_type(request.message)
 
     result = await run_crew(request.message, memories=memories)
-    asyncio.create_task(store_memory(result, user_id=user_id))
+    background_tasks.add_task(store_memory, result, user_id=user_id, supabase=supabase)
 
     return {
         "task_type": task_type,
@@ -178,16 +196,17 @@ async def crew_run(request: ChatRequest, user_id: CurrentUser) -> dict:
 
 
 @router.post("/memories")
-async def add_memory(request: MemoryRequest, user_id: CurrentUser) -> dict:
+async def add_memory(
+    request: MemoryRequest, user_id: CurrentUser, supabase: SupabaseClient
+) -> dict:
     """Manually store a memory (uses empty assistant reply)."""
-    await store_memory(request.message, user_id=user_id)
+    await store_memory(request.message, user_id=user_id, supabase=supabase)
     return {"status": "stored"}
 
 
 @router.get("/memories")
-async def list_memories(user_id: CurrentUser) -> dict:
+async def list_memories(user_id: CurrentUser, supabase: SupabaseClient) -> dict:
     """Return memories for the authenticated user."""
-    supabase = get_supabase()
     response = (
         supabase.table("memories")
         .select("id, content, created_at")
@@ -208,9 +227,8 @@ async def list_memories(user_id: CurrentUser) -> dict:
 
 
 @router.get("/memories/graph")
-async def list_memory_graph(user_id: CurrentUser) -> dict:
+async def list_memory_graph(user_id: CurrentUser, supabase: SupabaseClient) -> dict:
     """Return user memories as graph nodes and edges."""
-    supabase = get_supabase()
     response = (
         supabase.table("memories")
         .select("id, content, created_at")
@@ -244,9 +262,12 @@ async def list_memory_graph(user_id: CurrentUser) -> dict:
 
 
 @router.delete("/memories/{memory_id}")
-async def delete_memory(memory_id: str, user_id: CurrentUser) -> dict:
+async def delete_memory(
+    memory_id: str,
+    user_id: CurrentUser,
+    supabase: SupabaseClient,
+) -> dict:
     """Delete a memory by ID (must belong to the authenticated user)."""
-    supabase = get_supabase()
     # Verify ownership before deleting.
     rows = (
         supabase.table("memories")
@@ -275,6 +296,7 @@ passkey_router = APIRouter(prefix="/auth/passkey", tags=["auth"])
 async def passkey_register_options(
     request: PasskeyRegisterOptionsRequest,
     user_id: CurrentUser,
+    supabase: SupabaseClient,
 ) -> dict:
     """Generate WebAuthn registration options for an authenticated user.
 
@@ -283,7 +305,6 @@ async def passkey_register_options(
     then send the resulting credential to ``/register/verify`` along with the
     returned ``challenge_id``.
     """
-    supabase = get_supabase()
     # Fetch existing credentials to exclude from registration.
     rows = supabase.table("passkeys").select("credential_id").eq("user_id", str(user_id)).execute()
     existing_rows = cast("list[dict[str, Any]]", rows.data)
@@ -293,7 +314,7 @@ async def passkey_register_options(
     existing_ids = [_decode_credential_id(r["credential_id"]) for r in existing_rows]
 
     # Fetch user email from Supabase auth.
-    user_email = _get_user_email_from_jwt(user_id)
+    user_email = _get_user_email_from_jwt(user_id, supabase=supabase)
 
     result = generate_registration_options(
         user_id=user_id,
@@ -307,6 +328,7 @@ async def passkey_register_options(
 async def passkey_register_verify(
     request: PasskeyRegisterVerifyRequest,
     user_id: CurrentUser,
+    supabase: SupabaseClient,
 ) -> dict:
     """Verify a WebAuthn registration response and persist the new passkey."""
     try:
@@ -325,7 +347,7 @@ async def passkey_register_verify(
             detail="User mismatch in passkey registration",
         )
 
-    row = store_passkey(passkey_data)
+    row = store_passkey(passkey_data, supabase=supabase)
     return {
         "id": row["id"],
         "device_name": row.get("device_name"),
@@ -334,14 +356,17 @@ async def passkey_register_verify(
 
 
 @passkey_router.post("/login/options")
-async def passkey_login_options(request: PasskeyLoginOptionsRequest) -> dict:
+async def passkey_login_options(
+    request: PasskeyLoginOptionsRequest,
+    supabase: SupabaseClient,
+) -> dict:
     """Generate WebAuthn authentication options (unauthenticated endpoint).
 
     The client passes the user's email address. The backend looks up their
     registered passkeys and returns the assertion options.
     """
     try:
-        result = generate_authentication_options(user_email=request.email)
+        result = generate_authentication_options(user_email=request.email, supabase=supabase)
     except ValueError as exc:
         # Don't leak whether the user/passkeys exist — return 400 generically.
         raise HTTPException(
@@ -352,7 +377,10 @@ async def passkey_login_options(request: PasskeyLoginOptionsRequest) -> dict:
 
 
 @passkey_router.post("/login/verify")
-async def passkey_login_verify(request: PasskeyLoginVerifyRequest) -> dict:
+async def passkey_login_verify(
+    request: PasskeyLoginVerifyRequest,
+    supabase: SupabaseClient,
+) -> dict:
     """Verify a WebAuthn assertion and return a Supabase session (unauthenticated).
 
     On success, returns ``access_token``, ``refresh_token``, ``expires_in``,
@@ -363,6 +391,7 @@ async def passkey_login_verify(request: PasskeyLoginVerifyRequest) -> dict:
         session = verify_authentication(
             challenge_id=request.challenge_id,
             credential_json=request.credential,
+            supabase=supabase,
         )
     except ValueError as exc:
         raise HTTPException(
@@ -373,9 +402,8 @@ async def passkey_login_verify(request: PasskeyLoginVerifyRequest) -> dict:
 
 
 @passkey_router.get("/list")
-async def passkey_list(user_id: CurrentUser) -> dict:
+async def passkey_list(user_id: CurrentUser, supabase: SupabaseClient) -> dict:
     """List all registered passkeys for the authenticated user."""
-    supabase = get_supabase()
     rows = (
         supabase.table("passkeys")
         .select("id, device_name, transports, created_at, last_used_at")
@@ -387,9 +415,12 @@ async def passkey_list(user_id: CurrentUser) -> dict:
 
 
 @passkey_router.delete("/{passkey_id}")
-async def passkey_delete(passkey_id: str, user_id: CurrentUser) -> dict:
+async def passkey_delete(
+    passkey_id: str,
+    user_id: CurrentUser,
+    supabase: SupabaseClient,
+) -> dict:
     """Delete a passkey credential by ID (must belong to the authenticated user)."""
-    supabase = get_supabase()
     # Verify ownership before deleting.
     rows = (
         supabase.table("passkeys")
@@ -412,7 +443,7 @@ async def passkey_delete(passkey_id: str, user_id: CurrentUser) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _get_user_email_from_jwt(user_id: UUID) -> str:
+def _get_user_email_from_jwt(user_id: UUID, supabase: Client) -> str:
     """Fetch the email for a user from the Supabase admin API.
 
     We cache nothing here — this is called infrequently (only on passkey
@@ -420,7 +451,7 @@ def _get_user_email_from_jwt(user_id: UUID) -> str:
     """
     from app.passkey import _get_admin_client
 
-    admin = _get_admin_client()
+    admin = _get_admin_client(supabase=supabase)
     user = admin.auth.admin.get_user_by_id(str(user_id))
     if not user or not user.user:
         raise HTTPException(
@@ -436,15 +467,17 @@ def _get_user_email_from_jwt(user_id: UUID) -> str:
 
 
 @router.post("/agents", response_model=AgentResponse)
-async def create_agent_route(request: AgentCreate, user_id: CurrentUser) -> Any:
+async def create_agent_route(
+    request: AgentCreate, user_id: CurrentUser, supabase: SupabaseClient
+) -> Any:
     """Create a new agent."""
-    return await create_agent(request, user_id)
+    return await create_agent(request, user_id, supabase=supabase)
 
 
 @router.get("/agents", response_model=list[AgentResponse])
-async def list_agents_route(user_id: CurrentUser) -> Any:
+async def list_agents_route(user_id: CurrentUser, supabase: SupabaseClient) -> Any:
     """List all agents for the authenticated user."""
-    return await get_agents(user_id)
+    return await get_agents(user_id, supabase=supabase)
 
 
 @router.post("/agents/generate", response_model=AgentGenerationResponse)
@@ -466,47 +499,63 @@ async def list_agent_integrations_route(user_id: CurrentUser) -> Any:
 
 
 @router.post("/rooms", response_model=RoomResponse)
-async def create_room_route(request: RoomCreate, user_id: CurrentUser) -> Any:
+async def create_room_route(
+    request: RoomCreate, user_id: CurrentUser, supabase: SupabaseClient
+) -> Any:
     """Create a new chat room."""
-    return await create_room(request, user_id)
+    return await create_room(request, user_id, supabase=supabase)
 
 
 @router.get("/rooms", response_model=list[RoomResponse])
-async def list_rooms_route(user_id: CurrentUser) -> Any:
+async def list_rooms_route(user_id: CurrentUser, supabase: SupabaseClient) -> Any:
     """List all chat rooms for the authenticated user."""
-    return await get_rooms(user_id)
+    return await get_rooms(user_id, supabase=supabase)
 
 
 @router.patch("/rooms/{room_id}", response_model=RoomResponse)
-async def update_room_route(room_id: str, request: RoomUpdate, user_id: CurrentUser) -> Any:
+async def update_room_route(
+    room_id: str, request: RoomUpdate, user_id: CurrentUser, supabase: SupabaseClient
+) -> Any:
     """Update a chat room's details."""
-    return await update_room(room_id, request, user_id)
+    return await update_room(room_id, request, user_id, supabase=supabase)
 
 
 @router.post("/rooms/{room_id}/agents")
-async def add_agent_to_room_route(room_id: str, request: RoomAgentAdd, user_id: CurrentUser) -> Any:
+async def add_agent_to_room_route(
+    room_id: str, request: RoomAgentAdd, user_id: CurrentUser, supabase: SupabaseClient
+) -> Any:
     """Add an agent to a chat room."""
-    return await add_agent_to_room(room_id, request.agent_id, user_id)
+    return await add_agent_to_room(room_id, request.agent_id, user_id, supabase=supabase)
 
 
 @router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
-async def get_room_agents_route(room_id: str, user_id: CurrentUser) -> Any:
+async def get_room_agents_route(
+    room_id: str, user_id: CurrentUser, supabase: SupabaseClient
+) -> Any:
     """List all agents in a chat room."""
-    return await get_room_agents(room_id, user_id)
+    return await get_room_agents(room_id, user_id, supabase=supabase)
 
 
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
-async def list_room_messages_route(room_id: str, user_id: CurrentUser) -> Any:
+async def list_room_messages_route(
+    room_id: str, user_id: CurrentUser, supabase: SupabaseClient
+) -> Any:
     """List all messages in a chat room."""
-    return await get_room_messages(room_id, user_id)
+    return await get_room_messages(room_id, user_id, supabase=supabase)
 
 
 @router.post("/rooms/{room_id}/chat")
 async def room_chat_route(
-    room_id: str, request: ChatMessageCreate, user_id: CurrentUser
+    room_id: str,
+    request: ChatMessageCreate,
+    user_id: CurrentUser,
+    supabase: SupabaseClient,
+    background_tasks: BackgroundTasks,
 ) -> StreamingResponse:
     """Send a message to a chat room and stream responses from all agents."""
     return StreamingResponse(
-        stream_room_responses(room_id, request.content, user_id),
+        stream_room_responses(
+            room_id, request.content, user_id, supabase=supabase, background_tasks=background_tasks
+        ),
         media_type="text/plain; charset=utf-8",
     )

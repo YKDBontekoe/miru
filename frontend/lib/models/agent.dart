@@ -1,6 +1,12 @@
 import 'package:flutter/widgets.dart';
 
 class Agent {
+  static const List<String> _fallbackAvatarAssets = <String>[
+    'assets/images/corp_ai_avatar_3.png',
+    'assets/images/corp_ai_avatar_4.png',
+    'assets/images/corp_ai_avatar_5_1773260876684.png',
+  ];
+
   final String id;
   final String name;
   final String personality;
@@ -32,11 +38,11 @@ class Agent {
   });
 
   ImageProvider get avatarImage {
-    if (avatarUrl != null) {
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return NetworkImage(avatarUrl!);
     }
-    final int seed = (id.hashCode.abs() % 5) + 1;
-    return AssetImage('assets/images/corp_ai_avatar_$seed.png');
+    final int seed = id.hashCode.abs() % _fallbackAvatarAssets.length;
+    return AssetImage(_fallbackAvatarAssets[seed]);
   }
 
   int get connectionLevel => (messageCount / 10).floor() + 1;

@@ -44,10 +44,11 @@ from webauthn.helpers.structs import (
 )
 
 from app.config import get_settings
-from app.database import get_supabase
 
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from supabase import Client
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +202,7 @@ def verify_registration(
 
 def generate_authentication_options(
     user_email: str,
+    supabase: Client,
 ) -> dict[str, Any]:
     """Generate a PublicKeyCredentialRequestOptions dict for the client.
 
@@ -209,6 +211,7 @@ def generate_authentication_options(
 
     Args:
         user_email: The email of the user wishing to authenticate.
+        supabase: Optional Supabase client.
 
     Returns:
         A JSON-serialisable dict with ``challenge_id`` and ``options``.
@@ -220,10 +223,9 @@ def generate_authentication_options(
         ValueError: If the user has no registered passkeys.
     """
     settings = get_settings()
-    supabase = get_supabase()
 
     # Look up the user's UUID by email via the admin API (service role).
-    admin = _get_admin_client()
+    admin = _get_admin_client(supabase=supabase)
     users_response = admin.auth.admin.list_users()
     matching = [u for u in users_response if u.email == user_email]
     if not matching:
@@ -271,12 +273,14 @@ def generate_authentication_options(
 def verify_authentication(
     challenge_id: str,
     credential_json: str,
+    supabase: Client,
 ) -> dict[str, Any]:
     """Verify an authentication assertion and return Supabase session tokens.
 
     Args:
         challenge_id: The opaque token returned by generate_authentication_options.
         credential_json: The JSON-encoded PublicKeyCredential (assertion) from the client.
+        supabase: Optional Supabase client.
 
     Returns:
         A dict with ``access_token``, ``refresh_token``, ``expires_in``, and ``user``.
@@ -285,7 +289,6 @@ def verify_authentication(
         ValueError: If verification fails.
     """
     settings = get_settings()
-    supabase = get_supabase()
 
     entry = _pop_challenge(challenge_id)
     expected_challenge = entry["challenge"]
@@ -350,7 +353,7 @@ def verify_authentication(
 
     # Mint a Supabase session for the user via the Admin API.
     # We use generate_link to create a magic link token, then sign in with it.
-    admin = _get_admin_client()
+    admin = _get_admin_client(supabase=supabase)
     link_response = admin.auth.admin.generate_link(
         {
             "type": "magiclink",
@@ -383,12 +386,13 @@ def verify_authentication(
 # ---------------------------------------------------------------------------
 
 
-def _get_admin_client() -> Any:
-    """Return a Supabase client initialised with the service role key."""
-    from supabase import create_client
+def _get_admin_client(supabase: Client) -> Any:
+    """Return a Supabase client initialised with the service role key.
 
-    settings = get_settings()
-    return create_client(settings.supabase_url, settings.supabase_service_role_key)
+    In Miru, the client returned by get_supabase() (passed here as supabase)
+    is already initialized with the service role key.
+    """
+    return supabase
 
 
 def _get_user_email(admin_client: Any, user_id: str) -> str:
@@ -420,16 +424,19 @@ def _decode_credential_id(value: Any) -> bytes:
     raise TypeError(f"Cannot decode credential ID from {type(value)}")
 
 
-def store_passkey(passkey_data: dict[str, Any]) -> dict[str, Any]:
+def store_passkey(
+    passkey_data: dict[str, Any],
+    supabase: Client,
+) -> dict[str, Any]:
     """Insert a verified passkey credential into Supabase.
 
     Args:
         passkey_data: Dict returned by ``verify_registration``.
+        supabase: Optional Supabase client.
 
     Returns:
         The inserted row.
     """
-    supabase = get_supabase()
     row = {
         "user_id": passkey_data["user_id"],
         # Store as hex string for Supabase bytea compatibility

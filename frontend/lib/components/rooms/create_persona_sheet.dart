@@ -32,10 +32,10 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
 
     setState(() => _isGenerating = true);
     try {
-      final Map<String, dynamic> res = await ApiService.generateAgent(keywords);
+      final res = await ApiService.generateAgent(keywords);
       setState(() {
-        _nameController.text = (res['name'] as String?) ?? '';
-        _personalityController.text = (res['personality'] as String?) ?? '';
+        _nameController.text = res.name;
+        _personalityController.text = res.personality;
       });
     } catch (e) {
       if (mounted) {

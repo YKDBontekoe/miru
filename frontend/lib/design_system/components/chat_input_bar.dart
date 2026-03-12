@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../extensions/build_context_extensions.dart';
 import '../tokens/colors.dart';
 import '../tokens/spacing.dart';
-import '../tokens/typography.dart';
-import 'app_icon_button.dart';
 
 /// The bottom input bar for composing and sending messages.
 ///
@@ -43,90 +42,183 @@ class ChatInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
+    final isDark = context.isDark;
+
+    // Subtle top border instead of full container color
+    final containerColor =
+        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return SafeArea(
       child: Container(
-        color: colors.surfaceHigh,
-        padding: AppSpacing.inputBarPadding,
+        color: containerColor,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Input row: text field + action button
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    maxLines: null,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => onSend(),
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: colors.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: hintText,
-                      hintStyle: AppTypography.bodyMedium.copyWith(
-                        color: colors.onSurfaceMuted,
-                      ),
-                      filled: true,
-                      fillColor: colors.background,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.md,
-                      ),
-                      border: OutlineInputBorder(
+            // Hairline separator
+            Container(height: 1, color: borderColor.withValues(alpha: 0.5)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Text field in a card-like container
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.surfaceHighDark
+                            : AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusXxl,
+                          AppSpacing.radiusXl,
                         ),
-                        borderSide: BorderSide.none,
+                        border: Border.all(
+                          color: borderColor.withValues(alpha: 0.8),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.15 : 0.04,
+                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusXxl,
+                      child: TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        maxLines: null,
+                        minLines: 1,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => onSend(),
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
+                          color: isDark
+                              ? AppColors.onSurfaceDark
+                              : AppColors.onSurfaceLight,
                         ),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusXxl,
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.primary.withAlpha(100),
-                          width: 1.5,
+                        decoration: InputDecoration(
+                          hintText: hintText,
+                          hintStyle: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: isDark
+                                ? AppColors.onSurfaceMutedDark
+                                : AppColors.onSurfaceMutedLight,
+                          ),
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.md,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _buildActionButton(),
-              ],
+                  const SizedBox(width: AppSpacing.sm),
+                  _SendButton(
+                    isStreaming: isStreaming,
+                    onSend: onSend,
+                    onStop: onStopStreaming,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildActionButton() {
+// ---------------------------------------------------------------------------
+// Send / Stop button
+// ---------------------------------------------------------------------------
+
+class _SendButton extends StatelessWidget {
+  final bool isStreaming;
+  final VoidCallback onSend;
+  final VoidCallback? onStop;
+
+  const _SendButton({
+    required this.isStreaming,
+    required this.onSend,
+    required this.onStop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     if (isStreaming) {
-      return AppIconButton(
-        icon: Icons.stop_rounded,
-        onPressed: onStopStreaming,
-        variant: AppIconButtonVariant.filled,
-        color: AppColors.error,
+      return _CircleButton(
+        onPressed: onStop,
         tooltip: 'Stop generating',
+        backgroundColor: AppColors.error.withValues(alpha: 0.12),
+        child: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: AppColors.error,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
       );
     }
 
-    return AppIconButton(
-      icon: Icons.send_rounded,
+    return _CircleButton(
       onPressed: onSend,
-      variant: AppIconButtonVariant.filled,
       tooltip: 'Send message',
+      backgroundColor: AppColors.primary,
+      child: const Icon(
+        Icons.arrow_upward_rounded,
+        color: AppColors.onPrimary,
+        size: 20,
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final String tooltip;
+  final Color backgroundColor;
+  final Widget child;
+
+  const _CircleButton({
+    required this.onPressed,
+    required this.tooltip,
+    required this.backgroundColor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: backgroundColor,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Center(child: child),
+          ),
+        ),
+      ),
     );
   }
 }

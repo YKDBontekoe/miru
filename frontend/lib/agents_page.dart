@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'models/agent.dart';
+import 'models/agent_info.dart';
 
 class AgentsPage extends StatefulWidget {
   const AgentsPage({super.key});
@@ -14,8 +15,8 @@ class AgentsPage extends StatefulWidget {
 class _AgentsPageState extends State<AgentsPage> {
   List<Agent> _agents = [];
   bool _isLoading = true;
-  List<Map<String, dynamic>> _availableCapabilities = [];
-  List<Map<String, dynamic>> _availableIntegrations = [];
+  List<Capability> _availableCapabilities = [];
+  List<Integration> _availableIntegrations = [];
   Timer? _chatterTimer;
   final Map<String, String> _activeChatter = {};
 
@@ -70,9 +71,7 @@ class _AgentsPageState extends State<AgentsPage> {
     try {
       final data = await ApiService.getAgents();
       setState(() {
-        _agents = data
-            .map((dynamic e) => Agent.fromJson(e as Map<String, dynamic>))
-            .toList();
+        _agents = data;
       });
     } catch (e) {
       if (mounted) {
@@ -167,34 +166,19 @@ class _AgentsPageState extends State<AgentsPage> {
                                         keywordsController.text,
                                       );
                                       setDialogState(() {
-                                        nameController.text =
-                                            result['name'] as String? ?? '';
+                                        nameController.text = result.name;
                                         personalityController.text =
-                                            result['personality'] as String? ??
-                                                '';
+                                            result.personality;
                                         descriptionController.text =
-                                            result['description'] as String? ??
-                                                '';
-                                        final goals =
-                                            result['goals'] as List<dynamic>?;
-                                        if (goals != null) {
-                                          goalsController.text =
-                                              goals.join('\n');
-                                        }
+                                            result.description;
+                                        goalsController.text =
+                                            result.goals.join('\n');
 
                                         selectedCapabilities =
-                                            (result['capabilities']
-                                                        as List<dynamic>? ??
-                                                    [])
-                                                .map((e) => e.toString())
-                                                .toList();
+                                            result.capabilities;
 
                                         selectedIntegrations =
-                                            (result['suggested_integrations']
-                                                        as List<dynamic>? ??
-                                                    [])
-                                                .map((e) => e.toString())
-                                                .toList();
+                                            result.suggestedIntegrations;
 
                                         isGenerating = false;
                                       });
@@ -258,8 +242,8 @@ class _AgentsPageState extends State<AgentsPage> {
                       Wrap(
                         spacing: 8,
                         children: _availableCapabilities.map((cap) {
-                          final id = cap['id'] as String;
-                          final name = cap['name'] as String;
+                          final id = cap.id;
+                          final name = cap.name;
                           final isSelected = selectedCapabilities.contains(id);
                           return FilterChip(
                             label: Text(name),
@@ -285,12 +269,12 @@ class _AgentsPageState extends State<AgentsPage> {
                       Wrap(
                         spacing: 8,
                         children: _availableIntegrations.map((integration) {
-                          final type = integration['type'] as String;
-                          final name = integration['display_name'] as String;
+                          final type = integration.type;
+                          final name = integration.displayName;
                           final isSelected =
                               selectedIntegrations.contains(type);
                           final isComingSoon =
-                              integration['status'] == 'coming_soon';
+                              integration.status == 'coming_soon';
 
                           return FilterChip(
                             label: Text(name),

@@ -8,6 +8,7 @@ import 'design_system/design_system.dart';
 import 'services/passkey_service.dart';
 import 'services/supabase_service.dart';
 import 'api_service.dart';
+import 'models/memory.dart';
 
 class SettingsPage extends StatefulWidget {
   /// Called when the user clears chat history from settings.
@@ -29,8 +30,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _addingPasskey = false;
 
   // Memories state
-  List<Map<String, dynamic>> _memories = [];
-  List<Map<String, dynamic>> _memoryEdges = [];
+  List<Memory> _memories = [];
+  List<MemoryEdge> _memoryEdges = [];
   bool _loadingMemories = false;
   bool _showMemoryGraph = false;
 
@@ -169,8 +170,8 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
 
       setState(() {
-        _memories = graphData['nodes'] ?? [];
-        _memoryEdges = graphData['edges'] ?? [];
+        _memories = graphData.nodes;
+        _memoryEdges = graphData.edges;
       });
     } catch (e) {
       try {
@@ -188,13 +189,13 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _deleteMemory(Map<String, dynamic> memory) async {
+  Future<void> _deleteMemory(Memory memory) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Forget memory?'),
         content: Text(
-          'Should I forget this detail?\n\n"${memory['content']}"',
+          'Should I forget this detail?\n\n"${memory.content}"',
         ),
         actions: [
           TextButton(
@@ -213,7 +214,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed != true) return;
 
     try {
-      await ApiService.deleteMemory(memory['id'] as String);
+      await ApiService.deleteMemory(memory.id);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -542,7 +543,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildMemoryListItem(Map<String, dynamic> memory) {
+  Widget _buildMemoryListItem(Memory memory) {
     final colors = context.colors;
     return ListTile(
       leading: Icon(
@@ -551,13 +552,13 @@ class _SettingsPageState extends State<SettingsPage> {
         size: 20,
       ),
       title: Text(
-        memory['content'] as String? ?? '',
+        memory.content,
         style: AppTypography.bodyMedium.copyWith(
           color: colors.onSurface,
         ),
       ),
       subtitle: Text(
-        'Learned ${_formatDate(memory['created_at'] as String? ?? '')}',
+        'Learned ${_formatDate(memory.createdAt)}',
         style: AppTypography.bodySmall.copyWith(
           color: colors.onSurfaceMuted,
         ),
@@ -687,10 +688,10 @@ class _GraphNode {
 
   const _GraphNode({required this.id, required this.content});
 
-  factory _GraphNode.fromMemory(Map<String, dynamic> memory) {
+  factory _GraphNode.fromMemory(Memory memory) {
     return _GraphNode(
-      id: memory['id'] as String? ?? '',
-      content: memory['content'] as String? ?? '',
+      id: memory.id,
+      content: memory.content,
     );
   }
 }
@@ -698,7 +699,7 @@ class _GraphNode {
 class _MemoryGraphPainter extends CustomPainter {
   final AppThemeColors colors;
   final List<_GraphNode> nodes;
-  final List<Map<String, dynamic>> edges;
+  final List<MemoryEdge> edges;
 
   const _MemoryGraphPainter({
     required this.colors,
@@ -730,11 +731,8 @@ class _MemoryGraphPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     for (final edge in edges) {
-      final sourceId = edge['source'] as String?;
-      final targetId = edge['target'] as String?;
-      if (sourceId == null || targetId == null) {
-        continue;
-      }
+      final sourceId = edge.source;
+      final targetId = edge.target;
 
       final sourcePoint = nodePositions[sourceId];
       final targetPoint = nodePositions[targetId];
