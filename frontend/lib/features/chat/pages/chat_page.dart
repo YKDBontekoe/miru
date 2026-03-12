@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -98,7 +99,8 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isAtBottom = _scrollController.position.pixels >=
+    final isAtBottom =
+        _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 80;
     if (_showScrollToBottom == isAtBottom) {
       setState(() => _showScrollToBottom = !isAtBottom);
@@ -322,63 +324,78 @@ class _ChatPageState extends State<ChatPage> {
           );
         },
       ),
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          Column(
-            children: [
-              // Message list
-              Expanded(
-                child: _messages.isEmpty
-                    ? AppEmptyState(
-                        title: "Hi, I'm Miru.",
-                        subtitle:
-                            'I remember things about you over time.\nTell me something!',
-                        suggestions: const [
-                          'What can you help me with?',
-                          'Summarize a topic for me',
-                          'Tell me something interesting',
-                          'Help me brainstorm ideas',
-                        ],
-                        onSuggestionTap: (text) {
-                          _inputController.text = text;
-                          _sendMessage();
-                        },
-                      )
-                    : _MessageList(
-                        messages: _messages,
-                        scrollController: _scrollController,
-                        isStreaming: _isStreaming,
-                        streamingStatus: _streamingStatus,
-                        onCopy: _copyMessage,
-                        onRetry: _retryLastMessage,
-                      ),
-              ),
-
-              // Streaming status pill (shown above input bar)
-              if (_isStreaming && _streamingStatus != null)
-                _StreamingStatusPill(label: _streamingStatus!),
-
-              // Input bar
-              ChatInputBar(
-                controller: _inputController,
-                focusNode: _inputFocusNode,
-                onSend: _sendMessage,
-                isStreaming: _isStreaming,
-                onStopStreaming: _stopGeneration,
-              ),
-            ],
-          ),
+          // Message list
+          _messages.isEmpty
+              ? Padding(
+                  padding: EdgeInsets.only(
+                    top: kToolbarHeight + MediaQuery.paddingOf(context).top,
+                  ),
+                  child: AppEmptyState(
+                    title: "Hi, I'm Miru.",
+                    subtitle:
+                        'I remember things about you over time.\nTell me something!',
+                    suggestions: const [
+                      'What can you help me with?',
+                      'Summarize a topic for me',
+                      'Tell me something interesting',
+                      'Help me brainstorm ideas',
+                    ],
+                    onSuggestionTap: (text) {
+                      _inputController.text = text;
+                      _sendMessage();
+                    },
+                  ),
+                )
+              : Padding(
+                  padding: EdgeInsets.only(
+                    top: kToolbarHeight + MediaQuery.paddingOf(context).top,
+                    // Give enough bottom padding for the floating input bar
+                    bottom: 120,
+                  ),
+                  child: _MessageList(
+                    messages: _messages,
+                    scrollController: _scrollController,
+                    isStreaming: _isStreaming,
+                    streamingStatus: _streamingStatus,
+                    onCopy: _copyMessage,
+                    onRetry: _retryLastMessage,
+                  ),
+                ),
 
           // Scroll-to-bottom FAB
           if (_showScrollToBottom && _messages.isNotEmpty)
             Positioned(
-              bottom: 100,
+              bottom: 120,
               right: AppSpacing.lg,
               child: _ScrollToBottomButton(
                 onPressed: _scrollToBottom,
                 colors: colors,
               ),
             ),
+
+          // Bottom floating area
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isStreaming && _streamingStatus != null)
+                  _StreamingStatusPill(label: _streamingStatus!),
+                ChatInputBar(
+                  controller: _inputController,
+                  focusNode: _inputFocusNode,
+                  onSend: _sendMessage,
+                  isStreaming: _isStreaming,
+                  onStopStreaming: _stopGeneration,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -476,17 +493,11 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
       vsync: this,
       duration: AppDurations.medium,
     );
-    _opacity = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
 
@@ -500,10 +511,7 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
@@ -533,9 +541,10 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _opacity = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
-    );
+    _opacity = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
   }
 
   @override
@@ -550,46 +559,53 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
     final isDark = context.isDark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: FadeTransition(
         opacity: _opacity,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color:
-                isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-            border: Border.all(
-              color: colors.border.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 10,
-                height: 10,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colors.primary,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    (isDark
+                            ? AppColors.surfaceHighDark
+                            : AppColors.surfaceHighLight)
+                        .withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                border: Border.all(
+                  color: colors.border.withValues(alpha: 0.4),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    widget.label,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: colors.onSurfaceMuted,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                widget.label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: colors.onSurfaceMuted,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -622,9 +638,7 @@ class _ScrollToBottomButton extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: colors.border.withValues(alpha: 0.6),
-            ),
+            border: Border.all(color: colors.border.withValues(alpha: 0.6)),
           ),
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
@@ -668,7 +682,14 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+          (isDark ? AppColors.backgroundDark : AppColors.backgroundLight)
+              .withValues(alpha: 0.65),
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(color: Colors.transparent),
+        ),
+      ),
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
@@ -694,11 +715,7 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
               color: colors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.blur_on_rounded,
-              size: 16,
-              color: colors.primary,
-            ),
+            child: Icon(Icons.blur_on_rounded, size: 16, color: colors.primary),
           ),
           const SizedBox(width: AppSpacing.sm),
           // Gradient wordmark

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -60,10 +61,7 @@ class ChatBubble extends StatelessWidget {
     final screenWidth = context.screenWidth;
 
     if (isUser) {
-      return _UserBubble(
-        text: text,
-        screenWidth: screenWidth,
-      );
+      return _UserBubble(text: text, screenWidth: screenWidth);
     }
 
     return _AssistantBubble(
@@ -351,36 +349,52 @@ class _AssistantBubbleContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = isFailed
-        ? colors.errorSurface
+        ? colors.errorSurface.withValues(alpha: 0.8)
         : hasAgentName
-            ? accentColor.withValues(alpha: isDark ? 0.08 : 0.06)
-            : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight);
+        ? accentColor.withValues(alpha: isDark ? 0.12 : 0.08)
+        : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight)
+              .withValues(alpha: 0.6);
 
     final borderColor = isFailed
         ? AppColors.error.withValues(alpha: 0.35)
         : hasAgentName
-            ? accentColor.withValues(alpha: isDark ? 0.22 : 0.18)
-            : colors.border.withValues(alpha: 0.7);
+        ? accentColor.withValues(alpha: isDark ? 0.3 : 0.2)
+        : colors.border.withValues(alpha: 0.5);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AppSpacing.radiusSm),
-          topRight: Radius.circular(AppSpacing.radiusXl),
-          bottomLeft: Radius.circular(AppSpacing.radiusXl),
-          bottomRight: Radius.circular(AppSpacing.radiusXl),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(AppSpacing.radiusSm),
+        topRight: Radius.circular(AppSpacing.radiusXl),
+        bottomLeft: Radius.circular(AppSpacing.radiusXl),
+        bottomRight: Radius.circular(AppSpacing.radiusXl),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(AppSpacing.radiusSm),
+              topRight: Radius.circular(AppSpacing.radiusXl),
+              bottomLeft: Radius.circular(AppSpacing.radiusXl),
+              bottomRight: Radius.circular(AppSpacing.radiusXl),
+            ),
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: child,
         ),
-        border: Border.all(color: borderColor, width: 1),
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      child: child,
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Assistant bubble content (Markdown)
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Assistant bubble content (Markdown)
@@ -467,10 +481,7 @@ class _ActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSpacing.xxs,
-        left: AppSpacing.xxs,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.xxs, left: AppSpacing.xxs),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

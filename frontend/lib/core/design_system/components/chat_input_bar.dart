@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -44,90 +45,81 @@ class ChatInputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
 
-    // Subtle top border instead of full container color
     final containerColor =
-        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+        (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight)
+            .withValues(alpha: 0.65);
+    final borderColor = (isDark ? AppColors.borderDark : AppColors.borderLight)
+        .withValues(alpha: 0.8);
 
     return SafeArea(
-      child: Container(
-        color: containerColor,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Hairline separator
-            Container(height: 1, color: borderColor.withValues(alpha: 0.5)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.md,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.md,
+          AppSpacing.md, // Float it slightly
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: containerColor,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+                border: Border.all(color: borderColor, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Text field in a card-like container
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
+                    child: TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      maxLines: null,
+                      minLines: 1,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => onSend(),
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        height: 1.5,
                         color: isDark
-                            ? AppColors.surfaceHighDark
-                            : AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusXl,
-                        ),
-                        border: Border.all(
-                          color: borderColor.withValues(alpha: 0.8),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.15 : 0.04,
-                            ),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                            ? AppColors.onSurfaceDark
+                            : AppColors.onSurfaceLight,
                       ),
-                      child: TextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        maxLines: null,
-                        minLines: 1,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => onSend(),
-                        style: GoogleFonts.inter(
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        hintStyle: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
-                          height: 1.5,
                           color: isDark
-                              ? AppColors.onSurfaceDark
-                              : AppColors.onSurfaceLight,
+                              ? AppColors.onSurfaceMutedDark
+                              : AppColors.onSurfaceMutedLight,
                         ),
-                        decoration: InputDecoration(
-                          hintText: hintText,
-                          hintStyle: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                            color: isDark
-                                ? AppColors.onSurfaceMutedDark
-                                : AppColors.onSurfaceMutedLight,
-                          ),
-                          filled: false,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                            vertical: AppSpacing.md,
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.md,
                         ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.xs),
                   _SendButton(
                     isStreaming: isStreaming,
                     onSend: onSend,
@@ -136,7 +128,7 @@ class ChatInputBar extends StatelessWidget {
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
