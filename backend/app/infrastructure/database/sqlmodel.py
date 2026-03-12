@@ -14,6 +14,7 @@ from app.core.config import get_settings
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
+
 def parse_database_config(raw_url: str, ssl_enabled: bool) -> tuple[str, dict[str, Any]]:
     """Parse the database URL and determine the connection arguments.
 
