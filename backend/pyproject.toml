@@ -104,6 +104,7 @@ known_first_party = ["app"]
 
 [tool.mypy]
 python_version = "3.13"
+exclude = ["build/"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
