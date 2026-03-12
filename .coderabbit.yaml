@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: true
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  
+  instructions: >
+    You are reviewing code that may have been written by an AI agent (Jules).
+    When generating the 'Prompt for all review comments with AI agents', be extremely precise.
+    Include exact file paths, line numbers, and literal replacement strings or clear logical requirements.
+    Mention that the project is a FastAPI backend (Python 3.13) and Flutter frontend (Dart 3.41).
+    Remind the AI agent to run `make lint` and `make test` to verify its changes before pushing.
+
+  path_instructions:
+    - path: "backend/**/*.py"
+      instructions: "Ensure Type hints are used everywhere. Check for proper FastAPI dependency injection and exception handling. Validate against Ruff and Mypy standards."
+    - path: "frontend/lib/**/*.dart"
+      instructions: "Ensure `const` constructors are used where possible. Avoid unnecessary rebuilds. Check that state management using standard StatefulWidget patterns is correct. No Riverpod/Bloc."
+
+  labels:
+    auto_label: true
+    labeling_instructions:
+      - label: "bug"
+        instructions: "Apply if the PR fixes an existing issue or crash."
+      - label: "security"
+        instructions: "Apply if the PR addresses a security vulnerability or exposes sensitive data."
+      - label: "performance"
+        instructions: "Apply if the PR improves execution speed or memory usage."
+      - label: "refactor"
+        instructions: "Apply if the PR restructures code without changing behavior."
+
+auto_review:
+  enabled: true
+  drafts: false

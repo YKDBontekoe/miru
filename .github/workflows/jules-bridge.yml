@@ -1,0 +1,120 @@
+name: Jules-CodeRabbit Bridge
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  bridge-to-jules:
+    name: Proxy CodeRabbit to Jules
+    # Run only if the comment is on a pull request and authored by CodeRabbit
+    if: github.event.issue.pull_request && github.event.comment.user.login == 'coderabbitai[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse CodeRabbit Output and Proxy to Jules
+        uses: actions/github-script@v7
+        with:
+          # A PAT (Personal Access Token) from a real user is REQUIRED here.
+          # The default GITHUB_TOKEN belongs to github-actions[bot] and Jules will ignore it.
+          github-token: ${{ secrets.JULES_PROXY_PAT }}
+          script: |
+            const commentBody = context.payload.comment.body;
+            const prNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            console.log("Analyzing CodeRabbit comment on PR #" + prNumber);
+
+            // 1. Check for "No findings" (Auto-Approval / Pipeline Success)
+            const noFindingsRegex = /Actionable comments posted:\s*0/i;
+            const isClean = noFindingsRegex.test(commentBody);
+
+            if (isClean) {
+              console.log("CodeRabbit found no actionable issues. Labeling as ready-to-merge.");
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: prNumber,
+                labels: ['ready-to-merge', 'ai-approved']
+              });
+              
+              // Optional: Post an encouraging comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: "🎉 **AI Review Complete**: CodeRabbit found no issues. This PR is ready for final human merge."
+              });
+              return;
+            }
+
+            // 2. Extract the AI Agent prompt block securely
+            // This regex handles various spacing, newlines, and optional language tags (e.g. ```text)
+            const promptRegex = /<summary>🤖 Prompt for all review comments with AI agents<\/summary>[\s\S]*?```(?:[\w-]+)?\n([\s\S]*?)\n```/i;
+            const match = commentBody.match(promptRegex);
+
+            if (match && match[1]) {
+              const aiPrompt = match[1].trim();
+              console.log("Extracted AI prompt successfully.");
+
+              // 3. Loop Prevention (Validation Loop Logic)
+              const { data: existingComments } = await github.rest.issues.listComments({
+                owner,
+                repo,
+                issue_number: prNumber,
+              });
+              
+              const proxyComments = existingComments.filter(c => 
+                c.body && c.body.includes("Jules-CodeRabbit Bridge Proxy")
+              );
+              
+              const attemptNumber = proxyComments.length + 1;
+              const maxAttempts = 3;
+
+              if (attemptNumber > maxAttempts) {
+                console.log(`Max proxy attempts reached (${maxAttempts}). Alerting humans.`);
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  body: `⚠️ **AI Review Loop Detected** ⚠️\n\nJules and CodeRabbit have exchanged ${maxAttempts} rounds of feedback without resolving the issues. \n\n@${owner} Please step in to manually review and resolve the remaining conflicts.`
+                });
+                
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  labels: ['human-intervention-needed']
+                });
+                return;
+              }
+
+              // 4. Smart Context Injection
+              // We inject project-specific context to make Jules smarter at fixing the issue.
+              const contextInjection = `
+              
+              **Project Context & Requirements:**
+              - Validate your fixes by running local checks if possible (e.g., \`make lint\`, \`make test-backend\`, \`make test-frontend\`).
+              - If your changes introduce new architectural patterns or modify core agent behaviors, please update \`AGENTS.md\` as part of this fix.
+              - Ensure you do not revert existing valid code outside the scope of these requested fixes.
+              `;
+              
+              // The `/jules` slash command triggers Jules to start a session.
+              // By posting this using a PAT, Jules sees it as a human request.
+              const finalComment = `### Jules-CodeRabbit Bridge Proxy (Attempt ${attemptNumber}/${maxAttempts})\n\n/jules\n\n${aiPrompt}${contextInjection}`;
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: finalComment
+              });
+              
+              console.log(`Successfully proxied CodeRabbit prompt to Jules (Attempt ${attemptNumber}).`);
+            } else {
+              console.log("Warning: Could not find the AI Agent prompt block in the CodeRabbit comment. Has the CodeRabbit output format changed?");
+            }
