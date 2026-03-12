@@ -23,7 +23,17 @@ elif raw_url.startswith("postgresql://"):
 else:
     db_url = raw_url
 
-engine = create_async_engine(db_url, echo=False, future=True)
+# Supabase direct connection (port 5432) often requires SSL for asyncpg
+if "supabase.co" in db_url and "sslmode=" not in db_url:
+    separator = "&" if "?" in db_url else "?"
+    db_url += f"{separator}sslmode=require"
+
+# Explicitly set SSL for asyncpg if it's a Supabase URL
+connect_args = {}
+if "supabase.co" in db_url:
+    connect_args["ssl"] = "require"
+
+engine = create_async_engine(db_url, echo=False, future=True, connect_args=connect_args)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession]:

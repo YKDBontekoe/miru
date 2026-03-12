@@ -20,7 +20,7 @@ from app.domain.agents.service import AgentService  # noqa: TCH001
 router = APIRouter(tags=["Agents"])
 
 
-@router.post("/", response_model=AgentResponse)
+@router.post("", response_model=AgentResponse)
 async def create_agent(
     agent_data: AgentCreate,
     user_id: CurrentUser,
@@ -30,7 +30,7 @@ async def create_agent(
     return await service.create_agent(agent_data, user_id)
 
 
-@router.get("/", response_model=list[AgentResponse])
+@router.get("", response_model=list[AgentResponse])
 async def list_agents(
     user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],

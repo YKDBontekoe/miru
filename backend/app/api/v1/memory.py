@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 router = APIRouter(tags=["Memory"])
 
 
-@router.get("/", response_model=dict[str, list[Memory]])
+@router.get("", response_model=dict[str, list[Memory]])
 async def list_memories(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -36,7 +36,7 @@ async def get_memory_graph(
     return await service.get_memory_graph(user_id)
 
 
-@router.post("/")
+@router.post("", response_model=dict[str, Any])
 async def store_memory(
     data: MemoryRequest,
     user_id: CurrentUser,
