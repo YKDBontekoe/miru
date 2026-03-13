@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from crewai import Agent as CrewAgent
-from crewai import Crew, Process, Task
+import crewai
+from crewai import LLM, Crew, Process, Task
 
 from app.core.config import get_settings
 from app.domain.chat.models import (
@@ -39,6 +39,20 @@ class ChatService:
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
+
+    def _get_crew_llm(self) -> LLM:
+        """Build a CrewAI LLM instance backed by OpenRouter.
+
+        Using ``crewai.LLM`` instead of a raw ``AsyncOpenAI`` client prevents
+        CrewAI from injecting an unsupported ``tool_choice`` parameter when
+        routing through OpenRouter providers that don't implement that field.
+        """
+        settings = get_settings()
+        return LLM(
+            model=f"openrouter/{settings.default_chat_model}",
+            base_url="https://openrouter.ai/api/v1",
+            api_key=settings.openrouter_api_key,
+        )
 
     def _get_agent_tools(self, agent: Agent) -> list:
         """Build the tool list for an agent from its prefetched integrations.
@@ -128,9 +142,9 @@ class ChatService:
         if not db_agents:
             return {"task_type": "error", "result": "No agents available."}
 
-        llm = get_openrouter_client().openai_client
+        llm = self._get_crew_llm()
         crew_agents = [
-            CrewAgent(
+            crewai.Agent(
                 role=a.name,
                 goal=a.personality,
                 backstory=a.description or "",
@@ -171,9 +185,9 @@ class ChatService:
             return
 
         # 3. Build CrewAI agents
-        llm = get_openrouter_client().openai_client
+        llm = self._get_crew_llm()
         crew_agents = [
-            CrewAgent(
+            crewai.Agent(
                 role=a.name,
                 goal=a.personality,
                 backstory=a.description or "",
