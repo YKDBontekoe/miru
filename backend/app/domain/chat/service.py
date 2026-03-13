@@ -29,6 +29,20 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class _OpenRouterLLM(LLM):
+    """CrewAI LLM wrapper that forces ReAct-style tool calling.
+
+    CrewAI's built-in OpenAI provider hardcodes ``tool_choice: auto`` whenever
+    tools are present, which causes a 404 on OpenRouter routes that don't
+    implement that parameter.  Overriding ``supports_function_calling`` to
+    return ``False`` makes CrewAI fall back to its ReAct (text-based) tool loop,
+    which never sends ``tool_choice`` to the API.
+    """
+
+    def supports_function_calling(self) -> bool:
+        return False
+
+
 class ChatService:
     def __init__(
         self,
@@ -40,20 +54,19 @@ class ChatService:
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
 
-    def _get_crew_llm(self) -> LLM:
+    def _get_crew_llm(self) -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter.
 
-        Using ``crewai.LLM`` with ``tool_choice="none"`` prevents CrewAI/LiteLLM
-        from injecting an unsupported ``tool_choice`` parameter. Many OpenRouter
-        provider routes return a 404 when that field is present, so we suppress
-        it explicitly rather than relying on provider-level routing.
+        Returns an ``_OpenRouterLLM`` whose ``supports_function_calling()``
+        always returns ``False``, forcing CrewAI into its ReAct (text-based)
+        tool loop.  This avoids the ``tool_choice`` parameter that many
+        OpenRouter provider routes do not implement.
         """
         settings = get_settings()
-        return LLM(
+        return _OpenRouterLLM(
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
-            tool_choice="none",
         )
 
     def _get_agent_tools(self, agent: Agent) -> list:
