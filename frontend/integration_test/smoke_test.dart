@@ -7,48 +7,43 @@ import 'package:miru/main.dart';
 import 'package:miru/core/api/backend_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
 
-// Create a mock BackendService for tests
-void _setupMockBackend() {
-  BackendService.baseUrl.value = 'http://127.0.0.1:8000/api';
-  BackendService.bypassWaitForBackend = true;
-}
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Smoke tests', () {
-    testWidgets('App launches and renders the auth page', (tester) async {
+  group('End-to-End Smoke Tests', () {
+    testWidgets(
+        'App launches, connects to real backend, and renders the auth page',
+        (tester) async {
+      // 1. Initialize services pointing to the local ephemeral CI backend/Supabase
       await BackendService.init();
-      _setupMockBackend();
+
+      // Ensure we hit the real local backend instead of bypassing
+      BackendService.bypassWaitForBackend = false;
+
+      // Attempt to wait for the local backend to be healthy
+      await BackendService.waitForBackend(
+          maxAttempts: 15, initialDelay: const Duration(milliseconds: 500));
+
       await SupabaseService.initialize();
+
+      // 2. Pump the widget tree
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
 
       await tester.pumpAndSettle();
 
-      // Auth page title is visible
+      // 3. Auth page title is visible
       expect(find.text('Miru'), findsWidgets);
-    });
 
-    testWidgets('Email input bar is present', (tester) async {
-      await BackendService.init();
-      _setupMockBackend();
-      await SupabaseService.initialize();
-
-      await tester.pumpWidget(const ProviderScope(child: MiruApp()));
-
-      await tester.pumpAndSettle();
-
-      // The text field for email
+      // 4. Verify the email input bar is present
       expect(find.byType(TextField), findsAtLeastNWidgets(1));
     });
 
     testWidgets('Typing an email shows it in the input field', (tester) async {
       await BackendService.init();
-      _setupMockBackend();
+      BackendService.bypassWaitForBackend = false;
       await SupabaseService.initialize();
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
-
       await tester.pumpAndSettle();
 
       const testInput = 'test@example.com';
