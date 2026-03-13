@@ -8,6 +8,7 @@ def test_openrouter_client_initializes_with_json_mode() -> None:
         client = OpenRouterClient(api_key="fake-key")
 
         import instructor
+
         mock_from_openai.assert_called_once_with(client.openai_client, mode=instructor.Mode.JSON)
 
 
