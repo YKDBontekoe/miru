@@ -1,14 +1,16 @@
 """Tortoise ORM configuration and initialization."""
 
-import urllib.parse
 from __future__ import annotations
+
+import urllib.parse
 
 from tortoise import Tortoise
 
 from app.core.config import get_settings
-from app.infrastructure.database.utils import normalize_postgres_url
 
-raw_url = normalize_postgres_url(get_settings().database_url or "", for_asyncpg=True)
+raw_url = get_settings().database_url or ""
+if raw_url.startswith("postgresql://"):
+    raw_url = raw_url.replace("postgresql://", "postgres://", 1)
 
 if raw_url.startswith("postgres://"):
     parsed = urllib.parse.urlsplit(raw_url)
