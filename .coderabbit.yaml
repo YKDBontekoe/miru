@@ -34,6 +34,6 @@ reviews:
       - label: "refactor"
         instructions: "Apply if the PR restructures code without changing behavior."
 
-auto_review:
-  enabled: true
-  drafts: false
+  auto_review:
+    enabled: true
+    drafts: false
