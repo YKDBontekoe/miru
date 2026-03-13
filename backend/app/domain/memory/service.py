@@ -73,6 +73,12 @@ class MemoryService:
     async def get_memory_graph(self, user_id: UUID) -> dict[str, Any]:
         """Fetch all memories and their relationships for the graph view."""
         memories = await self.repo.list_all_memories(user_id)
+        if not memories:
+            return {
+                "nodes": [],
+                "edges": [],
+            }
+
         m_ids = [m.id for m in memories]
         edges = await self.repo.get_relationships_subgraph(m_ids)
 

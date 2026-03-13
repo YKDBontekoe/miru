@@ -2002,6 +2002,12 @@ dev = [
     { name = "types-requests" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aerich", specifier = ">=0.7.2" },
@@ -2038,6 +2044,12 @@ requires-dist = [
     { name = "webauthn", specifier = ">=2.7.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.2.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.0" },
+]
 
 [[package]]
 name = "mmh3"

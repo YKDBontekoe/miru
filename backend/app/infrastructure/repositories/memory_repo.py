@@ -104,6 +104,9 @@ class MemoryRepository:
 
     async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[MemoryRelationship]:
         """Fetch relationships between a set of memory IDs."""
+        if not memory_ids:
+            return []
+
         return await MemoryRelationship.filter(
             source_id__in=memory_ids, target_id__in=memory_ids
         ).all()
