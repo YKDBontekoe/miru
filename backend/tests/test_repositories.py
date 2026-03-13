@@ -227,11 +227,23 @@ class TestMemoryRepository:
         repo = MemoryRepository()
         mock_conn = AsyncMock()
         mock_conn.execute_query_dict = AsyncMock(return_value=[])
+        test_uuid = uuid4()
         with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
             mock_tortoise.get_connection.return_value = mock_conn
-            result = await repo.match_memories([0.1, 0.2], 0.5, 5, uuid4())
+            result = await repo.match_memories([0.1, 0.2], 0.5, 5, test_uuid)
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
+
+        args, kwargs = mock_conn.execute_query_dict.call_args
+        query = args[0]
+        params = args[1]
+
+        assert "p_user_id := $4::uuid" in query
+        assert "p_agent_id := $5::uuid" in query
+        assert "p_room_id := $6::uuid" in query
+        assert params[3] == str(test_uuid)
+        assert params[4] is None
+        assert params[5] is None
 
     async def test_search_fulltext_delegates_to_raw_sql(self) -> None:
         repo = MemoryRepository()
