@@ -68,3 +68,17 @@ async def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> Non
 
     tools = chat_service._get_agent_tools(agent)
     assert len(tools) == 0
+
+def test_openrouter_llm_initialization() -> None:
+    """Test that _OpenRouterLLM can be initialized with an openrouter model without ImportError."""
+    from app.domain.chat.service import _OpenRouterLLM
+
+    # Should not raise ImportError due to missing litellm fallback
+    llm = _OpenRouterLLM(
+        model="openrouter/nvidia/nemotron-3-nano-30b-a3b:free",
+        base_url="https://openrouter.ai/api/v1",
+        api_key="test_api_key"
+    )
+
+    # We override supports_function_calling to return False in _OpenRouterLLM
+    assert llm.supports_function_calling() is False
