@@ -3,56 +3,126 @@ name: Invoke Jules to Fix Sentry Issue
 on:
   issues:
     types: [labeled]
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours, check for pending issues
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
   issues: write
 
-concurrency:
-  group: jules-fix-${{ github.event.issue.number }}
-  cancel-in-progress: false
-
 jobs:
-  jules-fix:
-    if: contains(github.event.issue.labels.*.name, 'jules-fix-pending')
+  # First job: determine which issues need to be processed
+  find-issues:
     runs-on: ubuntu-latest
+    outputs:
+      issues: ${{ steps.find.outputs.issues }}
+    steps:
+      - name: Find issues with jules-fix-pending label
+        id: find
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            
+            // If triggered by an issue label event, process just that issue
+            if (github.event_name === 'issues' && github.event.issue) {
+              const issue = github.event.issue;
+              const hasLabel = issue.labels.some(l => l.name === 'jules-fix-pending');
+              if (hasLabel) {
+                console.log(`Processing single issue #${issue.number}`);
+                core.setOutput('issues', JSON.stringify([issue.number]));
+                return;
+              }
+            }
+            
+            // Otherwise, find all open issues with jules-fix-pending
+            console.log('Finding all issues with jules-fix-pending label...');
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              labels: 'jules-fix-pending',
+              per_page: 100
+            });
+            
+            const issueNumbers = issues.map(i => i.number);
+            console.log(`Found ${issueNumbers.length} issues to process: ${issueNumbers.join(', ')}`);
+            core.setOutput('issues', JSON.stringify(issueNumbers));
+
+  # Second job: process each issue in a matrix
+  jules-fix:
+    needs: find-issues
+    if: ${{ needs.find-issues.outputs.issues != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        issue: ${{ fromJSON(needs.find-issues.outputs.issues) }}
+      max-parallel: 1  # Process one at a time to avoid overwhelming Jules
+    concurrency:
+      group: jules-fix-${{ matrix.issue }}
+      cancel-in-progress: false
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
       
+      - name: Get Issue Details
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: issue } = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number: ${{ matrix.issue }}
+            });
+            
+            // Check if it still has the label (might have been processed by another run)
+            const hasLabel = issue.labels.some(l => l.name === 'jules-fix-pending');
+            if (!hasLabel) {
+              console.log(`Issue #${{ matrix.issue }} no longer has jules-fix-pending label, skipping`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            
+            core.setOutput('title', issue.title);
+            core.setOutput('body', issue.body || '');
+            core.setOutput('skip', 'false');
+      
       - name: Invoke Jules
+        if: steps.issue.outputs.skip != 'true'
         uses: google-labs-code/jules-invoke@v1
         with:
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           prompt: |
             Fix the bug described in this issue:
             
-            Title: ${{ github.event.issue.title }}
-            Description: ${{ github.event.issue.body }}
+            Title: ${{ steps.issue.outputs.title }}
+            Description: ${{ steps.issue.outputs.body }}
             
             Requirements:
             - Analyze the codebase and fix the underlying issue.
             - Write tests to verify the fix.
             - Ensure all existing tests pass.
             - When you are done, create a pull request. 
-            - IMPORTANT: Include "Closes #${{ github.event.issue.number }}" in your pull request description so the issue is automatically closed when the PR is merged.
+            - IMPORTANT: Include "Closes #${{ matrix.issue }}" in your pull request description so the issue is automatically closed when the PR is merged.
             
             Additional context:
             This issue was imported from Sentry. Focus on the 'culprit' and 'metadata' sections in the description.
 
       - name: Update Issue on Success
-        if: success()
+        if: success() && steps.issue.outputs.skip != 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
+            const issue_number = ${{ matrix.issue }};
 
-            // Remove 'jules-fix-pending' first, before adding 'jules-fix-submitted',
-            // to prevent the label event from re-triggering this workflow while
-            // 'jules-fix-pending' is still present.
             try {
               await github.rest.issues.removeLabel({
                 owner,
@@ -61,7 +131,6 @@ jobs:
                 name: 'jules-fix-pending'
               });
             } catch (e) {
-              // Label may already have been removed — only warn, don't fail
               console.log(`Warning: could not remove jules-fix-pending: ${e.message}`);
             }
 
@@ -80,15 +149,14 @@ jobs:
             });
 
       - name: Update Issue on Failure
-        if: failure()
+        if: failure() && steps.issue.outputs.skip != 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
+            const issue_number = ${{ matrix.issue }};
 
-            // Remove 'jules-fix-pending' so it doesn't re-trigger
             try {
               await github.rest.issues.removeLabel({
                 owner,
