@@ -47,7 +47,7 @@ jobs:
           echo "SENTRY_EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Issues
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
