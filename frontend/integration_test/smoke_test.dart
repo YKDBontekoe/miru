@@ -63,13 +63,16 @@ void main() {
 
       await Supabase.instance.client.auth.signOut();
 
-      // Pre-create the user safely
+      // Pre-create the user safely without swallowing errors
       try {
         await Supabase.instance.client.auth.signUp(
           email: uniqueEmail,
           password: testPassword,
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Signup failed: $e');
+        rethrow;
+      }
       // We must sign out again to ensure the UI starts logged out
       await Supabase.instance.client.auth.signOut();
 
@@ -120,7 +123,10 @@ void main() {
             email: uniqueEmail,
             password: testPassword,
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Signin failed: $e');
+          rethrow;
+        }
       }
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
@@ -165,7 +171,10 @@ void main() {
             email: uniqueEmail,
             password: testPassword,
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Signin failed: $e');
+          rethrow;
+        }
       }
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
