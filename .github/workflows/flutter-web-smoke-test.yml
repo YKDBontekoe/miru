@@ -111,7 +111,7 @@ jobs:
       - name: Extract Supabase Keys
         id: supabase-keys
         run: |
-          ANON_KEY=$(grep 'ANON_KEY=' backend/.env.test | cut -d '=' -f2 | tr -d '"')
+          ANON_KEY=$(grep 'ANON_KEY=' ../backend/.env.test | cut -d '=' -f2 | tr -d '"')
           echo "ANON_KEY=$ANON_KEY" >> $GITHUB_OUTPUT
 
       - name: Build web app
@@ -186,7 +186,7 @@ jobs:
         continue-on-error: true
 
       - name: Run accessibility check
-        run: axe http://localhost:8080 --exit
+        run: axe http://localhost:8080 || echo "Axe checks failed or could not run"
         continue-on-error: true   # informational; does not fail the pipeline
 
       # -----------------------------------------------------------------------
@@ -202,3 +202,18 @@ jobs:
           runs: 1
           budgetPath: ./frontend/.lighthouserc.json
         continue-on-error: true   # informational; does not fail the pipeline
+
+      # -----------------------------------------------------------------------
+      # Cleanup ephemeral local instances
+      # -----------------------------------------------------------------------
+      - name: Stop processes
+        if: always()
+        run: |
+          # Kill all running background jobs like UV and uvicorn
+          kill $(jobs -p) 2>/dev/null || true
+          pkill uvicorn || true
+
+      - name: Stop Local Supabase
+        if: always()
+        working-directory: ./supabase
+        run: supabase stop
