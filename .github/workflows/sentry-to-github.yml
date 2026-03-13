@@ -20,8 +20,8 @@ jobs:
         id: sentry
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT_BACKEND }}
         run: |
           # Fetch unresolved issues from Sentry
           HTTP_CODE=$(curl -s -o /tmp/sentry_response.json -w "%{http_code}" \
