@@ -84,6 +84,21 @@ def test_list_memories_route_network_error(client: TestClient) -> None:
     assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
 
 
+def test_list_memories_route_oserror(client: TestClient) -> None:
+    user_id = uuid4()
+    mock_service = MagicMock()
+
+    mock_service.retrieve_memories = AsyncMock(side_effect=OSError(101, "Network is unreachable"))
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+
+    response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+
+
 def test_store_memory_route_network_error(client: TestClient) -> None:
     user_id = uuid4()
     mock_service = MagicMock()
@@ -93,6 +108,25 @@ def test_store_memory_route_network_error(client: TestClient) -> None:
 
     request = httpx.Request("POST", "http://test")
     mock_service.store_memory = AsyncMock(side_effect=APIConnectionError(request=request))
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/memory",
+        headers={"Authorization": "Bearer fake_token"},
+        json={"message": "Important fact"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+
+
+def test_store_memory_route_oserror(client: TestClient) -> None:
+    user_id = uuid4()
+    mock_service = MagicMock()
+
+    mock_service.store_memory = AsyncMock(side_effect=OSError(101, "Network is unreachable"))
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_memory_service] = lambda: mock_service
