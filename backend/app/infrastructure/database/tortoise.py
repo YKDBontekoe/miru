@@ -1,12 +1,29 @@
 """Tortoise ORM configuration and initialization."""
 
+import urllib.parse
+
 from tortoise import Tortoise
 
 from app.core.config import get_settings
 
 raw_url = get_settings().database_url or ""
+
 if raw_url.startswith("postgresql://"):
     raw_url = raw_url.replace("postgresql://", "postgres://", 1)
+
+if raw_url.startswith("postgres://"):
+    parsed = urllib.parse.urlparse(raw_url)
+    query = dict(urllib.parse.parse_qsl(parsed.query))
+
+    # Remove pgbouncer argument as it's not supported by asyncpg
+    query.pop("pgbouncer", None)
+
+    # Disable prepared statement caching to avoid InvalidSQLStatementNameError
+    # when using PgBouncer in transaction mode
+    query["statement_cache_size"] = "0"
+
+    parsed = parsed._replace(query=urllib.parse.urlencode(query))
+    raw_url = urllib.parse.urlunparse(parsed)
 
 # Database configuration for Tortoise and Aerich
 TORTOISE_ORM = {
