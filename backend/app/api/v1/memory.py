@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse, MemoryGraphResponse  # noqa: TCH001
+from app.domain.memory.models import (  # noqa: TCH001
+    Memory,
+    MemoryGraphResponse,
+    MemoryRequest,
+    MemoryResponse,
+)
 from app.domain.memory.service import MemoryService  # noqa: TCH001
 
 if TYPE_CHECKING:

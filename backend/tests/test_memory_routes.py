@@ -64,6 +64,7 @@ def test_store_memory_route(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json()["id"] == str(memory_id)
 
+
 def test_get_memory_graph_route(client: TestClient) -> None:
     user_id = uuid4()
     memory_id = uuid4()
@@ -76,7 +77,7 @@ def test_get_memory_graph_route(client: TestClient) -> None:
         updated_at=datetime.now(UTC),
     )
 
-    from app.domain.memory.models import MemoryRelationship, MemoryGraphResponse
+    from app.domain.memory.models import MemoryGraphResponse, MemoryRelationship
 
     mock_rel = MemoryRelationship(
         id=uuid4(),
@@ -90,15 +91,15 @@ def test_get_memory_graph_route(client: TestClient) -> None:
 
     mock_service = MagicMock()
     mock_service.get_memory_graph = AsyncMock(
-        return_value=MemoryGraphResponse.model_validate({"nodes": [mock_memory], "edges": [mock_rel]})
+        return_value=MemoryGraphResponse.model_validate(
+            {"nodes": [mock_memory], "edges": [mock_rel]}
+        )
     )
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_memory_service] = lambda: mock_service
 
-    response = client.get(
-        "/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"}
-    )
+    response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 200
     data = response.json()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from app.domain.memory.models import Memory, MemoryGraphResponse
@@ -76,10 +76,12 @@ class MemoryService:
         m_ids = [m.id for m in memories]
         edges = await self.repo.get_relationships_subgraph(m_ids)
 
-        return MemoryGraphResponse.model_validate({
-            "nodes": memories,
-            "edges": edges,
-        })
+        return MemoryGraphResponse.model_validate(
+            {
+                "nodes": memories,
+                "edges": edges,
+            }
+        )
 
     async def retrieve_memories(
         self,
