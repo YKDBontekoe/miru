@@ -320,8 +320,8 @@ jobs:
       - name: Set Sentry release identifier
         id: sentry-release
         run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "value=miru-backend@${SHORT_SHA}" >> $GITHUB_OUTPUT
+          SHORT_SHA="${{ github.sha }}"
+          echo "value=miru-backend@${SHORT_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Deploy to Azure Container Apps
         id: deploy
