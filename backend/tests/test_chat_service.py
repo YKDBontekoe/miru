@@ -1,12 +1,10 @@
 """Tests for ChatService logic."""
 
 import typing
-from unittest.mock import AsyncMock
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.domain.agents.models import Agent
 from app.domain.chat.service import ChatService
 
 
@@ -19,24 +17,54 @@ def chat_service() -> ChatService:
 
 
 def test_get_agent_tools(chat_service: typing.Any) -> None:
+    """_get_agent_tools is synchronous and reads from prefetched agent_integrations."""
     # Agent with no integrations
-    agent1 = Agent(
-        id=uuid4(), user_id=uuid4(), name="Agent 1", personality="Helpful", integrations=[]
-    )
+    agent1 = MagicMock()
+    agent1.agent_integrations = []
+
     tools = chat_service._get_agent_tools(agent1)
     assert len(tools) == 0
 
-    # Agent with steam integration
+    # Agent with a steam integration
     steam_id = "12345678901234567"
-    agent2 = Agent(
-        id=uuid4(),
-        user_id=uuid4(),
-        name="Agent 2",
-        personality="Gamer",
-        integrations=["steam", "other"],
-        integration_configs={"steam": {"steam_id": steam_id}},
-    )
+    agent2 = MagicMock()
+
+    mock_ai = MagicMock()
+    mock_ai.integration_id = "steam"
+    mock_ai.enabled = True
+    mock_ai.config = {"steam_id": steam_id}
+
+    agent2.agent_integrations = [mock_ai]
+
     tools = chat_service._get_agent_tools(agent2)
     assert len(tools) == 2
     assert tools[0].name == "steam_player_summary"
     assert tools[1].name == "steam_owned_games"
+
+
+@pytest.mark.asyncio
+async def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
+    """Disabled integrations are skipped."""
+    agent = MagicMock()
+    mock_ai = MagicMock()
+    mock_ai.integration_id = "steam"
+    mock_ai.enabled = False
+    mock_ai.config = {"steam_id": "12345678901234567"}
+    agent.agent_integrations = [mock_ai]
+
+    tools = chat_service._get_agent_tools(agent)
+    assert len(tools) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
+    """Steam integration without steam_id produces no tools."""
+    agent = MagicMock()
+    mock_ai = MagicMock()
+    mock_ai.integration_id = "steam"
+    mock_ai.enabled = True
+    mock_ai.config = {}
+    agent.agent_integrations = [mock_ai]
+
+    tools = chat_service._get_agent_tools(agent)
+    assert len(tools) == 0

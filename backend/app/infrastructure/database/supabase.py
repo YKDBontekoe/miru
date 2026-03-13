@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, Any
 
 from fastapi import Depends
-from supabase import Client, create_client
 
 from app.core.config import get_settings
+
+if TYPE_CHECKING:
+    from supabase import Client
+else:
+    Client = Any
 
 _supabase: Client | None = None
 
@@ -19,6 +23,8 @@ def get_supabase() -> Client:
     """
     global _supabase
     if _supabase is None:
+        from supabase import create_client
+
         settings = get_settings()
         _supabase = create_client(
             supabase_url=settings.supabase_url,

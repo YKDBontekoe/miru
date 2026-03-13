@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.memory.models import Memory, MemoryRequest  # noqa: TCH001
+from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 router = APIRouter(tags=["Memory"])
 
 
-@router.get("", response_model=dict[str, list[Memory]])
+@router.get("", response_model=dict[str, list[MemoryResponse]])
 async def list_memories(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],

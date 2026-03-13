@@ -32,7 +32,11 @@ class AuthService:
         """Decode and verify a Supabase JWT."""
         settings = get_settings()
         try:
-            header = jwt.get_unverified_header(token)
+            try:
+                header = jwt.get_unverified_header(token)
+            except Exception as header_exc:
+                raise jwt.DecodeError("Invalid token format") from header_exc
+
             alg = header.get("alg")
 
             if alg == "HS256":

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar
 
-import instructor
-from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from app.core.config import get_settings
@@ -18,8 +16,10 @@ T = TypeVar("T", bound=BaseModel)
 
 class OpenRouterClient:
     def __init__(self, api_key: str):
-        # We use the AsyncOpenAI client because Instructor is built on top of it.
-        # OpenRouter is OpenAI-compatible.
+        # We defer imports to bypass Python 3.13 circular import bugs at startup
+        import instructor
+        from openai import AsyncOpenAI
+
         self.openai_client = AsyncOpenAI(
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1",
@@ -28,13 +28,11 @@ class OpenRouterClient:
                 "X-Title": "Miru AI Assistant",
             },
         )
-        # Patch the client with Instructor
         self.instructor_client: instructor.AsyncInstructor = instructor.from_openai(
             self.openai_client
         )
 
     async def embed(self, text: str, model: str) -> list[float]:
-        """Generate a text embedding vector."""
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
@@ -43,13 +41,11 @@ class OpenRouterClient:
         return response.data[0].embedding
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
-        """Get a full chat completion response (raw string)."""
         response = await self.openai_client.chat.completions.create(
             model=model,
             messages=messages,
             stream=False,
         )
-        # Type narrowing for non-streaming response
         if not hasattr(response, "choices"):
             return ""
         content = response.choices[0].message.content
@@ -61,7 +57,6 @@ class OpenRouterClient:
         model: str,
         response_model: type[T],
     ) -> T:
-        """Get a validated Pydantic model response from the LLM."""
         return await self.instructor_client.chat.completions.create(
             model=model,
             messages=messages,
@@ -80,7 +75,6 @@ def get_openrouter_client() -> OpenRouterClient:
     return _client
 
 
-# Functional helpers
 async def chat_completion(
     messages: list[ChatCompletionMessageParam], model: str | None = None
 ) -> str:

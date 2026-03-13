@@ -5,43 +5,42 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import Depends
-from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: TCH002
-from supabase import Client  # noqa: TCH002
 
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
-from app.infrastructure.database.sqlmodel import get_session
-from app.infrastructure.database.supabase import get_supabase
+from app.infrastructure.database.supabase import SupabaseClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
-# Repositories
+# ---------------------------------------------------------------------------
+# Repository factories
+# ---------------------------------------------------------------------------
 
 
-def get_agent_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> AgentRepository:
-    return AgentRepository(session)
+def get_agent_repo() -> AgentRepository:
+    return AgentRepository()
 
 
-def get_chat_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> ChatRepository:
-    return ChatRepository(session)
+def get_chat_repo() -> ChatRepository:
+    return ChatRepository()
 
 
-async def get_memory_repo(
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> MemoryRepository:
-    return MemoryRepository(session)
+def get_memory_repo() -> MemoryRepository:
+    return MemoryRepository()
 
 
-def get_auth_repo(db: Annotated[Client, Depends(get_supabase)]) -> AuthRepository:
-    # AuthRepository still uses Supabase client for WebAuthn/Passkey tables for now
+def get_auth_repo(db: SupabaseClient) -> AuthRepository:
+    # AuthRepository still uses the Supabase client for passkey tables.
     return AuthRepository(db)
 
 
-# Services
+# ---------------------------------------------------------------------------
+# Service factories
+# ---------------------------------------------------------------------------
 
 
 def get_agent_service(repo: Annotated[AgentRepository, Depends(get_agent_repo)]) -> AgentService:

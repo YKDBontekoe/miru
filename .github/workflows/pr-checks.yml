@@ -74,6 +74,13 @@ jobs:
       - name: Type check with Mypy
         run: mypy .
 
+      - name: Migration Drift Check
+        run: |
+          # Fails with exit code 1 if any model has changed without a corresponding
+          # 'python manage.py makemigrations' being run and committed.
+          # No database required — uses sqlite in-memory for schema generation.
+          python manage.py check
+
       - name: Run tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test

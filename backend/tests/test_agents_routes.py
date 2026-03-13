@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -22,18 +23,20 @@ def test_create_agent_route(client: TestClient) -> None:
     mock_service = MagicMock()
     user_id = uuid4()
 
-    # Mock the return value of the service
-    mock_service.create_agent = AsyncMock(
-        return_value=Agent(
-            id=uuid4(),
-            user_id=user_id,
-            name="Bot",
-            personality="Friendly",
-            goals=[],
-            capabilities=[],
-            integrations=[],
-        )
+    # Create Agent instance carefully (Tortoise M2M handling)
+    now = datetime.now()
+    agent = Agent(
+        id=uuid4(),
+        user_id=user_id,
+        name="Bot",
+        personality="Friendly",
+        goals=[],
+        created_at=now,
+        updated_at=now,
     )
+
+    # Mock the return value of the service
+    mock_service.create_agent = AsyncMock(return_value=agent)
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service

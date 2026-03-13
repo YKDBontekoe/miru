@@ -10,6 +10,7 @@ from uuid import uuid4
 import jwt
 import pytest
 from fastapi.testclient import TestClient
+from tortoise import Tortoise
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -70,13 +71,36 @@ def auth_headers(user_id: str | None = None) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+async def initialize_tortoise():
+    config = {
+        "connections": {"default": "sqlite://:memory:"},
+        "apps": {
+            "models": {
+                "models": [
+                    "app.domain.agents.models",
+                    "app.domain.chat.models",
+                    "app.domain.memory.models",
+                    "app.domain.agent_tools.models",
+                    "app.domain.auth.models",
+                ],
+                "default_connection": "default",
+            }
+        },
+    }
+    await Tortoise.init(config=config)
+    await Tortoise.generate_schemas()
+    yield
+    await Tortoise.close_connections()
+
+
 @pytest.fixture()
 def client() -> Generator[TestClient]:
     """Return a test client for the FastAPI app."""
     from app.main import app
 
     app.dependency_overrides = {}
-    yield TestClient(app, raise_server_exceptions=False)
+    yield TestClient(app, raise_server_exceptions=True)
     app.dependency_overrides = {}
 
 

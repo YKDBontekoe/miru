@@ -29,21 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class ChatService:
-    def _get_agent_tools(self, agent: Agent) -> list:
-        tools = []
-        if "steam" in agent.integrations:
-            # Look up steam_id in the new integration_configs dictionary
-            steam_config = agent.integration_configs.get("steam", {})
-            steam_id = steam_config.get("steam_id")
-            if steam_id:
-                tools.extend(
-                    [
-                        SteamPlayerSummaryTool(steam_id=steam_id),
-                        SteamOwnedGamesTool(steam_id=steam_id),
-                    ]
-                )
-        return tools
-
     def __init__(
         self,
         chat_repo: ChatRepository,
@@ -53,6 +38,27 @@ class ChatService:
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
+
+    def _get_agent_tools(self, agent: Agent) -> list:
+        """Build the tool list for an agent from its prefetched integrations.
+
+        Requires ``agent_integrations__integration`` to have been prefetched
+        before calling this method.
+        """
+        tools = []
+        for ai in agent.agent_integrations:  # type: ignore[attr-defined]
+            if not ai.enabled:
+                continue
+            if ai.integration_id == "steam":
+                steam_id = ai.config.get("steam_id")
+                if steam_id:
+                    tools.extend(
+                        [
+                            SteamPlayerSummaryTool(steam_id=steam_id),
+                            SteamOwnedGamesTool(steam_id=steam_id),
+                        ]
+                    )
+        return tools
 
     async def create_room(self, name: str, user_id: UUID) -> RoomResponse:
         room = await self.chat_repo.create_room(name, user_id)
@@ -92,21 +98,16 @@ class ChatService:
         ]
 
     async def stream_responses(self, user_message: str, user_id: UUID) -> AsyncIterator[str]:
-        """A simple non-room chat stream for general queries."""
-        # 1. Get User Agents
+        """A simple non-room chat stream for general queries using the first available agent."""
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
             yield "No agents available. Please create one first."
             return
 
-        # 2. Simple response (as a placeholder for a full agentic loop)
-        # In a real scenario, this would orchestrate among agents like stream_room_responses
         llm = get_openrouter_client().openai_client
-
-        # We'll just use the first agent for general chat if no room is specified
         agent = db_agents[0]
         response = await llm.chat.completions.create(
-            model="openai/gpt-3.5-turbo",
+            model=get_openrouter_client().openai_client.base_url and "openai/gpt-4o-mini",
             messages=[
                 {"role": "system", "content": agent.personality},
                 {"role": "user", "content": user_message},
@@ -118,7 +119,8 @@ class ChatService:
         yield "[[STATUS:done]]\n"
 
     async def run_crew(self, user_message: str, user_id: UUID) -> dict[str, str]:
-        """Execute a full CrewAI orchestration and return structured result."""
+        """Execute a full CrewAI orchestration and return a structured result."""
+        # list_by_user prefetches agent_integrations__integration
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
             return {"task_type": "error", "result": "No agents available."}
@@ -139,11 +141,11 @@ class ChatService:
         task = Task(
             description=user_message,
             expected_output="A comprehensive multi-agent analysis.",
-            agents=list(crew_agents),
+            agents=crew_agents,
         )
 
         crew = Crew(
-            agents=list(crew_agents),
+            agents=crew_agents,
             tasks=[task],
             process=Process.sequential,
         )
@@ -154,20 +156,19 @@ class ChatService:
     async def stream_room_responses(
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
-        """The core agentic chat loop using CrewAI Manager."""
+        """The core agentic chat loop using CrewAI."""
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
 
-        # 2. Get Agents in room
+        # 2. Get agents in room (agent_integrations prefetched by list_room_agents)
         db_agents = await self.chat_repo.list_room_agents(room_id)
         if not db_agents:
             yield "No agents in this room. Please add some first."
             return
 
-        # 3. Initialize CrewAI Agents
+        # 3. Build CrewAI agents
         llm = get_openrouter_client().openai_client
-
         crew_agents = [
             CrewAgent(
                 role=a.name,
@@ -180,25 +181,26 @@ class ChatService:
             for a in db_agents
         ]
 
-        # 4. Define Task
+        # 4. Define and execute task
         task = Task(
-            description=f"User said: {user_message}. Orchestrate a helpful conversation among available agents to assist the user.",
+            description=(
+                f"User said: {user_message}. "
+                "Orchestrate a helpful conversation among available agents to assist the user."
+            ),
             expected_output="A collaborative response from the most relevant agents.",
-            agents=list(crew_agents),  # Ensure it's a list
+            agents=crew_agents,
         )
 
-        # 5. Create Crew
         crew = Crew(
-            agents=list(crew_agents),
+            agents=crew_agents,
             tasks=[task],
             process=Process.sequential,
             verbose=True,
         )
 
-        # 6. Execute
         result = await crew.kickoff_async()
 
-        # 7. Save agent response
+        # 5. Save agent response
         agent_msg = ChatMessage(
             room_id=room_id,
             agent_id=db_agents[0].id,

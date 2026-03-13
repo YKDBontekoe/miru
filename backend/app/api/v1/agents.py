@@ -9,11 +9,14 @@ from fastapi import APIRouter, Depends
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import (
-    Agent,
     AgentCreate,
     AgentGenerate,
     AgentGenerationResponse,
     AgentResponse,
+    Capability,
+    CapabilityResponse,
+    Integration,
+    IntegrationResponse,
 )
 from app.domain.agents.service import AgentService  # noqa: TCH001
 
@@ -25,7 +28,7 @@ async def create_agent(
     agent_data: AgentCreate,
     user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
-) -> Agent:
+) -> AgentResponse:
     """Create a new agent."""
     return await service.create_agent(agent_data, user_id)
 
@@ -34,9 +37,27 @@ async def create_agent(
 async def list_agents(
     user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Agent]:
+) -> list[AgentResponse]:
     """List all agents for the current user."""
     return await service.list_agents(user_id)
+
+
+@router.get("/capabilities", response_model=list[CapabilityResponse])
+async def list_capabilities(
+    _user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+) -> list[Capability]:
+    """List all available capabilities."""
+    return await service.list_capabilities()
+
+
+@router.get("/integrations", response_model=list[IntegrationResponse])
+async def list_integrations(
+    _user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+) -> list[Integration]:
+    """List all available integrations."""
+    return await service.list_integrations()
 
 
 @router.post("/generate", response_model=AgentGenerationResponse)

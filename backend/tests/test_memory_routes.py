@@ -28,6 +28,7 @@ def test_list_memories_route(client: TestClient) -> None:
         content="Memory 1",
         embedding=[0.1, 0.2],
         created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     mock_service = MagicMock()
     mock_service.retrieve_memories = AsyncMock(return_value=[mock_memory])

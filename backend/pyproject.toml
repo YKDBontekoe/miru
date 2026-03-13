@@ -21,7 +21,8 @@ dependencies = [
     "sentry-sdk[fastapi]>=2.1.0",
     "instructor>=1.7.0",
     "authlib>=1.3.0",
-    "sqlmodel>=0.0.22",
+    "tortoise-orm>=0.24.0",
+    "aerich>=0.7.2",
     "asyncpg>=0.30.0",
     "nest-asyncio",
 ]
@@ -66,9 +67,11 @@ select = [
     "TCH", # flake8-type-checking
 ]
 ignore = [
-    "E501",  # Line too long (handled by formatter)
-    "UP047", # generic function should use type parameters (not supported in 3.11)
-    "UP043", # unnecessary default type args
+    "E501",   # Line too long (handled by formatter)
+    "UP047",  # generic function should use type parameters (not supported in 3.11)
+    "UP043",  # unnecessary default type args
+    "TC001",  # Move app import into TYPE_CHECKING — breaks FastAPI Depends at runtime
+    "TC003",  # Move stdlib import into TYPE_CHECKING — breaks Pydantic at runtime
 ]
 
 [tool.ruff.lint.isort]
@@ -123,4 +126,9 @@ disable_error_code = ["call-arg", "call-overload"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-asyncio_mode = "strict"
+asyncio_mode = "auto"
+
+[tool.aerich]
+tortoise_orm = "app.infrastructure.database.tortoise.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./."
