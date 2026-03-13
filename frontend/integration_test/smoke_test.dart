@@ -84,6 +84,8 @@ void main() {
 
       // Tap "Sign in with password instead"
       final toggleButton = find.text('Sign in with password instead');
+      expect(toggleButton, findsOneWidget,
+          reason: 'toggleButton not found. Widget tree will be dumped.');
       await tester.ensureVisible(toggleButton);
       await tester.tap(toggleButton);
       await tester.pumpAndSettle();
@@ -105,7 +107,14 @@ void main() {
       expect(find.text('Rooms'), findsWidgets);
       expect(find.text('Settings'), findsWidgets);
 
-      expect(find.byType(SnackBar), findsNothing);
+      final snackbars = find.byType(SnackBar).evaluate();
+      for (final e in snackbars) {
+        final snackbar = e.widget as SnackBar;
+        final textWidget = snackbar.content as Text;
+        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+      }
+      expect(snackbars, isEmpty);
+
       expect(find.textContaining('Error'), findsNothing);
     });
 
@@ -149,12 +158,21 @@ void main() {
 
       // Tap "Save Persona"
       final saveButton = find.text('Save Persona');
+      expect(saveButton, findsOneWidget,
+          reason: 'saveButton not found. Widget tree will be dumped.');
       await tester.ensureVisible(saveButton);
       await tester.tap(saveButton);
 
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      expect(find.byType(SnackBar), findsNothing);
+      final snackbars = find.byType(SnackBar).evaluate();
+      for (final e in snackbars) {
+        final snackbar = e.widget as SnackBar;
+        final textWidget = snackbar.content as Text;
+        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+      }
+      expect(snackbars, isEmpty);
+
       expect(find.textContaining('Error'), findsNothing);
     });
 
@@ -183,12 +201,22 @@ void main() {
       // Tap the Settings nav item. Since there could be other 'Settings' texts, we'll find the Icon with Icons.settings_outlined or matching text safely.
       final settingsButton = find.byWidgetPredicate(
           (widget) => widget is Icon && widget.icon == Icons.settings_outlined);
+      expect(settingsButton, findsOneWidget,
+          reason: 'settingsButton not found');
+
       await tester.tap(settingsButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
       expect(find.text('Settings'), findsWidgets);
 
-      expect(find.byType(SnackBar), findsNothing);
+      final snackbars = find.byType(SnackBar).evaluate();
+      for (final e in snackbars) {
+        final snackbar = e.widget as SnackBar;
+        final textWidget = snackbar.content as Text;
+        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+      }
+      expect(snackbars, isEmpty);
+
       expect(find.textContaining('Error'), findsNothing);
     });
   });
