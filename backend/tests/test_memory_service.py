@@ -9,7 +9,7 @@ from app.domain.memory.service import MemoryService
 
 
 @pytest.mark.asyncio
-async def test_get_memory_graph_service():
+async def test_get_memory_graph_service() -> None:
     user_id = uuid4()
     memory_id = uuid4()
 
