@@ -282,4 +282,12 @@ class AgentGenerationResponse(BaseModel):
     name: str
     personality: str
     description: str
+    capabilities: list[str] = Field(
+        default_factory=list,
+        description="List of capability IDs (e.g., web_search, memory) the agent should have.",
+    )
+    suggested_integrations: list[str] = Field(
+        default_factory=list,
+        description="List of integration IDs (e.g., discord, slack) the agent could use.",
+    )
     goals: list[str]
