@@ -175,7 +175,7 @@ def test_tortoise_url_adds_statement_cache_size() -> None:
 
         importlib.reload(tort_mod)
         assert (
-            tort_mod.TORTOISE_ORM["connections"]["default"]
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
             == "postgres://user:pass@host:5432/db?statement_cache_size=0"
         )
 
@@ -188,7 +188,7 @@ def test_tortoise_url_adds_statement_cache_size() -> None:
 
         importlib.reload(tort_mod)
         assert (
-            tort_mod.TORTOISE_ORM["connections"]["default"]
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
             == "postgres://user:pass@host:5432/db?sslmode=require&statement_cache_size=0"
         )
 
@@ -197,7 +197,7 @@ def test_tortoise_url_adds_statement_cache_size() -> None:
         import app.infrastructure.database.tortoise as tort_mod
 
         importlib.reload(tort_mod)
-        assert tort_mod.TORTOISE_ORM["connections"]["default"] == "sqlite://:memory:"
+        assert tort_mod.TORTOISE_ORM["connections"]["default"] == "sqlite://:memory:"  # type: ignore[index]
 
 
 # ---------------------------------------------------------------------------
