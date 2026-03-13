@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -162,6 +163,43 @@ def _walk_subclass(
         _walk_subclass(sub, policies, indexes, functions)
 
 
+def _idempotent_policy_stmt(stmt: str) -> str:
+    """Prepend DROP POLICY IF EXISTS before a CREATE POLICY statement.
+
+    Parses: CREATE POLICY <name> ON <table> ...
+    and emits: DROP POLICY IF EXISTS <name> ON <table>;\nCREATE POLICY ...
+    """
+    m = re.match(
+        r"CREATE\s+POLICY\s+(\S+)\s+ON\s+(public\.\S+|\"?\S+\"?)",
+        stmt.strip(),
+        re.IGNORECASE,
+    )
+    if m:
+        policy_name, table_name = m.group(1), m.group(2)
+        # Ensure table is schema-qualified
+        if not table_name.startswith("public."):
+            table_name = f"public.{table_name}"
+        return f"DROP POLICY IF EXISTS {policy_name} ON {table_name};\n{stmt.strip()}"
+    return stmt.strip()
+
+
+def _idempotent_function_stmt(stmt: str) -> str:
+    """Prepend DROP TRIGGER IF EXISTS before CREATE TRIGGER statements.
+
+    CREATE OR REPLACE FUNCTION is already idempotent; only triggers need
+    a DROP ... IF EXISTS guard.
+    """
+    m = re.match(
+        r"CREATE\s+(?:OR\s+REPLACE\s+)?TRIGGER\s+(\S+)\s+\S+\s+\S+\s+ON\s+(\S+)",
+        stmt.strip(),
+        re.IGNORECASE,
+    )
+    if m:
+        trigger_name, table_name = m.group(1), m.group(2)
+        return f"DROP TRIGGER IF EXISTS {trigger_name} ON {table_name};\n{stmt.strip()}"
+    return stmt.strip()
+
+
 def _build_migration_sql(
     name: str, schema_sql: str, policies: list[str], indexes: list[str], functions: list[str]
 ) -> str:
@@ -184,7 +222,7 @@ def _build_migration_sql(
             "-- Functions & Triggers --------------------------------------------------",
             "",
         ]
-        lines += [stmt.strip() for stmt in functions]
+        lines += [_idempotent_function_stmt(stmt) for stmt in functions]
 
     if policies:
         lines += [
@@ -192,7 +230,7 @@ def _build_migration_sql(
             "-- Row Level Security ----------------------------------------------------",
             "",
         ]
-        lines += [stmt.strip() for stmt in policies]
+        lines += [_idempotent_policy_stmt(stmt) for stmt in policies]
 
     if indexes:
         lines += [

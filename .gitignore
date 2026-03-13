@@ -410,3 +410,6 @@ site/
 
 # Profiling
 *.prof
+
+# Supabase
+supabase/.temp/

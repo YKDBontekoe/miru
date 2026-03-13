@@ -54,6 +54,18 @@ class ChatMessage(SupabaseModel):
             "FOR SELECT USING (EXISTS ("
             "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
             "));",
+            "CREATE POLICY chat_messages_owner_insert ON public.chat_messages "
+            "FOR INSERT WITH CHECK (EXISTS ("
+            "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY chat_messages_owner_update ON public.chat_messages "
+            "FOR UPDATE USING (EXISTS ("
+            "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY chat_messages_owner_delete ON public.chat_messages "
+            "FOR DELETE USING (EXISTS ("
+            "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
+            "));",
         ]
 
 

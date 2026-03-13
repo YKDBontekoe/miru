@@ -87,8 +87,16 @@ class MemoryRelationship(SupabaseModel):
         table = "memory_relationships"
         sql_policies = [
             "ALTER TABLE public.memory_relationships ENABLE ROW LEVEL SECURITY;",
-            "CREATE POLICY memory_relationships_owner ON public.memory_relationships "
+            "CREATE POLICY memory_relationships_owner_select ON public.memory_relationships "
             "FOR SELECT USING (EXISTS ("
+            "SELECT 1 FROM memories WHERE id = source_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY memory_relationships_owner_insert ON public.memory_relationships "
+            "FOR INSERT WITH CHECK (EXISTS ("
+            "SELECT 1 FROM memories WHERE id = source_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY memory_relationships_owner_delete ON public.memory_relationships "
+            "FOR DELETE USING (EXISTS ("
             "SELECT 1 FROM memories WHERE id = source_id AND user_id = auth.uid()"
             "));",
         ]

@@ -182,8 +182,10 @@ class AgentActionLog(SupabaseModel):
         table = "agent_action_logs"
         sql_policies = [
             "ALTER TABLE public.agent_action_logs ENABLE ROW LEVEL SECURITY;",
-            "CREATE POLICY agent_action_logs_owner ON public.agent_action_logs "
+            "CREATE POLICY agent_action_logs_owner_select ON public.agent_action_logs "
             "FOR SELECT USING (auth.uid() = user_id);",
+            "CREATE POLICY agent_action_logs_owner_insert ON public.agent_action_logs "
+            "FOR INSERT WITH CHECK (auth.uid() = user_id);",
         ]
 
 
