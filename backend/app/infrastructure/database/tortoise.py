@@ -1,5 +1,7 @@
 """Tortoise ORM configuration and initialization."""
 
+import urllib.parse
+
 from tortoise import Tortoise
 
 from app.core.config import get_settings
@@ -7,6 +9,16 @@ from app.core.config import get_settings
 raw_url = get_settings().database_url or ""
 if raw_url.startswith("postgresql://"):
     raw_url = raw_url.replace("postgresql://", "postgres://", 1)
+
+if raw_url.startswith("postgres://"):
+    parsed = urllib.parse.urlsplit(raw_url)
+    query_params = urllib.parse.parse_qsl(parsed.query)
+    if not any(k == "statement_cache_size" for k, v in query_params):
+        query_params.append(("statement_cache_size", "0"))
+    new_query = urllib.parse.urlencode(query_params)
+    raw_url = urllib.parse.urlunsplit(
+        (parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment)
+    )
 
 # Database configuration for Tortoise and Aerich
 TORTOISE_ORM = {
