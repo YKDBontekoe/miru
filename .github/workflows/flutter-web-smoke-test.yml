@@ -182,7 +182,10 @@ jobs:
             -d web-server \
             --web-port=8081 \
             --headless \
-            --browser-name=chrome
+            --browser-name=chrome \
+            --dart-define=API_URL=http://127.0.0.1:8000/api/v1 \
+            --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
+            --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}
         continue-on-error: false
 
       # -----------------------------------------------------------------------
