@@ -63,32 +63,47 @@ make fix-frontend    # Auto-fix frontend lint
 backend/
   app/
     main.py          # FastAPI entry point, lifespan, CORS, router mounts
-    config.py        # pydantic-settings Settings class, get_settings()
-    database.py      # Supabase client singleton, get_supabase()
-    routes.py        # ALL route handlers in one file (/chat, /memories, /agents, /rooms, etc.)
-    auth.py          # Supabase JWT validation, get_current_user() dependency
-    agents.py        # Agent/room/message models, DB ops, orchestration logic
-    memory.py        # store_memory(), retrieve_memories() via Supabase RPC + Neo4j
-    openrouter.py    # OpenRouter SDK: embed(), stream_chat(), chat_completion()
-    crew.py          # CrewAI integration for research/planning/summarisation/general tasks
-    graph.py         # Neo4j async driver, memory graph operations
-    passkey.py       # WebAuthn passkey registration and authentication
-    migrate.py       # Alembic CLI wrapper (not primary migration mechanism)
-  sql/
-    init.sql         # Local Docker dev schema init
+    core/
+      config.py      # pydantic-settings Settings class, get_settings()
+      security/
+        auth.py      # Supabase JWT validation, get_current_user() dependency
+    domain/          # One package per bounded context
+      agents/
+        models.py    # Tortoise ORM models + Pydantic schemas for agents, capabilities, etc.
+        service.py
+      auth/
+        models.py    # Profile, Passkey models + schemas
+        service.py
+      chat/
+        models.py    # ChatRoom, ChatMessage models + schemas
+        service.py
+      memory/
+        models.py    # Memory, MemoryGraphNode/Edge models + schemas
+        service.py
+      agent_tools/
+        models.py    # AgentTool, AgentToolLink models + schemas
+    infrastructure/
+      database/
+        base.py      # SupabaseModel — abstract Tortoise base with sql_policies/indexes/functions
+        tortoise.py  # TORTOISE_ORM config, init_db(), close_db()
+        supabase.py  # Supabase client singleton, get_supabase()
+      external/
+        openrouter.py  # embed(), stream_chat(), chat_completion() via OpenRouter
+        steam.py
+        steam_tool.py
+      repositories/  # Thin async wrappers around Tortoise queries
+    api/
+      v1/            # Route handlers, one file per domain area
   tests/
     conftest.py      # Fixtures: TestClient, auth helpers, make_jwt()
     test_agents.py
     test_agents_routes.py
     test_auth.py
-    test_crew.py
     test_health.py
     test_memory.py
     test_openrouter.py
-    test_passkey.py
-  requirements.txt
-  requirements-dev.txt
-  pyproject.toml     # Tool config only (ruff, black, isort, mypy, pytest) — no [project] table
+  pyproject.toml     # Dependencies + tool config (ruff, mypy, pytest)
+  manage.py          # Migration CLI: makemigrations / check / migrate / status
   .env.example
   Dockerfile
 
@@ -123,12 +138,11 @@ frontend/
   analysis_options.yaml
 
 supabase/
-  migrations/              # Source of truth for schema — raw SQL, run via Supabase CLI
-    20260306000000_initial_schema.sql
-    20260309000000_fix_memories_id_to_uuid.sql
-    20260309200000_add_auth_and_passkeys.sql
-    20260309300000_add_agents_and_groups.sql
-    20260309400000_add_advanced_memories.sql
+  migrations/              # Source of truth for schema — committed SQL applied by Supabase CLI
+    .schema_snapshot        # DDL snapshot used by manage.py for incremental diffing
+    .snapshot_extras        # Serialised sql_policies / sql_indexes from last makemigrations
+    .last_checksum          # Content hash used by manage.py check for drift detection
+    YYYYMMDDHHMMSS_*.sql    # Timestamped migration files
 
 docker-compose.yml         # Local dev only: pgvector/pgvector:pg16 container
 Makefile
@@ -140,13 +154,14 @@ Makefile
 
 ### Backend
 
-All application code lives in a **flat `app/` directory** — there are no `routes/`, `services/`, `repositories/`, or `models/` subdirectories. The key modules are:
+Application code is organised into bounded-context packages under `app/domain/`. The key modules are:
 
-- **`routes.py`** — All API route handlers in one file. Two routers are registered: the main `router` and `passkey_router`, both mounted under `/api` in `main.py`.
-- **`agents.py`** — Contains both the Pydantic models for agents/rooms/messages and the database operations using the Supabase client directly. Also contains the multi-agent orchestration logic.
-- **`memory.py`** — Stores and retrieves memories via Supabase RPC (`match_memories`) for vector similarity, and writes graph relationships to Neo4j.
-- **`openrouter.py`** — All LLM and embedding calls go through here. Models are configurable via env vars (`EMBEDDING_MODEL`, `DEFAULT_CHAT_MODEL`).
-- **`auth.py`** — JWT validation (supports HS256 and ES256/RS256 via JWKS). The `get_current_user()` FastAPI dependency is defined here.
+- **`app/api/v1/`** — Route handlers, one file per domain area, all mounted under `/api/v1` in `main.py`.
+- **`app/domain/**/models.py`** — Tortoise ORM models and co-located Pydantic schemas for each domain (agents, auth, chat, memory, agent_tools).
+- **`app/domain/**/service.py`** — Business logic and database operations for each domain.
+- **`app/infrastructure/external/openrouter.py`** — All LLM and embedding calls go through here. Models are configurable via env vars (`EMBEDDING_MODEL`, `DEFAULT_CHAT_MODEL`).
+- **`app/core/security/auth.py`** — JWT validation (supports HS256 and ES256/RS256 via JWKS). The `get_current_user()` FastAPI dependency is defined here.
+- **`app/infrastructure/database/base.py`** — `SupabaseModel`, the abstract Tortoise base that carries `sql_policies`, `sql_indexes`, and `sql_functions` for the migration generator.
 
 ### Frontend
 
@@ -158,9 +173,16 @@ The frontend is a **flat `lib/` directory** — there is no feature-based folder
 
 ### Database
 
-**Supabase (primary):** Accessed via the Supabase Python SDK — not asyncpg directly. All queries use the fluent client API (`.table("x").select(...).eq(...).execute()`). Vector similarity search uses the `match_memories` Supabase RPC function. Row Level Security (RLS) is enabled on all tables. Schema is managed via raw SQL files in `supabase/migrations/`.
+**Supabase (primary):** Accessed via the Supabase Python SDK — not asyncpg directly. All queries use the fluent client API (`.table("x").select(...).eq(...).execute()`). Vector similarity search uses the `match_memories` Supabase RPC function. Row Level Security (RLS) is enabled on all tables. Schema is managed via raw SQL files in `supabase/migrations/` and applied through the Supabase CLI (`supabase db push`).
 
-**Neo4j (graph layer):** Accessed via the async `neo4j` driver in `graph.py`. Stores `Memory` nodes and relationships (`RELATED_TO`, `SIMILAR_TO`). Failures are caught and logged — Neo4j being unavailable is non-fatal.
+**Neo4j (graph layer):** Accessed via the async `neo4j` driver. Stores `Memory` nodes and relationships (`RELATED_TO`, `SIMILAR_TO`). Failures are caught and logged — Neo4j being unavailable is non-fatal.
+
+**Migration system:** Schema changes flow through a custom code-first pipeline:
+1. Edit Tortoise ORM models in `app/domain/**/models.py` (including `sql_policies`, `sql_indexes`, `sql_functions` on `Meta`).
+2. Run `python manage.py makemigrations <name>` to generate an incremental SQL diff in `supabase/migrations/`.
+3. Apply locally with `supabase db reset --local` or push to a remote project with `supabase db push`.
+
+The CI pipeline (`database-migrations.yml`) validates and applies migrations automatically — see the **Migrations** section below.
 
 ### API Design
 - All routes are under `/api` (e.g., `/api/chat`, `/api/memories`, `/api/agents`)
@@ -249,7 +271,7 @@ The frontend is a **flat `lib/` directory** — there is no feature-based folder
 - All I/O must be `async` — never block the event loop
 - Paginate all list endpoints; never return unbounded result sets
 - Neo4j failures must not block the request — wrap graph writes in try/except
-- Use `ivfflat` index on `memories.embedding` for pgvector cosine similarity (already in migrations)
+- Use `hnsw` index on `memories.embedding` for pgvector cosine similarity (already in migrations — do not add a duplicate)
 - Stream LLM responses via `stream_chat()` — do not buffer full responses in memory
 
 ### Frontend
@@ -381,9 +403,9 @@ Install with: `make setup-hooks`
 ## Common Tasks
 
 ### Adding a New API Endpoint
-1. Add the route handler in `backend/app/routes.py`
-2. Add any new Pydantic models inline or in the most relevant module (e.g., `agents.py`)
-3. Add database logic directly using `get_supabase()` or existing helpers in `agents.py` / `memory.py`
+1. Add the route handler in the appropriate `backend/app/api/v1/` file for the domain
+2. Add any new Pydantic models to the relevant `app/domain/**/models.py`
+3. Add business logic to the corresponding `app/domain/**/service.py`
 4. Write tests in `backend/tests/`, mocking Supabase and any external services
 5. Run `make test-backend` and `make lint-backend`
 
@@ -396,16 +418,99 @@ Install with: `make setup-hooks`
 6. Run `flutter test` and `flutter analyze`
 
 ### Adding a Database Migration
-1. Create a new SQL file in `supabase/migrations/` with a timestamp prefix (`YYYYMMDDHHMMSS_description.sql`)
-2. Include both `up` logic and any necessary `down` rollback
-3. Apply via the Supabase CLI against your project
-4. Update `sql/init.sql` if the change affects the local Docker dev schema
+1. Edit the relevant Tortoise ORM model(s) in `backend/app/domain/**/models.py`.
+   - For structural changes (new table, new column): update the model fields.
+   - For RLS policies, custom indexes, or trigger functions: update `Meta.sql_policies`,
+     `Meta.sql_indexes`, or `Meta.sql_functions` on the model's inner `Meta` class.
+2. Generate the incremental migration:
+   ```bash
+   cd backend
+   python manage.py makemigrations <short_description>
+   # e.g. python manage.py makemigrations add_user_preferences
+   ```
+   This diffs the current models against `.schema_snapshot` and writes a new
+   `supabase/migrations/YYYYMMDDHHMMSS_<name>.sql` file containing only the delta.
+   Use `--full` only when creating the very first migration or intentionally squashing history.
+3. Review the generated SQL file before committing — destructive operations (DROP TABLE,
+   DROP COLUMN) are emitted as commented-out statements that you must uncomment deliberately.
+4. Apply locally to verify:
+   ```bash
+   supabase db reset --local
+   ```
+5. Commit the migration file **and** the updated snapshot files
+   (`.schema_snapshot`, `.snapshot_extras`, `.last_checksum`) together in the same commit.
+
+The CI pipeline applies migrations automatically via `supabase db push` — see **Migrations** below.
 
 ### Working with Vector Embeddings
 1. Use `embed()` from `app/openrouter.py` to generate embeddings
 2. Store via `store_memory()` in `app/memory.py`
 3. Retrieve via `retrieve_memories()` which calls the `match_memories` Supabase RPC
-4. The `ivfflat` index on `memories.embedding` is already defined in migrations — do not add duplicate indexes
+4. The `hnsw` index on `memories.embedding` is already defined in migrations — do not add duplicate indexes
+
+---
+
+## Migrations
+
+### How it works
+
+Schema changes are code-first: you edit Tortoise ORM models, run `manage.py` to generate SQL,
+then the Supabase CLI applies that SQL to the database. There is no manual SQL authoring.
+
+```
+Edit models.py  →  python manage.py makemigrations <name>  →  supabase db push
+```
+
+**`manage.py` commands:**
+
+| Command | Description |
+|---------|-------------|
+| `python manage.py makemigrations <name>` | Generate an incremental SQL diff from the current models vs. `.schema_snapshot`. Writes `supabase/migrations/YYYYMMDDHHMMSS_<name>.sql` and updates the snapshot files. |
+| `python manage.py makemigrations <name> --full` | Generate a complete schema dump (use for the initial migration or to squash history). |
+| `python manage.py check` | Exit 1 if models have changed since the last `makemigrations`. Used by CI to catch uncommitted drift. No database required. |
+| `python manage.py status` | Show which migration files have / have not been applied (queries `schema_migrations` tracking table). |
+| `python manage.py migrate` | Apply pending `.sql` files via `psql`, recording each in a `schema_migrations` tracking table. For local development only — CI uses `supabase db push` instead. |
+
+**Snapshot files** (always commit alongside the migration SQL):
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/.schema_snapshot` | Full DDL snapshot used by `makemigrations` to compute the incremental diff |
+| `supabase/migrations/.snapshot_extras` | Serialised `sql_policies` and `sql_indexes` from the last run |
+| `supabase/migrations/.last_checksum` | SHA-256 of the last generated schema; used by `manage.py check` |
+
+**Destructive operations** (DROP TABLE, DROP COLUMN) are emitted as commented-out SQL.
+You must uncomment them deliberately — they are never auto-applied.
+
+### CI pipeline (`.github/workflows/database-migrations.yml`)
+
+The pipeline runs on every push/PR that touches `supabase/migrations/**` and has three jobs:
+
+**1. `validate-migrations` (all events)**
+- Runs `python manage.py check` — fails if any model change was not committed with a migration.
+- Starts a local Supabase instance and runs `supabase db reset --local` as a dry-run to verify all SQL files apply cleanly.
+
+**2. `run-migrations-staging` (push to `develop` or manual dispatch)**
+- Links to the staging Supabase project via `SUPABASE_PROJECT_REF_STAGING`.
+- Runs `supabase db push` to apply any pending migrations.
+- Runs `supabase migration list` to verify the applied state.
+
+**3. `run-migrations-production` (push to `main` or manual dispatch)**
+- Links to the production Supabase project via `SUPABASE_PROJECT_REF`.
+- Runs `supabase db push` to apply any pending migrations.
+- Runs `supabase migration list` to verify the applied state.
+
+The migration drift check (`python manage.py check`) also runs as part of `pr-checks.yml`
+on every backend PR, so drift is caught at review time before it can reach the migration pipeline.
+
+### Required secrets
+
+| Secret | Used by |
+|--------|---------|
+| `SUPABASE_ACCESS_TOKEN` | All `supabase` CLI commands |
+| `SUPABASE_PROJECT_REF_STAGING` | Staging link step |
+| `SUPABASE_PROJECT_REF` | Production link step |
+| `SLACK_WEBHOOK_URL` | Failure notification (optional) |
 
 ---
 

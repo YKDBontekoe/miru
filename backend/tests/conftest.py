@@ -25,7 +25,7 @@ os.environ.setdefault("SUPABASE_URL", "http://localhost:54321")
 os.environ.setdefault("SUPABASE_KEY", "test-anon-key")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")
 os.environ.setdefault("SUPABASE_JWT_SECRET", "test-jwt-secret-that-is-long-enough-32ch")
-os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+
 os.environ.setdefault("DEFAULT_CHAT_MODEL", "google/gemma-3-27b-it:free")
 os.environ.setdefault("EMBEDDING_MODEL", "openai/text-embedding-3-small")
 os.environ.setdefault("WEBAUTHN_RP_ID", "localhost")

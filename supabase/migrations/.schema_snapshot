@@ -1,0 +1,242 @@
+CREATE TABLE IF NOT EXISTS "agents" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "personality" TEXT NOT NULL,
+    "description" TEXT,
+    "avatar_url" VARCHAR(512),
+    "system_prompt" TEXT,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'active',
+    "mood" VARCHAR(50) NOT NULL DEFAULT 'Neutral',
+    "goals" JSONB NOT NULL,
+    "message_count" INT NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS "idx_agents_user_id_2779f1" ON "agents" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_agents_name_2c59dc" ON "agents" ("name");
+COMMENT ON TABLE "agents" IS 'Database entity for Agents.';
+CREATE TABLE IF NOT EXISTS "agent_templates" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "name" VARCHAR(100) NOT NULL,
+    "description" TEXT NOT NULL,
+    "personality" TEXT NOT NULL,
+    "goals" JSONB NOT NULL,
+    "avatar_url" VARCHAR(512),
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE "agent_templates" IS 'Template for creating new agents.';
+CREATE TABLE IF NOT EXISTS "capabilities" (
+    "id" VARCHAR(50) NOT NULL PRIMARY KEY,
+    "name" VARCHAR(100) NOT NULL,
+    "description" TEXT NOT NULL,
+    "icon" VARCHAR(50) NOT NULL,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'active',
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE "capabilities" IS 'Database entity for Agent Capabilities.';
+CREATE TABLE IF NOT EXISTS "integrations" (
+    "id" VARCHAR(50) NOT NULL PRIMARY KEY,
+    "display_name" VARCHAR(100) NOT NULL,
+    "description" TEXT NOT NULL,
+    "icon" VARCHAR(50) NOT NULL,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'active',
+    "config_schema" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE "integrations" IS 'Database entity for external service definitions (e.g. Steam).';
+CREATE TABLE IF NOT EXISTS "agent_integrations" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "enabled" BOOL NOT NULL DEFAULT True,
+    "config" JSONB NOT NULL,
+    "credentials" JSONB NOT NULL,
+    "connected_at" TIMESTAMPTZ,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "agent_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
+    "integration_id" VARCHAR(50) NOT NULL REFERENCES "integrations" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_agent_integ_agent_i_4befdf" UNIQUE ("agent_id", "integration_id")
+);
+COMMENT ON TABLE "agent_integrations" IS 'Junction table for Agents and their specific service connections.';
+CREATE TABLE IF NOT EXISTS "user_agent_affinity" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "affinity_score" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "trust_level" INT NOT NULL DEFAULT 1,
+    "milestones" JSONB NOT NULL,
+    "last_interaction_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "agent_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_user_agent__user_id_2ad232" UNIQUE ("user_id", "agent_id")
+);
+COMMENT ON TABLE "user_agent_affinity" IS 'Tracks relationship strength between a user and an agent.';
+CREATE TABLE IF NOT EXISTS "passkeys" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "credential_id" VARCHAR(512) NOT NULL,
+    "public_key" TEXT NOT NULL,
+    "sign_count" INT NOT NULL DEFAULT 0,
+    "device_name" VARCHAR(255),
+    "transports" JSONB NOT NULL,
+    "last_used_at" TIMESTAMPTZ,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_passkeys_user_id_6fd10a" ON "passkeys" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_passkeys_credent_cfa3da" ON "passkeys" ("credential_id");
+COMMENT ON TABLE "passkeys" IS 'WebAuthn passkeys for passwordless login.';
+CREATE TABLE IF NOT EXISTS "profiles" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "display_name" VARCHAR(255),
+    "avatar_url" VARCHAR(512),
+    "bio" TEXT,
+    "timezone" VARCHAR(50) NOT NULL DEFAULT 'UTC',
+    "theme_preference" VARCHAR(20) NOT NULL DEFAULT 'system',
+    "privacy_mode" BOOL NOT NULL DEFAULT False,
+    "notifications_enabled" BOOL NOT NULL DEFAULT True,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE "profiles" IS 'User profile extension for auth.users.';
+CREATE TABLE IF NOT EXISTS "chat_rooms" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS "idx_chat_rooms_user_id_bbcf5f" ON "chat_rooms" ("user_id");
+COMMENT ON TABLE "chat_rooms" IS 'Database entity for Chat Rooms.';
+CREATE TABLE IF NOT EXISTS "agent_action_logs" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "action_type" VARCHAR(50) NOT NULL,
+    "content" TEXT NOT NULL,
+    "meta" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "agent_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
+    "room_id" UUID REFERENCES "chat_rooms" ("id") ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS "idx_agent_actio_user_id_8ec6ac" ON "agent_action_logs" ("user_id");
+COMMENT ON TABLE "agent_action_logs" IS 'Audit log of agent thoughts and tool usage.';
+CREATE TABLE IF NOT EXISTS "chat_messages" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID,
+    "agent_id" UUID,
+    "content" TEXT NOT NULL,
+    "message_type" VARCHAR(50) NOT NULL DEFAULT 'text',
+    "attachments" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ,
+    "room_id" UUID NOT NULL REFERENCES "chat_rooms" ("id") ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "idx_chat_messag_user_id_baf261" ON "chat_messages" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_chat_messag_agent_i_197d8e" ON "chat_messages" ("agent_id");
+COMMENT ON TABLE "chat_messages" IS 'Database entity for Chat Messages.';
+CREATE TABLE IF NOT EXISTS "chat_room_agents" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "agent_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
+    "room_id" UUID NOT NULL REFERENCES "chat_rooms" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_chat_room_a_room_id_260b22" UNIQUE ("room_id", "agent_id")
+);
+COMMENT ON TABLE "chat_room_agents" IS 'Junction table for Chat Rooms and Agents.';
+CREATE TABLE IF NOT EXISTS "memory_collections" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_memory_coll_user_id_18a9d8" ON "memory_collections" ("user_id");
+COMMENT ON TABLE "memory_collections" IS 'Groupings of related memories.';
+CREATE TABLE IF NOT EXISTS "memories" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID,
+    "agent_id" UUID,
+    "room_id" UUID,
+    "content" TEXT NOT NULL,
+    "embedding" vector(1536) NOT NULL,
+    "meta" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ,
+    "collection_id" UUID REFERENCES "memory_collections" ("id") ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS "idx_memories_user_id_a36d31" ON "memories" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_memories_agent_i_7415f4" ON "memories" ("agent_id");
+CREATE INDEX IF NOT EXISTS "idx_memories_room_id_c0505c" ON "memories" ("room_id");
+COMMENT ON TABLE "memories" IS 'Database entity for Memories (Vector Store).';
+CREATE TABLE IF NOT EXISTS "memory_graph_nodes" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID,
+    "name" VARCHAR(255) NOT NULL,
+    "entity_type" VARCHAR(50) NOT NULL,
+    "description" TEXT,
+    "meta" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_memory_grap_user_id_d72df4" ON "memory_graph_nodes" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_memory_grap_name_e854af" ON "memory_graph_nodes" ("name");
+CREATE INDEX IF NOT EXISTS "idx_memory_grap_entity__2d3818" ON "memory_graph_nodes" ("entity_type");
+COMMENT ON TABLE "memory_graph_nodes" IS 'Entity representing a concept or entity in the knowledge graph.';
+CREATE TABLE IF NOT EXISTS "memory_graph_edges" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "relationship" VARCHAR(100) NOT NULL,
+    "weight" DOUBLE PRECISION NOT NULL DEFAULT 1,
+    "meta" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "source_node_id" UUID NOT NULL REFERENCES "memory_graph_nodes" ("id") ON DELETE CASCADE,
+    "target_node_id" UUID NOT NULL REFERENCES "memory_graph_nodes" ("id") ON DELETE CASCADE
+);
+COMMENT ON TABLE "memory_graph_edges" IS 'Relationship between two graph nodes.';
+CREATE TABLE IF NOT EXISTS "memory_relationships" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "relationship_type" VARCHAR(50) NOT NULL DEFAULT 'RELATED_TO',
+    "weight" DOUBLE PRECISION NOT NULL DEFAULT 1,
+    "meta" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "source_id" UUID NOT NULL REFERENCES "memories" ("id") ON DELETE CASCADE,
+    "target_id" UUID NOT NULL REFERENCES "memories" ("id") ON DELETE CASCADE
+);
+COMMENT ON TABLE "memory_relationships" IS 'Represents a relationship between two memories.';
+CREATE TABLE IF NOT EXISTS "agent_tools" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID,
+    "name" VARCHAR(100) NOT NULL,
+    "description" TEXT NOT NULL,
+    "category" VARCHAR(50) NOT NULL DEFAULT 'utility',
+    "version" VARCHAR(20) NOT NULL DEFAULT '1.0.0',
+    "parameters_schema" JSONB NOT NULL,
+    "is_public" BOOL NOT NULL DEFAULT False,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'active',
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS "idx_agent_tools_user_id_895eef" ON "agent_tools" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_agent_tools_name_8ab3f4" ON "agent_tools" ("name");
+CREATE INDEX IF NOT EXISTS "idx_agent_tools_categor_5e48a8" ON "agent_tools" ("category");
+COMMENT ON TABLE "agent_tools" IS 'Database entity for Agent Tools/Skills.';
+CREATE TABLE IF NOT EXISTS "agent_tool_links" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "agent_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
+    "tool_id" UUID NOT NULL REFERENCES "agent_tools" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_agent_tool__agent_i_0de312" UNIQUE ("agent_id", "tool_id")
+);
+COMMENT ON TABLE "agent_tool_links" IS 'Junction table for Agents and their assigned Tools.';
+CREATE TABLE IF NOT EXISTS "agents_capabilities" (
+    "agents_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
+    "capability_id" VARCHAR(50) NOT NULL REFERENCES "capabilities" ("id") ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "uidx_agents_capa_agents__5aac45" ON "agents_capabilities" ("agents_id", "capability_id");
+CREATE TABLE IF NOT EXISTS "agent_templates_capabilities" (
+    "agent_templates_id" UUID NOT NULL REFERENCES "agent_templates" ("id") ON DELETE CASCADE,
+    "capability_id" VARCHAR(50) NOT NULL REFERENCES "capabilities" ("id") ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "uidx_agent_templ_agent_t_2179ff" ON "agent_templates_capabilities" ("agent_templates_id", "capability_id");

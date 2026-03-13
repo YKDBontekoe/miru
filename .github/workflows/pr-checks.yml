@@ -36,11 +36,11 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
+              - 'supabase/migrations/**'
             frontend:
               - 'frontend/**'
             workflows:
-              - '.github/workflows/pr-checks.yml'
-              - '.github/workflows/reusable-*.yml'
+              - '.github/workflows/**'
 
   backend-checks:
     name: Backend PR Checks
@@ -83,7 +83,6 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
           SUPABASE_URL: http://localhost:54321
           SUPABASE_KEY: test-anon-key
           SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
@@ -95,7 +94,7 @@ jobs:
           WEBAUTHN_RP_NAME: Miru Test
           WEBAUTHN_EXPECTED_ORIGIN: http://localhost
           CORS_ALLOWED_ORIGINS: "*"
-        run: pytest -v --tb=short
+        run: pytest -v --tb=short --cov=app --cov-report=term-missing --cov-fail-under=75
 
   # Flutter checks — only runs when frontend files change
   flutter-checks:
@@ -115,7 +114,7 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
-          cache: false
+          cache: true
 
       - name: Clean and install dependencies
         run: |
@@ -143,12 +142,7 @@ jobs:
     needs: changes
     if: |
       github.event_name == 'pull_request' &&
-      (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true') &&
-      (
-        startsWith(github.event.pull_request.head.ref, 'feature/') ||
-        github.base_ref == 'main' ||
-        github.base_ref == 'develop'
-      )
+      (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true')
     defaults:
       run:
         working-directory: ./frontend
@@ -192,14 +186,12 @@ jobs:
       - name: Run safety check on backend
         working-directory: ./backend
         run: safety check
-        continue-on-error: true
 
       - name: Run pip-audit on backend
         working-directory: ./backend
         run: pip-audit
-        continue-on-error: true
 
-      # Dart security audit (via pub outdated)
+      # Dart security audit
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -210,7 +202,6 @@ jobs:
       - name: Check Flutter dependencies
         working-directory: ./frontend
         run: flutter pub audit
-        continue-on-error: true
 
   # PR size check
   pr-size-check:

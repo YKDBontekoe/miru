@@ -71,11 +71,40 @@ jobs:
           done
           echo "✓ Migration files found"
 
-      - name: Dry-run migrations against local DB
+      - name: Dry-run migrations against local DB (full reset)
         run: |
           supabase db start
           supabase db reset --local
-          echo "✓ Migrations applied successfully to local DB"
+          echo "✓ All migrations apply cleanly to an empty database"
+
+      - name: Dry-run incremental apply (simulate production upgrade)
+        run: |
+          # Apply all migrations except the newest one, then apply only the newest.
+          # This catches errors that only surface when a migration runs on top of
+          # an already-populated schema (e.g. CREATE TABLE without IF NOT EXISTS,
+          # or ALTER TABLE on a column that doesn't exist yet in the baseline).
+          MIGRATIONS=($(ls supabase/migrations/*.sql | sort))
+          TOTAL=${#MIGRATIONS[@]}
+          if [ "$TOTAL" -le 1 ]; then
+            echo "Only one migration file — skipping incremental check."
+            exit 0
+          fi
+          LATEST="${MIGRATIONS[$TOTAL-1]}"
+          echo "Newest migration: $(basename $LATEST)"
+
+          # Reset to a clean state and apply all but the newest
+          supabase db reset --local
+          BASELINE_MIGRATIONS=("${MIGRATIONS[@]::$TOTAL-1}")
+          echo "Applying ${#BASELINE_MIGRATIONS[@]} baseline migration(s)..."
+          for f in "${BASELINE_MIGRATIONS[@]}"; do
+            echo "  applying $(basename $f)"
+            supabase db query < "$f"
+          done
+
+          # Now apply only the newest migration on top of the populated DB
+          echo "Applying newest migration incrementally: $(basename $LATEST)"
+          supabase db query < "$LATEST"
+          echo "✓ Newest migration applies cleanly on top of existing schema"
 
   run-migrations-staging:
     name: Run Migrations - Staging
@@ -98,6 +127,11 @@ jobs:
 
       - name: Link Supabase project
         run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF_STAGING }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Preview pending migrations (dry run)
+        run: supabase db push --dry-run
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
@@ -132,6 +166,11 @@ jobs:
 
       - name: Link Supabase project
         run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Preview pending migrations (dry run)
+        run: supabase db push --dry-run
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
