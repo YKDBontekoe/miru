@@ -24,8 +24,9 @@ def test_openrouter_client_init() -> None:
         patch("openai.AsyncOpenAI") as mock_openai,
         patch("instructor.from_openai") as mock_from_openai,
     ):
-        from app.infrastructure.external.openrouter import OpenRouterClient
         import instructor
+
+        from app.infrastructure.external.openrouter import OpenRouterClient
 
         mock_openai_instance = MagicMock()
         mock_openai.return_value = mock_openai_instance
