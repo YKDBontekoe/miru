@@ -27,7 +27,7 @@ async def list_memories(
     try:
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
-    except APIConnectionError as e:
+    except (APIConnectionError, OSError) as e:
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
@@ -52,7 +52,7 @@ async def store_memory(
     try:
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
-    except APIConnectionError as e:
+    except (APIConnectionError, OSError) as e:
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
