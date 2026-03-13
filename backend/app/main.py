@@ -24,10 +24,22 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-# TODO: re-enable Sentry once DSN is configured in production environment.
-# if settings.sentry_dsn:
-#     import sentry_sdk
-#     sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+if settings.sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.sentry_environment,
+        release=settings.sentry_release,
+        traces_sample_rate=1.0,
+        integrations=[
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(transaction_style="endpoint"),
+        ],
+    )
+    logger.info("Sentry error tracking enabled (environment=%s)", settings.sentry_environment)
 
 
 @asynccontextmanager

@@ -12,6 +12,9 @@ permissions:
 
 env:
   FLUTTER_VERSION: '3.41.0'
+  SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+  SENTRY_PROJECT_BACKEND: ${{ vars.SENTRY_PROJECT_BACKEND }}
+  SENTRY_PROJECT_FRONTEND: ${{ vars.SENTRY_PROJECT_FRONTEND }}
 
 jobs:
   create-release:
@@ -98,3 +101,87 @@ jobs:
         with:
           name: ios-release
           path: frontend/build/ios/iphoneos/
+
+  sentry-release:
+    name: Create Sentry Release
+    runs-on: ubuntu-latest
+    needs: build-release-artifacts
+    if: startsWith(github.ref, 'refs/tags/v') && secrets.SENTRY_AUTH_TOKEN != ''
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set release version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      # Download the web build artifact to upload source maps
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-release
+          path: frontend/build/web/
+
+      - name: Install Sentry CLI
+        run: curl -sL https://sentry.io/get-cli/ | bash
+
+      # --- Backend release ---
+      - name: Create backend Sentry release
+        if: env.SENTRY_PROJECT_BACKEND != ''
+        run: |
+          sentry-cli releases new "${{ steps.version.outputs.VERSION }}" \
+            --org "${{ env.SENTRY_ORG }}" \
+            --project "${{ env.SENTRY_PROJECT_BACKEND }}"
+
+          sentry-cli releases set-commits "${{ steps.version.outputs.VERSION }}" \
+            --auto \
+            --org "${{ env.SENTRY_ORG }}" \
+            --project "${{ env.SENTRY_PROJECT_BACKEND }}"
+
+          sentry-cli releases finalize "${{ steps.version.outputs.VERSION }}" \
+            --org "${{ env.SENTRY_ORG }}" \
+            --project "${{ env.SENTRY_PROJECT_BACKEND }}"
+
+      # --- Frontend (web) release + source maps ---
+      - name: Create frontend Sentry release and upload source maps
+        if: env.SENTRY_PROJECT_FRONTEND != ''
+        run: |
+          sentry-cli releases new "${{ steps.version.outputs.VERSION }}" \
+            --org "${{ env.SENTRY_ORG }}" \
+            --project "${{ env.SENTRY_PROJECT_FRONTEND }}"
+
+          sentry-cli releases set-commits "${{ steps.version.outputs.VERSION }}" \
+            --auto \
+            --org "${{ env.SENTRY_ORG }}" \
+            --project "${{ env.SENTRY_PROJECT_FRONTEND }}"
+
+          # Upload Flutter web source maps if present
+          if [ -d "frontend/build/web" ]; then
+            sentry-cli releases files "${{ steps.version.outputs.VERSION }}" upload-sourcemaps \
+              frontend/build/web \
+              --org "${{ env.SENTRY_ORG }}" \
+              --project "${{ env.SENTRY_PROJECT_FRONTEND }}" \
+              --rewrite \
+              --url-prefix "~/" \
+              || echo "No source maps found — skipping upload."
+          fi
+
+          sentry-cli releases finalize "${{ steps.version.outputs.VERSION }}" \
+            --org "${{ env.SENTRY_ORG }}" \
+            --project "${{ env.SENTRY_PROJECT_FRONTEND }}"
+
+      # Deploy markers tell Sentry which release is live in which environment
+      - name: Notify Sentry of production deploy
+        run: |
+          for PROJECT in ${{ env.SENTRY_PROJECT_BACKEND }} ${{ env.SENTRY_PROJECT_FRONTEND }}; do
+            [ -z "$PROJECT" ] && continue
+            sentry-cli releases deploys "${{ steps.version.outputs.VERSION }}" new \
+              --env production \
+              --org "${{ env.SENTRY_ORG }}" \
+              --project "$PROJECT" \
+              || true
+          done

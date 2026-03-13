@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     steam_api_key: str | None = None
     # Sentry DSN for error tracking
     sentry_dsn: str | None = None
+    # Sentry release identifier — set to the Git SHA or version tag at build time.
+    # Injected by CI via the SENTRY_RELEASE environment variable.
+    sentry_release: str | None = None
+    # Sentry environment name, e.g. "production", "staging", "development"
+    sentry_environment: str = "development"
 
     model_config = SettingsConfigDict(
         env_file=".env",
