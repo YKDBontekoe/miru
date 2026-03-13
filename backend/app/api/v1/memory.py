@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
+from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse, MemoryGraphResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
 
 if TYPE_CHECKING:
@@ -27,11 +27,11 @@ async def list_memories(
     return {"memories": memories}
 
 
-@router.get("/graph", response_model=dict[str, Any])
+@router.get("/graph", response_model=MemoryGraphResponse)
 async def get_memory_graph(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
-) -> dict[str, Any]:
+) -> MemoryGraphResponse:
     """Fetch the memory graph for the current user."""
     return await service.get_memory_graph(user_id)
 

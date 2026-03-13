@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -157,6 +157,7 @@ class MemoryGraphEdge(SupabaseModel):
 
 
 class MemoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: UUID
     user_id: UUID | None
     agent_id: UUID | None
@@ -165,6 +166,23 @@ class MemoryResponse(BaseModel):
     meta: dict
     created_at: datetime
     updated_at: datetime
+
+
+class MemoryRelationshipResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    source_id: UUID
+    target_id: UUID
+    relationship_type: str
+    weight: float
+    meta: dict
+    created_at: datetime
+
+
+class MemoryGraphResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    nodes: list[MemoryResponse]
+    edges: list[MemoryRelationshipResponse]
 
 
 class MemoryRequest(BaseModel):

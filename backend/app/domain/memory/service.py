@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from app.domain.memory.models import Memory
+from app.domain.memory.models import Memory, MemoryGraphResponse
 from app.infrastructure.external.openrouter import embed
 
 if TYPE_CHECKING:
@@ -70,16 +70,16 @@ class MemoryService:
     async def delete_memory(self, memory_id: UUID) -> bool:
         return await self.repo.delete_memory(memory_id)
 
-    async def get_memory_graph(self, user_id: UUID) -> dict[str, Any]:
+    async def get_memory_graph(self, user_id: UUID) -> MemoryGraphResponse:
         """Fetch all memories and their relationships for the graph view."""
         memories = await self.repo.list_all_memories(user_id)
         m_ids = [m.id for m in memories]
         edges = await self.repo.get_relationships_subgraph(m_ids)
 
-        return {
+        return MemoryGraphResponse.model_validate({
             "nodes": memories,
             "edges": edges,
-        }
+        })
 
     async def retrieve_memories(
         self,
