@@ -92,6 +92,10 @@ void main() {
       // We should now be in the MainScaffold, which has 'Rooms' and 'Settings' nav items
       expect(find.text('Rooms'), findsWidgets);
       expect(find.text('Settings'), findsWidgets);
+
+      // Assert no error snackbars or texts are displayed after login
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.textContaining('Error'), findsNothing);
     });
 
     testWidgets('Navigate to Rooms and Create Persona', (tester) async {
@@ -140,6 +144,10 @@ void main() {
 
       // We should be back on the Rooms page, but it might just be the chat view.
       // Rooms view should show the created agent in the list.
+
+      // Assert no errors occurred during navigation or saving
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.textContaining('Error'), findsNothing);
     });
 
     testWidgets('Navigate to Settings page', (tester) async {
@@ -167,6 +175,10 @@ void main() {
 
       // Verify we are on Settings page (e.g. looking for text "Theme", "App Settings", etc.)
       expect(find.text('Settings'), findsWidgets);
+
+      // Assert no errors occurred during settings navigation
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.textContaining('Error'), findsNothing);
     });
   });
 }

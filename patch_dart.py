@@ -3,29 +3,27 @@ import re
 with open('frontend/integration_test/smoke_test.dart', 'r') as f:
     content = f.read()
 
-# Make sure we're not accidentally bypassing UI in the remaining tests since they share state in a real integration test environment.
-# Instead of doing direct headless signIn, we will just use the pre-created UI test user from Test 3.
-old_test4_auth = """      // Make sure we're authenticated
-      if (Supabase.instance.client.auth.currentUser == null) {
-        try {
-          await Supabase.instance.client.auth.signInWithPassword(
-            email: 'integration_test@example.com',
-            password: 'password12345!',
-          );
-        } catch (_) {}
-      }"""
+# Replace the assertion for rooms since we missed adding the assertions there in the previous file. Wait, I see it in test 4?
+# Let's ensure it's there.
+old_rooms_end = """      // Wait for bottom sheet to close and list to reload
+      await tester.pumpAndSettle(const Duration(seconds: 2));
 
-new_test4_auth = """      // Make sure we're authenticated
-      if (Supabase.instance.client.auth.currentUser == null) {
-        try {
-          await Supabase.instance.client.auth.signInWithPassword(
-            email: 'ui_test@example.com',
-            password: 'password12345!',
-          );
-        } catch (_) {}
-      }"""
+      // We should be back on the Rooms page, but it might just be the chat view.
+      // Rooms view should show the created agent in the list.
+    });"""
 
-content = content.replace(old_test4_auth, new_test4_auth)
+new_rooms_end = """      // Wait for bottom sheet to close and list to reload
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      // We should be back on the Rooms page, but it might just be the chat view.
+      // Rooms view should show the created agent in the list.
+
+      // Assert no errors occurred during navigation or saving
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.textContaining('Error'), findsNothing);
+    });"""
+
+content = content.replace(old_rooms_end, new_rooms_end)
 
 with open('frontend/integration_test/smoke_test.dart', 'w') as f:
     f.write(content)
