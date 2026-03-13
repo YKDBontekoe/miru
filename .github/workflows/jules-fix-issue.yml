@@ -1,0 +1,115 @@
+name: Invoke Jules to Fix Sentry Issue
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: jules-fix-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  jules-fix:
+    if: contains(github.event.issue.labels.*.name, 'jules-fix-pending')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Invoke Jules
+        uses: google-labs-code/jules-invoke@v1
+        with:
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          prompt: |
+            Fix the bug described in this issue:
+            
+            Title: ${{ github.event.issue.title }}
+            Description: ${{ github.event.issue.body }}
+            
+            Requirements:
+            - Analyze the codebase and fix the underlying issue.
+            - Write tests to verify the fix.
+            - Ensure all existing tests pass.
+            - When you are done, create a pull request. 
+            - IMPORTANT: Include "Closes #${{ github.event.issue.number }}" in your pull request description so the issue is automatically closed when the PR is merged.
+            
+            Additional context:
+            This issue was imported from Sentry. Focus on the 'culprit' and 'metadata' sections in the description.
+
+      - name: Update Issue on Success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // Remove 'jules-fix-pending' first, before adding 'jules-fix-submitted',
+            // to prevent the label event from re-triggering this workflow while
+            // 'jules-fix-pending' is still present.
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'jules-fix-pending'
+              });
+            } catch (e) {
+              // Label may already have been removed — only warn, don't fail
+              console.log(`Warning: could not remove jules-fix-pending: ${e.message}`);
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['jules-fix-submitted']
+            });
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: "Jules has submitted a fix. The issue will be closed automatically when the pull request is merged."
+            });
+
+      - name: Update Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // Remove 'jules-fix-pending' so it doesn't re-trigger
+            try {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: 'jules-fix-pending'
+              });
+            } catch (e) {
+              console.log(`Warning: could not remove jules-fix-pending: ${e.message}`);
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: ['jules-fix-failed']
+            });
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: "Jules failed to submit a fix for this issue. Manual investigation is required.\n\nSee the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+            });

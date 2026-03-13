@@ -201,6 +201,8 @@ List all stored memories (for debugging/admin).
 | `codeql-analysis.yml` | Push/PR/Schedule | Security vulnerability scanning |
 | `release.yml` | Tag push (v*) | Create releases with artifacts |
 | `cleanup.yml` | Weekly | Remove old workflow runs & artifacts |
+| `sentry-to-github.yml` | Hourly | Sync Sentry issues to GitHub with labels |
+| `jules-fix-issue.yml` | On Issue | Invoke Jules AI to fix Sentry-imported issues |
 
 ### Required GitHub Secrets
 
@@ -224,6 +226,10 @@ Configure in **Settings → Secrets and variables → Actions**:
 
 **Quality:**
 - `CODECOV_TOKEN` - Test coverage reporting
+- `SENTRY_AUTH_TOKEN` - Sentry API access (Organization Settings > Developer Settings)
+- `SENTRY_ORG` - Sentry organization slug
+- `SENTRY_PROJECT` - Sentry project slug
+- `JULES_API_KEY` - API key for Jules AI from Google Labs
 
 ## 🧪 Development & Testing
 

@@ -78,3 +78,15 @@
 - name: python
   color: 2b67c6
   description: Python specific changes
+
+- name: sentry-issue
+  color: f44336
+  description: Issues imported from Sentry
+
+- name: jules-fix-pending
+  color: 4caf50
+  description: Issues waiting for Jules AI to attempt a fix
+
+- name: jules-fix-submitted
+  color: 2196f3
+  description: Issues where Jules AI has submitted a pull request
