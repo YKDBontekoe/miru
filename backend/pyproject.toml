@@ -50,13 +50,6 @@ packages = ["app"]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[dependency-groups]
-dev = [
-    "pyjwt[crypto]>=2.10.0",
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.0.0",
-]
 
 [tool.ruff]
 line-length = 100
