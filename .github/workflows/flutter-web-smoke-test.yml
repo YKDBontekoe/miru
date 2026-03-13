@@ -55,13 +55,10 @@ jobs:
       # -----------------------------------------------------------------------
       # Setup ephemeral Local Backend & Supabase
       # -----------------------------------------------------------------------
-      - name: Setup Node (for Supabase CLI)
-        uses: actions/setup-node@v4
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
         with:
-          node-version: 20
-
-      - name: Install Supabase CLI
-        run: npm install -g supabase
+          version: latest
 
       - name: Start Local Supabase
         working-directory: ./supabase

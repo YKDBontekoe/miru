@@ -3,11 +3,21 @@ import re
 with open('.github/workflows/flutter-web-smoke-test.yml', 'r') as f:
     content = f.read()
 
-# Fix the flutter build string to properly preserve line breaks
-bad_build = "flutter build web --release             --dart-define=API_URL=http://127.0.0.1:8000/api/v1             --dart-define=SUPABASE_URL=http://127.0.0.1:54321             --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}"
-good_build = "flutter build web --release \\\n            --dart-define=API_URL=http://127.0.0.1:8000/api/v1 \\\n            --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \\\n            --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}"
+# Replace Node & npm install with the official Supabase setup action
+old_setup = """      - name: Setup Node (for Supabase CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-content = content.replace(bad_build, good_build)
+      - name: Install Supabase CLI
+        run: npm install -g supabase"""
+
+new_setup = """      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest"""
+
+content = content.replace(old_setup, new_setup)
 
 with open('.github/workflows/flutter-web-smoke-test.yml', 'w') as f:
     f.write(content)
