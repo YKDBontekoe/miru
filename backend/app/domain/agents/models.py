@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from app.domain.chat.models import ChatRoom
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tortoise import fields
@@ -15,25 +18,25 @@ from app.infrastructure.database.base import SupabaseModel
 class Agent(SupabaseModel):
     """Database entity for Agents."""
 
-    id = fields.UUIDField(primary_key=True)
-    user_id = fields.UUIDField(db_index=True)
-    name = fields.CharField(max_length=100, db_index=True)
-    personality = fields.TextField()
-    description = fields.TextField(null=True)
-    avatar_url = fields.CharField(max_length=512, null=True)
-    system_prompt = fields.TextField(null=True)
-    status = fields.CharField(max_length=20, default="active")
-    mood = fields.CharField(max_length=50, default="Neutral")
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID = fields.UUIDField(db_index=True)
+    name: str = fields.CharField(max_length=100, db_index=True)  # type: ignore[assignment]
+    personality: str = fields.TextField()
+    description: str | None = fields.TextField(null=True)
+    avatar_url: str | None = fields.CharField(max_length=512, null=True)  # type: ignore[assignment]
+    system_prompt: str | None = fields.TextField(null=True)
+    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
+    mood: str = fields.CharField(max_length=50, default="Neutral")  # type: ignore[assignment]
 
-    capabilities = fields.ManyToManyField(
+    capabilities: fields.ManyToManyRelation[Capability] = fields.ManyToManyField(
         "models.Capability", related_name="agents", table="agents_capabilities"
     )
-    goals = fields.JSONField(default=[])
+    goals: list[str] = fields.JSONField(default=[])
 
-    message_count = fields.IntField(default=0)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-    deleted_at = fields.DatetimeField(null=True)
+    message_count: int = fields.IntField(default=0)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
+    deleted_at: datetime | None = fields.DatetimeField(null=True)
 
     class Meta:
         table = "agents"
@@ -46,12 +49,12 @@ class Agent(SupabaseModel):
 class Capability(SupabaseModel):
     """Database entity for Agent Capabilities."""
 
-    id = fields.CharField(primary_key=True, max_length=50)
-    name = fields.CharField(max_length=100)
-    description = fields.TextField()
-    icon = fields.CharField(max_length=50)
-    status = fields.CharField(max_length=20, default="active")
-    created_at = fields.DatetimeField(auto_now_add=True)
+    id: str = fields.CharField(primary_key=True, max_length=50)  # type: ignore[assignment]
+    name: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    description: str = fields.TextField()
+    icon: str = fields.CharField(max_length=50)  # type: ignore[assignment]
+    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "capabilities"
@@ -64,13 +67,13 @@ class Capability(SupabaseModel):
 class Integration(SupabaseModel):
     """Database entity for external service definitions (e.g. Steam)."""
 
-    id = fields.CharField(primary_key=True, max_length=50)
-    display_name = fields.CharField(max_length=100)
-    description = fields.TextField()
-    icon = fields.CharField(max_length=50)
-    status = fields.CharField(max_length=20, default="active")
-    config_schema = fields.JSONField(default=[])
-    created_at = fields.DatetimeField(auto_now_add=True)
+    id: str = fields.CharField(primary_key=True, max_length=50)  # type: ignore[assignment]
+    display_name: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    description: str = fields.TextField()
+    icon: str = fields.CharField(max_length=50)  # type: ignore[assignment]
+    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
+    config_schema: list | dict = fields.JSONField(default=[])
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "integrations"
@@ -83,21 +86,21 @@ class Integration(SupabaseModel):
 class AgentIntegration(SupabaseModel):
     """Junction table for Agents and their specific service connections."""
 
-    id = fields.UUIDField(primary_key=True)
-    agent = fields.ForeignKeyField(
+    id: UUID = fields.UUIDField(primary_key=True)
+    agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
         "models.Agent", related_name="agent_integrations", on_delete=fields.CASCADE
     )
-    integration = fields.ForeignKeyField(
+    integration: fields.ForeignKeyRelation[Integration] = fields.ForeignKeyField(
         "models.Integration", related_name="connected_agents", on_delete=fields.CASCADE
     )
 
-    enabled = fields.BooleanField(default=True)
-    config = fields.JSONField(default={})
-    credentials = fields.JSONField(default={})
+    enabled: bool = fields.BooleanField(default=True)  # type: ignore[assignment]
+    config: dict = fields.JSONField(default={})
+    credentials: dict = fields.JSONField(default={})
 
-    connected_at = fields.DatetimeField(null=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+    connected_at: datetime | None = fields.DatetimeField(null=True)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "agent_integrations"
@@ -114,18 +117,18 @@ class AgentIntegration(SupabaseModel):
 class AgentTemplate(SupabaseModel):
     """Template for creating new agents."""
 
-    id = fields.UUIDField(primary_key=True)
-    name = fields.CharField(max_length=100)
-    description = fields.TextField()
-    personality = fields.TextField()
-    goals = fields.JSONField(default=[])
+    id: UUID = fields.UUIDField(primary_key=True)
+    name: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    description: str = fields.TextField()
+    personality: str = fields.TextField()
+    goals: list[str] = fields.JSONField(default=[])
 
-    capabilities = fields.ManyToManyField(
+    capabilities: fields.ManyToManyRelation[Capability] = fields.ManyToManyField(
         "models.Capability", related_name="templates", table="agent_templates_capabilities"
     )
 
-    avatar_url = fields.CharField(max_length=512, null=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
+    avatar_url: str | None = fields.CharField(max_length=512, null=True)  # type: ignore[assignment]
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "agent_templates"
@@ -139,15 +142,15 @@ class AgentTemplate(SupabaseModel):
 class UserAgentAffinity(SupabaseModel):
     """Tracks relationship strength between a user and an agent."""
 
-    user_id = fields.UUIDField()
-    agent = fields.ForeignKeyField(
+    user_id: UUID = fields.UUIDField()
+    agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
         "models.Agent", related_name="affinities", on_delete=fields.CASCADE
     )
-    affinity_score = fields.FloatField(default=0.0)
-    trust_level = fields.IntField(default=1)
-    milestones = fields.JSONField(default=[])
-    last_interaction_at = fields.DatetimeField(auto_now=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
+    affinity_score: float = fields.FloatField(default=0.0)
+    trust_level: int = fields.IntField(default=1)
+    milestones: list = fields.JSONField(default=[])
+    last_interaction_at: datetime = fields.DatetimeField(auto_now=True)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "user_agent_affinity"
@@ -162,21 +165,21 @@ class UserAgentAffinity(SupabaseModel):
 class AgentActionLog(SupabaseModel):
     """Audit log of agent thoughts and tool usage."""
 
-    id = fields.UUIDField(primary_key=True)
-    user_id = fields.UUIDField(db_index=True)
-    agent = fields.ForeignKeyField(
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID = fields.UUIDField(db_index=True)
+    agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
         "models.Agent", related_name="action_logs", on_delete=fields.CASCADE
     )
-    room = fields.ForeignKeyField(
+    room: fields.ForeignKeyRelation[ChatRoom] | None = fields.ForeignKeyField(
         "models.ChatRoom",
         related_name="agent_action_logs",
         on_delete=fields.SET_NULL,
         null=True,
     )
-    action_type = fields.CharField(max_length=50)
-    content = fields.TextField()
-    meta = fields.JSONField(default={})
-    created_at = fields.DatetimeField(auto_now_add=True)
+    action_type: str = fields.CharField(max_length=50)  # type: ignore[assignment]
+    content: str = fields.TextField()
+    meta: dict = fields.JSONField(default={})
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "agent_action_logs"

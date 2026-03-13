@@ -9,7 +9,7 @@ from app.domain.chat.models import ChatMessage, ChatRoom, ChatRoomAgent
 
 
 class ChatRepository:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     async def create_room(self, name: str, user_id: UUID) -> ChatRoom:

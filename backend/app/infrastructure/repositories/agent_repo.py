@@ -8,7 +8,7 @@ from app.domain.agents.models import Agent, Capability, Integration
 
 
 class AgentRepository:
-    def __init__(self):
+    def __init__(self) -> None:
         # Tortoise ORM models don't need a session passed in
         pass
 

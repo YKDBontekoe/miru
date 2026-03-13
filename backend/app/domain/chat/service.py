@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from crewai import Agent as CrewAgent
 from crewai import Crew, Process, Task
 
+from app.core.config import get_settings
 from app.domain.chat.models import (
     ChatMessage,
     ChatMessageResponse,
@@ -88,7 +89,7 @@ class ChatService:
         return [
             ChatMessageResponse(
                 id=m.id,
-                room_id=m.room_id,
+                room_id=getattr(m, "room_id"),  # noqa: B009
                 user_id=m.user_id,
                 agent_id=m.agent_id,
                 content=m.content,
@@ -106,8 +107,10 @@ class ChatService:
 
         llm = get_openrouter_client().openai_client
         agent = db_agents[0]
+        # Use the default chat model from settings (configured via env)
+        model_name = get_settings().default_chat_model
         response = await llm.chat.completions.create(
-            model=get_openrouter_client().openai_client.base_url and "openai/gpt-4o-mini",
+            model=model_name,
             messages=[
                 {"role": "system", "content": agent.personality},
                 {"role": "user", "content": user_message},
@@ -145,7 +148,7 @@ class ChatService:
         )
 
         crew = Crew(
-            agents=crew_agents,
+            agents=crew_agents,  # type: ignore[arg-type]
             tasks=[task],
             process=Process.sequential,
         )
@@ -192,7 +195,7 @@ class ChatService:
         )
 
         crew = Crew(
-            agents=crew_agents,
+            agents=crew_agents,  # type: ignore[arg-type]
             tasks=[task],
             process=Process.sequential,
             verbose=True,

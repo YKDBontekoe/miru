@@ -11,7 +11,7 @@ from app.domain.memory.models import Memory, MemoryRelationship
 
 
 class MemoryRepository:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     async def insert_memory(self, memory: Memory) -> Memory:
@@ -82,12 +82,15 @@ class MemoryRepository:
             q = q.filter(relationship_type=rel_type)
 
         rels = await q.limit(10).all()
-        related_ids = set()
+        related_ids: set[UUID] = set()
         for rel in rels:
-            if str(rel.source_id) != str(memory_id):
-                related_ids.add(rel.source_id)
-            if str(rel.target_id) != str(memory_id):
-                related_ids.add(rel.target_id)
+            # Tortoise adds _id fields for foreign keys
+            s_id: UUID = getattr(rel, "source_id")  # noqa: B009
+            t_id: UUID = getattr(rel, "target_id")  # noqa: B009
+            if s_id != memory_id:
+                related_ids.add(s_id)
+            if t_id != memory_id:
+                related_ids.add(t_id)
 
         if not related_ids:
             return []

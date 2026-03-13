@@ -14,12 +14,12 @@ from app.infrastructure.database.base import SupabaseModel
 class MemoryCollection(SupabaseModel):
     """Groupings of related memories."""
 
-    id = fields.UUIDField(primary_key=True)
-    user_id = fields.UUIDField(db_index=True)
-    name = fields.CharField(max_length=255)
-    description = fields.TextField(null=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID = fields.UUIDField(db_index=True)
+    name: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    description: str | None = fields.TextField(null=True)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "memory_collections"
@@ -33,24 +33,26 @@ class MemoryCollection(SupabaseModel):
 class Memory(SupabaseModel):
     """Database entity for Memories (Vector Store)."""
 
-    id = fields.UUIDField(primary_key=True)
-    user_id = fields.UUIDField(null=True, db_index=True)
-    agent_id = fields.UUIDField(null=True, db_index=True)
-    room_id = fields.UUIDField(null=True, db_index=True)
-    collection = fields.ForeignKeyField(
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    agent_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    room_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    collection: fields.ForeignKeyRelation[MemoryCollection] | None = fields.ForeignKeyField(
         "models.MemoryCollection",
         related_name="memories",
         on_delete=fields.SET_NULL,
         null=True,
     )
 
-    content = fields.TextField()
-    embedding = fields.JSONField()  # Stored as vector(1536) in Postgres; patched by generator
-    meta = fields.JSONField(default={})
+    content: str = fields.TextField()
+    embedding: list[float] = (
+        fields.JSONField()
+    )  # Stored as vector(1536) in Postgres; patched by generator
+    meta: dict = fields.JSONField(default={})
 
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-    deleted_at = fields.DatetimeField(null=True)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
+    deleted_at: datetime | None = fields.DatetimeField(null=True)
 
     class Meta:
         table = "memories"
@@ -71,17 +73,17 @@ class Memory(SupabaseModel):
 class MemoryRelationship(SupabaseModel):
     """Represents a relationship between two memories."""
 
-    id = fields.UUIDField(primary_key=True)
-    source = fields.ForeignKeyField(
+    id: UUID = fields.UUIDField(primary_key=True)
+    source: fields.ForeignKeyRelation[Memory] = fields.ForeignKeyField(
         "models.Memory", related_name="relationships_out", on_delete=fields.CASCADE
     )
-    target = fields.ForeignKeyField(
+    target: fields.ForeignKeyRelation[Memory] = fields.ForeignKeyField(
         "models.Memory", related_name="relationships_in", on_delete=fields.CASCADE
     )
-    relationship_type = fields.CharField(max_length=50, default="RELATED_TO")
-    weight = fields.FloatField(default=1.0)
-    meta = fields.JSONField(default={})
-    created_at = fields.DatetimeField(auto_now_add=True)
+    relationship_type: str = fields.CharField(max_length=50, default="RELATED_TO")  # type: ignore[assignment]
+    weight: float = fields.FloatField(default=1.0)
+    meta: dict = fields.JSONField(default={})
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "memory_relationships"
@@ -105,14 +107,14 @@ class MemoryRelationship(SupabaseModel):
 class MemoryGraphNode(SupabaseModel):
     """Entity representing a concept or entity in the knowledge graph."""
 
-    id = fields.UUIDField(primary_key=True)
-    user_id = fields.UUIDField(null=True, db_index=True)
-    name = fields.CharField(max_length=255, db_index=True)
-    entity_type = fields.CharField(max_length=50, db_index=True)
-    description = fields.TextField(null=True)
-    meta = fields.JSONField(default={})
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    name: str = fields.CharField(max_length=255, db_index=True)  # type: ignore[assignment]
+    entity_type: str = fields.CharField(max_length=50, db_index=True)  # type: ignore[assignment]
+    description: str | None = fields.TextField(null=True)
+    meta: dict = fields.JSONField(default={})
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "memory_graph_nodes"
@@ -126,17 +128,17 @@ class MemoryGraphNode(SupabaseModel):
 class MemoryGraphEdge(SupabaseModel):
     """Relationship between two graph nodes."""
 
-    id = fields.UUIDField(primary_key=True)
-    source_node = fields.ForeignKeyField(
+    id: UUID = fields.UUIDField(primary_key=True)
+    source_node: fields.ForeignKeyRelation[MemoryGraphNode] = fields.ForeignKeyField(
         "models.MemoryGraphNode", related_name="edges_out", on_delete=fields.CASCADE
     )
-    target_node = fields.ForeignKeyField(
+    target_node: fields.ForeignKeyRelation[MemoryGraphNode] = fields.ForeignKeyField(
         "models.MemoryGraphNode", related_name="edges_in", on_delete=fields.CASCADE
     )
-    relationship = fields.CharField(max_length=100)
-    weight = fields.FloatField(default=1.0)
-    meta = fields.JSONField(default={})
-    created_at = fields.DatetimeField(auto_now_add=True)
+    relationship: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    weight: float = fields.FloatField(default=1.0)
+    meta: dict = fields.JSONField(default={})
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "memory_graph_edges"

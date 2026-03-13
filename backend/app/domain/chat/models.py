@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -10,16 +11,19 @@ from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
 
+if TYPE_CHECKING:
+    from app.domain.agents.models import Agent
+
 
 class ChatRoom(SupabaseModel):
     """Database entity for Chat Rooms."""
 
-    id = fields.UUIDField(primary_key=True)
-    user_id = fields.UUIDField(db_index=True)
-    name = fields.CharField(max_length=255)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-    deleted_at = fields.DatetimeField(null=True)
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID = fields.UUIDField(db_index=True)
+    name: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
+    deleted_at: datetime | None = fields.DatetimeField(null=True)
 
     class Meta:
         table = "chat_rooms"
@@ -32,19 +36,19 @@ class ChatRoom(SupabaseModel):
 class ChatMessage(SupabaseModel):
     """Database entity for Chat Messages."""
 
-    id = fields.UUIDField(primary_key=True)
-    room = fields.ForeignKeyField(
+    id: UUID = fields.UUIDField(primary_key=True)
+    room: fields.ForeignKeyRelation[ChatRoom] = fields.ForeignKeyField(
         "models.ChatRoom", related_name="messages", on_delete=fields.CASCADE
     )
-    user_id = fields.UUIDField(null=True, db_index=True)
-    agent_id = fields.UUIDField(null=True, db_index=True)
-    content = fields.TextField()
-    message_type = fields.CharField(max_length=50, default="text")
-    attachments = fields.JSONField(default=[])
+    user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    agent_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    content: str = fields.TextField()
+    message_type: str = fields.CharField(max_length=50, default="text")  # type: ignore[assignment]
+    attachments: list = fields.JSONField(default=[])
 
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
-    deleted_at = fields.DatetimeField(null=True)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    updated_at: datetime = fields.DatetimeField(auto_now=True)
+    deleted_at: datetime | None = fields.DatetimeField(null=True)
 
     class Meta:
         table = "chat_messages"
@@ -72,13 +76,13 @@ class ChatMessage(SupabaseModel):
 class ChatRoomAgent(SupabaseModel):
     """Junction table for Chat Rooms and Agents."""
 
-    room = fields.ForeignKeyField(
+    room: fields.ForeignKeyRelation[ChatRoom] = fields.ForeignKeyField(
         "models.ChatRoom", related_name="room_agents", on_delete=fields.CASCADE
     )
-    agent = fields.ForeignKeyField(
+    agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
         "models.Agent", related_name="agent_rooms", on_delete=fields.CASCADE
     )
-    created_at = fields.DatetimeField(auto_now_add=True)
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "chat_room_agents"

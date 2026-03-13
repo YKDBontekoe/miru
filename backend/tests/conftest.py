@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import AsyncGenerator
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -72,7 +73,7 @@ def auth_headers(user_id: str | None = None) -> dict[str, str]:
 
 
 @pytest.fixture(autouse=True)
-async def initialize_tortoise():
+async def initialize_tortoise() -> AsyncGenerator[None, None]:
     config = {
         "connections": {"default": "sqlite://:memory:"},
         "apps": {

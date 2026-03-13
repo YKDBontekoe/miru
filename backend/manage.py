@@ -25,6 +25,10 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from tortoise.backends.asyncpg.client import AsyncpgDBClient
 
 # ---------------------------------------------------------------------------
 # Bootstrap: stub required env vars so Pydantic Settings doesn't fail when
@@ -116,7 +120,7 @@ async def _generate_schema_sql() -> str:
         db_url="sqlite://:memory:",
         modules={"models": ALL_MODEL_MODULES},
     )
-    conn = Tortoise.get_connection("default")
+    conn = cast("AsyncpgDBClient", Tortoise.get_connection("default"))
     sql = AsyncpgSchemaGenerator(conn).get_create_schema_sql()
     await Tortoise.close_connections()
     return sql

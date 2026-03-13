@@ -134,8 +134,9 @@ class AgentService:
                     )
 
         # Refetch with relations so the response is fully populated.
-        agent = await self.repo.get_by_id(agent.pk)
-        return _build_agent_response(agent)  # type: ignore[arg-type]
+        refetched = await self.repo.get_by_id(agent.pk)
+        assert refetched is not None
+        return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
         """List all agents for a user."""

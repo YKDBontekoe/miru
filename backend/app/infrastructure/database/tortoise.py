@@ -4,7 +4,7 @@ from tortoise import Tortoise
 
 from app.core.config import get_settings
 
-raw_url = get_settings().database_url
+raw_url = get_settings().database_url or ""
 if raw_url.startswith("postgresql://"):
     raw_url = raw_url.replace("postgresql://", "postgres://", 1)
 
