@@ -201,7 +201,7 @@ jobs:
 
       - name: Check Flutter dependencies
         working-directory: ./frontend
-        run: flutter pub audit
+        run: dart pub audit
 
   # PR size check
   pr-size-check:
