@@ -25,6 +25,7 @@ dependencies = [
     "aerich>=0.7.2",
     "asyncpg>=0.30.0",
     "nest-asyncio",
+    "litellm>=1.82.1",
 ]
 
 [project.optional-dependencies]
@@ -49,11 +50,6 @@ packages = ["app"]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[dependency-groups]
-dev = [
-    "pytest>=8.2.0",
-    "pytest-asyncio>=0.23.0",
-]
 
 [tool.ruff]
 line-length = 100

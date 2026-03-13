@@ -19,7 +19,7 @@ def test_get_openrouter_client() -> None:
 
 
 def test_openrouter_client_init() -> None:
-    """Test that the OpenRouterClient initializes instructor with JSON mode."""
+    """Test that the OpenRouterClient initializes instructor with MD_JSON mode."""
     with (
         patch("openai.AsyncOpenAI") as mock_openai,
         patch("instructor.from_openai") as mock_from_openai,
@@ -39,9 +39,9 @@ def test_openrouter_client_init() -> None:
         mock_openai.assert_called_once()
         assert mock_openai.call_args[1]["api_key"] == "test-key"
 
-        # Verify instructor is initialized with JSON mode
+        # Verify instructor is initialized with MD_JSON mode
         mock_from_openai.assert_called_once_with(
             mock_openai_instance,
-            mode=instructor.Mode.JSON,
+            mode=instructor.Mode.MD_JSON,
         )
         assert client.instructor_client == mock_instructor_instance

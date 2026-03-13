@@ -49,18 +49,15 @@ class MemoryRepository:
                 query_embedding := $1::vector,
                 match_threshold := $2,
                 match_count := $3,
-                p_user_id := $4,
-                p_agent_id := $5,
-                p_room_id := $6
+                p_user_id := $4::uuid,
+                p_agent_id := $5::uuid,
+                p_room_id := $6::uuid
             )
         """
-        p_user = str(user_id) if user_id else None
-        p_agent = str(agent_id) if agent_id else None
-        p_room = str(room_id) if room_id else None
         # asyncpg expects the vector as a bracket-formatted string, e.g. "[0.1,0.2,...]"
         vector_str = "[" + ",".join(str(v) for v in vector) + "]"
         records = await conn.execute_query_dict(
-            query, [vector_str, threshold, count, p_user, p_agent, p_room]
+            query, [vector_str, threshold, count, user_id, agent_id, room_id]
         )
         return [Memory(**row) for row in records]
 
