@@ -8,6 +8,11 @@ raw_url = get_settings().database_url or ""
 if raw_url.startswith("postgresql://"):
     raw_url = raw_url.replace("postgresql://", "postgres://", 1)
 
+# Disable asyncpg statement caching for Supabase/PgBouncer compatibility
+if raw_url.startswith("postgres://") and "statement_cache_size=0" not in raw_url:
+    separator = "&" if "?" in raw_url else "?"
+    raw_url = f"{raw_url}{separator}statement_cache_size=0"
+
 # Database configuration for Tortoise and Aerich
 TORTOISE_ORM = {
     "connections": {"default": raw_url},

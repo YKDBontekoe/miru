@@ -683,6 +683,13 @@ def _get_db_url() -> str:
     if not db_url or db_url == _ENV_STUBS["DATABASE_URL"]:
         print("ERROR: DATABASE_URL is not set. Export it or add it to backend/.env")
         sys.exit(1)
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgres://", 1)
+
+    if db_url.startswith("postgres://") and "statement_cache_size=0" not in db_url:
+        separator = "&" if "?" in db_url else "?"
+        db_url = f"{db_url}{separator}statement_cache_size=0"
+
     return db_url
 
 
