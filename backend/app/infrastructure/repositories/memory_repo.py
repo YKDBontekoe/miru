@@ -49,9 +49,9 @@ class MemoryRepository:
                 query_embedding := $1::vector,
                 match_threshold := $2,
                 match_count := $3,
-                p_user_id := $4,
-                p_agent_id := $5,
-                p_room_id := $6
+                p_user_id := $4::uuid,
+                p_agent_id := $5::uuid,
+                p_room_id := $6::uuid
             )
         """
         p_user = str(user_id) if user_id else None
