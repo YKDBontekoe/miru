@@ -9,13 +9,14 @@ part 'chat_message.g.dart';
 class ChatMessage with _$ChatMessage {
   const ChatMessage._();
 
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory ChatMessage({
     required String id,
     @Default('temp') String roomId,
     String? userId,
     String? agentId,
-    required String text,
-    required DateTime timestamp,
+    @JsonKey(name: 'content') required String text,
+    @JsonKey(name: 'created_at') required DateTime timestamp,
     @Default(MessageStatus.sent) MessageStatus status,
     String? crewTaskType,
   }) = _ChatMessage;
