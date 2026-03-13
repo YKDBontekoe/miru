@@ -98,13 +98,20 @@ jobs:
 
           # Wait for backend to be healthy
           echo "Waiting for backend..."
+          backend_up=0
           for i in {1..30}; do
             if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
               echo "Backend is up!"
+              backend_up=1
               break
             fi
             sleep 1
           done
+
+          if [ $backend_up -eq 0 ]; then
+            echo "::error::Backend failed to start"
+            exit 1
+          fi
       # -----------------------------------------------------------------------
       # Build the web app
       # -----------------------------------------------------------------------

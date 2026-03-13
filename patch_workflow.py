@@ -1,43 +1,34 @@
-import re
-
 with open('.github/workflows/flutter-web-smoke-test.yml', 'r') as f:
     content = f.read()
 
-# 1. Fix path to .env.test in Extract Supabase Keys step
-content = content.replace("grep 'ANON_KEY=' backend/.env.test", "grep 'ANON_KEY=' ../backend/.env.test")
+old_loop = """          # Wait for backend to be healthy
+          echo "Waiting for backend..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
+              echo "Backend is up!"
+              break
+            fi
+            sleep 1
+          done"""
 
-# 2. Add cleanup step at the end of the workflow
-cleanup_step = """
-      # -----------------------------------------------------------------------
-      # Cleanup ephemeral local instances
-      # -----------------------------------------------------------------------
-      - name: Stop processes
-        if: always()
-        run: |
-          # Kill all running background jobs like UV and uvicorn
-          kill $(jobs -p) 2>/dev/null || true
-          pkill uvicorn || true
+new_loop = """          # Wait for backend to be healthy
+          echo "Waiting for backend..."
+          backend_up=0
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
+              echo "Backend is up!"
+              backend_up=1
+              break
+            fi
+            sleep 1
+          done
 
-      - name: Stop Local Supabase
-        if: always()
-        working-directory: ./supabase
-        run: supabase stop
-"""
+          if [ $backend_up -eq 0 ]; then
+            echo "::error::Backend failed to start"
+            EXIT 1
+          fi"""
 
-# Append cleanup step at the end
-content = content + cleanup_step
-
-# 3. Replace the axe-core exit code handling
-# Instead of letting axe exit 2 and fail the step (which somehow got bubbled up or something),
-# we can just use set +e and not use --exit, or explicitly ignore failures
-axe_step = """      - name: Run accessibility check
-        run: axe http://localhost:8080 --exit
-        continue-on-error: true   # informational; does not fail the pipeline"""
-new_axe_step = """      - name: Run accessibility check
-        run: axe http://localhost:8080 || echo "Axe checks failed or could not run"
-        continue-on-error: true   # informational; does not fail the pipeline"""
-content = content.replace(axe_step, new_axe_step)
-
+content = content.replace(old_loop, new_loop.replace('EXIT', 'exit'))
 
 with open('.github/workflows/flutter-web-smoke-test.yml', 'w') as f:
     f.write(content)

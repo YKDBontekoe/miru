@@ -17,6 +17,9 @@ void main() {
       // 1. Initialize services pointing to the local ephemeral CI backend/Supabase
       await BackendService.init();
 
+      // Force the base URL to hit the local ephemeral CI backend instead of production Azure
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
+
       // Ensure we hit the real local backend instead of bypassing
       BackendService.bypassWaitForBackend = false;
 
@@ -40,7 +43,10 @@ void main() {
 
     testWidgets('Typing an email shows it in the input field', (tester) async {
       await BackendService.init();
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
       BackendService.bypassWaitForBackend = false;
+      await BackendService.waitForBackend(
+          maxAttempts: 15, initialDelay: const Duration(milliseconds: 500));
       await SupabaseService.initialize();
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
