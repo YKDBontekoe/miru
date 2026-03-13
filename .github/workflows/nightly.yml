@@ -62,7 +62,7 @@ jobs:
 
       - name: Create issue if vulnerabilities found
         if: steps.safety.outcome == 'failure' || steps.pip_audit.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = '🔒 Security: Vulnerabilities found in Python dependencies';
@@ -189,7 +189,7 @@ jobs:
 
       - name: Notify on failure
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = `🔥 Nightly Build Failed: ${{ matrix.target }}`;
