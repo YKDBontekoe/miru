@@ -43,15 +43,17 @@ class ChatService:
     def _get_crew_llm(self) -> LLM:
         """Build a CrewAI LLM instance backed by OpenRouter.
 
-        Using ``crewai.LLM`` instead of a raw ``AsyncOpenAI`` client prevents
-        CrewAI from injecting an unsupported ``tool_choice`` parameter when
-        routing through OpenRouter providers that don't implement that field.
+        Using ``crewai.LLM`` with ``tool_choice="none"`` prevents CrewAI/LiteLLM
+        from injecting an unsupported ``tool_choice`` parameter. Many OpenRouter
+        provider routes return a 404 when that field is present, so we suppress
+        it explicitly rather than relying on provider-level routing.
         """
         settings = get_settings()
         return LLM(
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
+            tool_choice="none",
         )
 
     def _get_agent_tools(self, agent: Agent) -> list:
