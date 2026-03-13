@@ -46,8 +46,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from app.infrastructure.database.utils import normalize_postgres_url
-
 if TYPE_CHECKING:
     from tortoise.backends.asyncpg.client import AsyncpgDBClient
 
@@ -685,7 +683,7 @@ def _get_db_url() -> str:
     if not db_url or db_url == _ENV_STUBS["DATABASE_URL"]:
         print("ERROR: DATABASE_URL is not set. Export it or add it to backend/.env")
         sys.exit(1)
-    return normalize_postgres_url(db_url, for_asyncpg=False)
+    return db_url
 
 
 def _psql_run(db_url: str, sql: str) -> None:
