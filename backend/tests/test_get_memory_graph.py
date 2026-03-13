@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -7,7 +9,7 @@ from app.domain.memory.service import MemoryService
 
 
 @pytest.mark.asyncio
-async def test_get_memory_graph_empty_memories():
+async def test_get_memory_graph_empty_memories() -> None:
     mock_repo = AsyncMock()
     mock_repo.list_all_memories.return_value = []
     # If memories is empty, m_ids will be []
