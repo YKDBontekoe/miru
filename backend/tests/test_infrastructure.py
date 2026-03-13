@@ -348,6 +348,8 @@ def test_sentry_init_called_when_dsn_set() -> None:
         # Re-execute just the init block
         import sentry_sdk
         from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.litellm import LiteLLMIntegration
+        from sentry_sdk.integrations.openai import OpenAIIntegration
         from sentry_sdk.integrations.starlette import StarletteIntegration
 
         if mock_settings.sentry_dsn:
@@ -359,6 +361,8 @@ def test_sentry_init_called_when_dsn_set() -> None:
                 integrations=[
                     StarletteIntegration(transaction_style="endpoint"),
                     FastApiIntegration(transaction_style="endpoint"),
+                    OpenAIIntegration(include_prompts=True),
+                    LiteLLMIntegration(include_prompts=True),
                 ],
             )
 

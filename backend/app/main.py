@@ -27,6 +27,8 @@ settings = get_settings()
 if settings.sentry_dsn:
     import sentry_sdk
     from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.litellm import LiteLLMIntegration
+    from sentry_sdk.integrations.openai import OpenAIIntegration
     from sentry_sdk.integrations.starlette import StarletteIntegration
 
     sentry_sdk.init(
@@ -37,6 +39,8 @@ if settings.sentry_dsn:
         integrations=[
             StarletteIntegration(transaction_style="endpoint"),
             FastApiIntegration(transaction_style="endpoint"),
+            OpenAIIntegration(include_prompts=True),
+            LiteLLMIntegration(include_prompts=True),
         ],
     )
     logger.info("Sentry error tracking enabled (environment=%s)", settings.sentry_environment)
