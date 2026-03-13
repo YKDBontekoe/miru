@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Parse CodeRabbit Output and Proxy to Jules
-        uses: actions/github-script@v8
+        uses: actions/github-script@v7
         with:
           # A PAT (Personal Access Token) from a real user is REQUIRED here.
           # The default GITHUB_TOKEN belongs to github-actions[bot] and Jules will ignore it.

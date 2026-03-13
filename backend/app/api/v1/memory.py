@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from openai import APIConnectionError
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
@@ -29,13 +28,8 @@ async def list_memories(
     service: Annotated[MemoryService, Depends(get_memory_service)],
 ) -> dict[str, list[Memory]]:
     """Retrieve top memories for the current user."""
-    try:
-        memories = await service.retrieve_memories(query="", user_id=user_id)
-        return {"memories": memories}
-    except APIConnectionError as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    memories = await service.retrieve_memories(query="", user_id=user_id)
+    return {"memories": memories}
 
 
 @router.get("/graph", response_model=MemoryGraphResponse)
@@ -54,13 +48,8 @@ async def store_memory(
     service: Annotated[MemoryService, Depends(get_memory_service)],
 ) -> dict[str, Any]:
     """Manually store a new memory."""
-    try:
-        memory_id = await service.store_memory(content=data.message, user_id=user_id)
-        return {"status": "ok", "id": str(memory_id)}
-    except APIConnectionError as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    memory_id = await service.store_memory(content=data.message, user_id=user_id)
+    return {"status": "ok", "id": str(memory_id)}
 
 
 @router.delete("/{memory_id}")

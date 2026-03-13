@@ -4,18 +4,16 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
-import httpx
 from fastapi.testclient import TestClient
-from openai import APIConnectionError
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import get_current_user
-from app.domain.memory.models import Memory, MemoryGraphResponse, MemoryRelationship
+from app.domain.memory.models import Memory
 from app.main import app
 
 
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient]:
     app.dependency_overrides = {}
     yield TestClient(app)
     app.dependency_overrides = {}
@@ -79,6 +77,8 @@ def test_get_memory_graph_route(client: TestClient) -> None:
         updated_at=datetime.now(UTC),
     )
 
+    from app.domain.memory.models import MemoryGraphResponse, MemoryRelationship
+
     mock_rel = MemoryRelationship(
         id=uuid4(),
         source_id=memory_id,
@@ -109,39 +109,3 @@ def test_get_memory_graph_route(client: TestClient) -> None:
     assert data["nodes"][0]["content"] == "Graph memory"
     assert len(data["edges"]) == 1
     assert data["edges"][0]["relationship_type"] == "SIMILAR_TO"
-
-
-def test_list_memories_route_network_error(client: TestClient) -> None:
-    user_id = uuid4()
-    mock_service = MagicMock()
-
-    request = httpx.Request("GET", "http://test")
-    mock_service.retrieve_memories = AsyncMock(side_effect=APIConnectionError(request=request))
-
-    app.dependency_overrides[get_current_user] = lambda: user_id
-    app.dependency_overrides[get_memory_service] = lambda: mock_service
-
-    response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
-
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
-
-
-def test_store_memory_route_network_error(client: TestClient) -> None:
-    user_id = uuid4()
-    mock_service = MagicMock()
-
-    request = httpx.Request("POST", "http://test")
-    mock_service.store_memory = AsyncMock(side_effect=APIConnectionError(request=request))
-
-    app.dependency_overrides[get_current_user] = lambda: user_id
-    app.dependency_overrides[get_memory_service] = lambda: mock_service
-
-    response = client.post(
-        "/api/v1/memory",
-        headers={"Authorization": "Bearer fake_token"},
-        json={"message": "Important fact"},
-    )
-
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}

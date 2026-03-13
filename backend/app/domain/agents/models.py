@@ -23,6 +23,7 @@ class Agent(SupabaseModel):
     name: str = fields.CharField(max_length=100, db_index=True)  # type: ignore[assignment]
     personality: str = fields.TextField()
     description: str | None = fields.TextField(null=True)
+    avatar_url: str | None = fields.CharField(max_length=512, null=True)  # type: ignore[assignment]
     system_prompt: str | None = fields.TextField(null=True)
     status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
     mood: str = fields.CharField(max_length=50, default="Neutral")  # type: ignore[assignment]
@@ -126,6 +127,7 @@ class AgentTemplate(SupabaseModel):
         "models.Capability", related_name="templates", table="agent_templates_capabilities"
     )
 
+    avatar_url: str | None = fields.CharField(max_length=512, null=True)  # type: ignore[assignment]
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
@@ -220,6 +222,7 @@ class AgentBase(BaseModel):
     name: str = Field(max_length=100)
     personality: str = Field(max_length=1000)
     description: str | None = Field(default=None, max_length=500)
+    avatar_url: str | None = Field(default=None)
     system_prompt: str | None = Field(default=None)
     status: str = Field(default="active")
     mood: str = Field(default="Neutral")

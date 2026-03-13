@@ -49,6 +49,7 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
         name=agent.name,
         personality=agent.personality,
         description=agent.description,
+        avatar_url=agent.avatar_url,
         system_prompt=agent.system_prompt,
         status=agent.status,
         mood=agent.mood,
