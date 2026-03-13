@@ -1,17 +1,13 @@
 """Tortoise ORM configuration and initialization."""
 
+from __future__ import annotations
+
 from tortoise import Tortoise
 
 from app.core.config import get_settings
+from app.infrastructure.database.utils import normalize_postgres_url
 
-raw_url = get_settings().database_url or ""
-if raw_url.startswith("postgresql://"):
-    raw_url = raw_url.replace("postgresql://", "postgres://", 1)
-
-# Disable asyncpg statement caching for Supabase/PgBouncer compatibility
-if raw_url.startswith("postgres://") and "statement_cache_size=0" not in raw_url:
-    separator = "&" if "?" in raw_url else "?"
-    raw_url = f"{raw_url}{separator}statement_cache_size=0"
+raw_url = normalize_postgres_url(get_settings().database_url or "", for_asyncpg=True)
 
 # Database configuration for Tortoise and Aerich
 TORTOISE_ORM = {
