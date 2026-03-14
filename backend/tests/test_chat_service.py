@@ -121,3 +121,65 @@ async def test_run_crew_task_has_single_agent(
         _, crew_kwargs = mock_crew_cls.call_args
         assert "agents" in crew_kwargs
         assert crew_kwargs["agents"] == [mock_crew_agent]
+
+@pytest.mark.asyncio
+async def test_run_crew_task_has_multiple_agents(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import uuid
+    from unittest.mock import patch
+
+    user_id = uuid.uuid4()
+
+    agent1 = MagicMock()
+    agent1.name = "Agent 1"
+    agent1.personality = "Helpful"
+    agent1.description = "A helpful agent"
+    agent1.agent_integrations = []
+
+    agent2 = MagicMock()
+    agent2.name = "Agent 2"
+    agent2.personality = "Funny"
+    agent2.description = "A funny agent"
+    agent2.agent_integrations = []
+
+    chat_service.agent_repo.list_by_user.return_value = [agent1, agent2]
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,
+    ):
+        mock_crew_agent1 = MagicMock()
+        mock_crew_agent1.role = "Agent 1"
+        mock_crew_agent2 = MagicMock()
+        mock_crew_agent2.role = "Agent 2"
+        mock_agent_cls.side_effect = [mock_crew_agent1, mock_crew_agent2]
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        result = await chat_service.run_crew("hello", user_id)
+
+        assert result["task_type"] == "general"
+        assert result["result"] == "Crew output"
+
+        # Verify Task was instantiated without an assigned agent (hierarchical)
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "agent" not in kwargs
+
+        # Verify Crew was instantiated hierarchically with manager_llm
+        mock_crew_cls.assert_called_once()
+        _, crew_kwargs = mock_crew_cls.call_args
+        assert "agents" in crew_kwargs
+        assert crew_kwargs["agents"] == [mock_crew_agent1, mock_crew_agent2]
+        assert "manager_llm" in crew_kwargs
+        assert crew_kwargs["manager_llm"] == mock_llm
+        assert crew_kwargs["process"] == mock_process.hierarchical
