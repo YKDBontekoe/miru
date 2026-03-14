@@ -1,10 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:miru/core/services/supabase_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('SupabaseService.initialize calls Supabase', () async {
+    // Mock SharedPreferences to avoid MissingPluginException
+    SharedPreferences.setMockInitialValues({});
+
     // Because Supabase.initialize is a singleton and tests run in same isolate,
     // we just want to execute the lines for coverage without breaking the real app.
     // The easiest way is to pass explicit arguments to hit the new lines.
