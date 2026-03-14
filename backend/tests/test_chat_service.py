@@ -121,3 +121,208 @@ async def test_run_crew_task_has_single_agent(
         _, crew_kwargs = mock_crew_cls.call_args
         assert "agents" in crew_kwargs
         assert crew_kwargs["agents"] == [mock_crew_agent]
+
+
+@pytest.mark.asyncio
+async def test_run_crew_task_has_multiple_agents(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import uuid
+    from unittest.mock import patch
+
+    user_id = uuid.uuid4()
+
+    agent1 = MagicMock()
+    agent1.name = "Agent 1"
+    agent1.personality = "Helpful"
+    agent1.description = "A helpful agent"
+    agent1.agent_integrations = []
+
+    agent2 = MagicMock()
+    agent2.name = "Agent 2"
+    agent2.personality = "Funny"
+    agent2.description = "A funny agent"
+    agent2.agent_integrations = []
+
+    chat_service.agent_repo.list_by_user.return_value = [agent1, agent2]
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,
+    ):
+        mock_crew_agent1 = MagicMock()
+        mock_crew_agent1.role = "Agent 1"
+        mock_crew_agent2 = MagicMock()
+        mock_crew_agent2.role = "Agent 2"
+        mock_agent_cls.side_effect = [mock_crew_agent1, mock_crew_agent2]
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        result = await chat_service.run_crew("hello", user_id)
+
+        assert result["task_type"] == "general"
+        assert result["result"] == "Crew output"
+
+        # Verify Task was instantiated without an assigned agent (hierarchical)
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "agent" not in kwargs
+
+        # Verify Crew was instantiated hierarchically with manager_llm
+        mock_crew_cls.assert_called_once()
+        _, crew_kwargs = mock_crew_cls.call_args
+        assert "agents" in crew_kwargs
+        assert crew_kwargs["agents"] == [mock_crew_agent1, mock_crew_agent2]
+        assert "manager_llm" in crew_kwargs
+        assert crew_kwargs["manager_llm"] == mock_llm
+        assert crew_kwargs["process"] == mock_process.hierarchical
+
+
+@pytest.mark.asyncio
+async def test_stream_room_responses_single_agent(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import uuid
+    from unittest.mock import patch
+
+    user_id = uuid.uuid4()
+    room_id = uuid.uuid4()
+
+    agent = MagicMock()
+    agent.id = uuid.uuid4()
+    agent.name = "Test Agent"
+    agent.personality = "Helpful"
+    agent.description = "A helpful agent"
+    agent.agent_integrations = []
+
+    chat_service.chat_repo.list_room_agents.return_value = [agent]
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,
+    ):
+        mock_crew_agent = MagicMock()
+        mock_crew_agent.role = "Test Agent"
+        mock_agent_cls.return_value = mock_crew_agent
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        responses = []
+        async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+            responses.append(r)
+
+        assert responses == ["Crew output", "[[STATUS:done]]\n"]
+
+        # Verify Task was instantiated with single agent
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "agent" in kwargs
+        assert kwargs["agent"] == mock_crew_agent
+
+        # Verify Crew was instantiated with agents list
+        mock_crew_cls.assert_called_once()
+        _, crew_kwargs = mock_crew_cls.call_args
+        assert "agents" in crew_kwargs
+        assert crew_kwargs["agents"] == [mock_crew_agent]
+        assert crew_kwargs["process"] == mock_process.sequential
+
+
+@pytest.mark.asyncio
+async def test_stream_room_responses_multiple_agents(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import uuid
+    from unittest.mock import patch
+
+    user_id = uuid.uuid4()
+    room_id = uuid.uuid4()
+
+    agent1 = MagicMock()
+    agent1.id = uuid.uuid4()
+    agent1.name = "Test Agent 1"
+    agent1.personality = "Helpful"
+    agent1.description = "A helpful agent"
+    agent1.agent_integrations = []
+
+    agent2 = MagicMock()
+    agent2.id = uuid.uuid4()
+    agent2.name = "Test Agent 2"
+    agent2.personality = "Funny"
+    agent2.description = "A funny agent"
+    agent2.agent_integrations = []
+
+    chat_service.chat_repo.list_room_agents.return_value = [agent1, agent2]
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,
+    ):
+        mock_crew_agent1 = MagicMock()
+        mock_crew_agent1.role = "Test Agent 1"
+        mock_crew_agent2 = MagicMock()
+        mock_crew_agent2.role = "Test Agent 2"
+        mock_agent_cls.side_effect = [mock_crew_agent1, mock_crew_agent2]
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        responses = []
+        async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+            responses.append(r)
+
+        assert responses == ["Crew output", "[[STATUS:done]]\n"]
+
+        # Verify Task was instantiated without single agent
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "agent" not in kwargs
+
+        # Verify Crew was instantiated with multiple agents
+        mock_crew_cls.assert_called_once()
+        _, crew_kwargs = mock_crew_cls.call_args
+        assert "agents" in crew_kwargs
+        assert crew_kwargs["agents"] == [mock_crew_agent1, mock_crew_agent2]
+        assert crew_kwargs["process"] == mock_process.hierarchical
+        assert "manager_llm" in crew_kwargs
+        assert crew_kwargs["manager_llm"] == mock_llm
+
+
+@pytest.mark.asyncio
+async def test_stream_room_responses_no_agents(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import uuid
+
+    user_id = uuid.uuid4()
+    room_id = uuid.uuid4()
+
+    chat_service.chat_repo.list_room_agents.return_value = []
+
+    responses = []
+    async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+        responses.append(r)
+
+    assert responses == ["No agents in this room. Please add some first."]
