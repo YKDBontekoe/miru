@@ -244,10 +244,10 @@ class TestMemoryRepository:
         assert "$5::uuid" in sql_query
         assert "$6::uuid" in sql_query
 
-        # Verify parameters are passed as UUID objects, not strings
-        assert params[3] == uid
-        assert params[4] == aid
-        assert params[5] == rid
+        # Verify parameters are passed as strings, not UUID objects
+        assert params[3] == str(uid)
+        assert params[4] == str(aid)
+        assert params[5] == str(rid)
 
     async def test_search_fulltext_delegates_to_raw_sql(self) -> None:
         repo = MemoryRepository()

@@ -56,8 +56,12 @@ class MemoryRepository:
         """
         # asyncpg expects the vector as a bracket-formatted string, e.g. "[0.1,0.2,...]"
         vector_str = "[" + ",".join(str(v) for v in vector) + "]"
+        p_user_id = str(user_id) if user_id else None
+        p_agent_id = str(agent_id) if agent_id else None
+        p_room_id = str(room_id) if room_id else None
+
         records = await conn.execute_query_dict(
-            query, [vector_str, threshold, count, user_id, agent_id, room_id]
+            query, [vector_str, threshold, count, p_user_id, p_agent_id, p_room_id]
         )
         return [Memory(**row) for row in records]
 
