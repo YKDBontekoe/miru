@@ -2,7 +2,7 @@ name: CodeRabbit Rate Limit Detector
 
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 jobs:
   detect-rate-limit:
