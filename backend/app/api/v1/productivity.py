@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.models import (
@@ -40,9 +40,11 @@ async def create_task(
 @router.get("/tasks", response_model=list[TaskResponse])
 async def list_tasks(
     user_id: CurrentUser,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ) -> list[TaskResponse]:
     """List all tasks for the current user."""
-    tasks = await ProductivityService.list_tasks(user_id)
+    tasks = await ProductivityService.list_tasks(user_id, limit=limit, offset=offset)
     return [TaskResponse.model_validate(t) for t in tasks]
 
 
@@ -94,9 +96,11 @@ async def create_note(
 @router.get("/notes", response_model=list[NoteResponse])
 async def list_notes(
     user_id: CurrentUser,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ) -> list[NoteResponse]:
     """List all notes for the current user."""
-    notes = await ProductivityService.list_notes(user_id)
+    notes = await ProductivityService.list_notes(user_id, limit=limit, offset=offset)
     return [NoteResponse.model_validate(n) for n in notes]
 
 

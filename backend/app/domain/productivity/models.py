@@ -19,7 +19,6 @@ class Task(SupabaseModel):
     title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
     description: str | None = fields.TextField(null=True)
     is_completed: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
@@ -40,7 +39,6 @@ class Note(SupabaseModel):
     title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
     content: str = fields.TextField()
     is_pinned: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
@@ -59,18 +57,48 @@ class Note(SupabaseModel):
 
 
 class TaskCreate(BaseModel):
+    """Schema for creating a new Task.
+
+    Args:
+        title: The title of the task.
+        description: An optional description.
+        is_completed: Indicates whether the task is complete. Defaults to False.
+    """
+
     title: str
     description: str | None = None
     is_completed: bool = False
 
 
 class TaskUpdate(BaseModel):
+    """Schema for updating an existing Task.
+
+    Args:
+        title: Optional new title for the task.
+        description: Optional new description.
+        is_completed: Optional new completion status.
+    """
+
     title: str | None = None
     description: str | None = None
     is_completed: bool | None = None
 
 
 class TaskResponse(BaseModel):
+    """Schema for a Task response.
+
+    This model maps from ORM attributes.
+
+    Args:
+        id: Unique identifier for the task.
+        user_id: Unique identifier for the owning user.
+        title: The title of the task.
+        description: The description of the task, if any.
+        is_completed: Whether the task is completed.
+        created_at: The timestamp when the task was created.
+        updated_at: The timestamp when the task was last updated.
+    """
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -83,18 +111,48 @@ class TaskResponse(BaseModel):
 
 
 class NoteCreate(BaseModel):
+    """Schema for creating a new Note.
+
+    Args:
+        title: The title of the note.
+        content: The text content of the note.
+        is_pinned: Whether the note is pinned. Defaults to False.
+    """
+
     title: str
     content: str
     is_pinned: bool = False
 
 
 class NoteUpdate(BaseModel):
+    """Schema for updating an existing Note.
+
+    Args:
+        title: Optional new title for the note.
+        content: Optional new content for the note.
+        is_pinned: Optional new pinned status.
+    """
+
     title: str | None = None
     content: str | None = None
     is_pinned: bool | None = None
 
 
 class NoteResponse(BaseModel):
+    """Schema for a Note response.
+
+    This model maps from ORM attributes.
+
+    Args:
+        id: Unique identifier for the note.
+        user_id: Unique identifier for the owning user.
+        title: The title of the note.
+        content: The text content of the note.
+        is_pinned: Whether the note is pinned.
+        created_at: The timestamp when the note was created.
+        updated_at: The timestamp when the note was last updated.
+    """
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

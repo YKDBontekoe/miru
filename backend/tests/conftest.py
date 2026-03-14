@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import jwt
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 from tortoise import Tortoise
 
@@ -73,7 +74,7 @@ def auth_headers(user_id: str | None = None) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def initialize_tortoise() -> AsyncGenerator[None, None]:
     config = {
         "connections": {"default": "sqlite://:memory:"},

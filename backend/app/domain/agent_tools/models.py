@@ -35,9 +35,12 @@ class AgentTool(SupabaseModel):
         table = "agent_tools"
         sql_policies = [
             "ALTER TABLE public.agent_tools ENABLE ROW LEVEL SECURITY;",
-            "CREATE POLICY agent_tools_owner_all ON public.agent_tools FOR ALL USING ("
-            "user_id IS NULL OR auth.uid() = user_id OR is_public = true"
+            "CREATE POLICY agent_tools_select ON public.agent_tools FOR SELECT USING ("
+            "is_public = true OR auth.uid() = user_id OR user_id IS NULL"
             ");",
+            "CREATE POLICY agent_tools_insert ON public.agent_tools FOR INSERT WITH CHECK (auth.uid() = user_id);",
+            "CREATE POLICY agent_tools_update ON public.agent_tools FOR UPDATE USING (auth.uid() = user_id);",
+            "CREATE POLICY agent_tools_delete ON public.agent_tools FOR DELETE USING (auth.uid() = user_id);",
         ]
 
 

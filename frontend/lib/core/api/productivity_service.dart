@@ -1,25 +1,22 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../models/note.dart';
 import '../models/task.dart';
 import '../services/supabase_service.dart';
 import 'backend_service.dart';
 
-part 'productivity_service.g.dart';
-
-@riverpod
-ProductivityService productivityService(ProductivityServiceRef ref) {
-  return ProductivityService(ref);
-}
-
 class ProductivityService {
-  final ProductivityServiceRef ref;
+  final http.Client _client;
 
-  ProductivityService(this.ref);
-  final http.Client _client = http.Client();
+  ProductivityService({http.Client? client})
+      : _client = client ?? http.Client();
+
+  String get _normalizedBaseUrl {
+    final raw = BackendService.baseUrl.value;
+    return raw.endsWith('/') ? raw.substring(0, raw.length - 1) : raw;
+  }
 
   Future<Map<String, String>> _headers() async {
     final token = SupabaseService.accessToken;
@@ -34,7 +31,7 @@ class ProductivityService {
   // ---------------------------------------------------------------------------
 
   Future<List<Task>> listTasks() async {
-    final uri = Uri.parse('${BackendService.baseUrl.value}/productivity/tasks');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/tasks');
     final response = await _client.get(uri, headers: await _headers());
 
     if (response.statusCode == 200) {
@@ -48,7 +45,7 @@ class ProductivityService {
   }
 
   Future<Task> createTask(String title, {String? description}) async {
-    final uri = Uri.parse('${BackendService.baseUrl.value}/productivity/tasks');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/tasks');
     final response = await _client.post(
       uri,
       headers: await _headers(),
@@ -67,8 +64,7 @@ class ProductivityService {
 
   Future<Task> updateTask(String id,
       {String? title, String? description, bool? isCompleted}) async {
-    final uri =
-        Uri.parse('${BackendService.baseUrl.value}/productivity/tasks/$id');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/tasks/$id');
     final Map<String, dynamic> updates = {};
     if (title != null) updates['title'] = title;
     if (description != null) updates['description'] = description;
@@ -88,8 +84,7 @@ class ProductivityService {
   }
 
   Future<void> deleteTask(String id) async {
-    final uri =
-        Uri.parse('${BackendService.baseUrl.value}/productivity/tasks/$id');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/tasks/$id');
     final response = await _client.delete(uri, headers: await _headers());
 
     if (response.statusCode != 204) {
@@ -102,7 +97,7 @@ class ProductivityService {
   // ---------------------------------------------------------------------------
 
   Future<List<Note>> listNotes() async {
-    final uri = Uri.parse('${BackendService.baseUrl.value}/productivity/notes');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes');
     final response = await _client.get(uri, headers: await _headers());
 
     if (response.statusCode == 200) {
@@ -117,7 +112,7 @@ class ProductivityService {
 
   Future<Note> createNote(String title, String content,
       {bool isPinned = false}) async {
-    final uri = Uri.parse('${BackendService.baseUrl.value}/productivity/notes');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes');
     final response = await _client.post(
       uri,
       headers: await _headers(),
@@ -137,8 +132,7 @@ class ProductivityService {
 
   Future<Note> updateNote(String id,
       {String? title, String? content, bool? isPinned}) async {
-    final uri =
-        Uri.parse('${BackendService.baseUrl.value}/productivity/notes/$id');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes/$id');
     final Map<String, dynamic> updates = {};
     if (title != null) updates['title'] = title;
     if (content != null) updates['content'] = content;
@@ -158,8 +152,7 @@ class ProductivityService {
   }
 
   Future<void> deleteNote(String id) async {
-    final uri =
-        Uri.parse('${BackendService.baseUrl.value}/productivity/notes/$id');
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes/$id');
     final response = await _client.delete(uri, headers: await _headers());
 
     if (response.statusCode != 204) {
