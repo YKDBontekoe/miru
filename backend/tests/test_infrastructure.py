@@ -200,6 +200,66 @@ def test_tortoise_url_adds_statement_cache_size() -> None:
         assert tort_mod.TORTOISE_ORM["connections"]["default"] == "sqlite://:memory:"  # type: ignore[index]
 
 
+def test_tortoise_url_strips_pgbouncer() -> None:
+    import importlib
+    import os
+    from unittest.mock import patch
+
+    # Force get_settings() to re-run and pick up our os.environ overrides
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+
+    # For tests to pass, we need to supply required values
+    env_vars = {
+        "OPENROUTER_API_KEY": "test-key",
+        "SUPABASE_URL": "http://localhost:54321",
+        "SUPABASE_KEY": "test-anon-key",
+        "SUPABASE_SERVICE_ROLE_KEY": "test-service-role-key",
+        "SUPABASE_JWT_SECRET": "test-jwt-secret-that-is-long-enough-32ch",
+        "DEFAULT_CHAT_MODEL": "google/gemma-3-27b-it:free",
+        "EMBEDDING_MODEL": "openai/text-embedding-3-small",
+        "WEBAUTHN_RP_ID": "localhost",
+        "WEBAUTHN_RP_NAME": "Miru Test",
+        "WEBAUTHN_EXPECTED_ORIGIN": "http://localhost",
+        "CORS_ALLOWED_ORIGINS": "*",
+    }
+
+    with patch.dict(
+        os.environ,
+        {
+            **env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?pgbouncer=true",
+        },
+    ):
+        get_settings.cache_clear()
+        import app.infrastructure.database.tortoise as tort_mod
+
+        importlib.reload(tort_mod)
+        # Should strip pgbouncer=true and add statement_cache_size=0
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?statement_cache_size=0"
+        )
+
+    with patch.dict(
+        os.environ,
+        {
+            **env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?pgbouncer=true&statement_cache_size=100&other=val",
+        },
+    ):
+        get_settings.cache_clear()
+        import app.infrastructure.database.tortoise as tort_mod
+
+        importlib.reload(tort_mod)
+        # Should strip pgbouncer=true and preserve statement_cache_size and other
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?statement_cache_size=100&other=val"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Supabase singleton
 # ---------------------------------------------------------------------------

@@ -15,6 +15,7 @@ if raw_url.startswith("postgresql://"):
 if raw_url.startswith("postgres://"):
     parsed = urllib.parse.urlsplit(raw_url)
     query_params = urllib.parse.parse_qsl(parsed.query)
+    query_params = [(k, v) for k, v in query_params if k != "pgbouncer"]
     if not any(k == "statement_cache_size" for k, v in query_params):
         query_params.append(("statement_cache_size", "0"))
     new_query = urllib.parse.urlencode(query_params)
