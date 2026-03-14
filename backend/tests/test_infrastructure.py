@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -142,18 +143,12 @@ async def test_client_embed() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_tortoise_url_adds_statement_cache_size() -> None:
-    import importlib
-    import os
-    from unittest.mock import patch
-
-    # Force get_settings() to re-run and pick up our os.environ overrides
+@pytest.fixture
+def test_env_vars() -> dict[str, str]:
     from app.core.config import get_settings
 
     get_settings.cache_clear()
-
-    # For tests to pass, we need to supply required values
-    env_vars = {
+    return {
         "OPENROUTER_API_KEY": "test-key",
         "SUPABASE_URL": "http://localhost:54321",
         "SUPABASE_KEY": "test-anon-key",
@@ -167,13 +162,26 @@ def test_tortoise_url_adds_statement_cache_size() -> None:
         "CORS_ALLOWED_ORIGINS": "*",
     }
 
-    with patch.dict(
-        os.environ, {**env_vars, "DATABASE_URL": "postgresql://user:pass@host:5432/db"}
-    ):
-        get_settings.cache_clear()
-        import app.infrastructure.database.tortoise as tort_mod
 
-        importlib.reload(tort_mod)
+def _reload_tortoise_module() -> Any:
+    import importlib
+
+    import app.infrastructure.database.tortoise as tort_mod
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    importlib.reload(tort_mod)
+    return tort_mod
+
+
+def test_tortoise_url_adds_statement_cache_size(test_env_vars: dict[str, str]) -> None:
+    import os
+    from unittest.mock import patch
+
+    with patch.dict(
+        os.environ, {**test_env_vars, "DATABASE_URL": "postgresql://user:pass@host:5432/db"}
+    ):
+        tort_mod = _reload_tortoise_module()
         assert (
             tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
             == "postgres://user:pass@host:5432/db?statement_cache_size=0"
@@ -181,23 +189,56 @@ def test_tortoise_url_adds_statement_cache_size() -> None:
 
     with patch.dict(
         os.environ,
-        {**env_vars, "DATABASE_URL": "postgres://user:pass@host:5432/db?sslmode=require"},
+        {**test_env_vars, "DATABASE_URL": "postgres://user:pass@host:5432/db?sslmode=require"},
     ):
-        get_settings.cache_clear()
-        import app.infrastructure.database.tortoise as tort_mod
-
-        importlib.reload(tort_mod)
+        tort_mod = _reload_tortoise_module()
         assert (
             tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
             == "postgres://user:pass@host:5432/db?sslmode=require&statement_cache_size=0"
         )
 
-    with patch.dict(os.environ, {**env_vars, "DATABASE_URL": "sqlite://:memory:"}):
-        get_settings.cache_clear()
-        import app.infrastructure.database.tortoise as tort_mod
-
-        importlib.reload(tort_mod)
+    with patch.dict(os.environ, {**test_env_vars, "DATABASE_URL": "sqlite://:memory:"}):
+        tort_mod = _reload_tortoise_module()
         assert tort_mod.TORTOISE_ORM["connections"]["default"] == "sqlite://:memory:"  # type: ignore[index]
+
+
+def test_tortoise_url_strips_pgbouncer(test_env_vars: dict[str, str]) -> None:
+    """Verify that the tortoise URL builder strips pgbouncer settings.
+
+    This ensures that any `pgbouncer=true` parameter added by connection poolers
+    is stripped out when generating the `postgres://` URL, while still normalizing
+    the DB URL with the required parameters (like `statement_cache_size`).
+    """
+    import os
+    from unittest.mock import patch
+
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?pgbouncer=true",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        # Should strip pgbouncer=true and add statement_cache_size=0
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?statement_cache_size=0"
+        )
+
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?pgbouncer=true&statement_cache_size=100&other=val",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        # Should strip pgbouncer=true and preserve statement_cache_size and other
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?statement_cache_size=100&other=val"
+        )
 
 
 # ---------------------------------------------------------------------------
