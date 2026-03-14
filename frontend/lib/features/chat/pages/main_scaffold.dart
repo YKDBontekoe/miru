@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/features/rooms/pages/rooms_page.dart';
+import 'package:miru/features/rooms/widgets/create_persona_sheet.dart';
 import 'package:miru/features/settings/pages/settings_page.dart';
 
 class MainScaffold extends StatefulWidget {

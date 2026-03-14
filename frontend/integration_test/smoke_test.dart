@@ -96,8 +96,8 @@ void main() {
       // Enter password
       await tester.enterText(find.byType(TextField).at(1), testPassword);
 
-      // Tap "Sign In"
-      final signInButton = find.text('Sign In');
+      // Tap "Sign in"
+      final signInButton = find.text('Sign in');
       await tester.ensureVisible(signInButton);
       await tester.tap(signInButton);
 
@@ -108,12 +108,19 @@ void main() {
       expect(find.text('Settings'), findsWidgets);
 
       final snackbars = find.byType(SnackBar).evaluate();
-      for (final e in snackbars) {
-        final snackbar = e.widget as SnackBar;
-        final textWidget = snackbar.content as Text;
-        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+      if (snackbars.isNotEmpty) {
+        for (final e in snackbars) {
+          final snackbar = e.widget as SnackBar;
+          if (snackbar.content is Text) {
+            final textWidget = snackbar.content as Text;
+            debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+          } else {
+            debugPrint('UNEXPECTED SNACKBAR FOUND (Non-text content)');
+          }
+        }
       }
-      expect(snackbars, isEmpty);
+      expect(snackbars, isEmpty,
+          reason: 'Unexpected snackbars found during sign in');
 
       expect(find.textContaining('Error'), findsNothing);
     });
@@ -166,12 +173,19 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       final snackbars = find.byType(SnackBar).evaluate();
-      for (final e in snackbars) {
-        final snackbar = e.widget as SnackBar;
-        final textWidget = snackbar.content as Text;
-        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+      if (snackbars.isNotEmpty) {
+        for (final e in snackbars) {
+          final snackbar = e.widget as SnackBar;
+          if (snackbar.content is Text) {
+            final textWidget = snackbar.content as Text;
+            debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+          } else {
+            debugPrint('UNEXPECTED SNACKBAR FOUND (Non-text content)');
+          }
+        }
       }
-      expect(snackbars, isEmpty);
+      expect(snackbars, isEmpty,
+          reason: 'Unexpected snackbars found during agent creation');
 
       expect(find.textContaining('Error'), findsNothing);
     });
@@ -210,12 +224,19 @@ void main() {
       expect(find.text('Settings'), findsWidgets);
 
       final snackbars = find.byType(SnackBar).evaluate();
-      for (final e in snackbars) {
-        final snackbar = e.widget as SnackBar;
-        final textWidget = snackbar.content as Text;
-        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+      if (snackbars.isNotEmpty) {
+        for (final e in snackbars) {
+          final snackbar = e.widget as SnackBar;
+          if (snackbar.content is Text) {
+            final textWidget = snackbar.content as Text;
+            debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+          } else {
+            debugPrint('UNEXPECTED SNACKBAR FOUND (Non-text content)');
+          }
+        }
       }
-      expect(snackbars, isEmpty);
+      expect(snackbars, isEmpty,
+          reason: 'Unexpected snackbars found on settings page');
 
       expect(find.textContaining('Error'), findsNothing);
     });

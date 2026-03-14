@@ -20,7 +20,7 @@ class Capability with _$Capability {
 class Integration with _$Integration {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Integration({
-    required String type,
+    required String id,
     required String displayName,
     required String description,
     required String icon,
