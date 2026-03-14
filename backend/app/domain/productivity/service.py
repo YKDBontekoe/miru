@@ -103,9 +103,7 @@ class ProductivityService:
                 status_code=500, detail="Database error occurred while updating task"
             ) from e
         except Exception as e:
-            logger.exception(
-                "Unexpected error in update_task for user_id=%s task_id=%s", user_id, task_id
-            )
+            logger.exception("Unexpected error in update_task")
             raise HTTPException(status_code=500, detail="Failed to update task") from e
 
     @staticmethod
@@ -120,9 +118,7 @@ class ProductivityService:
                 status_code=500, detail="Database error occurred while deleting task"
             ) from e
         except Exception as e:
-            logger.exception(
-                "Unexpected error in delete_task for user_id=%s task_id=%s", user_id, task_id
-            )
+            logger.exception("Unexpected error in delete_task")
             raise HTTPException(status_code=500, detail="Failed to delete task") from e
 
     # ---------------------------------------------------------------------------
@@ -205,9 +201,7 @@ class ProductivityService:
                 status_code=500, detail="Database error occurred while updating note"
             ) from e
         except Exception as e:
-            logger.exception(
-                "Unexpected error in update_note for user_id=%s note_id=%s", user_id, note_id
-            )
+            logger.exception("Unexpected error in update_note")
             raise HTTPException(status_code=500, detail="Failed to update note") from e
 
     @staticmethod
@@ -222,7 +216,5 @@ class ProductivityService:
                 status_code=500, detail="Database error occurred while deleting note"
             ) from e
         except Exception as e:
-            logger.exception(
-                "Unexpected error in delete_note for user_id=%s note_id=%s", user_id, note_id
-            )
+            logger.exception("Unexpected error in delete_note")
             raise HTTPException(status_code=500, detail="Failed to delete note") from e
