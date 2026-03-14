@@ -1,0 +1,109 @@
+name: CodeRabbit Rate Limit Detector
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  detect-rate-limit:
+    name: Detect and Queue CodeRabbit PR
+    # Only run if it's a PR, the comment contains rate limit info, and is likely from CodeRabbit
+    if: >
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, 'Rate limit exceeded') &&
+      contains(github.event.comment.body, 'coderabbit')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Parse wait time and Create Tracking Issue
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_CREATED_AT: ${{ github.event.comment.created_at }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          PR_TITLE: ${{ github.event.issue.title }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 -c "
+          import os, re, datetime, json
+          import urllib.request, urllib.parse
+
+          body = os.environ.get('COMMENT_BODY', '')
+          created_at_str = os.environ.get('COMMENT_CREATED_AT')
+          pr_number = os.environ.get('PR_NUMBER')
+          pr_title = os.environ.get('PR_TITLE')
+          repo_owner = os.environ.get('REPO_OWNER')
+          repo_name = os.environ.get('REPO_NAME')
+          token = os.environ.get('GITHUB_TOKEN')
+
+          print(f'Parsing wait time for PR #{pr_number}')
+
+          # Try to find minutes
+          min_match = re.search(r'\*\*(\d+)\s*minute', body, re.IGNORECASE)
+          minutes = int(min_match.group(1)) if min_match else 0
+
+          # Try to find seconds
+          sec_match = re.search(r'(?:and\s+)?\*\*?(\d+)\s*second', body, re.IGNORECASE)
+          if not sec_match:
+              sec_match = re.search(r'(\d+)\s*second', body, re.IGNORECASE)
+          seconds = int(sec_match.group(1)) if sec_match else 0
+
+          if minutes == 0 and seconds == 0:
+              minutes = 5  # default fallback
+
+          total_seconds = minutes * 60 + seconds
+          print(f'Detected wait time: {total_seconds} seconds')
+
+          # Calculate unlock time
+          created_at = datetime.datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+          unlock_time = created_at + datetime.timedelta(seconds=total_seconds)
+          unlock_time_iso = unlock_time.isoformat()
+          print(f'Unlock time (UTC): {unlock_time_iso}')
+
+          # 1. Add Label to PR
+          api_base = f'https://api.github.com/repos/{repo_owner}/{repo_name}'
+          headers = {
+              'Authorization': f'token {token}',
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'CodeRabbit-Rate-Limit-Detector'
+          }
+
+          label_url = f'{api_base}/issues/{pr_number}/labels'
+          label_data = json.dumps({'labels': ['coderabbit:queued']}).encode('utf-8')
+          req = urllib.request.Request(label_url, data=label_data, headers=headers, method='POST')
+          try:
+              urllib.request.urlopen(req)
+              print(f'Successfully labeled PR #{pr_number} with coderabbit:queued')
+          except Exception as e:
+              print(f'Failed to label PR: {e}')
+
+          # 2. Create Tracking Issue
+          issue_title = f'⏳ CodeRabbit Queue: PR #{pr_number}'
+          issue_body = f'''This issue tracks a rate-limited PR for CodeRabbit review.
+
+          **PR:** #{pr_number} ({pr_title})
+          **Queued At:** {created_at.isoformat()}
+          **Wait Time:** {minutes} minutes and {seconds} seconds
+          **Unlock Time (UTC):** {unlock_time_iso}
+
+          A cron job will automatically request a review on the PR once the unlock time has passed.
+          '''
+
+          issue_url = f'{api_base}/issues'
+          issue_data = json.dumps({
+              'title': issue_title,
+              'body': issue_body,
+              'labels': ['coderabbit:tracking']
+          }).encode('utf-8')
+
+          req_issue = urllib.request.Request(issue_url, data=issue_data, headers=headers, method='POST')
+          try:
+              with urllib.request.urlopen(req_issue) as response:
+                  resp_data = json.loads(response.read().decode())
+                  print(f'Created tracking issue #{resp_data.get(\'number\')}')
+          except Exception as e:
+              print(f'Failed to create tracking issue: {e}')
+          "
