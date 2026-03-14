@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -162,7 +163,7 @@ def test_env_vars() -> dict[str, str]:
     }
 
 
-def _reload_tortoise_module() -> type:
+def _reload_tortoise_module() -> Any:
     import importlib
 
     import app.infrastructure.database.tortoise as tort_mod
