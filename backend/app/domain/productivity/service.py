@@ -38,12 +38,12 @@ class ProductivityService:
                 is_completed=task_data.is_completed,
             )
         except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
-            logger.exception("Failed to create_task for user_id=%s", user_id)
+            logger.exception("Failed to create task")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while creating task"
             ) from e
         except Exception as e:
-            logger.exception("Unexpected error in create_task for user_id=%s", user_id)
+            logger.exception("Unexpected error in create_task")
             raise HTTPException(status_code=500, detail="Failed to create task") from e
 
     @staticmethod
@@ -57,12 +57,12 @@ class ProductivityService:
                 .offset(offset)
             )
         except (IntegrityError, OperationalError, DBConnectionError) as e:
-            logger.exception("Failed to list_tasks for user_id=%s", user_id)
+            logger.exception("Failed to list tasks")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while listing tasks"
             ) from e
         except Exception as e:
-            logger.exception("Unexpected error in list_tasks for user_id=%s", user_id)
+            logger.exception("Unexpected error in list_tasks")
             raise HTTPException(status_code=500, detail="Failed to list tasks") from e
 
     @staticmethod
@@ -98,7 +98,7 @@ class ProductivityService:
             await task.save(update_fields=list(valid_keys.keys()))
             return task
         except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
-            logger.exception("Failed to update_task for user_id=%s task_id=%s", user_id, task_id)
+            logger.exception("Failed to update task")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while updating task"
             ) from e
@@ -115,7 +115,7 @@ class ProductivityService:
         try:
             await task.delete()
         except (IntegrityError, OperationalError, DBConnectionError) as e:
-            logger.exception("Failed to delete_task for user_id=%s task_id=%s", user_id, task_id)
+            logger.exception("Failed to delete task")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while deleting task"
             ) from e
@@ -140,12 +140,12 @@ class ProductivityService:
                 is_pinned=note_data.is_pinned,
             )
         except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
-            logger.exception("Failed to create_note for user_id=%s", user_id)
+            logger.exception("Failed to create note")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while creating note"
             ) from e
         except Exception as e:
-            logger.exception("Unexpected error in create_note for user_id=%s", user_id)
+            logger.exception("Unexpected error in create_note")
             raise HTTPException(status_code=500, detail="Failed to create note") from e
 
     @staticmethod
@@ -159,12 +159,12 @@ class ProductivityService:
                 .offset(offset)
             )
         except (IntegrityError, OperationalError, DBConnectionError) as e:
-            logger.exception("Failed to list_notes for user_id=%s", user_id)
+            logger.exception("Failed to list notes")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while listing notes"
             ) from e
         except Exception as e:
-            logger.exception("Unexpected error in list_notes for user_id=%s", user_id)
+            logger.exception("Unexpected error in list_notes")
             raise HTTPException(status_code=500, detail="Failed to list notes") from e
 
     @staticmethod
@@ -200,7 +200,7 @@ class ProductivityService:
             await note.save(update_fields=list(valid_keys.keys()))
             return note
         except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
-            logger.exception("Failed to update_note for user_id=%s note_id=%s", user_id, note_id)
+            logger.exception("Failed to update note")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while updating note"
             ) from e
@@ -217,7 +217,7 @@ class ProductivityService:
         try:
             await note.delete()
         except (IntegrityError, OperationalError, DBConnectionError) as e:
-            logger.exception("Failed to delete_note for user_id=%s note_id=%s", user_id, note_id)
+            logger.exception("Failed to delete note")
             raise HTTPException(
                 status_code=500, detail="Database error occurred while deleting note"
             ) from e
