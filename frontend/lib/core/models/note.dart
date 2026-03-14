@@ -9,6 +9,9 @@ class Note with _$Note {
   const factory Note({
     required String id,
     required String userId,
+    String? agentId,
+    String? originMessageId,
+    String? originContext,
     required String title,
     required String content,
     @Default(false) bool isPinned,

@@ -111,7 +111,10 @@ class ProductivityService {
   }
 
   Future<Note> createNote(String title, String content,
-      {bool isPinned = false}) async {
+      {bool isPinned = false,
+      String? agentId,
+      String? originMessageId,
+      String? originContext}) async {
     final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes');
     final response = await _client.post(
       uri,
@@ -120,6 +123,9 @@ class ProductivityService {
         'title': title,
         'content': content,
         'is_pinned': isPinned,
+        if (agentId != null) 'agent_id': agentId,
+        if (originMessageId != null) 'origin_message_id': originMessageId,
+        if (originContext != null) 'origin_context': originContext,
       }),
     );
 

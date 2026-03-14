@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/note.dart';
 import '../../../core/design_system/design_system.dart';
+import '../../../core/api/agents_service.dart';
 import 'tasks_page.dart'; // To access productivityServiceProvider
 
 final notesProvider = FutureProvider.autoDispose<List<Note>>((ref) async {
@@ -150,62 +151,134 @@ class _NoteTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.read(productivityServiceProvider);
+    final agentsAsync = ref.watch(agentsProvider);
 
     return Container(
       decoration: BoxDecoration(
         color: context.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       ),
-      child: ListTile(
-        leading: IconButton(
-          icon: Icon(
-            note.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-            color: note.isPinned ? context.colorScheme.primary : null,
-          ),
-          onPressed: () async {
-            try {
-              await service.updateNote(note.id, isPinned: !note.isPinned);
-              ref.invalidate(notesProvider);
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Failed to pin note')),
-                );
-              }
-            }
-          },
-        ),
-        title: Text(note.title,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(
-          note.content,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => _showNoteDialog(context, ref, note),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: IconButton(
+              icon: Icon(
+                note.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                color: note.isPinned ? context.colorScheme.primary : null,
+              ),
               onPressed: () async {
                 try {
-                  await service.deleteNote(note.id);
+                  await service.updateNote(note.id, isPinned: !note.isPinned);
                   ref.invalidate(notesProvider);
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to delete note')),
+                      const SnackBar(content: Text('Failed to pin note')),
                     );
                   }
                 }
               },
             ),
-          ],
-        ),
+            title: Text(note.title,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(
+              note.content,
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _showNoteDialog(context, ref, note),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    try {
+                      await service.deleteNote(note.id);
+                      ref.invalidate(notesProvider);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Failed to delete note')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          if (note.agentId != null || note.originContext != null)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: AppSpacing.xl + AppSpacing.md,
+                right: AppSpacing.md,
+                bottom: AppSpacing.sm,
+              ),
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (note.agentId != null)
+                    agentsAsync.when(
+                      data: (agents) {
+                        final agent = agents
+                            .where((a) => a.id == note.agentId)
+                            .firstOrNull;
+                        if (agent == null) return const SizedBox.shrink();
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.colorScheme.primaryContainer,
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusXs),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.smart_toy_outlined,
+                                size: 12,
+                                color: context.colorScheme.onPrimaryContainer,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                agent.name,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: context.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                  if (note.originContext != null)
+                    Text(
+                      'Context: ${note.originContext}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

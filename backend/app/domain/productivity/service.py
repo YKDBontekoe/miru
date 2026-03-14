@@ -131,6 +131,9 @@ class ProductivityService:
         try:
             return await Note.create(
                 user_id=user_id,
+                agent_id=note_data.agent_id,
+                origin_message_id=note_data.origin_message_id,
+                origin_context=note_data.origin_context,
                 title=note_data.title,
                 content=note_data.content,
                 is_pinned=note_data.is_pinned,

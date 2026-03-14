@@ -2,6 +2,7 @@
 
 import typing
 from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
 
@@ -20,9 +21,8 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     """_get_agent_tools is synchronous and reads from prefetched agent_integrations."""
     # Agent with no integrations
     agent1 = MagicMock()
+    agent1.id = uuid4()
     agent1.agent_integrations = []
-
-    from uuid import uuid4
 
     user_id = uuid4()
     tools = chat_service._get_agent_tools(agent1, user_id)
@@ -31,6 +31,7 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     # Agent with a steam integration
     steam_id = "12345678901234567"
     agent2 = MagicMock()
+    agent2.id = uuid4()
 
     mock_ai = MagicMock()
     mock_ai.integration_id = "steam"
@@ -45,34 +46,30 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     assert tools[1].name == "steam_owned_games"
 
 
-@pytest.mark.asyncio
-async def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
+def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
     """Disabled integrations are skipped."""
     agent = MagicMock()
+    agent.id = uuid4()
     mock_ai = MagicMock()
     mock_ai.integration_id = "steam"
     mock_ai.enabled = False
     mock_ai.config = {"steam_id": "12345678901234567"}
     agent.agent_integrations = [mock_ai]
 
-    from uuid import uuid4
-
     user_id = uuid4()
     tools = chat_service._get_agent_tools(agent, user_id)
     assert len(tools) == 5  # Productivity tools always included
 
 
-@pytest.mark.asyncio
-async def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
+def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
     """Steam integration without steam_id produces no tools."""
     agent = MagicMock()
+    agent.id = uuid4()
     mock_ai = MagicMock()
     mock_ai.integration_id = "steam"
     mock_ai.enabled = True
     mock_ai.config = {}
     agent.agent_integrations = [mock_ai]
-
-    from uuid import uuid4
 
     user_id = uuid4()
     tools = chat_service._get_agent_tools(agent, user_id)
@@ -83,12 +80,12 @@ async def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> Non
 async def test_run_crew_task_has_single_agent(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import uuid
     from unittest.mock import patch
 
-    user_id = uuid.uuid4()
+    user_id = uuid4()
 
     agent = MagicMock()
+    agent.id = uuid4()
     agent.name = "Test Agent"
     agent.personality = "Helpful"
     agent.description = "A helpful agent"
@@ -136,18 +133,19 @@ async def test_run_crew_task_has_single_agent(
 async def test_run_crew_task_has_multiple_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import uuid
     from unittest.mock import patch
 
-    user_id = uuid.uuid4()
+    user_id = uuid4()
 
     agent1 = MagicMock()
+    agent1.id = uuid4()
     agent1.name = "Agent 1"
     agent1.personality = "Helpful"
     agent1.description = "A helpful agent"
     agent1.agent_integrations = []
 
     agent2 = MagicMock()
+    agent2.id = uuid4()
     agent2.name = "Agent 2"
     agent2.personality = "Funny"
     agent2.description = "A funny agent"
@@ -199,14 +197,13 @@ async def test_run_crew_task_has_multiple_agents(
 async def test_stream_room_responses_single_agent(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import uuid
     from unittest.mock import patch
 
-    user_id = uuid.uuid4()
-    room_id = uuid.uuid4()
+    user_id = uuid4()
+    room_id = uuid4()
 
     agent = MagicMock()
-    agent.id = uuid.uuid4()
+    agent.id = uuid4()
     agent.name = "Test Agent"
     agent.personality = "Helpful"
     agent.description = "A helpful agent"
@@ -256,21 +253,20 @@ async def test_stream_room_responses_single_agent(
 async def test_stream_room_responses_multiple_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import uuid
     from unittest.mock import patch
 
-    user_id = uuid.uuid4()
-    room_id = uuid.uuid4()
+    user_id = uuid4()
+    room_id = uuid4()
 
     agent1 = MagicMock()
-    agent1.id = uuid.uuid4()
+    agent1.id = uuid4()
     agent1.name = "Test Agent 1"
     agent1.personality = "Helpful"
     agent1.description = "A helpful agent"
     agent1.agent_integrations = []
 
     agent2 = MagicMock()
-    agent2.id = uuid.uuid4()
+    agent2.id = uuid4()
     agent2.name = "Test Agent 2"
     agent2.personality = "Funny"
     agent2.description = "A funny agent"
@@ -323,10 +319,8 @@ async def test_stream_room_responses_multiple_agents(
 async def test_stream_room_responses_no_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import uuid
-
-    user_id = uuid.uuid4()
-    room_id = uuid.uuid4()
+    user_id = uuid4()
+    room_id = uuid4()
 
     chat_service.chat_repo.list_room_agents.return_value = []
 

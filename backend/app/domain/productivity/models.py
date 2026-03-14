@@ -36,6 +36,9 @@ class Note(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
+    agent_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    origin_message_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    origin_context: str | None = fields.TextField(null=True)
     title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
     content: str = fields.TextField()
     is_pinned: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
@@ -117,11 +120,17 @@ class NoteCreate(BaseModel):
         title: The title of the note.
         content: The text content of the note.
         is_pinned: Whether the note is pinned. Defaults to False.
+        agent_id: Optional ID of the agent that created the note.
+        origin_message_id: Optional ID of the message that triggered the note creation.
+        origin_context: Optional context/description of why the note was created.
     """
 
     title: str
     content: str
     is_pinned: bool = False
+    agent_id: UUID | None = None
+    origin_message_id: UUID | None = None
+    origin_context: str | None = None
 
 
 class NoteUpdate(BaseModel):
@@ -149,6 +158,9 @@ class NoteResponse(BaseModel):
         title: The title of the note.
         content: The text content of the note.
         is_pinned: Whether the note is pinned.
+        agent_id: Optional ID of the agent that created the note.
+        origin_message_id: Optional ID of the message that triggered the note creation.
+        origin_context: Optional context/description of why the note was created.
         created_at: The timestamp when the note was created.
         updated_at: The timestamp when the note was last updated.
     """
@@ -157,6 +169,9 @@ class NoteResponse(BaseModel):
 
     id: UUID
     user_id: UUID
+    agent_id: UUID | None = None
+    origin_message_id: UUID | None = None
+    origin_context: str | None = None
     title: str
     content: str
     is_pinned: bool
