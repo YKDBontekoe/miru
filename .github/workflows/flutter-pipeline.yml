@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLUTTER_VERSION: '3.29.0'
+  FLUTTER_VERSION: '3.41.4'
   WORKING_DIRECTORY: './frontend'
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
     name: Flutter CI
     uses: ./.github/workflows/reusable-flutter-setup.yml
     with:
-      flutter-version: '3.29.0'
+      flutter-version: '3.41.4'
       working-directory: './frontend'
       run-tests: true
       run-lint: true
