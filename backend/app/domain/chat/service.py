@@ -176,17 +176,28 @@ class ChatService:
         llm = self._get_crew_llm()
         crew_agents = self._create_crew_agents(db_agents, llm, allow_delegation=True)
 
-        task = Task(
-            description=user_message,
-            expected_output="A comprehensive multi-agent analysis.",
-            agent=crew_agents[0],
-        )
-
-        crew = Crew(
-            agents=crew_agents,  # type: ignore[arg-type]
-            tasks=[task],
-            process=Process.sequential,
-        )
+        if len(crew_agents) > 1:
+            task = Task(
+                description=user_message,
+                expected_output="A comprehensive multi-agent analysis.",
+            )
+            crew = Crew(
+                agents=crew_agents,  # type: ignore[arg-type]
+                tasks=[task],
+                process=Process.hierarchical,
+                manager_llm=llm,
+            )
+        else:
+            task = Task(
+                description=user_message,
+                expected_output="A comprehensive multi-agent analysis.",
+                agent=crew_agents[0],
+            )
+            crew = Crew(
+                agents=crew_agents,  # type: ignore[arg-type]
+                tasks=[task],
+                process=Process.sequential,
+            )
 
         result = await crew.kickoff_async()
         return {"task_type": "general", "result": str(result)}
@@ -210,21 +221,36 @@ class ChatService:
         crew_agents = self._create_crew_agents(db_agents, llm, allow_delegation=False)
 
         # 4. Define and execute task
-        task = Task(
-            description=(
-                f"User said: {user_message}. "
-                "Orchestrate a helpful conversation among available agents to assist the user."
-            ),
-            expected_output="A collaborative response from the most relevant agents.",
-            agent=crew_agents[0],
-        )
-
-        crew = Crew(
-            agents=crew_agents,  # type: ignore[arg-type]
-            tasks=[task],
-            process=Process.sequential,
-            verbose=True,
-        )
+        if len(crew_agents) > 1:
+            task = Task(
+                description=(
+                    f"User said: {user_message}. "
+                    "Orchestrate a helpful conversation among available agents to assist the user."
+                ),
+                expected_output="A collaborative response from the most relevant agents.",
+            )
+            crew = Crew(
+                agents=crew_agents,  # type: ignore[arg-type]
+                tasks=[task],
+                process=Process.hierarchical,
+                manager_llm=llm,
+                verbose=True,
+            )
+        else:
+            task = Task(
+                description=(
+                    f"User said: {user_message}. "
+                    "Orchestrate a helpful conversation among available agents to assist the user."
+                ),
+                expected_output="A collaborative response from the most relevant agents.",
+                agent=crew_agents[0],
+            )
+            crew = Crew(
+                agents=crew_agents,  # type: ignore[arg-type]
+                tasks=[task],
+                process=Process.sequential,
+                verbose=True,
+            )
 
         result = await crew.kickoff_async()
 
