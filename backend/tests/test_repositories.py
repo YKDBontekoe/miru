@@ -5,6 +5,8 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+
 from app.domain.agents.models import Agent
 from app.domain.auth.models import PasskeyRecord
 from app.domain.chat.models import ChatMessage
@@ -20,36 +22,44 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 
 class TestAgentRepository:
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_list_capabilities_returns_list(self) -> None:
         repo = AgentRepository()
         result = await repo.list_capabilities()
         assert isinstance(result, list)
 
+    @pytest.mark.asyncio
     async def test_list_integrations_returns_list(self) -> None:
         repo = AgentRepository()
         result = await repo.list_integrations()
         assert isinstance(result, list)
 
+    @pytest.mark.asyncio
     async def test_get_by_id_returns_none_for_unknown(self) -> None:
         repo = AgentRepository()
         result = await repo.get_by_id(uuid4())
         assert result is None
 
+    @pytest.mark.asyncio
     async def test_get_by_id_accepts_str(self) -> None:
         repo = AgentRepository()
         result = await repo.get_by_id(str(uuid4()))
         assert result is None
 
+    @pytest.mark.asyncio
     async def test_list_by_user_returns_empty_for_unknown(self) -> None:
         repo = AgentRepository()
         result = await repo.list_by_user(uuid4())
         assert result == []
 
+    @pytest.mark.asyncio
     async def test_list_by_user_accepts_str(self) -> None:
         repo = AgentRepository()
         result = await repo.list_by_user(str(uuid4()))
         assert result == []
 
+    @pytest.mark.asyncio
     async def test_create_returns_agent(self) -> None:
         repo = AgentRepository()
         user_id = uuid4()
@@ -58,11 +68,13 @@ class TestAgentRepository:
         assert created.name == "Test"
         assert created.id is not None
 
+    @pytest.mark.asyncio
     async def test_update_mood_noop_for_unknown(self) -> None:
         repo = AgentRepository()
         # Should not raise even if agent doesn't exist
         await repo.update_mood(uuid4(), "happy")
 
+    @pytest.mark.asyncio
     async def test_increment_message_count_noop_for_unknown(self) -> None:
         repo = AgentRepository()
         await repo.increment_message_count(uuid4())
@@ -74,6 +86,7 @@ class TestAgentRepository:
 
 
 class TestChatRepository:
+    @pytest.mark.asyncio
     async def test_create_and_list_room(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -83,21 +96,25 @@ class TestChatRepository:
         rooms = await repo.list_rooms(user_id)
         assert any(r.id == room.id for r in rooms)
 
+    @pytest.mark.asyncio
     async def test_get_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
         result = await repo.get_room(uuid4())
         assert result is None
 
+    @pytest.mark.asyncio
     async def test_update_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
         result = await repo.update_room(uuid4(), "New Name")
         assert result is None
 
+    @pytest.mark.asyncio
     async def test_delete_room_returns_false_for_unknown(self) -> None:
         repo = ChatRepository()
         result = await repo.delete_room(uuid4())
         assert result is False
 
+    @pytest.mark.asyncio
     async def test_create_and_delete_room(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -105,6 +122,7 @@ class TestChatRepository:
         result = await repo.delete_room(room.id)
         assert result is True
 
+    @pytest.mark.asyncio
     async def test_update_room_name(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -113,6 +131,7 @@ class TestChatRepository:
         assert updated is not None
         assert updated.name == "New Name"
 
+    @pytest.mark.asyncio
     async def test_get_room_messages_empty(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -120,6 +139,7 @@ class TestChatRepository:
         messages = await repo.get_room_messages(room.id)
         assert messages == []
 
+    @pytest.mark.asyncio
     async def test_save_message(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -128,6 +148,7 @@ class TestChatRepository:
         saved = await repo.save_message(msg)
         assert saved.content == "Hello"
 
+    @pytest.mark.asyncio
     async def test_list_room_agents_empty(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -142,6 +163,7 @@ class TestChatRepository:
 
 
 class TestMemoryRepository:
+    @pytest.mark.asyncio
     async def test_insert_and_list_memory(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
@@ -151,11 +173,13 @@ class TestMemoryRepository:
         memories = await repo.list_all_memories(user_id)
         assert any(m.content == "Test fact" for m in memories)
 
+    @pytest.mark.asyncio
     async def test_list_memories_empty_for_unknown_user(self) -> None:
         repo = MemoryRepository()
         result = await repo.list_all_memories(uuid4())
         assert result == []
 
+    @pytest.mark.asyncio
     async def test_delete_memory_returns_true(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
@@ -164,11 +188,13 @@ class TestMemoryRepository:
         result = await repo.delete_memory(memory.id)
         assert result is True
 
+    @pytest.mark.asyncio
     async def test_delete_memory_returns_false_for_unknown(self) -> None:
         repo = MemoryRepository()
         result = await repo.delete_memory(uuid4())
         assert result is False
 
+    @pytest.mark.asyncio
     async def test_create_relationship(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
@@ -180,6 +206,7 @@ class TestMemoryRepository:
         rel = await repo.create_relationship(m1.id, m2.id, "RELATED_TO")
         assert rel is not None
 
+    @pytest.mark.asyncio
     async def test_find_related_no_relationships(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
@@ -189,6 +216,7 @@ class TestMemoryRepository:
         related = await repo.find_related(memory.id)
         assert related == []
 
+    @pytest.mark.asyncio
     async def test_find_related_returns_linked_memories(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
@@ -201,6 +229,7 @@ class TestMemoryRepository:
         related = await repo.find_related(m1.id)
         assert any(m.content == "Target" for m in related)
 
+    @pytest.mark.asyncio
     async def test_find_related_with_rel_type_filter(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
@@ -217,11 +246,13 @@ class TestMemoryRepository:
         related_wrong = await repo.find_related(m1.id, rel_type="RELATED_TO")
         assert related_wrong == []
 
+    @pytest.mark.asyncio
     async def test_get_relationships_subgraph_empty(self) -> None:
         repo = MemoryRepository()
         result = await repo.get_relationships_subgraph([uuid4(), uuid4()])
         assert result == []
 
+    @pytest.mark.asyncio
     async def test_match_memories_delegates_to_raw_sql(self) -> None:
         """match_memories uses raw SQL — mock the connection to verify call."""
         repo = MemoryRepository()
@@ -249,6 +280,7 @@ class TestMemoryRepository:
         assert params[4] == str(aid)
         assert params[5] == str(rid)
 
+    @pytest.mark.asyncio
     async def test_search_fulltext_delegates_to_raw_sql(self) -> None:
         repo = MemoryRepository()
         mock_conn = AsyncMock()
@@ -288,12 +320,14 @@ class TestAuthRepository:
         )
         return db
 
+    @pytest.mark.asyncio
     async def test_get_passkeys_by_user_empty(self) -> None:
         db = self._make_db(data=[])
         repo = AuthRepository(db)
         result = await repo.get_passkeys_by_user(str(uuid4()))
         assert result == []
 
+    @pytest.mark.asyncio
     async def test_get_passkeys_by_user_returns_records(self) -> None:
         uid = str(uuid4())
         row = {
@@ -311,12 +345,14 @@ class TestAuthRepository:
         assert len(result) == 1
         assert isinstance(result[0], PasskeyRecord)
 
+    @pytest.mark.asyncio
     async def test_update_sign_count_calls_db(self) -> None:
         db = self._make_db()
         repo = AuthRepository(db)
         await repo.update_sign_count(str(uuid4()), 5)
         db.table.assert_called_with("passkeys")
 
+    @pytest.mark.asyncio
     async def test_create_passkey_returns_record(self) -> None:
         db = self._make_db()
         repo = AuthRepository(db)

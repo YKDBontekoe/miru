@@ -228,6 +228,30 @@ CREATE TABLE IF NOT EXISTS "agent_tool_links" (
     CONSTRAINT "uid_agent_tool__agent_i_0de312" UNIQUE ("agent_id", "tool_id")
 );
 COMMENT ON TABLE "agent_tool_links" IS 'Junction table for Agents and their assigned Tools.';
+CREATE TABLE IF NOT EXISTS "notes" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "title" VARCHAR(255) NOT NULL,
+    "content" TEXT NOT NULL,
+    "is_pinned" BOOL NOT NULL DEFAULT False,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS "idx_notes_user_id_9d616a" ON "notes" ("user_id");
+COMMENT ON TABLE "notes" IS 'Database entity for User Notes.';
+CREATE TABLE IF NOT EXISTS "tasks" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "title" VARCHAR(255) NOT NULL,
+    "description" TEXT,
+    "is_completed" BOOL NOT NULL DEFAULT False,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS "idx_tasks_user_id_7d4869" ON "tasks" ("user_id");
+COMMENT ON TABLE "tasks" IS 'Database entity for User Tasks.';
 CREATE TABLE IF NOT EXISTS "agents_capabilities" (
     "agents_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,
     "capability_id" VARCHAR(50) NOT NULL REFERENCES "capabilities" ("id") ON DELETE CASCADE

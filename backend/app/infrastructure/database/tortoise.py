@@ -34,6 +34,7 @@ TORTOISE_ORM = {
                 "app.domain.chat.models",
                 "app.domain.memory.models",
                 "app.domain.agent_tools.models",
+                "app.domain.productivity.models",
                 "aerich.models",
             ],
             "default_connection": "default",

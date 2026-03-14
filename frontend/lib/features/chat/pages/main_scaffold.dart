@@ -4,6 +4,8 @@ import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/features/rooms/pages/rooms_page.dart';
 import 'package:miru/features/rooms/widgets/create_persona_sheet.dart';
 import 'package:miru/features/settings/pages/settings_page.dart';
+import 'package:miru/features/productivity/pages/tasks_page.dart';
+import 'package:miru/features/productivity/pages/notes_page.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -17,12 +19,12 @@ class _MainScaffoldState extends State<MainScaffold> {
   final ValueNotifier<int> _personaRefreshNotifier = ValueNotifier<int>(0);
 
   void _onItemTapped(int index) {
-    if (index == 1) {
+    if (index == 2) {
       _showCreatePersona();
       return;
     }
     setState(() {
-      _currentIndex = index == 2 ? 1 : 0;
+      _currentIndex = index;
     });
   }
 
@@ -54,8 +56,11 @@ class _MainScaffoldState extends State<MainScaffold> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          RoomsPage(personaRefreshListenable: _personaRefreshNotifier),
-          const SettingsPage(),
+          RoomsPage(personaRefreshListenable: _personaRefreshNotifier), // 0
+          const TasksPage(), // 1
+          const SizedBox(), // Placeholder for index 2 (Add button)     // 2
+          const NotesPage(), // 3
+          const SettingsPage(), // 4
         ],
       ),
       bottomNavigationBar: _buildLiquidGlassNavBar(colors),
@@ -65,12 +70,12 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget _buildLiquidGlassNavBar(AppThemeColors colors) {
     return Container(
       margin: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
+        AppSpacing.md,
         0,
-        AppSpacing.xl,
-        AppSpacing.xl,
+        AppSpacing.md,
+        AppSpacing.md,
       ),
-      height: 72, // increased height slightly for the new button
+      height: 72,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSpacing.radiusXxl),
         child: BackdropFilter(
@@ -95,13 +100,29 @@ class _MainScaffoldState extends State<MainScaffold> {
                   onTap: () => _onItemTapped(0),
                   colors: colors,
                 ),
+                _buildNavItem(
+                  icon: Icons.task_alt_outlined,
+                  activeIcon: Icons.task_alt_rounded,
+                  label: 'Tasks',
+                  isActive: _currentIndex == 1,
+                  onTap: () => _onItemTapped(1),
+                  colors: colors,
+                ),
                 _buildCreateButton(colors),
+                _buildNavItem(
+                  icon: Icons.note_alt_outlined,
+                  activeIcon: Icons.note_alt_rounded,
+                  label: 'Notes',
+                  isActive: _currentIndex == 3,
+                  onTap: () => _onItemTapped(3),
+                  colors: colors,
+                ),
                 _buildNavItem(
                   icon: Icons.settings_outlined,
                   activeIcon: Icons.settings_rounded,
                   label: 'Settings',
-                  isActive: _currentIndex == 1,
-                  onTap: () => _onItemTapped(2),
+                  isActive: _currentIndex == 4,
+                  onTap: () => _onItemTapped(4),
                   colors: colors,
                 ),
               ],
@@ -127,8 +148,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
           color: isActive
@@ -156,6 +177,7 @@ class _MainScaffoldState extends State<MainScaffold> {
               style: AppTypography.labelSmall.copyWith(
                 color: isActive ? colors.primary : colors.onSurfaceMuted,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 10,
               ),
               child: Text(label),
             ),
@@ -193,7 +215,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: const Icon(
           Icons.add_rounded,
           color: AppColors.onPrimary,
-          size: 32,
+          size: 28,
         ),
       ),
     );
