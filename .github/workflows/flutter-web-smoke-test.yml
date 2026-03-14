@@ -94,13 +94,13 @@ jobs:
           export EMBEDDING_MODEL="test"
 
           # Run the backend in the background
-          uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          uv run uvicorn app.main:app --host localhost --port 8000 &
 
           # Wait for backend to be healthy
           echo "Waiting for backend..."
           backend_up=0
           for i in {1..30}; do
-            if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
+            if curl -s http://localhost:8000/health | grep -q "status"; then
               echo "Backend is up!"
               backend_up=1
               break
@@ -124,8 +124,8 @@ jobs:
       - name: Build web app
         run: |
           flutter build web --release \
-            --dart-define=API_URL=http://127.0.0.1:8000/api/v1 \
-            --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
+            --dart-define=API_URL=http://localhost:8000/api/v1 \
+            --dart-define=SUPABASE_URL=http://localhost:54321 \
             --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}
 
       # -----------------------------------------------------------------------
@@ -183,8 +183,8 @@ jobs:
             --web-port=8081 \
             --headless \
             --browser-name=chrome \
-            --dart-define=API_URL=http://127.0.0.1:8000/api/v1 \
-            --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
+            --dart-define=API_URL=http://localhost:8000/api/v1 \
+            --dart-define=SUPABASE_URL=http://localhost:54321 \
             --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}
         continue-on-error: false
 
