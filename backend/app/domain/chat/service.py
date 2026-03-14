@@ -34,13 +34,12 @@ class _OpenRouterLLM(LLM):
 
     CrewAI's built-in OpenAI provider hardcodes ``tool_choice: auto`` whenever
     tools are present, which causes a 404 on OpenRouter routes that don't
-    implement that parameter.  Overriding ``supports_function_calling`` to
-    return ``False`` makes CrewAI fall back to its ReAct (text-based) tool loop,
-    which never sends ``tool_choice`` to the API.
+    implement that parameter.  We override ``supports_function_calling`` to
+    return ``True`` and drop ``tool_choice`` using ``additional_drop_params``.
     """
 
     def supports_function_calling(self) -> bool:
-        return False
+        return True
 
 
 class ChatService:
@@ -67,6 +66,7 @@ class ChatService:
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
+            additional_drop_params=["tool_choice"],
         )
 
     def _get_agent_tools(self, agent: Agent) -> list:
@@ -178,8 +178,13 @@ class ChatService:
 
         if len(crew_agents) > 1:
             task = Task(
-                description=user_message,
-                expected_output="A comprehensive multi-agent analysis.",
+                description=(
+                    f"User said: {user_message}. "
+                    "You are managing a group chat. You MUST delegate tasks to EACH available agent so they can all contribute to the conversation. "
+                    "Ensure they respond to the user and to each other's points. "
+                    "Gather their responses and return a combined final transcript of what each agent said."
+                ),
+                expected_output="A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'",
             )
             crew = Crew(
                 agents=crew_agents,  # type: ignore[arg-type]
@@ -225,9 +230,11 @@ class ChatService:
             task = Task(
                 description=(
                     f"User said: {user_message}. "
-                    "Orchestrate a helpful conversation among available agents to assist the user."
+                    "You are managing a group chat. You MUST delegate tasks to EACH available agent so they can all contribute to the conversation. "
+                    "Ensure they respond to the user and to each other's points. "
+                    "Gather their responses and return a combined final transcript of what each agent said."
                 ),
-                expected_output="A collaborative response from the most relevant agents.",
+                expected_output="A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'",
             )
             crew = Crew(
                 agents=crew_agents,  # type: ignore[arg-type]
