@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
+
+if TYPE_CHECKING:
+    from app.domain.agents.models import Agent
+    from app.domain.chat.models import ChatMessage
 
 
 class Task(SupabaseModel):
@@ -36,8 +41,20 @@ class Note(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
-    agent_id: UUID | None = fields.UUIDField(null=True, db_index=True)
-    origin_message_id: UUID | None = fields.UUIDField(null=True, db_index=True)
+    agent_id: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
+        "models.Agent",
+        related_name="notes",
+        null=True,
+        db_index=True,
+        on_delete=fields.SET_NULL,
+    )
+    origin_message_id: fields.ForeignKeyNullableRelation[ChatMessage] = fields.ForeignKeyField(
+        "models.ChatMessage",
+        related_name="originated_notes",
+        null=True,
+        db_index=True,
+        on_delete=fields.SET_NULL,
+    )
     origin_context: str | None = fields.TextField(null=True)
     title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
     content: str = fields.TextField()
