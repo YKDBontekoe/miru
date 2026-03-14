@@ -173,7 +173,7 @@ class ChatService:
         task = Task(
             description=user_message,
             expected_output="A comprehensive multi-agent analysis.",
-            agents=crew_agents,
+            agent=crew_agents[0],
         )
 
         crew = Crew(
@@ -220,7 +220,7 @@ class ChatService:
                 "Orchestrate a helpful conversation among available agents to assist the user."
             ),
             expected_output="A collaborative response from the most relevant agents.",
-            agents=crew_agents,
+            agent=crew_agents[0],
         )
 
         crew = Crew(

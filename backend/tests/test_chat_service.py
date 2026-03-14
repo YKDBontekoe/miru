@@ -68,3 +68,51 @@ async def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> Non
 
     tools = chat_service._get_agent_tools(agent)
     assert len(tools) == 0
+
+
+@pytest.mark.asyncio
+async def test_run_crew_task_has_single_agent(chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    import uuid
+    from unittest.mock import patch
+    user_id = uuid.uuid4()
+
+    agent = MagicMock()
+    agent.name = "Test Agent"
+    agent.personality = "Helpful"
+    agent.description = "A helpful agent"
+    agent.agent_integrations = []
+
+    chat_service.agent_repo.list_by_user.return_value = [agent]
+
+    # Mock _get_crew_llm to prevent it looking for OPENAI_API_KEY
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with patch("app.domain.chat.service.Task") as mock_task_cls:
+        with patch("app.domain.chat.service.Crew") as mock_crew_cls:
+            with patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls:
+                mock_crew_agent = MagicMock()
+                mock_crew_agent.role = "Test Agent"
+                mock_agent_cls.return_value = mock_crew_agent
+
+                mock_crew_instance = MagicMock()
+                mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+                mock_crew_cls.return_value = mock_crew_instance
+
+                result = await chat_service.run_crew("hello", user_id)
+
+                assert result["task_type"] == "general"
+                assert result["result"] == "Crew output"
+
+                # Verify Task was instantiated with single agent
+                mock_task_cls.assert_called_once()
+                _, kwargs = mock_task_cls.call_args
+                assert "agent" in kwargs
+                assert kwargs["agent"] == mock_crew_agent
+
+                # Verify Crew was instantiated with agents list
+                mock_crew_cls.assert_called_once()
+                _, crew_kwargs = mock_crew_cls.call_args
+                assert "agents" in crew_kwargs
+                assert crew_kwargs["agents"] == [mock_crew_agent]
