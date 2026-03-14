@@ -22,8 +22,11 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     agent1 = MagicMock()
     agent1.agent_integrations = []
 
-    tools = chat_service._get_agent_tools(agent1)
-    assert len(tools) == 0
+    from uuid import uuid4
+
+    user_id = uuid4()
+    tools = chat_service._get_agent_tools(agent1, user_id)
+    assert len(tools) == 5  # Productivity tools always included
 
     # Agent with a steam integration
     steam_id = "12345678901234567"
@@ -36,8 +39,8 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
 
     agent2.agent_integrations = [mock_ai]
 
-    tools = chat_service._get_agent_tools(agent2)
-    assert len(tools) == 2
+    tools = chat_service._get_agent_tools(agent2, user_id)
+    assert len(tools) == 7  # 2 steam + 5 productivity tools
     assert tools[0].name == "steam_player_summary"
     assert tools[1].name == "steam_owned_games"
 
@@ -52,8 +55,11 @@ async def test_get_agent_tools_disabled_integration(chat_service: typing.Any) ->
     mock_ai.config = {"steam_id": "12345678901234567"}
     agent.agent_integrations = [mock_ai]
 
-    tools = chat_service._get_agent_tools(agent)
-    assert len(tools) == 0
+    from uuid import uuid4
+
+    user_id = uuid4()
+    tools = chat_service._get_agent_tools(agent, user_id)
+    assert len(tools) == 5  # Productivity tools always included
 
 
 @pytest.mark.asyncio
@@ -66,8 +72,11 @@ async def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> Non
     mock_ai.config = {}
     agent.agent_integrations = [mock_ai]
 
-    tools = chat_service._get_agent_tools(agent)
-    assert len(tools) == 0
+    from uuid import uuid4
+
+    user_id = uuid4()
+    tools = chat_service._get_agent_tools(agent, user_id)
+    assert len(tools) == 5  # Productivity tools always included
 
 
 @pytest.mark.asyncio
