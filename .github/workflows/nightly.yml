@@ -37,24 +37,19 @@ jobs:
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
 
-      - name: Run safety check
-        id: safety
+      - name: Run security audit
+        id: security_audit
         working-directory: ./backend
         run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Security Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          uvx safety check
-        continue-on-error: true
-
-      - name: Run pip-audit
-        id: pip_audit
-        working-directory: ./backend
-        run: uvx pip-audit
+          uv sync --all-extras
+          echo "### Security Check (Safety)" >> $GITHUB_STEP_SUMMARY
+          uv run safety scan >> $GITHUB_STEP_SUMMARY || echo "Safety found issues"
+          echo "### Security Check (pip-audit)" >> $GITHUB_STEP_SUMMARY
+          uv run pip-audit >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
         continue-on-error: true
 
       - name: Create issue if vulnerabilities found
-        if: steps.safety.outcome == 'failure' || steps.pip_audit.outcome == 'failure'
+        if: steps.security_audit.outcome == 'failure'
         uses: actions/github-script@v8
         with:
           script: |

@@ -85,10 +85,12 @@ jobs:
           enable-cache: true
       - name: Set up Python
         run: uv python install 3.13
-      - name: Run safety check
+      - name: Run security audit
         run: |
-          uvx safety check
-          uvx pip-audit --working-dir ./backend
+          cd backend
+          uv sync --all-extras
+          uv run safety scan
+          uv run pip-audit
 
   pr-size-check:
     name: PR Size Check
