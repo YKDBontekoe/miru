@@ -1,0 +1,182 @@
+name: AI Agents Automation (Jules & CodeRabbit)
+
+on:
+  issue_comment:
+    types: [created, edited]
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours for Jules Sentry fixes
+    - cron: '*/5 * * * *'  # Every 5 minutes for CodeRabbit queue
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  # --- Jules - CodeRabbit Bridge ---
+  jules-coderabbit-bridge:
+    name: Proxy CodeRabbit to Jules
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.user.login == 'coderabbitai[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Proxy to Jules
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.JULES_PROXY_PAT }}
+          script: |
+            const commentBody = context.payload.comment.body;
+            const prNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const noFindingsRegex = /Actionable comments posted:\s*0/i;
+            if (noFindingsRegex.test(commentBody)) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: ['ready-to-merge', 'ai-approved'] });
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: "🎉 **AI Review Complete**: CodeRabbit found no issues." });
+              return;
+            }
+
+            const promptRegex = /<summary>🤖 Prompt for all review comments with AI agents<\/summary>[\s\S]*?```(?:[\w-]+)?\n([\s\S]*?)\n```/i;
+            const match = commentBody.match(promptRegex);
+
+            if (match && match[1]) {
+              const aiPrompt = match[1].trim();
+              const { data: existingComments } = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
+              const proxyComments = existingComments.filter(c => c.body && c.body.includes("Jules-CodeRabbit Bridge Proxy"));
+              const attemptNumber = proxyComments.length + 1;
+              if (attemptNumber > 3) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: "⚠️ **AI Review Loop Detected** ⚠️" });
+                await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: ['human-intervention-needed'] });
+                return;
+              }
+              const contextInjection = "\n\n**Project Context:** Use local checks (make lint, etc). Update AGENTS.md if needed.";
+              const finalComment = `### Jules-CodeRabbit Bridge Proxy (Attempt ${attemptNumber}/3)\n\n/jules\n\n${aiPrompt}${contextInjection}`;
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: finalComment });
+            }
+
+  # --- Jules - Sentry Fixer ---
+  jules-find-issues:
+    name: Find Sentry Issues
+    if: github.event_name == 'issues' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      issues: ${{ steps.find.outputs.issues }}
+    steps:
+      - name: Find issues with jules-fix-pending label
+        id: find
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            if (github.event_name === 'issues' && github.event.issue) {
+              const issue = github.event.issue;
+              if (issue.labels.some(l => l.name === 'jules-fix-pending')) {
+                core.setOutput('issues', JSON.stringify([issue.number]));
+                return;
+              }
+            }
+            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', labels: 'jules-fix-pending' });
+            core.setOutput('issues', JSON.stringify(issues.map(i => i.number)));
+
+  jules-fix:
+    needs: jules-find-issues
+    if: needs.jules-find-issues.outputs.issues != '[]' && needs.jules-find-issues.outputs.issues != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        issue: ${{ fromJSON(needs.jules-find-issues.outputs.issues) }}
+      max-parallel: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Issue Details
+        id: issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: ${{ matrix.issue }} });
+            if (!issue.labels.some(l => l.name === 'jules-fix-pending')) { core.setOutput('skip', 'true'); return; }
+            core.setOutput('title', issue.title);
+            core.setOutput('body', issue.body || '');
+            core.setOutput('skip', 'false');
+      - name: Invoke Jules
+        if: steps.issue.outputs.skip != 'true'
+        uses: google-labs-code/jules-action@v1.0.0
+        with:
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          prompt: |
+            Fix the bug described in this issue:
+            Title: ${{ steps.issue.outputs.title }}
+            Description: ${{ steps.issue.outputs.body }}
+            Requirements: Analyze, fix, write tests, create PR with "Closes #${{ matrix.issue }}".
+      - name: Update Issue
+        if: always() && steps.issue.outputs.skip != 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issue_number = ${{ matrix.issue }};
+            const label = job.status === 'success' ? 'jules-fix-submitted' : 'jules-fix-failed';
+            const body = job.status === 'success' ? "Jules has submitted a fix." : "Jules failed to submit a fix.";
+            try { await github.rest.issues.removeLabel({ ...context.repo, issue_number, name: 'jules-fix-pending' }); } catch(e) {}
+            await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [label] });
+            await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+
+  # --- CodeRabbit - Rate Limit Handling ---
+  coderabbit-detect-limit:
+    name: Detect CodeRabbit Rate Limit
+    if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'Rate limit exceeded') && contains(github.event.comment.body, 'coderabbit')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Queue PR for Review
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_CREATED_AT: ${{ github.event.comment.created_at }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          PR_TITLE: ${{ github.event.issue.title }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 -c "
+          import os, re, datetime, json, urllib.request
+          body = os.environ.get('COMMENT_BODY', '')
+          pr_number = os.environ.get('PR_NUMBER')
+          token = os.environ.get('GITHUB_TOKEN')
+          api_base = f'https://api.github.com/repos/{os.environ.get(\"GITHUB_REPOSITORY\")}'
+          headers = {'Authorization': f'token {token}', 'Accept': 'application/vnd.github.v3+json'}
+          
+          min_match = re.search(r'\*\*(\d+)\s*minute', body, re.IGNORECASE)
+          minutes = int(min_match.group(1)) if min_match else 5
+          unlock_time = (datetime.datetime.fromisoformat(os.environ.get('COMMENT_CREATED_AT').replace('Z', '+00:00')) + datetime.timedelta(minutes=minutes)).isoformat()
+          
+          urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{pr_number}/labels', data=json.dumps({'labels': ['coderabbit:queued']}).encode(), headers=headers))
+          urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues', data=json.dumps({'title': f'⏳ CodeRabbit Queue: PR #{pr_number}', 'body': f'**PR:** #{pr_number}\n**Unlock Time (UTC):** {unlock_time}', 'labels': ['coderabbit:tracking']}).encode(), headers=headers))
+          "
+
+  coderabbit-process-queue:
+    name: Process CodeRabbit Queue
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Queued PRs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 -c "
+          import os, json, datetime, urllib.request, re
+          token = os.environ.get('GITHUB_TOKEN')
+          api_base = f'https://api.github.com/repos/{os.environ.get(\"GITHUB_REPOSITORY\")}'
+          headers = {'Authorization': f'token {token}', 'Accept': 'application/vnd.github.v3+json'}
+          
+          issues = json.loads(urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues?labels=coderabbit:tracking&state=open', headers=headers)).read())
+          now = datetime.datetime.now(datetime.timezone.utc)
+          
+          for issue in issues:
+              pr_match = re.search(r'\*\*PR:\*\* #(\d+)', issue['body'])
+              unlock_match = re.search(r'\*\*Unlock Time \(UTC\):\*\* (.*)', issue['body'])
+              if pr_match and unlock_match and now >= datetime.datetime.fromisoformat(unlock_match.group(1)):
+                  pr_number = pr_match.group(1)
+                  urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{pr_number}/comments', data=json.dumps({'body': '@coderabbitai review'}).encode(), headers=headers))
+                  urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{pr_number}/labels/coderabbit%3Aqueued', headers=headers, method='DELETE'))
+                  urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{issue[\"number\"]}', data=json.dumps({'state': 'closed'}).encode(), headers=headers, method='PATCH'))
+          "

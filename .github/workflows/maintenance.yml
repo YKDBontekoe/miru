@@ -1,0 +1,97 @@
+name: Maintenance & Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/labels.yml'
+  schedule:
+    - cron: '0 2 * * 0' # Every Sunday at 2:00 AM UTC (Cleanup)
+    - cron: '0 * * * *' # Every hour (Sentry Sync)
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  packages: write
+  issues: write
+
+jobs:
+  # --- GitHub Label Sync ---
+  sync-labels:
+    name: Sync GitHub Labels
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: micnncim/action-label-syncer@v1
+        with:
+          manifest: .github/labels.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # --- Artifact & Branch Cleanup ---
+  cleanup:
+    name: Cleanup Old Data
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 30
+          keep_minimum_runs: 10
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          name: |
+            flutter-web-build
+            ios-ipa
+            android-aab
+            android-apk-debug
+          failOnError: false
+      - name: Delete stale branches
+        run: |
+          git fetch --prune origin
+          git branch -r --merged origin/main | grep -v "HEAD\|origin/main\|origin/develop" | sed 's|origin/||' | while read BRANCH; do
+            LAST=$(git log -1 --format=%ct "origin/$BRANCH" 2>/dev/null || echo 0)
+            if [ "$(( ($(date +%s) - LAST) / 86400 ))" -gt 90 ]; then
+              git push origin --delete "$BRANCH" || true
+            fi
+          done
+
+  # --- Sentry to GitHub Sync ---
+  sentry-sync:
+    name: Sentry to GitHub Sync
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Sentry Issues
+        id: sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT_BACKEND }}
+        run: |
+          curl -s -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" "https://sentry.io/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/?query=is:unresolved" > /tmp/sentry.json
+          echo "issues=$(cat /tmp/sentry.json | jq -c '.')" >> $GITHUB_OUTPUT
+      - name: Create Issues
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issues = JSON.parse(process.env.ISSUES || '[]');
+            const { owner, repo } = context.repo;
+            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', labels: 'sentry-issue' });
+            const openTitles = new Set(existing.map(i => i.title));
+            for (const issue of issues) {
+              const title = `[Sentry] ${issue.title}`;
+              if (!openTitles.has(title)) {
+                await github.rest.issues.create({ owner, repo, title, body: `**Sentry**: [${issue.title}](${issue.permalink})\n\n${issue.culprit}`, labels: ['sentry-issue', 'jules-fix-pending'] });
+              }
+            }
+        env:
+          ISSUES: ${{ steps.sentry.outputs.issues }}
