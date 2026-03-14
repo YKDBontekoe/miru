@@ -9,6 +9,13 @@ import crewai
 from crewai import LLM, Crew, Process, Task
 
 from app.core.config import get_settings
+from app.domain.agent_tools.productivity_tools import (
+    CreateNoteTool,
+    CreateTaskTool,
+    ListNotesTool,
+    ListTasksTool,
+    UpdateTaskTool,
+)
 from app.domain.chat.models import (
     ChatMessage,
     ChatMessageResponse,
@@ -80,7 +87,9 @@ class ChatService:
             additional_drop_params=["tool_choice"],
         )
 
-    def _get_agent_tools(self, agent: Agent) -> list:
+    def _get_agent_tools(
+        self, agent: Agent, user_id: UUID, origin_message_id: UUID | None = None
+    ) -> list:
         """Build the tool list for an agent from its prefetched integrations.
 
         Requires ``agent_integrations__integration`` to have been prefetched
@@ -99,6 +108,19 @@ class ChatService:
                             SteamOwnedGamesTool(steam_id=steam_id),
                         ]
                     )
+
+        tools.extend(
+            [
+                ListTasksTool(user_id=user_id, agent_id=agent.id),
+                CreateTaskTool(user_id=user_id, agent_id=agent.id),
+                UpdateTaskTool(user_id=user_id, agent_id=agent.id),
+                ListNotesTool(user_id=user_id, agent_id=agent.id),
+                CreateNoteTool(
+                    user_id=user_id, agent_id=agent.id, origin_message_id=origin_message_id
+                ),
+            ]
+        )
+
         return tools
 
     async def create_room(self, name: str, user_id: UUID) -> RoomResponse:
@@ -162,7 +184,12 @@ class ChatService:
         yield "[[STATUS:done]]\n"
 
     def _create_crew_agents(
-        self, db_agents: list[Agent], llm: LLM, allow_delegation: bool = False
+        self,
+        db_agents: list[Agent],
+        llm: LLM,
+        user_id: UUID,
+        allow_delegation: bool = False,
+        origin_message_id: UUID | None = None,
     ) -> list[crewai.Agent]:
         """Helper to create crewai.Agent instances from DB agents."""
         return [
@@ -172,7 +199,7 @@ class ChatService:
                 backstory=a.description or "",
                 llm=llm,
                 allow_delegation=allow_delegation,
-                tools=self._get_agent_tools(a),
+                tools=self._get_agent_tools(a, user_id, origin_message_id=origin_message_id),
             )
             for a in db_agents
         ]
@@ -185,7 +212,7 @@ class ChatService:
             return {"task_type": "error", "result": "No agents available."}
 
         llm = self._get_crew_llm()
-        crew_agents = self._create_crew_agents(db_agents, llm, allow_delegation=True)
+        crew_agents = self._create_crew_agents(db_agents, llm, user_id, allow_delegation=True)
 
         if len(crew_agents) > 1:
             task = Task(
@@ -229,7 +256,9 @@ class ChatService:
 
         # 3. Build CrewAI agents
         llm = self._get_crew_llm()
-        crew_agents = self._create_crew_agents(db_agents, llm, allow_delegation=False)
+        crew_agents = self._create_crew_agents(
+            db_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg.id
+        )
 
         # 4. Define and execute task
         if len(crew_agents) > 1:

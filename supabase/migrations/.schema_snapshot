@@ -231,14 +231,19 @@ COMMENT ON TABLE "agent_tool_links" IS 'Junction table for Agents and their assi
 CREATE TABLE IF NOT EXISTS "notes" (
     "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID NOT NULL,
+    "origin_context" TEXT,
     "title" VARCHAR(255) NOT NULL,
     "content" TEXT NOT NULL,
     "is_pinned" BOOL NOT NULL DEFAULT False,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deleted_at" TIMESTAMPTZ
+    "deleted_at" TIMESTAMPTZ,
+    "agent_id" UUID REFERENCES "agents" ("id") ON DELETE SET NULL,
+    "origin_message_id" UUID REFERENCES "chat_messages" ("id") ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS "idx_notes_user_id_9d616a" ON "notes" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_notes_agent_i_72e862" ON "notes" ("agent_id");
+CREATE INDEX IF NOT EXISTS "idx_notes_origin__be1941" ON "notes" ("origin_message_id");
 COMMENT ON TABLE "notes" IS 'Database entity for User Notes.';
 CREATE TABLE IF NOT EXISTS "tasks" (
     "id" UUID NOT NULL PRIMARY KEY,

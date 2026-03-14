@@ -51,5 +51,9 @@
   ],
   "indexes": [
     "CREATE INDEX IF NOT EXISTS memories_embedding_hnsw_idx ON public.memories USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);"
+  ],
+  "functions": [
+    "\n            CREATE OR REPLACE FUNCTION public.handle_new_user()\n            RETURNS trigger AS $$\n            BEGIN\n              INSERT INTO public.profiles (id, display_name, avatar_url)\n              VALUES (\n                new.id,\n                new.raw_user_meta_data->>'full_name',\n                new.raw_user_meta_data->>'avatar_url'\n              );\n              RETURN new;\n            END;\n            $$ LANGUAGE plpgsql SECURITY DEFINER;\n            ",
+    "\n            CREATE OR REPLACE TRIGGER on_auth_user_created\n              AFTER INSERT ON auth.users\n              FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();\n            "
   ]
 }

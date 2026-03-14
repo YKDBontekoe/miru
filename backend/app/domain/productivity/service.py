@@ -131,10 +131,14 @@ class ProductivityService:
         try:
             return await Note.create(
                 user_id=user_id,
+                agent=note_data.agent_id,
+                origin_message=note_data.origin_message_id,
+                origin_context=note_data.origin_context,
                 title=note_data.title,
                 content=note_data.content,
                 is_pinned=note_data.is_pinned,
             )
+
         except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
             logger.exception("Failed to create note")
             raise HTTPException(
