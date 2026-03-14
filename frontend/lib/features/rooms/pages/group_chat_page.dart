@@ -62,13 +62,15 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final agentsData = await ApiService.getRoomAgents(widget.room.id);
-      final messagesData = await ApiService.getRoomMessages(widget.room.id);
+      final results = await Future.wait([
+        ApiService.getRoomAgents(widget.room.id),
+        ApiService.getRoomMessages(widget.room.id),
+      ]);
 
       if (!mounted) return;
       setState(() {
-        _roomAgents = agentsData;
-        _messages = messagesData;
+        _roomAgents = results[0] as List<Agent>;
+        _messages = results[1] as List<ChatMessage>;
       });
       _scrollToBottom();
     } catch (e) {
