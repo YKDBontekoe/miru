@@ -5,6 +5,12 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from openai import APIConnectionError
+
+try:
+    from instructor.core.exceptions import InstructorRetryException
+except ImportError:
+    from instructor.exceptions import InstructorRetryException
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import get_current_user
@@ -113,3 +119,58 @@ def test_build_agent_response_without_avatar() -> None:
     assert response.integrations == ["steam"]
     assert response.integration_configs == {"steam": {"steam_id": "123"}}
     assert not hasattr(response, "avatar_url")
+
+
+def test_generate_agent_network_error(client: TestClient) -> None:
+    mock_service = MagicMock()
+    mock_service.generate_agent_profile = AsyncMock(
+        side_effect=APIConnectionError(request=MagicMock())
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: uuid4()
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/agents/generate",
+        headers={"Authorization": "Bearer fake_token"},
+        json={"keywords": "friendly assistant"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Upstream AI service is currently unreachable"
+
+
+def test_generate_agent_oserror(client: TestClient) -> None:
+    mock_service = MagicMock()
+    mock_service.generate_agent_profile = AsyncMock(side_effect=OSError("Network is unreachable"))
+
+    app.dependency_overrides[get_current_user] = lambda: uuid4()
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/agents/generate",
+        headers={"Authorization": "Bearer fake_token"},
+        json={"keywords": "friendly assistant"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Upstream AI service is currently unreachable"
+
+
+def test_generate_agent_instructor_retry_exception(client: TestClient) -> None:
+    mock_service = MagicMock()
+    mock_service.generate_agent_profile = AsyncMock(
+        side_effect=InstructorRetryException(n_attempts=3, last_completion=None, total_usage=0)
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: uuid4()
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/agents/generate",
+        headers={"Authorization": "Bearer fake_token"},
+        json={"keywords": "friendly assistant"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Upstream AI service failed to generate a valid response"
