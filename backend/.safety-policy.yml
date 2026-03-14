@@ -4,3 +4,6 @@ security:
     "85151":
       reason: "Transient dependency of onnxruntime/opentelemetry. No fixed version available yet. Risk is acceptable for current usage."
       expires: "2026-04-14 00:00:00"
+    "GHSA-w8v5-vhqr-4h9v":
+      reason: "Transient dependency of instructor. No fixed version available for diskcache yet. Requires local filesystem write access to exploit."
+      expires: "2026-04-14 00:00:00"

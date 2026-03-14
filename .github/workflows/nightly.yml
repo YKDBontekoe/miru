@@ -46,7 +46,7 @@ jobs:
           # safety check is used because safety scan requires an account/key in CI
           uv run safety check --policy-file .safety-policy.yml >> $GITHUB_STEP_SUMMARY || echo "Safety found issues"
           echo "### Security Check (pip-audit)" >> $GITHUB_STEP_SUMMARY
-          uv run pip-audit >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
+          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
         continue-on-error: true
 
       - name: Create issue if vulnerabilities found
