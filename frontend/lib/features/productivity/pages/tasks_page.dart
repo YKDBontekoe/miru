@@ -105,7 +105,9 @@ class TasksPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom: AppSpacing.bottomNavBarHeight + AppSpacing.md * 2 + MediaQuery.viewPaddingOf(context).bottom,
+              bottom: AppSpacing.bottomNavBarHeight +
+                  AppSpacing.md * 2 +
+                  MediaQuery.viewPaddingOf(context).bottom,
             ),
             itemCount: tasks.length,
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
@@ -131,7 +133,10 @@ class TasksPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: AppSpacing.bottomNavBarHeight + AppSpacing.md + MediaQuery.viewPaddingOf(context).bottom),
+        padding: EdgeInsets.only(
+            bottom: AppSpacing.bottomNavBarHeight +
+                AppSpacing.md +
+                MediaQuery.viewPaddingOf(context).bottom),
         child: FloatingActionButton(
           onPressed: () => _showTaskDialog(context, ref),
           child: const Icon(Icons.add),
