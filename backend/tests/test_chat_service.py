@@ -122,6 +122,7 @@ async def test_run_crew_task_has_single_agent(
         assert "agents" in crew_kwargs
         assert crew_kwargs["agents"] == [mock_crew_agent]
 
+
 @pytest.mark.asyncio
 async def test_run_crew_task_has_multiple_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
