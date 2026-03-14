@@ -1,0 +1,7 @@
+# Safety policy file to ignore specific vulnerabilities
+# Protobuf <= 6.33.4 is vulnerable to DoS (CVE-2026-0994).
+# Currently no fixed version is available in the 5.x/6.x range that is compatible with our dependencies.
+ignore-vulnerabilities:
+  "85151":
+    reason: "Transient dependency of onnxruntime/opentelemetry. No fixed version available yet. Risk is acceptable for current usage."
+    expires: "2026-04-14 00:00:00"

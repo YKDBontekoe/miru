@@ -44,7 +44,7 @@ jobs:
           uv sync --all-extras
           echo "### Security Check (Safety)" >> $GITHUB_STEP_SUMMARY
           # safety check is used because safety scan requires an account/key in CI
-          uv run safety check >> $GITHUB_STEP_SUMMARY || echo "Safety found issues"
+          uv run safety check --policy-file .safety-policy.yml >> $GITHUB_STEP_SUMMARY || echo "Safety found issues"
           echo "### Security Check (pip-audit)" >> $GITHUB_STEP_SUMMARY
           uv run pip-audit >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
         continue-on-error: true
