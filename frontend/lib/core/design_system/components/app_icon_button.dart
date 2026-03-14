@@ -40,28 +40,28 @@ class AppIconButton extends StatelessWidget {
 
     final ButtonStyle style = switch (variant) {
       AppIconButtonVariant.filled => IconButton.styleFrom(
-        backgroundColor: color ?? colors.primary,
-        foregroundColor: AppColors.onPrimary,
-        minimumSize: Size(size, size),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          backgroundColor: color ?? colors.primary,
+          foregroundColor: AppColors.onPrimary,
+          minimumSize: Size(size, size),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          ),
         ),
-      ),
       AppIconButtonVariant.tonal => IconButton.styleFrom(
-        backgroundColor: colors.primarySurface,
-        foregroundColor: colors.primary,
-        minimumSize: Size(size, size),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          backgroundColor: colors.primarySurface,
+          foregroundColor: colors.primary,
+          minimumSize: Size(size, size),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          ),
         ),
-      ),
       AppIconButtonVariant.ghost => IconButton.styleFrom(
-        foregroundColor: color ?? colors.onSurface,
-        minimumSize: Size(size, size),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          foregroundColor: color ?? colors.onSurface,
+          minimumSize: Size(size, size),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          ),
         ),
-      ),
     };
 
     return IconButton(

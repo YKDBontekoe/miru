@@ -98,8 +98,7 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isAtBottom =
-        _scrollController.position.pixels >=
+    final isAtBottom = _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 80;
     if (_showScrollToBottom == isAtBottom) {
       setState(() => _showScrollToBottom = !isAtBottom);
@@ -552,9 +551,8 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
             vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceHighDark
-                : AppColors.surfaceHighLight,
+            color:
+                isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight,
             borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             border: Border.all(
               color: colors.border.withValues(alpha: 0.5),
@@ -657,9 +655,8 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
         : [AppColors.onSurfaceLight, AppColors.primaryDark];
 
     return AppBar(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,

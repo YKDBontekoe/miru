@@ -126,12 +126,13 @@ class AddAgentSheetState extends State<AddAgentSheet> {
                   trailing: isInRoom
                       ? Icon(Icons.check_rounded, color: AppColors.success)
                       : isAdding
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(Icons.add_rounded, color: colors.onSurfaceMuted),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(Icons.add_rounded,
+                              color: colors.onSurfaceMuted),
                   onTap: isInRoom || isAdding
                       ? null
                       : () {

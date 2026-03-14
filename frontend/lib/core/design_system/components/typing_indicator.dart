@@ -78,7 +78,7 @@ class _BouncingDotState extends State<_BouncingDot>
 
     return AnimatedBuilder(
       animation: _animation,
-      builder: (_, _) => Transform.translate(
+      builder: (_, __) => Transform.translate(
         offset: Offset(0, _animation.value),
         child: Container(
           width: AppSpacing.typingDotSize,

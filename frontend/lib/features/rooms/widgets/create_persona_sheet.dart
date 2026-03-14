@@ -273,8 +273,8 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
                         child: FilledButton(
                           onPressed:
                               _isResolvingSteam || _resolvedSteamId != null
-                              ? null
-                              : _resolveSteamUser,
+                                  ? null
+                                  : _resolveSteamUser,
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.md,

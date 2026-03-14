@@ -37,17 +37,6 @@ jobs:
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependency checkers
-        run: |
-          pip install safety pip-audit
-
-      - name: Check for outdated dependencies
-        working-directory: ./backend
-        run: |
-          echo "### Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          pip list --outdated --format=columns >> $GITHUB_STEP_SUMMARY || true
-
       - name: Run safety check
         id: safety
         working-directory: ./backend
@@ -55,13 +44,13 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Security Check" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          safety check
+          uvx safety check
         continue-on-error: true
 
       - name: Run pip-audit
         id: pip_audit
         working-directory: ./backend
-        run: pip-audit
+        run: uvx pip-audit
         continue-on-error: true
 
       - name: Create issue if vulnerabilities found

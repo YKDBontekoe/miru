@@ -109,13 +109,12 @@ class NotesPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom:
-                  AppSpacing.bottomNavBarHeight +
+              bottom: AppSpacing.bottomNavBarHeight +
                   AppSpacing.md * 2 +
                   MediaQuery.viewPaddingOf(context).bottom,
             ),
             itemCount: notes.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final note = notes[index];
               return _NoteTile(note: note, agents: agents);
@@ -139,8 +138,7 @@ class NotesPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom:
-              AppSpacing.bottomNavBarHeight +
+          bottom: AppSpacing.bottomNavBarHeight +
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),
@@ -240,9 +238,8 @@ class _NoteTile extends ConsumerWidget {
                 children: [
                   if (note.agentId != null)
                     () {
-                      final agent = agents
-                          .where((a) => a.id == note.agentId)
-                          .firstOrNull;
+                      final agent =
+                          agents.where((a) => a.id == note.agentId).firstOrNull;
                       if (agent == null) return const SizedBox.shrink();
                       return Container(
                         padding: const EdgeInsets.symmetric(

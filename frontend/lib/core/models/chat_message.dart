@@ -25,20 +25,20 @@ class ChatMessage with _$ChatMessage {
   bool get isAgent => agentId != null;
 
   factory ChatMessage.user(String text) => ChatMessage(
-    id: _generateId(),
-    text: text,
-    userId: 'temp',
-    timestamp: DateTime.now(),
-    status: MessageStatus.sent,
-  );
+        id: _generateId(),
+        text: text,
+        userId: 'temp',
+        timestamp: DateTime.now(),
+        status: MessageStatus.sent,
+      );
 
   factory ChatMessage.assistantPlaceholder() => ChatMessage(
-    id: _generateId(),
-    text: '',
-    agentId: 'temp',
-    timestamp: DateTime.now(),
-    status: MessageStatus.streaming,
-  );
+        id: _generateId(),
+        text: '',
+        agentId: 'temp',
+        timestamp: DateTime.now(),
+        status: MessageStatus.streaming,
+      );
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) =>
       _$ChatMessageFromJson(json);

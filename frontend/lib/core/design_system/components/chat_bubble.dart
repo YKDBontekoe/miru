@@ -350,14 +350,14 @@ class _AssistantBubbleContainer extends StatelessWidget {
     final bgColor = isFailed
         ? colors.errorSurface
         : hasAgentName
-        ? accentColor.withValues(alpha: isDark ? 0.08 : 0.06)
-        : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight);
+            ? accentColor.withValues(alpha: isDark ? 0.08 : 0.06)
+            : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight);
 
     final borderColor = isFailed
         ? AppColors.error.withValues(alpha: 0.35)
         : hasAgentName
-        ? accentColor.withValues(alpha: isDark ? 0.22 : 0.18)
-        : colors.border.withValues(alpha: 0.7);
+            ? accentColor.withValues(alpha: isDark ? 0.22 : 0.18)
+            : colors.border.withValues(alpha: 0.7);
 
     return Container(
       decoration: BoxDecoration(

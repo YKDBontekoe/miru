@@ -179,9 +179,8 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                           AppSpacing.radiusMd,
                         ),
                         border: Border.all(
-                          color: isSelected
-                              ? colors.primaryLight
-                              : colors.border,
+                          color:
+                              isSelected ? colors.primaryLight : colors.border,
                           width: isSelected ? 2 : 1,
                         ),
                       ),

@@ -18,9 +18,9 @@ class CrewResult {
   const CrewResult({required this.taskType, required this.result});
 
   factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
-    taskType: json['task_type'] as String? ?? 'general',
-    result: json['result'] as String? ?? '',
-  );
+        taskType: json['task_type'] as String? ?? 'general',
+        result: json['result'] as String? ?? '',
+      );
 }
 
 class ApiService {

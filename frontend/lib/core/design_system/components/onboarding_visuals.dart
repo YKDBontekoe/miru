@@ -57,8 +57,7 @@ class _MemoryPainter extends CustomPainter {
     final scale = size.width / 280;
 
     for (var i = 0; i < 4; i++) {
-      final yOffset =
-          (i - 1.5) * 45.0 * scale +
+      final yOffset = (i - 1.5) * 45.0 * scale +
           (progress * 10 * scale * (i.isEven ? 1 : -1));
       final opacity = 1.0 - (i * 0.2);
       final width = (160.0 - (i * 15)) * scale;

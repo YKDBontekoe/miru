@@ -87,8 +87,8 @@ jobs:
         run: uv python install 3.13
       - name: Run safety check
         run: |
-          uv run safety check
-          uv run pip-audit --working-dir ./backend
+          uvx safety check
+          uvx pip-audit --working-dir ./backend
 
   pr-size-check:
     name: PR Size Check

@@ -112,13 +112,12 @@ class TasksPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom:
-                  AppSpacing.bottomNavBarHeight +
+              bottom: AppSpacing.bottomNavBarHeight +
                   AppSpacing.md * 2 +
                   MediaQuery.viewPaddingOf(context).bottom,
             ),
             itemCount: tasks.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final task = tasks[index];
               return _TaskTile(task: task);
@@ -142,8 +141,7 @@ class TasksPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom:
-              AppSpacing.bottomNavBarHeight +
+          bottom: AppSpacing.bottomNavBarHeight +
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),
