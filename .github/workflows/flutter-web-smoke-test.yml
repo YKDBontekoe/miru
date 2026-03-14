@@ -86,21 +86,21 @@ jobs:
           export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
           export SUPABASE_JWT_SECRET="super-secret-jwt-token-with-at-least-32-characters-long"
           export CORS_ALLOWED_ORIGINS="*"
-          export WEBAUTHN_RP_ID="localhost"
+          export WEBAUTHN_RP_ID="127.0.0.1"
           export WEBAUTHN_RP_NAME="Miru Test CI"
-          export WEBAUTHN_EXPECTED_ORIGIN="http://localhost:8080"
+          export WEBAUTHN_EXPECTED_ORIGIN="http://127.0.0.1:8080"
           export OPENROUTER_API_KEY="test"
           export DEFAULT_CHAT_MODEL="test"
           export EMBEDDING_MODEL="test"
 
           # Run the backend in the background
-          uv run uvicorn app.main:app --host localhost --port 8000 &
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 
           # Wait for backend to be healthy
           echo "Waiting for backend..."
           backend_up=0
           for i in {1..30}; do
-            if curl -s http://localhost:8000/health | grep -q "status"; then
+            if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
               echo "Backend is up!"
               backend_up=1
               break
@@ -124,8 +124,8 @@ jobs:
       - name: Build web app
         run: |
           flutter build web --release \
-            --dart-define=API_URL=http://localhost:8000/api/v1 \
-            --dart-define=SUPABASE_URL=http://localhost:54321 \
+            --dart-define=API_URL=http://127.0.0.1:8000/api/v1 \
+            --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
             --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}
 
       # -----------------------------------------------------------------------
@@ -145,7 +145,7 @@ jobs:
           npx --yes serve -s build/web -l 8080 &
           echo "Waiting for server to be ready..."
           for i in $(seq 1 30); do
-            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 | grep -q "200"; then
+            if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080 | grep -q "200"; then
               echo "Server is up after ${i}s"
               break
             fi
@@ -158,7 +158,7 @@ jobs:
 
       - name: Verify app is reachable
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080)
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "::error::App did not return HTTP 200 (got $STATUS)"
@@ -167,7 +167,7 @@ jobs:
 
       - name: Verify index.html contains expected content
         run: |
-          BODY=$(curl -s http://localhost:8080)
+          BODY=$(curl -s http://127.0.0.1:8080)
           if ! echo "$BODY" | grep -q "flutter"; then
             echo "::error::index.html does not look like a Flutter web app"
             exit 1
@@ -183,8 +183,8 @@ jobs:
             --web-port=8081 \
             --headless \
             --browser-name=chrome \
-            --dart-define=API_URL=http://localhost:8000/api/v1 \
-            --dart-define=SUPABASE_URL=http://localhost:54321 \
+            --dart-define=API_URL=http://127.0.0.1:8000/api/v1 \
+            --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
             --dart-define=SUPABASE_ANON_KEY=${{ steps.supabase-keys.outputs.ANON_KEY }}
         continue-on-error: false
 
@@ -196,7 +196,7 @@ jobs:
         continue-on-error: true
 
       - name: Run accessibility check
-        run: axe http://localhost:8080 || echo "Axe checks failed or could not run"
+        run: axe http://127.0.0.1:8080 || echo "Axe checks failed or could not run"
         continue-on-error: true   # informational; does not fail the pipeline
 
       # -----------------------------------------------------------------------
@@ -206,7 +206,7 @@ jobs:
         uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
-            http://localhost:8080
+            http://127.0.0.1:8080
           uploadArtifacts: true
           temporaryPublicStorage: false
           runs: 1

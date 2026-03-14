@@ -66,11 +66,8 @@ allow_all_origins = "*" in origins
 
 app.add_middleware(
     CORSMiddleware,
-    # When allow_credentials=True, allow_origins cannot be ["*"].
-    # We use allow_origin_regex to allow everything while being compatible with credentials.
-    allow_origins=[] if allow_all_origins else origins,
-    allow_origin_regex=".*" if allow_all_origins else None,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

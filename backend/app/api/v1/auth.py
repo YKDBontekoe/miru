@@ -7,6 +7,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_auth_service
+from app.core.config import get_settings
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.auth.models import (
     PasskeyLoginOptionsRequest,
@@ -27,8 +28,12 @@ async def get_registration_options(
     _service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
     """Get options for passkey registration."""
+    settings = get_settings()
     # Placeholder for actual WebAuthn logic
-    return {"challenge": "dummy_challenge", "rp": {"name": "Miru", "id": "localhost"}}
+    return {
+        "challenge": "dummy_challenge",
+        "rp": {"name": settings.webauthn_rp_name, "id": settings.webauthn_rp_id},
+    }
 
 
 @router.post("/passkey/register/verify")

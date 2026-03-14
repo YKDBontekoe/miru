@@ -57,9 +57,22 @@ void main() {
           debugPrint(
               'UNEXPECTED SNACKBAR FOUND ($context): ${textWidget.data}');
           messages += '${textWidget.data}; ';
+        } else if (snackbar.content is Row) {
+          // Some snackbars might have a Row with an icon and text
+          final row = snackbar.content as Row;
+          for (final child in row.children) {
+            if (child is Text) {
+              debugPrint('UNEXPECTED SNACKBAR FOUND ($context): ${child.data}');
+              messages += '${child.data}; ';
+            } else if (child is Expanded && child.child is Text) {
+              final t = child.child as Text;
+              debugPrint('UNEXPECTED SNACKBAR FOUND ($context): ${t.data}');
+              messages += '${t.data}; ';
+            }
+          }
         } else {
           debugPrint(
-              'UNEXPECTED SNACKBAR FOUND ($context) with non-text content');
+              'UNEXPECTED SNACKBAR FOUND ($context) with content type: ${snackbar.content.runtimeType}');
         }
       }
       expect(snackbars, isEmpty,
@@ -68,6 +81,13 @@ void main() {
   }
 
   group('End-to-End Smoke Tests', () {
+    setUpAll(() async {
+      debugPrint('Starting Smoke Tests...');
+      debugPrint('API_URL: $apiUrl');
+      debugPrint('SUPABASE_URL: $supabaseUrl');
+      // Small delay to ensure backend/network is fully ready in CI
+      await Future.delayed(const Duration(seconds: 2));
+    });
     testWidgets(
         'App launches, connects to real backend, and renders the auth page',
         (tester) async {
