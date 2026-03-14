@@ -119,7 +119,8 @@ class _RoomsPageState extends State<RoomsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreateRoomSheet(availableAgents: _agents, onRoomCreated: _loadRooms),
+      builder: (context) =>
+          CreateRoomSheet(availableAgents: _agents, onRoomCreated: _loadRooms),
     );
   }
 
