@@ -75,7 +75,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         AppSpacing.md,
         AppSpacing.md,
       ),
-      height: 72,
+      height: AppSpacing.bottomNavBarHeight,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppSpacing.radiusXxl),
         child: BackdropFilter(

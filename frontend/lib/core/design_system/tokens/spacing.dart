@@ -181,4 +181,7 @@ abstract final class AppSpacing {
 
   /// AppBar height.
   static const double appBarHeight = 56;
+
+  /// Bottom Navigation Bar height.
+  static const double bottomNavBarHeight = 72;
 }
