@@ -85,6 +85,7 @@ async def initialize_tortoise() -> AsyncGenerator[None, None]:
                     "app.domain.memory.models",
                     "app.domain.agent_tools.models",
                     "app.domain.auth.models",
+                    "app.domain.productivity.models",
                 ],
                 "default_connection": "default",
             }

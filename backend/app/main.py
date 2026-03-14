@@ -14,6 +14,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.integrations import router as integrations_router
 from app.api.v1.memory import router as memory_router
+from app.api.v1.productivity import router as productivity_router
 from app.core.config import get_settings
 from app.infrastructure.database.tortoise import close_db, init_db
 
@@ -73,6 +74,7 @@ app.include_router(agents_router, prefix="/api/v1/agents")
 app.include_router(auth_router, prefix="/api/v1/auth")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(memory_router, prefix="/api/v1/memory")
+app.include_router(productivity_router, prefix="/api/v1/productivity")
 app.include_router(integrations_router, prefix="/api/v1/integrations")
 
 
