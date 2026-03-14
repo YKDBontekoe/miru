@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     # Sentry environment name, e.g. "production", "staging", "development"
     sentry_environment: str = "development"
 
+    # Neo4j configuration (deprecated but may still be in env)
+    neo4j_uri: str | None = None
+    neo4j_user: str | None = None
+    neo4j_password: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

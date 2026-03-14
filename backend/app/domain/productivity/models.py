@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -194,3 +194,14 @@ class NoteResponse(BaseModel):
     is_pinned: bool
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("agent_id", "origin_message_id", mode="before")
+    @classmethod
+    def extract_uuid(cls, v: Any) -> UUID | None:
+        """Extract raw UUID from Tortoise relation proxy if needed."""
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return v
+        # Tortoise relations have an '_id' attribute for the raw PK
+        return getattr(v, "pk", None) or getattr(v, "id", None)
