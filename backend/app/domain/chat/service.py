@@ -150,6 +150,22 @@ class ChatService:
         yield content
         yield "[[STATUS:done]]\n"
 
+    def _create_crew_agents(
+        self, db_agents: list[Agent], llm: LLM, allow_delegation: bool = False
+    ) -> list[crewai.Agent]:
+        """Helper to create crewai.Agent instances from DB agents."""
+        return [
+            crewai.Agent(
+                role=a.name,
+                goal=a.personality,
+                backstory=a.description or "",
+                llm=llm,
+                allow_delegation=allow_delegation,
+                tools=self._get_agent_tools(a),
+            )
+            for a in db_agents
+        ]
+
     async def run_crew(self, user_message: str, user_id: UUID) -> dict[str, str]:
         """Execute a full CrewAI orchestration and return a structured result."""
         # list_by_user prefetches agent_integrations__integration
@@ -158,17 +174,7 @@ class ChatService:
             return {"task_type": "error", "result": "No agents available."}
 
         llm = self._get_crew_llm()
-        crew_agents = [
-            crewai.Agent(
-                role=a.name,
-                goal=a.personality,
-                backstory=a.description or "",
-                llm=llm,
-                allow_delegation=True,
-                tools=self._get_agent_tools(a),
-            )
-            for a in db_agents
-        ]
+        crew_agents = self._create_crew_agents(db_agents, llm, allow_delegation=True)
 
         task = Task(
             description=user_message,
@@ -201,17 +207,7 @@ class ChatService:
 
         # 3. Build CrewAI agents
         llm = self._get_crew_llm()
-        crew_agents = [
-            crewai.Agent(
-                role=a.name,
-                goal=a.personality,
-                backstory=a.description or "",
-                llm=llm,
-                allow_delegation=False,
-                tools=self._get_agent_tools(a),
-            )
-            for a in db_agents
-        ]
+        crew_agents = self._create_crew_agents(db_agents, llm, allow_delegation=False)
 
         # 4. Define and execute task
         task = Task(
