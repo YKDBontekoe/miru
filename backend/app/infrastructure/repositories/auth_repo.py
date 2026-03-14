@@ -36,3 +36,14 @@ class AuthRepository:
         response = self.db.table("passkeys").insert(row).execute()
         data = cast("list[dict[str, Any]]", response.data)[0]
         return PasskeyRecord(**data)
+
+    async def delete_passkey(self, passkey_id: str | UUID, user_id: str | UUID) -> bool:
+        """Delete a passkey belonging to a user."""
+        response = (
+            self.db.table("passkeys")
+            .delete()
+            .eq("id", str(passkey_id))
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+        return len(response.data) > 0

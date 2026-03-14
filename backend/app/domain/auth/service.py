@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 import jwt
 
@@ -44,7 +45,7 @@ class AuthService:
                     token,
                     settings.supabase_jwt_secret,
                     algorithms=["HS256"],
-                    options={"verify_aud": False},
+                    audience="authenticated",
                 )
             else:
                 jwks_client = self._get_jwks_client()
@@ -53,7 +54,7 @@ class AuthService:
                     token,
                     signing_key.key,
                     algorithms=["ES256", "RS256"],
-                    options={"verify_aud": False},
+                    audience="authenticated",
                 )
             return JWTPayload(**payload)
         except Exception as exc:
@@ -66,3 +67,7 @@ class AuthService:
         """Skeleton for Authlib WebAuthn registration verification."""
         # Implementation would use Authlib to validate credential_json
         pass
+
+    async def delete_passkey(self, passkey_id: str | UUID, user_id: str | UUID) -> bool:
+        """Delete a passkey belonging to a user."""
+        return await self.repo.delete_passkey(passkey_id, user_id)

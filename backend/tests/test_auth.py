@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import time
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 import jwt
 import pytest
@@ -17,21 +15,7 @@ from app.main import app
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
-
-def make_jwt(user_id: str | None = None, expired: bool = False) -> str:
-    """Create a dummy Supabase JWT for testing."""
-    from app.core.config import get_settings
-
-    settings = get_settings()
-    uid = user_id or str(uuid4())
-    now = int(time.time())
-    payload = {
-        "sub": uid,
-        "role": "authenticated",
-        "iat": now,
-        "exp": now - 3600 if expired else now + 3600,
-    }
-    return jwt.encode(payload, settings.supabase_jwt_secret, algorithm="HS256")
+from tests.conftest import make_jwt
 
 
 @pytest.mark.asyncio
