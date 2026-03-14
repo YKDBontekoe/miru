@@ -39,7 +39,12 @@ async def get_memory_graph(
     service: Annotated[MemoryService, Depends(get_memory_service)],
 ) -> dict[str, Any]:
     """Fetch the memory graph for the current user."""
-    return await service.get_memory_graph(user_id)
+    try:
+        return await service.get_memory_graph(user_id)
+    except (APIConnectionError, OSError) as e:
+        raise HTTPException(
+            status_code=503, detail="Upstream AI service is currently unreachable"
+        ) from e
 
 
 @router.post("", response_model=dict[str, Any])
