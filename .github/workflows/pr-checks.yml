@@ -89,7 +89,8 @@ jobs:
         run: |
           cd backend
           uv sync --all-extras
-          uv run safety scan
+          # safety check is used because safety scan requires an account/key in CI
+          uv run safety check
           uv run pip-audit
 
   pr-size-check:
