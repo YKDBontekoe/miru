@@ -165,8 +165,8 @@ def test_env_vars() -> dict[str, str]:
 def _reload_tortoise_module() -> type:
     import importlib
 
-    from app.core.config import get_settings
     import app.infrastructure.database.tortoise as tort_mod
+    from app.core.config import get_settings
 
     get_settings.cache_clear()
     importlib.reload(tort_mod)
