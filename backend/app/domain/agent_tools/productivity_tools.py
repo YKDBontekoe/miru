@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from crewai.tools import BaseTool
@@ -7,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from app.domain.productivity.models import NoteCreate, TaskCreate, TaskUpdate
 from app.domain.productivity.service import ProductivityService
+
+logger = logging.getLogger(__name__)
 
 
 class ListTasksInput(BaseModel):
@@ -31,18 +34,22 @@ class ListTasksTool(BaseTool):
     agent_id: UUID | None = None
 
     async def _run(self) -> str:
-        tasks = await ProductivityService.list_tasks(user_id=self.user_id)
+        try:
+            tasks = await ProductivityService.list_tasks(user_id=self.user_id)
 
-        if not tasks:
-            return "No tasks found."
+            if not tasks:
+                return "No tasks found."
 
-        result = "Tasks:\n"
-        for t in tasks:
-            status = "Completed" if t.is_completed else "Pending"
-            result += f"- [{t.id}] {t.title} ({status})\n"
-            if t.description:
-                result += f"  Description: {t.description}\n"
-        return result
+            result = "Tasks:\n"
+            for t in tasks:
+                status = "Completed" if t.is_completed else "Pending"
+                result += f"- [{t.id}] {t.title} ({status})\n"
+                if t.description:
+                    result += f"  Description: {t.description}\n"
+            return result
+        except Exception:
+            logger.exception("Error in ListTasksTool for user %s", self.user_id)
+            return "Error fetching tasks."
 
 
 class CreateTaskInput(BaseModel):
@@ -68,10 +75,14 @@ class CreateTaskTool(BaseTool):
     agent_id: UUID | None = None
 
     async def _run(self, title: str, description: str | None = None) -> str:
-        task_data = TaskCreate(title=title, description=description, is_completed=False)
-        task = await ProductivityService.create_task(user_id=self.user_id, task_data=task_data)
+        try:
+            task_data = TaskCreate(title=title, description=description, is_completed=False)
+            task = await ProductivityService.create_task(user_id=self.user_id, task_data=task_data)
 
-        return f"Successfully created task '{task.title}' with ID {task.id}."
+            return f"Successfully created task '{task.title}' with ID {task.id}."
+        except Exception:
+            logger.exception("Error in CreateTaskTool for user %s", self.user_id)
+            return "Error creating task."
 
 
 class UpdateTaskInput(BaseModel):
@@ -100,15 +111,17 @@ class UpdateTaskTool(BaseTool):
     async def _run(
         self, task_id: UUID, is_completed: bool | None = None, title: str | None = None
     ) -> str:
-        update_data = TaskUpdate(is_completed=is_completed, title=title)
-        task = await ProductivityService.update_task(
-            user_id=self.user_id, task_id=task_id, update_data=update_data
-        )
+        try:
+            update_data = TaskUpdate(is_completed=is_completed, title=title)
+            task = await ProductivityService.update_task(
+                user_id=self.user_id, task_id=task_id, update_data=update_data
+            )
 
-        status = "Completed" if task.is_completed else "Pending"
-        return (
-            f"Successfully updated task '{task.title}' with ID {task.id}. Status is now: {status}."
-        )
+            status = "Completed" if task.is_completed else "Pending"
+            return f"Successfully updated task '{task.title}' with ID {task.id}. Status is now: {status}."
+        except Exception:
+            logger.exception("Error in UpdateTaskTool for user %s", self.user_id)
+            return "Error updating task."
 
 
 class ListNotesInput(BaseModel):
@@ -133,17 +146,21 @@ class ListNotesTool(BaseTool):
     agent_id: UUID | None = None
 
     async def _run(self) -> str:
-        notes = await ProductivityService.list_notes(user_id=self.user_id)
+        try:
+            notes = await ProductivityService.list_notes(user_id=self.user_id)
 
-        if not notes:
-            return "No notes found."
+            if not notes:
+                return "No notes found."
 
-        result = "Notes:\n"
-        for n in notes:
-            pinned = "(Pinned)" if n.is_pinned else ""
-            result += f"- [{n.id}] {pinned} {n.title}\n"
-            result += f"  Content: {n.content}\n"
-        return result
+            result = "Notes:\n"
+            for n in notes:
+                pinned = "(Pinned)" if n.is_pinned else ""
+                result += f"- [{n.id}] {pinned} {n.title}\n"
+                result += f"  Content: {n.content}\n"
+            return result
+        except Exception:
+            logger.exception("Error in ListNotesTool for user %s", self.user_id)
+            return "Error fetching notes."
 
 
 class CreateNoteInput(BaseModel):
@@ -174,14 +191,18 @@ class CreateNoteTool(BaseTool):
     origin_message_id: UUID | None = None
 
     async def _run(self, title: str, content: str, origin_context: str | None = None) -> str:
-        note_data = NoteCreate(
-            title=title,
-            content=content,
-            is_pinned=False,
-            agent_id=self.agent_id,
-            origin_message_id=self.origin_message_id,
-            origin_context=origin_context,
-        )
-        note = await ProductivityService.create_note(user_id=self.user_id, note_data=note_data)
+        try:
+            note_data = NoteCreate(
+                title=title,
+                content=content,
+                is_pinned=False,
+                agent_id=self.agent_id,
+                origin_message_id=self.origin_message_id,
+                origin_context=origin_context,
+            )
+            note = await ProductivityService.create_note(user_id=self.user_id, note_data=note_data)
 
-        return f"Successfully created note '{note.title}' with ID {note.id}."
+            return f"Successfully created note '{note.title}' with ID {note.id}."
+        except Exception:
+            logger.exception("Error in CreateNoteTool for user %s", self.user_id)
+            return "Error creating note."

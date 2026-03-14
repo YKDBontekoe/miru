@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -41,14 +41,14 @@ class Note(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
-    agent_id: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
+    agent: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
         "models.Agent",
         related_name="notes",
         null=True,
         db_index=True,
         on_delete=fields.SET_NULL,
     )
-    origin_message_id: fields.ForeignKeyNullableRelation[ChatMessage] = fields.ForeignKeyField(
+    origin_message: fields.ForeignKeyNullableRelation[ChatMessage] = fields.ForeignKeyField(
         "models.ChatMessage",
         related_name="originated_notes",
         null=True,
@@ -186,8 +186,8 @@ class NoteResponse(BaseModel):
 
     id: UUID
     user_id: UUID
-    agent_id: UUID | None = None
-    origin_message_id: UUID | None = None
+    agent_id: UUID | None = Field(None, validation_alias="agent")
+    origin_message_id: UUID | None = Field(None, validation_alias="origin_message")
     origin_context: str | None = None
     title: str
     content: str
@@ -198,10 +198,14 @@ class NoteResponse(BaseModel):
     @field_validator("agent_id", "origin_message_id", mode="before")
     @classmethod
     def extract_uuid(cls, v: Any) -> UUID | None:
-        """Extract raw UUID from Tortoise relation proxy if needed."""
+        """Extract raw UUID from Tortoise relation proxy if needed.
+
+        Relation proxies expose the raw PK via attributes like "pk" or "id".
+        Returns None if those attributes are absent or the value is None.
+        """
         if v is None:
             return None
         if isinstance(v, UUID):
             return v
-        # Tortoise relations have an '_id' attribute for the raw PK
+        # Tortoise relations have 'pk' or 'id' for the raw PK
         return getattr(v, "pk", None) or getattr(v, "id", None)

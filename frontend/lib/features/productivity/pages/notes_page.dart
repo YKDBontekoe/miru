@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/note.dart';
+import '../../../core/models/agent.dart';
 import '../../../core/design_system/design_system.dart';
 import '../../../core/api/agents_service.dart';
 import 'tasks_page.dart'; // To access productivityServiceProvider
@@ -84,6 +85,7 @@ class NotesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesAsync = ref.watch(notesProvider);
+    final agentsAsync = ref.watch(agentsProvider);
 
     return Scaffold(
       backgroundColor: context.colorScheme.surface,
@@ -97,6 +99,7 @@ class NotesPage extends ConsumerWidget {
           if (notes.isEmpty) {
             return const Center(child: Text('No notes yet. Add one!'));
           }
+          final agents = agentsAsync.valueOrNull ?? [];
           return ListView.separated(
             padding: EdgeInsets.only(
               left: AppSpacing.md,
@@ -110,7 +113,10 @@ class NotesPage extends ConsumerWidget {
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final note = notes[index];
-              return _NoteTile(note: note);
+              return _NoteTile(
+                note: note,
+                agents: agents,
+              );
             },
           );
         },
@@ -145,13 +151,16 @@ class NotesPage extends ConsumerWidget {
 
 class _NoteTile extends ConsumerWidget {
   final Note note;
+  final List<Agent> agents;
 
-  const _NoteTile({required this.note});
+  const _NoteTile({
+    required this.note,
+    required this.agents,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.read(productivityServiceProvider);
-    final agentsAsync = ref.watch(agentsProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -226,53 +235,52 @@ class _NoteTile extends ConsumerWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (note.agentId != null)
-                    agentsAsync.when(
-                      data: (agents) {
-                        final agent = agents
-                            .where((a) => a.id == note.agentId)
-                            .firstOrNull;
-                        if (agent == null) return const SizedBox.shrink();
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xs,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.colorScheme.primaryContainer,
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.radiusXs),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.smart_toy_outlined,
-                                size: 12,
+                    () {
+                      final agent =
+                          agents.where((a) => a.id == note.agentId).firstOrNull;
+                      if (agent == null) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.colorScheme.primaryContainer,
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radiusXs),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.smart_toy_outlined,
+                              size: 12,
+                              color: context.colorScheme.onPrimaryContainer,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              agent.name,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                                 color: context.colorScheme.onPrimaryContainer,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                agent.name,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: context.colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }(),
                   if (note.originContext != null)
-                    Text(
-                      'Context: ${note.originContext}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontStyle: FontStyle.italic,
-                        color: context.colorScheme.onSurfaceVariant,
+                    Flexible(
+                      child: Text(
+                        'Context: ${note.originContext}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: context.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                 ],

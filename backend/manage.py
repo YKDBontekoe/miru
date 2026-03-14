@@ -335,6 +335,7 @@ def _build_incremental_sql(
     indexes: list[str],
     prev_indexes: list[str],
     functions: list[str],
+    prev_functions: list[str],
 ) -> str:
     """Produce an incremental (ALTER / CREATE) migration from two schema snapshots.
 
@@ -346,8 +347,8 @@ def _build_incremental_sql(
     * Removed columns → commented-out ``ALTER TABLE ... DROP COLUMN``
     * New indexes → ``CREATE INDEX IF NOT EXISTS``
     * Removed indexes → commented-out ``DROP INDEX IF EXISTS``
-    * Policy changes → full DROP + CREATE block (always idempotent)
-    * Function changes → full DROP + CREATE block (always idempotent)
+    * Policy changes → full DROP + CREATE block (only if changed)
+    * Function changes → full DROP + CREATE block (only if changed)
     """
     current_tables = _parse_create_table_blocks(current_schema)
     previous_tables = _parse_create_table_blocks(previous_schema)
@@ -444,23 +445,25 @@ def _build_incremental_sql(
         ]
         lines += schema_lines
 
-    # Functions & triggers (always re-emit — they are idempotent)
-    if functions:
+    # Functions & triggers (only re-emit if changed)
+    new_functions = [f for f in functions if f not in prev_functions]
+    if new_functions:
         lines += [
             "",
             "-- Functions & Triggers --------------------------------------------------",
             "",
         ]
-        lines += [_idempotent_function_stmt(stmt) for stmt in functions]
+        lines += [_idempotent_function_stmt(stmt) for stmt in new_functions]
 
-    # Policies (always re-emit — DROP IF EXISTS makes them idempotent)
-    if policies:
+    # Policies (only re-emit if changed)
+    new_policies = [p for p in policies if p not in prev_policies]
+    if new_policies:
         lines += [
             "",
             "-- Row Level Security ----------------------------------------------------",
             "",
         ]
-        lines += [_idempotent_policy_stmt(stmt) for stmt in policies]
+        lines += [_idempotent_policy_stmt(stmt) for stmt in new_policies]
 
     # Extra custom indexes from Meta.sql_indexes
     prev_extra_set = set(prev_indexes)
@@ -575,7 +578,7 @@ async def cmd_makemigrations(name: str, *, full: bool = False) -> None:
     else:
         previous_schema = SNAPSHOT_FILE.read_text(encoding="utf-8")
         # Load previous extras from snapshot metadata (stored as a JSON-ish block comment)
-        prev_policies, prev_indexes = _load_snapshot_extras()
+        prev_policies, prev_indexes, prev_functions = _load_snapshot_extras()
         migration_sql = _build_incremental_sql(
             name,
             schema_sql,
@@ -585,6 +588,7 @@ async def cmd_makemigrations(name: str, *, full: bool = False) -> None:
             indexes,
             prev_indexes,
             functions,
+            prev_functions,
         )
 
     timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
@@ -596,7 +600,7 @@ async def cmd_makemigrations(name: str, *, full: bool = False) -> None:
     # Update snapshot and checksum — bind the checksum to this filename so
     # cmd_check can detect if the SQL file was not committed alongside the snapshot.
     SNAPSHOT_FILE.write_text(schema_sql, encoding="utf-8")
-    _save_snapshot_extras(policies, indexes)
+    _save_snapshot_extras(policies, indexes, functions)
     _write_checksum(_content_checksum(schema_sql, policies, indexes, functions), filename)
 
     print(f"Created:  supabase/migrations/{filename}")
@@ -621,25 +625,25 @@ def _snapshot_extras_file() -> Path:
     return MIGRATIONS_DIR / ".snapshot_extras"
 
 
-def _save_snapshot_extras(policies: list[str], indexes: list[str]) -> None:
+def _save_snapshot_extras(policies: list[str], indexes: list[str], functions: list[str]) -> None:
     """Persist extra SQL lists alongside the schema snapshot."""
     import json
 
     _snapshot_extras_file().write_text(
-        json.dumps({"policies": policies, "indexes": indexes}, indent=2),
+        json.dumps({"policies": policies, "indexes": indexes, "functions": functions}, indent=2),
         encoding="utf-8",
     )
 
 
-def _load_snapshot_extras() -> tuple[list[str], list[str]]:
+def _load_snapshot_extras() -> tuple[list[str], list[str], list[str]]:
     """Load previously saved extras.  Returns empty lists if not found."""
     import json
 
     extras_file = _snapshot_extras_file()
     if not extras_file.exists():
-        return [], []
+        return [], [], []
     data = json.loads(extras_file.read_text(encoding="utf-8"))
-    return data.get("policies", []), data.get("indexes", [])
+    return data.get("policies", []), data.get("indexes", []), data.get("functions", [])
 
 
 async def cmd_check() -> None:
