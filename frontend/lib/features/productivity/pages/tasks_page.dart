@@ -101,7 +101,12 @@ class TasksPage extends ConsumerWidget {
             return const Center(child: Text('No tasks yet. Add one!'));
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.only(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              top: AppSpacing.md,
+              bottom: 96,
+            ),
             itemCount: tasks.length,
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
@@ -125,9 +130,12 @@ class TasksPage extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showTaskDialog(context, ref),
-        child: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton(
+          onPressed: () => _showTaskDialog(context, ref),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
