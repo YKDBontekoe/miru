@@ -58,6 +58,7 @@ def make_jwt(user_id: str | None = None, expired: bool = False) -> str:
         "iss": "supabase",
         "iat": now,
         "exp": exp,
+        "aud": "authenticated",
     }
     return str(jwt.encode(payload, _JWT_SECRET, algorithm=_JWT_ALGORITHM))
 

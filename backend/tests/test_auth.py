@@ -30,6 +30,7 @@ def make_jwt(user_id: str | None = None, expired: bool = False) -> str:
         "role": "authenticated",
         "iat": now,
         "exp": now - 3600 if expired else now + 3600,
+        "aud": "authenticated",
     }
     return jwt.encode(payload, settings.supabase_jwt_secret, algorithm="HS256")
 

@@ -44,7 +44,7 @@ class AuthService:
                     token,
                     settings.supabase_jwt_secret,
                     algorithms=["HS256"],
-                    options={"verify_aud": False},
+                    audience="authenticated",
                 )
             else:
                 jwks_client = self._get_jwks_client()
@@ -53,7 +53,7 @@ class AuthService:
                     token,
                     signing_key.key,
                     algorithms=["ES256", "RS256"],
-                    options={"verify_aud": False},
+                    audience="authenticated",
                 )
             return JWTPayload(**payload)
         except Exception as exc:

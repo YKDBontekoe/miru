@@ -80,11 +80,7 @@ async def delete_passkey(
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
     """Delete a passkey."""
-    # Simple check if it belongs to user
-    passkeys = await service.repo.get_passkeys_by_user(user_id)
-    if not any(str(p.id) == passkey_id for p in passkeys):
+    deleted = await service.repo.delete_passkey(passkey_id, user_id)
+    if not deleted:
         raise HTTPException(status_code=404, detail="Passkey not found")
-
-    # Assuming we have a delete method in repo, or using raw supabase
-    service.repo.db.table("passkeys").delete().eq("id", passkey_id).execute()
     return {"status": "ok"}
