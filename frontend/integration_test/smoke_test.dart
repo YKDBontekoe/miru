@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:miru/main.dart';
 import 'package:miru/core/api/backend_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
+import 'package:miru/features/chat/pages/main_scaffold.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -127,16 +128,18 @@ void main() {
 
       final snackbars = find.byType(SnackBar).evaluate();
       if (snackbars.isNotEmpty) {
+        String messages = '';
         for (final e in snackbars) {
           final snackbar = e.widget as SnackBar;
           if (snackbar.content is Text) {
             final textWidget = snackbar.content as Text;
             debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+            messages += '${textWidget.data}; ';
           }
         }
+        expect(snackbars, isEmpty,
+            reason: 'Unexpected snackbars found during sign in: $messages');
       }
-      expect(snackbars, isEmpty,
-          reason: 'Unexpected snackbars found during sign in');
 
       expect(find.textContaining('Error'), findsNothing);
     });
@@ -171,8 +174,16 @@ void main() {
       await tester.tap(find.text('Rooms'));
       await tester.pumpAndSettle();
 
-      // Tap the floating Create button (the one with add_rounded icon)
-      final createButton = find.byIcon(Icons.add_rounded);
+      // Tap the floating Create button (the one with add_rounded icon in MainScaffold)
+      // Find the create button by widget predicate to uniquely identify the center FAB (it's the only size: 32 icon in MainScaffold)
+      final createButton = find.descendant(
+        of: find.byType(MainScaffold),
+        matching: find.byWidgetPredicate((widget) =>
+            widget is Icon &&
+            widget.icon == Icons.add_rounded &&
+            widget.size == 32),
+      );
+      expect(createButton, findsOneWidget, reason: 'FAB not found');
       await tester.tap(createButton);
       await tester.pumpAndSettle();
 
@@ -194,16 +205,19 @@ void main() {
 
       final snackbars = find.byType(SnackBar).evaluate();
       if (snackbars.isNotEmpty) {
+        String messages = '';
         for (final e in snackbars) {
           final snackbar = e.widget as SnackBar;
           if (snackbar.content is Text) {
             final textWidget = snackbar.content as Text;
             debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+            messages += '${textWidget.data}; ';
           }
         }
+        expect(snackbars, isEmpty,
+            reason:
+                'Unexpected snackbars found during agent creation: $messages');
       }
-      expect(snackbars, isEmpty,
-          reason: 'Unexpected snackbars found during agent creation');
 
       expect(find.textContaining('Error'), findsNothing);
     });
@@ -234,7 +248,15 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       // Tap Settings in Bottom Nav
-      await tester.tap(find.text('Settings'));
+      // Find the Icon with Icons.settings_outlined or matching text safely in the Bottom Nav.
+      final settingsButton = find.descendant(
+        of: find.byType(MainScaffold),
+        matching: find.text('Settings'),
+      );
+      expect(settingsButton, findsOneWidget,
+          reason: 'settings nav item not found');
+
+      await tester.tap(settingsButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
       expect(find.text('Account'), findsWidgets);
@@ -242,16 +264,18 @@ void main() {
 
       final snackbars = find.byType(SnackBar).evaluate();
       if (snackbars.isNotEmpty) {
+        String messages = '';
         for (final e in snackbars) {
           final snackbar = e.widget as SnackBar;
           if (snackbar.content is Text) {
             final textWidget = snackbar.content as Text;
             debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
+            messages += '${textWidget.data}; ';
           }
         }
+        expect(snackbars, isEmpty,
+            reason: 'Unexpected snackbars found on settings page: $messages');
       }
-      expect(snackbars, isEmpty,
-          reason: 'Unexpected snackbars found on settings page');
 
       expect(find.textContaining('Error'), findsNothing);
     });
