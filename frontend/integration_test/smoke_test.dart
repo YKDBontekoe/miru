@@ -23,7 +23,7 @@ void main() {
   );
   const String apiUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://127.0.0.1:8000/api/v1',
+    defaultValue: 'http://localhost:8000/api/v1',
   );
 
   // Generate a unique email per run to avoid state collision in Supabase

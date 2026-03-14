@@ -61,15 +61,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-origins = settings.cors_allowed_origins.split(",")  # pragma: no cover
-allow_all_origins = "*" in origins  # pragma: no cover
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # pragma: no cover
-    allow_credentials=False,  # pragma: no cover
-    allow_methods=["*"],  # pragma: no cover
-    allow_headers=["*"],  # pragma: no cover
+    allow_origins=settings.cors_allowed_origins.split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(agents_router, prefix="/api/v1/agents")
