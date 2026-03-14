@@ -45,8 +45,9 @@ class ChatInputBar extends StatelessWidget {
     final isDark = context.isDark;
 
     // Subtle top border instead of full container color
-    final containerColor =
-        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    final containerColor = isDark
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return SafeArea(

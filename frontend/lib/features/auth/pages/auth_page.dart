@@ -322,8 +322,9 @@ class _AuthPageState extends State<AuthPage>
                     }
                     return null;
                   },
-                  onFieldSubmitted:
-                      _showPasswordField ? null : (_) => _sendMagicLink(),
+                  onFieldSubmitted: _showPasswordField
+                      ? null
+                      : (_) => _sendMagicLink(),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 

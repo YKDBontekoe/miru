@@ -11,7 +11,7 @@ class ProductivityService {
   final http.Client _client;
 
   ProductivityService({http.Client? client})
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   String get _normalizedBaseUrl {
     final raw = BackendService.baseUrl.value;

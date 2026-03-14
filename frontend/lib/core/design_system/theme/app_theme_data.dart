@@ -27,8 +27,9 @@ abstract final class AppTheme {
   static ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
-    final colors =
-        isDark ? const AppThemeColors.dark() : const AppThemeColors.light();
+    final colors = isDark
+        ? const AppThemeColors.dark()
+        : const AppThemeColors.light();
 
     final colorScheme = isDark
         ? const ColorScheme.dark(
@@ -80,8 +81,9 @@ abstract final class AppTheme {
         titleTextStyle: AppTypography.headingMedium.copyWith(
           color: colors.onSurface,
         ),
-        systemOverlayStyle:
-            isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       ),
 
       // Card
@@ -373,51 +375,51 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
 
   /// Dark mode color set.
   const AppThemeColors.dark()
-      : background = AppColors.backgroundDark,
-        surface = AppColors.surfaceDark,
-        surfaceHigh = AppColors.surfaceHighDark,
-        surfaceHighest = AppColors.surfaceHighestDark,
-        border = AppColors.borderDark,
-        onSurface = AppColors.onSurfaceDark,
-        onSurfaceMuted = AppColors.onSurfaceMutedDark,
-        onSurfaceDisabled = AppColors.onSurfaceDisabledDark,
-        primary = AppColors.primary,
-        primaryLight = AppColors.primaryLight,
-        primarySurface = AppColors.primarySurface,
-        userBubble = AppColors.userBubbleDark,
-        assistantBubble = AppColors.assistantBubbleDark,
-        success = AppColors.success,
-        successSurface = AppColors.successSurfaceDark,
-        warning = AppColors.warning,
-        warningSurface = AppColors.warningSurfaceDark,
-        error = AppColors.error,
-        errorSurface = AppColors.errorSurfaceDark,
-        info = AppColors.info,
-        infoSurface = AppColors.infoSurfaceDark;
+    : background = AppColors.backgroundDark,
+      surface = AppColors.surfaceDark,
+      surfaceHigh = AppColors.surfaceHighDark,
+      surfaceHighest = AppColors.surfaceHighestDark,
+      border = AppColors.borderDark,
+      onSurface = AppColors.onSurfaceDark,
+      onSurfaceMuted = AppColors.onSurfaceMutedDark,
+      onSurfaceDisabled = AppColors.onSurfaceDisabledDark,
+      primary = AppColors.primary,
+      primaryLight = AppColors.primaryLight,
+      primarySurface = AppColors.primarySurface,
+      userBubble = AppColors.userBubbleDark,
+      assistantBubble = AppColors.assistantBubbleDark,
+      success = AppColors.success,
+      successSurface = AppColors.successSurfaceDark,
+      warning = AppColors.warning,
+      warningSurface = AppColors.warningSurfaceDark,
+      error = AppColors.error,
+      errorSurface = AppColors.errorSurfaceDark,
+      info = AppColors.info,
+      infoSurface = AppColors.infoSurfaceDark;
 
   /// Light mode color set.
   const AppThemeColors.light()
-      : background = AppColors.backgroundLight,
-        surface = AppColors.surfaceLight,
-        surfaceHigh = AppColors.surfaceHighLight,
-        surfaceHighest = AppColors.surfaceHighestLight,
-        border = AppColors.borderLight,
-        onSurface = AppColors.onSurfaceLight,
-        onSurfaceMuted = AppColors.onSurfaceMutedLight,
-        onSurfaceDisabled = AppColors.onSurfaceDisabledLight,
-        primary = AppColors.primary,
-        primaryLight = AppColors.primaryLight,
-        primarySurface = AppColors.primarySurfaceLight,
-        userBubble = AppColors.userBubbleLight,
-        assistantBubble = AppColors.assistantBubbleLight,
-        success = AppColors.success,
-        successSurface = AppColors.successSurfaceLight,
-        warning = AppColors.warning,
-        warningSurface = AppColors.warningSurfaceLight,
-        error = AppColors.error,
-        errorSurface = AppColors.errorSurfaceLight,
-        info = AppColors.info,
-        infoSurface = AppColors.infoSurfaceLight;
+    : background = AppColors.backgroundLight,
+      surface = AppColors.surfaceLight,
+      surfaceHigh = AppColors.surfaceHighLight,
+      surfaceHighest = AppColors.surfaceHighestLight,
+      border = AppColors.borderLight,
+      onSurface = AppColors.onSurfaceLight,
+      onSurfaceMuted = AppColors.onSurfaceMutedLight,
+      onSurfaceDisabled = AppColors.onSurfaceDisabledLight,
+      primary = AppColors.primary,
+      primaryLight = AppColors.primaryLight,
+      primarySurface = AppColors.primarySurfaceLight,
+      userBubble = AppColors.userBubbleLight,
+      assistantBubble = AppColors.assistantBubbleLight,
+      success = AppColors.success,
+      successSurface = AppColors.successSurfaceLight,
+      warning = AppColors.warning,
+      warningSurface = AppColors.warningSurfaceLight,
+      error = AppColors.error,
+      errorSurface = AppColors.errorSurfaceLight,
+      info = AppColors.info,
+      infoSurface = AppColors.infoSurfaceLight;
 
   @override
   AppThemeColors copyWith({

@@ -112,7 +112,8 @@ class TasksPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom: AppSpacing.bottomNavBarHeight +
+              bottom:
+                  AppSpacing.bottomNavBarHeight +
                   AppSpacing.md * 2 +
                   MediaQuery.viewPaddingOf(context).bottom,
             ),
@@ -141,7 +142,8 @@ class TasksPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom: AppSpacing.bottomNavBarHeight +
+          bottom:
+              AppSpacing.bottomNavBarHeight +
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),

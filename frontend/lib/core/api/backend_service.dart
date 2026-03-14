@@ -43,8 +43,9 @@ class BackendService {
     }
 
     // Strip trailing slash for consistency
-    final sanitized =
-        url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    final sanitized = url.endsWith('/')
+        ? url.substring(0, url.length - 1)
+        : url;
 
     // Append /api/v1 if not present
     String finalUrl = sanitized;
@@ -89,8 +90,9 @@ class BackendService {
     try {
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          final response =
-              await client.get(uri).timeout(const Duration(seconds: 5));
+          final response = await client
+              .get(uri)
+              .timeout(const Duration(seconds: 5));
 
           if (response.statusCode == 200) {
             debugPrint('Backend is awake after $attempt attempts');

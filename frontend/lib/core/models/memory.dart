@@ -42,8 +42,8 @@ class MemoryEdge {
   }
 
   Map<String, dynamic> toJson() => {
-        'source': source,
-        'target': target,
-        if (type != null) 'type': type,
-      };
+    'source': source,
+    'target': target,
+    if (type != null) 'type': type,
+  };
 }
