@@ -98,23 +98,31 @@ async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, stea
     assert "Error fetching owned games" in result
 
 
-@patch("app.infrastructure.external.steam_tool.get_player_summaries")
+@patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
 def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id: str) -> None:
+    """Test sync tool execution."""
+    mock_get_summaries.return_value = [
+        {
+            "personaname": "Robin",
+            "personastate": 1,
+            "profileurl": "https://steamcommunity.com/id/robinwalker/",
+        }
+    ]
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
-
-    with patch("asyncio.run") as mock_run:
-        mock_run.return_value = "sync result"
-        with patch.object(tool, "_arun", return_value="sync result"):
-            result = tool._run()
-        assert result == "sync result"
+    # _run() calls asyncio.run(_arun()) which calls get_player_summaries
+    result = tool._run()
+    assert "Robin" in result
+    assert "Online" in result
 
 
-@patch("app.infrastructure.external.steam_tool.get_owned_games")
+@patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
 def test_steam_owned_games_tool_sync(mock_get_games: typing.Any, steam_id: str) -> None:
+    """Test sync tool execution for owned games."""
+    mock_get_games.return_value = [
+        {"appid": 440, "name": "Team Fortress 2", "playtime_forever": 600},
+    ]
     tool = SteamOwnedGamesTool(steam_id=steam_id)
-
-    with patch("asyncio.run") as mock_run:
-        mock_run.return_value = "sync games result"
-        with patch.object(tool, "_arun", return_value="sync result"):
-            result = tool._run()
-        assert result == "sync games result"
+    # _run() calls asyncio.run(_arun()) which calls get_owned_games
+    result = tool._run()
+    assert "Team Fortress 2" in result
+    assert "10.0 hours" in result
