@@ -29,13 +29,24 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+MULTI_AGENT_PROMPT = (
+    "User said: {user_message}. You are managing a group chat. You MUST delegate tasks to EACH "
+    "available agent so they can all contribute to the conversation. Ensure they respond to the "
+    "user and to each other's points. Gather their responses and return a combined final transcript "
+    "of what each agent said."
+)
+
+MULTI_AGENT_EXPECTED_OUTPUT = "A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'"
+
+
 class _OpenRouterLLM(LLM):
-    """CrewAI LLM wrapper that forces ReAct-style tool calling.
+    """CrewAI LLM wrapper that supports function calling via OpenRouter.
 
     CrewAI's built-in OpenAI provider hardcodes ``tool_choice: auto`` whenever
-    tools are present, which causes a 404 on OpenRouter routes that don't
-    implement that parameter.  We override ``supports_function_calling`` to
-    return ``True`` and drop ``tool_choice`` using ``additional_drop_params``.
+    tools are present, which causes a 404 on many OpenRouter routes that do not
+    implement that parameter. This wrapper advertises function-calling support
+    by returning ``True`` from ``supports_function_calling`` and drops the
+    incompatible ``tool_choice`` parameter via ``additional_drop_params``.
     """
 
     def supports_function_calling(self) -> bool:
@@ -56,10 +67,10 @@ class ChatService:
     def _get_crew_llm(self) -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter.
 
-        Returns an ``_OpenRouterLLM`` whose ``supports_function_calling()``
-        always returns ``False``, forcing CrewAI into its ReAct (text-based)
-        tool loop.  This avoids the ``tool_choice`` parameter that many
-        OpenRouter provider routes do not implement.
+        Returns an ``_OpenRouterLLM`` configured to allow function calling
+        (``supports_function_calling()`` returns ``True``), but with the
+        provider-specific ``tool_choice`` parameter dropped to avoid 404 errors
+        on OpenRouter routes that do not implement it.
         """
         settings = get_settings()
         return _OpenRouterLLM(
@@ -178,13 +189,8 @@ class ChatService:
 
         if len(crew_agents) > 1:
             task = Task(
-                description=(
-                    f"User said: {user_message}. "
-                    "You are managing a group chat. You MUST delegate tasks to EACH available agent so they can all contribute to the conversation. "
-                    "Ensure they respond to the user and to each other's points. "
-                    "Gather their responses and return a combined final transcript of what each agent said."
-                ),
-                expected_output="A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'",
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
                 agents=crew_agents,  # type: ignore[arg-type]
@@ -228,13 +234,8 @@ class ChatService:
         # 4. Define and execute task
         if len(crew_agents) > 1:
             task = Task(
-                description=(
-                    f"User said: {user_message}. "
-                    "You are managing a group chat. You MUST delegate tasks to EACH available agent so they can all contribute to the conversation. "
-                    "Ensure they respond to the user and to each other's points. "
-                    "Gather their responses and return a combined final transcript of what each agent said."
-                ),
-                expected_output="A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'",
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
                 agents=crew_agents,  # type: ignore[arg-type]
