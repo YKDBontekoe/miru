@@ -80,7 +80,7 @@ async def delete_passkey(
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
     """Delete a passkey."""
-    deleted = await service.repo.delete_passkey(passkey_id, user_id)
+    deleted = await service.delete_passkey(passkey_id, user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Passkey not found")
     return {"status": "ok"}
