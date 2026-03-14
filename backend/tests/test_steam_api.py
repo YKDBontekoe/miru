@@ -6,7 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from app.infrastructure.external.steam import get_owned_games, get_player_summaries
+from app.infrastructure.external.steam import (
+    get_owned_games,
+    get_player_summaries,
+    resolve_vanity_url,
+)
 
 
 @pytest.fixture
@@ -135,3 +139,53 @@ async def test_get_owned_games_no_key() -> None:
         mock.return_value.steam_api_key = None
         games = await get_owned_games("76561197960435530")
         assert games == []
+
+
+@pytest.mark.asyncio
+async def test_resolve_vanity_url_success(mock_settings: typing.Any) -> None:
+    vanity_url = "robinwalker"
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"response": {"success": 1, "steamid": "76561197960435530"}}
+    mock_response.raise_for_status.return_value = None
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_response
+        steam_id = await resolve_vanity_url(vanity_url)
+
+        assert steam_id == "76561197960435530"
+        mock_get.assert_called_once()
+        args, kwargs = mock_get.call_args
+        assert kwargs["params"]["vanityurl"] == vanity_url
+        assert "test_steam_key" in kwargs["params"]["key"]
+
+
+@pytest.mark.asyncio
+async def test_resolve_vanity_url_not_found(mock_settings: typing.Any) -> None:
+    vanity_url = "nonexistent_url_12345"
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"response": {"success": 42, "message": "No match"}}
+    mock_response.raise_for_status.return_value = None
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_response
+        steam_id = await resolve_vanity_url(vanity_url)
+
+        assert steam_id is None
+        mock_get.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_resolve_vanity_url_no_key() -> None:
+    with patch("app.infrastructure.external.steam.get_settings") as mock:
+        mock.return_value.steam_api_key = None
+        steam_id = await resolve_vanity_url("robinwalker")
+        assert steam_id is None
+
+
+@pytest.mark.asyncio
+async def test_resolve_vanity_url_exception(mock_settings: typing.Any) -> None:
+    vanity_url = "robinwalker"
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.side_effect = Exception("Unexpected error")
+        steam_id = await resolve_vanity_url(vanity_url)
+        assert steam_id is None
