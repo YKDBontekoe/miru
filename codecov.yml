@@ -55,11 +55,14 @@ comment:
   hide_project_coverage: false
 
 ignore:
-  - "backend/.venv/**/*"
-  - "backend/**/__pycache__/**/*"
-  - "backend/**/test*/**/*"
-  - "backend/tests/**/*"
-  - "frontend/.dart_tool/**/*"
-  - "frontend/build/**/*"
-  - "frontend/test/**/*"
-  - "frontend/integration_test/**/*"
+  - "backend/.venv/**"
+  - "backend/**/__pycache__/**"
+  - "backend/**/test*/**"
+  - "backend/tests/**"
+  - "frontend/.dart_tool/**"
+  - "frontend/build/**"
+  - "frontend/test/**"
+  - "frontend/integration_test/**"
+  - "frontend/integration_test/smoke_test.dart"
+  - "patch_dart.py"
+  - "patch_workflow.py"

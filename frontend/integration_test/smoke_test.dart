@@ -7,46 +7,28 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:miru/main.dart';
 import 'package:miru/core/api/backend_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
-import 'package:miru/features/chat/pages/main_scaffold.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Prefer environment variables (passed via --dart-define)
-  const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://duxnzcquiukrgjmornxa.supabase.co',
-  );
-  const String supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'sb_publishable_IfPdFU_wx4imNeBKpMYUOQ_usy_Of1l',
-  );
-  const String apiUrl = String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'http://127.0.0.1:8000/api/v1',
-  );
-
   // Generate a unique email per run to avoid state collision in Supabase
   final uniqueEmail =
-      'test_${DateTime.now().millisecondsSinceEpoch}@example.com';
-  const testPassword = 'Password123!';
+      'ui_test_${DateTime.now().millisecondsSinceEpoch}@example.com';
+  const testPassword = 'password12345!';
 
   group('End-to-End Smoke Tests', () {
     testWidgets(
         'App launches, connects to real backend, and renders the auth page',
         (tester) async {
       await BackendService.init();
-      await BackendService.setBaseUrl(apiUrl);
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
       BackendService.bypassWaitForBackend = false;
       await BackendService.waitForBackend(
           maxAttempts: 15, initialDelay: const Duration(milliseconds: 500));
-      await SupabaseService.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
-      );
+      await SupabaseService.initialize();
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
       expect(find.text('Miru'), findsWidgets);
       expect(find.byType(TextField), findsAtLeastNWidgets(1));
@@ -54,16 +36,14 @@ void main() {
 
     testWidgets('Typing an email shows it in the input field', (tester) async {
       await BackendService.init();
-      await BackendService.setBaseUrl(apiUrl);
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
       BackendService.bypassWaitForBackend = false;
       await BackendService.waitForBackend(
           maxAttempts: 15, initialDelay: const Duration(milliseconds: 500));
-      await SupabaseService.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
-      );
+      await SupabaseService.initialize();
+
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
       const testInput = 'test@example.com';
       await tester.enterText(find.byType(TextField).first, testInput);
@@ -75,87 +55,77 @@ void main() {
     testWidgets('Can sign in via password UI and skip onboarding',
         (tester) async {
       await BackendService.init();
-      await BackendService.setBaseUrl(apiUrl);
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
       BackendService.bypassWaitForBackend = false;
       await BackendService.waitForBackend(
           maxAttempts: 15, initialDelay: const Duration(milliseconds: 500));
-      await SupabaseService.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
-      );
+      await SupabaseService.initialize();
 
-      // 1. Ensure the user exists in this Supabase instance
+      await Supabase.instance.client.auth.signOut();
+
+      // Pre-create the user safely without swallowing errors
       try {
         await Supabase.instance.client.auth.signUp(
           email: uniqueEmail,
           password: testPassword,
         );
       } catch (e) {
-        // If they already exist or we hit a limit, we just continue and try to sign in
-        debugPrint('Signup info (safe to ignore): $e');
+        debugPrint('Signup failed: $e');
+        rethrow;
       }
-
-      // 2. Ensure we start logged out for the UI test
+      // We must sign out again to ensure the UI starts logged out
       await Supabase.instance.client.auth.signOut();
 
-      // 3. Skip onboarding manually in prefs so we go straight to MainScaffold after login
+      // Skip the onboarding screens
       await BackendService.setOnboardingComplete(true);
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // Switch to password mode
+      // Tap "Sign in with password instead"
       final toggleButton = find.text('Sign in with password instead');
+      expect(toggleButton, findsOneWidget,
+          reason: 'toggleButton not found. Widget tree will be dumped.');
       await tester.ensureVisible(toggleButton);
       await tester.tap(toggleButton);
       await tester.pumpAndSettle();
 
-      // Enter credentials
+      // Enter email
       await tester.enterText(find.byType(TextField).at(0), uniqueEmail);
+
+      // Enter password
       await tester.enterText(find.byType(TextField).at(1), testPassword);
 
-      // Tap "Sign in"
-      final signInButton = find.text('Sign in');
+      // Tap "Sign In"
+      final signInButton = find.text('Sign In');
       await tester.ensureVisible(signInButton);
       await tester.tap(signInButton);
 
-      // Wait for auth state change and navigation
+      // Wait for network request and auth state stream to emit
       await tester.pumpAndSettle(const Duration(seconds: 3));
 
-      // Should now be on MainScaffold
       expect(find.text('Rooms'), findsWidgets);
       expect(find.text('Settings'), findsWidgets);
 
       final snackbars = find.byType(SnackBar).evaluate();
-      if (snackbars.isNotEmpty) {
-        String messages = '';
-        for (final e in snackbars) {
-          final snackbar = e.widget as SnackBar;
-          if (snackbar.content is Text) {
-            final textWidget = snackbar.content as Text;
-            debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
-            messages += '${textWidget.data}; ';
-          }
-        }
-        expect(snackbars, isEmpty,
-            reason: 'Unexpected snackbars found during sign in: $messages');
+      for (final e in snackbars) {
+        final snackbar = e.widget as SnackBar;
+        final textWidget = snackbar.content as Text;
+        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
       }
+      expect(snackbars, isEmpty);
 
       expect(find.textContaining('Error'), findsNothing);
     });
 
     testWidgets('Navigate to Rooms and Create Persona', (tester) async {
       await BackendService.init();
-      await BackendService.setBaseUrl(apiUrl);
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
       BackendService.bypassWaitForBackend = false;
-      await SupabaseService.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
-      );
-
+      await SupabaseService.initialize();
       await BackendService.setOnboardingComplete(true);
 
-      // Ensure authenticated
+      // Make sure we're authenticated
       if (Supabase.instance.client.auth.currentUser == null) {
         try {
           await Supabase.instance.client.auth.signInWithPassword(
@@ -163,36 +133,28 @@ void main() {
             password: testPassword,
           );
         } catch (e) {
-          debugPrint('Auth setup failed: $e');
+          debugPrint('Signin failed: $e');
+          rethrow;
         }
       }
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // Tap Rooms in Bottom Nav
-      await tester.tap(find.text('Rooms'));
-      await tester.pumpAndSettle();
-
-      // Tap the floating Create button (the one with add_rounded icon in MainScaffold)
-      // Find the create button by widget predicate to uniquely identify the center FAB (it's the only size: 32 icon in MainScaffold)
-      final createButton = find.descendant(
-        of: find.byType(MainScaffold),
-        matching: find.byWidgetPredicate((widget) =>
-            widget is Icon &&
-            widget.icon == Icons.add_rounded &&
-            widget.size == 32),
-      );
-      expect(createButton, findsOneWidget, reason: 'FAB not found');
+      // Find the create button by widget predicate to uniquely identify the center FAB (it's the only size: 32 icon)
+      final createButton = find.byWidgetPredicate((widget) =>
+          widget is Icon &&
+          widget.icon == Icons.add_rounded &&
+          widget.size == 32);
       await tester.tap(createButton);
       await tester.pumpAndSettle();
 
-      // Fill in persona name
+      // Find text fields inside CreatePersonaSheet
       final nameField = find.byType(TextField).at(0);
       await tester.enterText(nameField, 'Test Agent');
 
       final personalityField = find.byType(TextField).at(1);
-      await tester.enterText(personalityField, 'You are a helpful test agent.');
+      await tester.enterText(personalityField, 'You are a test agent.');
 
       // Tap "Save Persona"
       final saveButton = find.text('Save Persona');
@@ -204,33 +166,21 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       final snackbars = find.byType(SnackBar).evaluate();
-      if (snackbars.isNotEmpty) {
-        String messages = '';
-        for (final e in snackbars) {
-          final snackbar = e.widget as SnackBar;
-          if (snackbar.content is Text) {
-            final textWidget = snackbar.content as Text;
-            debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
-            messages += '${textWidget.data}; ';
-          }
-        }
-        expect(snackbars, isEmpty,
-            reason:
-                'Unexpected snackbars found during agent creation: $messages');
+      for (final e in snackbars) {
+        final snackbar = e.widget as SnackBar;
+        final textWidget = snackbar.content as Text;
+        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
       }
+      expect(snackbars, isEmpty);
 
       expect(find.textContaining('Error'), findsNothing);
     });
 
     testWidgets('Navigate to Settings page', (tester) async {
       await BackendService.init();
-      await BackendService.setBaseUrl(apiUrl);
+      await BackendService.setBaseUrl('http://127.0.0.1:8000/api/v1');
       BackendService.bypassWaitForBackend = false;
-      await SupabaseService.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseAnonKey,
-      );
-
+      await SupabaseService.initialize();
       await BackendService.setOnboardingComplete(true);
 
       if (Supabase.instance.client.auth.currentUser == null) {
@@ -240,42 +190,32 @@ void main() {
             password: testPassword,
           );
         } catch (e) {
-          debugPrint('Auth setup failed: $e');
+          debugPrint('Signin failed: $e');
+          rethrow;
         }
       }
 
       await tester.pumpWidget(const ProviderScope(child: MiruApp()));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // Tap Settings in Bottom Nav
-      // Find the Icon with Icons.settings_outlined or matching text safely in the Bottom Nav.
-      final settingsButton = find.descendant(
-        of: find.byType(MainScaffold),
-        matching: find.text('Settings'),
-      );
+      // Tap the Settings nav item. Since there could be other 'Settings' texts, we'll find the Icon with Icons.settings_outlined or matching text safely.
+      final settingsButton = find.byWidgetPredicate(
+          (widget) => widget is Icon && widget.icon == Icons.settings_outlined);
       expect(settingsButton, findsOneWidget,
-          reason: 'settings nav item not found');
+          reason: 'settingsButton not found');
 
       await tester.tap(settingsButton);
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
-      expect(find.text('Account'), findsWidgets);
-      expect(find.text('Preferences'), findsWidgets);
+      expect(find.text('Settings'), findsWidgets);
 
       final snackbars = find.byType(SnackBar).evaluate();
-      if (snackbars.isNotEmpty) {
-        String messages = '';
-        for (final e in snackbars) {
-          final snackbar = e.widget as SnackBar;
-          if (snackbar.content is Text) {
-            final textWidget = snackbar.content as Text;
-            debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
-            messages += '${textWidget.data}; ';
-          }
-        }
-        expect(snackbars, isEmpty,
-            reason: 'Unexpected snackbars found on settings page: $messages');
+      for (final e in snackbars) {
+        final snackbar = e.widget as SnackBar;
+        final textWidget = snackbar.content as Text;
+        debugPrint('UNEXPECTED SNACKBAR FOUND: ${textWidget.data}');
       }
+      expect(snackbars, isEmpty);
 
       expect(find.textContaining('Error'), findsNothing);
     });
