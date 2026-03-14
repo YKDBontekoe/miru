@@ -269,7 +269,7 @@ class _AgentsPageState extends State<AgentsPage> {
                       Wrap(
                         spacing: 8,
                         children: _availableIntegrations.map((integration) {
-                          final type = integration.id;
+                          final type = integration.type;
                           final name = integration.displayName;
                           final isSelected =
                               selectedIntegrations.contains(type);

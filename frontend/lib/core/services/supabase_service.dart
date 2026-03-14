@@ -41,7 +41,7 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
 
   /// Initialise the Supabase client.  Must be called once before any auth ops.
-  static Future<void> initialize({String? url, String? anonKey}) async {
+  static Future<void> initialize() async {
     final localStorage = kIsWeb
         ? SharedPreferencesLocalStorage(
             persistSessionKey: 'miru-supabase-session',
@@ -49,8 +49,8 @@ class SupabaseService {
         : _SecureLocalStorage();
 
     await Supabase.initialize(
-      url: url ?? _supabaseUrl,
-      anonKey: anonKey ?? _supabaseAnonKey,
+      url: _supabaseUrl,
+      anonKey: _supabaseAnonKey,
       debug: true,
       authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
