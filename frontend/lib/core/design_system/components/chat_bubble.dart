@@ -60,10 +60,7 @@ class ChatBubble extends StatelessWidget {
     final screenWidth = context.screenWidth;
 
     if (isUser) {
-      return _UserBubble(
-        text: text,
-        screenWidth: screenWidth,
-      );
+      return _UserBubble(text: text, screenWidth: screenWidth);
     }
 
     return _AssistantBubble(
@@ -353,14 +350,14 @@ class _AssistantBubbleContainer extends StatelessWidget {
     final bgColor = isFailed
         ? colors.errorSurface
         : hasAgentName
-            ? accentColor.withValues(alpha: isDark ? 0.08 : 0.06)
-            : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight);
+        ? accentColor.withValues(alpha: isDark ? 0.08 : 0.06)
+        : (isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight);
 
     final borderColor = isFailed
         ? AppColors.error.withValues(alpha: 0.35)
         : hasAgentName
-            ? accentColor.withValues(alpha: isDark ? 0.22 : 0.18)
-            : colors.border.withValues(alpha: 0.7);
+        ? accentColor.withValues(alpha: isDark ? 0.22 : 0.18)
+        : colors.border.withValues(alpha: 0.7);
 
     return Container(
       decoration: BoxDecoration(
@@ -467,10 +464,7 @@ class _ActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSpacing.xxs,
-        left: AppSpacing.xxs,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.xxs, left: AppSpacing.xxs),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

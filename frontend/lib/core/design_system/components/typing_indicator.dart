@@ -70,7 +70,7 @@ class _BouncingDotState extends State<_BouncingDot>
         Colors.red,
         Colors.indigo,
         Colors.deepPurple,
-        Colors.orange
+        Colors.orange,
       ];
       dotColor =
           baseColors[widget.agentName!.hashCode.abs() % baseColors.length];
@@ -78,7 +78,7 @@ class _BouncingDotState extends State<_BouncingDot>
 
     return AnimatedBuilder(
       animation: _animation,
-      builder: (_, __) => Transform.translate(
+      builder: (_, _) => Transform.translate(
         offset: Offset(0, _animation.value),
         child: Container(
           width: AppSpacing.typingDotSize,

@@ -23,11 +23,7 @@ void main() async {
   // Initialise Passkey support.
   await PasskeyService.initialize();
 
-  runApp(
-    const ProviderScope(
-      child: MiruApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MiruApp()));
 }
 
 class MiruApp extends StatefulWidget {

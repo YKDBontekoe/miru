@@ -20,19 +20,19 @@ class AppStatusDot extends StatelessWidget {
 
   /// Online (green) indicator.
   const AppStatusDot.online({super.key, this.size = AppSpacing.statusDotSize})
-      : color = AppColors.success;
+    : color = AppColors.success;
 
   /// Offline (muted) indicator.
   const AppStatusDot.offline({super.key, this.size = AppSpacing.statusDotSize})
-      : color = AppColors.onSurfaceDisabledDark;
+    : color = AppColors.onSurfaceDisabledDark;
 
   /// Busy/warning indicator.
   const AppStatusDot.busy({super.key, this.size = AppSpacing.statusDotSize})
-      : color = AppColors.warning;
+    : color = AppColors.warning;
 
   /// Error/offline indicator.
   const AppStatusDot.error({super.key, this.size = AppSpacing.statusDotSize})
-      : color = AppColors.error;
+    : color = AppColors.error;
 
   @override
   Widget build(BuildContext context) {

@@ -25,15 +25,16 @@ class PasskeyInfo {
   });
 
   factory PasskeyInfo.fromJson(Map<String, dynamic> json) => PasskeyInfo(
-        id: json['id'] as String,
-        deviceName: json['device_name'] as String?,
-        transports: (json['transports'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            [],
-        createdAt: json['created_at'] as String,
-        lastUsedAt: json['last_used_at'] as String?,
-      );
+    id: json['id'] as String,
+    deviceName: json['device_name'] as String?,
+    transports:
+        (json['transports'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        [],
+    createdAt: json['created_at'] as String,
+    lastUsedAt: json['last_used_at'] as String?,
+  );
 }
 
 /// Handles the WebAuthn passkey registration and authentication flows.
@@ -45,10 +46,10 @@ class PasskeyService {
   static String get _baseUrl => BackendService.baseUrl.value;
 
   static Map<String, String> get _authHeaders => {
-        'Content-Type': 'application/json; charset=utf-8',
-        if (SupabaseService.accessToken != null)
-          'Authorization': 'Bearer ${SupabaseService.accessToken}',
-      };
+    'Content-Type': 'application/json; charset=utf-8',
+    if (SupabaseService.accessToken != null)
+      'Authorization': 'Bearer ${SupabaseService.accessToken}',
+  };
 
   /// Initialise the credential manager.
   static Future<void> initialize() async {
@@ -195,8 +196,9 @@ class PasskeyService {
 
     if (_credentialManager.isSupportedPlatform) {
       final challenge = options['challenge'] as String;
-      final rpId = (options['rpId'] ?? options['rp_id'] ?? options['rp']?['id'])
-          as String?;
+      final rpId =
+          (options['rpId'] ?? options['rp_id'] ?? options['rp']?['id'])
+              as String?;
 
       final credential = await _credentialManager.getCredentials(
         passKeyOption: CredentialLoginOptions(

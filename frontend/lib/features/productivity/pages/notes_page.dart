@@ -11,8 +11,11 @@ final notesProvider = FutureProvider.autoDispose<List<Note>>((ref) async {
   return service.listNotes();
 });
 
-void _showNoteDialog(BuildContext context, WidgetRef ref,
-    [Note? existingNote]) {
+void _showNoteDialog(
+  BuildContext context,
+  WidgetRef ref, [
+  Note? existingNote,
+]) {
   final titleController = TextEditingController(text: existingNote?.title);
   final contentController = TextEditingController(text: existingNote?.content);
 
@@ -67,7 +70,8 @@ void _showNoteDialog(BuildContext context, WidgetRef ref,
               if (ctx.mounted) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(
-                      content: Text('Failed to save note. Please try again.')),
+                    content: Text('Failed to save note. Please try again.'),
+                  ),
                 );
               }
             }
@@ -105,18 +109,16 @@ class NotesPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom: AppSpacing.bottomNavBarHeight +
+              bottom:
+                  AppSpacing.bottomNavBarHeight +
                   AppSpacing.md * 2 +
                   MediaQuery.viewPaddingOf(context).bottom,
             ),
             itemCount: notes.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final note = notes[index];
-              return _NoteTile(
-                note: note,
-                agents: agents,
-              );
+              return _NoteTile(note: note, agents: agents);
             },
           );
         },
@@ -137,9 +139,11 @@ class NotesPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-            bottom: AppSpacing.bottomNavBarHeight +
-                AppSpacing.md +
-                MediaQuery.viewPaddingOf(context).bottom),
+          bottom:
+              AppSpacing.bottomNavBarHeight +
+              AppSpacing.md +
+              MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: FloatingActionButton(
           onPressed: () => _showNoteDialog(context, ref),
           child: const Icon(Icons.add),
@@ -153,10 +157,7 @@ class _NoteTile extends ConsumerWidget {
   final Note note;
   final List<Agent> agents;
 
-  const _NoteTile({
-    required this.note,
-    required this.agents,
-  });
+  const _NoteTile({required this.note, required this.agents});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -189,8 +190,10 @@ class _NoteTile extends ConsumerWidget {
                 }
               },
             ),
-            title: Text(note.title,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              note.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               note.content,
               maxLines: 5,
@@ -213,7 +216,8 @@ class _NoteTile extends ConsumerWidget {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Failed to delete note')),
+                            content: Text('Failed to delete note'),
+                          ),
                         );
                       }
                     }
@@ -236,8 +240,9 @@ class _NoteTile extends ConsumerWidget {
                 children: [
                   if (note.agentId != null)
                     () {
-                      final agent =
-                          agents.where((a) => a.id == note.agentId).firstOrNull;
+                      final agent = agents
+                          .where((a) => a.id == note.agentId)
+                          .firstOrNull;
                       if (agent == null) return const SizedBox.shrink();
                       return Container(
                         padding: const EdgeInsets.symmetric(
@@ -246,8 +251,9 @@ class _NoteTile extends ConsumerWidget {
                         ),
                         decoration: BoxDecoration(
                           color: context.colorScheme.primaryContainer,
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radiusXs),
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusXs,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,

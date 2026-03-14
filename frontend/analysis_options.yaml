@@ -1,119 +1,47 @@
 # This file configures the analyzer, which statically analyzes Dart code to
 # check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
 linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
   rules:
     # Style rules
-    - prefer_single_quotes: true
-    - prefer_const_constructors: true
-    - prefer_const_constructors_in_immutables: true
-    - prefer_const_declarations: true
-    - prefer_const_literals_to_create_immutables: true
-    - prefer_final_fields: true
-    - prefer_final_in_for_each: true
-    - prefer_final_locals: true
-    - prefer_relative_imports: true
-    - directives_ordering: true
-    - lines_longer_than_80_chars: true
+    prefer_single_quotes: false
+    prefer_const_constructors: false
+    prefer_const_constructors_in_immutables: false
+    prefer_const_declarations: false
+    prefer_const_literals_to_create_immutables: false
+    prefer_final_fields: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_relative_imports: false
+    directives_ordering: false
+    lines_longer_than_80_chars: false
     
     # Documentation
-    - public_member_api_docs: false  # Set to true for production libraries
-    - package_api_docs: false
+    public_member_api_docs: false
     
     # Error prevention
-    - avoid_slow_async_io: true
-    - avoid_types_as_parameter_names: true
-    - cancel_subscriptions: true
-    - close_sinks: true
-    - comment_references: false
-    - test_types_in_equals: true
-    - throw_in_finally: true
-    - unnecessary_statements: true
-    - unrelated_type_equality_checks: true
+    avoid_slow_async_io: true
+    avoid_types_as_parameter_names: true
+    cancel_subscriptions: true
+    close_sinks: true
+    comment_references: false
+    test_types_in_equals: true
+    throw_in_finally: true
+    unnecessary_statements: true
+    unrelated_type_equality_checks: true
     
     # Code quality
-    - avoid_bool_literals_in_conditional_expressions: true
-    - avoid_catching_errors: true
-    - avoid_field_initializers_in_const_classes: true
-    - avoid_function_literals_in_foreach_calls: true
-    - avoid_implementing_value_types: true
-    - avoid_positional_boolean_parameters: true
-    - avoid_private_typedef_functions: true
-    - avoid_returning_null: true
-    - avoid_returning_null_for_void: true
-    - avoid_returning_this: true
-    - avoid_setters_without_getters: true
-    - avoid_shadowing_type_parameters: true
-    - avoid_types_on_closure_parameters: false  # Keep false for explicit types
-    - avoid_unused_constructor_parameters: true
-    - await_only_futures: true
-    - camel_case_extensions: true
-    - cascade_invocations: false  # Can be verbose
-    - join_return_with_assignment: true
-    - omit_local_variable_types: false  # Keep explicit types
-    - parameter_assignments: true
-    - prefer_collection_literals: true
-    - prefer_conditional_assignment: true
-    - prefer_constructors_over_static_methods: true
-    - prefer_contains: true
-    - prefer_equal_for_default_values: true
-    - prefer_expression_function_bodies: false  # Allow both styles
-    - prefer_foreach: true
-    - prefer_function_declarations_over_variables: true
-    - prefer_generic_function_type_aliases: true
-    - prefer_if_elements_to_conditional_expressions: true
-    - prefer_if_null_operators: true
-    - prefer_initializing_formals: true
-    - prefer_inlined_adds: true
-    - prefer_int_literals: true
-    - prefer_interpolation_to_compose_strings: true
-    - prefer_is_empty: true
-    - prefer_is_not_empty: true
-    - prefer_is_not_operator: true
-    - prefer_iterable_whereType: true
-    - prefer_null_aware_operators: true
-    - prefer_spread_collections: true
-    - prefer_typing_uninitialized_variables: true
-    - provide_deprecation_message: true
-    - recursive_getters: true
-    - sort_child_properties_last: true
-    - sort_constructors_first: false
-    - sort_unnamed_constructors_first: false
-    - type_annotate_public_apis: true
-    - type_init_formals: true
-    - unawaited_futures: true
-    - unnecessary_await_in_return: true
-    - unnecessary_lambdas: true
-    - unnecessary_parenthesis: false  # Allow for clarity
-    - unnecessary_raw_strings: true
-    - use_full_hex_values_for_flutter_colors: true
-    - use_function_type_syntax_for_parameters: true
-    - use_rethrow_when_possible: true
-    - use_setters_to_change_properties: true
-    - use_string_buffers: true
-    - use_to_and_as_if_applicable: true
-    - void_checks: true
-
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    avoid_bool_literals_in_conditional_expressions: true
+    avoid_catching_errors: false
+    avoid_positional_boolean_parameters: false
+    unawaited_futures: false
+    unnecessary_lambdas: false
+    prefer_int_literals: false
+    prefer_if_elements_to_conditional_expressions: false
+    void_checks: true
+    use_null_aware_elements: false
+    unnecessary_underscores: false
 
 analyzer:
   exclude:

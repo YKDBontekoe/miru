@@ -98,7 +98,8 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isAtBottom = _scrollController.position.pixels >=
+    final isAtBottom =
+        _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 80;
     if (_showScrollToBottom == isAtBottom) {
       setState(() => _showScrollToBottom = !isAtBottom);
@@ -476,17 +477,11 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
       vsync: this,
       duration: AppDurations.medium,
     );
-    _opacity = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
 
@@ -500,10 +495,7 @@ class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
@@ -533,9 +525,10 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _opacity = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
-    );
+    _opacity = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
   }
 
   @override
@@ -559,8 +552,9 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
             vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color:
-                isDark ? AppColors.surfaceHighDark : AppColors.surfaceHighLight,
+            color: isDark
+                ? AppColors.surfaceHighDark
+                : AppColors.surfaceHighLight,
             borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             border: Border.all(
               color: colors.border.withValues(alpha: 0.5),
@@ -575,9 +569,7 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
                 height: 10,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colors.primary,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
@@ -622,9 +614,7 @@ class _ScrollToBottomButton extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: colors.border.withValues(alpha: 0.6),
-            ),
+            border: Border.all(color: colors.border.withValues(alpha: 0.6)),
           ),
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
@@ -667,8 +657,9 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
         : [AppColors.onSurfaceLight, AppColors.primaryDark];
 
     return AppBar(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
@@ -694,11 +685,7 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
               color: colors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.blur_on_rounded,
-              size: 16,
-              color: colors.primary,
-            ),
+            child: Icon(Icons.blur_on_rounded, size: 16, color: colors.primary),
           ),
           const SizedBox(width: AppSpacing.sm),
           // Gradient wordmark

@@ -18,9 +18,9 @@ class CrewResult {
   const CrewResult({required this.taskType, required this.result});
 
   factory CrewResult.fromJson(Map<String, dynamic> json) => CrewResult(
-        taskType: json['task_type'] as String? ?? 'general',
-        result: json['result'] as String? ?? '',
-      );
+    taskType: json['task_type'] as String? ?? 'general',
+    result: json['result'] as String? ?? '',
+  );
 }
 
 class ApiService {
@@ -31,12 +31,14 @@ class ApiService {
     // (without leading slash) work correctly.
     final effectiveBaseUrl = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
 
-    final dio = Dio(BaseOptions(
-      baseUrl: effectiveBaseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      contentType: 'application/json; charset=utf-8',
-    ));
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: effectiveBaseUrl,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        contentType: 'application/json; charset=utf-8',
+      ),
+    );
 
     final token = SupabaseService.accessToken;
     if (token != null) {
@@ -69,8 +71,9 @@ class ApiService {
       );
 
       if (response.data != null) {
-        await for (final chunk
-            in response.data!.stream.map((bytes) => utf8.decode(bytes))) {
+        await for (final chunk in response.data!.stream.map(
+          (bytes) => utf8.decode(bytes),
+        )) {
           yield chunk;
         }
       }
@@ -156,18 +159,23 @@ class ApiService {
 
   static Future<Map<String, dynamic>> resolveSteamUser(String username) async {
     return _handleError((dio) async {
-      final response = await dio.get('integrations/steam/resolve-user',
-          queryParameters: {'username': username});
+      final response = await dio.get(
+        'integrations/steam/resolve-user',
+        queryParameters: {'username': username},
+      );
       return response.data as Map<String, dynamic>;
     });
   }
 
   static Future<AgentGenerationResponse> generateAgent(String keywords) async {
     return _handleError((dio) async {
-      final response =
-          await dio.post('agents/generate', data: {'keywords': keywords});
+      final response = await dio.post(
+        'agents/generate',
+        data: {'keywords': keywords},
+      );
       return AgentGenerationResponse.fromJson(
-          response.data as Map<String, dynamic>);
+        response.data as Map<String, dynamic>,
+      );
     });
   }
 
@@ -212,12 +220,14 @@ class ApiService {
 
   static Future<void> updateRoom(String roomId, String name) async {
     await _handleError(
-        (dio) => dio.patch('rooms/$roomId', data: {'name': name}));
+      (dio) => dio.patch('rooms/$roomId', data: {'name': name}),
+    );
   }
 
   static Future<void> addAgentToRoom(String roomId, String agentId) async {
     await _handleError(
-        (dio) => dio.post('rooms/$roomId/agents', data: {'agent_id': agentId}));
+      (dio) => dio.post('rooms/$roomId/agents', data: {'agent_id': agentId}),
+    );
   }
 
   static Future<List<Agent>> getRoomAgents(String roomId) async {
@@ -250,8 +260,9 @@ class ApiService {
       );
 
       if (response.data != null) {
-        await for (final chunk
-            in response.data!.stream.map((bytes) => utf8.decode(bytes))) {
+        await for (final chunk in response.data!.stream.map(
+          (bytes) => utf8.decode(bytes),
+        )) {
           yield chunk;
         }
       }

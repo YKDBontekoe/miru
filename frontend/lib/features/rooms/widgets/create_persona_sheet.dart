@@ -92,7 +92,8 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Please connect your Steam account or disable the integration.'),
+            'Please connect your Steam account or disable the integration.',
+          ),
           backgroundColor: AppColors.error,
         ),
       );
@@ -272,14 +273,16 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
                         child: FilledButton(
                           onPressed:
                               _isResolvingSteam || _resolvedSteamId != null
-                                  ? null
-                                  : _resolveSteamUser,
+                              ? null
+                              : _resolveSteamUser,
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.md),
+                              horizontal: AppSpacing.md,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.radiusMd),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.radiusMd,
+                              ),
                             ),
                           ),
                           child: _isResolvingSteam
@@ -291,9 +294,11 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
                                     color: AppColors.onPrimary,
                                   ),
                                 )
-                              : Text(_resolvedSteamId != null
-                                  ? 'Connected'
-                                  : 'Connect'),
+                              : Text(
+                                  _resolvedSteamId != null
+                                      ? 'Connected'
+                                      : 'Connect',
+                                ),
                         ),
                       ),
                     ],
@@ -303,8 +308,9 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
                       padding: const EdgeInsets.only(top: AppSpacing.sm),
                       child: Text(
                         'Connected to: $_resolvedSteamName',
-                        style: AppTypography.bodySmall
-                            .copyWith(color: AppColors.success),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.success,
+                        ),
                       ),
                     ),
                 ],

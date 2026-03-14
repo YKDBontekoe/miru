@@ -31,11 +31,7 @@ class MemoryEdge {
   final String target;
   final String? type;
 
-  const MemoryEdge({
-    required this.source,
-    required this.target,
-    this.type,
-  });
+  const MemoryEdge({required this.source, required this.target, this.type});
 
   factory MemoryEdge.fromJson(Map<String, dynamic> json) {
     return MemoryEdge(
@@ -46,8 +42,8 @@ class MemoryEdge {
   }
 
   Map<String, dynamic> toJson() => {
-        'source': source,
-        'target': target,
-        if (type != null) 'type': type,
-      };
+    'source': source,
+    'target': target,
+    if (type != null) 'type': type,
+  };
 }
