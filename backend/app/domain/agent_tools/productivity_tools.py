@@ -48,7 +48,7 @@ class ListTasksTool(BaseTool):
                     result += f"  Description: {t.description}\n"
             return result
         except Exception:
-            logger.exception("Error in ListTasksTool for user %s", self.user_id)
+            logger.exception("Error in ListTasksTool")
             return "Error fetching tasks."
 
 
@@ -81,7 +81,7 @@ class CreateTaskTool(BaseTool):
 
             return f"Successfully created task '{task.title}' with ID {task.id}."
         except Exception:
-            logger.exception("Error in CreateTaskTool for user %s", self.user_id)
+            logger.exception("Error in CreateTaskTool")
             return "Error creating task."
 
 
@@ -120,7 +120,7 @@ class UpdateTaskTool(BaseTool):
             status = "Completed" if task.is_completed else "Pending"
             return f"Successfully updated task '{task.title}' with ID {task.id}. Status is now: {status}."
         except Exception:
-            logger.exception("Error in UpdateTaskTool for user %s", self.user_id)
+            logger.exception("Error in UpdateTaskTool")
             return "Error updating task."
 
 
@@ -159,7 +159,7 @@ class ListNotesTool(BaseTool):
                 result += f"  Content: {n.content}\n"
             return result
         except Exception:
-            logger.exception("Error in ListNotesTool for user %s", self.user_id)
+            logger.exception("Error in ListNotesTool")
             return "Error fetching notes."
 
 
@@ -204,5 +204,5 @@ class CreateNoteTool(BaseTool):
 
             return f"Successfully created note '{note.title}' with ID {note.id}."
         except Exception:
-            logger.exception("Error in CreateNoteTool for user %s", self.user_id)
+            logger.exception("Error in CreateNoteTool")
             return "Error creating note."
