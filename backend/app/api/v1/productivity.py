@@ -19,6 +19,11 @@ from app.domain.productivity.models import (
     TaskResponse,
     TaskUpdate,
 )
+from datetime import timezone
+
+from fastapi.responses import Response
+from icalendar import Calendar, Event as ICalEvent
+
 from app.domain.productivity.service import ProductivityService
 
 logger = logging.getLogger(__name__)
@@ -198,17 +203,17 @@ async def delete_event(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/calendar/export.ics")
+@router.get("/calendar/export.ics", response_class=Response)
 async def export_ical(
     user_id: CurrentUser,
-) -> bytes:
-    """Export all calendar events as an iCal (.ics) file."""
-    from datetime import timezone
+) -> Response:
+    """Export calendar events as an iCal (.ics) file.
 
-    from fastapi.responses import Response
-    from icalendar import Calendar, Event as ICalEvent
-
-    events = await ProductivityService.list_events(user_id, limit=500)
+    Returns up to 500 events. When the result is truncated, the response
+    includes an ``X-Results-Truncated: true`` header.
+    """
+    _EXPORT_LIMIT = 500
+    events = await ProductivityService.list_events(user_id, limit=_EXPORT_LIMIT)
 
     cal = Calendar()
     cal.add("prodid", "-//Miru AI Assistant//miru.app//EN")
@@ -224,16 +229,20 @@ async def export_ical(
             ical_event.add("description", event.description)
         if event.location:
             ical_event.add("location", event.location)
-        ical_event.add("dtstart", event.start_time.replace(tzinfo=timezone.utc))
-        ical_event.add("dtend", event.end_time.replace(tzinfo=timezone.utc))
+        # Use astimezone to correctly convert tz-aware datetimes to UTC
+        ical_event.add("dtstart", event.start_time.astimezone(timezone.utc))
+        ical_event.add("dtend", event.end_time.astimezone(timezone.utc))
         ical_event.add("uid", str(event.id))
         if event.origin_context:
             ical_event.add("comment", f"Created by agent: {event.origin_context}")
         cal.add_component(ical_event)
 
-    ics_bytes = cal.to_ical()
+    headers = {"Content-Disposition": "attachment; filename=miru-calendar.ics"}
+    if len(events) >= _EXPORT_LIMIT:
+        headers["X-Results-Truncated"] = "true"
+
     return Response(
-        content=ics_bytes,
+        content=cal.to_ical(),
         media_type="text/calendar",
-        headers={"Content-Disposition": "attachment; filename=miru-calendar.ics"},
+        headers=headers,
     )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
-    from app.domain.agents.models import Agent, Memory
+    from app.domain.agents.models import Agent
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -312,8 +313,7 @@ class ChatService:
         memory_svc = MemoryService(self.memory_repo)
 
         # 3. Retrieve relevant memories and recent conversation history in parallel
-        import asyncio as _asyncio
-        memories, recent_messages = await _asyncio.gather(
+        memories, recent_messages = await asyncio.gather(
             memory_svc.retrieve_memories(user_message, user_id=user_id, room_id=room_id),
             self.chat_repo.get_recent_messages(room_id, limit=HISTORY_WINDOW),
         )
@@ -387,12 +387,15 @@ class ChatService:
             logger.warning("Failed to store room memory: %s", exc)
 
         # 8. Knowledge graph extraction (background task)
-        import asyncio as _asyncio
-        _asyncio.create_task(
+        _bg_task = asyncio.create_task(
             extract_and_store_graph(
-                f"User: {user_message}\nAgent: {result_str}", user_id, self.memory_repo
+                f"User: {user_message}\nAgent: {result_str}", user_id
             )
         )
+        def _on_kg_done(t: asyncio.Task) -> None:
+            if not t.cancelled() and (exc := t.exception()):
+                logger.error("Knowledge graph extraction failed: %s", exc)
+        _bg_task.add_done_callback(_on_kg_done)
 
         # 9. Affinity increment + action log for each room agent
         for db_agent in db_agents:

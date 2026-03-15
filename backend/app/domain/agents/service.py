@@ -181,7 +181,8 @@ class AgentService:
                     {"role": "user", "content": recent_history[-2000:]},  # limit tokens
                 ]
             )
-            mood = mood.strip().split()[0][:50]  # first word, max 50 chars
+            words = mood.strip().split()
+            mood = words[0][:50] if words else "Neutral"
         except Exception as exc:
             logger.warning("Mood update failed, defaulting to Neutral: %s", exc)
             mood = "Neutral"

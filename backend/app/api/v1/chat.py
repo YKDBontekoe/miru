@@ -121,8 +121,11 @@ async def get_room_messages(
     room_id: UUID,
     _user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(room_id)
+    """Fetch paginated messages for a room (most recent ``limit`` messages in chronological order)."""
+    return await service.get_room_messages(room_id, limit=limit, offset=offset)
 
 
 @router.post("/rooms/{room_id}/chat")

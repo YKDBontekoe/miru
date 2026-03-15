@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+import uuid
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.infrastructure.external.openrouter import structured_completion
-
-if TYPE_CHECKING:
-    from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +33,13 @@ class _ExtractionResult(BaseModel):
 async def extract_and_store_graph(
     text: str,
     user_id: UUID,
-    memory_repo: MemoryRepository,
 ) -> None:
-    """Extract entities and relationships from text and persist to the knowledge graph."""
+    """Extract entities and relationships from text and persist to the knowledge graph.
+
+    Uses an LLM to identify named entities and relationships, then upserts them
+    into ``memory_graph_nodes`` and ``memory_graph_edges`` with deduplication via
+    ``ON CONFLICT`` clauses.
+    """
     try:
         result: _ExtractionResult = await structured_completion(
             messages=[
@@ -69,16 +70,16 @@ async def extract_and_store_graph(
 
     for entity in result.entities:
         try:
-            # Upsert node (deduplicate on name + entity_type + user_id)
+            node_id = str(uuid.uuid4())
             rows = await conn.execute_query_dict(
                 """
-                INSERT INTO memory_graph_nodes (user_id, name, entity_type, description)
-                VALUES ($1::uuid, $2, $3, $4)
+                INSERT INTO memory_graph_nodes (id, user_id, name, entity_type, description, meta)
+                VALUES ($1::uuid, $2::uuid, $3, $4, $5, '{}'::jsonb)
                 ON CONFLICT (user_id, name, entity_type) DO UPDATE
                   SET description = EXCLUDED.description
                 RETURNING id
                 """,
-                [str(user_id), entity.name, entity.entity_type, entity.description],
+                [node_id, str(user_id), entity.name, entity.entity_type, entity.description],
             )
             if rows:
                 entity_name_to_id[entity.name] = UUID(str(rows[0]["id"]))
@@ -91,13 +92,15 @@ async def extract_and_store_graph(
         if not src_id or not tgt_id:
             continue
         try:
+            edge_id = str(uuid.uuid4())
             await conn.execute_query(
                 """
-                INSERT INTO memory_graph_edges (source_node_id, target_node_id, relationship)
-                VALUES ($1::uuid, $2::uuid, $3)
+                INSERT INTO memory_graph_edges
+                    (id, source_node_id, target_node_id, relationship, meta)
+                VALUES ($1::uuid, $2::uuid, $3::uuid, $4, '{}'::jsonb)
                 ON CONFLICT (source_node_id, target_node_id, relationship) DO NOTHING
                 """,
-                [str(src_id), str(tgt_id), rel.relationship],
+                [edge_id, str(src_id), str(tgt_id), rel.relationship],
             )
         except Exception as exc:
             logger.warning("Failed to insert graph edge: %s", exc)

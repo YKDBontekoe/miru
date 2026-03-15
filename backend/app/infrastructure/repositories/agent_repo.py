@@ -56,7 +56,7 @@ class AgentRepository:
         """Atomically increment an agent's message count with a single SQL UPDATE."""
         conn = Tortoise.get_connection("default")
         await conn.execute_query(
-            "UPDATE agents SET message_count = message_count + 1 WHERE id = ",
+            "UPDATE agents SET message_count = message_count + 1 WHERE id = $1",
             [str(agent_id)],
         )
 

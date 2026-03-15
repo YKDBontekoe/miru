@@ -16,6 +16,7 @@ from app.domain.auth.models import (
     PasskeyRegisterVerifyRequest,
 )
 from app.domain.auth.service import AuthService  # noqa: TCH001
+from app.infrastructure.database.supabase import get_supabase_client
 
 router = APIRouter(tags=["Auth"])
 
@@ -28,7 +29,6 @@ async def get_registration_options(
 ) -> dict[str, Any]:
     """Get options for passkey registration (real WebAuthn challenge)."""
     try:
-        from app.infrastructure.database.supabase import get_supabase_client
         client = get_supabase_client()
         user_resp = client.auth.admin.get_user_by_id(str(user_id))
         username = (user_resp.user.email or str(user_id)) if user_resp and user_resp.user else str(user_id)

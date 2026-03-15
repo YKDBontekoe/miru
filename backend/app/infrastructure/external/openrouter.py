@@ -17,23 +17,23 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=BaseModel)
 
 # Simple LRU cache with TTL for embeddings
-_embed_cache: dict[str, tuple[list[float], float]] = {}
+_embed_cache: dict[tuple[str, str], tuple[list[float], float]] = {}
 _EMBED_TTL_SECONDS = 300  # 5 minutes
 
 
-def _embed_cache_get(key: str) -> list[float] | None:
-    entry = _embed_cache.get(key)
+def _embed_cache_get(text: str, model: str) -> list[float] | None:
+    entry = _embed_cache.get((text, model))
     if entry and time.monotonic() - entry[1] < _EMBED_TTL_SECONDS:
         return entry[0]
     return None
 
 
-def _embed_cache_set(key: str, value: list[float]) -> None:
+def _embed_cache_set(text: str, model: str, value: list[float]) -> None:
     # Limit cache to 256 entries (evict oldest)
     if len(_embed_cache) >= 256:
         oldest_key = min(_embed_cache, key=lambda k: _embed_cache[k][1])
         del _embed_cache[oldest_key]
-    _embed_cache[key] = (value, time.monotonic())
+    _embed_cache[(text, model)] = (value, time.monotonic())
 
 
 class OpenRouterClient:
@@ -56,7 +56,7 @@ class OpenRouterClient:
         )
 
     async def embed(self, text: str, model: str) -> list[float]:
-        cached = _embed_cache_get(text)
+        cached = _embed_cache_get(text, model)
         if cached is not None:
             return cached
         response = await self.openai_client.embeddings.create(
@@ -65,7 +65,7 @@ class OpenRouterClient:
             encoding_format="float",
         )
         result = response.data[0].embedding
-        _embed_cache_set(text, result)
+        _embed_cache_set(text, model, result)
         return result
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:

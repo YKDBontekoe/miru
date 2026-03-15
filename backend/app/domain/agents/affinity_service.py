@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from uuid import UUID
 
 from tortoise import Tortoise
-from tortoise.exceptions import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +22,12 @@ async def increment_affinity(user_id: UUID, agent_id: UUID) -> str | None:
     """
     conn = Tortoise.get_connection("default")
     try:
-        # Upsert affinity row and return new score
+        # Upsert affinity row; include milestones default so NOT NULL is satisfied
         rows = await conn.execute_query_dict(
             """
-            INSERT INTO user_agent_affinity (user_id, agent_id, affinity_score, last_interaction_at)
-            VALUES ($1::uuid, $2::uuid, 1.0, NOW())
+            INSERT INTO user_agent_affinity
+                (user_id, agent_id, affinity_score, milestones, last_interaction_at)
+            VALUES ($1::uuid, $2::uuid, 1.0, '[]'::jsonb, NOW())
             ON CONFLICT (user_id, agent_id) DO UPDATE
               SET affinity_score = user_agent_affinity.affinity_score + 1.0,
                   last_interaction_at = NOW()
@@ -49,7 +50,6 @@ async def increment_affinity(user_id: UUID, agent_id: UUID) -> str | None:
         if new_score >= milestone and milestone not in milestones_hit:
             try:
                 milestones_hit.append(milestone)
-                import json
                 await conn.execute_query(
                     """
                     UPDATE user_agent_affinity
@@ -75,8 +75,6 @@ async def log_agent_action(
     meta: dict | None = None,
 ) -> None:
     """Write an entry to the agent_action_logs table."""
-    import json
-
     conn = Tortoise.get_connection("default")
     try:
         await conn.execute_query(

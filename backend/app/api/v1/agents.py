@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from uuid import UUID
 
 from app.domain.agents.models import (
     AgentCreate,

@@ -55,14 +55,19 @@ class ChatRepository:
     async def get_room_messages(
         self, room_id: UUID, limit: int = 100, offset: int = 0
     ) -> list[ChatMessage]:
-        """Fetch messages in a room with pagination."""
-        return (
+        """Fetch the most recent messages in a room (newest-first page, returned in chronological order).
+
+        Queries newest first to ensure pagination returns the most recent
+        ``limit`` messages, then reverses so callers receive them oldest→newest.
+        """
+        msgs = (
             await ChatMessage.filter(room_id=room_id)
-            .order_by("created_at")
+            .order_by("-created_at")
             .limit(limit)
             .offset(offset)
             .all()
         )
+        return list(reversed(msgs))
 
     async def get_recent_messages(self, room_id: UUID, limit: int = 10) -> list[ChatMessage]:
         """Fetch the most recent N messages in a room (for conversation context injection)."""

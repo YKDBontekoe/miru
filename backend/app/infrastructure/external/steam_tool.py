@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 
 from crewai.tools import BaseTool
@@ -22,8 +23,20 @@ class SteamPlayerSummaryTool(BaseTool):
 
     steam_id: str = Field(..., description="The 17-digit Steam64 ID of the user.")
 
+    def _run(self) -> str:
+        """Sync wrapper around async implementation (used by CrewAI BaseTool.run)."""
+        return asyncio.run(self._arun())
+
     async def _arun(self) -> str:
-        """Async implementation of the tool."""
+        """Async implementation of the tool.
+
+        Fetches the player's persona name, online state, and currently playing
+        game (if any) from the Steam Web API.
+
+        Returns:
+            A JSON string with persona_name, status, profile_url and optionally
+            currently_playing, or an error message string on failure.
+        """
         try:
             summaries = await get_player_summaries([self.steam_id])
             if not summaries:
@@ -66,7 +79,20 @@ class SteamOwnedGamesTool(BaseTool):
 
     steam_id: str = Field(..., description="The 17-digit Steam64 ID of the user.")
 
+    def _run(self) -> str:
+        """Sync wrapper around async implementation (used by CrewAI BaseTool.run)."""
+        return asyncio.run(self._arun())
+
     async def _arun(self) -> str:
+        """Async implementation of the tool.
+
+        Fetches the list of games owned by the Steam user sorted by total
+        playtime and returns the top 10 most-played titles.
+
+        Returns:
+            A plain-text summary of the total game count and top 10 most-played
+            games with playtime in hours, or an error message string on failure.
+        """
         try:
             games = await get_owned_games(self.steam_id)
             if not games:
@@ -83,8 +109,6 @@ class SteamOwnedGamesTool(BaseTool):
                 results.append(f"{name} ({playtime_hours} hours)")
 
             total_games = len(games)
-            return f"Total games owned: {total_games}. Top 10 most played:
-" + "
-".join(results)
+            return f"Total games owned: {total_games}. Top 10 most played:\n" + "\n".join(results)
         except Exception as e:
             return f"Error fetching owned games: {e!s}"

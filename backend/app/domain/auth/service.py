@@ -5,8 +5,8 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import os
 import secrets
+import time
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -27,16 +27,29 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# In-memory challenge store (use Redis in production for horizontal scaling)
-_challenge_store: dict[str, str] = {}
+# In-memory challenge store: challenge_id -> (challenge_b64, expires_at)
+# Use Redis in production for horizontal scaling.
+_challenge_store: dict[str, tuple[str, float]] = {}
+_CHALLENGE_TTL = 300  # 5 minutes
 
 
 def _store_challenge(challenge_id: str, challenge: str) -> None:
-    _challenge_store[challenge_id] = challenge
+    # Prune any obviously expired entries on write (cheap O(n) cleanup)
+    now = time.monotonic()
+    expired = [k for k, (_, exp) in _challenge_store.items() if exp < now]
+    for k in expired:
+        _challenge_store.pop(k, None)
+    _challenge_store[challenge_id] = (challenge, now + _CHALLENGE_TTL)
 
 
 def _pop_challenge(challenge_id: str) -> str | None:
-    return _challenge_store.pop(challenge_id, None)
+    entry = _challenge_store.pop(challenge_id, None)
+    if entry is None:
+        return None
+    challenge, expires_at = entry
+    if time.monotonic() > expires_at:
+        return None  # expired
+    return challenge
 
 
 class AuthService:
@@ -161,12 +174,12 @@ class AuthService:
         """Generate WebAuthn authentication options."""
         rp_id, _, _ = self._rp_settings()
 
-        challenge_id = secrets.token_urlsafe(16)
         options = webauthn.generate_authentication_options(
             rp_id=rp_id,
             user_verification=UserVerificationRequirement.PREFERRED,
         )
 
+        challenge_id = secrets.token_urlsafe(16)
         _store_challenge(challenge_id, base64.b64encode(options.challenge).decode())
 
         return {
@@ -221,17 +234,42 @@ class AuthService:
         # Update sign count
         await self.repo.update_sign_count(passkey_id, verification.new_sign_count)
 
-        # Mint a Supabase session using the service role key
+        # Mint a Supabase session: generate_link returns a hashed_token we
+        # can exchange for a real session via verify_otp.
         from supabase import create_client
         admin_client = create_client(settings.supabase_url, settings.supabase_service_role_key)
-        session = admin_client.auth.admin.generate_link({
+
+        # Retrieve user email for the link generation
+        try:
+            user_resp = admin_client.auth.admin.get_user_by_id(str(user_id))
+            email = user_resp.user.email if user_resp and user_resp.user else f"{user_id}@passkey.local"
+        except Exception:
+            email = f"{user_id}@passkey.local"
+
+        link_resp = admin_client.auth.admin.generate_link({
             "type": "magiclink",
-            "email": passkey_row.get("email", f"{user_id}@passkey.local"),
+            "email": email,
         })
 
+        # Exchange the hashed token for a real session
+        hashed_token = getattr(link_resp, "hashed_token", None) or (
+            link_resp.properties.hashed_token if hasattr(link_resp, "properties") else None
+        )
+        verification_type = getattr(link_resp, "verification_type", "magiclink") or "magiclink"
+
+        if hashed_token:
+            session_resp = admin_client.auth.verify_otp({
+                "email": email,
+                "token_hash": hashed_token,
+                "type": verification_type,
+            })
+            session = session_resp.session if hasattr(session_resp, "session") else None
+        else:
+            session = None
+
         return {
-            "access_token": session.properties.access_token if hasattr(session, "properties") else "",
-            "refresh_token": session.properties.refresh_token if hasattr(session, "properties") else "",
+            "access_token": session.access_token if session else "",
+            "refresh_token": session.refresh_token if session else "",
             "user_id": str(user_id),
         }
 
