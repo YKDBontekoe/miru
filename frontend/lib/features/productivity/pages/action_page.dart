@@ -1,3 +1,4 @@
+import 'package:miru/core/api/productivity_service.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,198 +164,20 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
   }
 
   Future<void> _showEventDialog(
-    BuildContext context,
-    WidgetRef ref, [
+    BuildContext context, [
     CalendarEvent? existingEvent,
   ]) async {
-    final titleController = TextEditingController(text: existingEvent?.title);
-    final descController = TextEditingController(
-      text: existingEvent?.description,
+    final productivityService = ref.read(productivityServiceProvider);
+    void onRefresh() => ref.read(calendarEventsProvider.notifier).refresh();
+
+    await showDialog(
+      context: context,
+      builder: (context) => _EventDialog(
+        existingEvent: existingEvent,
+        productivityService: productivityService,
+        onRefresh: onRefresh,
+      ),
     );
-
-    // Default to next hour
-    final now = DateTime.now();
-    final defaultStart = DateTime(now.year, now.month, now.day, now.hour + 1);
-    final defaultEnd = defaultStart.add(const Duration(hours: 1));
-
-    DateTime selectedStart = existingEvent?.startTime.toLocal() ?? defaultStart;
-    DateTime selectedEnd = existingEvent?.endTime.toLocal() ?? defaultEnd;
-
-    try {
-      await showDialog(
-        context: context,
-        builder: (context) => StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(existingEvent == null ? 'New Event' : 'Edit Event'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Title'),
-                      autofocus: true,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    TextField(
-                      controller: descController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description (optional)',
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      children: [
-                        const Text('Start: '),
-                        TextButton(
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: selectedStart,
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
-                            );
-                            if (date != null && context.mounted) {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay.fromDateTime(
-                                  selectedStart,
-                                ),
-                              );
-                              if (time != null) {
-                                setState(() {
-                                  selectedStart = DateTime(
-                                    date.year,
-                                    date.month,
-                                    date.day,
-                                    time.hour,
-                                    time.minute,
-                                  );
-                                  if (selectedEnd.isBefore(selectedStart)) {
-                                    selectedEnd = selectedStart.add(
-                                      const Duration(hours: 1),
-                                    );
-                                  }
-                                });
-                              }
-                            }
-                          },
-                          child: Text(
-                            DateFormat('MMM d, h:mm a').format(selectedStart),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Text('End: '),
-                        TextButton(
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate: selectedEnd,
-                              firstDate: DateTime(2000),
-                              lastDate: DateTime(2100),
-                            );
-                            if (date != null && context.mounted) {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay.fromDateTime(
-                                  selectedEnd,
-                                ),
-                              );
-                              if (time != null) {
-                                setState(() {
-                                  selectedEnd = DateTime(
-                                    date.year,
-                                    date.month,
-                                    date.day,
-                                    time.hour,
-                                    time.minute,
-                                  );
-                                });
-                              }
-                            }
-                          },
-                          child: Text(
-                            DateFormat('MMM d, h:mm a').format(selectedEnd),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final title = titleController.text.trim();
-                    if (title.isEmpty) return;
-
-                    if (selectedEnd.isBefore(selectedStart) ||
-                        selectedEnd.isAtSameMomentAs(selectedStart)) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('End time must be after start time'),
-                          ),
-                        );
-                      }
-                      return;
-                    }
-
-                    final service = ref.read(productivityServiceProvider);
-
-                    try {
-                      if (existingEvent == null) {
-                        await service.createCalendarEvent(
-                          CalendarEventCreate(
-                            title: title,
-                            description: descController.text.trim(),
-                            startTime: selectedStart.toUtc(),
-                            endTime: selectedEnd.toUtc(),
-                          ),
-                        );
-                      } else {
-                        await service.updateCalendarEvent(
-                          existingEvent.id,
-                          CalendarEventUpdate(
-                            title: title,
-                            description: descController.text.trim(),
-                            startTime: selectedStart.toUtc(),
-                            endTime: selectedEnd.toUtc(),
-                          ),
-                        );
-                      }
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ref.read(calendarEventsProvider.notifier).refresh();
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Failed to save event')),
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-    } finally {
-      titleController.dispose();
-      descController.dispose();
-    }
   }
 
   @override
@@ -406,7 +229,7 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
                   final event = state.events[index];
                   return _EventTile(
                     event: event,
-                    onEdit: () => _showEventDialog(context, ref, event),
+                    onEdit: () => _showEventDialog(context, event),
                     onDelete: () async {
                       try {
                         await ref
@@ -436,7 +259,7 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
         ),
         child: FloatingActionButton(
           heroTag: 'calendar_fab',
-          onPressed: () => _showEventDialog(context, ref),
+          onPressed: () => _showEventDialog(context),
           child: const Icon(Icons.add),
         ),
       ),
@@ -599,6 +422,231 @@ class _EventTile extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _EventDialog extends StatefulWidget {
+  final CalendarEvent? existingEvent;
+  final ProductivityService productivityService;
+  final VoidCallback onRefresh;
+
+  const _EventDialog({
+    this.existingEvent,
+    required this.productivityService,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_EventDialog> createState() => _EventDialogState();
+}
+
+class _EventDialogState extends State<_EventDialog> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descController;
+  late DateTime _selectedStart;
+  late DateTime _selectedEnd;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.existingEvent?.title);
+    _descController = TextEditingController(
+      text: widget.existingEvent?.description,
+    );
+
+    final now = DateTime.now();
+    final defaultStart = DateTime(now.year, now.month, now.day, now.hour + 1);
+    final defaultEnd = defaultStart.add(const Duration(hours: 1));
+
+    _selectedStart = widget.existingEvent?.startTime.toLocal() ?? defaultStart;
+    _selectedEnd = widget.existingEvent?.endTime.toLocal() ?? defaultEnd;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.existingEvent == null ? 'New Event' : 'Edit Event'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Title'),
+              autofocus: true,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: _descController,
+              decoration: const InputDecoration(
+                labelText: 'Description (optional)',
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                const Text('Start: '),
+                TextButton(
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedStart,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null && context.mounted) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(_selectedStart),
+                      );
+                      if (time != null) {
+                        if (!mounted) return;
+                        setState(() {
+                          _selectedStart = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                          if (_selectedEnd.isBefore(_selectedStart)) {
+                            _selectedEnd = _selectedStart.add(
+                              const Duration(hours: 1),
+                            );
+                          }
+                        });
+                      }
+                    }
+                  },
+                  child: Text(
+                    DateFormat('MMM d, h:mm a').format(_selectedStart),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                const Text('End: '),
+                TextButton(
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedEnd,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (date != null && context.mounted) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(_selectedEnd),
+                      );
+                      if (time != null) {
+                        if (!mounted) return;
+                        setState(() {
+                          _selectedEnd = DateTime(
+                            date.year,
+                            date.month,
+                            date.day,
+                            time.hour,
+                            time.minute,
+                          );
+                        });
+                      }
+                    }
+                  },
+                  child: Text(DateFormat('MMM d, h:mm a').format(_selectedEnd)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving
+              ? null
+              : () async {
+                  final title = _titleController.text.trim();
+                  if (title.isEmpty) return;
+
+                  if (_selectedEnd.isBefore(_selectedStart) ||
+                      _selectedEnd.isAtSameMomentAs(_selectedStart)) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('End time must be after start time'),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
+                  setState(() {
+                    _isSaving = true;
+                  });
+
+                  try {
+                    if (widget.existingEvent == null) {
+                      await widget.productivityService.createCalendarEvent(
+                        CalendarEventCreate(
+                          title: title,
+                          description: _descController.text.trim(),
+                          startTime: _selectedStart.toUtc(),
+                          endTime: _selectedEnd.toUtc(),
+                        ),
+                      );
+                    } else {
+                      await widget.productivityService.updateCalendarEvent(
+                        widget.existingEvent!.id,
+                        CalendarEventUpdate(
+                          title: title,
+                          description: _descController.text.trim(),
+                          startTime: _selectedStart.toUtc(),
+                          endTime: _selectedEnd.toUtc(),
+                        ),
+                      );
+                    }
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      widget.onRefresh();
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to save event')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _isSaving = false;
+                      });
+                    }
+                  }
+                },
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Save'),
+        ),
+      ],
     );
   }
 }
