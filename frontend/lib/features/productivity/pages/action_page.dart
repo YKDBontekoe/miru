@@ -165,7 +165,7 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     BuildContext context,
     WidgetRef ref, [
     CalendarEvent? existingEvent,
-  ]) {
+  ]) async {
     final titleController = TextEditingController(text: existingEvent?.title);
     final descController = TextEditingController(
       text: existingEvent?.description,
