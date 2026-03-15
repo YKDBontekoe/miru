@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -41,7 +42,7 @@ class CalendarEventsNotifier extends AutoDisposeNotifier<CalendarEventsState> {
 
   @override
   CalendarEventsState build() {
-    _fetchPage(isRefresh: true);
+    unawaited(Future.microtask(() => _fetchPage(isRefresh: true)));
     return const CalendarEventsState(isLoading: true);
   }
 
