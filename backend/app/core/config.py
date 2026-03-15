@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     # e.g. "https://miru.app,https://www.miru.app"
     webauthn_expected_origin: str = "http://localhost"
     # Comma-separated allowed CORS origins — tighten in production
-    cors_allowed_origins: str = "*"
+    cors_allowed_origins: str = "http://localhost,http://localhost:8080"
     # Tavily Search API key for web search capabilities
     tavily_api_key: str | None = None
     # Steam Web API key for Steam games integration
