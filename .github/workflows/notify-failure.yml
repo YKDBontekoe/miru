@@ -4,8 +4,7 @@ on:
   workflow_run:
     workflows: 
       - "Backend CI/CD - Deploy to Azure Container Apps"
-      - "Flutter Web CI/CD - Deploy to Azure Static Web Apps"
-      - "Flutter iOS CI/CD - Deploy to TestFlight"
+      - "Flutter CI/CD Pipeline"
     types:
       - completed
 

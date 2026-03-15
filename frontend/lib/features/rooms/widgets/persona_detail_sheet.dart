@@ -109,7 +109,8 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                   decoration: BoxDecoration(
                     color: colors.primaryLight.withValues(alpha: 0.1),
                     border: Border.all(
-                        color: colors.primaryLight.withValues(alpha: 0.5)),
+                      color: colors.primaryLight.withValues(alpha: 0.5),
+                    ),
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   ),
                   child: Column(
@@ -119,13 +120,16 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                       Text(
                         'Lvl ${widget.agent.connectionLevel}',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: colors.primaryLight),
+                          fontWeight: FontWeight.bold,
+                          color: colors.primaryLight,
+                        ),
                       ),
                       Text(
                         'Connection',
                         style: TextStyle(
-                            fontSize: 10, color: colors.onSurfaceMuted),
+                          fontSize: 10,
+                          color: colors.onSurfaceMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -146,13 +150,16 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                       Text(
                         widget.agent.mood,
                         style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: colors.onSurface),
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
+                        ),
                       ),
                       Text(
                         'Current Mood',
                         style: TextStyle(
-                            fontSize: 10, color: colors.onSurfaceMuted),
+                          fontSize: 10,
+                          color: colors.onSurfaceMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -196,8 +203,10 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.delete_outline_rounded,
-                    color: AppColors.error),
+                : const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.error,
+                  ),
             label: const Text(
               'Delete Persona',
               style: TextStyle(color: AppColors.error),

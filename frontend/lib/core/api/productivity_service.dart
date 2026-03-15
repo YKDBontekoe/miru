@@ -12,7 +12,7 @@ class ProductivityService {
   final http.Client _client;
 
   ProductivityService({http.Client? client})
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   String get _normalizedBaseUrl {
     final raw = BackendService.baseUrl.value;
@@ -63,8 +63,12 @@ class ProductivityService {
     }
   }
 
-  Future<Task> updateTask(String id,
-      {String? title, String? description, bool? isCompleted}) async {
+  Future<Task> updateTask(
+    String id, {
+    String? title,
+    String? description,
+    bool? isCompleted,
+  }) async {
     final uri = Uri.parse('$_normalizedBaseUrl/productivity/tasks/$id');
     final Map<String, dynamic> updates = {};
     if (title != null) updates['title'] = title;
@@ -111,11 +115,14 @@ class ProductivityService {
     }
   }
 
-  Future<Note> createNote(String title, String content,
-      {bool isPinned = false,
-      String? agentId,
-      String? originMessageId,
-      String? originContext}) async {
+  Future<Note> createNote(
+    String title,
+    String content, {
+    bool isPinned = false,
+    String? agentId,
+    String? originMessageId,
+    String? originContext,
+  }) async {
     final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes');
     final response = await _client.post(
       uri,
@@ -137,8 +144,12 @@ class ProductivityService {
     }
   }
 
-  Future<Note> updateNote(String id,
-      {String? title, String? content, bool? isPinned}) async {
+  Future<Note> updateNote(
+    String id, {
+    String? title,
+    String? content,
+    bool? isPinned,
+  }) async {
     final uri = Uri.parse('$_normalizedBaseUrl/productivity/notes/$id');
     final Map<String, dynamic> updates = {};
     if (title != null) updates['title'] = title;

@@ -43,8 +43,9 @@ class BackendService {
     }
 
     // Strip trailing slash for consistency
-    final sanitized =
-        url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+    final sanitized = url.endsWith('/')
+        ? url.substring(0, url.length - 1)
+        : url;
 
     // Append /api/v1 if not present
     String finalUrl = sanitized;
@@ -82,15 +83,16 @@ class BackendService {
     Duration currentDelay = initialDelay;
 
     // The health endpoint is at the root, so we strip /api/v1
-    final uri =
-        Uri.parse(baseUrl.value.replaceAll(RegExp(r'/api/v1$'), '/health'));
+    final uri = Uri.parse(
+      baseUrl.value.replaceAll(RegExp(r'/api/v1$'), '/health'),
+    );
 
     try {
       for (int attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          final response = await client.get(uri).timeout(
-                const Duration(seconds: 5),
-              );
+          final response = await client
+              .get(uri)
+              .timeout(const Duration(seconds: 5));
 
           if (response.statusCode == 200) {
             debugPrint('Backend is awake after $attempt attempts');
@@ -98,7 +100,8 @@ class BackendService {
           }
         } catch (e) {
           debugPrint(
-              'Backend not awake yet (attempt $attempt/$maxAttempts): $e');
+            'Backend not awake yet (attempt $attempt/$maxAttempts): $e',
+          );
         }
 
         if (attempt < maxAttempts) {
@@ -106,10 +109,7 @@ class BackendService {
           // Simple backoff: double the delay up to a maximum of 5 seconds
           currentDelay = Duration(
             milliseconds: (currentDelay.inMilliseconds * 1.5)
-                .clamp(
-                  initialDelay.inMilliseconds,
-                  5000,
-                )
+                .clamp(initialDelay.inMilliseconds, 5000)
                 .toInt(),
           );
         }

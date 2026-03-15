@@ -6,7 +6,7 @@ on:
       flutter-version:
         description: 'Flutter version to use'
         type: string
-        default: '3.24.0'
+        default: '3.41.4'
       working-directory:
         description: 'Working directory'
         type: string
@@ -40,23 +40,30 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+
+      - name: Cache Pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ inputs.working-directory }}/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ inputs.flutter-version }}
           channel: 'stable'
-          cache: false
+          cache: true # Built-in caching for Flutter SDK
 
-      - name: Clean and install dependencies
-        run: |
-          flutter clean
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Verify dependencies
-        run: flutter pub deps
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Verify formatting
         if: inputs.run-lint

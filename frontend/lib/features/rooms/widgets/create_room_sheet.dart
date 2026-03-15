@@ -175,11 +175,13 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                         color: isSelected
                             ? colors.primaryLight.withValues(alpha: 0.1)
                             : colors.surfaceHigh,
-                        borderRadius:
-                            BorderRadius.circular(AppSpacing.radiusMd),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMd,
+                        ),
                         border: Border.all(
-                          color:
-                              isSelected ? colors.primaryLight : colors.border,
+                          color: isSelected
+                              ? colors.primaryLight
+                              : colors.border,
                           width: isSelected ? 2 : 1,
                         ),
                       ),

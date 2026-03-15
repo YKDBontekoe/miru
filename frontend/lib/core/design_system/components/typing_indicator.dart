@@ -70,7 +70,7 @@ class _BouncingDotState extends State<_BouncingDot>
         Colors.red,
         Colors.indigo,
         Colors.deepPurple,
-        Colors.orange
+        Colors.orange,
       ];
       dotColor =
           baseColors[widget.agentName!.hashCode.abs() % baseColors.length];

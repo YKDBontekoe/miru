@@ -194,9 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Forget memory?'),
-        content: Text(
-          'Should I forget this detail?\n\n"${memory.content}"',
-        ),
+        content: Text('Should I forget this detail?\n\n"${memory.content}"'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -553,15 +551,11 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       title: Text(
         memory.content,
-        style: AppTypography.bodyMedium.copyWith(
-          color: colors.onSurface,
-        ),
+        style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
       ),
       subtitle: Text(
         'Learned ${_formatDate(memory.createdAt)}',
-        style: AppTypography.bodySmall.copyWith(
-          color: colors.onSurfaceMuted,
-        ),
+        style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
       ),
       trailing: IconButton(
         icon: Icon(
@@ -590,9 +584,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         child: Text(
           'Only one memory available. More connections appear as Miru learns.',
-          style: AppTypography.bodySmall.copyWith(
-            color: colors.onSurfaceMuted,
-          ),
+          style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
         ),
       );
     }
@@ -689,10 +681,7 @@ class _GraphNode {
   const _GraphNode({required this.id, required this.content});
 
   factory _GraphNode.fromMemory(Memory memory) {
-    return _GraphNode(
-      id: memory.id,
-      content: memory.content,
-    );
+    return _GraphNode(id: memory.id, content: memory.content);
   }
 }
 
@@ -756,9 +745,7 @@ class _MemoryGraphPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
-          style: AppTypography.bodySmall.copyWith(
-            color: colors.onSurface,
-          ),
+          style: AppTypography.bodySmall.copyWith(color: colors.onSurface),
         ),
         textDirection: TextDirection.ltr,
         maxLines: 1,

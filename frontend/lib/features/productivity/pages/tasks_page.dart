@@ -12,8 +12,11 @@ final tasksProvider = FutureProvider.autoDispose<List<Task>>((ref) async {
   return service.listTasks();
 });
 
-void _showTaskDialog(BuildContext context, WidgetRef ref,
-    [Task? existingTask]) {
+void _showTaskDialog(
+  BuildContext context,
+  WidgetRef ref, [
+  Task? existingTask,
+]) {
   final titleController = TextEditingController(text: existingTask?.title);
   final descController = TextEditingController(text: existingTask?.description);
 
@@ -31,8 +34,9 @@ void _showTaskDialog(BuildContext context, WidgetRef ref,
           ),
           TextField(
             controller: descController,
-            decoration:
-                const InputDecoration(labelText: 'Description (optional)'),
+            decoration: const InputDecoration(
+              labelText: 'Description (optional)',
+            ),
             maxLines: 3,
           ),
         ],
@@ -51,8 +55,10 @@ void _showTaskDialog(BuildContext context, WidgetRef ref,
 
             try {
               if (existingTask == null) {
-                await service.createTask(title,
-                    description: descController.text.trim());
+                await service.createTask(
+                  title,
+                  description: descController.text.trim(),
+                );
               } else {
                 await service.updateTask(
                   existingTask.id,
@@ -69,7 +75,8 @@ void _showTaskDialog(BuildContext context, WidgetRef ref,
               if (ctx.mounted) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(
-                      content: Text('Failed to save task. Please try again.')),
+                    content: Text('Failed to save task. Please try again.'),
+                  ),
                 );
               }
             }
@@ -100,7 +107,8 @@ class TasksPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom: AppSpacing.bottomNavBarHeight +
+              bottom:
+                  AppSpacing.bottomNavBarHeight +
                   AppSpacing.md * 2 +
                   MediaQuery.viewPaddingOf(context).bottom,
             ),
@@ -129,9 +137,11 @@ class TasksPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-            bottom: AppSpacing.bottomNavBarHeight +
-                AppSpacing.md +
-                MediaQuery.viewPaddingOf(context).bottom),
+          bottom:
+              AppSpacing.bottomNavBarHeight +
+              AppSpacing.md +
+              MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: FloatingActionButton(
           onPressed: () => _showTaskDialog(context, ref),
           child: const Icon(Icons.add),

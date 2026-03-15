@@ -42,8 +42,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
   void initState() {
     super.initState();
     _roomName = widget.room.name;
-    _confettiController =
-        ConfettiController(duration: const Duration(seconds: 2));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
     _loadData();
   }
 
@@ -147,16 +148,18 @@ class _GroupChatPageState extends State<GroupChatPage> {
               HapticFeedback.heavyImpact();
               _confettiController.play();
               setState(() {
-                _messages.add(ChatMessage(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  roomId: widget.room.id,
-                  userId: null,
-                  agentId: null, // System message conceptually
-                  text:
-                      '**Level up!** You reached Connection Level $level with $agentName.',
-                  timestamp: DateTime.now(),
-                  status: MessageStatus.sent,
-                ));
+                _messages.add(
+                  ChatMessage(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    roomId: widget.room.id,
+                    userId: null,
+                    agentId: null, // System message conceptually
+                    text:
+                        '**Level up!** You reached Connection Level $level with $agentName.',
+                    timestamp: DateTime.now(),
+                    status: MessageStatus.sent,
+                  ),
+                );
               });
               _scrollToBottom();
             }

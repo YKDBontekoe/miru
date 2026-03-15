@@ -10,8 +10,11 @@ final notesProvider = FutureProvider.autoDispose<List<Note>>((ref) async {
   return service.listNotes();
 });
 
-void _showNoteDialog(BuildContext context, WidgetRef ref,
-    [Note? existingNote]) {
+void _showNoteDialog(
+  BuildContext context,
+  WidgetRef ref, [
+  Note? existingNote,
+]) {
   final titleController = TextEditingController(text: existingNote?.title);
   final contentController = TextEditingController(text: existingNote?.content);
 
@@ -70,7 +73,8 @@ void _showNoteDialog(BuildContext context, WidgetRef ref,
               if (ctx.mounted) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   const SnackBar(
-                      content: Text('Failed to save note. Please try again.')),
+                    content: Text('Failed to save note. Please try again.'),
+                  ),
                 );
               }
             }
@@ -88,6 +92,7 @@ class NotesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesAsync = ref.watch(notesProvider);
+    final agentsAsync = ref.watch(agentsProvider);
 
     return Scaffold(
       backgroundColor: context.colorScheme.surface,
@@ -109,7 +114,9 @@ class NotesPage extends ConsumerWidget {
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final note = notes[index];
-              return _NoteTile(note: note);
+              // Resolve conflict: Extract agents list to pass into tile
+              final agents = agentsAsync.value ?? [];
+              return _NoteTile(note: note, agents: agents);
             },
           );
         },
@@ -130,9 +137,10 @@ class NotesPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-            bottom: AppSpacing.bottomNavBarHeight +
-                AppSpacing.md +
-                MediaQuery.viewPaddingOf(context).bottom),
+          bottom: AppSpacing.bottomNavBarHeight +
+              AppSpacing.md +
+              MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: FloatingActionButton(
           onPressed: () => _showNoteDialog(context, ref),
           child: const Icon(Icons.add),
@@ -144,13 +152,13 @@ class NotesPage extends ConsumerWidget {
 
 class _NoteTile extends ConsumerWidget {
   final Note note;
+  final List<Agent> agents; // Keeping the main branch parameter requirement
 
-  const _NoteTile({required this.note});
+  const _NoteTile({required this.note, required this.agents});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.read(productivityServiceProvider);
-    final agentsAsync = ref.watch(agentsProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -181,8 +189,10 @@ class _NoteTile extends ConsumerWidget {
                 }
               },
             ),
-            title: Text(note.title,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              note.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
               note.content,
               maxLines: 4,
@@ -204,8 +214,7 @@ class _NoteTile extends ConsumerWidget {
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Failed to delete note')),
+                          const SnackBar(content: Text('Failed to delete note')),
                         );
                       }
                     }
@@ -237,24 +246,20 @@ class _NoteTile extends ConsumerWidget {
                               size: 14, color: context.colorScheme.primary),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
-                            child: agentsAsync.when(
-                              data: (agents) {
-                                final agent = agents
-                                    .where((a) => a.id == note.agentId)
-                                    .firstOrNull;
-                                return Text(
-                                  agent != null
-                                      ? 'Created by ${agent.name}'
-                                      : 'Created by Agent',
-                                  style: AppTypography.labelSmall.copyWith(
-                                    color: context.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                );
-                              },
-                              loading: () => const Text('Loading agent...'),
-                              error: (_, __) => const Text('Unknown Agent'),
-                            ),
+                            child: () {
+                              final agent = agents
+                                  .where((a) => a.id == note.agentId)
+                                  .firstOrNull;
+                              return Text(
+                                agent != null
+                                    ? 'Created by ${agent.name}'
+                                    : 'Created by Agent',
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: context.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            }(),
                           ),
                         ],
                       ),

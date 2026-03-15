@@ -1,0 +1,173 @@
+name: Flutter CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/flutter-pipeline.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: flutter-pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.41.4'
+  WORKING_DIRECTORY: './frontend'
+
+jobs:
+  flutter-ci:
+    name: Flutter CI
+    uses: ./.github/workflows/reusable-flutter-setup.yml
+    with:
+      flutter-version: '3.41.4'
+      working-directory: './frontend'
+      run-tests: true
+      run-lint: true
+      upload-coverage: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  android-build:
+    name: Build Android (APK & Bundle)
+    needs: [flutter-ci]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ env.WORKING_DIRECTORY }}/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+      - name: Build APK
+        run: flutter build apk --release
+      - name: Build App Bundle
+        run: flutter build appbundle --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: ${{ env.WORKING_DIRECTORY }}/build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-bundle
+          path: ${{ env.WORKING_DIRECTORY }}/build/app/outputs/bundle/release/app-release.aab
+
+  ios-build:
+    name: Build iOS (IPA)
+    needs: [flutter-ci]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ env.WORKING_DIRECTORY }}/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+      - name: Build IPA
+        run: flutter build ios --release --no-codesign
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: ${{ env.WORKING_DIRECTORY }}/build/ios/iphoneos/Runner.app
+
+  web-build:
+    name: Build Web
+    needs: [flutter-ci]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ env.WORKING_DIRECTORY }}/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+      - name: Build Web
+        run: flutter build web --release
+      - name: Upload Web Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: ${{ env.WORKING_DIRECTORY }}/build/web
+
+  smoke-test-web:
+    name: Web Smoke Test
+    needs: [web-build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download Web Build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./web-dist
+      - name: Run Lighthouse (Smoke Test)
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: './frontend/.lighthouserc.json'
+
+  deploy:
+    name: Deploy Flutter Apps
+    needs: [android-build, ios-build, web-build, smoke-test-web]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Placeholder
+        run: |
+          echo "Deploying to production environments..."
+          # Add actual deployment steps here (e.g. Firebase App Distribution, App Store Connect, S3/Azure, etc.)

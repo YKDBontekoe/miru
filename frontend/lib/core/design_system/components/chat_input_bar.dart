@@ -45,8 +45,9 @@ class ChatInputBar extends StatelessWidget {
     final isDark = context.isDark;
 
     // Subtle top border instead of full container color
-    final containerColor =
-        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    final containerColor = isDark
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
     final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
 
     return SafeArea(
@@ -212,11 +213,7 @@ class _CircleButton extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: Center(child: child),
-          ),
+          child: SizedBox(width: 40, height: 40, child: Center(child: child)),
         ),
       ),
     );
