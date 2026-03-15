@@ -4,8 +4,7 @@ import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/features/rooms/pages/rooms_page.dart';
 import 'package:miru/features/rooms/widgets/create_persona_sheet.dart';
 import 'package:miru/features/settings/pages/settings_page.dart';
-import 'package:miru/features/productivity/pages/tasks_page.dart';
-import 'package:miru/features/productivity/pages/notes_page.dart';
+import 'package:miru/features/productivity/pages/action_page.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -57,10 +56,9 @@ class _MainScaffoldState extends State<MainScaffold> {
         index: _currentIndex,
         children: [
           RoomsPage(personaRefreshListenable: _personaRefreshNotifier), // 0
-          const TasksPage(), // 1
+          const ActionPage(), // 1
           const SizedBox(), // Placeholder for index 2 (Add button)     // 2
-          const NotesPage(), // 3
-          const SettingsPage(), // 4
+          const SettingsPage(), // 3
         ],
       ),
       bottomNavigationBar: _buildLiquidGlassNavBar(colors),
@@ -101,28 +99,20 @@ class _MainScaffoldState extends State<MainScaffold> {
                   colors: colors,
                 ),
                 _buildNavItem(
-                  icon: Icons.task_alt_outlined,
-                  activeIcon: Icons.task_alt_rounded,
-                  label: 'Tasks',
+                  icon: Icons.bolt_outlined,
+                  activeIcon: Icons.bolt_rounded,
+                  label: 'Action',
                   isActive: _currentIndex == 1,
                   onTap: () => _onItemTapped(1),
                   colors: colors,
                 ),
                 _buildCreateButton(colors),
                 _buildNavItem(
-                  icon: Icons.note_alt_outlined,
-                  activeIcon: Icons.note_alt_rounded,
-                  label: 'Notes',
-                  isActive: _currentIndex == 3,
-                  onTap: () => _onItemTapped(3),
-                  colors: colors,
-                ),
-                _buildNavItem(
                   icon: Icons.settings_outlined,
                   activeIcon: Icons.settings_rounded,
                   label: 'Settings',
-                  isActive: _currentIndex == 4,
-                  onTap: () => _onItemTapped(4),
+                  isActive: _currentIndex == 3,
+                  onTap: () => _onItemTapped(3),
                   colors: colors,
                 ),
               ],
