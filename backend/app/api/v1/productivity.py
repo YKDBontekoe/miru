@@ -191,3 +191,49 @@ async def delete_event(
 ) -> None:
     """Delete a specific calendar event."""
     await ProductivityService.delete_event(user_id, event_id)
+
+
+# ---------------------------------------------------------------------------
+# iCal Export
+# ---------------------------------------------------------------------------
+
+
+@router.get("/calendar/export.ics")
+async def export_ical(
+    user_id: CurrentUser,
+) -> bytes:
+    """Export all calendar events as an iCal (.ics) file."""
+    from datetime import timezone
+
+    from fastapi.responses import Response
+    from icalendar import Calendar, Event as ICalEvent
+
+    events = await ProductivityService.list_events(user_id, limit=500)
+
+    cal = Calendar()
+    cal.add("prodid", "-//Miru AI Assistant//miru.app//EN")
+    cal.add("version", "2.0")
+    cal.add("calscale", "GREGORIAN")
+    cal.add("method", "PUBLISH")
+    cal.add("x-wr-calname", "Miru Calendar")
+
+    for event in events:
+        ical_event = ICalEvent()
+        ical_event.add("summary", event.title)
+        if event.description:
+            ical_event.add("description", event.description)
+        if event.location:
+            ical_event.add("location", event.location)
+        ical_event.add("dtstart", event.start_time.replace(tzinfo=timezone.utc))
+        ical_event.add("dtend", event.end_time.replace(tzinfo=timezone.utc))
+        ical_event.add("uid", str(event.id))
+        if event.origin_context:
+            ical_event.add("comment", f"Created by agent: {event.origin_context}")
+        cal.add_component(ical_event)
+
+    ics_bytes = cal.to_ical()
+    return Response(
+        content=ics_bytes,
+        media_type="text/calendar",
+        headers={"Content-Disposition": "attachment; filename=miru-calendar.ics"},
+    )

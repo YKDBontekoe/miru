@@ -27,9 +27,9 @@ class MemoryRepository:
             return True
         return False
 
-    async def list_all_memories(self, user_id: UUID, limit: int = 100) -> list[Memory]:
+    async def list_all_memories(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[Memory]:
         """Fetch all memories for a user (no vector match)."""
-        return await Memory.filter(user_id=user_id).limit(limit).all()
+        return await Memory.filter(user_id=user_id).order_by("-created_at").limit(limit).offset(offset).all()
 
     async def match_memories(
         self,

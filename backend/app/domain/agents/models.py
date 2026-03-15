@@ -291,3 +291,16 @@ class AgentGenerationResponse(BaseModel):
         description="List of integration IDs (e.g., discord, slack) the agent could use.",
     )
     goals: list[str]
+
+
+class AgentTemplateResponse(BaseModel):
+    """Schema for returning agent template data."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    description: str
+    personality: str
+    goals: list[str] = []
+    created_at: datetime

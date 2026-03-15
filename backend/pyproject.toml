@@ -8,7 +8,6 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.29.0",
     "supabase>=2.3.0",
-    "openrouter>=0.7.11",
     "crewai[tools]>=1.10.1",
     "crewai-tools>=0.12.1",
     "tavily-python>=0.5.0",
@@ -24,7 +23,7 @@ dependencies = [
     "tortoise-orm>=0.24.0",
     "aerich>=0.7.2",
     "asyncpg>=0.30.0",
-    "nest-asyncio",
+    "icalendar>=5.0.0",
     "litellm>=1.82.1",
 ]
 

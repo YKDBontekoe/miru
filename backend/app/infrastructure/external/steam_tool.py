@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 
 from crewai.tools import BaseTool
@@ -22,17 +21,6 @@ class SteamPlayerSummaryTool(BaseTool):
     )
 
     steam_id: str = Field(..., description="The 17-digit Steam64 ID of the user.")
-
-    def _run(self) -> str:
-        """Run the tool synchronously."""
-        try:
-            asyncio.get_running_loop()
-            import nest_asyncio
-
-            nest_asyncio.apply()
-        except RuntimeError:
-            pass
-        return asyncio.run(self._arun())
 
     async def _arun(self) -> str:
         """Async implementation of the tool."""
@@ -78,17 +66,6 @@ class SteamOwnedGamesTool(BaseTool):
 
     steam_id: str = Field(..., description="The 17-digit Steam64 ID of the user.")
 
-    def _run(self) -> str:
-        """Run the tool synchronously."""
-        try:
-            asyncio.get_running_loop()
-            import nest_asyncio
-
-            nest_asyncio.apply()
-        except RuntimeError:
-            pass
-        return asyncio.run(self._arun())
-
     async def _arun(self) -> str:
         try:
             games = await get_owned_games(self.steam_id)
@@ -106,6 +83,8 @@ class SteamOwnedGamesTool(BaseTool):
                 results.append(f"{name} ({playtime_hours} hours)")
 
             total_games = len(games)
-            return f"Total games owned: {total_games}. Top 10 most played:\n" + "\n".join(results)
+            return f"Total games owned: {total_games}. Top 10 most played:
+" + "
+".join(results)
         except Exception as e:
             return f"Error fetching owned games: {e!s}"

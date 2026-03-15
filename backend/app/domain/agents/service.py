@@ -11,6 +11,8 @@ from app.domain.agents.models import (
     AgentGenerationResponse,
     AgentIntegration,
     AgentResponse,
+    AgentTemplate,
+    AgentTemplateResponse,
     Capability,
     Integration,
 )
@@ -161,7 +163,62 @@ class AgentService:
         )
 
     async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
-        """Analyze history and update agent mood via repository."""
+        """Analyze recent conversation history and update agent mood via LLM."""
         if not recent_history.strip():
             return
-        await self.repo.update_mood(agent_id, "Optimistic")
+        from app.infrastructure.external.openrouter import chat_completion
+        try:
+            mood = await chat_completion(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an emotional analyst. Respond with a single word describing "
+                            "the dominant mood of the following conversation (e.g. Curious, Happy, "
+                            "Frustrated, Excited, Thoughtful, Neutral, Optimistic, Anxious)."
+                        ),
+                    },
+                    {"role": "user", "content": recent_history[-2000:]},  # limit tokens
+                ]
+            )
+            mood = mood.strip().split()[0][:50]  # first word, max 50 chars
+        except Exception as exc:
+            logger.warning("Mood update failed, defaulting to Neutral: %s", exc)
+            mood = "Neutral"
+        await self.repo.update_mood(agent_id, mood)
+
+    async def list_templates(self) -> list[AgentTemplateResponse]:
+        """List all available agent templates."""
+        templates = await self.repo.list_templates()
+        return [
+            AgentTemplateResponse(
+                id=t.pk,
+                name=t.name,
+                description=t.description,
+                personality=t.personality,
+                goals=t.goals or [],
+                created_at=t.created_at,
+            )
+            for t in templates
+        ]
+
+    async def create_from_template(
+        self,
+        template_id: UUID,
+        user_id: UUID,
+        name_override: str | None = None,
+    ) -> AgentResponse:
+        """Create a new agent from an existing template."""
+        template = await self.repo.get_template_by_id(template_id)
+        if not template:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Agent template not found")
+
+        agent_data = AgentCreate(
+            name=name_override or template.name,
+            personality=template.personality,
+            description=template.description,
+            goals=template.goals or [],
+            capabilities=[cap.pk for cap in template.capabilities.related_objects],
+        )
+        return await self.create_agent(agent_data, user_id)

@@ -22,45 +22,69 @@ router = APIRouter(tags=["Auth"])
 
 @router.post("/passkey/register/options")
 async def get_registration_options(
-    _data: PasskeyRegisterOptionsRequest,
-    _user_id: CurrentUser,
-    _service: Annotated[AuthService, Depends(get_auth_service)],
+    data: PasskeyRegisterOptionsRequest,
+    user_id: CurrentUser,
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
-    """Get options for passkey registration."""
-    # Placeholder for actual WebAuthn logic
-    return {"challenge": "dummy_challenge", "rp": {"name": "Miru", "id": "localhost"}}
+    """Get options for passkey registration (real WebAuthn challenge)."""
+    try:
+        from app.infrastructure.database.supabase import get_supabase_client
+        client = get_supabase_client()
+        user_resp = client.auth.admin.get_user_by_id(str(user_id))
+        username = (user_resp.user.email or str(user_id)) if user_resp and user_resp.user else str(user_id)
+    except Exception:
+        username = str(user_id)
+
+    return await service.get_registration_options(
+        user_id=user_id,
+        username=username,
+        device_name=data.device_name,
+    )
 
 
 @router.post("/passkey/register/verify")
 async def verify_registration(
     data: PasskeyRegisterVerifyRequest,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
     """Verify passkey registration."""
-    await service.verify_registration(data.challenge_id, data.credential)
+    try:
+        await service.verify_registration(
+            challenge_id=data.challenge_id,
+            credential_json=data.credential,
+            user_id=user_id,
+            device_name=data.device_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "ok"}
 
 
 @router.post("/passkey/login/options")
 async def get_login_options(
-    _data: PasskeyLoginOptionsRequest,
-    _service: Annotated[AuthService, Depends(get_auth_service)],
+    data: PasskeyLoginOptionsRequest,
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
-    """Get options for passkey login."""
-    return {"challenge": "dummy_challenge"}
+    """Get options for passkey login (real WebAuthn challenge)."""
+    return await service.get_login_options(email=data.email)
 
 
 @router.post("/passkey/login/verify")
 async def verify_login(
-    _data: PasskeyLoginVerifyRequest,
-    _service: Annotated[AuthService, Depends(get_auth_service)],
+    data: PasskeyLoginVerifyRequest,
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
-    """Verify passkey login and return tokens."""
-    return {
-        "access_token": "dummy_access_token",
-        "refresh_token": "dummy_refresh_token",
-    }
+    """Verify passkey login assertion and return tokens."""
+    try:
+        return await service.verify_login(
+            challenge_id=data.challenge_id,
+            credential_json=data.credential,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail="Authentication failed") from exc
 
 
 @router.get("/passkey/list", response_model=dict[str, list[PasskeyRecord]])
