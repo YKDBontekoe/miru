@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from crewai.tools import BaseTool
+from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from app.domain.productivity.models import NoteCreate, TaskCreate, TaskUpdate
@@ -324,6 +326,8 @@ class CreateEventTool(BaseTool):
             )
 
             return f"Successfully created calendar event '{event.title}' with ID {event.id}."
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("Error in CreateEventTool")
             return "Error creating calendar event."
@@ -369,19 +373,29 @@ class UpdateEventTool(BaseTool):
         try:
             from app.domain.productivity.models import CalendarEventUpdate
 
-            update_data = CalendarEventUpdate(
-                title=title,
-                description=description,
-                start_time=start_time,
-                end_time=end_time,
-                is_all_day=is_all_day,
-                location=location,
-            )
+            update_fields: dict[str, Any] = {}
+            if title is not None:
+                update_fields["title"] = title
+            if description is not None:
+                update_fields["description"] = description
+            if start_time is not None:
+                update_fields["start_time"] = start_time
+            if end_time is not None:
+                update_fields["end_time"] = end_time
+            if is_all_day is not None:
+                update_fields["is_all_day"] = is_all_day
+            if location is not None:
+                update_fields["location"] = location
+
+            update_data = CalendarEventUpdate(**update_fields)
+
             event = await ProductivityService.update_event(
                 user_id=self.user_id, event_id=event_id, update_data=update_data
             )
 
             return f"Successfully updated calendar event '{event.title}' with ID {event.id}."
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("Error in UpdateEventTool")
             return "Error updating calendar event."
@@ -412,6 +426,8 @@ class DeleteEventTool(BaseTool):
         try:
             await ProductivityService.delete_event(user_id=self.user_id, event_id=event_id)
             return f"Successfully deleted calendar event with ID {event_id}."
+        except HTTPException:
+            raise
         except Exception:
             logger.exception("Error in DeleteEventTool")
             return "Error deleting calendar event."

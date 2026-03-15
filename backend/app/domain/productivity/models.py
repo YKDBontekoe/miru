@@ -251,7 +251,7 @@ class CalendarEvent(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY calendar_events_owner_all ON public.calendar_events FOR ALL USING (auth.uid() = user_id);",
-            "ALTER TABLE public.calendar_events ADD CONSTRAINT check_end_after_start CHECK (end_time >= start_time);",
+            "ALTER TABLE public.calendar_events ADD CONSTRAINT check_end_after_start CHECK (end_time > start_time);",
         ]
 
 
@@ -270,8 +270,8 @@ class CalendarEventCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_time_range(self) -> CalendarEventCreate:
-        if self.end_time < self.start_time:
-            raise ValueError("end_time must be greater than or equal to start_time")
+        if self.end_time <= self.start_time:
+            raise ValueError("end_time must be greater than start_time")
         return self
 
 

@@ -8,10 +8,79 @@ import 'tasks_page.dart';
 import 'notes_page.dart';
 import '../../../core/api/agents_service.dart';
 
+class CalendarEventsState {
+  final List<CalendarEvent> events;
+  final bool isLoading;
+  final bool hasError;
+  final bool hasReachedEnd;
+
+  const CalendarEventsState({
+    this.events = const [],
+    this.isLoading = false,
+    this.hasError = false,
+    this.hasReachedEnd = false,
+  });
+
+  CalendarEventsState copyWith({
+    List<CalendarEvent>? events,
+    bool? isLoading,
+    bool? hasError,
+    bool? hasReachedEnd,
+  }) {
+    return CalendarEventsState(
+      events: events ?? this.events,
+      isLoading: isLoading ?? this.isLoading,
+      hasError: hasError ?? this.hasError,
+      hasReachedEnd: hasReachedEnd ?? this.hasReachedEnd,
+    );
+  }
+}
+
+class CalendarEventsNotifier extends AutoDisposeNotifier<CalendarEventsState> {
+  static const int _pageSize = 50;
+
+  @override
+  CalendarEventsState build() {
+    _fetchPage(isRefresh: true);
+    return const CalendarEventsState(isLoading: true);
+  }
+
+  Future<void> _fetchPage({bool isRefresh = false}) async {
+    if (state.isLoading && !isRefresh) return;
+
+    final service = ref.read(productivityServiceProvider);
+
+    if (isRefresh) {
+      state = const CalendarEventsState(isLoading: true);
+    } else {
+      state = state.copyWith(isLoading: true);
+    }
+
+    try {
+      final currentOffset = isRefresh ? 0 : state.events.length;
+      final newEvents = await service.listCalendarEvents(
+        limit: _pageSize,
+        offset: currentOffset,
+      );
+
+      state = state.copyWith(
+        events: isRefresh ? newEvents : [...state.events, ...newEvents],
+        isLoading: false,
+        hasReachedEnd: newEvents.length < _pageSize,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, hasError: true);
+    }
+  }
+
+  Future<void> fetchNextPage() => _fetchPage();
+  Future<void> refresh() => _fetchPage(isRefresh: true);
+}
+
 final calendarEventsProvider =
-    FutureProvider.autoDispose<List<CalendarEvent>>((ref) async {
-  final service = ref.watch(productivityServiceProvider);
-  return service.listCalendarEvents();
+    AutoDisposeNotifierProvider<CalendarEventsNotifier, CalendarEventsState>(
+        () {
+  return CalendarEventsNotifier();
 });
 
 class ActionPage extends ConsumerStatefulWidget {
@@ -66,8 +135,34 @@ class _ActionPageState extends ConsumerState<ActionPage>
   }
 }
 
-class _CalendarTab extends ConsumerWidget {
+class _CalendarTab extends ConsumerStatefulWidget {
   const _CalendarTab();
+
+  @override
+  ConsumerState<_CalendarTab> createState() => _CalendarTabState();
+}
+
+class _CalendarTabState extends ConsumerState<_CalendarTab> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(calendarEventsProvider.notifier).fetchNextPage();
+    }
+  }
 
   void _showEventDialog(BuildContext context, WidgetRef ref,
       [CalendarEvent? existingEvent]) {
@@ -213,7 +308,7 @@ class _CalendarTab extends ConsumerWidget {
                   }
                   if (context.mounted) {
                     Navigator.pop(context);
-                    ref.invalidate(calendarEventsProvider);
+                    ref.read(calendarEventsProvider.notifier).refresh();
                   }
                 } catch (e) {
                   if (context.mounted) {
@@ -232,63 +327,77 @@ class _CalendarTab extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final eventsAsync = ref.watch(calendarEventsProvider);
+  Widget build(BuildContext context) {
+    final state = ref.watch(calendarEventsProvider);
 
     return Scaffold(
-      body: eventsAsync.when(
-        data: (events) {
-          if (events.isEmpty) {
-            return const Center(child: Text('No events yet. Add one!'));
-          }
-
-          return ListView.builder(
-            padding: EdgeInsets.only(
-              top: AppSpacing.md,
-              left: AppSpacing.md,
-              right: AppSpacing.md,
-              bottom: AppSpacing.bottomNavBarHeight +
-                  AppSpacing.md * 2 +
-                  MediaQuery.viewPaddingOf(context).bottom,
-            ),
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              final event = events[index];
-              return _EventTile(
-                event: event,
-                onEdit: () => _showEventDialog(context, ref, event),
-                onDelete: () async {
-                  try {
-                    await ref
-                        .read(productivityServiceProvider)
-                        .deleteCalendarEvent(event.id);
-                    ref.invalidate(calendarEventsProvider);
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to delete event')),
-                      );
-                    }
-                  }
-                },
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Unable to load events.'),
-              TextButton(
-                onPressed: () => ref.invalidate(calendarEventsProvider),
-                child: const Text('Retry'),
+      body: state.hasError && state.events.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Unable to load events.'),
+                  TextButton(
+                    onPressed: () =>
+                        ref.read(calendarEventsProvider.notifier).refresh(),
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : state.isLoading && state.events.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : state.events.isEmpty
+                  ? const Center(child: Text('No events yet. Add one!'))
+                  : RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(calendarEventsProvider.notifier).refresh(),
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: EdgeInsets.only(
+                          top: AppSpacing.md,
+                          left: AppSpacing.md,
+                          right: AppSpacing.md,
+                          bottom: AppSpacing.bottomNavBarHeight +
+                              AppSpacing.md * 2 +
+                              MediaQuery.viewPaddingOf(context).bottom,
+                        ),
+                        itemCount:
+                            state.events.length + (state.isLoading ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == state.events.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(AppSpacing.md),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+
+                          final event = state.events[index];
+                          return _EventTile(
+                            event: event,
+                            onEdit: () => _showEventDialog(context, ref, event),
+                            onDelete: () async {
+                              try {
+                                await ref
+                                    .read(productivityServiceProvider)
+                                    .deleteCalendarEvent(event.id);
+                                ref
+                                    .read(calendarEventsProvider.notifier)
+                                    .refresh();
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text('Failed to delete event')),
+                                  );
+                                }
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
             bottom: AppSpacing.bottomNavBarHeight +
