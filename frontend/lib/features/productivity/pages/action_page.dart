@@ -1,3 +1,4 @@
+import 'package:miru/core/api/productivity_service.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -166,9 +167,16 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     BuildContext context, [
     CalendarEvent? existingEvent,
   ]) async {
+    final productivityService = ref.read(productivityServiceProvider);
+    void onRefresh() => ref.read(calendarEventsProvider.notifier).refresh();
+
     await showDialog(
       context: context,
-      builder: (context) => _EventDialog(existingEvent: existingEvent),
+      builder: (context) => _EventDialog(
+        existingEvent: existingEvent,
+        productivityService: productivityService,
+        onRefresh: onRefresh,
+      ),
     );
   }
 
@@ -418,20 +426,27 @@ class _EventTile extends ConsumerWidget {
   }
 }
 
-class _EventDialog extends ConsumerStatefulWidget {
+class _EventDialog extends StatefulWidget {
   final CalendarEvent? existingEvent;
+  final ProductivityService productivityService;
+  final VoidCallback onRefresh;
 
-  const _EventDialog({this.existingEvent});
+  const _EventDialog({
+    this.existingEvent,
+    required this.productivityService,
+    required this.onRefresh,
+  });
 
   @override
-  ConsumerState<_EventDialog> createState() => _EventDialogState();
+  State<_EventDialog> createState() => _EventDialogState();
 }
 
-class _EventDialogState extends ConsumerState<_EventDialog> {
+class _EventDialogState extends State<_EventDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
   late DateTime _selectedStart;
   late DateTime _selectedEnd;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -495,6 +510,7 @@ class _EventDialogState extends ConsumerState<_EventDialog> {
                         initialTime: TimeOfDay.fromDateTime(_selectedStart),
                       );
                       if (time != null) {
+                        if (!mounted) return;
                         setState(() {
                           _selectedStart = DateTime(
                             date.year,
@@ -535,6 +551,7 @@ class _EventDialogState extends ConsumerState<_EventDialog> {
                         initialTime: TimeOfDay.fromDateTime(_selectedEnd),
                       );
                       if (time != null) {
+                        if (!mounted) return;
                         setState(() {
                           _selectedEnd = DateTime(
                             date.year,
@@ -560,58 +577,74 @@ class _EventDialogState extends ConsumerState<_EventDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () async {
-            final title = _titleController.text.trim();
-            if (title.isEmpty) return;
+          onPressed: _isSaving
+              ? null
+              : () async {
+                  final title = _titleController.text.trim();
+                  if (title.isEmpty) return;
 
-            if (_selectedEnd.isBefore(_selectedStart) ||
-                _selectedEnd.isAtSameMomentAs(_selectedStart)) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('End time must be after start time'),
-                  ),
-                );
-              }
-              return;
-            }
+                  if (_selectedEnd.isBefore(_selectedStart) ||
+                      _selectedEnd.isAtSameMomentAs(_selectedStart)) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('End time must be after start time'),
+                        ),
+                      );
+                    }
+                    return;
+                  }
 
-            final service = ref.read(productivityServiceProvider);
+                  setState(() {
+                    _isSaving = true;
+                  });
 
-            try {
-              if (widget.existingEvent == null) {
-                await service.createCalendarEvent(
-                  CalendarEventCreate(
-                    title: title,
-                    description: _descController.text.trim(),
-                    startTime: _selectedStart.toUtc(),
-                    endTime: _selectedEnd.toUtc(),
-                  ),
-                );
-              } else {
-                await service.updateCalendarEvent(
-                  widget.existingEvent!.id,
-                  CalendarEventUpdate(
-                    title: title,
-                    description: _descController.text.trim(),
-                    startTime: _selectedStart.toUtc(),
-                    endTime: _selectedEnd.toUtc(),
-                  ),
-                );
-              }
-              if (context.mounted) {
-                Navigator.pop(context);
-                ref.read(calendarEventsProvider.notifier).refresh();
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Failed to save event')),
-                );
-              }
-            }
-          },
-          child: const Text('Save'),
+                  try {
+                    if (widget.existingEvent == null) {
+                      await widget.productivityService.createCalendarEvent(
+                        CalendarEventCreate(
+                          title: title,
+                          description: _descController.text.trim(),
+                          startTime: _selectedStart.toUtc(),
+                          endTime: _selectedEnd.toUtc(),
+                        ),
+                      );
+                    } else {
+                      await widget.productivityService.updateCalendarEvent(
+                        widget.existingEvent!.id,
+                        CalendarEventUpdate(
+                          title: title,
+                          description: _descController.text.trim(),
+                          startTime: _selectedStart.toUtc(),
+                          endTime: _selectedEnd.toUtc(),
+                        ),
+                      );
+                    }
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      widget.onRefresh();
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to save event')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _isSaving = false;
+                      });
+                    }
+                  }
+                },
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Save'),
         ),
       ],
     );
