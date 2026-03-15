@@ -395,8 +395,8 @@ class _AuthPageState extends State<AuthPage>
                     onPressed: _isLoadingPassword ? null : _signInWithPassword,
                     child: _isLoadingPassword
                         ? const SizedBox(
-                            height: 18,
-                            width: 18,
+                            height: AppSpacing.iconMd,
+                            width: AppSpacing.iconMd,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text('Sign in'),
@@ -408,8 +408,8 @@ class _AuthPageState extends State<AuthPage>
                         : _sendMagicLink,
                     child: _isLoadingMagicLink
                         ? const SizedBox(
-                            height: 18,
-                            width: 18,
+                            height: AppSpacing.iconMd,
+                            width: AppSpacing.iconMd,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text('Send magic link'),
@@ -443,8 +443,8 @@ class _AuthPageState extends State<AuthPage>
                       : _signInWithPasskey,
                   icon: _isLoadingPasskey
                       ? const SizedBox(
-                          height: 16,
-                          width: 16,
+                          height: AppSpacing.iconSm,
+                          width: AppSpacing.iconSm,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.fingerprint_rounded),
