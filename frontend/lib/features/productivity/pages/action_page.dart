@@ -161,7 +161,7 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     }
   }
 
-  void _showEventDialog(
+  Future<void> _showEventDialog(
     BuildContext context,
     WidgetRef ref, [
     CalendarEvent? existingEvent,
@@ -179,162 +179,181 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     DateTime selectedStart = existingEvent?.startTime.toLocal() ?? defaultStart;
     DateTime selectedEnd = existingEvent?.endTime.toLocal() ?? defaultEnd;
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text(existingEvent == null ? 'New Event' : 'Edit Event'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Title'),
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description (optional)',
+    try {
+      await showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(existingEvent == null ? 'New Event' : 'Edit Event'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                      autofocus: true,
                     ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      const Text('Start: '),
-                      TextButton(
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedStart,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null && context.mounted) {
-                            final time = await showTimePicker(
+                    const SizedBox(height: AppSpacing.sm),
+                    TextField(
+                      controller: descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description (optional)',
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        const Text('Start: '),
+                        TextButton(
+                          onPressed: () async {
+                            final date = await showDatePicker(
                               context: context,
-                              initialTime: TimeOfDay.fromDateTime(
-                                selectedStart,
-                              ),
+                              initialDate: selectedStart,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
                             );
-                            if (time != null) {
-                              setState(() {
-                                selectedStart = DateTime(
-                                  date.year,
-                                  date.month,
-                                  date.day,
-                                  time.hour,
-                                  time.minute,
-                                );
-                                if (selectedEnd.isBefore(selectedStart)) {
-                                  selectedEnd = selectedStart.add(
-                                    const Duration(hours: 1),
+                            if (date != null && context.mounted) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  selectedStart,
+                                ),
+                              );
+                              if (time != null) {
+                                setState(() {
+                                  selectedStart = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    time.hour,
+                                    time.minute,
                                   );
-                                }
-                              });
+                                  if (selectedEnd.isBefore(selectedStart)) {
+                                    selectedEnd = selectedStart.add(
+                                      const Duration(hours: 1),
+                                    );
+                                  }
+                                });
+                              }
                             }
-                          }
-                        },
-                        child: Text(
-                          DateFormat('MMM d, h:mm a').format(selectedStart),
+                          },
+                          child: Text(
+                            DateFormat('MMM d, h:mm a').format(selectedStart),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Text('End: '),
-                      TextButton(
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedEnd,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null && context.mounted) {
-                            final time = await showTimePicker(
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text('End: '),
+                        TextButton(
+                          onPressed: () async {
+                            final date = await showDatePicker(
                               context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedEnd),
+                              initialDate: selectedEnd,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
                             );
-                            if (time != null) {
-                              setState(() {
-                                selectedEnd = DateTime(
-                                  date.year,
-                                  date.month,
-                                  date.day,
-                                  time.hour,
-                                  time.minute,
-                                );
-                              });
+                            if (date != null && context.mounted) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  selectedEnd,
+                                ),
+                              );
+                              if (time != null) {
+                                setState(() {
+                                  selectedEnd = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    time.hour,
+                                    time.minute,
+                                  );
+                                });
+                              }
                             }
-                          }
-                        },
-                        child: Text(
-                          DateFormat('MMM d, h:mm a').format(selectedEnd),
+                          },
+                          child: Text(
+                            DateFormat('MMM d, h:mm a').format(selectedEnd),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final title = titleController.text.trim();
-                  if (title.isEmpty) return;
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final title = titleController.text.trim();
+                    if (title.isEmpty) return;
 
-                  final service = ref.read(productivityServiceProvider);
+                    if (selectedEnd.isBefore(selectedStart) ||
+                        selectedEnd.isAtSameMomentAs(selectedStart)) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('End time must be after start time'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
 
-                  try {
-                    if (existingEvent == null) {
-                      await service.createCalendarEvent(
-                        CalendarEventCreate(
-                          title: title,
-                          description: descController.text.trim(),
-                          startTime: selectedStart.toUtc(),
-                          endTime: selectedEnd.toUtc(),
-                        ),
-                      );
-                    } else {
-                      await service.updateCalendarEvent(
-                        existingEvent.id,
-                        CalendarEventUpdate(
-                          title: title,
-                          description: descController.text.trim(),
-                          startTime: selectedStart.toUtc(),
-                          endTime: selectedEnd.toUtc(),
-                        ),
-                      );
+                    final service = ref.read(productivityServiceProvider);
+
+                    try {
+                      if (existingEvent == null) {
+                        await service.createCalendarEvent(
+                          CalendarEventCreate(
+                            title: title,
+                            description: descController.text.trim(),
+                            startTime: selectedStart.toUtc(),
+                            endTime: selectedEnd.toUtc(),
+                          ),
+                        );
+                      } else {
+                        await service.updateCalendarEvent(
+                          existingEvent.id,
+                          CalendarEventUpdate(
+                            title: title,
+                            description: descController.text.trim(),
+                            startTime: selectedStart.toUtc(),
+                            endTime: selectedEnd.toUtc(),
+                          ),
+                        );
+                      }
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ref.read(calendarEventsProvider.notifier).refresh();
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to save event')),
+                        );
+                      }
                     }
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ref.read(calendarEventsProvider.notifier).refresh();
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to save event')),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } finally {
+      titleController.dispose();
+      descController.dispose();
+    }
   }
 
   @override
