@@ -68,8 +68,8 @@ class _LoadingPageState extends State<LoadingPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 48,
-              height: 48,
+              width: AppSpacing.iconXl,
+              height: AppSpacing.iconXl,
               child: CircularProgressIndicator(
                 color: colors.primary,
                 strokeWidth: 3,
@@ -130,8 +130,8 @@ class _LoadingPageState extends State<LoadingPage> {
                 onPressed: _isRetrying ? null : _retry,
                 icon: _isRetrying
                     ? const SizedBox(
-                        width: 16,
-                        height: 16,
+                        width: AppSpacing.iconSm,
+                        height: AppSpacing.iconSm,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.refresh_rounded),

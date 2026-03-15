@@ -163,8 +163,8 @@ class _IntroductionPageState extends State<IntroductionPage> {
     return AnimatedContainer(
       duration: AppDurations.fast,
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-      height: 8,
-      width: isActive ? 24 : 8,
+      height: AppSpacing.sm,
+      width: isActive ? 24 : AppSpacing.sm,
       decoration: BoxDecoration(
         color: isActive
             ? AppColors.primary
