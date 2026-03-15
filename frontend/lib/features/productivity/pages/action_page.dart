@@ -79,9 +79,10 @@ class CalendarEventsNotifier extends AutoDisposeNotifier<CalendarEventsState> {
 
 final calendarEventsProvider =
     AutoDisposeNotifierProvider<CalendarEventsNotifier, CalendarEventsState>(
-        () {
-  return CalendarEventsNotifier();
-});
+      () {
+        return CalendarEventsNotifier();
+      },
+    );
 
 class ActionPage extends ConsumerStatefulWidget {
   const ActionPage({super.key});
@@ -125,11 +126,7 @@ class _ActionPageState extends ConsumerState<ActionPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _CalendarTab(),
-          TasksPage(),
-          NotesPage(),
-        ],
+        children: const [_CalendarTab(), TasksPage(), NotesPage()],
       ),
     );
   }
@@ -164,11 +161,15 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     }
   }
 
-  void _showEventDialog(BuildContext context, WidgetRef ref,
-      [CalendarEvent? existingEvent]) {
+  Future<void> _showEventDialog(
+    BuildContext context,
+    WidgetRef ref, [
+    CalendarEvent? existingEvent,
+  ]) async {
     final titleController = TextEditingController(text: existingEvent?.title);
-    final descController =
-        TextEditingController(text: existingEvent?.description);
+    final descController = TextEditingController(
+      text: existingEvent?.description,
+    );
 
     // Default to next hour
     final now = DateTime.now();
@@ -178,152 +179,181 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
     DateTime selectedStart = existingEvent?.startTime.toLocal() ?? defaultStart;
     DateTime selectedEnd = existingEvent?.endTime.toLocal() ?? defaultEnd;
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(builder: (context, setState) {
-        return AlertDialog(
-          title: Text(existingEvent == null ? 'New Event' : 'Edit Event'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                  autofocus: true,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                TextField(
-                  controller: descController,
-                  decoration: const InputDecoration(
-                      labelText: 'Description (optional)'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
+    try {
+      await showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(existingEvent == null ? 'New Event' : 'Edit Event'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Start: '),
-                    TextButton(
-                      onPressed: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: selectedStart,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (date != null && context.mounted) {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay.fromDateTime(selectedStart),
-                          );
-                          if (time != null) {
-                            setState(() {
-                              selectedStart = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
-                                time.hour,
-                                time.minute,
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextField(
+                      controller: descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description (optional)',
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        const Text('Start: '),
+                        TextButton(
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: selectedStart,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (date != null && context.mounted) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  selectedStart,
+                                ),
                               );
-                              if (selectedEnd.isBefore(selectedStart)) {
-                                selectedEnd =
-                                    selectedStart.add(const Duration(hours: 1));
+                              if (time != null) {
+                                setState(() {
+                                  selectedStart = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    time.hour,
+                                    time.minute,
+                                  );
+                                  if (selectedEnd.isBefore(selectedStart)) {
+                                    selectedEnd = selectedStart.add(
+                                      const Duration(hours: 1),
+                                    );
+                                  }
+                                });
                               }
-                            });
-                          }
-                        }
-                      },
-                      child: Text(
-                          DateFormat('MMM d, h:mm a').format(selectedStart)),
+                            }
+                          },
+                          child: Text(
+                            DateFormat('MMM d, h:mm a').format(selectedStart),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text('End: '),
+                        TextButton(
+                          onPressed: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: selectedEnd,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (date != null && context.mounted) {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  selectedEnd,
+                                ),
+                              );
+                              if (time != null) {
+                                setState(() {
+                                  selectedEnd = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    time.hour,
+                                    time.minute,
+                                  );
+                                });
+                              }
+                            }
+                          },
+                          child: Text(
+                            DateFormat('MMM d, h:mm a').format(selectedEnd),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    const Text('End: '),
-                    TextButton(
-                      onPressed: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: selectedEnd,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final title = titleController.text.trim();
+                    if (title.isEmpty) return;
+
+                    if (selectedEnd.isBefore(selectedStart) ||
+                        selectedEnd.isAtSameMomentAs(selectedStart)) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('End time must be after start time'),
+                          ),
                         );
-                        if (date != null && context.mounted) {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay.fromDateTime(selectedEnd),
-                          );
-                          if (time != null) {
-                            setState(() {
-                              selectedEnd = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
-                                time.hour,
-                                time.minute,
-                              );
-                            });
-                          }
-                        }
-                      },
-                      child:
-                          Text(DateFormat('MMM d, h:mm a').format(selectedEnd)),
-                    ),
-                  ],
+                      }
+                      return;
+                    }
+
+                    final service = ref.read(productivityServiceProvider);
+
+                    try {
+                      if (existingEvent == null) {
+                        await service.createCalendarEvent(
+                          CalendarEventCreate(
+                            title: title,
+                            description: descController.text.trim(),
+                            startTime: selectedStart.toUtc(),
+                            endTime: selectedEnd.toUtc(),
+                          ),
+                        );
+                      } else {
+                        await service.updateCalendarEvent(
+                          existingEvent.id,
+                          CalendarEventUpdate(
+                            title: title,
+                            description: descController.text.trim(),
+                            startTime: selectedStart.toUtc(),
+                            endTime: selectedEnd.toUtc(),
+                          ),
+                        );
+                      }
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ref.read(calendarEventsProvider.notifier).refresh();
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to save event')),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final title = titleController.text.trim();
-                if (title.isEmpty) return;
-
-                final service = ref.read(productivityServiceProvider);
-
-                try {
-                  if (existingEvent == null) {
-                    await service.createCalendarEvent(CalendarEventCreate(
-                      title: title,
-                      description: descController.text.trim(),
-                      startTime: selectedStart.toUtc(),
-                      endTime: selectedEnd.toUtc(),
-                    ));
-                  } else {
-                    await service.updateCalendarEvent(
-                      existingEvent.id,
-                      CalendarEventUpdate(
-                        title: title,
-                        description: descController.text.trim(),
-                        startTime: selectedStart.toUtc(),
-                        endTime: selectedEnd.toUtc(),
-                      ),
-                    );
-                  }
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ref.read(calendarEventsProvider.notifier).refresh();
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to save event')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      }),
-    );
+            );
+          },
+        ),
+      );
+    } finally {
+      titleController.dispose();
+      descController.dispose();
+    }
   }
 
   @override
@@ -346,63 +376,63 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
               ),
             )
           : state.isLoading && state.events.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : state.events.isEmpty
-                  ? const Center(child: Text('No events yet. Add one!'))
-                  : RefreshIndicator(
-                      onRefresh: () =>
-                          ref.read(calendarEventsProvider.notifier).refresh(),
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.only(
-                          top: AppSpacing.md,
-                          left: AppSpacing.md,
-                          right: AppSpacing.md,
-                          bottom: AppSpacing.bottomNavBarHeight +
-                              AppSpacing.md * 2 +
-                              MediaQuery.viewPaddingOf(context).bottom,
-                        ),
-                        itemCount:
-                            state.events.length + (state.isLoading ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == state.events.length) {
-                            return const Padding(
-                              padding: EdgeInsets.all(AppSpacing.md),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
+          ? const Center(child: CircularProgressIndicator())
+          : state.events.isEmpty
+          ? const Center(child: Text('No events yet. Add one!'))
+          : RefreshIndicator(
+              onRefresh: () =>
+                  ref.read(calendarEventsProvider.notifier).refresh(),
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: EdgeInsets.only(
+                  top: AppSpacing.md,
+                  left: AppSpacing.md,
+                  right: AppSpacing.md,
+                  bottom:
+                      AppSpacing.bottomNavBarHeight +
+                      AppSpacing.md * 2 +
+                      MediaQuery.viewPaddingOf(context).bottom,
+                ),
+                itemCount: state.events.length + (state.isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == state.events.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(AppSpacing.md),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
 
-                          final event = state.events[index];
-                          return _EventTile(
-                            event: event,
-                            onEdit: () => _showEventDialog(context, ref, event),
-                            onDelete: () async {
-                              try {
-                                await ref
-                                    .read(productivityServiceProvider)
-                                    .deleteCalendarEvent(event.id);
-                                ref
-                                    .read(calendarEventsProvider.notifier)
-                                    .refresh();
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content:
-                                            Text('Failed to delete event')),
-                                  );
-                                }
-                              }
-                            },
+                  final event = state.events[index];
+                  return _EventTile(
+                    event: event,
+                    onEdit: () => _showEventDialog(context, ref, event),
+                    onDelete: () async {
+                      try {
+                        await ref
+                            .read(productivityServiceProvider)
+                            .deleteCalendarEvent(event.id);
+                        ref.read(calendarEventsProvider.notifier).refresh();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to delete event'),
+                            ),
                           );
-                        },
-                      ),
-                    ),
+                        }
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-            bottom: AppSpacing.bottomNavBarHeight +
-                AppSpacing.md +
-                MediaQuery.viewPaddingOf(context).bottom),
+          bottom:
+              AppSpacing.bottomNavBarHeight +
+              AppSpacing.md +
+              MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: FloatingActionButton(
           heroTag: 'calendar_fab',
           onPressed: () => _showEventDialog(context, ref),
@@ -444,26 +474,36 @@ class _EventTile extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            title: Text(event.title,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              event.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (event.description != null && event.description!.isNotEmpty)
-                  Text(event.description!,
-                      maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(
+                    event.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.access_time,
-                        size: 14, color: context.colorScheme.primary),
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: context.colorScheme.primary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       event.isAllDay
                           ? 'All Day - ${dateFormat.format(startLocal)}'
                           : '${dateFormat.format(startLocal)} ${timeFormat.format(startLocal)} - ${timeFormat.format(endLocal)}',
                       style: TextStyle(
-                          color: context.colorScheme.primary, fontSize: 12),
+                        color: context.colorScheme.primary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -502,8 +542,11 @@ class _EventTile extends ConsumerWidget {
                     if (event.agentId != null)
                       Row(
                         children: [
-                          Icon(Icons.smart_toy_outlined,
-                              size: 14, color: context.colorScheme.primary),
+                          Icon(
+                            Icons.smart_toy_outlined,
+                            size: 14,
+                            color: context.colorScheme.primary,
+                          ),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: agentsAsync.when(
@@ -533,9 +576,11 @@ class _EventTile extends ConsumerWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline,
-                              size: 14,
-                              color: context.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.info_outline,
+                            size: 14,
+                            color: context.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(

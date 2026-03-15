@@ -182,13 +182,12 @@ class ProductivityService {
   // Calendar Events
   // ---------------------------------------------------------------------------
 
-  Future<List<CalendarEvent>> listCalendarEvents(
-      {int limit = 50, int offset = 0}) async {
+  Future<List<CalendarEvent>> listCalendarEvents({
+    int limit = 50,
+    int offset = 0,
+  }) async {
     final uri = Uri.parse('$_normalizedBaseUrl/productivity/events').replace(
-      queryParameters: {
-        'limit': limit.toString(),
-        'offset': offset.toString(),
-      },
+      queryParameters: {'limit': limit.toString(), 'offset': offset.toString()},
     );
     final response = await _client.get(uri, headers: await _headers());
 
@@ -212,14 +211,17 @@ class ProductivityService {
 
     if (response.statusCode == 201) {
       return CalendarEvent.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to create event: ${response.statusCode}');
     }
   }
 
   Future<CalendarEvent> updateCalendarEvent(
-      String id, CalendarEventUpdate data) async {
+    String id,
+    CalendarEventUpdate data,
+  ) async {
     final uri = Uri.parse('$_normalizedBaseUrl/productivity/events/$id');
     final response = await _client.patch(
       uri,
@@ -229,7 +231,8 @@ class ProductivityService {
 
     if (response.statusCode == 200) {
       return CalendarEvent.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to update event: ${response.statusCode}');
     }

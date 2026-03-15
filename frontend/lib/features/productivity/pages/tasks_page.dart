@@ -186,8 +186,9 @@ class _TaskTile extends ConsumerWidget {
           task.title,
           style: TextStyle(
             decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-            color:
-                task.isCompleted ? context.colorScheme.onSurfaceVariant : null,
+            color: task.isCompleted
+                ? context.colorScheme.onSurfaceVariant
+                : null,
           ),
         ),
         subtitle: task.description != null && task.description!.isNotEmpty
@@ -196,8 +197,9 @@ class _TaskTile extends ConsumerWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  decoration:
-                      task.isCompleted ? TextDecoration.lineThrough : null,
+                  decoration: task.isCompleted
+                      ? TextDecoration.lineThrough
+                      : null,
                 ),
               )
             : null,
