@@ -9,6 +9,9 @@ from fastapi import APIRouter, Query
 
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.models import (
+    CalendarEventCreate,
+    CalendarEventResponse,
+    CalendarEventUpdate,
     NoteCreate,
     NoteResponse,
     NoteUpdate,
@@ -132,3 +135,59 @@ async def delete_note(
 ) -> None:
     """Delete a specific note."""
     await ProductivityService.delete_note(user_id, note_id)
+
+
+# ---------------------------------------------------------------------------
+# Calendar Events
+# ---------------------------------------------------------------------------
+
+
+@router.post("/events", response_model=CalendarEventResponse, status_code=201)
+async def create_event(
+    event_data: CalendarEventCreate,
+    user_id: CurrentUser,
+) -> CalendarEventResponse:
+    """Create a new calendar event."""
+    event = await ProductivityService.create_event(user_id, event_data)
+    return CalendarEventResponse.model_validate(event)
+
+
+@router.get("/events", response_model=list[CalendarEventResponse])
+async def list_events(
+    user_id: CurrentUser,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> list[CalendarEventResponse]:
+    """List all calendar events for the current user."""
+    events = await ProductivityService.list_events(user_id, limit=limit, offset=offset)
+    return [CalendarEventResponse.model_validate(e) for e in events]
+
+
+@router.get("/events/{event_id}", response_model=CalendarEventResponse)
+async def get_event(
+    event_id: UUID,
+    user_id: CurrentUser,
+) -> CalendarEventResponse:
+    """Get a specific calendar event."""
+    event = await ProductivityService.get_event(user_id, event_id)
+    return CalendarEventResponse.model_validate(event)
+
+
+@router.patch("/events/{event_id}", response_model=CalendarEventResponse)
+async def update_event(
+    event_id: UUID,
+    event_data: CalendarEventUpdate,
+    user_id: CurrentUser,
+) -> CalendarEventResponse:
+    """Update a specific calendar event."""
+    event = await ProductivityService.update_event(user_id, event_id, event_data)
+    return CalendarEventResponse.model_validate(event)
+
+
+@router.delete("/events/{event_id}", status_code=204)
+async def delete_event(
+    event_id: UUID,
+    user_id: CurrentUser,
+) -> None:
+    """Delete a specific calendar event."""
+    await ProductivityService.delete_event(user_id, event_id)

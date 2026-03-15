@@ -90,11 +90,6 @@ class TasksPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.colorScheme.surface,
-      appBar: AppBar(
-        title: Text('Tasks', style: AppTypography.headingMedium),
-        backgroundColor: context.colorScheme.surface,
-        elevation: 0,
-      ),
       body: tasksAsync.when(
         data: (tasks) {
           if (tasks.isEmpty) {
@@ -179,22 +174,32 @@ class _TaskTile extends ConsumerWidget {
         ),
         title: Text(
           task.title,
-          style: task.isCompleted
-              ? const TextStyle(decoration: TextDecoration.lineThrough)
-              : null,
+          style: TextStyle(
+            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+            color:
+                task.isCompleted ? context.colorScheme.onSurfaceVariant : null,
+          ),
         ),
         subtitle: task.description != null && task.description!.isNotEmpty
-            ? Text(task.description!)
+            ? Text(
+                task.description!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  decoration:
+                      task.isCompleted ? TextDecoration.lineThrough : null,
+                ),
+              )
             : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit),
+              icon: const Icon(Icons.edit, size: 20),
               onPressed: () => _showTaskDialog(context, ref, task),
             ),
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              icon: const Icon(Icons.delete, size: 20),
               onPressed: () async {
                 try {
                   await service.deleteTask(task.id);

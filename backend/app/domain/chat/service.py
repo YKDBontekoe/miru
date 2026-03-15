@@ -10,10 +10,14 @@ from crewai import LLM, Crew, Process, Task
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
+    CreateEventTool,
     CreateNoteTool,
     CreateTaskTool,
+    ListEventsTool,
     ListNotesTool,
     ListTasksTool,
+    UpdateEventTool,
+    DeleteEventTool,
     UpdateTaskTool,
 )
 from app.domain.chat.models import (
@@ -112,6 +116,12 @@ class ChatService:
         tools.extend(
             [
                 ListTasksTool(user_id=user_id, agent_id=agent.id),
+                ListEventsTool(user_id=user_id, agent_id=agent.id),
+                CreateEventTool(
+                    user_id=user_id, agent_id=agent.id, origin_message_id=origin_message_id
+                ),
+                UpdateEventTool(user_id=user_id, agent_id=agent.id),
+                DeleteEventTool(user_id=user_id, agent_id=agent.id),
                 CreateTaskTool(user_id=user_id, agent_id=agent.id),
                 UpdateTaskTool(user_id=user_id, agent_id=agent.id),
                 ListNotesTool(user_id=user_id, agent_id=agent.id),

@@ -9,6 +9,9 @@ from fastapi import HTTPException
 from tortoise.exceptions import DBConnectionError, IntegrityError, OperationalError
 
 from app.domain.productivity.models import (
+    CalendarEvent,
+    CalendarEventCreate,
+    CalendarEventUpdate,
     Note,
     NoteCreate,
     NoteUpdate,
@@ -131,8 +134,8 @@ class ProductivityService:
         try:
             return await Note.create(
                 user_id=user_id,
-                agent=note_data.agent_id,
-                origin_message=note_data.origin_message_id,
+                agent_id=note_data.agent_id,
+                origin_message_id=note_data.origin_message_id,
                 origin_context=note_data.origin_context,
                 title=note_data.title,
                 content=note_data.content,
@@ -222,3 +225,109 @@ class ProductivityService:
         except Exception as e:
             logger.exception("Unexpected error in delete_note")
             raise HTTPException(status_code=500, detail="Failed to delete note") from e
+
+    # ---------------------------------------------------------------------------
+    # Calendar Events
+    # ---------------------------------------------------------------------------
+
+    @staticmethod
+    async def create_event(user_id: UUID, event_data: CalendarEventCreate) -> CalendarEvent:
+        """Create a new calendar event for the user."""
+        try:
+            return await CalendarEvent.create(
+                user_id=user_id,
+                agent_id=event_data.agent_id,
+                origin_message_id=event_data.origin_message_id,
+                origin_context=event_data.origin_context,
+                title=event_data.title,
+                description=event_data.description,
+                start_time=event_data.start_time,
+                end_time=event_data.end_time,
+                is_all_day=event_data.is_all_day,
+                location=event_data.location,
+            )
+        except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
+            logger.exception("Failed to create calendar event")
+            raise HTTPException(
+                status_code=500, detail="Database error occurred while creating calendar event"
+            ) from e
+        except Exception as e:
+            logger.exception("Unexpected error in create_event")
+            raise HTTPException(status_code=500, detail="Failed to create calendar event") from e
+
+    @staticmethod
+    async def list_events(user_id: UUID, limit: int = 50, offset: int = 0) -> list[CalendarEvent]:
+        """List calendar events for the user."""
+        try:
+            return (
+                await CalendarEvent.filter(user_id=user_id)
+                .order_by("start_time")
+                .limit(limit)
+                .offset(offset)
+            )
+        except (IntegrityError, OperationalError, DBConnectionError) as e:
+            logger.exception("Failed to list calendar events")
+            raise HTTPException(
+                status_code=500, detail="Database error occurred while listing calendar events"
+            ) from e
+        except Exception as e:
+            logger.exception("Unexpected error in list_events")
+            raise HTTPException(status_code=500, detail="Failed to list calendar events") from e
+
+    @staticmethod
+    async def get_event(user_id: UUID, event_id: UUID) -> CalendarEvent:
+        """Get a specific calendar event."""
+        event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id)
+        if not event:
+            raise HTTPException(status_code=404, detail="Calendar event not found")
+        return event
+
+    @staticmethod
+    async def update_event(
+        user_id: UUID, event_id: UUID, update_data: CalendarEventUpdate
+    ) -> CalendarEvent:
+        """Update a specific calendar event."""
+        event = await ProductivityService.get_event(user_id, event_id)
+
+        update_fields = update_data.model_dump(exclude_unset=True)
+        if not update_fields:
+            return event
+
+        # Filter out None values for non-nullable fields
+        valid_keys = {}
+        for k, v in update_fields.items():
+            if v is None and k in ("title", "start_time", "end_time", "is_all_day"):
+                continue
+            valid_keys[k] = v
+
+        if not valid_keys:
+            return event
+
+        try:
+            for field, value in valid_keys.items():
+                setattr(event, field, value)
+            await event.save(update_fields=list(valid_keys.keys()))
+            return event
+        except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
+            logger.exception("Failed to update calendar event")
+            raise HTTPException(
+                status_code=500, detail="Database error occurred while updating calendar event"
+            ) from e
+        except Exception as e:
+            logger.exception("Unexpected error in update_event")
+            raise HTTPException(status_code=500, detail="Failed to update calendar event") from e
+
+    @staticmethod
+    async def delete_event(user_id: UUID, event_id: UUID) -> None:
+        """Delete a specific calendar event."""
+        event = await ProductivityService.get_event(user_id, event_id)
+        try:
+            await event.delete()
+        except (IntegrityError, OperationalError, DBConnectionError) as e:
+            logger.exception("Failed to delete calendar event")
+            raise HTTPException(
+                status_code=500, detail="Database error occurred while deleting calendar event"
+            ) from e
+        except Exception as e:
+            logger.exception("Unexpected error in delete_event")
+            raise HTTPException(status_code=500, detail="Failed to delete calendar event") from e

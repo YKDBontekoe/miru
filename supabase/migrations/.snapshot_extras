@@ -47,7 +47,9 @@
     "ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;",
     "CREATE POLICY tasks_owner_all ON public.tasks FOR ALL USING (auth.uid() = user_id);",
     "ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;",
-    "CREATE POLICY notes_owner_all ON public.notes FOR ALL USING (auth.uid() = user_id);"
+    "CREATE POLICY notes_owner_all ON public.notes FOR ALL USING (auth.uid() = user_id);",
+    "ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;",
+    "CREATE POLICY calendar_events_owner_all ON public.calendar_events FOR ALL USING (auth.uid() = user_id);"
   ],
   "indexes": [
     "CREATE INDEX IF NOT EXISTS memories_embedding_hnsw_idx ON public.memories USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);"

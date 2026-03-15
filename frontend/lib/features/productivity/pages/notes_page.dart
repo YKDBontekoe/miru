@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/note.dart';
-import '../../../core/models/agent.dart';
 import '../../../core/design_system/design_system.dart';
 import '../../../core/api/agents_service.dart';
 import 'tasks_page.dart'; // To access productivityServiceProvider
@@ -20,20 +19,23 @@ void _showNoteDialog(BuildContext context, WidgetRef ref,
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text(existingNote == null ? 'New Note' : 'Edit Note'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: titleController,
-            decoration: const InputDecoration(labelText: 'Title'),
-            autofocus: true,
-          ),
-          TextField(
-            controller: contentController,
-            decoration: const InputDecoration(labelText: 'Content'),
-            maxLines: 5,
-          ),
-        ],
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: 'Title'),
+              autofocus: true,
+            ),
+            TextField(
+              controller: contentController,
+              decoration: const InputDecoration(labelText: 'Content'),
+              maxLines: 8,
+              minLines: 3,
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -44,6 +46,7 @@ void _showNoteDialog(BuildContext context, WidgetRef ref,
           onPressed: () async {
             final title = titleController.text.trim();
             final content = contentController.text.trim();
+
             if (title.isEmpty || content.isEmpty) return;
 
             final service = ref.read(productivityServiceProvider);
@@ -85,21 +88,14 @@ class NotesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesAsync = ref.watch(notesProvider);
-    final agentsAsync = ref.watch(agentsProvider);
 
     return Scaffold(
       backgroundColor: context.colorScheme.surface,
-      appBar: AppBar(
-        title: Text('Notes', style: AppTypography.headingMedium),
-        backgroundColor: context.colorScheme.surface,
-        elevation: 0,
-      ),
       body: notesAsync.when(
         data: (notes) {
           if (notes.isEmpty) {
             return const Center(child: Text('No notes yet. Add one!'));
           }
-          final agents = agentsAsync.valueOrNull ?? [];
           return ListView.separated(
             padding: EdgeInsets.only(
               left: AppSpacing.md,
@@ -113,10 +109,7 @@ class NotesPage extends ConsumerWidget {
             separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final note = notes[index];
-              return _NoteTile(
-                note: note,
-                agents: agents,
-              );
+              return _NoteTile(note: note);
             },
           );
         },
@@ -151,20 +144,19 @@ class NotesPage extends ConsumerWidget {
 
 class _NoteTile extends ConsumerWidget {
   final Note note;
-  final List<Agent> agents;
 
-  const _NoteTile({
-    required this.note,
-    required this.agents,
-  });
+  const _NoteTile({required this.note});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.read(productivityServiceProvider);
+    final agentsAsync = ref.watch(agentsProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainer,
+        color: note.isPinned
+            ? context.colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : context.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       ),
       child: Column(
@@ -193,18 +185,18 @@ class _NoteTile extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(
               note.content,
-              maxLines: 5,
+              maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit),
+                  icon: const Icon(Icons.edit, size: 20),
                   onPressed: () => _showNoteDialog(context, ref, note),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: const Icon(Icons.delete, size: 20),
                   onPressed: () async {
                     try {
                       await service.deleteNote(note.id);
@@ -225,65 +217,69 @@ class _NoteTile extends ConsumerWidget {
           if (note.agentId != null || note.originContext != null)
             Padding(
               padding: const EdgeInsets.only(
-                left: AppSpacing.xl + AppSpacing.md,
+                left: AppSpacing.xxxl,
                 right: AppSpacing.md,
-                bottom: AppSpacing.sm,
+                bottom: AppSpacing.md,
               ),
-              child: Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.xs,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (note.agentId != null)
-                    () {
-                      final agent =
-                          agents.where((a) => a.id == note.agentId).firstOrNull;
-                      if (agent == null) return const SizedBox.shrink();
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xs,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.colorScheme.primaryContainer,
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radiusXs),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.smart_toy_outlined,
-                              size: 12,
-                              color: context.colorScheme.onPrimaryContainer,
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: context.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (note.agentId != null)
+                      Row(
+                        children: [
+                          Icon(Icons.smart_toy_outlined,
+                              size: 14, color: context.colorScheme.primary),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: agentsAsync.when(
+                              data: (agents) {
+                                final agent = agents
+                                    .where((a) => a.id == note.agentId)
+                                    .firstOrNull;
+                                return Text(
+                                  agent != null
+                                      ? 'Created by ${agent.name}'
+                                      : 'Created by Agent',
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: context.colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                );
+                              },
+                              loading: () => const Text('Loading agent...'),
+                              error: (_, __) => const Text('Unknown Agent'),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              agent.name,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: context.colorScheme.onPrimaryContainer,
+                          ),
+                        ],
+                      ),
+                    if (note.agentId != null && note.originContext != null)
+                      const SizedBox(height: AppSpacing.xs),
+                    if (note.originContext != null)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 14,
+                              color: context.colorScheme.onSurfaceVariant),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              'Context: ${note.originContext}',
+                              style: AppTypography.labelSmall.copyWith(
+                                color: context.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    }(),
-                  if (note.originContext != null)
-                    Flexible(
-                      child: Text(
-                        'Context: ${note.originContext}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontStyle: FontStyle.italic,
-                          color: context.colorScheme.onSurfaceVariant,
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
         ],

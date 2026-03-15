@@ -6,6 +6,7 @@ import '../models/note.dart';
 import '../models/task.dart';
 import '../services/supabase_service.dart';
 import 'backend_service.dart';
+import '../../features/productivity/models/calendar_event.dart';
 
 class ProductivityService {
   final http.Client _client;
@@ -163,6 +164,66 @@ class ProductivityService {
 
     if (response.statusCode != 204) {
       throw Exception('Failed to delete note: ${response.statusCode}');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Calendar Events
+  // ---------------------------------------------------------------------------
+
+  Future<List<CalendarEvent>> listCalendarEvents() async {
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/events');
+    final response = await _client.get(uri, headers: await _headers());
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+      return data
+          .map((json) => CalendarEvent.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load events: ${response.statusCode}');
+    }
+  }
+
+  Future<CalendarEvent> createCalendarEvent(CalendarEventCreate data) async {
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/events');
+    final response = await _client.post(
+      uri,
+      headers: await _headers(),
+      body: jsonEncode(data.toJson()),
+    );
+
+    if (response.statusCode == 201) {
+      return CalendarEvent.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to create event: ${response.statusCode}');
+    }
+  }
+
+  Future<CalendarEvent> updateCalendarEvent(
+      String id, CalendarEventUpdate data) async {
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/events/$id');
+    final response = await _client.patch(
+      uri,
+      headers: await _headers(),
+      body: jsonEncode(data.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      return CalendarEvent.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to update event: ${response.statusCode}');
+    }
+  }
+
+  Future<void> deleteCalendarEvent(String id) async {
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/events/$id');
+    final response = await _client.delete(uri, headers: await _headers());
+
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete event: ${response.statusCode}');
     }
   }
 }
