@@ -171,8 +171,14 @@ class ProductivityService {
   // Calendar Events
   // ---------------------------------------------------------------------------
 
-  Future<List<CalendarEvent>> listCalendarEvents() async {
-    final uri = Uri.parse('$_normalizedBaseUrl/productivity/events');
+  Future<List<CalendarEvent>> listCalendarEvents(
+      {int limit = 50, int offset = 0}) async {
+    final uri = Uri.parse('$_normalizedBaseUrl/productivity/events').replace(
+      queryParameters: {
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      },
+    );
     final response = await _client.get(uri, headers: await _headers());
 
     if (response.statusCode == 200) {

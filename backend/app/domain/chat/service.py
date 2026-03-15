@@ -13,11 +13,11 @@ from app.domain.agent_tools.productivity_tools import (
     CreateEventTool,
     CreateNoteTool,
     CreateTaskTool,
+    DeleteEventTool,
     ListEventsTool,
     ListNotesTool,
     ListTasksTool,
     UpdateEventTool,
-    DeleteEventTool,
     UpdateTaskTool,
 )
 from app.domain.chat.models import (

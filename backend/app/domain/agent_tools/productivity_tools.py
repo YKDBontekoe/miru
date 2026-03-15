@@ -241,11 +241,13 @@ class ListEventsTool(BaseTool):
 
             result = "Calendar Events:\n"
             for e in events:
-                time_str = (
-                    "All Day"
-                    if e.is_all_day
-                    else f"{e.start_time.strftime('%Y-%m-%d %H:%M')} to {e.end_time.strftime('%Y-%m-%d %H:%M')}"
-                )
+                if e.is_all_day:
+                    if e.end_time.date() != e.start_time.date():
+                        time_str = f"All Day {e.start_time.strftime('%Y-%m-%d')} to {e.end_time.strftime('%Y-%m-%d')}"
+                    else:
+                        time_str = f"All Day on {e.start_time.strftime('%Y-%m-%d')}"
+                else:
+                    time_str = f"{e.start_time.strftime('%Y-%m-%d %H:%M')} to {e.end_time.strftime('%Y-%m-%d %H:%M')}"
                 result += f"- [{e.id}] {e.title} ({time_str})\n"
                 if e.description:
                     result += f"  Description: {e.description}\n"
@@ -383,6 +385,7 @@ class UpdateEventTool(BaseTool):
         except Exception:
             logger.exception("Error in UpdateEventTool")
             return "Error updating calendar event."
+
 
 class DeleteEventInput(BaseModel):
     event_id: UUID = Field(..., description="The ID of the calendar event to delete.")

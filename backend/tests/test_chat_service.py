@@ -28,7 +28,17 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
 
     user_id = uuid4()
     tools = chat_service._get_agent_tools(agent1, user_id)
-    assert len(tools) == 9  # Productivity tools always included
+    # Ensure expected productivity and calendar tools are present
+    tool_types = [type(t).__name__ for t in tools]
+    assert "ListTasksTool" in tool_types
+    assert "CreateTaskTool" in tool_types
+    assert "UpdateTaskTool" in tool_types
+    assert "ListNotesTool" in tool_types
+    assert "CreateNoteTool" in tool_types
+    assert "ListEventsTool" in tool_types
+    assert "CreateEventTool" in tool_types
+    assert "UpdateEventTool" in tool_types
+    assert "DeleteEventTool" in tool_types
 
     # Agent with a steam integration
     steam_id = "12345678901234567"
@@ -43,7 +53,19 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     agent2.agent_integrations = [mock_ai]
 
     tools = chat_service._get_agent_tools(agent2, user_id)
-    assert len(tools) == 11  # 2 steam + 5 productivity tools
+    # Ensure expected productivity and calendar tools are present
+    tool_types = [type(t).__name__ for t in tools]
+    assert "ListTasksTool" in tool_types
+    assert "CreateTaskTool" in tool_types
+    assert "UpdateTaskTool" in tool_types
+    assert "ListNotesTool" in tool_types
+    assert "CreateNoteTool" in tool_types
+    assert "ListEventsTool" in tool_types
+    assert "CreateEventTool" in tool_types
+    assert "UpdateEventTool" in tool_types
+    assert "DeleteEventTool" in tool_types
+    assert "SteamOwnedGamesTool" in tool_types
+    assert "SteamPlayerSummaryTool" in tool_types
     assert tools[0].name == "steam_player_summary"
     assert tools[1].name == "steam_owned_games"
 
@@ -60,7 +82,17 @@ def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
 
     user_id = uuid4()
     tools = chat_service._get_agent_tools(agent, user_id)
-    assert len(tools) == 9  # Productivity tools always included
+    # Ensure expected productivity and calendar tools are present
+    tool_types = [type(t).__name__ for t in tools]
+    assert "ListTasksTool" in tool_types
+    assert "CreateTaskTool" in tool_types
+    assert "UpdateTaskTool" in tool_types
+    assert "ListNotesTool" in tool_types
+    assert "CreateNoteTool" in tool_types
+    assert "ListEventsTool" in tool_types
+    assert "CreateEventTool" in tool_types
+    assert "UpdateEventTool" in tool_types
+    assert "DeleteEventTool" in tool_types
 
 
 def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
@@ -75,7 +107,17 @@ def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
 
     user_id = uuid4()
     tools = chat_service._get_agent_tools(agent, user_id)
-    assert len(tools) == 9  # Productivity tools always included
+    # Ensure expected productivity and calendar tools are present
+    tool_types = [type(t).__name__ for t in tools]
+    assert "ListTasksTool" in tool_types
+    assert "CreateTaskTool" in tool_types
+    assert "UpdateTaskTool" in tool_types
+    assert "ListNotesTool" in tool_types
+    assert "CreateNoteTool" in tool_types
+    assert "ListEventsTool" in tool_types
+    assert "CreateEventTool" in tool_types
+    assert "UpdateEventTool" in tool_types
+    assert "DeleteEventTool" in tool_types
 
 
 @pytest.mark.asyncio

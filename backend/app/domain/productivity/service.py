@@ -233,6 +233,12 @@ class ProductivityService:
     @staticmethod
     async def create_event(user_id: UUID, event_data: CalendarEventCreate) -> CalendarEvent:
         """Create a new calendar event for the user."""
+        if event_data.end_time < event_data.start_time:
+            logger.warning("Attempted to create event with end_time before start_time")
+            raise HTTPException(
+                status_code=400, detail="end_time must be greater than or equal to start_time"
+            )
+
         try:
             return await CalendarEvent.create(
                 user_id=user_id,
@@ -302,6 +308,15 @@ class ProductivityService:
 
         if not valid_keys:
             return event
+
+        new_start = valid_keys.get("start_time", event.start_time)
+        new_end = valid_keys.get("end_time", event.end_time)
+
+        if new_end < new_start:
+            logger.warning("Attempted to update event with end_time before start_time")
+            raise HTTPException(
+                status_code=400, detail="end_time must be greater than or equal to start_time"
+            )
 
         try:
             for field, value in valid_keys.items():

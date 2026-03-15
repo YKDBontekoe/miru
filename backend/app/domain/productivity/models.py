@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -71,8 +71,22 @@ class Note(SupabaseModel):
         ]
 
 
+def extract_uuid_from_relation(v: Any) -> UUID | None:
+    """Extract raw UUID from Tortoise relation proxy if needed.
+
+    Relation proxies expose the raw PK via attributes like "pk" or "id".
+    Returns None if those attributes are absent or the value is None.
+    """
+    if v is None:
+        return None
+    if isinstance(v, UUID):
+        return v
+    return getattr(v, "pk", None) or getattr(v, "id", None)
+
+
 # ---------------------------------------------------------------------------
 # API Pydantic Schemas
+
 # ---------------------------------------------------------------------------
 
 
@@ -198,17 +212,8 @@ class NoteResponse(BaseModel):
     @field_validator("agent_id", "origin_message_id", mode="before")
     @classmethod
     def extract_uuid(cls, v: Any) -> UUID | None:
-        """Extract raw UUID from Tortoise relation proxy if needed.
-
-        Relation proxies expose the raw PK via attributes like "pk" or "id".
-        Returns None if those attributes are absent or the value is None.
-        """
-        if v is None:
-            return None
-        if isinstance(v, UUID):
-            return v
-        # Tortoise relations have 'pk' or 'id' for the raw PK
-        return getattr(v, "pk", None) or getattr(v, "id", None)
+        """Extract raw UUID from Tortoise relation proxy if needed."""
+        return extract_uuid_from_relation(v)
 
 
 class CalendarEvent(SupabaseModel):
@@ -246,6 +251,7 @@ class CalendarEvent(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY calendar_events_owner_all ON public.calendar_events FOR ALL USING (auth.uid() = user_id);",
+            "ALTER TABLE public.calendar_events ADD CONSTRAINT check_end_after_start CHECK (end_time >= start_time);",
         ]
 
 
@@ -261,6 +267,12 @@ class CalendarEventCreate(BaseModel):
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
     origin_context: str | None = None
+
+    @model_validator(mode="after")
+    def validate_time_range(self) -> CalendarEventCreate:
+        if self.end_time < self.start_time:
+            raise ValueError("end_time must be greater than or equal to start_time")
+        return self
 
 
 class CalendarEventUpdate(BaseModel):
@@ -297,8 +309,4 @@ class CalendarEventResponse(BaseModel):
     @classmethod
     def extract_uuid(cls, v: Any) -> UUID | None:
         """Extract raw UUID from Tortoise relation proxy if needed."""
-        if v is None:
-            return None
-        if isinstance(v, UUID):
-            return v
-        return getattr(v, "pk", None) or getattr(v, "id", None)
+        return extract_uuid_from_relation(v)

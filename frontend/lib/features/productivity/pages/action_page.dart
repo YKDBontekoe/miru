@@ -80,8 +80,8 @@ class _CalendarTab extends ConsumerWidget {
     final defaultStart = DateTime(now.year, now.month, now.day, now.hour + 1);
     final defaultEnd = defaultStart.add(const Duration(hours: 1));
 
-    DateTime selectedStart = existingEvent?.startTime ?? defaultStart;
-    DateTime selectedEnd = existingEvent?.endTime ?? defaultEnd;
+    DateTime selectedStart = existingEvent?.startTime.toLocal() ?? defaultStart;
+    DateTime selectedEnd = existingEvent?.endTime.toLocal() ?? defaultEnd;
 
     showDialog(
       context: context,
