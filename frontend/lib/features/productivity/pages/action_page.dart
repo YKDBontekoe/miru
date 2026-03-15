@@ -41,7 +41,7 @@ class CalendarEventsNotifier extends AutoDisposeNotifier<CalendarEventsState> {
 
   @override
   CalendarEventsState build() {
-    _fetchPage(isRefresh: true);
+    Future.microtask(() => _fetchPage(isRefresh: true));
     return const CalendarEventsState(isLoading: true);
   }
 
