@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/note.dart';
 import '../../../core/design_system/design_system.dart';
 import '../../../core/api/agents_service.dart';
+import '../../../core/models/agent.dart';
 import 'tasks_page.dart'; // To access productivityServiceProvider
 
 final notesProvider = FutureProvider.autoDispose<List<Note>>((ref) async {
@@ -106,7 +107,8 @@ class NotesPage extends ConsumerWidget {
               left: AppSpacing.md,
               right: AppSpacing.md,
               top: AppSpacing.md,
-              bottom: AppSpacing.bottomNavBarHeight +
+              bottom:
+                  AppSpacing.bottomNavBarHeight +
                   AppSpacing.md * 2 +
                   MediaQuery.viewPaddingOf(context).bottom,
             ),
@@ -137,7 +139,8 @@ class NotesPage extends ConsumerWidget {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom: AppSpacing.bottomNavBarHeight +
+          bottom:
+              AppSpacing.bottomNavBarHeight +
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),
@@ -214,7 +217,9 @@ class _NoteTile extends ConsumerWidget {
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Failed to delete note')),
+                          const SnackBar(
+                            content: Text('Failed to delete note'),
+                          ),
                         );
                       }
                     }
@@ -242,8 +247,11 @@ class _NoteTile extends ConsumerWidget {
                     if (note.agentId != null)
                       Row(
                         children: [
-                          Icon(Icons.smart_toy_outlined,
-                              size: 14, color: context.colorScheme.primary),
+                          Icon(
+                            Icons.smart_toy_outlined,
+                            size: 14,
+                            color: context.colorScheme.primary,
+                          ),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: () {
@@ -269,9 +277,11 @@ class _NoteTile extends ConsumerWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline,
-                              size: 14,
-                              color: context.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.info_outline,
+                            size: 14,
+                            color: context.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(
