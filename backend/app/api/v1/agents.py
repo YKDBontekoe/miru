@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
+
 from app.domain.agents.models import (
     AgentCreate,
     AgentGenerate,
     AgentGenerationResponse,
     AgentResponse,
+    AgentTemplateResponse,
     Capability,
     CapabilityResponse,
     Integration,
@@ -68,3 +71,23 @@ async def generate_agent(
 ) -> AgentGenerationResponse:
     """Use AI to generate an agent persona."""
     return await service.generate_agent_profile(data.keywords)
+
+
+@router.get("/templates", response_model=list[AgentTemplateResponse])
+async def list_templates(
+    _user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+) -> list[AgentTemplateResponse]:
+    """List all available agent templates."""
+    return await service.list_templates()
+
+
+@router.post("/from-template/{template_id}", response_model=AgentResponse)
+async def create_from_template(
+    template_id: UUID,
+    user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+    name: str | None = None,
+) -> AgentResponse:
+    """Create a new agent from an existing template, optionally overriding the name."""
+    return await service.create_from_template(template_id, user_id, name_override=name)

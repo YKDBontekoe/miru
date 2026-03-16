@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -25,6 +26,9 @@ from app.domain.chat.models import (
     ChatMessageResponse,
     RoomResponse,
 )
+from app.domain.memory.service import MemoryService
+from app.domain.memory.knowledge_graph_service import extract_and_store_graph
+from app.domain.agents.affinity_service import increment_affinity, log_agent_action
 from app.infrastructure.external.openrouter import get_openrouter_client
 from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
 
@@ -39,7 +43,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
 MULTI_AGENT_PROMPT = (
     "User said: {user_message}. You are managing a group chat. You MUST delegate tasks to EACH "
     "available agent so they can all contribute to the conversation. Ensure they respond to the "
@@ -47,7 +50,11 @@ MULTI_AGENT_PROMPT = (
     "of what each agent said."
 )
 
-MULTI_AGENT_EXPECTED_OUTPUT = "A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'"
+MULTI_AGENT_EXPECTED_OUTPUT = (
+    "A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'"
+)
+
+HISTORY_WINDOW = 10  # number of recent messages to inject as conversation context
 
 
 class _OpenRouterLLM(LLM):
@@ -64,6 +71,25 @@ class _OpenRouterLLM(LLM):
         return True
 
 
+def _format_memory_context(memories: list) -> str:
+    """Format retrieved memories into an injectable system prompt section."""
+    if not memories:
+        return ""
+    lines = [f"- {m.content}" for m in memories]
+    return "\n[MEMORY CONTEXT]\nRelevant facts about this user:\n" + "\n".join(lines) + "\n"
+
+
+def _format_history_context(messages: list) -> str:
+    """Format recent chat messages into a conversation history block."""
+    if not messages:
+        return ""
+    lines = []
+    for m in messages:
+        speaker = "User" if m.user_id else "Agent"
+        lines.append(f"{speaker}: {m.content}")
+    return "\n[CONVERSATION HISTORY]\n" + "\n".join(lines) + "\n"
+
+
 class ChatService:
     def __init__(
         self,
@@ -76,13 +102,7 @@ class ChatService:
         self.memory_repo = memory_repo
 
     def _get_crew_llm(self) -> _OpenRouterLLM:
-        """Build a CrewAI LLM instance backed by OpenRouter.
-
-        Returns an ``_OpenRouterLLM`` configured to allow function calling
-        (``supports_function_calling()`` returns ``True``), but with the
-        provider-specific ``tool_choice`` parameter dropped to avoid 404 errors
-        on OpenRouter routes that do not implement it.
-        """
+        """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
         return _OpenRouterLLM(
             model=f"openrouter/{settings.default_chat_model}",
@@ -94,11 +114,7 @@ class ChatService:
     def _get_agent_tools(
         self, agent: Agent, user_id: UUID, origin_message_id: UUID | None = None
     ) -> list:
-        """Build the tool list for an agent from its prefetched integrations.
-
-        Requires ``agent_integrations__integration`` to have been prefetched
-        before calling this method.
-        """
+        """Build the tool list for an agent from its prefetched integrations."""
         tools = []
         for ai in agent.agent_integrations:  # type: ignore[attr-defined]
             if not ai.enabled:
@@ -156,8 +172,10 @@ class ChatService:
     async def list_room_agents(self, room_id: UUID) -> list[Agent]:
         return await self.chat_repo.list_room_agents(room_id)
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
-        msgs = await self.chat_repo.get_room_messages(room_id)
+    async def get_room_messages(
+        self, room_id: UUID, limit: int = 100, offset: int = 0
+    ) -> list[ChatMessageResponse]:
+        msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, offset=offset)
         return [
             ChatMessageResponse(
                 id=m.id,
@@ -171,25 +189,45 @@ class ChatService:
         ]
 
     async def stream_responses(self, user_message: str, user_id: UUID) -> AsyncIterator[str]:
-        """A simple non-room chat stream for general queries using the first available agent."""
+        """Non-room chat stream: retrieves relevant memories and injects them into context."""
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
             yield "No agents available. Please create one first."
             return
 
-        llm = get_openrouter_client().openai_client
         agent = db_agents[0]
-        # Use the default chat model from settings (configured via env)
+        memory_svc = MemoryService(self.memory_repo)
+
+        # 1. Retrieve relevant memories
+        memories = await memory_svc.retrieve_memories(user_message, user_id=user_id)
+        memory_context = _format_memory_context(memories)
+
+        # 2. Build system prompt with memory context
+        base_prompt = agent.system_prompt or agent.personality
+        system_prompt = base_prompt + memory_context
+
+        llm = get_openrouter_client().openai_client
         model_name = get_settings().default_chat_model
         response = await llm.chat.completions.create(
             model=model_name,
             messages=[
-                {"role": "system", "content": agent.personality},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
         )
 
         content = response.choices[0].message.content or "Error: No response from agent."
+
+        # 3. Store the conversation turn as a memory
+        try:
+            await memory_svc.store_memory(
+                f"User asked: {user_message}\nAgent replied: {content}",
+                user_id=user_id,
+                agent_id=agent.id,
+            )
+        except Exception as exc:
+            logger.warning("Failed to store memory: %s", exc)
+
         yield content
         yield "[[STATUS:done]]\n"
 
@@ -200,13 +238,16 @@ class ChatService:
         user_id: UUID,
         allow_delegation: bool = False,
         origin_message_id: UUID | None = None,
+        memory_context: str = "",
+        history_context: str = "",
     ) -> list[crewai.Agent]:
         """Helper to create crewai.Agent instances from DB agents."""
+        extra_context = history_context + memory_context
         return [
             crewai.Agent(
                 role=a.name,
-                goal=a.personality,
-                backstory=a.description or "",
+                goal=a.system_prompt or a.personality,
+                backstory=(a.description or "") + extra_context,
                 llm=llm,
                 allow_delegation=allow_delegation,
                 tools=self._get_agent_tools(a, user_id, origin_message_id=origin_message_id),
@@ -216,13 +257,18 @@ class ChatService:
 
     async def run_crew(self, user_message: str, user_id: UUID) -> dict[str, str]:
         """Execute a full CrewAI orchestration and return a structured result."""
-        # list_by_user prefetches agent_integrations__integration
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
             return {"task_type": "error", "result": "No agents available."}
 
+        memory_svc = MemoryService(self.memory_repo)
+        memories = await memory_svc.retrieve_memories(user_message, user_id=user_id)
+        memory_context = _format_memory_context(memories)
+
         llm = self._get_crew_llm()
-        crew_agents = self._create_crew_agents(db_agents, llm, user_id, allow_delegation=True)
+        crew_agents = self._create_crew_agents(
+            db_agents, llm, user_id, allow_delegation=True, memory_context=memory_context
+        )
 
         if len(crew_agents) > 1:
             task = Task(
@@ -253,24 +299,41 @@ class ChatService:
     async def stream_room_responses(
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
-        """The core agentic chat loop using CrewAI."""
+        """Room-based agentic chat loop using CrewAI with memory and history context."""
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
 
-        # 2. Get agents in room (agent_integrations prefetched by list_room_agents)
+        # 2. Get agents in room
         db_agents = await self.chat_repo.list_room_agents(room_id)
         if not db_agents:
             yield "No agents in this room. Please add some first."
             return
 
-        # 3. Build CrewAI agents
+        memory_svc = MemoryService(self.memory_repo)
+
+        # 3. Retrieve relevant memories and recent conversation history in parallel
+        memories, recent_messages = await asyncio.gather(
+            memory_svc.retrieve_memories(user_message, user_id=user_id, room_id=room_id),
+            self.chat_repo.get_recent_messages(room_id, limit=HISTORY_WINDOW),
+        )
+        memory_context = _format_memory_context(memories)
+        # Exclude the message we just saved (it's the last in the list)
+        history_context = _format_history_context(recent_messages[:-1])
+
+        # 4. Build CrewAI agents with injected context
         llm = self._get_crew_llm()
         crew_agents = self._create_crew_agents(
-            db_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg.id
+            db_agents,
+            llm,
+            user_id,
+            allow_delegation=False,
+            origin_message_id=user_msg.id,
+            memory_context=memory_context,
+            history_context=history_context,
         )
 
-        # 4. Define and execute task
+        # 5. Define and execute task
         if len(crew_agents) > 1:
             task = Task(
                 description=MULTI_AGENT_PROMPT.format(user_message=user_message),
@@ -284,11 +347,13 @@ class ChatService:
                 verbose=True,
             )
         else:
+            task_description = (
+                f"{history_context}\n[CURRENT MESSAGE]\n"
+                f"User said: {user_message}. "
+                "Orchestrate a helpful conversation among available agents to assist the user."
+            )
             task = Task(
-                description=(
-                    f"User said: {user_message}. "
-                    "Orchestrate a helpful conversation among available agents to assist the user."
-                ),
+                description=task_description,
                 expected_output="A collaborative response from the most relevant agents.",
                 agent=crew_agents[0],
             )
@@ -300,18 +365,51 @@ class ChatService:
             )
 
         result = await crew.kickoff_async()
+        result_str = str(result)
 
-        # 5. Save agent response
-        # In a hierarchical multi-agent response, attributing to a single agent
-        # is incorrect, so we leave agent_id as None. Otherwise use the single agent's ID.
+        # 6. Save agent response
         agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
-
         agent_msg = ChatMessage(
             room_id=room_id,
             agent_id=agent_id_for_msg,
-            content=str(result),
+            content=result_str,
         )
         await self.chat_repo.save_message(agent_msg)
 
-        yield str(result)
+        # 7. Store conversation turn as memory (non-blocking)
+        try:
+            await memory_svc.store_memory(
+                f"User asked: {user_message}\nAgent replied: {result_str}",
+                user_id=user_id,
+                room_id=room_id,
+            )
+        except Exception as exc:
+            logger.warning("Failed to store room memory: %s", exc)
+
+        # 8. Knowledge graph extraction (background task)
+        _bg_task = asyncio.create_task(
+            extract_and_store_graph(
+                f"User: {user_message}\nAgent: {result_str}", user_id
+            )
+        )
+        def _on_kg_done(t: asyncio.Task) -> None:
+            if not t.cancelled() and (exc := t.exception()):
+                logger.error("Knowledge graph extraction failed: %s", exc)
+        _bg_task.add_done_callback(_on_kg_done)
+
+        # 9. Affinity increment + action log for each room agent
+        for db_agent in db_agents:
+            level_up = await increment_affinity(user_id, db_agent.id)
+            if level_up:
+                yield level_up + "\n"
+            await log_agent_action(
+                user_id=user_id,
+                agent_id=db_agent.id,
+                action_type="chat_response",
+                content=result_str[:500],
+                room_id=room_id,
+                meta={"message_length": len(result_str)},
+            )
+
+        yield result_str
         yield "[[STATUS:done]]\n"

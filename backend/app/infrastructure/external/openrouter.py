@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import functools
+import time
 from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel
@@ -12,6 +15,25 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
 T = TypeVar("T", bound=BaseModel)
+
+# Simple LRU cache with TTL for embeddings
+_embed_cache: dict[tuple[str, str], tuple[list[float], float]] = {}
+_EMBED_TTL_SECONDS = 300  # 5 minutes
+
+
+def _embed_cache_get(text: str, model: str) -> list[float] | None:
+    entry = _embed_cache.get((text, model))
+    if entry and time.monotonic() - entry[1] < _EMBED_TTL_SECONDS:
+        return entry[0]
+    return None
+
+
+def _embed_cache_set(text: str, model: str, value: list[float]) -> None:
+    # Limit cache to 256 entries (evict oldest)
+    if len(_embed_cache) >= 256:
+        oldest_key = min(_embed_cache, key=lambda k: _embed_cache[k][1])
+        del _embed_cache[oldest_key]
+    _embed_cache[(text, model)] = (value, time.monotonic())
 
 
 class OpenRouterClient:
@@ -34,12 +56,17 @@ class OpenRouterClient:
         )
 
     async def embed(self, text: str, model: str) -> list[float]:
+        cached = _embed_cache_get(text, model)
+        if cached is not None:
+            return cached
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
             encoding_format="float",
         )
-        return response.data[0].embedding
+        result = response.data[0].embedding
+        _embed_cache_set(text, model, result)
+        return result
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
         response = await self.openai_client.chat.completions.create(
@@ -65,11 +92,22 @@ class OpenRouterClient:
         )
 
 
-# Singleton client for internal use
+# Thread-safe singleton using asyncio.Lock
 _client: OpenRouterClient | None = None
+_client_lock = asyncio.Lock()
+
+
+async def _get_openrouter_client_async() -> OpenRouterClient:
+    global _client
+    if _client is None:
+        async with _client_lock:
+            if _client is None:
+                _client = OpenRouterClient(get_settings().openrouter_api_key)
+    return _client
 
 
 def get_openrouter_client() -> OpenRouterClient:
+    """Return the singleton OpenRouterClient. Creates it synchronously on first call."""
     global _client
     if _client is None:
         _client = OpenRouterClient(get_settings().openrouter_api_key)

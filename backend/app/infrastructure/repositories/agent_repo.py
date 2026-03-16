@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from app.domain.agents.models import Agent, Capability, Integration
+from tortoise import Tortoise
+
+from app.domain.agents.models import Agent, AgentTemplate, Capability, Integration
 
 
 class AgentRepository:
@@ -51,8 +53,19 @@ class AgentRepository:
             await agent.save()
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
-        """Increment an agent's message count."""
-        agent = await self.get_by_id(agent_id)
-        if agent:
-            agent.message_count += 1
-            await agent.save()
+        """Atomically increment an agent's message count with a single SQL UPDATE."""
+        conn = Tortoise.get_connection("default")
+        await conn.execute_query(
+            "UPDATE agents SET message_count = message_count + 1 WHERE id = $1",
+            [str(agent_id)],
+        )
+
+    async def list_templates(self) -> list[AgentTemplate]:
+        """List all available agent templates."""
+        return await AgentTemplate.all().prefetch_related("capabilities")
+
+    async def get_template_by_id(self, template_id: UUID | str) -> AgentTemplate | None:
+        """Fetch a single agent template by ID."""
+        if isinstance(template_id, str):
+            template_id = UUID(template_id)
+        return await AgentTemplate.get_or_none(id=template_id).prefetch_related("capabilities")
