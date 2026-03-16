@@ -4,3 +4,6 @@ security:
     "85151":
       reason: "Transient dependency of onnxruntime/opentelemetry. No fixed version available yet. Risk is acceptable for current usage."
       expires: "2026-04-14 00:00:00"
+    "86338":
+      reason: "Transient dependency of diskcache (CVE-2025-69872). Deserialization of untrusted data risk is mitigated by environment isolation."
+      expires: "2026-05-14 00:00:00"
