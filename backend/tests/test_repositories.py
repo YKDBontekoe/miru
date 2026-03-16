@@ -140,6 +140,12 @@ class TestChatRepository:
         assert messages == []
 
     @pytest.mark.asyncio
+    async def test_get_room_messages_unknown_room(self) -> None:
+        repo = ChatRepository()
+        messages = await repo.get_room_messages(uuid4(), uuid4())
+        assert messages == []
+
+    @pytest.mark.asyncio
     async def test_save_message(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -155,6 +161,18 @@ class TestChatRepository:
         room = await repo.create_room("Agent Room", user_id)
         agents = await repo.list_room_agents(room.id, user_id)
         assert agents == []
+
+    @pytest.mark.asyncio
+    async def test_list_room_agents_unknown_room(self) -> None:
+        repo = ChatRepository()
+        agents = await repo.list_room_agents(uuid4(), uuid4())
+        assert agents == []
+
+    @pytest.mark.asyncio
+    async def test_add_agent_to_room_raises_value_error(self) -> None:
+        repo = ChatRepository()
+        with pytest.raises(ValueError, match="Room or Agent not found or unauthorized"):
+            await repo.add_agent_to_room(uuid4(), uuid4(), uuid4())
 
 
 # ---------------------------------------------------------------------------

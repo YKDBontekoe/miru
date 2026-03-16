@@ -121,6 +121,76 @@ def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
 
 
 @pytest.mark.asyncio
+async def test_update_room(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    mock_room = MagicMock()
+    mock_room.id = room_id
+    mock_room.name = "Updated"
+    chat_service.chat_repo.update_room.return_value = mock_room
+
+    result = await chat_service.update_room(room_id, "Updated", user_id)
+    assert result is not None
+    assert result.name == "Updated"
+    chat_service.chat_repo.update_room.assert_awaited_once_with(room_id, "Updated", user_id)
+
+
+@pytest.mark.asyncio
+async def test_update_room_not_found(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    chat_service.chat_repo.update_room.return_value = None
+
+    result = await chat_service.update_room(room_id, "Updated", user_id)
+    assert result is None
+    chat_service.chat_repo.update_room.assert_awaited_once_with(room_id, "Updated", user_id)
+
+
+@pytest.mark.asyncio
+async def test_delete_room(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    chat_service.chat_repo.delete_room.return_value = True
+
+    result = await chat_service.delete_room(room_id, user_id)
+    assert result is True
+    chat_service.chat_repo.delete_room.assert_awaited_once_with(room_id, user_id)
+
+
+@pytest.mark.asyncio
+async def test_add_agent_to_room(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    agent_id = uuid4()
+    user_id = uuid4()
+    chat_service.chat_repo.add_agent_to_room.return_value = None
+
+    await chat_service.add_agent_to_room(room_id, agent_id, user_id)
+    chat_service.chat_repo.add_agent_to_room.assert_awaited_once_with(room_id, agent_id, user_id)
+
+
+@pytest.mark.asyncio
+async def test_list_room_agents(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    chat_service.chat_repo.list_room_agents.return_value = []
+
+    result = await chat_service.list_room_agents(room_id, user_id)
+    assert result == []
+    chat_service.chat_repo.list_room_agents.assert_awaited_once_with(room_id, user_id)
+
+
+@pytest.mark.asyncio
+async def test_get_room_messages(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    chat_service.chat_repo.get_room_messages.return_value = []
+
+    result = await chat_service.get_room_messages(room_id, user_id)
+    assert result == []
+    chat_service.chat_repo.get_room_messages.assert_awaited_once_with(room_id, user_id)
+
+
+@pytest.mark.asyncio
 async def test_run_crew_task_has_single_agent(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
