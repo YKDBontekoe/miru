@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -52,8 +53,18 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final passkeys = await PasskeyService.listPasskeys();
       if (mounted) setState(() => _passkeys = passkeys);
-    } catch (e) {
-      // Non-fatal — user may not have any passkeys yet.
+    } catch (e, s) {
+      developer.log(
+        'settings_page error: Could not load passkeys',
+        error: e,
+        stackTrace: s,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load passkeys. Please try again.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _loadingPasskeys = false);
     }
@@ -103,11 +114,18 @@ class _SettingsPageState extends State<SettingsPage> {
           content: Text(e.message ?? 'Passkeys not supported on this device'),
         ),
       );
-    } catch (e) {
+    } catch (e, s) {
+      developer.log(
+        'settings_page error: Failed to add passkey',
+        error: e,
+        stackTrace: s,
+      );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An unexpected error occurred. Please try again.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _addingPasskey = false);
     }
@@ -145,11 +163,18 @@ class _SettingsPageState extends State<SettingsPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('Passkey removed')));
       await _loadPasskeys();
-    } catch (e) {
+    } catch (e, s) {
+      developer.log(
+        'settings_page error: Failed to remove passkey',
+        error: e,
+        stackTrace: s,
+      );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to remove: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to remove item. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -173,7 +198,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _memories = graphData.nodes;
         _memoryEdges = graphData.edges;
       });
-    } catch (e) {
+    } on Exception {
       try {
         final memories = await ApiService.getMemories();
         if (!mounted) return;
@@ -218,11 +243,18 @@ class _SettingsPageState extends State<SettingsPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('Memory forgotten')));
       await _loadMemories();
-    } catch (e) {
+    } catch (e, s) {
+      developer.log(
+        'settings_page error: Failed to delete memory',
+        error: e,
+        stackTrace: s,
+      );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to remove item. Please try again.'),
+        ),
+      );
     }
   }
 
