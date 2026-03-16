@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Any
 from uuid import UUID  # noqa: TCH003
 
@@ -20,6 +21,8 @@ from app.domain.chat.models import (
     RoomUpdate,
 )
 from app.domain.chat.service import ChatService  # noqa: TCH001
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Chat"])
 
@@ -80,7 +83,9 @@ async def update_room(
 ) -> RoomResponse:
     room = await service.update_room(room_id, data.name, user_id)
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise HTTPException(
+            status_code=404, detail={"error": "ROOM_NOT_FOUND", "message": "Room not found"}
+        )
     return room
 
 
@@ -92,7 +97,9 @@ async def delete_room(
 ) -> dict[str, str]:
     success = await service.delete_room(room_id, user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise HTTPException(
+            status_code=404, detail={"error": "ROOM_NOT_FOUND", "message": "Room not found"}
+        )
     return {"status": "ok"}
 
 
@@ -106,7 +113,11 @@ async def add_agent_to_room(
     try:
         await service.add_agent_to_room(room_id, data.agent_id, user_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        logger.exception("Failed to add agent to room")
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "AGENT_ADD_FAILED", "message": "Failed to add agent to room"},
+        ) from e
     return {"status": "ok"}
 
 
@@ -116,8 +127,13 @@ async def get_room_agents(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    agents = await service.list_room_agents(room_id, user_id)
-    return [AgentResponse.model_validate(a) for a in agents]
+    try:
+        agents = await service.list_room_agents(room_id, user_id)
+        return [AgentResponse.model_validate(a) for a in agents]
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404, detail={"error": "ROOM_NOT_FOUND", "message": "Room not found"}
+        ) from e
 
 
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
@@ -126,7 +142,12 @@ async def get_room_messages(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(room_id, user_id)
+    try:
+        return await service.get_room_messages(room_id, user_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404, detail={"error": "ROOM_NOT_FOUND", "message": "Room not found"}
+        ) from e
 
 
 @router.post("/rooms/{room_id}/chat")

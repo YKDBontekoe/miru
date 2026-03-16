@@ -57,18 +57,18 @@ class ChatRepository:
         """Fetch all agents associated with a room, with integrations prefetched."""
         room = await self.get_room(room_id, user_id)
         if not room:
-            return []
+            raise ValueError("Room not found")
 
-        assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
-            "agent__agent_integrations__integration"
-        )
+        assocs = await ChatRoomAgent.filter(
+            room_id=room_id, agent__user_id=user_id
+        ).prefetch_related("agent__agent_integrations__integration")
         return [assoc.agent for assoc in assocs]
 
     async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessage]:
         """Fetch all messages in a room."""
         room = await self.get_room(room_id, user_id)
         if not room:
-            return []
+            raise ValueError("Room not found")
 
         return await ChatMessage.filter(room_id=room_id).order_by("created_at").all()
 

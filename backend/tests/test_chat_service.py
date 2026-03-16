@@ -438,8 +438,7 @@ async def test_stream_room_responses_no_agents(
 
     chat_service.chat_repo.list_room_agents.return_value = []
 
-    responses = []
-    async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
-        responses.append(r)
+    responses = [r async for r in chat_service.stream_room_responses(room_id, "hello", user_id)]
 
     assert responses == ["No agents in this room or room not found. Please add some first."]
+    chat_service.chat_repo.save_message.assert_not_called()
