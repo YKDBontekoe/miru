@@ -17,6 +17,7 @@ T = TypeVar("T", bound=BaseModel)
 class OpenRouterClient:
     def __init__(self, api_key: str):
         # We defer imports to bypass Python 3.13 circular import bugs at startup
+        # SEC(agent): review needed - diskcache (dependency of instructor) is vulnerable to CVE-2025-69872 (Deserialization of Untrusted Data). Upstream fix needed.
         import instructor
         from openai import AsyncOpenAI
 
