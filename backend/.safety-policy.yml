@@ -1,6 +1,9 @@
-# Safety policy file to ignore specific vulnerabilities
 security:
+  ignore-cvss-severity-below: 0
   ignore-vulnerabilities:
-    "85151":
-      reason: "Transient dependency of onnxruntime/opentelemetry. No fixed version available yet. Risk is acceptable for current usage."
-      expires: "2026-04-14 00:00:00"
+    85151:
+      reason: Transient dependency of onnxruntime/opentelemetry. No fixed version available yet. Risk is acceptable for current usage.
+      expires: 2026-04-14
+    86338:
+      reason: "Diskcache transient dependency. Unsafe default deserialization not exploitable since cache data is not user-controlled."
+      expires: 2026-04-14

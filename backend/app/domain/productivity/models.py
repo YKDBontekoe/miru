@@ -241,7 +241,7 @@ class CalendarEvent(SupabaseModel):
     start_time: datetime = fields.DatetimeField()
     end_time: datetime = fields.DatetimeField()
     is_all_day: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-    location: str | None = fields.CharField(max_length=255, null=True)
+    location: str | None = fields.CharField(max_length=255, null=True)  # type: ignore[assignment]
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
