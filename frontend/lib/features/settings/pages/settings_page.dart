@@ -52,7 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final passkeys = await PasskeyService.listPasskeys();
       if (mounted) setState(() => _passkeys = passkeys);
-    } catch (e) {
+    } on Exception {
       // Non-fatal — user may not have any passkeys yet.
     } finally {
       if (mounted) setState(() => _loadingPasskeys = false);
@@ -103,7 +103,7 @@ class _SettingsPageState extends State<SettingsPage> {
           content: Text(e.message ?? 'Passkeys not supported on this device'),
         ),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -145,7 +145,7 @@ class _SettingsPageState extends State<SettingsPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('Passkey removed')));
       await _loadPasskeys();
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -173,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _memories = graphData.nodes;
         _memoryEdges = graphData.edges;
       });
-    } catch (e) {
+    } on Exception {
       try {
         final memories = await ApiService.getMemories();
         if (!mounted) return;
@@ -218,7 +218,7 @@ class _SettingsPageState extends State<SettingsPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('Memory forgotten')));
       await _loadMemories();
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,

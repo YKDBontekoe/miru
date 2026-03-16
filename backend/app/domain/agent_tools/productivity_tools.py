@@ -1,3 +1,7 @@
+# TODO(miru-agent): This file is over 400 lines and handles multiple domains (Tasks, Notes, Events).
+# Recommended next step: Split this module into domain-focused sub-modules (e.g., tasks_tools.py, notes_tools.py, events_tools.py)
+# within the app.domain.agent_tools package to improve cohesion and adherence to the Single Responsibility Principle.
+
 from __future__ import annotations
 
 import logging
