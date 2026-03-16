@@ -41,7 +41,7 @@ async def test_update_room_not_found(
         headers=authed_headers,
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Room not found"}
+    assert response.json() == {"detail": {"error": "ROOM_NOT_FOUND", "message": "Room not found"}}
 
 
 @pytest.mark.asyncio
@@ -83,7 +83,7 @@ async def test_delete_room_not_found(
 
     response = client.delete(f"/api/v1/rooms/{room_id}", headers=authed_headers)
     assert response.status_code == 404
-    assert response.json() == {"detail": "Room not found"}
+    assert response.json() == {"detail": {"error": "ROOM_NOT_FOUND", "message": "Room not found"}}
 
 
 @pytest.mark.asyncio
@@ -120,7 +120,7 @@ async def test_add_agent_to_room_not_found(
         headers=authed_headers,
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Room or Agent not found or unauthorized"}
+    assert response.json() == {"detail": {"error": "AGENT_ADD_FAILED", "message": "Failed to add agent to room"}}
 
 
 @pytest.mark.asyncio
