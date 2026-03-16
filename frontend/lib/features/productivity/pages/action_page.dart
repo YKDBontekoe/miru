@@ -257,10 +257,17 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),
-        child: FloatingActionButton(
-          heroTag: 'calendar_fab',
-          onPressed: () => _showEventDialog(context),
-          child: const Icon(Icons.add),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: AppShadows.primaryGlow,
+          ),
+          child: FloatingActionButton(
+            elevation: 0,
+            heroTag: 'calendar_fab',
+            onPressed: () => _showEventDialog(context),
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );
@@ -300,7 +307,9 @@ class _EventTile extends ConsumerWidget {
           ListTile(
             title: Text(
               event.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

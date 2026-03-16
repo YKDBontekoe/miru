@@ -144,9 +144,16 @@ class NotesPage extends ConsumerWidget {
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),
-        child: FloatingActionButton(
-          onPressed: () => _showNoteDialog(context, ref),
-          child: const Icon(Icons.add),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: AppShadows.primaryGlow,
+          ),
+          child: FloatingActionButton(
+            elevation: 0,
+            onPressed: () => _showNoteDialog(context, ref),
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );
@@ -194,7 +201,9 @@ class _NoteTile extends ConsumerWidget {
             ),
             title: Text(
               note.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
               note.content,

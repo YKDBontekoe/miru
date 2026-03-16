@@ -207,9 +207,11 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                     Icons.delete_outline_rounded,
                     color: AppColors.error,
                   ),
-            label: const Text(
+            label: Text(
               'Delete Persona',
-              style: TextStyle(color: AppColors.error),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.error),
             ),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),

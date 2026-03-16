@@ -142,9 +142,16 @@ class TasksPage extends ConsumerWidget {
               AppSpacing.md +
               MediaQuery.viewPaddingOf(context).bottom,
         ),
-        child: FloatingActionButton(
-          onPressed: () => _showTaskDialog(context, ref),
-          child: const Icon(Icons.add),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: AppShadows.primaryGlow,
+          ),
+          child: FloatingActionButton(
+            elevation: 0,
+            onPressed: () => _showTaskDialog(context, ref),
+            child: const Icon(Icons.add),
+          ),
         ),
       ),
     );
