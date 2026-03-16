@@ -141,23 +141,24 @@ class ChatService:
         rooms = await self.chat_repo.list_rooms(user_id)
         return [RoomResponse(id=r.id, name=r.name, created_at=r.created_at) for r in rooms]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    # SEC(agent): Fixed IDOR. Ensuring all operations are scoped to user_id to prevent unauthorized access to other users' Chat Rooms and Agents.
+    async def update_room(self, room_id: UUID, name: str, user_id: UUID) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, name, user_id)
         if room:
             return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
-        await self.chat_repo.add_agent_to_room(room_id, agent_id)
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> None:
+        await self.chat_repo.add_agent_to_room(room_id, agent_id, user_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
-        return await self.chat_repo.list_room_agents(room_id)
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        return await self.chat_repo.list_room_agents(room_id, user_id)
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
-        msgs = await self.chat_repo.get_room_messages(room_id)
+    async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessageResponse]:
+        msgs = await self.chat_repo.get_room_messages(room_id, user_id)
         return [
             ChatMessageResponse(
                 id=m.id,
@@ -254,15 +255,15 @@ class ChatService:
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
-        # 1. Save user message
+        # 1. Verify ownership and get agents in room (agent_integrations prefetched by list_room_agents)
+        db_agents = await self.chat_repo.list_room_agents(room_id, user_id)
+        if not db_agents:
+            yield "No agents in this room or room not found. Please add some first."
+            return
+
+        # 2. Save user message only after verifying ownership
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
-
-        # 2. Get agents in room (agent_integrations prefetched by list_room_agents)
-        db_agents = await self.chat_repo.list_room_agents(room_id)
-        if not db_agents:
-            yield "No agents in this room. Please add some first."
-            return
 
         # 3. Build CrewAI agents
         llm = self._get_crew_llm()
