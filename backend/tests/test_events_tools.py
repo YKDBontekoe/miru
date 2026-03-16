@@ -1,4 +1,6 @@
-import typing
+from __future__ import annotations
+
+from collections.abc import Generator
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -15,7 +17,7 @@ from app.domain.productivity.models import CalendarEvent
 
 
 @pytest.fixture
-def mock_service() -> typing.Generator[MagicMock, None, None]:
+def mock_service() -> Generator[MagicMock, None, None]:
     with patch("app.domain.agent_tools.productivity.events_tools.ProductivityService") as mock:
         yield mock
 

@@ -1,4 +1,6 @@
-import typing
+from __future__ import annotations
+
+from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -12,7 +14,7 @@ from app.domain.productivity.models import Note
 
 
 @pytest.fixture
-def mock_service() -> typing.Generator[MagicMock, None, None]:
+def mock_service() -> Iterator[MagicMock]:
     with patch("app.domain.agent_tools.productivity.notes_tools.ProductivityService") as mock:
         yield mock
 
