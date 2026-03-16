@@ -12,6 +12,12 @@ import 'package:miru/core/models/message_status.dart';
 import 'package:miru/features/settings/pages/settings_page.dart';
 
 // ---------------------------------------------------------------------------
+
+import 'package:miru/features/chat/widgets/message_list.dart';
+import 'package:miru/features/chat/widgets/streaming_status_pill.dart';
+import 'package:miru/features/chat/widgets/scroll_to_bottom_button.dart';
+import 'package:miru/features/chat/widgets/miru_app_bar.dart';
+
 // Page
 // ---------------------------------------------------------------------------
 
@@ -310,7 +316,7 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      appBar: _MiruAppBar(
+      appBar: MiruAppBar(
         colors: colors,
         isDark: isDark,
         showNewChat: _messages.isNotEmpty,
@@ -345,7 +351,7 @@ class _ChatPageState extends State<ChatPage> {
                           _sendMessage();
                         },
                       )
-                    : _MessageList(
+                    : MessageList(
                         messages: _messages,
                         scrollController: _scrollController,
                         isStreaming: _isStreaming,
@@ -357,7 +363,7 @@ class _ChatPageState extends State<ChatPage> {
 
               // Streaming status pill (shown above input bar)
               if (_isStreaming && _streamingStatus != null)
-                _StreamingStatusPill(label: _streamingStatus!),
+                StreamingStatusPill(label: _streamingStatus!),
 
               // Input bar
               ChatInputBar(
@@ -375,7 +381,7 @@ class _ChatPageState extends State<ChatPage> {
             Positioned(
               bottom: 100,
               right: AppSpacing.lg,
-              child: _ScrollToBottomButton(
+              child: ScrollToBottomButton(
                 onPressed: _scrollToBottom,
                 colors: colors,
               ),
@@ -400,335 +406,3 @@ class _ChatPageState extends State<ChatPage> {
 // ---------------------------------------------------------------------------
 // Message list
 // ---------------------------------------------------------------------------
-
-class _MessageList extends StatelessWidget {
-  final List<ChatMessage> messages;
-  final ScrollController scrollController;
-  final bool isStreaming;
-  final String? streamingStatus;
-  final void Function(ChatMessage) onCopy;
-  final VoidCallback onRetry;
-
-  const _MessageList({
-    required this.messages,
-    required this.scrollController,
-    required this.isStreaming,
-    required this.streamingStatus,
-    required this.onCopy,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.lg,
-      ),
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final msg = messages[index];
-
-        // Show streaming status label in the placeholder bubble while we're
-        // waiting for the first token.
-        final isPlaceholder =
-            !msg.isUser && msg.text.isEmpty && streamingStatus != null;
-
-        return _AnimatedMessageItem(
-          key: ValueKey(msg.id),
-          child: ChatBubble(
-            text: isPlaceholder ? streamingStatus! : msg.text,
-            isUser: msg.isUser,
-            crewTaskType: msg.crewTaskType,
-            status: isPlaceholder ? MessageStatus.streaming : msg.status,
-            onCopy: () => onCopy(msg),
-            onRetry: msg.status == MessageStatus.failed ? onRetry : null,
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Animated message item — slides + fades in
-// ---------------------------------------------------------------------------
-
-class _AnimatedMessageItem extends StatefulWidget {
-  final Widget child;
-
-  const _AnimatedMessageItem({super.key, required this.child});
-
-  @override
-  State<_AnimatedMessageItem> createState() => _AnimatedMessageItemState();
-}
-
-class _AnimatedMessageItemState extends State<_AnimatedMessageItem>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-  late final Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppDurations.medium,
-    );
-    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.06),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacity,
-      child: SlideTransition(position: _slide, child: widget.child),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Streaming status pill
-// ---------------------------------------------------------------------------
-
-class _StreamingStatusPill extends StatefulWidget {
-  final String label;
-
-  const _StreamingStatusPill({required this.label});
-
-  @override
-  State<_StreamingStatusPill> createState() => _StreamingStatusPillState();
-}
-
-class _StreamingStatusPillState extends State<_StreamingStatusPill>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _opacity = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final isDark = context.isDark;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: FadeTransition(
-        opacity: _opacity,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceHighDark
-                : AppColors.surfaceHighLight,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-            border: Border.all(
-              color: colors.border.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 10,
-                height: 10,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                widget.label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: colors.onSurfaceMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Scroll to bottom button
-// ---------------------------------------------------------------------------
-
-class _ScrollToBottomButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final AppThemeColors colors;
-
-  const _ScrollToBottomButton({required this.onPressed, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: colors.surfaceHigh,
-      elevation: 4,
-      shadowColor: Colors.black.withValues(alpha: 0.15),
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: colors.border.withValues(alpha: 0.6)),
-          ),
-          child: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: colors.onSurfaceMuted,
-            size: AppSpacing.iconMd,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Premium App Bar
-// ---------------------------------------------------------------------------
-
-class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final AppThemeColors colors;
-  final bool isDark;
-  final bool showNewChat;
-  final VoidCallback onNewChat;
-  final VoidCallback onSettingsPressed;
-
-  const _MiruAppBar({
-    required this.colors,
-    required this.isDark,
-    required this.showNewChat,
-    required this.onNewChat,
-    required this.onSettingsPressed,
-  });
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  @override
-  Widget build(BuildContext context) {
-    // Gradient uses design tokens instead of hardcoded colors.
-    final gradientColors = isDark
-        ? [AppColors.onSurfaceDark, AppColors.primaryLight]
-        : [AppColors.onSurfaceLight, AppColors.primaryDark];
-
-    return AppBar(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      centerTitle: true,
-      leading: showNewChat
-          ? IconButton(
-              icon: Icon(
-                Icons.add_rounded,
-                color: colors.onSurfaceMuted,
-                size: 22,
-              ),
-              tooltip: 'New chat',
-              onPressed: onNewChat,
-            )
-          : null,
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Icon mark
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: colors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.blur_on_rounded, size: 16, color: colors.primary),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          // Gradient wordmark
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: gradientColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds),
-            child: Text(
-              'Miru',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          const AppStatusDot.online(),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(
-            Icons.settings_outlined,
-            color: colors.onSurfaceMuted,
-            size: 22,
-          ),
-          onPressed: onSettingsPressed,
-          tooltip: 'Settings',
-        ),
-        const SizedBox(width: AppSpacing.xs),
-      ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: (isDark ? AppColors.borderDark : AppColors.borderLight)
-              .withValues(alpha: 0.4),
-        ),
-      ),
-    );
-  }
-}

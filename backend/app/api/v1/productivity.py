@@ -19,7 +19,7 @@ from app.domain.productivity.models import (
     TaskResponse,
     TaskUpdate,
 )
-from app.domain.productivity.service import ProductivityService
+from app.domain.productivity.service import CalendarService, NoteService, TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ async def create_task(
     user_id: CurrentUser,
 ) -> TaskResponse:
     """Create a new task."""
-    task = await ProductivityService.create_task(user_id, task_data)
+    task = await TaskService.create_task(user_id, task_data)
     return TaskResponse.model_validate(task)
 
 
@@ -47,7 +47,7 @@ async def list_tasks(
     offset: int = Query(0, ge=0),
 ) -> list[TaskResponse]:
     """List all tasks for the current user."""
-    tasks = await ProductivityService.list_tasks(user_id, limit=limit, offset=offset)
+    tasks = await TaskService.list_tasks(user_id, limit=limit, offset=offset)
     return [TaskResponse.model_validate(t) for t in tasks]
 
 
@@ -57,7 +57,7 @@ async def get_task(
     user_id: CurrentUser,
 ) -> TaskResponse:
     """Get a specific task."""
-    task = await ProductivityService.get_task(user_id, task_id)
+    task = await TaskService.get_task(user_id, task_id)
     return TaskResponse.model_validate(task)
 
 
@@ -68,7 +68,7 @@ async def update_task(
     user_id: CurrentUser,
 ) -> TaskResponse:
     """Update a specific task."""
-    task = await ProductivityService.update_task(user_id, task_id, task_data)
+    task = await TaskService.update_task(user_id, task_id, task_data)
     return TaskResponse.model_validate(task)
 
 
@@ -78,7 +78,7 @@ async def delete_task(
     user_id: CurrentUser,
 ) -> None:
     """Delete a specific task."""
-    await ProductivityService.delete_task(user_id, task_id)
+    await TaskService.delete_task(user_id, task_id)
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ async def create_note(
     user_id: CurrentUser,
 ) -> NoteResponse:
     """Create a new note."""
-    note = await ProductivityService.create_note(user_id, note_data)
+    note = await NoteService.create_note(user_id, note_data)
     return NoteResponse.model_validate(note)
 
 
@@ -103,7 +103,7 @@ async def list_notes(
     offset: int = Query(0, ge=0),
 ) -> list[NoteResponse]:
     """List all notes for the current user."""
-    notes = await ProductivityService.list_notes(user_id, limit=limit, offset=offset)
+    notes = await NoteService.list_notes(user_id, limit=limit, offset=offset)
     return [NoteResponse.model_validate(n) for n in notes]
 
 
@@ -113,7 +113,7 @@ async def get_note(
     user_id: CurrentUser,
 ) -> NoteResponse:
     """Get a specific note."""
-    note = await ProductivityService.get_note(user_id, note_id)
+    note = await NoteService.get_note(user_id, note_id)
     return NoteResponse.model_validate(note)
 
 
@@ -124,7 +124,7 @@ async def update_note(
     user_id: CurrentUser,
 ) -> NoteResponse:
     """Update a specific note."""
-    note = await ProductivityService.update_note(user_id, note_id, note_data)
+    note = await NoteService.update_note(user_id, note_id, note_data)
     return NoteResponse.model_validate(note)
 
 
@@ -134,7 +134,7 @@ async def delete_note(
     user_id: CurrentUser,
 ) -> None:
     """Delete a specific note."""
-    await ProductivityService.delete_note(user_id, note_id)
+    await NoteService.delete_note(user_id, note_id)
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ async def create_event(
     user_id: CurrentUser,
 ) -> CalendarEventResponse:
     """Create a new calendar event."""
-    event = await ProductivityService.create_event(user_id, event_data)
+    event = await CalendarService.create_event(user_id, event_data)
     return CalendarEventResponse.model_validate(event)
 
 
@@ -159,7 +159,7 @@ async def list_events(
     offset: int = Query(0, ge=0),
 ) -> list[CalendarEventResponse]:
     """List all calendar events for the current user."""
-    events = await ProductivityService.list_events(user_id, limit=limit, offset=offset)
+    events = await CalendarService.list_events(user_id, limit=limit, offset=offset)
     return [CalendarEventResponse.model_validate(e) for e in events]
 
 
@@ -169,7 +169,7 @@ async def get_event(
     user_id: CurrentUser,
 ) -> CalendarEventResponse:
     """Get a specific calendar event."""
-    event = await ProductivityService.get_event(user_id, event_id)
+    event = await CalendarService.get_event(user_id, event_id)
     return CalendarEventResponse.model_validate(event)
 
 
@@ -180,7 +180,7 @@ async def update_event(
     user_id: CurrentUser,
 ) -> CalendarEventResponse:
     """Update a specific calendar event."""
-    event = await ProductivityService.update_event(user_id, event_id, event_data)
+    event = await CalendarService.update_event(user_id, event_id, event_data)
     return CalendarEventResponse.model_validate(event)
 
 
@@ -190,4 +190,4 @@ async def delete_event(
     user_id: CurrentUser,
 ) -> None:
     """Delete a specific calendar event."""
-    await ProductivityService.delete_event(user_id, event_id)
+    await CalendarService.delete_event(user_id, event_id)

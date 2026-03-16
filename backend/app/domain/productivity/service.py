@@ -23,12 +23,8 @@ from app.domain.productivity.models import (
 logger = logging.getLogger(__name__)
 
 
-class ProductivityService:
-    """Service for managing productivity features."""
-
-    # ---------------------------------------------------------------------------
-    # Tasks
-    # ---------------------------------------------------------------------------
+class TaskService:
+    """Service for managing tasks."""
 
     @staticmethod
     async def create_task(user_id: UUID, task_data: TaskCreate) -> Task:
@@ -79,7 +75,7 @@ class ProductivityService:
     @staticmethod
     async def update_task(user_id: UUID, task_id: UUID, update_data: TaskUpdate) -> Task:
         """Update a specific task."""
-        task = await ProductivityService.get_task(user_id, task_id)
+        task = await TaskService.get_task(user_id, task_id)
 
         update_fields = update_data.model_dump(exclude_unset=True)
         if not update_fields:
@@ -112,7 +108,7 @@ class ProductivityService:
     @staticmethod
     async def delete_task(user_id: UUID, task_id: UUID) -> None:
         """Delete a specific task."""
-        task = await ProductivityService.get_task(user_id, task_id)
+        task = await TaskService.get_task(user_id, task_id)
         try:
             await task.delete()
         except (IntegrityError, OperationalError, DBConnectionError) as e:
@@ -124,9 +120,9 @@ class ProductivityService:
             logger.exception("Unexpected error in delete_task")
             raise HTTPException(status_code=500, detail="Failed to delete task") from e
 
-    # ---------------------------------------------------------------------------
-    # Notes
-    # ---------------------------------------------------------------------------
+
+class NoteService:
+    """Service for managing notes."""
 
     @staticmethod
     async def create_note(user_id: UUID, note_data: NoteCreate) -> Note:
@@ -181,7 +177,7 @@ class ProductivityService:
     @staticmethod
     async def update_note(user_id: UUID, note_id: UUID, update_data: NoteUpdate) -> Note:
         """Update a specific note."""
-        note = await ProductivityService.get_note(user_id, note_id)
+        note = await NoteService.get_note(user_id, note_id)
 
         update_fields = update_data.model_dump(exclude_unset=True)
         if not update_fields:
@@ -214,7 +210,7 @@ class ProductivityService:
     @staticmethod
     async def delete_note(user_id: UUID, note_id: UUID) -> None:
         """Delete a specific note."""
-        note = await ProductivityService.get_note(user_id, note_id)
+        note = await NoteService.get_note(user_id, note_id)
         try:
             await note.delete()
         except (IntegrityError, OperationalError, DBConnectionError) as e:
@@ -226,9 +222,9 @@ class ProductivityService:
             logger.exception("Unexpected error in delete_note")
             raise HTTPException(status_code=500, detail="Failed to delete note") from e
 
-    # ---------------------------------------------------------------------------
-    # Calendar Events
-    # ---------------------------------------------------------------------------
+
+class CalendarService:
+    """Service for managing calendar events."""
 
     @staticmethod
     async def create_event(user_id: UUID, event_data: CalendarEventCreate) -> CalendarEvent:
@@ -291,7 +287,7 @@ class ProductivityService:
         user_id: UUID, event_id: UUID, update_data: CalendarEventUpdate
     ) -> CalendarEvent:
         """Update a specific calendar event."""
-        event = await ProductivityService.get_event(user_id, event_id)
+        event = await CalendarService.get_event(user_id, event_id)
 
         update_fields = update_data.model_dump(exclude_unset=True)
         if not update_fields:
@@ -331,7 +327,7 @@ class ProductivityService:
     @staticmethod
     async def delete_event(user_id: UUID, event_id: UUID) -> None:
         """Delete a specific calendar event."""
-        event = await ProductivityService.get_event(user_id, event_id)
+        event = await CalendarService.get_event(user_id, event_id)
         try:
             await event.delete()
         except (IntegrityError, OperationalError, DBConnectionError) as e:
