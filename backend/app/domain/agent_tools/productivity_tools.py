@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from app.domain.productivity.models import NoteCreate, TaskCreate, TaskUpdate
-from app.domain.productivity.service import ProductivityService
+from app.domain.productivity.service import CalendarService, NoteService, TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class ListTasksTool(BaseTool):
 
     async def _run(self) -> str:
         try:
-            tasks = await ProductivityService.list_tasks(user_id=self.user_id)
+            tasks = await TaskService.list_tasks(user_id=self.user_id)
 
             if not tasks:
                 return "No tasks found."
@@ -80,7 +80,7 @@ class CreateTaskTool(BaseTool):
     async def _run(self, title: str, description: str | None = None) -> str:
         try:
             task_data = TaskCreate(title=title, description=description, is_completed=False)
-            task = await ProductivityService.create_task(user_id=self.user_id, task_data=task_data)
+            task = await TaskService.create_task(user_id=self.user_id, task_data=task_data)
 
             return f"Successfully created task '{task.title}' with ID {task.id}."
         except Exception:
@@ -116,7 +116,7 @@ class UpdateTaskTool(BaseTool):
     ) -> str:
         try:
             update_data = TaskUpdate(is_completed=is_completed, title=title)
-            task = await ProductivityService.update_task(
+            task = await TaskService.update_task(
                 user_id=self.user_id, task_id=task_id, update_data=update_data
             )
 
@@ -150,7 +150,7 @@ class ListNotesTool(BaseTool):
 
     async def _run(self) -> str:
         try:
-            notes = await ProductivityService.list_notes(user_id=self.user_id)
+            notes = await NoteService.list_notes(user_id=self.user_id)
 
             if not notes:
                 return "No notes found."
@@ -203,7 +203,7 @@ class CreateNoteTool(BaseTool):
                 origin_message_id=self.origin_message_id,
                 origin_context=origin_context,
             )
-            note = await ProductivityService.create_note(user_id=self.user_id, note_data=note_data)
+            note = await NoteService.create_note(user_id=self.user_id, note_data=note_data)
 
             return f"Successfully created note '{note.title}' with ID {note.id}."
         except Exception:
@@ -236,7 +236,7 @@ class ListEventsTool(BaseTool):
 
     async def _run(self) -> str:
         try:
-            events = await ProductivityService.list_events(user_id=self.user_id)
+            events = await CalendarService.list_events(user_id=self.user_id)
 
             if not events:
                 return "No calendar events found."
@@ -321,9 +321,7 @@ class CreateEventTool(BaseTool):
                 origin_message_id=self.origin_message_id,
                 origin_context=origin_context,
             )
-            event = await ProductivityService.create_event(
-                user_id=self.user_id, event_data=event_data
-            )
+            event = await CalendarService.create_event(user_id=self.user_id, event_data=event_data)
 
             return f"Successfully created calendar event '{event.title}' with ID {event.id}."
         except HTTPException:
@@ -389,7 +387,7 @@ class UpdateEventTool(BaseTool):
 
             update_data = CalendarEventUpdate(**update_fields)
 
-            event = await ProductivityService.update_event(
+            event = await CalendarService.update_event(
                 user_id=self.user_id, event_id=event_id, update_data=update_data
             )
 
@@ -424,7 +422,7 @@ class DeleteEventTool(BaseTool):
 
     async def _run(self, event_id: UUID) -> str:
         try:
-            await ProductivityService.delete_event(user_id=self.user_id, event_id=event_id)
+            await CalendarService.delete_event(user_id=self.user_id, event_id=event_id)
             return f"Successfully deleted calendar event with ID {event_id}."
         except HTTPException:
             raise
