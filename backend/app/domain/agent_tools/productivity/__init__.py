@@ -1,20 +1,19 @@
-from app.domain.agent_tools.productivity import (
+from .events_tools import (
     CreateEventInput,
     CreateEventTool,
-    CreateNoteInput,
-    CreateNoteTool,
-    CreateTaskInput,
-    CreateTaskTool,
     DeleteEventInput,
     DeleteEventTool,
     ListEventsInput,
     ListEventsTool,
-    ListNotesInput,
-    ListNotesTool,
-    ListTasksInput,
-    ListTasksTool,
     UpdateEventInput,
     UpdateEventTool,
+)
+from .notes_tools import CreateNoteInput, CreateNoteTool, ListNotesInput, ListNotesTool
+from .tasks_tools import (
+    CreateTaskInput,
+    CreateTaskTool,
+    ListTasksInput,
+    ListTasksTool,
     UpdateTaskInput,
     UpdateTaskTool,
 )
