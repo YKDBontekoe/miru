@@ -67,8 +67,9 @@ class MemoryService:
 
         return memory_id
 
-    async def delete_memory(self, memory_id: UUID) -> bool:
-        return await self.repo.delete_memory(memory_id)
+    # SEC(agent): Fixed IDOR. Ensure delete_memory is scoped to user_id to prevent unauthorized deletion of other users' memories.
+    async def delete_memory(self, memory_id: UUID, user_id: UUID) -> bool:
+        return await self.repo.delete_memory(memory_id, user_id)
 
     async def get_memory_graph(self, user_id: UUID) -> dict[str, Any]:
         """Fetch all memories and their relationships for the graph view."""

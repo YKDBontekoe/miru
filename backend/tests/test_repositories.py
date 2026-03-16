@@ -99,19 +99,19 @@ class TestChatRepository:
     @pytest.mark.asyncio
     async def test_get_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.get_room(uuid4())
+        result = await repo.get_room(uuid4(), uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_update_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.update_room(uuid4(), "New Name")
+        result = await repo.update_room(uuid4(), "New Name", uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_delete_room_returns_false_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.delete_room(uuid4())
+        result = await repo.delete_room(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio
@@ -119,7 +119,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Delete Me", user_id)
-        result = await repo.delete_room(room.id)
+        result = await repo.delete_room(room.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
@@ -127,7 +127,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Old Name", user_id)
-        updated = await repo.update_room(room.id, "New Name")
+        updated = await repo.update_room(room.id, "New Name", user_id)
         assert updated is not None
         assert updated.name == "New Name"
 
@@ -136,7 +136,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Msg Room", user_id)
-        messages = await repo.get_room_messages(room.id)
+        messages = await repo.get_room_messages(room.id, user_id)
         assert messages == []
 
     @pytest.mark.asyncio
@@ -153,7 +153,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Agent Room", user_id)
-        agents = await repo.list_room_agents(room.id)
+        agents = await repo.list_room_agents(room.id, user_id)
         assert agents == []
 
 
@@ -185,13 +185,13 @@ class TestMemoryRepository:
         user_id = uuid4()
         memory = Memory(content="To delete", user_id=user_id, embedding=[0.0])
         await repo.insert_memory(memory)
-        result = await repo.delete_memory(memory.id)
+        result = await repo.delete_memory(memory.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
     async def test_delete_memory_returns_false_for_unknown(self) -> None:
         repo = MemoryRepository()
-        result = await repo.delete_memory(uuid4())
+        result = await repo.delete_memory(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio

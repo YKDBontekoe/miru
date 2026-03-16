@@ -19,9 +19,10 @@ class MemoryRepository:
         await memory.save()
         return memory
 
-    async def delete_memory(self, memory_id: UUID) -> bool:
+    # SEC(agent): Fixed IDOR. Ensure delete_memory is scoped to user_id to prevent unauthorized deletion of other users' memories.
+    async def delete_memory(self, memory_id: UUID, user_id: UUID) -> bool:
         """Delete a memory."""
-        memory = await Memory.get_or_none(id=memory_id)
+        memory = await Memory.get_or_none(id=memory_id, user_id=user_id)
         if memory:
             await memory.delete()
             return True
