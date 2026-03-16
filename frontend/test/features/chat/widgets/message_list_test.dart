@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:miru/core/design_system/design_system.dart';
+
 import 'package:miru/features/chat/widgets/message_list.dart';
 import 'package:miru/core/models/chat_message.dart';
 import 'package:miru/core/models/message_status.dart';
@@ -20,17 +20,17 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-          home: Scaffold(
-            body: MessageList(
-              messages: messages,
-              scrollController: scrollController,
-              isStreaming: false,
-              streamingStatus: null,
-              onCopy: (msg) {},
-              onRetry: () {},
-            ),
+        home: Scaffold(
+          body: MessageList(
+            messages: messages,
+            scrollController: scrollController,
+            isStreaming: false,
+            streamingStatus: null,
+            onCopy: (msg) {},
+            onRetry: () {},
           ),
-              ),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
     expect(find.byType(MessageList), findsOneWidget);
