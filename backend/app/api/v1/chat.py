@@ -106,7 +106,7 @@ async def add_agent_to_room(
     try:
         await service.add_agent_to_room(room_id, data.agent_id, user_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     return {"status": "ok"}
 
 

@@ -41,7 +41,9 @@ class ChatRepository:
             return True
         return False
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> ChatRoomAgent:
+    async def add_agent_to_room(
+        self, room_id: UUID, agent_id: UUID, user_id: UUID
+    ) -> ChatRoomAgent:
         """Associate an agent with a room."""
         room = await self.get_room(room_id, user_id)
         agent = await Agent.get_or_none(id=agent_id, user_id=user_id)
