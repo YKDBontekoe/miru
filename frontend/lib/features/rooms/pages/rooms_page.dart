@@ -95,7 +95,7 @@ class _RoomsPageState extends State<RoomsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) => const CreatePersonaSheet(),
     ).then((created) {
       if (created == true) {
@@ -118,7 +118,7 @@ class _RoomsPageState extends State<RoomsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) =>
           CreateRoomSheet(availableAgents: _agents, onRoomCreated: _loadRooms),
     );
@@ -128,7 +128,7 @@ class _RoomsPageState extends State<RoomsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) =>
           PersonaDetailSheet(agent: agent, onDeleted: _loadAgents),
     );
@@ -242,26 +242,32 @@ class _RoomsPageState extends State<RoomsPage> {
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.sm,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: colors.surfaceHigh,
+        child: Material(
+          color: colors.surfaceHigh,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(color: colors.border.withValues(alpha: 0.5)),
+            side: BorderSide(color: colors.border.withValues(alpha: 0.5)),
           ),
-          child: Row(
-            children: [
-              Icon(Icons.person_add_outlined, color: colors.primaryLight),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  'No personas yet. Tap + to create one.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: colors.onSurfaceMuted,
+          clipBehavior: Clip.hardEdge,
+          child: InkWell(
+            onTap: _showCreatePersonaDialog,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  Icon(Icons.person_add_outlined, color: colors.primaryLight),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'No personas yet. Tap + to create one.',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: colors.onSurfaceMuted,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       );
@@ -277,48 +283,54 @@ class _RoomsPageState extends State<RoomsPage> {
           final agent = _agents[index];
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: GestureDetector(
-              onTap: () => _showPersonaDetail(agent),
-              child: Container(
-                width: 84,
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: colors.surfaceHigh,
+            child: Container(
+              width: 84,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                boxShadow: AppShadows.sm,
+              ),
+              child: Material(
+                color: colors.surfaceHigh,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  border: Border.all(
-                    color: colors.border.withValues(alpha: 0.5),
-                  ),
-                  boxShadow: AppShadows.sm,
+                  side: BorderSide(color: colors.border.withValues(alpha: 0.5)),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: colors.primaryLight.withValues(
-                        alpha: 0.15,
-                      ),
-                      backgroundImage: agent.avatarImage,
-                      child: agent.avatarUrl == null
-                          ? null
-                          : Text(
-                              agent.name.substring(0, 1).toUpperCase(),
-                              style: AppTypography.labelLarge.copyWith(
-                                color: colors.primaryLight,
-                              ),
-                            ),
+                clipBehavior: Clip.hardEdge,
+                child: InkWell(
+                  onTap: () => _showPersonaDetail(agent),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xs),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: colors.primaryLight.withValues(
+                            alpha: 0.15,
+                          ),
+                          backgroundImage: agent.avatarImage,
+                          child: agent.avatarUrl == null
+                              ? null
+                              : Text(
+                                  agent.name.substring(0, 1).toUpperCase(),
+                                  style: AppTypography.labelLarge.copyWith(
+                                    color: colors.primaryLight,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          agent.name,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: colors.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      agent.name,
-                      style: AppTypography.labelSmall.copyWith(
-                        color: colors.onSurface,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

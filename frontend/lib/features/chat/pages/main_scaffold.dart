@@ -31,7 +31,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) => const CreatePersonaSheet(),
     );
 
@@ -144,7 +144,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         decoration: BoxDecoration(
           color: isActive
               ? colors.primary.withValues(alpha: 0.15)
-              : Colors.transparent,
+              : AppColors.transparent,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         ),
         child: Column(
@@ -178,34 +178,30 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildCreateButton(AppThemeColors colors) {
-    return GestureDetector(
-      onTap: _showCreatePersona,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [colors.primaryLight, colors.primary],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: colors.primary.withValues(alpha: 0.5),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-            BoxShadow(
-              color: colors.primary.withValues(alpha: 0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [colors.primaryLight, colors.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: const Icon(
-          Icons.add_rounded,
-          color: AppColors.onPrimary,
-          size: 28,
+        shape: BoxShape.circle,
+        boxShadow: AppShadows.primaryGlow,
+      ),
+      child: Material(
+        color: AppColors.transparent,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.hardEdge,
+        child: InkWell(
+          onTap: _showCreatePersona,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: const Icon(
+              Icons.add_rounded,
+              color: AppColors.onPrimary,
+              size: 28,
+            ),
+          ),
         ),
       ),
     );

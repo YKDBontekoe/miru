@@ -271,7 +271,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.transparent,
         builder: (context) => AddAgentSheet(
           allAgents: allAgents,
           roomAgents: _roomAgents,
@@ -374,11 +374,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
               colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
-                Colors.purple,
+                AppColors.success,
+                AppColors.primary,
+                AppColors.error,
+                AppColors.warning,
+                AppColors.primaryDark,
               ],
             ),
           ),
@@ -396,16 +396,22 @@ class _GroupChatPageState extends State<GroupChatPage> {
         icon: Icon(Icons.arrow_back_ios_rounded, color: colors.onSurface),
         onPressed: () => Navigator.pop(context),
       ),
-      title: GestureDetector(
+      title: InkWell(
         onTap: _renameRoom,
-        behavior: HitTestBehavior.opaque,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_roomName, style: AppTypography.headingSmall),
-            const SizedBox(width: AppSpacing.xs),
-            Icon(Icons.edit_outlined, size: 14, color: colors.onSurfaceMuted),
-          ],
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_roomName, style: AppTypography.headingSmall),
+              const SizedBox(width: AppSpacing.xs),
+              Icon(Icons.edit_outlined, size: 14, color: colors.onSurfaceMuted),
+            ],
+          ),
         ),
       ),
       actions: [

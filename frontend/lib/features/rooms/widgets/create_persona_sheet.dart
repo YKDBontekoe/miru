@@ -366,7 +366,7 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
                       child: FilledButton(
                         onPressed: _isGenerating ? null : _generateAI,
                         style: FilledButton.styleFrom(
-                          padding: EdgeInsets.zero,
+                          padding: AppSpacing.paddingNone,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               AppSpacing.radiusMd,

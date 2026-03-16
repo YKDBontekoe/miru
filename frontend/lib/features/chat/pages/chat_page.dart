@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:miru/core/api/api_service.dart';
@@ -287,7 +286,9 @@ class _ChatPageState extends State<ChatPage> {
       SnackBar(
         content: Text(
           'Copied to clipboard',
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
         ),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
@@ -575,8 +576,7 @@ class _StreamingStatusPillState extends State<_StreamingStatusPill>
               const SizedBox(width: AppSpacing.xs),
               Text(
                 widget.label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: colors.onSurfaceMuted,
                 ),
@@ -601,25 +601,30 @@ class _ScrollToBottomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: colors.surfaceHigh,
-      elevation: 4,
-      shadowColor: Colors.black.withValues(alpha: 0.15),
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: colors.border.withValues(alpha: 0.6)),
-          ),
-          child: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: colors.onSurfaceMuted,
-            size: AppSpacing.iconMd,
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: AppShadows.md,
+      ),
+      child: Material(
+        color: colors.surfaceHigh,
+        elevation: 0,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: colors.border.withValues(alpha: 0.6)),
+            ),
+            child: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: colors.onSurfaceMuted,
+              size: AppSpacing.iconMd,
+            ),
           ),
         ),
       ),
@@ -697,10 +702,9 @@ class _MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
             ).createShader(bounds),
             child: Text(
               'Miru',
-              style: GoogleFonts.inter(
-                fontSize: 18,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: AppColors.surfaceLight,
                 letterSpacing: -0.5,
               ),
             ),

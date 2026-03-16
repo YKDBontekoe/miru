@@ -1,3 +1,7 @@
+import 'package:miru/core/design_system/tokens/shadows.dart';
+import 'package:miru/core/design_system/tokens/colors.dart';
+import 'package:miru/core/design_system/tokens/spacing.dart';
+
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -237,9 +241,10 @@ class _AgentsPageState extends State<AgentsPage> {
                         maxLines: 3,
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'Capabilities',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -264,9 +269,10 @@ class _AgentsPageState extends State<AgentsPage> {
                         }).toList(),
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'Integrations',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -366,12 +372,12 @@ class _AgentsPageState extends State<AgentsPage> {
 
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 final baseColors = [
-                  Colors.blue,
-                  Colors.teal,
-                  Colors.red,
-                  Colors.indigo,
-                  Colors.deepPurple,
-                  Colors.orange,
+                  AppColors.primary,
+                  AppColors.info,
+                  AppColors.error,
+                  AppColors.primaryDark,
+                  AppColors.primaryLight,
+                  AppColors.warning,
                 ];
                 final themeColor =
                     baseColors[agent.name.hashCode.abs() % baseColors.length];
@@ -385,175 +391,209 @@ class _AgentsPageState extends State<AgentsPage> {
                         themeColor.withValues(alpha: 0.05),
                       ];
 
-                return Card(
+                return Container(
                   margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: themeColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    boxShadow: AppShadows.sm,
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: bgColors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  child: Card(
+                    margin: AppSpacing.paddingNone,
+                    clipBehavior: Clip.antiAlias,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      side: BorderSide(
+                        color: themeColor.withValues(alpha: 0.3),
+                        width: 1,
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundImage: agent.avatarImage,
-                                radius: 28,
-                                child: agent.avatarUrl == null
-                                    ? null
-                                    : Text(agent.name[0].toUpperCase()),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            agent.name,
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: bgColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundImage: agent.avatarImage,
+                                  radius: 28,
+                                  child: agent.avatarUrl == null
+                                      ? null
+                                      : Text(agent.name[0].toUpperCase()),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              agent.name,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                        if (chatter != null)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.surface,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: themeColor.withValues(
-                                                  alpha: 0.5,
+                                          if (chatter != null)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: themeColor.withValues(
+                                                    alpha: 0.5,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            child: Text(
-                                              chatter,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: themeColor,
+                                              child: Text(
+                                                chatter,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: themeColor,
+                                                    ),
                                               ),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    if (agent.description != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        agent.description!,
-                                        style: TextStyle(
-                                          color: isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[700],
+                                        ],
+                                      ),
+                                      if (agent.description != null) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          agent.description!,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: isDark
+                                                    ? AppColors
+                                                          .onSurfaceMutedLight
+                                                    : AppColors
+                                                          .onSurfaceMutedDark,
+                                              ),
                                         ),
+                                      ],
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.military_tech,
+                                            size: 16,
+                                            color: themeColor,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Lvl ${agent.connectionLevel}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: themeColor,
+                                                ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Icon(
+                                            Icons.mood,
+                                            size: 16,
+                                            color: isDark
+                                                ? AppColors.onSurfaceMutedLight
+                                                : AppColors.onSurfaceMutedDark,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            agent.mood,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: isDark
+                                                      ? AppColors
+                                                            .onSurfaceMutedLight
+                                                      : AppColors
+                                                            .onSurfaceMutedDark,
+                                                ),
+                                          ),
+                                        ],
                                       ),
                                     ],
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.military_tech,
-                                          size: 16,
-                                          color: themeColor,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Lvl ${agent.connectionLevel}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: themeColor,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Icon(
-                                          Icons.mood,
-                                          size: 16,
-                                          color: isDark
-                                              ? Colors.grey[400]
-                                              : Colors.grey[700],
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          agent.mood,
-                                          style: TextStyle(
-                                            color: isDark
-                                                ? Colors.grey[400]
-                                                : Colors.grey[700],
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              agent.personality,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            if (agent.capabilities.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: agent.capabilities.map((cap) {
+                                  return Chip(
+                                    label: Text(
+                                      cap,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    padding: AppSpacing.paddingNone,
+                                  );
+                                }).toList(),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            agent.personality,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          if (agent.capabilities.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: agent.capabilities.map((cap) {
-                                return Chip(
-                                  label: Text(
-                                    cap,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  padding: EdgeInsets.zero,
-                                );
-                              }).toList(),
-                            ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateAgentDialog,
-        child: const Icon(Icons.add),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: AppShadows.primaryGlow,
+        ),
+        child: FloatingActionButton(
+          elevation: 0,
+          onPressed: _showCreateAgentDialog,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
