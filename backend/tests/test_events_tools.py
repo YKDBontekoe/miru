@@ -1,5 +1,6 @@
+import typing
 from datetime import datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -14,13 +15,13 @@ from app.domain.productivity.models import CalendarEvent
 
 
 @pytest.fixture
-def mock_service():
+def mock_service() -> typing.Generator[MagicMock, None, None]:
     with patch("app.domain.agent_tools.productivity.events_tools.ProductivityService") as mock:
         yield mock
 
 
 @pytest.mark.asyncio
-async def test_list_events_tool_empty(mock_service) -> None:
+async def test_list_events_tool_empty(mock_service: MagicMock) -> None:
     mock_service.list_events = AsyncMock(return_value=[])
     tool = ListEventsTool(user_id=uuid4())
     result = await tool._run()
@@ -28,7 +29,7 @@ async def test_list_events_tool_empty(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_list_events_tool_with_events(mock_service) -> None:
+async def test_list_events_tool_with_events(mock_service: MagicMock) -> None:
     event1 = CalendarEvent(
         id=uuid4(),
         title="Event 1",
@@ -74,7 +75,7 @@ async def test_list_events_tool_with_events(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_list_events_tool_error(mock_service) -> None:
+async def test_list_events_tool_error(mock_service: MagicMock) -> None:
     mock_service.list_events = AsyncMock(side_effect=Exception("DB Error"))
     tool = ListEventsTool(user_id=uuid4())
     result = await tool._run()
@@ -82,7 +83,7 @@ async def test_list_events_tool_error(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_event_tool_success(mock_service) -> None:
+async def test_create_event_tool_success(mock_service: MagicMock) -> None:
     event_id = uuid4()
     mock_event = CalendarEvent(
         id=event_id,
@@ -107,7 +108,7 @@ async def test_create_event_tool_success(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_event_tool_error(mock_service) -> None:
+async def test_create_event_tool_error(mock_service: MagicMock) -> None:
     mock_service.create_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = CreateEventTool(user_id=uuid4())
     result = await tool._run(
@@ -119,7 +120,7 @@ async def test_create_event_tool_error(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_event_tool_success(mock_service) -> None:
+async def test_update_event_tool_success(mock_service: MagicMock) -> None:
     event_id = uuid4()
     mock_event = CalendarEvent(
         id=event_id,
@@ -146,7 +147,7 @@ async def test_update_event_tool_success(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_event_tool_error(mock_service) -> None:
+async def test_update_event_tool_error(mock_service: MagicMock) -> None:
     mock_service.update_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = UpdateEventTool(user_id=uuid4())
     result = await tool._run(event_id=uuid4(), title="Updated Event")
@@ -154,7 +155,7 @@ async def test_update_event_tool_error(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_event_tool_success(mock_service) -> None:
+async def test_delete_event_tool_success(mock_service: MagicMock) -> None:
     mock_service.delete_event = AsyncMock()
 
     event_id = uuid4()
@@ -165,7 +166,7 @@ async def test_delete_event_tool_success(mock_service) -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_event_tool_error(mock_service) -> None:
+async def test_delete_event_tool_error(mock_service: MagicMock) -> None:
     mock_service.delete_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = DeleteEventTool(user_id=uuid4())
     result = await tool._run(event_id=uuid4())
