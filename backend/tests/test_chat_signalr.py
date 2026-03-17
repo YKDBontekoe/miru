@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,14 +13,14 @@ from app.main import app
 client = TestClient(app)
 
 
-def mock_current_user():
+def mock_current_user() -> UUID:
     return uuid4()
 
 
-def test_get_webpubsub_client_none(monkeypatch):
+def test_get_webpubsub_client_none(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.core.config import Settings
 
-    def mock_get_settings():
+    def mock_get_settings() -> Settings:
         return Settings(
             openrouter_api_key="test",
             supabase_url="test",
@@ -37,10 +37,12 @@ def test_get_webpubsub_client_none(monkeypatch):
 
 
 @patch("app.domain.chat.signalr.WebPubSubServiceClient")
-def test_get_webpubsub_client_configured(mock_client, monkeypatch):
+def test_get_webpubsub_client_configured(
+    mock_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from app.core.config import Settings
 
-    def mock_get_settings():
+    def mock_get_settings() -> Settings:
         return Settings(
             openrouter_api_key="test",
             supabase_url="test",
@@ -57,7 +59,7 @@ def test_get_webpubsub_client_configured(mock_client, monkeypatch):
     assert c is not None
 
 
-def test_negotiate_endpoint_no_client(monkeypatch):
+def test_negotiate_endpoint_no_client(monkeypatch: pytest.MonkeyPatch) -> None:
     app.dependency_overrides[mock_current_user] = mock_current_user
     monkeypatch.setattr("app.api.v1.chat.get_webpubsub_client", lambda: None)
 
@@ -73,7 +75,9 @@ def test_negotiate_endpoint_no_client(monkeypatch):
 
 
 @patch("app.api.v1.chat.get_webpubsub_client")
-def test_negotiate_endpoint_success(mock_get_client, monkeypatch):
+def test_negotiate_endpoint_success(
+    mock_get_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from app.core.security.auth import get_current_user
 
     app.dependency_overrides[get_current_user] = mock_current_user
@@ -92,7 +96,7 @@ def test_negotiate_endpoint_success(mock_get_client, monkeypatch):
     assert data["accessToken"] == "abc"
 
 
-def test_webhook_options():
+def test_webhook_options() -> None:
     response = client.options("/api/v1/webhook", headers={"webhook-request-origin": "test.com"})
     assert response.status_code == 200
     assert response.headers["WebHook-Allowed-Origin"] == "test.com"
@@ -102,13 +106,16 @@ def test_webhook_options():
 
 
 @pytest.mark.asyncio
-async def test_webhook_post_success():
+async def test_webhook_post_success() -> None:
     from app.domain.chat.service import ChatService
 
     mock_chat_service = MagicMock(spec=ChatService)
 
     # We mock stream_responses to yield something so process_chat can consume it
-    async def mock_stream(*args, **kwargs):
+    from collections.abc import AsyncGenerator
+    from typing import Any
+
+    async def mock_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
         yield "response"
 
     mock_chat_service.stream_responses.side_effect = mock_stream
