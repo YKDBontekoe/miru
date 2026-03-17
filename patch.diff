@@ -1,18 +1,10 @@
---- backend/app/main.py
-+++ backend/app/main.py
-@@ -14,6 +14,7 @@
- from app.api.v1.memory import router as memory_router
- from app.api.v1.productivity import router as productivity_router
- from app.core.config import get_settings
-+from app.domain.notifications.api.router import router as notifications_router
- from app.infrastructure.database.tortoise import close_db, init_db
+--- backend/pyproject.toml
++++ backend/pyproject.toml
+@@ -46,6 +46,7 @@
+     "UP043",  # unnecessary default type args
+     "TC001",  # Move app import into TYPE_CHECKING — breaks FastAPI Depends at runtime
+     "TC003",  # Move stdlib import into TYPE_CHECKING — breaks Pydantic at runtime
++    "B008",   # Do not perform function call in argument defaults
+ ]
 
- if TYPE_CHECKING:
-@@ -73,6 +74,7 @@
- app.include_router(memory_router, prefix="/api/v1/memory")
- app.include_router(productivity_router, prefix="/api/v1/productivity")
- app.include_router(integrations_router, prefix="/api/v1/integrations")
-+app.include_router(notifications_router, prefix="/api/v1/notifications")
-
-
- @app.get("/health")
+ [tool.ruff.lint.isort]

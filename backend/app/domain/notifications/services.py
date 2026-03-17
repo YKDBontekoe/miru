@@ -26,5 +26,7 @@ class NotificationService:
         # Tags are used to send notifications to specific user device registrations
         tags = [f"user:{user_id}"]
 
-        logger.info(f"Sending notification to user {user_id}")
+        # SEC(agent): Sanitized user input to prevent log injection (CWE-117)
+        safe_user_id = user_id.replace('\n', '').replace('\r', '')
+        logger.info(f"Sending notification to user {safe_user_id}")
         await self.azure_hub_client.send_notification(payload, tags)

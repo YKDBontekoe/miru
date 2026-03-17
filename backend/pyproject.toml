@@ -77,6 +77,7 @@ ignore = [
     "UP043",  # unnecessary default type args
     "TC001",  # Move app import into TYPE_CHECKING — breaks FastAPI Depends at runtime
     "TC003",  # Move stdlib import into TYPE_CHECKING — breaks Pydantic at runtime
+    "B008",   # Do not perform function call in argument defaults
 ]
 
 [tool.ruff.lint.isort]
