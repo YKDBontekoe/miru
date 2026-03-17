@@ -7,8 +7,11 @@ class BackendService {
   static const String _storageKey = 'miru_backend_url';
   static const String _onboardingKey = 'miru_onboarding_complete';
 
-  static const String _azureUrl =
-      'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
+  static const String _azureUrl = String.fromEnvironment(
+    'BACKEND_URL',
+    defaultValue:
+        'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1',
+  );
 
   static String get _defaultUrl => _azureUrl;
 
