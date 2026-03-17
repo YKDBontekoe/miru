@@ -66,9 +66,9 @@ jobs:
         with:
           working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Build APK
-        run: flutter build apk --release --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" --dart-define=BACKEND_URL="${{ vars.PRODUCTION_URL }}/api/v1"
+        run: flutter build apk --release --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
       - name: Build App Bundle
-        run: flutter build appbundle --release --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" --dart-define=BACKEND_URL="${{ vars.PRODUCTION_URL }}/api/v1"
+        run: flutter build appbundle --release --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -110,7 +110,7 @@ jobs:
         with:
           working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Build IPA
-        run: flutter build ios --release --no-codesign --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" --dart-define=BACKEND_URL="${{ vars.PRODUCTION_URL }}/api/v1"
+        run: flutter build ios --release --no-codesign --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
@@ -147,7 +147,7 @@ jobs:
         with:
           working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Build Web
-        run: flutter build web --release --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" --dart-define=BACKEND_URL="${{ vars.PRODUCTION_URL }}/api/v1"
+        run: flutter build web --release --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
       - name: Upload Web Build
         uses: actions/upload-artifact@v4
         with:
