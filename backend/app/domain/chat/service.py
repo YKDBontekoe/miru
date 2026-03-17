@@ -76,18 +76,16 @@ class ChatService:
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
 
-    def _broadcast_to_user(self, user_id: UUID, message: str) -> None:
+    async def _broadcast_to_user(self, user_id: UUID, message: str) -> None:
         client = get_webpubsub_client()
         if client:
             try:
                 # We send the message as JSON
-                client.send_to_user(
+                await client.send_to_user(
                     user_id=str(user_id), message={"type": "message", "content": message}
                 )
             except Exception as e:
-                import logging
-
-                logging.getLogger(__name__).error(f"Failed to broadcast: {e}")
+                logger.exception(f"Failed to broadcast: {e}")
 
     def _get_crew_llm(self) -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter.
@@ -204,7 +202,7 @@ class ChatService:
         )
 
         content = response.choices[0].message.content or "Error: No response from agent."
-        self._broadcast_to_user(user_id, content)
+        await self._broadcast_to_user(user_id, content)
         yield content
         yield "[[STATUS:done]]\n"
 
@@ -328,7 +326,7 @@ class ChatService:
         )
         await self.chat_repo.save_message(agent_msg)
 
-        self._broadcast_to_user(user_id, str(result))
+        await self._broadcast_to_user(user_id, str(result))
 
         yield str(result)
         yield "[[STATUS:done]]\n"

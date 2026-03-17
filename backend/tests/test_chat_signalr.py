@@ -71,7 +71,7 @@ def test_negotiate_endpoint_no_client(monkeypatch: pytest.MonkeyPatch) -> None:
 
     response = client.post("/api/v1/negotiate")
     assert response.status_code == 500
-    assert response.json()["detail"] == "Azure Web PubSub not configured"
+    assert response.json()["detail"]["error"] == "azure_webpubsub_not_configured"
 
 
 @patch("app.api.v1.chat.get_webpubsub_client")
@@ -82,7 +82,9 @@ def test_negotiate_endpoint_success(
 
     app.dependency_overrides[get_current_user] = mock_current_user
 
-    mock_client_instance = MagicMock()
+    from unittest.mock import AsyncMock
+
+    mock_client_instance = AsyncMock()
     mock_client_instance.get_client_access_token.return_value = {
         "url": "wss://test",
         "token": "abc",
@@ -106,7 +108,22 @@ def test_webhook_options() -> None:
 
 
 @pytest.mark.asyncio
-async def test_webhook_post_success() -> None:
+async def test_webhook_post_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import Settings
+
+    def mock_get_settings() -> Settings:
+        return Settings(
+            openrouter_api_key="test",
+            supabase_url="test",
+            supabase_key="test",
+            supabase_service_role_key="test",
+            supabase_jwt_secret="test",
+            embedding_model="test",
+            default_chat_model="test",
+            azure_webpubsub_connection_string="Endpoint=https://test.webpubsub.azure.com;AccessKey=test;Version=1.0;",
+        )
+
+    monkeypatch.setattr("app.api.v1.chat.get_settings", mock_get_settings)
     from app.domain.chat.service import ChatService
 
     mock_chat_service = MagicMock(spec=ChatService)
@@ -123,7 +140,21 @@ async def test_webhook_post_success() -> None:
     app.dependency_overrides[get_chat_service] = lambda: mock_chat_service
 
     uid = str(uuid4())
-    headers = {"ce-userid": uid, "ce-type": "azure.webpubsub.user.message"}
+    import hashlib
+    import hmac
+
+    access_key = "test"
+    conn_id = "abc"
+    expected_mac = hmac.new(
+        access_key.encode("utf-8"), conn_id.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+    headers = {
+        "ce-userid": uid,
+        "ce-type": "azure.webpubsub.user.message",
+        "ce-connectionId": conn_id,
+        "ce-signature": f"sha256={expected_mac}",
+    }
     payload = {"arguments": ["hello"]}
 
     response = client.post("/api/v1/webhook", json=payload, headers=headers)
@@ -133,14 +164,11 @@ async def test_webhook_post_success() -> None:
     response = client.post("/api/v1/webhook", json={}, headers=headers)
     assert response.status_code == 200  # Unknown payload
 
-    response = client.post(
-        "/api/v1/webhook", json={"arguments": ["hi"]}, headers={"ce-type": "other"}
-    )
+    headers["ce-type"] = "other"
+    response = client.post("/api/v1/webhook", json={"arguments": ["hi"]}, headers=headers)
     assert response.status_code == 200  # Ignored event type
 
-    response = client.post(
-        "/api/v1/webhook",
-        json={"arguments": ["hi"]},
-        headers={"ce-userid": "not-uuid", "ce-type": "azure.webpubsub.user.message"},
-    )
+    headers["ce-type"] = "azure.webpubsub.user.message"
+    headers["ce-userid"] = "not-uuid"
+    response = client.post("/api/v1/webhook", json={"arguments": ["hi"]}, headers=headers)
     assert response.status_code == 400

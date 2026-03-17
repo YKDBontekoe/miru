@@ -128,5 +128,15 @@ class ChatRequest(BaseModel):
 
 
 class SignalRNegotiateResponse(BaseModel):
+    """Model for Azure Web PubSub SignalR negotiation response.
+
+    This model defines the payload returned to the frontend when negotiating
+    a SignalR websocket connection.
+
+    Attributes:
+        url: The SignalR endpoint URL to connect to.
+        access_token: The negotiated access token used for authentication (aliased to accessToken).
+    """
+
     url: str
     access_token: str = Field(alias="accessToken")

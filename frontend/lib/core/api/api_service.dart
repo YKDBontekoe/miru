@@ -208,13 +208,10 @@ class ApiService {
 
   /// Get a SignalR connection token.
   Future<Map<String, dynamic>> negotiateSignalR() async {
-    final dio = _getDio();
-    final response = await dio.post('api/v1/negotiate');
-    if (response.statusCode == 200) {
+    return _handleError((dio) async {
+      final response = await dio.post('negotiate');
       return response.data as Map<String, dynamic>;
-    } else {
-      throw Exception('Failed to negotiate SignalR');
-    }
+    });
   }
 
   Future<List<ChatRoom>> getRooms() async {

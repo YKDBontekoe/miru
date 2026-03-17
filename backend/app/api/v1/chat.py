@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import logging
 from typing import Annotated, Any
 from uuid import UUID  # noqa: TCH003
 
@@ -9,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import get_chat_service
+from app.core.config import get_settings
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import AgentResponse
 from app.domain.chat.models import (
@@ -151,10 +155,16 @@ async def negotiate(
     """Negotiate endpoint for Azure Web PubSub SignalR."""
     client = get_webpubsub_client()
     if not client:
-        raise HTTPException(status_code=500, detail="Azure Web PubSub not configured")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "azure_webpubsub_not_configured",
+                "message": "Azure Web PubSub not configured",
+            },
+        )
 
     # Issue a token for the user
-    token = client.get_client_access_token(user_id=str(user_id))
+    token = await client.get_client_access_token(user_id=str(user_id))
     return SignalRNegotiateResponse(url=token["url"], accessToken=token["token"])
 
 
@@ -174,19 +184,56 @@ async def webpubsub_webhook(
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> Response:
     """Handle messages sent from SignalR clients."""
-    payload = await request.json()
 
-    # We expect messages from clients. User ID is attached by Web PubSub in headers.
-    user_id_str = request.headers.get("ce-userid")
-    event_type = request.headers.get("ce-type")
+    # 1. Signature validation
+    # Extract headers
+    ce_userid_str = request.headers.get("ce-userid")
+    ce_type = request.headers.get("ce-type")
+    ce_connection_id = request.headers.get("ce-connectionId", "")
+    ce_signature = request.headers.get("ce-signature")
 
-    if not user_id_str or event_type != "azure.webpubsub.user.message":
+    if not ce_signature:
+        return Response(status_code=401, content="Missing signature")
+
+    settings = get_settings()
+    if not settings.azure_webpubsub_connection_string:
+        return Response(status_code=400, content="Web PubSub not configured")
+
+    # Parse AccessKey from connection string
+    access_key = ""
+    for part in settings.azure_webpubsub_connection_string.split(";"):
+        if part.startswith("AccessKey="):
+            access_key = part.split("=", 1)[1]
+            break
+
+    if not access_key:
+        return Response(status_code=400, content="Invalid connection string")
+
+    # Recompute HMAC-SHA256 over ce_connectionId
+    expected_mac = hmac.new(
+        access_key.encode("utf-8"), ce_connection_id.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+    # Signatures are formatted like: "sha256=xxx,sha256=yyy"
+    signatures = [
+        sig.split("=", 1)[1] for sig in ce_signature.split(",") if sig.startswith("sha256=")
+    ]
+
+    if expected_mac not in signatures:
+        return Response(status_code=401, content="Invalid signature")
+
+    if not ce_userid_str or ce_type != "azure.webpubsub.user.message":
         return Response(status_code=200)  # ACK gracefully
 
     try:
-        user_id = UUID(user_id_str)
+        user_id = UUID(ce_userid_str)
     except Exception:
-        return Response(status_code=400)
+        return Response(status_code=400, content="Invalid user id")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        return Response(status_code=400, content="Invalid JSON")
 
     message_content = ""
     # With SignalR, messages are wrapped in multiple levels, or we can just parse the direct string
@@ -219,9 +266,7 @@ async def webpubsub_webhook(
             async for _ in service.stream_responses(message_content, user_id):
                 pass
         except Exception as e:
-            import logging
-
-            logging.getLogger(__name__).error(f"Error processing SignalR chat: {e}")
+            logging.getLogger(__name__).exception(f"Error processing SignalR chat: {e}")
 
     asyncio.create_task(process_chat())
 

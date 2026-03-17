@@ -46,10 +46,12 @@ class _ChatPageState extends State<ChatPage> {
 
   static const String _messagesKey = 'miru_chat_messages';
 
+  bool _isConnecting = true;
+
   @override
   void initState() {
     super.initState();
-    SignalRService.instance.initialize();
+    _initSignalR();
 
     _signalRSubscription = SignalRService.instance.onMessage.listen((payload) {
       if (!mounted) return;
@@ -148,6 +150,18 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  Future<void> _initSignalR() async {
+    try {
+      await SignalRService.instance.initialize();
+    } catch (e) {
+      debugPrint('SignalR init failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isConnecting = false);
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
@@ -155,6 +169,14 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendMessage() async {
     final text = _inputController.text.trim();
     if (text.isEmpty || _isStreaming) return;
+    if (!SignalRService.instance.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not connected. Please wait or check your connection.'),
+        ),
+      );
+      return;
+    }
 
     _inputController.clear();
     _inputFocusNode.requestFocus();
@@ -177,7 +199,7 @@ class _ChatPageState extends State<ChatPage> {
           if (_messages[lastIndex].status != MessageStatus.sent) {
             _messages[lastIndex] = _messages[lastIndex].copyWith(
               text: _messages[lastIndex].text.isEmpty
-                  ? 'Error: $e'
+                  ? 'Something went wrong. Please try again.'
                   : _messages[lastIndex].text,
               status: MessageStatus.failed,
             );
@@ -218,12 +240,6 @@ class _ChatPageState extends State<ChatPage> {
         if (!mounted) return;
         setState(() {
           _streamingStatus = null;
-          final lastIndex = _messages.length - 1;
-          if (_messages[lastIndex].status == MessageStatus.streaming) {
-            _messages[lastIndex] = _messages[lastIndex].copyWith(
-              status: MessageStatus.sent,
-            );
-          }
         });
         HapticFeedback.mediumImpact();
       },
@@ -250,7 +266,6 @@ class _ChatPageState extends State<ChatPage> {
   /// Stop the current streaming response.
   void _stopGeneration() {
     _activeStreamSubscription?.cancel();
-    _signalRSubscription?.cancel();
     _activeStreamSubscription = null;
     setState(() {
       _isStreaming = false;
@@ -381,13 +396,19 @@ class _ChatPageState extends State<ChatPage> {
                 StreamingStatusPill(label: _streamingStatus!),
 
               // Input bar
-              ChatInputBar(
-                controller: _inputController,
-                focusNode: _inputFocusNode,
-                onSend: _sendMessage,
-                isStreaming: _isStreaming,
-                onStopStreaming: _stopGeneration,
-              ),
+              if (_isConnecting)
+                const Padding(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  child: Center(child: Text('Connecting to chat...')),
+                )
+              else
+                ChatInputBar(
+                  controller: _inputController,
+                  focusNode: _inputFocusNode,
+                  onSend: _sendMessage,
+                  isStreaming: _isStreaming,
+                  onStopStreaming: _stopGeneration,
+                ),
             ],
           ),
 
