@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIConnectionError
@@ -11,7 +12,6 @@ from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
-from uuid import UUID
 
 router = APIRouter(tags=["Memory"])
 
