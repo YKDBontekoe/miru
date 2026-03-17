@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 from uuid import UUID  # noqa: TCH003
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import get_chat_service
@@ -18,8 +18,10 @@ from app.domain.chat.models import (
     RoomCreate,
     RoomResponse,
     RoomUpdate,
+    SignalRNegotiateResponse,
 )
 from app.domain.chat.service import ChatService  # noqa: TCH001
+from app.domain.chat.signalr import get_webpubsub_client
 
 router = APIRouter(tags=["Chat"])
 
@@ -140,3 +142,87 @@ async def chat_in_room(
         service.stream_room_responses(room_id, message, user_id),
         media_type="text/event-stream",
     )
+
+
+@router.post("/negotiate", response_model=SignalRNegotiateResponse)
+async def negotiate(
+    user_id: CurrentUser,
+) -> SignalRNegotiateResponse:
+    """Negotiate endpoint for Azure Web PubSub SignalR."""
+    client = get_webpubsub_client()
+    if not client:
+        raise HTTPException(status_code=500, detail="Azure Web PubSub not configured")
+
+    # Issue a token for the user
+    token = client.get_client_access_token(user_id=str(user_id))
+    return SignalRNegotiateResponse(url=token["url"], access_token=token["token"])
+
+
+@router.options("/webhook")
+async def webpubsub_options(request: Request) -> Response:
+    """Respond to Web PubSub Abuse Protection."""
+    if "webhook-request-origin" in request.headers:
+        return Response(
+            headers={"WebHook-Allowed-Origin": request.headers["webhook-request-origin"]}
+        )
+    return Response(status_code=400)
+
+
+@router.post("/webhook")
+async def webpubsub_webhook(
+    request: Request,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> Response:
+    """Handle messages sent from SignalR clients."""
+    payload = await request.json()
+
+    # We expect messages from clients. User ID is attached by Web PubSub in headers.
+    user_id_str = request.headers.get("ce-userid")
+    event_type = request.headers.get("ce-type")
+
+    if not user_id_str or event_type != "azure.webpubsub.user.message":
+        return Response(status_code=200)  # ACK gracefully
+
+    try:
+        user_id = UUID(user_id_str)
+    except Exception:
+        return Response(status_code=400)
+
+    message_content = ""
+    # With SignalR, messages are wrapped in multiple levels, or we can just parse the direct string
+    # Try parsing text data
+    try:
+        # Check if SignalR invocation
+        if (
+            "arguments" in payload
+            and isinstance(payload["arguments"], list)
+            and len(payload["arguments"]) > 0
+        ):
+            message_content = payload["arguments"][0]
+        else:
+            return Response(status_code=200)  # Unknown payload
+    except Exception:
+        return Response(status_code=400)
+
+    # Trigger chat processing
+    # Since it's a websocket and we want to respond asynchronously without blocking Web PubSub webhook:
+    import asyncio
+
+    # Check if room id is provided via headers or we do general stream responses
+    # By default, we'll run general chat if we don't know the room
+    # The frontend right now doesn't pass room_id to SignalR `sendMessage`
+    # Let's just consume the stream to generate the final response
+
+    async def process_chat() -> None:
+        try:
+            # Consume stream to trigger the final broadcast inside service
+            async for _ in service.stream_responses(message_content, user_id):
+                pass
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error(f"Error processing SignalR chat: {e}")
+
+    asyncio.create_task(process_chat())
+
+    return Response(status_code=200)

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -125,3 +125,8 @@ class ChatRequest(BaseModel):
     message: str | None = None
     content: str | None = None
     use_crew: bool = False
+
+
+class SignalRNegotiateResponse(BaseModel):
+    url: str
+    access_token: str = Field(alias="accessToken")
