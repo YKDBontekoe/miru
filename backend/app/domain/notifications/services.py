@@ -14,7 +14,9 @@ class NotificationService:
     ) -> None:
         self.azure_hub_client = azure_hub_client
 
-    async def notify_user(self, user_id: str, message: str, title: str = "New Notification") -> None:
+    async def notify_user(
+        self, user_id: str, message: str, title: str = "New Notification"
+    ) -> None:
         """
         Send a generic template notification to a specific user.
         Tags can be used to route messages to specific user devices.
@@ -27,6 +29,6 @@ class NotificationService:
         tags = [f"user:{user_id}"]
 
         # SEC(agent): Sanitized user input to prevent log injection (CWE-117)
-        safe_user_id = user_id.replace('\n', '').replace('\r', '')
+        safe_user_id = user_id.replace("\n", "").replace("\r", "")
         logger.info(f"Sending notification to user {safe_user_id}")
         await self.azure_hub_client.send_notification(payload, tags)

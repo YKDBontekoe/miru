@@ -15,7 +15,10 @@ class NotificationService {
       return;
     }
     try {
-      await AzureNotificationHub.instance.startWithHubInfo(connectionString, hubName);
+      await AzureNotificationHub.instance.startWithHubInfo(
+        connectionString,
+        hubName,
+      );
       log('Notification hub initialized.');
     } catch (e, s) {
       log('Failed to init notification hub', error: e, stackTrace: s);
