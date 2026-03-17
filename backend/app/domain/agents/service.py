@@ -133,7 +133,7 @@ class AgentService:
                     )
 
         # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
+        refetched = await self.repo.get_by_id(agent.pk, user_id)
         assert refetched is not None
         return _build_agent_response(refetched)
 
@@ -160,8 +160,10 @@ class AgentService:
             response_model=AgentGenerationResponse,
         )
 
-    async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
+    async def update_mood(
+        self, agent_id: UUID | str, recent_history: str, user_id: UUID | str
+    ) -> None:
         """Analyze history and update agent mood via repository."""
         if not recent_history.strip():
             return
-        await self.repo.update_mood(agent_id, "Optimistic")
+        await self.repo.update_mood(agent_id, "Optimistic", user_id)

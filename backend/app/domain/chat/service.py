@@ -141,22 +141,34 @@ class ChatService:
         rooms = await self.chat_repo.list_rooms(user_id)
         return [RoomResponse(id=r.id, name=r.name, created_at=r.created_at) for r in rooms]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, user_id, name)
         if room:
             return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
+    async def add_agent_to_room(self, room_id: UUID, user_id: UUID, agent_id: UUID) -> None:
+        # SEC(agent): Prevents IDOR. Verify the user has access to the room first
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied")
         await self.chat_repo.add_agent_to_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        # SEC(agent): Prevents IDOR by verifying user ownership of the room
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied")
         return await self.chat_repo.list_room_agents(room_id)
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
+    async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessageResponse]:
+        # SEC(agent): Prevents IDOR by checking room ownership before fetching messages
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied")
         msgs = await self.chat_repo.get_room_messages(room_id)
         return [
             ChatMessageResponse(
@@ -250,10 +262,19 @@ class ChatService:
         result = await crew.kickoff_async()
         return {"task_type": "general", "result": str(result)}
 
+    async def verify_room_access(self, room_id: UUID, user_id: UUID) -> None:
+        """Verify the user has access to the specified room. Raises ValueError if denied."""
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied.")
+
     async def stream_room_responses(
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
+        # SEC(agent): Prevents IDOR by verifying room ownership before allowing chat
+        await self.verify_room_access(room_id, user_id)
+
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)

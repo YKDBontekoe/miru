@@ -38,13 +38,13 @@ class TestAgentRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_returns_none_for_unknown(self) -> None:
         repo = AgentRepository()
-        result = await repo.get_by_id(uuid4())
+        result = await repo.get_by_id(uuid4(), uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_by_id_accepts_str(self) -> None:
         repo = AgentRepository()
-        result = await repo.get_by_id(str(uuid4()))
+        result = await repo.get_by_id(str(uuid4()), str(uuid4()))
         assert result is None
 
     @pytest.mark.asyncio
@@ -72,12 +72,12 @@ class TestAgentRepository:
     async def test_update_mood_noop_for_unknown(self) -> None:
         repo = AgentRepository()
         # Should not raise even if agent doesn't exist
-        await repo.update_mood(uuid4(), "happy")
+        await repo.update_mood(uuid4(), "happy", uuid4())
 
     @pytest.mark.asyncio
     async def test_increment_message_count_noop_for_unknown(self) -> None:
         repo = AgentRepository()
-        await repo.increment_message_count(uuid4())
+        await repo.increment_message_count(uuid4(), uuid4())
 
 
 # ---------------------------------------------------------------------------
@@ -99,19 +99,19 @@ class TestChatRepository:
     @pytest.mark.asyncio
     async def test_get_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.get_room(uuid4())
+        result = await repo.get_room(uuid4(), uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_update_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.update_room(uuid4(), "New Name")
+        result = await repo.update_room(uuid4(), uuid4(), "New Name")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_delete_room_returns_false_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.delete_room(uuid4())
+        result = await repo.delete_room(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio
@@ -119,7 +119,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Delete Me", user_id)
-        result = await repo.delete_room(room.id)
+        result = await repo.delete_room(room.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
@@ -127,9 +127,40 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Old Name", user_id)
-        updated = await repo.update_room(room.id, "New Name")
+        updated = await repo.update_room(room.id, user_id, "New Name")
         assert updated is not None
         assert updated.name == "New Name"
+
+    @pytest.mark.asyncio
+    async def test_ownership_mismatch_returns_none(self) -> None:
+        """Verify that room operations fail safely if the user_id does not match the room owner."""
+        repo = ChatRepository()
+        owner_id = uuid4()
+        different_user_id = uuid4()
+
+        # Create a room owned by owner_id
+        room = await repo.create_room("Ownership Test", owner_id)
+
+        # 1. get_room should return None for a different user
+        fetched = await repo.get_room(room.id, different_user_id)
+        assert fetched is None
+
+        # 2. update_room should return None for a different user
+        updated = await repo.update_room(room.id, different_user_id, "Hacked Name")
+        assert updated is None
+
+        # Verify the original name is untouched
+        original_room = await repo.get_room(room.id, owner_id)
+        assert original_room is not None
+        assert original_room.name == "Ownership Test"
+
+        # 3. delete_room should return False for a different user
+        deleted = await repo.delete_room(room.id, different_user_id)
+        assert deleted is False
+
+        # Verify room still exists for the real owner
+        still_exists = await repo.get_room(room.id, owner_id)
+        assert still_exists is not None
 
     @pytest.mark.asyncio
     async def test_get_room_messages_empty(self) -> None:
@@ -185,13 +216,13 @@ class TestMemoryRepository:
         user_id = uuid4()
         memory = Memory(content="To delete", user_id=user_id, embedding=[0.0])
         await repo.insert_memory(memory)
-        result = await repo.delete_memory(memory.id)
+        result = await repo.delete_memory(memory.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
     async def test_delete_memory_returns_false_for_unknown(self) -> None:
         repo = MemoryRepository()
-        result = await repo.delete_memory(uuid4())
+        result = await repo.delete_memory(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio

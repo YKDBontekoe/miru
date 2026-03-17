@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIConnectionError
@@ -11,9 +12,6 @@ from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
-
-if TYPE_CHECKING:
-    from uuid import UUID
 
 router = APIRouter(tags=["Memory"])
 
@@ -66,11 +64,11 @@ async def store_memory(
 @router.delete("/{memory_id}")
 async def delete_memory(
     memory_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
 ) -> dict[str, str]:
     """Delete a memory."""
-    success = await service.delete_memory(memory_id)
+    success = await service.delete_memory(memory_id, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Memory not found")
     return {"status": "ok"}
