@@ -26,7 +26,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "nest-asyncio",
     "litellm>=1.82.1",
-    "pyopenssl>=26.0.0",  # pinned due to GHSA-vp96-hxj8-p424/GHSA-5pwr-322w-8jr4 from webauthn transitive dep to prevent CI failure
+    "pyopenssl>=26.0.0",
 ]
 
 [project.optional-dependencies]
