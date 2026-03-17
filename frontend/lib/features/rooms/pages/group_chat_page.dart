@@ -64,8 +64,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        ApiService.getRoomAgents(widget.room.id),
-        ApiService.getRoomMessages(widget.room.id),
+        ApiService.instance.getRoomAgents(widget.room.id),
+        ApiService.instance.getRoomMessages(widget.room.id),
       ]);
 
       if (!mounted) return;
@@ -79,7 +79,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading chat: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
         ),
       );
     } finally {
@@ -123,7 +123,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     HapticFeedback.lightImpact();
 
     try {
-      final stream = ApiService.streamRoomChat(widget.room.id, text);
+      final stream = ApiService.instance.streamRoomChat(widget.room.id, text);
 
       // Current agent being streamed — tracked via [[AGENT:id:name]] markers.
       String? activeAgentId;
@@ -203,7 +203,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
         ),
       );
     } finally {
@@ -247,14 +247,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
     if (newName != null && newName.isNotEmpty && newName != _roomName) {
       try {
-        await ApiService.updateRoom(widget.room.id, newName);
+        await ApiService.instance.updateRoom(widget.room.id, newName);
         if (mounted) setState(() => _roomName = newName);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Rename failed: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -263,7 +263,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   Future<void> _showAddAgentDialog() async {
     try {
-      final allAgentsData = await ApiService.getAgents();
+      final allAgentsData = await ApiService.instance.getAgents();
       final allAgents = allAgentsData;
 
       if (!mounted) return;
@@ -276,7 +276,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           allAgents: allAgents,
           roomAgents: _roomAgents,
           onAdd: (agentId) async {
-            await ApiService.addAgentToRoom(widget.room.id, agentId);
+            await ApiService.instance.addAgentToRoom(widget.room.id, agentId);
             await _loadData();
           },
         ),
@@ -286,7 +286,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading personas: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
         ),
       );
     }
@@ -373,12 +373,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [
-                AppColors.success,
-                AppColors.primary,
-                AppColors.error,
-                AppColors.warning,
-                AppColors.primaryDark,
+              colors: [
+                colors.success,
+                colors.primary,
+                colors.error,
+                colors.warning,
+                colors.primarySurface,
               ],
             ),
           ),
@@ -409,7 +409,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
             children: [
               Text(_roomName, style: AppTypography.headingSmall),
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.edit_outlined, size: 14, color: colors.onSurfaceMuted),
+              Icon(
+                Icons.edit_outlined,
+                size: AppSpacing.iconSm,
+                color: colors.onSurfaceMuted,
+              ),
             ],
           ),
         ),
@@ -451,7 +455,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
       color: colors.surfaceHigh,
       child: Row(
         children: [
-          Icon(Icons.group_outlined, size: 14, color: colors.onSurfaceMuted),
+          Icon(
+            Icons.group_outlined,
+            size: AppSpacing.iconSm,
+            color: colors.onSurfaceMuted,
+          ),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
@@ -480,7 +488,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           children: [
             Icon(
               Icons.chat_bubble_outline_rounded,
-              size: 48,
+              size: AppSpacing.iconXl,
               color: colors.onSurfaceMuted.withValues(alpha: 0.4),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -592,8 +600,8 @@ class _StatusPillState extends State<StatusPill>
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 10,
-                height: 10,
+                width: AppSpacing.sm,
+                height: AppSpacing.sm,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.5,
                   color: widget.colors.primary,

@@ -65,12 +65,12 @@ class _BouncingDotState extends State<_BouncingDot>
     Color dotColor = context.colors.onSurfaceMuted;
     if (widget.agentName != null && widget.agentName!.isNotEmpty) {
       final baseColors = [
-        Colors.blue,
-        Colors.teal,
-        Colors.red,
-        Colors.indigo,
-        Colors.deepPurple,
-        Colors.orange,
+        context.colors.primary,
+        context.colors.info,
+        context.colors.error,
+        context.colors.primarySurface,
+        context.colors.primaryLight,
+        context.colors.warning,
       ];
       dotColor =
           baseColors[widget.agentName!.hashCode.abs() % baseColors.length];
