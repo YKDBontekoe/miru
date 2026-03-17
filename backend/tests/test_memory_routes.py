@@ -84,6 +84,44 @@ def test_list_memories_route_network_error(client: TestClient) -> None:
     assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
 
 
+def test_delete_memory_route_success(client: TestClient) -> None:
+    user_id = uuid4()
+    memory_id = uuid4()
+    mock_service = MagicMock()
+
+    mock_service.delete_memory = AsyncMock(return_value=True)
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+
+    response = client.delete(
+        f"/api/v1/memory/{memory_id}",
+        headers={"Authorization": "Bearer fake_token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_delete_memory_route_not_found(client: TestClient) -> None:
+    user_id = uuid4()
+    memory_id = uuid4()
+    mock_service = MagicMock()
+
+    mock_service.delete_memory = AsyncMock(return_value=False)
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+
+    response = client.delete(
+        f"/api/v1/memory/{memory_id}",
+        headers={"Authorization": "Bearer fake_token"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Memory not found"}
+
+
 def test_get_memory_graph_network_error(client: TestClient) -> None:
     user_id = uuid4()
     mock_service = MagicMock()

@@ -11,9 +11,7 @@ from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
-
-if TYPE_CHECKING:
-    from uuid import UUID
+from uuid import UUID
 
 router = APIRouter(tags=["Memory"])
 
