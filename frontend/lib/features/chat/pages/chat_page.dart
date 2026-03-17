@@ -14,6 +14,7 @@ import 'package:miru/features/chat/widgets/miru_app_bar.dart';
 import 'package:miru/features/chat/widgets/scroll_to_bottom_button.dart';
 import 'package:miru/features/chat/widgets/streaming_status_pill.dart';
 import 'package:miru/features/chat/widgets/message_list.dart';
+import 'package:miru/features/chat/widgets/chat_input_bar.dart';
 
 // ---------------------------------------------------------------------------
 // Page
@@ -148,7 +149,6 @@ class _ChatPageState extends State<ChatPage> {
     try {
       await _sendStreamingMessage(text);
     } catch (e) {
-      // Don't overwrite if already cancelled.
       if (_messages.isNotEmpty) {
         setState(() {
           final lastIndex = _messages.length - 1;
@@ -172,7 +172,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  /// Streams a response from the backend, handling [[STATUS:...]] events.
   Future<void> _sendStreamingMessage(String text) async {
     final statusRegex = RegExp(r'\[\[STATUS:([^\]]+)\]\]');
 
@@ -181,7 +180,6 @@ class _ChatPageState extends State<ChatPage> {
       (chunk) {
         if (!mounted) return;
 
-        // Handle status events.
         final statusMatch = statusRegex.firstMatch(chunk);
         if (statusMatch != null) {
           final payload = statusMatch.group(1)!;
@@ -189,7 +187,6 @@ class _ChatPageState extends State<ChatPage> {
           return;
         }
 
-        // Regular text chunk — clear status and append to the reply.
         setState(() {
           _streamingStatus = null;
           final lastIndex = _messages.length - 1;
@@ -215,11 +212,9 @@ class _ChatPageState extends State<ChatPage> {
       },
     );
 
-    // Await the subscription completing.
     await _activeStreamSubscription!.asFuture<void>();
   }
 
-  /// Maps a raw backend status payload to a human-readable label.
   String? _statusLabel(String payload) {
     switch (payload) {
       case 'retrieving_memories':
@@ -233,7 +228,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  /// Stop the current streaming response.
   void _stopGeneration() {
     _activeStreamSubscription?.cancel();
     _activeStreamSubscription = null;
@@ -252,22 +246,17 @@ class _ChatPageState extends State<ChatPage> {
     unawaited(_saveMessages());
   }
 
-  /// Retry the last failed message.
   void _retryLastMessage() {
     if (_messages.length < 2) return;
 
-    // Find the user message that preceded the failed assistant message.
     final failedIndex = _messages.length - 1;
     if (!_messages[failedIndex].isUser &&
         _messages[failedIndex].status == MessageStatus.failed) {
-      // Remove the failed response.
       setState(() => _messages.removeAt(failedIndex));
 
-      // Find the last user message and resend.
       for (int i = _messages.length - 1; i >= 0; i--) {
         if (_messages[i].isUser) {
           _inputController.text = _messages[i].text;
-          // Remove the original user message too -- _sendMessage will re-add it.
           setState(() => _messages.removeAt(i));
           _sendMessage();
           break;
@@ -276,7 +265,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  /// Clear all messages and start a new conversation.
   void _newChat() {
     if (_isStreaming) _stopGeneration();
     setState(() => _messages.clear());
@@ -284,23 +272,13 @@ class _ChatPageState extends State<ChatPage> {
     unawaited(_saveMessages());
   }
 
-  /// Copy message text to clipboard.
   void _copyMessage(ChatMessage msg) {
     Clipboard.setData(ClipboardData(text: msg.text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          'Copied to clipboard',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
-        ),
+        content: Text('Copied to clipboard'),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        margin: const EdgeInsets.all(AppSpacing.lg),
       ),
     );
   }
@@ -333,13 +311,11 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Column(
             children: [
-              // Message list
               Expanded(
                 child: _messages.isEmpty
                     ? AppEmptyState(
                         title: "Hi, I'm Miru.",
-                        subtitle:
-                            'I remember things about you over time.\nTell me something!',
+                        subtitle: 'I remember things about you over time.\nTell me something!',
                         suggestions: const [
                           'What can you help me with?',
                           'Summarize a topic for me',
@@ -360,12 +336,8 @@ class _ChatPageState extends State<ChatPage> {
                         onRetry: _retryLastMessage,
                       ),
               ),
-
-              // Streaming status pill (shown above input bar)
               if (_isStreaming && _streamingStatus != null)
                 StreamingStatusPill(label: _streamingStatus!),
-
-              // Input bar
               ChatInputBar(
                 controller: _inputController,
                 focusNode: _inputFocusNode,
@@ -375,8 +347,6 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ],
           ),
-
-          // Scroll-to-bottom FAB
           if (_showScrollToBottom && _messages.isNotEmpty)
             Positioned(
               bottom: 100,
