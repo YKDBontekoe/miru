@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'package:miru/core/api/backend_service.dart';
 import 'package:miru/core/design_system/design_system.dart';
@@ -23,7 +24,17 @@ void main() async {
   // Initialise Passkey support.
   await PasskeyService.initialize();
 
-  runApp(const ProviderScope(child: MiruApp()));
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  if (sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = sentryDsn;
+      },
+      appRunner: () => runApp(const ProviderScope(child: MiruApp())),
+    );
+  } else {
+    runApp(const ProviderScope(child: MiruApp()));
+  }
 }
 
 class MiruApp extends StatefulWidget {
