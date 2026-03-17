@@ -155,7 +155,7 @@ async def negotiate(
 
     # Issue a token for the user
     token = client.get_client_access_token(user_id=str(user_id))
-    return SignalRNegotiateResponse(url=token["url"], access_token=token["token"])
+    return SignalRNegotiateResponse(url=token["url"], accessToken=token["token"])
 
 
 @router.options("/webhook")
