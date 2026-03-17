@@ -62,9 +62,7 @@ jobs:
           channel: 'stable'
           cache: true
       - name: Install dependencies and generate code
-        run: |
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
+        uses: ./.github/actions/flutter-generate-code
       - name: Build APK
         run: flutter build apk --release
       - name: Build App Bundle
@@ -106,9 +104,7 @@ jobs:
           channel: 'stable'
           cache: true
       - name: Install dependencies and generate code
-        run: |
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
+        uses: ./.github/actions/flutter-generate-code
       - name: Build IPA
         run: flutter build ios --release --no-codesign
       - name: Upload IPA
@@ -143,9 +139,7 @@ jobs:
           channel: 'stable'
           cache: true
       - name: Install dependencies and generate code
-        run: |
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
+        uses: ./.github/actions/flutter-generate-code
       - name: Build Web
         run: flutter build web --release
       - name: Upload Web Build
