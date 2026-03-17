@@ -63,6 +63,8 @@ jobs:
           cache: true
       - name: Install dependencies and generate code
         uses: ./.github/actions/flutter-generate-code
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Build APK
         run: flutter build apk --release
       - name: Build App Bundle
@@ -105,6 +107,8 @@ jobs:
           cache: true
       - name: Install dependencies and generate code
         uses: ./.github/actions/flutter-generate-code
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Build IPA
         run: flutter build ios --release --no-codesign
       - name: Upload IPA
@@ -140,6 +144,8 @@ jobs:
           cache: true
       - name: Install dependencies and generate code
         uses: ./.github/actions/flutter-generate-code
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}
       - name: Build Web
         run: flutter build web --release
       - name: Upload Web Build
