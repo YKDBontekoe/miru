@@ -4,15 +4,15 @@ import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/features/rooms/pages/rooms_page.dart';
 
 void main() {
-  testWidgets('RoomsPage renders empty state successfully', (WidgetTester tester) async {
+  testWidgets('RoomsPage renders empty state successfully', (
+    WidgetTester tester,
+  ) async {
     // Basic test to render RoomsPage with defaults.
     // It should safely display loading indicators utilizing context.colors.primary.
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: const Scaffold(
-          body: RoomsPage(),
-        ),
+        home: const Scaffold(body: RoomsPage()),
       ),
     );
 

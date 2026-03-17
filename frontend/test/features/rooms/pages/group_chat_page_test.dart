@@ -5,7 +5,9 @@ import 'package:miru/features/rooms/pages/group_chat_page.dart';
 import 'package:miru/core/models/chat_room.dart';
 
 void main() {
-  testWidgets('GroupChatPage handles StatusPill and rendering', (WidgetTester tester) async {
+  testWidgets('GroupChatPage handles StatusPill and rendering', (
+    WidgetTester tester,
+  ) async {
     final room = ChatRoom(
       id: 'test-room-id',
       name: 'Test Room',
@@ -15,9 +17,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: Scaffold(
-          body: GroupChatPage(room: room),
-        ),
+        home: Scaffold(body: GroupChatPage(room: room)),
       ),
     );
 
@@ -30,14 +30,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: Builder(builder: (context) {
-           return Scaffold(
-             body: StatusPill(
-               label: 'Loading...',
-               colors: context.colors,
-             ),
-           );
-        }),
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: StatusPill(label: 'Loading...', colors: context.colors),
+            );
+          },
+        ),
       ),
     );
 
