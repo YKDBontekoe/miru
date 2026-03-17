@@ -68,6 +68,18 @@ class MemoryService:
         return memory_id
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID) -> bool:
+        """Delete a specific memory for a given user.
+
+        Args:
+            memory_id (UUID): The unique identifier of the memory to delete.
+            user_id (UUID): The unique identifier of the user who owns the memory.
+
+        Returns:
+            bool: True if the memory was successfully found and deleted, False otherwise.
+
+        Raises:
+            Exception: Any underlying repository errors are passed through to the caller.
+        """
         return await self.repo.delete_memory(memory_id, user_id)
 
     async def get_memory_graph(self, user_id: UUID) -> dict[str, Any]:

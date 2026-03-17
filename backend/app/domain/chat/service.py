@@ -262,15 +262,18 @@ class ChatService:
         result = await crew.kickoff_async()
         return {"task_type": "general", "result": str(result)}
 
+    async def verify_room_access(self, room_id: UUID, user_id: UUID) -> None:
+        """Verify the user has access to the specified room. Raises ValueError if denied."""
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied.")
+
     async def stream_room_responses(
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         # SEC(agent): Prevents IDOR by verifying room ownership before allowing chat
-        room = await self.chat_repo.get_room(room_id, user_id)
-        if not room:
-            yield "Error: Room not found or access denied."
-            return
+        await self.verify_room_access(room_id, user_id)
 
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)

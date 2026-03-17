@@ -101,6 +101,7 @@ def test_delete_memory_route_success(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+    mock_service.delete_memory.assert_awaited_once_with(memory_id, user_id)
 
 
 def test_delete_memory_route_not_found(client: TestClient) -> None:
@@ -120,6 +121,7 @@ def test_delete_memory_route_not_found(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Memory not found"}
+    mock_service.delete_memory.assert_awaited_once_with(memory_id, user_id)
 
 
 def test_get_memory_graph_network_error(client: TestClient) -> None:

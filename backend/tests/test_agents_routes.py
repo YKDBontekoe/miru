@@ -65,6 +65,7 @@ def test_get_agents_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    mock_service.list_agents.assert_awaited_once_with(user_id)
 
 
 def test_get_agent_capabilities_route(client: TestClient) -> None:
@@ -82,6 +83,7 @@ def test_get_agent_capabilities_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    mock_service.list_capabilities.assert_awaited_once()
 
 
 def test_get_agent_integrations_route(client: TestClient) -> None:
@@ -99,6 +101,7 @@ def test_get_agent_integrations_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    mock_service.list_integrations.assert_awaited_once()
 
 
 def test_generate_agent_profile_route(client: TestClient) -> None:
@@ -125,6 +128,7 @@ def test_generate_agent_profile_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["name"] == "Generated Bot"
+    mock_service.generate_agent_profile.assert_awaited_once_with("friendly helpful")
 
 
 def test_build_agent_response_without_avatar() -> None:

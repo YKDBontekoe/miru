@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -73,7 +74,12 @@ app.add_middleware(
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):  # type: ignore
+    """Middleware to inject HTTP security headers globally into all responses."""
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """Injects Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, and Strict-Transport-Security."""
         response = await call_next(request)
         # SEC(agent): Essential security headers to prevent common web vulnerabilities
         response.headers["Content-Security-Policy"] = "default-src 'self'"

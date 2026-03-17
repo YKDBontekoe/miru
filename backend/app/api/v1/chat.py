@@ -145,6 +145,12 @@ async def chat_in_room(
     message = request.message or request.content
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
+
+    try:
+        await service.verify_room_access(room_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
     return StreamingResponse(
         service.stream_room_responses(room_id, message, user_id),
         media_type="text/event-stream",
