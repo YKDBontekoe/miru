@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.core.security.auth import CurrentUser
 from app.domain.notifications.services import NotificationService
 
-router = APIRouter(prefix="/notifications", tags=["notifications"])
+router = APIRouter(tags=["notifications"])
 
 
 class NotificationRequest(BaseModel):

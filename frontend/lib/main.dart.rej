@@ -1,0 +1,11 @@
+--- frontend/lib/main.dart
++++ frontend/lib/main.dart
+@@ -59,7 +59,7 @@
+     _authStream = SupabaseService.authStateChanges;
+
+     // Check synchronously for auth state at start
+-    final user = SupabaseService.isAuthenticated ? SupabaseService.client.auth.currentUser : null;
++    final user = SupabaseService.isAuthenticated ? Supabase.instance.client.auth.currentUser : null;
+     if (user != null) {
+       NotificationService.registerStatic(['user:${user.id}']);
+     } else {

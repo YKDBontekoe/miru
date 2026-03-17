@@ -1,0 +1,9 @@
+--- backend/tests/app/domain/notifications/test_api.py
++++ backend/tests/app/domain/notifications/test_api.py
+@@ -21,7 +21,7 @@
+         response = client.post(
+-            "/api/v1/notifications/notifications/send", json={"message": "Hello World", "title": "Test Title"}
++            "/api/v1/notifications/send", json={"message": "Hello World", "title": "Test Title"}
+         )
+
+         assert response.status_code == 202

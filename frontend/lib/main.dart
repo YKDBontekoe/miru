@@ -61,7 +61,7 @@ class _MiruAppState extends State<MiruApp> {
 
     // Check synchronously for auth state at start
     final user = SupabaseService.isAuthenticated
-        ? SupabaseService.client.auth.currentUser
+        ? Supabase.instance.client.auth.currentUser
         : null;
     if (user != null) {
       NotificationService.registerStatic(['user:${user.id}']);
