@@ -61,6 +61,8 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
+      - name: Install dependencies and generate code
+        uses: ./.github/actions/flutter-generate-code
       - name: Build APK
         run: flutter build apk --release
       - name: Build App Bundle
@@ -101,6 +103,8 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
+      - name: Install dependencies and generate code
+        uses: ./.github/actions/flutter-generate-code
       - name: Build IPA
         run: flutter build ios --release --no-codesign
       - name: Upload IPA
@@ -134,6 +138,8 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
+      - name: Install dependencies and generate code
+        uses: ./.github/actions/flutter-generate-code
       - name: Build Web
         run: flutter build web --release
       - name: Upload Web Build
