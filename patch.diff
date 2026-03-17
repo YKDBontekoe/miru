@@ -1,10 +1,53 @@
---- backend/pyproject.toml
-+++ backend/pyproject.toml
-@@ -46,6 +46,7 @@
-     "UP043",  # unnecessary default type args
-     "TC001",  # Move app import into TYPE_CHECKING — breaks FastAPI Depends at runtime
-     "TC003",  # Move stdlib import into TYPE_CHECKING — breaks Pydantic at runtime
-+    "B008",   # Do not perform function call in argument defaults
- ]
+--- backend/tests/app/infrastructure/notifications/test_azure_hubs.py
++++ backend/tests/app/infrastructure/notifications/test_azure_hubs.py
+@@ -2,12 +2,12 @@
 
- [tool.ruff.lint.isort]
+ import pytest
+
+-from app.core.config import get_settings
++from app.core.config import get_settings, Settings
+ from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
+
+
+ @pytest.fixture
+-def mock_settings() -> MagicMock:
++def mock_settings() -> Settings:
+     settings = get_settings()
+     settings.azure_notification_hub_name = "test-hub"
+     settings.azure_notification_hub_connection_string = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=testkey"
+@@ -17,7 +17,7 @@
+ @pytest.mark.asyncio
+ @patch("app.infrastructure.notifications.azure_hubs.AzureNotificationHub")
+ async def test_azure_client_initialization(
+-    mock_hub_class: MagicMock, mock_settings: MagicMock
++    mock_hub_class: MagicMock, mock_settings: Settings
+ ) -> None:
+     client = AzureNotificationHubClient()
+     assert client.hub is not None
+@@ -30,7 +30,7 @@
+ @pytest.mark.asyncio
+ @patch("app.infrastructure.notifications.azure_hubs.AzureNotificationHub")
+ async def test_send_notification_success(
+-    mock_hub_class: MagicMock, mock_settings: MagicMock
++    mock_hub_class: MagicMock, mock_settings: Settings
+ ) -> None:
+     client = AzureNotificationHubClient()
+     mock_hub_instance = mock_hub_class.return_value
+@@ -51,7 +51,7 @@
+ @pytest.mark.asyncio
+ @patch("app.infrastructure.notifications.azure_hubs.AzureNotificationHub")
+ async def test_send_notification_uninitialized(
+-    mock_hub_class: MagicMock, mock_settings: MagicMock
++    mock_hub_class: MagicMock, mock_settings: Settings
+ ) -> None:
+     # Temporarily unset settings
+     mock_settings.azure_notification_hub_name = None
+@@ -66,7 +66,7 @@
+ @pytest.mark.asyncio
+ @patch("app.infrastructure.notifications.azure_hubs.AzureNotificationHub")
+ async def test_send_notification_exception(
+-    mock_hub_class: MagicMock, mock_settings: MagicMock
++    mock_hub_class: MagicMock, mock_settings: Settings
+ ) -> None:
+     client = AzureNotificationHubClient()
+     mock_hub_instance = mock_hub_class.return_value
