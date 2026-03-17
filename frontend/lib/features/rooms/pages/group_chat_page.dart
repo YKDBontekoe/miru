@@ -508,7 +508,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final msg = _messages[index];
-        return MessageItem(message: msg, senderName: _getSenderName(msg));
+        return RepaintBoundary(
+          child: MessageItem(message: msg, senderName: _getSenderName(msg)),
+        );
       },
     );
   }

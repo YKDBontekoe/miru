@@ -438,13 +438,15 @@ class _MessageList extends StatelessWidget {
 
         return _AnimatedMessageItem(
           key: ValueKey(msg.id),
-          child: ChatBubble(
-            text: isPlaceholder ? streamingStatus! : msg.text,
-            isUser: msg.isUser,
-            crewTaskType: msg.crewTaskType,
-            status: isPlaceholder ? MessageStatus.streaming : msg.status,
-            onCopy: () => onCopy(msg),
-            onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+          child: RepaintBoundary(
+            child: ChatBubble(
+              text: isPlaceholder ? streamingStatus! : msg.text,
+              isUser: msg.isUser,
+              crewTaskType: msg.crewTaskType,
+              status: isPlaceholder ? MessageStatus.streaming : msg.status,
+              onCopy: () => onCopy(msg),
+              onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+            ),
           ),
         );
       },
