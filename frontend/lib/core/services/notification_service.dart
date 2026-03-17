@@ -1,11 +1,8 @@
 import 'dart:developer';
 
 import 'package:az_notification_hub/az_notification_hub.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NotificationService {
-  NotificationService();
-
   static Future<void> initStatic(
     String hubName,
     String connectionString,
@@ -22,6 +19,7 @@ class NotificationService {
       log('Notification hub initialized.');
     } catch (e, s) {
       log('Failed to init notification hub', error: e, stackTrace: s);
+      rethrow;
     }
   }
 
@@ -29,12 +27,15 @@ class NotificationService {
     try {
       final success = await AzureNotificationHub.instance.addTags(tags);
       if (success) {
-        log('Successfully registered with Notification Hub: tags=$tags');
+        log(
+          'Successfully registered with Notification Hub: tags count=${tags.length}',
+        );
       } else {
         log('Failed to register with Notification Hub.');
       }
     } catch (e, s) {
       log('Error registering with Notification Hub', error: e, stackTrace: s);
+      rethrow;
     }
   }
 
@@ -44,22 +45,7 @@ class NotificationService {
       log('Successfully unregistered from Notification Hub.');
     } catch (e, s) {
       log('Error unregistering from Notification Hub', error: e, stackTrace: s);
+      rethrow;
     }
   }
-
-  Future<void> init(String hubName, String connectionString) async {
-    return initStatic(hubName, connectionString);
-  }
-
-  Future<void> register(List<String> tags) async {
-    return registerStatic(tags);
-  }
-
-  Future<void> unregister() async {
-    return unregisterStatic();
-  }
 }
-
-final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService();
-});

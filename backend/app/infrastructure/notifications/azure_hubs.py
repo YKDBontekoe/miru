@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import asyncio
 import json
 import logging
 from typing import Any
@@ -37,14 +40,13 @@ class AzureNotificationHubClient:
             return
 
         try:
-            # Note: the notificationhubs-rest-python client is synchronous.
-            # In a heavy async environment, this should be offloaded to a thread pool,
-            # but for this basic implementation we call it directly.
             if isinstance(payload, dict):
                 payload = json.dumps(payload)
             notification = AzureNotification(notification_format="template", payload=payload)
-            self.hub.send_notification(notification, tags)
+            # notificationhubs-rest-python client is synchronous.
+            # Use asyncio.to_thread to offload blocking I/O off the main event loop.
+            await asyncio.to_thread(self.hub.send_notification, notification, tags)
             logger.info("Successfully sent notification.")
-        except Exception as e:
-            logger.error(f"Failed to send notification: {e}")
+        except Exception as exc:
+            logger.exception("Failed to send notification", exc_info=exc)
             raise

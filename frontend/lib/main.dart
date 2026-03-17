@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:miru/core/api/backend_service.dart';
 import 'package:miru/core/design_system/design_system.dart';
-import 'package:miru/core/services/passkey_service.dart';
 import 'package:miru/core/services/notification_service.dart';
+import 'package:miru/core/services/passkey_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
 import 'package:miru/features/auth/pages/auth_page.dart';
 import 'package:miru/features/auth/pages/loading_page.dart';
@@ -29,7 +31,14 @@ void main() async {
   const azHubConn = String.fromEnvironment(
     'AZURE_NOTIFICATION_HUB_CONN_STRING',
   );
-  await NotificationService.initStatic(azHubName, azHubConn);
+
+  if (azHubName.isEmpty || azHubConn.isEmpty) {
+    debugPrint(
+      'Warning: AZURE_NOTIFICATION_HUB_NAME or AZURE_NOTIFICATION_HUB_CONN_STRING is missing in environment.',
+    );
+  } else {
+    await NotificationService.initStatic(azHubName, azHubConn);
+  }
 
   runApp(const ProviderScope(child: MiruApp()));
 }
@@ -43,12 +52,24 @@ class MiruApp extends StatefulWidget {
 
 class _MiruAppState extends State<MiruApp> {
   late final Stream<AuthState> _authStream;
+  StreamSubscription<AuthState>? _authSub;
 
   @override
   void initState() {
     super.initState();
     _authStream = SupabaseService.authStateChanges;
-    _authStream.listen((event) {
+
+    // Check synchronously for auth state at start
+    final user = SupabaseService.isAuthenticated
+        ? SupabaseService.client.auth.currentUser
+        : null;
+    if (user != null) {
+      NotificationService.registerStatic(['user:${user.id}']);
+    } else {
+      NotificationService.unregisterStatic();
+    }
+
+    _authSub = _authStream.listen((event) {
       final user = event.session?.user;
       if (user != null) {
         NotificationService.registerStatic(['user:${user.id}']);
@@ -56,6 +77,12 @@ class _MiruAppState extends State<MiruApp> {
         NotificationService.unregisterStatic();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   @override

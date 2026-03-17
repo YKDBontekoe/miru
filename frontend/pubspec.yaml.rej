@@ -1,17 +1,18 @@
 --- frontend/pubspec.yaml
 +++ frontend/pubspec.yaml
-@@ -47,12 +47,14 @@
-   flutter_riverpod: ^2.6.1
-   riverpod_annotation: ^2.6.1
+@@ -32,13 +32,15 @@
+   credential_manager: ^2.0.8
+   confetti: ^0.8.0
 
 +  # Notifications
 +  az_notification_hub: ^1.4.0
 +
+   # State Management
+   flutter_riverpod: ^2.6.1
+   riverpod_annotation: ^2.6.1
+
    # Data Modeling
+-  az_notification_hub: ^1.4.0
    freezed_annotation: ^2.4.4
    json_annotation: ^4.9.0
    intl: ^0.20.2
--  az_notification_hub: ^1.4.0
-
- dev_dependencies:
-   flutter_test:

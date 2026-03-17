@@ -77,7 +77,7 @@ ignore = [
     "UP043",  # unnecessary default type args
     "TC001",  # Move app import into TYPE_CHECKING — breaks FastAPI Depends at runtime
     "TC003",  # Move stdlib import into TYPE_CHECKING — breaks Pydantic at runtime
-    "B008",   # Do not perform function call in argument defaults
+    "B008",
 ]
 
 [tool.ruff.lint.isort]
@@ -139,4 +139,3 @@ asyncio_mode = "strict"
 tortoise_orm = "app.infrastructure.database.tortoise.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./."
-extend-ignore = ["B008"]
