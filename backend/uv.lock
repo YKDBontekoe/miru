@@ -1983,6 +1983,7 @@ dependencies = [
     { name = "instructor" },
     { name = "litellm" },
     { name = "nest-asyncio" },
+    { name = "notificationhubs-rest-python" },
     { name = "numpy" },
     { name = "openrouter" },
     { name = "pydantic-settings" },
@@ -2028,6 +2029,7 @@ requires-dist = [
     { name = "litellm", specifier = ">=1.82.1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10.0" },
     { name = "nest-asyncio" },
+    { name = "notificationhubs-rest-python", specifier = ">=1.0.2" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "openrouter", specifier = ">=0.7.11" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0" },
@@ -2350,6 +2352,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e1/8f/915e1c12df07c70ed779d18ab83d065718a926e70d3ea33eb0cd66ffb7c0/nltk-3.9.3.tar.gz", hash = "sha256:cb5945d6424a98d694c2b9a0264519fab4363711065a46aa0ae7a2195b92e71f", size = 2923673, upload-time = "2026-02-24T12:05:53.833Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c2/7e/9af5a710a1236e4772de8dfcc6af942a561327bb9f42b5b4a24d0cf100fd/nltk-3.9.3-py3-none-any.whl", hash = "sha256:60b3db6e9995b3dd976b1f0fa7dec22069b2677e759c28eb69b62ddd44870522", size = 1525385, upload-time = "2026-02-24T12:05:46.54Z" },
+]
+
+[[package]]
+name = "notificationhubs-rest-python"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/24/57/48696efd55f5ca770ec600db446f27844e180a0154a09c13f1282397fcd9/notificationhubs_rest_python-1.0.2.tar.gz", hash = "sha256:0eef3d4b00054c6c84d9155b2b25aa4047dd049a6e79928c73457d84c764a608", size = 8685, upload-time = "2024-07-17T19:55:42.971Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/81/35c17bad3ee000d44a1cc89bd0a2c487eb70129d882983481cafec90e2f8/notificationhubs_rest_python-1.0.2-py3-none-any.whl", hash = "sha256:a2b14b9780fac301097ad4d1524fcf218cfe8816e06ee0dcf5a87d3b71720a88", size = 9336, upload-time = "2024-07-17T19:55:41.202Z" },
 ]
 
 [[package]]

@@ -27,6 +27,7 @@ dependencies = [
     "nest-asyncio",
     "litellm>=1.82.1",
     "pyopenssl>=26.0.0",
+    "notificationhubs-rest-python>=1.0.2",
 ]
 
 [project.optional-dependencies]
@@ -137,3 +138,4 @@ asyncio_mode = "strict"
 tortoise_orm = "app.infrastructure.database.tortoise.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./."
+extend-ignore = ["B008"]

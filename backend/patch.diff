@@ -1,0 +1,22 @@
+--- app/domain/notifications/api/router.py
++++ app/domain/notifications/api/router.py
+@@ -16,7 +16,7 @@
+ async def send_notification(
+     request: NotificationRequest,
+     user_id: CurrentUser,
+-    service: NotificationService = Depends(),
++    service: NotificationService = Depends(NotificationService),
+ ) -> dict[str, str]:
+     """
+     Test endpoint to send a notification to the current user.
+--- app/domain/notifications/services.py
++++ app/domain/notifications/services.py
+@@ -8,9 +8,9 @@
+
+
+ class NotificationService:
+     def __init__(
+-        self, azure_hub_client: AzureNotificationHubClient = Depends(AzureNotificationHubClient)
++        self, azure_hub_client: AzureNotificationHubClient = Depends(AzureNotificationHubClient),
+     ) -> None:
+         self.azure_hub_client = azure_hub_client

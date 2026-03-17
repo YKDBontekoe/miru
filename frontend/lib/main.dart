@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:miru/core/api/backend_service.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/core/services/passkey_service.dart';
+import 'package:miru/core/services/notification_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
 import 'package:miru/features/auth/pages/auth_page.dart';
 import 'package:miru/features/auth/pages/loading_page.dart';
@@ -23,6 +24,13 @@ void main() async {
   // Initialise Passkey support.
   await PasskeyService.initialize();
 
+  // Setup notification service configuration from environment
+  const azHubName = String.fromEnvironment('AZURE_NOTIFICATION_HUB_NAME');
+  const azHubConn = String.fromEnvironment(
+    'AZURE_NOTIFICATION_HUB_CONN_STRING',
+  );
+  await NotificationService.initStatic(azHubName, azHubConn);
+
   runApp(const ProviderScope(child: MiruApp()));
 }
 
@@ -40,6 +48,14 @@ class _MiruAppState extends State<MiruApp> {
   void initState() {
     super.initState();
     _authStream = SupabaseService.authStateChanges;
+    _authStream.listen((event) {
+      final user = event.session?.user;
+      if (user != null) {
+        NotificationService.registerStatic(['user:${user.id}']);
+      } else {
+        NotificationService.unregisterStatic();
+      }
+    });
   }
 
   @override

@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     # Sentry environment name, e.g. "production", "staging", "development"
     sentry_environment: str = "development"
 
+    # Azure Notification Hubs
+    azure_notification_hub_name: str | None = None
+    azure_notification_hub_connection_string: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
