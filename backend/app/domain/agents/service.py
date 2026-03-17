@@ -160,8 +160,10 @@ class AgentService:
             response_model=AgentGenerationResponse,
         )
 
-    async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
+    async def update_mood(
+        self, agent_id: UUID | str, recent_history: str, user_id: UUID | str | None = None
+    ) -> None:
         """Analyze history and update agent mood via repository."""
         if not recent_history.strip():
             return
-        await self.repo.update_mood(agent_id, "Optimistic")
+        await self.repo.update_mood(agent_id, "Optimistic", user_id)
