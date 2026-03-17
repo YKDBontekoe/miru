@@ -409,7 +409,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
             children: [
               Text(_roomName, style: AppTypography.headingSmall),
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.edit_outlined, size: AppSpacing.iconSm, color: colors.onSurfaceMuted),
+              Icon(
+                Icons.edit_outlined,
+                size: AppSpacing.iconSm,
+                color: colors.onSurfaceMuted,
+              ),
             ],
           ),
         ),
@@ -451,7 +455,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
       color: colors.surfaceHigh,
       child: Row(
         children: [
-          Icon(Icons.group_outlined, size: AppSpacing.iconSm, color: colors.onSurfaceMuted),
+          Icon(
+            Icons.group_outlined,
+            size: AppSpacing.iconSm,
+            color: colors.onSurfaceMuted,
+          ),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
