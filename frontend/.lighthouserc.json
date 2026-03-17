@@ -1,5 +1,8 @@
 {
   "ci": {
+    "collect": {
+      "staticDistDir": "../web-dist"
+    },
     "assert": {
       "assertions": {
         "categories:performance": ["warn", { "minScore": 0.6 }],
