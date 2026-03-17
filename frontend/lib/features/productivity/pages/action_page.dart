@@ -1,90 +1,70 @@
-import 'package:miru/core/api/productivity_service.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/design_system/design_system.dart';
+import 'package:miru/core/api/productivity_service.dart';
+import 'package:miru/core/api/api_service.dart';
+import 'package:miru/core/design_system/design_system.dart';
+
 import '../models/calendar_event.dart';
-import 'tasks_page.dart';
-import 'notes_page.dart';
-import '../../../core/api/agents_service.dart';
+import '../../../core/models/task.dart';
+import '../../../core/models/note.dart';
 
-class CalendarEventsState {
-  final List<CalendarEvent> events;
-  final bool isLoading;
-  final bool hasError;
-  final bool hasReachedEnd;
+// Provide a single instance of ProductivityService
+final productivityServiceProvider = Provider((ref) => ProductivityService());
 
-  const CalendarEventsState({
-    this.events = const [],
-    this.isLoading = false,
-    this.hasError = false,
-    this.hasReachedEnd = false,
+// Selected date for the dashboard
+final selectedDateProvider = StateProvider<DateTime>((ref) {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+});
+
+// Tasks Provider
+final tasksProvider = FutureProvider.autoDispose<List<Task>>((ref) async {
+  final service = ref.watch(productivityServiceProvider);
+  return service.listTasks();
+});
+
+// Notes Provider
+final notesProvider = FutureProvider.autoDispose<List<Note>>((ref) async {
+  final service = ref.watch(productivityServiceProvider);
+  return service.listNotes();
+});
+
+// Calendar Events Provider
+final calendarEventsProvider = FutureProvider.autoDispose<List<CalendarEvent>>((
+  ref,
+) async {
+  final service = ref.watch(productivityServiceProvider);
+  // We fetch a reasonable number of events for the dashboard
+  return service.listCalendarEvents(limit: 100);
+});
+
+// A composite state to hold all dashboard data
+class DashboardState {
+  final AsyncValue<List<CalendarEvent>> events;
+  final AsyncValue<List<Task>> tasks;
+  final AsyncValue<List<Note>> notes;
+
+  DashboardState({
+    required this.events,
+    required this.tasks,
+    required this.notes,
   });
 
-  CalendarEventsState copyWith({
-    List<CalendarEvent>? events,
-    bool? isLoading,
-    bool? hasError,
-    bool? hasReachedEnd,
-  }) {
-    return CalendarEventsState(
-      events: events ?? this.events,
-      isLoading: isLoading ?? this.isLoading,
-      hasError: hasError ?? this.hasError,
-      hasReachedEnd: hasReachedEnd ?? this.hasReachedEnd,
-    );
-  }
+  bool get isLoading => events.isLoading || tasks.isLoading || notes.isLoading;
+  bool get hasError => events.hasError || tasks.hasError || notes.hasError;
 }
 
-class CalendarEventsNotifier extends AutoDisposeNotifier<CalendarEventsState> {
-  static const int _pageSize = 50;
+// The unified dashboard provider
+final dashboardProvider = Provider.autoDispose<DashboardState>((ref) {
+  final events = ref.watch(calendarEventsProvider);
+  final tasks = ref.watch(tasksProvider);
+  final notes = ref.watch(notesProvider);
 
-  @override
-  CalendarEventsState build() {
-    unawaited(Future.microtask(() => _fetchPage(isRefresh: true)));
-    return const CalendarEventsState(isLoading: true);
-  }
-
-  Future<void> _fetchPage({bool isRefresh = false}) async {
-    if (state.isLoading && !isRefresh) return;
-
-    final service = ref.read(productivityServiceProvider);
-
-    if (isRefresh) {
-      state = const CalendarEventsState(isLoading: true);
-    } else {
-      state = state.copyWith(isLoading: true);
-    }
-
-    try {
-      final currentOffset = isRefresh ? 0 : state.events.length;
-      final newEvents = await service.listCalendarEvents(
-        limit: _pageSize,
-        offset: currentOffset,
-      );
-
-      state = state.copyWith(
-        events: isRefresh ? newEvents : [...state.events, ...newEvents],
-        isLoading: false,
-        hasReachedEnd: newEvents.length < _pageSize,
-      );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, hasError: true);
-    }
-  }
-
-  Future<void> fetchNextPage() => _fetchPage();
-  Future<void> refresh() => _fetchPage(isRefresh: true);
-}
-
-final calendarEventsProvider =
-    AutoDisposeNotifierProvider<CalendarEventsNotifier, CalendarEventsState>(
-      () {
-        return CalendarEventsNotifier();
-      },
-    );
+  return DashboardState(events: events, tasks: tasks, notes: notes);
+});
 
 class ActionPage extends ConsumerStatefulWidget {
   const ActionPage({super.key});
@@ -93,569 +73,646 @@ class ActionPage extends ConsumerStatefulWidget {
   ConsumerState<ActionPage> createState() => _ActionPageState();
 }
 
-class _ActionPageState extends ConsumerState<ActionPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ActionPageState extends ConsumerState<ActionPage> {
+  final TextEditingController _inputController = TextEditingController();
+  bool _isSending = false;
+  String? _lastResponse;
+
+  // Weekly calendar scroll controller
+  final ScrollController _weekScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    // Scroll to center today on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_weekScrollController.hasClients) {
+        // Approximate width of a day item is 60. Center it.
+        final screenWidth = MediaQuery.of(context).size.width;
+        final offset = (3 * 60.0) - (screenWidth / 2) + 30.0;
+        _weekScrollController.jumpTo(offset > 0 ? offset : 0);
+      }
+    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _inputController.dispose();
+    _weekScrollController.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Action', style: AppTypography.headingMedium),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: context.colorScheme.primary,
-          unselectedLabelColor: context.colorScheme.onSurfaceVariant,
-          indicatorColor: context.colorScheme.primary,
-          tabs: const [
-            Tab(text: 'Calendar'),
-            Tab(text: 'Tasks'),
-            Tab(text: 'Notes'),
-          ],
+  Future<void> _handleAiInput(String text) async {
+    if (text.trim().isEmpty) return;
+
+    setState(() {
+      _isSending = true;
+      _lastResponse = null;
+    });
+
+    try {
+      final result = await ApiService.instance.runCrew(text);
+
+      if (!mounted) return;
+
+      setState(() {
+        _lastResponse = result.result;
+      });
+
+      // Refresh providers
+      ref.invalidate(tasksProvider);
+      ref.invalidate(notesProvider);
+      ref.invalidate(calendarEventsProvider);
+
+      _inputController.clear();
+
+      // Also show a snackbar with the result
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.result),
+          behavior: SnackBarBehavior.floating,
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [_CalendarTab(), TasksPage(), NotesPage()],
-      ),
-    );
-  }
-}
-
-class _CalendarTab extends ConsumerStatefulWidget {
-  const _CalendarTab();
-
-  @override
-  ConsumerState<_CalendarTab> createState() => _CalendarTabState();
-}
-
-class _CalendarTabState extends ConsumerState<_CalendarTab> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      ref.read(calendarEventsProvider.notifier).fetchNextPage();
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to process request: $e'),
+          backgroundColor: context.colors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
     }
   }
 
-  Future<void> _showEventDialog(
-    BuildContext context, [
-    CalendarEvent? existingEvent,
-  ]) async {
-    final productivityService = ref.read(productivityServiceProvider);
-    void onRefresh() => ref.read(calendarEventsProvider.notifier).refresh();
-
-    await showDialog(
-      context: context,
-      builder: (context) => _EventDialog(
-        existingEvent: existingEvent,
-        productivityService: productivityService,
-        onRefresh: onRefresh,
-      ),
+  // Generate a week of dates around today
+  List<DateTime> _getWeekDays() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return List.generate(
+      7,
+      (index) => today.subtract(Duration(days: 3 - index)),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(calendarEventsProvider);
-
-    return Scaffold(
-      body: state.hasError && state.events.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Unable to load events.'),
-                  TextButton(
-                    onPressed: () =>
-                        ref.read(calendarEventsProvider.notifier).refresh(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          : state.isLoading && state.events.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : state.events.isEmpty
-          ? const Center(child: Text('No events yet. Add one!'))
-          : RefreshIndicator(
-              onRefresh: () =>
-                  ref.read(calendarEventsProvider.notifier).refresh(),
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: EdgeInsets.only(
-                  top: AppSpacing.md,
-                  left: AppSpacing.md,
-                  right: AppSpacing.md,
-                  bottom:
-                      AppSpacing.bottomNavBarHeight +
-                      AppSpacing.md * 2 +
-                      MediaQuery.viewPaddingOf(context).bottom,
-                ),
-                itemCount: state.events.length + (state.isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == state.events.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(AppSpacing.md),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-
-                  final event = state.events[index];
-                  return _EventTile(
-                    event: event,
-                    onEdit: () => _showEventDialog(context, event),
-                    onDelete: () async {
-                      try {
-                        await ref
-                            .read(productivityServiceProvider)
-                            .deleteCalendarEvent(event.id);
-                        ref.read(calendarEventsProvider.notifier).refresh();
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to delete event'),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom:
-              AppSpacing.bottomNavBarHeight +
-              AppSpacing.md +
-              MediaQuery.viewPaddingOf(context).bottom,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: AppShadows.primaryGlow,
-          ),
-          child: FloatingActionButton(
-            elevation: 0,
-            heroTag: 'calendar_fab',
-            onPressed: () => _showEventDialog(context),
-            child: const Icon(Icons.add),
-          ),
-        ),
+  Widget _buildSectionHeader(String title, {Widget? action}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
-    );
-  }
-}
-
-class _EventTile extends ConsumerWidget {
-  final CalendarEvent event;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _EventTile({
-    required this.event,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final timeFormat = DateFormat('h:mm a');
-    final dateFormat = DateFormat('MMM d');
-    final agentsAsync = ref.watch(agentsProvider);
-
-    // Convert UTC to local for display
-    final startLocal = event.startTime.toLocal();
-    final endLocal = event.endTime.toLocal();
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: context.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ListTile(
-            title: Text(
-              event.title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (event.description != null && event.description!.isNotEmpty)
-                  Text(
-                    event.description!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 14,
-                      color: context.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      event.isAllDay
-                          ? 'All Day - ${dateFormat.format(startLocal)}'
-                          : '${dateFormat.format(startLocal)} ${timeFormat.format(startLocal)} - ${timeFormat.format(endLocal)}',
-                      style: TextStyle(
-                        color: context.colorScheme.primary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 20),
-                  onPressed: onEdit,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 20),
-                  onPressed: onDelete,
-                ),
-              ],
+          Text(
+            title,
+            style: AppTypography.headingSmall.copyWith(
+              color: context.colors.onSurface,
             ),
           ),
-          if (event.agentId != null || event.originContext != null)
-            Padding(
-              padding: const EdgeInsets.only(
-                left: AppSpacing.md,
-                right: AppSpacing.md,
-                bottom: AppSpacing.md,
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: context.colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (event.agentId != null)
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.smart_toy_outlined,
-                            size: 14,
-                            color: context.colorScheme.primary,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Expanded(
-                            child: agentsAsync.when(
-                              data: (agents) {
-                                final agent = agents
-                                    .where((a) => a.id == event.agentId)
-                                    .firstOrNull;
-                                return Text(
-                                  agent != null
-                                      ? 'Created by ${agent.name}'
-                                      : 'Created by Agent',
-                                  style: AppTypography.labelSmall.copyWith(
-                                    color: context.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                );
-                              },
-                              loading: () => const Text('Loading agent...'),
-                              error: (_, __) => const Text('Unknown Agent'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (event.agentId != null && event.originContext != null)
-                      const SizedBox(height: AppSpacing.xs),
-                    if (event.originContext != null)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 14,
-                            color: context.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Expanded(
-                            child: Text(
-                              'Context: ${event.originContext}',
-                              style: AppTypography.labelSmall.copyWith(
-                                color: context.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
+          if (action != null) action,
         ],
       ),
     );
   }
-}
 
-class _EventDialog extends StatefulWidget {
-  final CalendarEvent? existingEvent;
-  final ProductivityService productivityService;
-  final VoidCallback onRefresh;
+  Widget _buildWeeklyCalendar(DateTime selectedDate) {
+    final weekDays = _getWeekDays();
+    final colors = context.colors;
 
-  const _EventDialog({
-    this.existingEvent,
-    required this.productivityService,
-    required this.onRefresh,
-  });
-
-  @override
-  State<_EventDialog> createState() => _EventDialogState();
-}
-
-class _EventDialogState extends State<_EventDialog> {
-  late final TextEditingController _titleController;
-  late final TextEditingController _descController;
-  late DateTime _selectedStart;
-  late DateTime _selectedEnd;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.existingEvent?.title);
-    _descController = TextEditingController(
-      text: widget.existingEvent?.description,
-    );
-
-    final now = DateTime.now();
-    final defaultStart = DateTime(now.year, now.month, now.day, now.hour + 1);
-    final defaultEnd = defaultStart.add(const Duration(hours: 1));
-
-    _selectedStart = widget.existingEvent?.startTime.toLocal() ?? defaultStart;
-    _selectedEnd = widget.existingEvent?.endTime.toLocal() ?? defaultEnd;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.existingEvent == null ? 'New Event' : 'Edit Event'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Title'),
-              autofocus: true,
+    return SizedBox(
+      height: 80,
+      child: ListView.builder(
+        controller: _weekScrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        itemCount: weekDays.length,
+        itemBuilder: (context, index) {
+          final date = weekDays[index];
+          final isSelected = date.isAtSameMomentAs(selectedDate);
+          final isToday = date.isAtSameMomentAs(
+            DateTime(
+              DateTime.now().year,
+              DateTime.now().month,
+              DateTime.now().day,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _descController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                const Text('Start: '),
-                TextButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedStart,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (date != null && context.mounted) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(_selectedStart),
-                      );
-                      if (time != null) {
-                        if (!mounted) return;
-                        setState(() {
-                          _selectedStart = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                          if (_selectedEnd.isBefore(_selectedStart)) {
-                            _selectedEnd = _selectedStart.add(
-                              const Duration(hours: 1),
-                            );
-                          }
-                        });
-                      }
-                    }
-                  },
-                  child: Text(
-                    DateFormat('MMM d, h:mm a').format(_selectedStart),
+          );
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () =>
+                    ref.read(selectedDateProvider.notifier).state = date,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? colors.primary
+                        : (isToday
+                              ? colors.primary.withValues(alpha: 0.1)
+                              : colors.surfaceHigh),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(
+                      color: isSelected
+                          ? colors.primary
+                          : colors.border.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                    boxShadow: isSelected ? AppShadows.sm : [],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('E').format(date).toUpperCase(),
+                        style: AppTypography.labelSmall.copyWith(
+                          color: isSelected
+                              ? colors.surfaceHigh
+                              : colors.onSurfaceMuted,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        date.day.toString(),
+                        style: AppTypography.headingMedium.copyWith(
+                          color: isSelected
+                              ? colors.surfaceHigh
+                              : colors.onSurface,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-            Row(
-              children: [
-                const Text('End: '),
-                TextButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedEnd,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (date != null && context.mounted) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(_selectedEnd),
-                      );
-                      if (time != null) {
-                        if (!mounted) return;
-                        setState(() {
-                          _selectedEnd = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                        });
-                      }
-                    }
-                  },
-                  child: Text(DateFormat('MMM d, h:mm a').format(_selectedEnd)),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTodayEvents(
+    AsyncValue<List<CalendarEvent>> eventsAsync,
+    DateTime selectedDate,
+  ) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: eventsAsync.when(
+        data: (events) {
+          final dayEvents = events.where((e) {
+            final start = e.startTime.toLocal();
+            return start.year == selectedDate.year &&
+                start.month == selectedDate.month &&
+                start.day == selectedDate.day;
+          }).toList();
+
+          dayEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+          if (dayEvents.isEmpty) {
+            return _buildEmptyState(
+              icon: Icons.event_available_rounded,
+              message: "No events today — want me to schedule something?",
+            );
+          }
+
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            itemCount: dayEvents.length,
+            itemBuilder: (context, index) {
+              final event = dayEvents[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.colors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(
+                      color: context.colors.border.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: context.colors.primary,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                event.title,
+                                style: AppTypography.labelLarge.copyWith(
+                                  color: context.colors.onSurface,
+                                ),
+                              ),
+                              if (event.description != null &&
+                                  event.description!.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.xxs),
+                                Text(
+                                  event.description!,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: context.colors.onSurfaceMuted,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: AppSpacing.xs),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time_rounded,
+                                    size: 14,
+                                    color: context.colors.onSurfaceMuted,
+                                  ),
+                                  const SizedBox(width: AppSpacing.xxs),
+                                  Text(
+                                    '\${DateFormat(\'h:mm a\').format(event.startTime.toLocal())} - \${DateFormat(\'h:mm a\').format(event.endTime.toLocal())}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: context.colors.onSurfaceMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
+              );
+            },
+          );
+        },
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (e, _) => Center(child: Text('Error loading events: $e')),
+      ),
+    );
+  }
+
+  Widget _buildTasksSection(AsyncValue<List<Task>> tasksAsync) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: tasksAsync.when(
+        data: (tasks) {
+          final pendingTasks = tasks.where((t) => !t.isCompleted).toList();
+
+          if (pendingTasks.isEmpty) {
+            return _buildEmptyState(
+              icon: Icons.task_alt_rounded,
+              message: "All caught up! Any new tasks for me?",
+            );
+          }
+
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            itemCount: pendingTasks.length,
+            itemBuilder: (context, index) {
+              final task = pendingTasks[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.colors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(
+                      color: context.colors.border.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 0,
+                    ),
+                    leading: Icon(
+                      Icons.radio_button_unchecked_rounded,
+                      color: context.colors.onSurfaceMuted,
+                    ),
+                    title: Text(
+                      task.title,
+                      style: AppTypography.labelLarge.copyWith(
+                        color: context.colors.onSurface,
+                      ),
+                    ),
+                    subtitle:
+                        task.description != null && task.description!.isNotEmpty
+                        ? Text(
+                            task.description!,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: context.colors.onSurfaceMuted,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : null,
+                  ),
+                ),
+              );
+            },
+          );
+        },
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (e, _) => Center(child: Text('Error loading tasks: $e')),
+      ),
+    );
+  }
+
+  Widget _buildNotesSection(AsyncValue<List<Note>> notesAsync) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: notesAsync.when(
+        data: (notes) {
+          if (notes.isEmpty) {
+            return _buildEmptyState(
+              icon: Icons.note_alt_outlined,
+              message: "No notes here. Need me to jot something down?",
+            );
+          }
+
+          final sortedNotes = List<Note>.from(notes)
+            ..sort((a, b) {
+              if (a.isPinned && !b.isPinned) return -1;
+              if (!a.isPinned && b.isPinned) return 1;
+              return b.createdAt.compareTo(a.createdAt);
+            });
+
+          return SizedBox(
+            height: 140,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: sortedNotes.length,
+              itemBuilder: (context, index) {
+                final note = sortedNotes[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.md),
+                  child: Container(
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: note.isPinned
+                          ? context.colors.primary.withValues(alpha: 0.05)
+                          : context.colors.surfaceHigh,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      border: Border.all(
+                        color: note.isPinned
+                            ? context.colors.primary.withValues(alpha: 0.3)
+                            : context.colors.border.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                note.title,
+                                style: AppTypography.labelLarge.copyWith(
+                                  color: context.colors.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (note.isPinned)
+                              Icon(
+                                Icons.push_pin_rounded,
+                                size: 14,
+                                color: context.colors.primary,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            note.content,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: context.colors.onSurfaceMuted,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (e, _) => Center(child: Text('Error loading notes: $e')),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({required IconData icon, required String message}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: context.colors.surfaceHigh,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border: Border.all(
+            color: context.colors.border.withValues(alpha: 0.3),
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: context.colors.onSurfaceMuted.withValues(alpha: 0.5),
+              size: 32,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              message,
+              style: AppTypography.bodyMedium.copyWith(
+                color: context.colors.onSurfaceMuted,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final dashboard = ref.watch(dashboardProvider);
+    final selectedDate = ref.watch(selectedDateProvider);
+
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        title: Text('Assistant', style: AppTypography.headingMedium),
+        backgroundColor: colors.surfaceHigh,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: colors.border.withValues(alpha: 0.5),
+            height: 1,
+          ),
         ),
-        ElevatedButton(
-          onPressed: _isSaving
-              ? null
-              : () async {
-                  final title = _titleController.text.trim();
-                  if (title.isEmpty) return;
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(tasksProvider);
+                    ref.invalidate(notesProvider);
+                    ref.invalidate(calendarEventsProvider);
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: AppSpacing.md),
+                        _buildWeeklyCalendar(selectedDate),
 
-                  if (_selectedEnd.isBefore(_selectedStart) ||
-                      _selectedEnd.isAtSameMomentAs(_selectedStart)) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('End time must be after start time'),
+                        _buildSectionHeader(
+                          'Events',
+                          action: Icon(
+                            Icons.chevron_right_rounded,
+                            color: colors.onSurfaceMuted,
+                          ),
                         ),
-                      );
-                    }
-                    return;
-                  }
+                        _buildTodayEvents(dashboard.events, selectedDate),
 
-                  setState(() {
-                    _isSaving = true;
-                  });
+                        _buildSectionHeader(
+                          'Tasks',
+                          action: Icon(
+                            Icons.chevron_right_rounded,
+                            color: colors.onSurfaceMuted,
+                          ),
+                        ),
+                        _buildTasksSection(dashboard.tasks),
 
-                  try {
-                    if (widget.existingEvent == null) {
-                      await widget.productivityService.createCalendarEvent(
-                        CalendarEventCreate(
-                          title: title,
-                          description: _descController.text.trim(),
-                          startTime: _selectedStart.toUtc(),
-                          endTime: _selectedEnd.toUtc(),
+                        _buildSectionHeader(
+                          'Notes',
+                          action: Icon(
+                            Icons.chevron_right_rounded,
+                            color: colors.onSurfaceMuted,
+                          ),
                         ),
-                      );
-                    } else {
-                      await widget.productivityService.updateCalendarEvent(
-                        widget.existingEvent!.id,
-                        CalendarEventUpdate(
-                          title: title,
-                          description: _descController.text.trim(),
-                          startTime: _selectedStart.toUtc(),
-                          endTime: _selectedEnd.toUtc(),
-                        ),
-                      );
-                    }
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      widget.onRefresh();
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to save event')),
-                      );
-                    }
-                  } finally {
-                    if (mounted) {
-                      setState(() {
-                        _isSaving = false;
-                      });
-                    }
-                  }
-                },
-          child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save'),
-        ),
-      ],
+                        _buildNotesSection(dashboard.notes),
+
+                        if (_lastResponse != null)
+                          Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Container(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: colors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(
+                                  AppSpacing.radiusLg,
+                                ),
+                                border: Border.all(
+                                  color: colors.primary.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: colors.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      _lastResponse!,
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: colors.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(
+                          height: AppSpacing.xxl * 3,
+                        ), // padding for bottom bar
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              ChatInputBar(
+                controller: _inputController,
+                onSend: () => _handleAiInput(_inputController.text),
+                isStreaming: _isSending,
+                onStopStreaming: null,
+                hintText: 'Ask me to schedule, remind, or note...',
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
