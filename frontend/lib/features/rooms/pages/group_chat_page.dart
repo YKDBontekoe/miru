@@ -79,7 +79,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading chat: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
         ),
       );
     } finally {
@@ -203,7 +203,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
         ),
       );
     } finally {
@@ -254,7 +254,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Rename failed: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: context.colors.error,
           ),
         );
       }
@@ -286,7 +286,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading personas: $e'),
-          backgroundColor: AppColors.error,
+          backgroundColor: context.colors.error,
         ),
       );
     }
@@ -373,12 +373,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [
-                AppColors.success,
-                AppColors.primary,
-                AppColors.error,
-                AppColors.warning,
-                AppColors.primaryDark,
+              colors: [
+                context.colors.success,
+                context.colors.primary,
+                context.colors.error,
+                context.colors.warning,
+                context.colors.primarySurface,
               ],
             ),
           ),
@@ -409,7 +409,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
             children: [
               Text(_roomName, style: AppTypography.headingSmall),
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.edit_outlined, size: 14, color: colors.onSurfaceMuted),
+              Icon(Icons.edit_outlined, size: AppSpacing.iconSm, color: colors.onSurfaceMuted),
             ],
           ),
         ),
@@ -451,7 +451,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
       color: colors.surfaceHigh,
       child: Row(
         children: [
-          Icon(Icons.group_outlined, size: 14, color: colors.onSurfaceMuted),
+          Icon(Icons.group_outlined, size: AppSpacing.iconSm, color: colors.onSurfaceMuted),
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Text(
@@ -480,7 +480,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           children: [
             Icon(
               Icons.chat_bubble_outline_rounded,
-              size: 48,
+              size: AppSpacing.iconXl,
               color: colors.onSurfaceMuted.withValues(alpha: 0.4),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -592,8 +592,8 @@ class _StatusPillState extends State<StatusPill>
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 10,
-                height: 10,
+                width: AppSpacing.sm,
+                height: AppSpacing.sm,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.5,
                   color: widget.colors.primary,

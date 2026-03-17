@@ -84,9 +84,11 @@ class ChatInputBar extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.15 : 0.04,
-                            ),
+                            color:
+                                (isDark
+                                        ? AppColors.onSurfaceDark
+                                        : AppColors.onSurfaceLight)
+                                    .withValues(alpha: isDark ? 0.15 : 0.04),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
