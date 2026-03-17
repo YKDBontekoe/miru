@@ -66,6 +66,52 @@ def test_get_agents_route(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json() == []
 
+def test_get_agent_capabilities_route(client: TestClient) -> None:
+    mock_service = MagicMock()
+    user_id = uuid4()
+
+    mock_service.list_capabilities = AsyncMock(return_value=[])
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.get("/api/v1/agents/capabilities", headers={"Authorization": "Bearer fake_token"})
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+def test_get_agent_integrations_route(client: TestClient) -> None:
+    mock_service = MagicMock()
+    user_id = uuid4()
+
+    mock_service.list_integrations = AsyncMock(return_value=[])
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.get("/api/v1/agents/integrations", headers={"Authorization": "Bearer fake_token"})
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+def test_generate_agent_profile_route(client: TestClient) -> None:
+    mock_service = MagicMock()
+    user_id = uuid4()
+
+    mock_service.generate_agent_profile = AsyncMock(return_value={"name": "Generated Bot", "personality": "Helpful", "description": "A helpful bot", "goals": ["help"]})
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/agents/generate",
+        headers={"Authorization": "Bearer fake_token"},
+        json={"keywords": "friendly helpful"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Generated Bot"
+
 
 def test_build_agent_response_without_avatar() -> None:
     """Test that agent response is built correctly without an avatar_url field."""
