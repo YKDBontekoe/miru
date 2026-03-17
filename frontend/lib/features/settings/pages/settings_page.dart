@@ -191,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!SupabaseService.isAuthenticated) return;
     setState(() => _loadingMemories = true);
     try {
-      final graphData = await ApiService.getMemoryGraph();
+      final graphData = await ApiService.instance.getMemoryGraph();
       if (!mounted) return;
 
       setState(() {
@@ -200,7 +200,7 @@ class _SettingsPageState extends State<SettingsPage> {
       });
     } on Exception {
       try {
-        final memories = await ApiService.getMemories();
+        final memories = await ApiService.instance.getMemories();
         if (!mounted) return;
         setState(() {
           _memories = memories;
@@ -237,7 +237,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed != true) return;
 
     try {
-      await ApiService.deleteMemory(memory.id);
+      await ApiService.instance.deleteMemory(memory.id);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,

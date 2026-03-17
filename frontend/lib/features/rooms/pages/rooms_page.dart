@@ -48,7 +48,7 @@ class _RoomsPageState extends State<RoomsPage> {
   Future<void> _loadRooms() async {
     setState(() => _isLoadingRooms = true);
     try {
-      final data = await ApiService.getRooms();
+      final data = await ApiService.instance.getRooms();
       if (mounted) {
         setState(() {
           _rooms = data;
@@ -71,7 +71,7 @@ class _RoomsPageState extends State<RoomsPage> {
   Future<void> _loadAgents() async {
     setState(() => _isLoadingAgents = true);
     try {
-      final data = await ApiService.getAgents();
+      final data = await ApiService.instance.getAgents();
       if (mounted) {
         setState(() {
           _agents = data;

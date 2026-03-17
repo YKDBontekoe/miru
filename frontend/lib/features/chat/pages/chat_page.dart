@@ -171,7 +171,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendStreamingMessage(String text) async {
     final statusRegex = RegExp(r'\[\[STATUS:([^\]]+)\]\]');
 
-    final stream = ApiService.sendMessage(text);
+    final stream = ApiService.instance.sendMessage(text);
     _activeStreamSubscription = stream.listen(
       (chunk) {
         if (!mounted) return;

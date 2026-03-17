@@ -73,7 +73,7 @@ class _AgentsPageState extends State<AgentsPage> {
   Future<void> _loadAgents() async {
     setState(() => _isLoading = true);
     try {
-      final data = await ApiService.getAgents();
+      final data = await ApiService.instance.getAgents();
       setState(() {
         _agents = data;
       });
@@ -90,8 +90,8 @@ class _AgentsPageState extends State<AgentsPage> {
 
   Future<void> _loadAvailableOptions() async {
     try {
-      final caps = await ApiService.getAgentCapabilities();
-      final ints = await ApiService.getAgentIntegrations();
+      final caps = await ApiService.instance.getAgentCapabilities();
+      final ints = await ApiService.instance.getAgentIntegrations();
       if (mounted) {
         setState(() {
           _availableCapabilities = caps;
@@ -165,8 +165,8 @@ class _AgentsPageState extends State<AgentsPage> {
                                     if (keywordsController.text.isEmpty) return;
                                     setDialogState(() => isGenerating = true);
                                     try {
-                                      final result =
-                                          await ApiService.generateAgent(
+                                      final result = await ApiService.instance
+                                          .generateAgent(
                                             keywordsController.text,
                                           );
                                       setDialogState(() {
@@ -329,7 +329,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           .where((s) => s.trim().isNotEmpty)
                           .toList();
 
-                      await ApiService.createAgent(
+                      await ApiService.instance.createAgent(
                         nameController.text,
                         personalityController.text,
                         description: descriptionController.text.isEmpty

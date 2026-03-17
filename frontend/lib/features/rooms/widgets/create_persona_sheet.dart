@@ -39,7 +39,7 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
 
     setState(() => _isResolvingSteam = true);
     try {
-      final res = await ApiService.resolveSteamUser(query);
+      final res = await ApiService.instance.resolveSteamUser(query);
       setState(() {
         _resolvedSteamId = res['steam_id'] as String?;
         _resolvedSteamName = res['persona_name'] as String?;
@@ -64,7 +64,7 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
 
     setState(() => _isGenerating = true);
     try {
-      final res = await ApiService.generateAgent(keywords);
+      final res = await ApiService.instance.generateAgent(keywords);
       setState(() {
         _nameController.text = res.name;
         _personalityController.text = res.personality;
@@ -110,7 +110,7 @@ class _CreatePersonaSheetState extends State<CreatePersonaSheet> {
         configs['steam'] = {'steam_id': _resolvedSteamId};
       }
 
-      await ApiService.createAgent(
+      await ApiService.instance.createAgent(
         name,
         personality,
         integrations: integrations,

@@ -64,8 +64,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
-        ApiService.getRoomAgents(widget.room.id),
-        ApiService.getRoomMessages(widget.room.id),
+        ApiService.instance.getRoomAgents(widget.room.id),
+        ApiService.instance.getRoomMessages(widget.room.id),
       ]);
 
       if (!mounted) return;
@@ -123,7 +123,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     HapticFeedback.lightImpact();
 
     try {
-      final stream = ApiService.streamRoomChat(widget.room.id, text);
+      final stream = ApiService.instance.streamRoomChat(widget.room.id, text);
 
       // Current agent being streamed — tracked via [[AGENT:id:name]] markers.
       String? activeAgentId;
@@ -247,7 +247,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
     if (newName != null && newName.isNotEmpty && newName != _roomName) {
       try {
-        await ApiService.updateRoom(widget.room.id, newName);
+        await ApiService.instance.updateRoom(widget.room.id, newName);
         if (mounted) setState(() => _roomName = newName);
       } catch (e) {
         if (!mounted) return;
@@ -263,7 +263,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   Future<void> _showAddAgentDialog() async {
     try {
-      final allAgentsData = await ApiService.getAgents();
+      final allAgentsData = await ApiService.instance.getAgents();
       final allAgents = allAgentsData;
 
       if (!mounted) return;
@@ -276,7 +276,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           allAgents: allAgents,
           roomAgents: _roomAgents,
           onAdd: (agentId) async {
-            await ApiService.addAgentToRoom(widget.room.id, agentId);
+            await ApiService.instance.addAgentToRoom(widget.room.id, agentId);
             await _loadData();
           },
         ),

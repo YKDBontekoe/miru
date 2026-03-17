@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -10,7 +11,7 @@ import 'package:miru/core/models/chat_room.dart';
 import 'package:miru/core/models/memory.dart';
 import 'package:miru/core/services/supabase_service.dart';
 
-/// Result returned by [ApiService.runCrew].
+/// Result returned by [ApiService.instance.runCrew].
 class CrewResult {
   final String taskType;
   final String result;
@@ -24,6 +25,10 @@ class CrewResult {
 }
 
 class ApiService {
+  static ApiService? _instance;
+  static ApiService get instance => _instance ?? ApiService();
+  @visibleForTesting
+  static set instance(ApiService? mock) => _instance = mock;
   static String get baseUrl => BackendService.baseUrl.value;
 
   static Dio _getDio() {
@@ -48,7 +53,7 @@ class ApiService {
     return dio;
   }
 
-  static Future<T> _handleError<T>(Future<T> Function(Dio dio) call) async {
+  Future<T> _handleError<T>(Future<T> Function(Dio dio) call) async {
     try {
       return await call(_getDio());
     } on DioException catch (e) {
@@ -61,7 +66,7 @@ class ApiService {
   }
 
   /// Streams a chat response from the backend.
-  static Stream<String> sendMessage(String message) async* {
+  Stream<String> sendMessage(String message) async* {
     try {
       final dio = _getDio();
       final response = await dio.post<ResponseBody>(
@@ -87,7 +92,7 @@ class ApiService {
 
   // --- Memories API ---
 
-  static Future<List<Memory>> getMemories() async {
+  Future<List<Memory>> getMemories() async {
     return _handleError((dio) async {
       final response = await dio.get('memory');
       final data = response.data as Map<String, dynamic>;
@@ -98,11 +103,11 @@ class ApiService {
     });
   }
 
-  static Future<void> deleteMemory(String id) async {
+  Future<void> deleteMemory(String id) async {
     await _handleError((dio) => dio.delete('memory/$id'));
   }
 
-  static Future<MemoryGraph> getMemoryGraph() async {
+  Future<MemoryGraph> getMemoryGraph() async {
     return _handleError((dio) async {
       final response = await dio.get('memory/graph');
       return MemoryGraph.fromJson(response.data as Map<String, dynamic>);
@@ -110,7 +115,7 @@ class ApiService {
   }
 
   /// Runs a CrewAI crew for [message] and returns the full structured result.
-  static Future<CrewResult> runCrew(String message) async {
+  Future<CrewResult> runCrew(String message) async {
     return _handleError((dio) async {
       final response = await dio.post('crew', data: {'message': message});
       return CrewResult.fromJson(response.data as Map<String, dynamic>);
@@ -119,7 +124,7 @@ class ApiService {
 
   // --- Agents API ---
 
-  static Future<List<Agent>> getAgents() async {
+  Future<List<Agent>> getAgents() async {
     return _handleError((dio) async {
       final response = await dio.get('agents');
       final data = response.data as List<dynamic>;
@@ -129,7 +134,7 @@ class ApiService {
     });
   }
 
-  static Future<Agent> createAgent(
+  Future<Agent> createAgent(
     String name,
     String personality, {
     String? description,
@@ -157,7 +162,7 @@ class ApiService {
     });
   }
 
-  static Future<Map<String, dynamic>> resolveSteamUser(String username) async {
+  Future<Map<String, dynamic>> resolveSteamUser(String username) async {
     return _handleError((dio) async {
       final response = await dio.get(
         'integrations/steam/resolve-user',
@@ -167,7 +172,7 @@ class ApiService {
     });
   }
 
-  static Future<AgentGenerationResponse> generateAgent(String keywords) async {
+  Future<AgentGenerationResponse> generateAgent(String keywords) async {
     return _handleError((dio) async {
       final response = await dio.post(
         'agents/generate',
@@ -179,7 +184,7 @@ class ApiService {
     });
   }
 
-  static Future<List<Capability>> getAgentCapabilities() async {
+  Future<List<Capability>> getAgentCapabilities() async {
     return _handleError((dio) async {
       final response = await dio.get('agents/capabilities');
       final data = response.data as List<dynamic>;
@@ -189,7 +194,7 @@ class ApiService {
     });
   }
 
-  static Future<List<Integration>> getAgentIntegrations() async {
+  Future<List<Integration>> getAgentIntegrations() async {
     return _handleError((dio) async {
       final response = await dio.get('agents/integrations');
       final data = response.data as List<dynamic>;
@@ -201,7 +206,7 @@ class ApiService {
 
   // --- Chat Rooms API ---
 
-  static Future<List<ChatRoom>> getRooms() async {
+  Future<List<ChatRoom>> getRooms() async {
     return _handleError((dio) async {
       final response = await dio.get('rooms');
       final data = response.data as List<dynamic>;
@@ -211,26 +216,26 @@ class ApiService {
     });
   }
 
-  static Future<ChatRoom> createRoom(String name) async {
+  Future<ChatRoom> createRoom(String name) async {
     return _handleError((dio) async {
       final response = await dio.post('rooms', data: {'name': name});
       return ChatRoom.fromJson(response.data as Map<String, dynamic>);
     });
   }
 
-  static Future<void> updateRoom(String roomId, String name) async {
+  Future<void> updateRoom(String roomId, String name) async {
     await _handleError(
       (dio) => dio.patch('rooms/$roomId', data: {'name': name}),
     );
   }
 
-  static Future<void> addAgentToRoom(String roomId, String agentId) async {
+  Future<void> addAgentToRoom(String roomId, String agentId) async {
     await _handleError(
       (dio) => dio.post('rooms/$roomId/agents', data: {'agent_id': agentId}),
     );
   }
 
-  static Future<List<Agent>> getRoomAgents(String roomId) async {
+  Future<List<Agent>> getRoomAgents(String roomId) async {
     return _handleError((dio) async {
       final response = await dio.get('rooms/$roomId/agents');
       final data = response.data as List<dynamic>;
@@ -240,7 +245,7 @@ class ApiService {
     });
   }
 
-  static Future<List<ChatMessage>> getRoomMessages(String roomId) async {
+  Future<List<ChatMessage>> getRoomMessages(String roomId) async {
     return _handleError((dio) async {
       final response = await dio.get('rooms/$roomId/messages');
       final data = response.data as List<dynamic>;
@@ -250,7 +255,7 @@ class ApiService {
     });
   }
 
-  static Stream<String> streamRoomChat(String roomId, String message) async* {
+  Stream<String> streamRoomChat(String roomId, String message) async* {
     try {
       final dio = _getDio();
       final response = await dio.post<ResponseBody>(
