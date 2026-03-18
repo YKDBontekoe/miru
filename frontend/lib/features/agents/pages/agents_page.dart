@@ -136,21 +136,21 @@ class _AgentsPageState extends State<AgentsPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                           isGenerating
                               ? const SizedBox(
-                                  width: 110,
-                                  height: 24,
+                                  width: 200,
+                                  height: AppSpacing.xxl,
                                   child: Row(
                                     children: [
                                       SizedBox(
-                                        width: 16,
-                                        height: 16,
+                                        width: AppSpacing.iconSm,
+                                        height: AppSpacing.iconSm,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                         ),
                                       ),
-                                      SizedBox(width: 8),
+                                      SizedBox(width: AppSpacing.sm),
                                       Text('Decoding...'),
                                     ],
                                   ),
@@ -202,7 +202,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                 ),
                         ],
                       ),
-                      const Divider(height: 32),
+                      const Divider(height: AppSpacing.xxxl),
                       TextField(
                         controller: nameController,
                         decoration: const InputDecoration(
@@ -210,7 +210,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           hintText: 'e.g. Captain Bluebeard',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: descriptionController,
                         decoration: const InputDecoration(
@@ -218,7 +218,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           hintText: 'A seafaring AI who loves pirate jokes',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: personalityController,
                         decoration: const InputDecoration(
@@ -227,7 +227,7 @@ class _AgentsPageState extends State<AgentsPage> {
                         ),
                         maxLines: 4,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: goalsController,
                         decoration: const InputDecoration(
@@ -237,15 +237,15 @@ class _AgentsPageState extends State<AgentsPage> {
                         ),
                         maxLines: 3,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       Text(
                         'Capabilities',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Wrap(
-                        spacing: 8,
+                        spacing: AppSpacing.sm,
                         children: _availableCapabilities.map((cap) {
                           final id = cap.id;
                           final name = cap.name;
@@ -265,15 +265,15 @@ class _AgentsPageState extends State<AgentsPage> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       Text(
                         'Integrations',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Wrap(
-                        spacing: 8,
+                        spacing: AppSpacing.sm,
                         children: _availableIntegrations.map((integration) {
                           final type = integration.type;
                           final name = integration.displayName;
@@ -298,7 +298,10 @@ class _AgentsPageState extends State<AgentsPage> {
                                     });
                                   },
                             avatar: isComingSoon
-                                ? const Icon(Icons.lock_clock, size: 16)
+                                ? const Icon(
+                                    Icons.lock_clock,
+                                    size: AppSpacing.iconSm,
+                                  )
                                 : null,
                           );
                         }).toList(),
@@ -425,12 +428,12 @@ class _AgentsPageState extends State<AgentsPage> {
                               children: [
                                 CircleAvatar(
                                   backgroundImage: agent.avatarImage,
-                                  radius: 28,
+                                  radius: AppSpacing.avatarLg / 2,
                                   child: agent.avatarUrl == null
                                       ? null
                                       : Text(agent.name[0].toUpperCase()),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: AppSpacing.lg),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -463,7 +466,9 @@ class _AgentsPageState extends State<AgentsPage> {
                                                   context,
                                                 ).colorScheme.surface,
                                                 borderRadius:
-                                                    BorderRadius.circular(12),
+                                                    BorderRadius.circular(
+                                                      AppSpacing.radiusMd,
+                                                    ),
                                                 border: Border.all(
                                                   color: themeColor.withValues(
                                                     alpha: 0.5,
@@ -483,7 +488,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                         ],
                                       ),
                                       if (agent.description != null) ...[
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: AppSpacing.xxs),
                                         Text(
                                           agent.description!,
                                           style: Theme.of(context)
@@ -498,15 +503,15 @@ class _AgentsPageState extends State<AgentsPage> {
                                               ),
                                         ),
                                       ],
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: AppSpacing.sm),
                                       Row(
                                         children: [
                                           Icon(
                                             Icons.military_tech,
-                                            size: 16,
+                                            size: AppSpacing.iconSm,
                                             color: themeColor,
                                           ),
-                                          const SizedBox(width: 4),
+                                          const SizedBox(width: AppSpacing.xs),
                                           Text(
                                             'Lvl ${agent.connectionLevel}',
                                             style: Theme.of(context)
@@ -517,15 +522,15 @@ class _AgentsPageState extends State<AgentsPage> {
                                                   color: themeColor,
                                                 ),
                                           ),
-                                          const SizedBox(width: 12),
+                                          const SizedBox(width: AppSpacing.md),
                                           Icon(
                                             Icons.mood,
-                                            size: 16,
+                                            size: AppSpacing.iconSm,
                                             color: isDark
                                                 ? AppColors.onSurfaceMutedLight
                                                 : AppColors.onSurfaceMutedDark,
                                           ),
-                                          const SizedBox(width: 4),
+                                          const SizedBox(width: AppSpacing.xs),
                                           Text(
                                             agent.mood,
                                             style: Theme.of(context)
@@ -546,7 +551,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.md),
                             Text(
                               agent.personality,
                               maxLines: 2,
@@ -554,10 +559,10 @@ class _AgentsPageState extends State<AgentsPage> {
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             if (agent.capabilities.isNotEmpty) ...[
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSpacing.md),
                               Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.xs,
                                 children: agent.capabilities.map((cap) {
                                   return Chip(
                                     label: Text(
