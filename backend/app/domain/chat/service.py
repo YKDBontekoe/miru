@@ -25,6 +25,7 @@ from app.domain.chat.models import (
     ChatMessageResponse,
     RoomResponse,
 )
+from app.domain.chat.signalr import get_webpubsub_client
 from app.infrastructure.external.openrouter import get_openrouter_client
 from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
 
@@ -74,6 +75,17 @@ class ChatService:
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
+
+    async def _broadcast_to_user(self, user_id: UUID, message: str) -> None:
+        client = get_webpubsub_client()
+        if client:
+            try:
+                # We send the message as JSON
+                await client.send_to_user(
+                    user_id=str(user_id), message={"type": "message", "content": message}
+                )
+            except Exception as e:
+                logger.exception(f"Failed to broadcast: {e}")
 
     def _get_crew_llm(self) -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter.
@@ -190,6 +202,7 @@ class ChatService:
         )
 
         content = response.choices[0].message.content or "Error: No response from agent."
+        await self._broadcast_to_user(user_id, content)
         yield content
         yield "[[STATUS:done]]\n"
 
@@ -312,6 +325,8 @@ class ChatService:
             content=str(result),
         )
         await self.chat_repo.save_message(agent_msg)
+
+        await self._broadcast_to_user(user_id, str(result))
 
         yield str(result)
         yield "[[STATUS:done]]\n"
