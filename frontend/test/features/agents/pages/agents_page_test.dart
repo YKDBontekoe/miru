@@ -40,6 +40,10 @@ void main() {
         fakeApi; // We need to make sure ApiService allows injecting instance
   });
 
+  tearDown(() {
+    ApiService.instance = null;
+  });
+
   Widget buildTestWidget() {
     return MaterialApp(theme: AppTheme.light, home: const AgentsPage());
   }
