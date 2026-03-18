@@ -32,18 +32,35 @@ async def _handle_db_errors(action: str) -> AsyncGenerator[None, None]:
         yield
     except HTTPException:
         raise
-    except (IntegrityError, OperationalError, DBConnectionError, ValueError) as e:
+    except ValueError as e:
+        logger.exception(f"Validation error while {action}")
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except (IntegrityError, OperationalError, DBConnectionError) as e:
         logger.exception(f"Failed to {action}")
 
-        action_ing = action
-        if action.startswith("create "):
-            action_ing = action.replace("create ", "creating ", 1)
-        elif action.startswith("list "):
-            action_ing = action.replace("list ", "listing ", 1)
-        elif action.startswith("update "):
-            action_ing = action.replace("update ", "updating ", 1)
-        elif action.startswith("delete "):
-            action_ing = action.replace("delete ", "deleting ", 1)
+        parts = action.split(" ", 1)
+        verb = parts[0].lower()
+
+        gerund_map = {
+            "create": "creating",
+            "list": "listing",
+            "update": "updating",
+            "delete": "deleting",
+            "get": "getting",
+        }
+
+        if verb in gerund_map:
+            gerund = gerund_map[verb]
+        else:
+            if verb.endswith("e"):
+                gerund = verb[:-1] + "ing"
+            else:
+                gerund = verb + "ing"
+
+        if len(parts) > 1:
+            action_ing = f"{gerund} {parts[1]}"
+        else:
+            action_ing = gerund
 
         raise HTTPException(
             status_code=500, detail=f"Database error occurred while {action_ing}"
@@ -86,7 +103,8 @@ class ProductivityService:
     @staticmethod
     async def get_task(user_id: UUID, task_id: UUID) -> Task:
         """Get a specific task."""
-        task = await Task.get_or_none(id=task_id, user_id=user_id)
+        async with _handle_db_errors("get task"):
+            task = await Task.get_or_none(id=task_id, user_id=user_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         return task
@@ -155,7 +173,8 @@ class ProductivityService:
     @staticmethod
     async def get_note(user_id: UUID, note_id: UUID) -> Note:
         """Get a specific note."""
-        note = await Note.get_or_none(id=note_id, user_id=user_id)
+        async with _handle_db_errors("get note"):
+            note = await Note.get_or_none(id=note_id, user_id=user_id)
         if not note:
             raise HTTPException(status_code=404, detail="Note not found")
         return note
@@ -231,7 +250,8 @@ class ProductivityService:
     @staticmethod
     async def get_event(user_id: UUID, event_id: UUID) -> CalendarEvent:
         """Get a specific calendar event."""
-        event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id)
+        async with _handle_db_errors("get calendar event"):
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id)
         if not event:
             raise HTTPException(status_code=404, detail="Calendar event not found")
         return event

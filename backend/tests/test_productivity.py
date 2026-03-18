@@ -439,8 +439,8 @@ async def test_handle_db_errors_unexpected() -> None:
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("list test"):
             raise ValueError("mock generic error")
-    assert exc_info.value.status_code == 500
-    assert "Database error occurred while listing test" in exc_info.value.detail
+    assert exc_info.value.status_code == 400
+    assert "mock generic error" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("update test"):
@@ -468,23 +468,23 @@ async def test_handle_db_errors_action_mapping() -> None:
 
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("list notes"):
-            raise ValueError("mock error")
+            raise IntegrityError("mock error")
     assert "listing notes" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("update task"):
-            raise ValueError("mock error")
+            raise IntegrityError("mock error")
     assert "updating task" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("delete calendar event"):
-            raise ValueError("mock error")
+            raise IntegrityError("mock error")
     assert "deleting calendar event" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("read file"):
-            raise ValueError("mock error")
-    assert "read file" in exc_info.value.detail
+            raise IntegrityError("mock error")
+    assert "reading file" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         async with _handle_db_errors("create task"):
