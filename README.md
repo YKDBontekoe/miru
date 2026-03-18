@@ -1,80 +1,103 @@
 # Miru - AI Personal Assistant with Memory
 
-**Miru** is a personal AI assistant that actually remembers you. Unlike typical chatbots that start fresh every conversation, Miru uses vector memory powered by PostgreSQL + pgvector to store and retrieve your past interactions, creating a truly personalized experience that grows smarter over time.
+**Miru** is a personal AI assistant that actually remembers you. Unlike typical chatbots that start fresh every conversation, Miru uses vector memory powered by Supabase (PostgreSQL + pgvector) to store and retrieve your past interactions, creating a truly personalized experience that grows smarter over time.
 
-## 🎯 What Miru Does
+## What Miru Does
 
 ### Core Features
 
-**🧠 Long-term Memory**
-- Every conversation you have is stored as a vector embedding
-- Automatically retrieves relevant memories based on context similarity
+**Long-term Memory**
+- Every conversation is stored as a vector embedding in pgvector
+- Automatically retrieves relevant memories based on cosine similarity (HNSW-indexed)
 - Remembers facts, preferences, and past discussions
-- Memory persists across sessions and devices
+- Memory collections for grouping related memories
+- Knowledge graph with entities and relationships stored in PostgreSQL
 
-**💬 Natural Conversations**
-- Powered by Mistral AI's large language models
-- Streaming responses for real-time interaction
+**AI-Powered Agents**
+- Create custom AI personas with unique personalities, goals, and capabilities
+- AI-assisted agent generation from keywords
+- Agent templates for quick setup
+- Extensible tool system (web search, productivity tools, Steam integration)
+- Multi-agent orchestration via CrewAI
+
+**Chat Rooms & Group Chat**
+- Solo chat with any agent using streaming responses
+- Multi-agent group chat rooms
 - Context-aware replies that reference your history
-- Warm, thoughtful personality
 
-**📱 Multi-Platform Support**
-- iOS (via TestFlight)
+**Productivity Suite**
+- Tasks with completion tracking
+- Notes with pinning and agent-created notes
+- Calendar events with all-day support and location
+
+**Authentication**
+- Magic link (email)
+- Password login
+- Passwordless passkey/WebAuthn support
+
+**Multi-Platform**
+- iOS
 - Android
 - Web (Azure Static Web Apps)
-- Windows
-- macOS
-- Linux
+- macOS, Windows, Linux (Flutter desktop)
 
 ### Use Cases
 
 - **Personal Journal** - Reflect on past thoughts and track personal growth
 - **Learning Companion** - Remember what you're studying and build on it
-- **Task Management** - Recall previous projects and decisions
+- **Task Management** - Manage tasks, notes, and calendar events conversationally
 - **Creative Writing** - Maintain continuity across writing sessions
 - **Knowledge Base** - Store and retrieve information conversationally
+- **Multi-Agent Collaboration** - Orchestrate multiple AI personas for complex tasks
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                          MIRU                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────────────────┐    ┌──────────────────────────┐   │
-│  │  Frontend (Flutter)     │    │  Backend (FastAPI)       │   │
-│  │  ├─ iOS                 │◄──►│  ├─ REST API             │   │
-│  │  ├─ Android             │    │  ├─ Streaming Responses  │   │
-│  │  ├─ Web                 │    │  └─ Vector Search        │   │
-│  │  ├─ Windows             │    │                          │   │
-│  │  └─ Desktop (mac/Linux) │    │  PostgreSQL + pgvector   │   │
-│  │                         │    │  └─ Embeddings storage   │   │
-│  └─────────────────────────┘    └──────────────────────────┘   │
-│                                                                 │
-│  External Services:                                             │
-│  • Mistral AI - Language models & embeddings                    │
-│  • Azure - Hosting (Container Apps + Static Web Apps)           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                            MIRU                                  │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────────────────┐    ┌───────────────────────────┐  │
+│  │  Frontend (Flutter)      │    │  Backend (FastAPI)        │  │
+│  │  ├─ iOS / Android        │◄──►│  ├─ REST API (/api/v1)   │  │
+│  │  ├─ Web                  │    │  ├─ Streaming (SSE)       │  │
+│  │  └─ Desktop (mac/win/lnx)│    │  ├─ Vector Search         │  │
+│  │                          │    │  ├─ CrewAI Orchestration   │  │
+│  │  State: Riverpod +       │    │  └─ Agent Tool System     │  │
+│  │         StatefulWidget   │    │                           │  │
+│  │  Models: Freezed         │    │  Supabase (PostgreSQL     │  │
+│  └──────────────────────────┘    │    + pgvector)            │  │
+│                                  └───────────────────────────┘  │
+│                                                                  │
+│  External Services:                                              │
+│  • OpenRouter — LLM & embeddings (Claude, GPT, etc.)            │
+│  • Supabase — Auth, database, RLS                                │
+│  • Azure — Container Apps, Static Web Apps, Notification Hubs    │
+│  • Sentry — Error tracking                                       │
+│  • Tavily — Web search for agents                                │
+│  • Steam Web API — Gaming integration                            │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### How It Works
 
-1. **User sends message** → Frontend sends POST to `/chat`
-2. **Memory retrieval** → Backend embeds query, searches pgvector for similar memories
-3. **Context injection** → Relevant memories are injected into the AI's system prompt
-4. **Streaming response** → AI generates response with memory context
-5. **Memory storage** → User's message is embedded and stored for future retrieval
+1. **User sends message** -> Frontend sends request to `/api/v1/rooms/{id}/messages`
+2. **Memory retrieval** -> Backend embeds the query via OpenRouter, searches pgvector for similar memories
+3. **Context injection** -> Relevant memories are injected into the agent's system prompt
+4. **Streaming response** -> Agent generates a response streamed back via SSE
+5. **Memory storage** -> The conversation is embedded and stored for future retrieval
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Python 3.11+** - Backend runtime
-- **Flutter SDK 3.19+** - Frontend framework
-- **Docker & Docker Compose** - Database and local development
+- **Python 3.13+** - Backend runtime
+- **Flutter SDK 3.11+** - Frontend framework
+- **Docker & Docker Compose** - Local development database
 - **Make** - Build automation
-- **Mistral API Key** - Get one at [console.mistral.ai](https://console.mistral.ai)
+- **Supabase account** - Database and auth ([supabase.com](https://supabase.com))
+- **OpenRouter API key** - LLM access ([openrouter.ai](https://openrouter.ai))
 
 ### Installation
 
@@ -88,214 +111,231 @@ make setup-backend
 
 # Configure environment variables
 cp backend/.env.example backend/.env
-# Edit backend/.env and add your MISTRAL_API_KEY
+# Edit backend/.env — see the .env.example for required keys
 
-# Start PostgreSQL database with pgvector
+# Start local PostgreSQL database with pgvector (optional, for local dev)
 make db
 
 # Run backend server (Terminal 1)
 make backend
 
 # Run Flutter frontend (Terminal 2)
+cd frontend && flutter pub get
 make frontend
 ```
 
-### First Conversation
+### Environment Variables
 
-1. Open the app on your device or browser
-2. Start typing in the chat interface
-3. Tell Miru something about yourself (e.g., "My favorite color is blue")
-4. Later, ask "What's my favorite color?" - Miru will remember!
+See [`backend/.env.example`](backend/.env.example) for the full list. Key variables:
 
-## 📁 Project Structure
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API key for LLM and embeddings |
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_KEY` | Yes | Supabase anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (backend only) |
+| `SUPABASE_JWT_SECRET` | Yes | JWT secret for token validation |
+| `DATABASE_URL` | Yes | Direct PostgreSQL connection string |
+| `WEBAUTHN_RP_ID` | Yes | Passkey relying party ID (`localhost` for dev) |
+| `TAVILY_API_KEY` | No | Tavily API key for agent web search |
+
+## Project Structure
 
 ```
 miru/
-├── backend/                  # FastAPI Python backend
+├── backend/                      # FastAPI Python backend
 │   ├── app/
-│   │   ├── main.py          # FastAPI application entry
-│   │   ├── routes.py        # API endpoints (/chat, /memories)
-│   │   ├── memory.py        # Vector embedding & retrieval logic
-│   │   ├── database.py      # PostgreSQL connection pool
-│   │   └── config.py        # Environment configuration
-│   ├── sql/                 # Database migrations
-│   │   └── init.sql         # pgvector schema setup
-│   ├── tests/               # Pytest test suite
-│   ├── Dockerfile           # Container image
-│   └── pyproject.toml       # Python dependencies & tooling
+│   │   ├── main.py              # Entry point, lifespan, CORS, Sentry, router mounts
+│   │   ├── core/
+│   │   │   ├── config.py        # pydantic-settings configuration
+│   │   │   └── security/auth.py # Supabase JWT validation, get_current_user()
+│   │   ├── domain/              # Bounded contexts
+│   │   │   ├── agents/          # Agent models, service, schemas
+│   │   │   ├── auth/            # Profile, Passkey models, service
+│   │   │   ├── chat/            # ChatRoom, ChatMessage, streaming
+│   │   │   ├── memory/          # Memory, graph nodes/edges, embeddings
+│   │   │   ├── productivity/    # Tasks, Notes, Calendar Events
+│   │   │   ├── notifications/   # Push notification service
+│   │   │   └── agent_tools/     # Extensible agent tool system
+│   │   ├── api/v1/              # Route handlers per domain
+│   │   └── infrastructure/      # Database, external services, repositories
+│   │       ├── database/        # Supabase client, Tortoise ORM config
+│   │       ├── external/        # OpenRouter, Steam, CrewAI
+│   │       └── repositories/    # Data access layer
+│   ├── tests/                   # Pytest test suite
+│   ├── manage.py                # Migration CLI (makemigrations, check, migrate, status)
+│   ├── Dockerfile
+│   └── pyproject.toml
 │
-├── frontend/                # Flutter multi-platform frontend
+├── frontend/                    # Flutter multi-platform frontend
 │   ├── lib/
-│   │   ├── main.dart        # App entry point
-│   │   ├── chat_page.dart   # Main chat interface
-│   │   ├── api_service.dart # HTTP client for backend
-│   │   └── design_system/   # UI components & themes
-│   ├── test/                # Widget and integration tests
-│   ├── ios/                 # iOS platform code
-│   ├── android/             # Android platform code
-│   ├── web/                 # Web platform configuration
-│   └── pubspec.yaml         # Dart dependencies
+│   │   ├── main.dart            # Entry point, ProviderScope, auth routing
+│   │   ├── core/
+│   │   │   ├── api/             # API service, agents service, productivity service
+│   │   │   ├── design_system/   # Components, tokens, themes
+│   │   │   ├── models/          # Freezed data models
+│   │   │   └── services/        # Supabase, Passkey, Notification services
+│   │   └── features/
+│   │       ├── agents/          # Agent management pages
+│   │       ├── auth/            # Login flows (magic link, password, passkey)
+│   │       ├── chat/            # Solo chat interface
+│   │       ├── rooms/           # Group chat rooms
+│   │       ├── productivity/    # Tasks, Notes, Calendar Events
+│   │       ├── onboarding/      # First-launch experience
+│   │       └── settings/        # App configuration
+│   ├── test/                    # Widget and unit tests
+│   └── pubspec.yaml
 │
-├── .github/                 # GitHub configuration
-│   ├── workflows/           # CI/CD automation
-│   └── ISSUE_TEMPLATE/      # Contribution templates
+├── supabase/
+│   └── migrations/              # SQL migration files (source of truth for schema)
 │
-├── docker-compose.yml       # Local development services
-├── Makefile                 # Common development commands
-└── AGENTS.md               # Guidelines for AI coding agents
+├── .github/workflows/           # CI/CD automation
+├── docker-compose.yml           # Local dev: pgvector container
+├── Makefile                     # Development commands
+└── AGENTS.md                    # Guidelines for AI coding agents
 ```
 
-## 🔧 API Endpoints
+## API
 
-### `POST /chat`
-Stream a chat response with memory context.
+All routes are under `/api/v1` and require a Supabase JWT Bearer token (except health check).
 
-**Request:**
-```json
-{
-  "message": "What's my favorite color?"
-}
-```
+| Prefix | Description |
+|--------|-------------|
+| `GET /health` | Health check |
+| `/api/v1/agents` | Agent CRUD, AI generation, capabilities, integrations |
+| `/api/v1/auth` | Passkey registration and login (WebAuthn) |
+| `/api/v1/rooms` | Chat rooms, messages, streaming responses |
+| `/api/v1/crew` | CrewAI multi-agent orchestration |
+| `/api/v1/memory` | Memory storage and retrieval |
+| `/api/v1/productivity` | Tasks, Notes, Calendar Events |
+| `/api/v1/integrations` | Steam integration |
+| `/api/v1/notifications` | Push notification registration |
 
-**Response:** (streaming text)
-```
-Your favorite color is blue. You mentioned this to me earlier!
-```
+Interactive API docs are available at `http://localhost:8000/docs` when the backend is running.
 
-### `POST /memories`
-Manually store a memory.
-
-**Request:**
-```json
-{
-  "message": "I have a meeting with Sarah tomorrow at 3pm"
-}
-```
-
-### `GET /memories`
-List all stored memories (for debugging/admin).
-
-**Response:**
-```json
-{
-  "memories": [
-    {
-      "id": 1,
-      "content": "My favorite color is blue",
-      "created_at": "2026-03-06T10:30:00"
-    }
-  ]
-}
-```
-
-## 🔄 CI/CD & Automation
+## CI/CD & Automation
 
 ### GitHub Actions Workflows
 
 | Workflow | Trigger | Description |
 |----------|---------|-------------|
-| `backend-deploy.yml` | Push to main/develop | Deploy FastAPI to Azure Container Apps |
-| `flutter-web-deploy.yml` | Push to main/develop | Deploy web app to Azure Static Web Apps |
-| `flutter-ios-deploy.yml` | Push to main | Build & upload iOS to TestFlight |
-| `pr-checks.yml` | Pull Request | Run tests, linting, type checks |
-| `codeql-analysis.yml` | Push/PR/Schedule | Security vulnerability scanning |
-| `release.yml` | Tag push (v*) | Create releases with artifacts |
-| `cleanup.yml` | Weekly | Remove old workflow runs & artifacts |
-| `sentry-to-github.yml` | Hourly | Sync Sentry issues to GitHub with labels |
-| `jules-fix-issue.yml` | On Issue | Invoke Jules AI to fix Sentry-imported issues |
+| `pr-checks.yml` | Pull requests | Backend tests + lint, Flutter tests + lint, security audit, PR size check |
+| `backend-deploy.yml` | Push to main/develop | Test, Docker build to GHCR, Trivy scan, migrate DB, deploy to Azure Container Apps |
+| `flutter-pipeline.yml` | Push to main/develop | Flutter CI, build APK/iOS/Web, Lighthouse test, deploy web to Azure Static Web Apps |
+| `database-migrations.yml` | Push/PR touching migrations | Validate migration drift, deploy to staging/production via Supabase CLI |
+| `release.yml` | Tag push (v*) | GitHub release with changelog, build artifacts, Sentry release |
+| `codeql-analysis.yml` | Push/PR, weekly | Python security analysis |
+| `nightly.yml` | Daily 2 AM UTC | Security audit, dependency check, multi-platform build test |
+| `maintenance.yml` | Weekly/hourly | Label sync, artifact cleanup, branch cleanup, Sentry issue sync |
+| `notify-failure.yml` | Workflow failure | Discord + Slack notifications, auto-create GitHub issues |
+| `ai-agents.yml` | Issues, schedule | Jules auto-fix for Sentry issues, CodeRabbit bridge, performance reports |
 
 ### Required GitHub Secrets
 
-Configure in **Settings → Secrets and variables → Actions**:
-
 **Azure Deployment:**
-- `AZURE_CREDENTIALS` - Service principal JSON
-- `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`
+- `AZURE_CREDENTIALS`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`
 - `AZURE_STATIC_WEB_APPS_API_TOKEN`
 
+**Supabase:**
+- `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_PROJECT_REF_STAGING`
+
 **Backend:**
-- `DATABASE_URL` - PostgreSQL connection string
-- `MISTRAL_API_KEY` - AI model access
-- `SECRET_KEY` - Application encryption
+- `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_JWT_SECRET`, `DATABASE_URL`
 
-**iOS Deployment:**
-- `APPLE_ID`, `APPLE_TEAM_ID`
-- `APP_SPECIFIC_PASSWORD`
-- `IOS_P12_CERTIFICATE`, `IOS_P12_PASSWORD`
-- `IOS_PROVISIONING_PROFILE`
+**Quality & Monitoring:**
+- `CODECOV_TOKEN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`
 
-**Quality:**
-- `CODECOV_TOKEN` - Test coverage reporting
-- `SENTRY_AUTH_TOKEN` - Sentry API access (Organization Settings > Developer Settings)
-- `SENTRY_ORG` - Sentry organization slug
-- `SENTRY_PROJECT` - Sentry project slug
-- `JULES_API_KEY` - API key for Jules AI from Google Labs
+**Notifications:**
+- `SLACK_WEBHOOK_URL`, `DISCORD_WEBHOOK_URL`
 
-## 🧪 Development & Testing
+## Development
 
-### Backend Development
+### Backend
 
 ```bash
 cd backend
 
-# Install dependencies
-pip install -e ".[dev]"
+# Run server
+.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run tests with coverage
-pytest --cov=app --cov-report=html
+.venv/bin/pytest --cov=app --cov-report=term-missing
 
-# Run linting & formatting
-ruff check . && ruff check --fix .
-black .
-isort .
-mypy app/
+# Lint
+ruff check . && black --check . && isort --check-only . && mypy app/
+
+# Auto-fix
+ruff check --fix . && black . && isort .
 ```
 
-### Frontend Development
+### Frontend
 
 ```bash
 cd frontend
 
-# Get dependencies
+# Get dependencies and generate models
 flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+
+# Run app
+flutter run
 
 # Run tests
 flutter test --coverage
 
-# Check code quality
+# Lint
 flutter analyze
 dart format --output=none --set-exit-if-changed .
-
-# Run on specific device
-flutter run -d ios
-flutter run -d android
-flutter run -d chrome
 ```
 
-### Pre-commit Hooks
-
-Install automated checks before each commit:
+### Make Commands
 
 ```bash
-make setup-hooks
+make setup-backend   # Create venv, install deps
+make setup-hooks     # Install pre-commit hook
+make db              # Start local pgvector Docker container
+make db-stop         # Stop local Docker container
+make backend         # Run FastAPI server
+make frontend        # Run Flutter app
+make test            # Run all tests
+make lint            # Run all linting
+make fix             # Auto-fix lint issues
+make clean           # Remove build artifacts
 ```
 
-This runs ruff, black, flutter analyze, and dart format automatically.
+### Database Migrations
 
-## 📊 Code Quality Standards
+Schema changes are code-first via Tortoise ORM models:
 
-- **Backend:** 75%+ test coverage, strict type hints, docstrings
-- **Frontend:** 70%+ test coverage, effective Dart style
-- **Security:** CodeQL scanning, dependency audits, secret scanning
-- **Documentation:** API docs, inline comments, architecture decisions
+```bash
+cd backend
 
-View coverage: [codecov.io/gh/yourusername/miru](https://codecov.io/gh/yourusername/miru)
+# 1. Edit models in app/domain/**/models.py
+# 2. Generate migration
+python manage.py makemigrations <name>
 
-## 🤝 Contributing
+# 3. Apply locally
+supabase db reset --local
+
+# 4. Check for uncommitted drift
+python manage.py check
+```
+
+See [AGENTS.md](AGENTS.md) for full migration workflow details.
+
+## Code Quality
+
+- **Backend:** 75%+ test coverage, strict type hints, Google-style docstrings
+- **Frontend:** 70%+ test coverage, Effective Dart style
+- **Security:** CodeQL scanning, Trivy container scanning, dependency audits
+- **Pre-commit hooks:** ruff, black, flutter analyze, dart format
+
+Install hooks: `make setup-hooks`
+
+## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-**Quick contribution workflow:**
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
@@ -305,59 +345,25 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed gu
 6. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
 7. Push and create a Pull Request
 
-### Development Commands
+## Security
 
-```bash
-# Run everything locally
-make backend    # Terminal 1 - FastAPI server
-make frontend   # Terminal 2 - Flutter app
-make db         # Start PostgreSQL
+See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities.
 
-# Testing
-make test       # Run all tests
-make test-backend
-make test-frontend
+## License
 
-# Code quality
-make lint       # Check all linting
-make fix        # Auto-fix issues
-```
+[MIT License](LICENSE)
 
-## 📚 Documentation
+## Acknowledgments
 
-- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
-- [Code Style Guide](AGENTS.md) - Coding standards
-- [API Reference](backend/app/routes.py) - Auto-generated from code
-- [Issue Templates](.github/ISSUE_TEMPLATE/) - Bug reports & features
-
-## 🔒 Security
-
-- **Dependency scanning** - Automated via Dependabot
-- **Code analysis** - CodeQL runs on every push
-- **Secret detection** - Prevents credential leaks
-- **Vulnerability reports** - See [security policy](.github/ISSUE_TEMPLATE/security.md)
-
-## 🌟 Why Miru?
-
-- **Privacy-first** - Your data stays in your database
-- **Self-hostable** - Run entirely on your infrastructure
-- **Extensible** - Modular architecture for custom features
-- **Multi-modal** - Web, mobile, and desktop support
-- **Open source** - Transparent and community-driven
-
-## 📄 License
-
-[MIT License](LICENSE) - Open source and free to use
-
-## 🙏 Acknowledgments
-
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
-- [Flutter](https://flutter.dev/) - Beautiful multi-platform UI
-- [Mistral AI](https://mistral.ai/) - State-of-the-art language models
-- [PostgreSQL](https://www.postgresql.org/) + [pgvector](https://github.com/pgvector/pgvector) - Vector database
-- [Azure](https://azure.microsoft.com/) - Cloud hosting platform
+- [FastAPI](https://fastapi.tiangolo.com/) - Python web framework
+- [Flutter](https://flutter.dev/) - Multi-platform UI framework
+- [Supabase](https://supabase.com/) - Auth, database, and real-time
+- [OpenRouter](https://openrouter.ai/) - LLM routing and access
+- [pgvector](https://github.com/pgvector/pgvector) - Vector similarity search for PostgreSQL
+- [CrewAI](https://www.crewai.com/) - Multi-agent orchestration
+- [Sentry](https://sentry.io/) - Error tracking
+- [Azure](https://azure.microsoft.com/) - Cloud hosting
 
 ---
 
-<p align="center">Built with ❤️ using FastAPI + Flutter + PostgreSQL</p>
-<p align="center"><a href="https://github.com/yourusername/miru">Star us on GitHub</a></p>
+<p align="center">Built with FastAPI + Flutter + Supabase</p>
