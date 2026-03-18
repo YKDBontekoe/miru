@@ -30,6 +30,14 @@ async def send_notification(
     """
     Test endpoint to send a notification to the current user.
     The request is accepted for asynchronous processing.
+
+    Args:
+        request (NotificationRequest): The HTTP request body containing message payload.
+        user_id (CurrentUser): String identifier of the current authenticated user.
+        service (NotificationService): The notification service dependency instance.
+
+    Returns:
+        dict[str, str]: A dictionary indicating the async job has successfully started.
     """
     await service.notify_user(str(user_id), request.message, request.title)
     return {"status": "success"}

@@ -298,6 +298,8 @@ jobs:
               TAVILY_API_KEY="${{ secrets.TAVILY_API_KEY }}" \
               SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
               SENTRY_RELEASE="${{ steps.sentry-release.outputs.value }}" \
+              AZURE_NOTIFICATION_HUB_NAME="${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}" \
+              AZURE_NOTIFICATION_HUB_CONNECTION_STRING="${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}" \
               SENTRY_ENVIRONMENT="production"
 
       - name: Verify deployment

@@ -52,7 +52,7 @@ class MiruApp extends StatefulWidget {
 
 class _MiruAppState extends State<MiruApp> {
   late final Stream<AuthState> _authStream;
-  StreamSubscription<AuthState>? _authSub;
+  late final StreamSubscription<AuthState> _authSub;
 
   @override
   void initState() {
@@ -64,17 +64,17 @@ class _MiruAppState extends State<MiruApp> {
         ? Supabase.instance.client.auth.currentUser
         : null;
     if (user != null) {
-      NotificationService.registerStatic(['user:${user.id}']);
+      NotificationService.registerStatic(['user:${user.id}']).ignore();
     } else {
-      NotificationService.unregisterStatic();
+      NotificationService.unregisterStatic().ignore();
     }
 
     _authSub = _authStream.listen((event) {
       final user = event.session?.user;
       if (user != null) {
-        NotificationService.registerStatic(['user:${user.id}']);
+        NotificationService.registerStatic(['user:${user.id}']).ignore();
       } else {
-        NotificationService.unregisterStatic();
+        NotificationService.unregisterStatic().ignore();
       }
     });
   }
