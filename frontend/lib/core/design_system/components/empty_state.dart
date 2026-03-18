@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import 'package:miru/core/design_system/extensions/build_context_extensions.dart';
-import 'package:miru/core/design_system/theme/app_theme_data.dart';
-import 'package:miru/core/design_system/tokens/colors.dart';
-import 'package:miru/core/design_system/tokens/spacing.dart';
-import 'package:miru/core/design_system/tokens/typography.dart';
+import 'package:miru/core/design_system/design_system.dart';
 
 /// A centered empty-state placeholder with a custom animated AI orb, title,
 /// subtitle, and optional suggestion chips.
@@ -79,10 +74,7 @@ class AppEmptyState extends StatelessWidget {
                 },
                 child: Text(
                   title,
-                  style: GoogleFonts.inter(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
+                  style: AppTypography.headingLarge.copyWith(
                     color: Colors.white, // ShaderMask paints over this
                   ),
                   textAlign: TextAlign.center,
@@ -95,10 +87,7 @@ class AppEmptyState extends StatelessWidget {
                 Text(
                   subtitle!,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                    height: 1.6,
+                  style: AppTypography.bodyMedium.copyWith(
                     color: colors.onSurfaceMuted,
                   ),
                 ),

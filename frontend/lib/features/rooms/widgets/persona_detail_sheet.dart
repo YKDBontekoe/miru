@@ -116,18 +116,16 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                   child: Column(
                     children: [
                       Icon(Icons.military_tech, color: colors.primaryLight),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         'Lvl ${widget.agent.connectionLevel}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.labelSmall.copyWith(
                           color: colors.primaryLight,
                         ),
                       ),
                       Text(
                         'Connection',
-                        style: TextStyle(
-                          fontSize: 10,
+                        style: AppTypography.captionSmall.copyWith(
                           color: colors.onSurfaceMuted,
                         ),
                       ),
@@ -146,18 +144,16 @@ class _PersonaDetailSheetState extends State<PersonaDetailSheet> {
                   child: Column(
                     children: [
                       Icon(Icons.mood, color: colors.onSurfaceMuted),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         widget.agent.mood,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.labelSmall.copyWith(
                           color: colors.onSurface,
                         ),
                       ),
                       Text(
                         'Current Mood',
-                        style: TextStyle(
-                          fontSize: 10,
+                        style: AppTypography.captionSmall.copyWith(
                           color: colors.onSurfaceMuted,
                         ),
                       ),

@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:miru/core/models/message_status.dart';
-import 'package:miru/core/design_system/extensions/build_context_extensions.dart';
-import 'package:miru/core/design_system/theme/app_theme_data.dart';
-import 'package:miru/core/design_system/tokens/colors.dart';
-import 'package:miru/core/design_system/tokens/spacing.dart';
-import 'package:miru/core/design_system/tokens/typography.dart';
-import 'typing_indicator.dart';
+import 'package:miru/core/design_system/design_system.dart';
 
 /// A themed chat bubble that adapts to user vs. assistant messages.
 ///
@@ -109,13 +103,7 @@ class _UserBubble extends StatelessWidget {
             bottomLeft: Radius.circular(AppSpacing.radiusXl),
             bottomRight: Radius.circular(AppSpacing.radiusSm),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.25),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppShadows.md,
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -123,12 +111,7 @@ class _UserBubble extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-            height: 1.55,
-            color: AppColors.onPrimary,
-          ),
+          style: AppTypography.bodyMedium.copyWith(color: AppColors.onPrimary),
         ),
       ),
     );
@@ -217,10 +200,9 @@ class _AssistantBubble extends StatelessWidget {
                       ),
                       child: Text(
                         agentName!,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                        style: AppTypography.captionSmall.copyWith(
                           color: accentColor,
+                          fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -305,8 +287,7 @@ class _AssistantAvatar extends StatelessWidget {
           child: agentName != null && agentName!.isNotEmpty
               ? Text(
                   agentName![0].toUpperCase(),
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
+                  style: AppTypography.captionSmall.copyWith(
                     fontWeight: FontWeight.w700,
                     color: isFailed ? AppColors.error : accentColor,
                   ),
@@ -398,12 +379,7 @@ class _AssistantContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final textColor = isFailed ? AppColors.error : colors.onSurface;
 
-    final base = GoogleFonts.inter(
-      fontSize: 15,
-      fontWeight: FontWeight.w400,
-      height: 1.6,
-      color: textColor,
-    );
+    final base = AppTypography.bodyMedium.copyWith(color: textColor);
 
     return MarkdownBody(
       data: text,
@@ -522,8 +498,7 @@ class _ActionChip extends StatelessWidget {
               const SizedBox(width: 3),
               Text(
                 label,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
+                style: AppTypography.captionSmall.copyWith(
                   fontWeight: FontWeight.w500,
                   color: color.withValues(alpha: 0.7),
                 ),

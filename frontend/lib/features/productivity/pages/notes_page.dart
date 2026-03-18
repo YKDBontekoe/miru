@@ -203,7 +203,7 @@ class _NoteTile extends ConsumerWidget {
               note.title,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
               note.content,
@@ -214,11 +214,11 @@ class _NoteTile extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, size: 20),
+                  icon: const Icon(Icons.edit, size: AppSpacing.iconSm),
                   onPressed: () => _showNoteDialog(context, ref, note),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 20),
+                  icon: const Icon(Icons.delete, size: AppSpacing.iconSm),
                   onPressed: () async {
                     try {
                       await service.deleteNote(note.id);

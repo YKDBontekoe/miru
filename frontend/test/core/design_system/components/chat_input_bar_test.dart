@@ -1,82 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:miru/core/design_system/design_system.dart';
+import 'package:miru/core/design_system/components/chat_input_bar.dart';
+import 'package:miru/core/design_system/theme/app_theme_data.dart';
 
 void main() {
+  Widget buildTestWidget({
+    required Widget child,
+    required Brightness brightness,
+  }) {
+    return MaterialApp(
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
+      home: Scaffold(body: child),
+    );
+  }
+
   testWidgets('ChatInputBar renders correctly in light and dark mode', (
-    WidgetTester tester,
+    tester,
   ) async {
     final controller = TextEditingController();
-    addTearDown(controller.dispose);
-
-    bool sendInvoked = false;
-    bool stopInvoked = false;
+    bool sent = false;
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.light,
-        home: Scaffold(
-          body: ChatInputBar(
-            controller: controller,
-            onSend: () {
-              sendInvoked = true;
-              controller.clear();
-            },
-            isStreaming: false,
-            onStopStreaming: () {
-              stopInvoked = true;
-            },
-          ),
+      buildTestWidget(
+        brightness: Brightness.light,
+        child: ChatInputBar(
+          controller: controller,
+          onSend: () => sent = true,
+          hintText: 'Test hint',
         ),
       ),
     );
 
-    expect(find.byType(ChatInputBar), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('Test hint'), findsOneWidget);
 
-    // Simulate typing and sending
-    await tester.enterText(find.byType(TextField), 'Hello Miru');
-    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'test message');
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    expect(sent, isTrue);
 
-    // Tap the send button directly via Icon
-    final sendButton = find.byIcon(Icons.arrow_upward_rounded);
-    await tester.tap(sendButton);
-    await tester.pumpAndSettle();
-
-    expect(sendInvoked, isTrue);
-    expect(controller.text, isEmpty);
-
-    // Verify dark mode mounts with streaming=true
+    // Dark mode
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.dark,
-        home: Scaffold(
-          body: ChatInputBar(
-            controller: controller,
-            onSend: () {},
-            isStreaming: true,
-            onStopStreaming: () {
-              stopInvoked = true;
-            },
-          ),
+      buildTestWidget(
+        brightness: Brightness.dark,
+        child: ChatInputBar(
+          controller: controller,
+          onSend: () {},
+          hintText: 'Test hint',
         ),
       ),
     );
 
-    expect(find.byType(ChatInputBar), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+  });
 
-    // Simulate stopping stream
-    final stopButton = find.descendant(
-      of: find.byType(ChatInputBar),
-      matching: find.byIcon(Icons.stop_rounded),
+  testWidgets('ChatInputBar shows stop button when streaming', (tester) async {
+    final controller = TextEditingController();
+    bool stopped = false;
+
+    await tester.pumpWidget(
+      buildTestWidget(
+        brightness: Brightness.light,
+        child: ChatInputBar(
+          controller: controller,
+          onSend: () {},
+          isStreaming: true,
+          onStopStreaming: () => stopped = true,
+          hintText: 'Test hint',
+        ),
+      ),
     );
-    if (stopButton.evaluate().isNotEmpty) {
-      await tester.tap(stopButton.first);
-      await tester.pumpAndSettle();
-      expect(stopInvoked, isTrue);
-    }
+
+    // The send icon shouldn't be there, instead a stop button (which is just a container inside an InkWell)
+    expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
+
+    // Tap the stop button (it has a Tooltip 'Stop generating')
+    await tester.tap(find.byTooltip('Stop generating'));
+    expect(stopped, isTrue);
   });
 }

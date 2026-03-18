@@ -1,8 +1,10 @@
-import 'package:miru/core/api/productivity_service.dart';
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
+import 'package:miru/core/api/productivity_service.dart';
 
 import '../../../core/design_system/design_system.dart';
 import '../models/calendar_event.dart';
@@ -309,7 +311,7 @@ class _EventTile extends ConsumerWidget {
               event.title,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,7 +322,7 @@ class _EventTile extends ConsumerWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xxs),
                 Row(
                   children: [
                     Icon(
@@ -328,14 +330,13 @@ class _EventTile extends ConsumerWidget {
                       size: 14,
                       color: context.colorScheme.primary,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.xxs),
                     Text(
                       event.isAllDay
                           ? 'All Day - ${dateFormat.format(startLocal)}'
                           : '${dateFormat.format(startLocal)} ${timeFormat.format(startLocal)} - ${timeFormat.format(endLocal)}',
-                      style: TextStyle(
+                      style: AppTypography.captionSmall.copyWith(
                         color: context.colorScheme.primary,
-                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -346,11 +347,11 @@ class _EventTile extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit, size: 20),
+                  icon: const Icon(Icons.edit, size: AppSpacing.iconSm),
                   onPressed: onEdit,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, size: 20),
+                  icon: const Icon(Icons.delete, size: AppSpacing.iconSm),
                   onPressed: onDelete,
                 ),
               ],
