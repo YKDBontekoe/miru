@@ -413,3 +413,5 @@ site/
 
 # Supabase
 supabase/.temp/
+*.rej
+*.diff

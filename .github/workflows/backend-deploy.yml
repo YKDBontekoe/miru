@@ -245,7 +245,6 @@ jobs:
           WEBAUTHN_EXPECTED_ORIGIN: ${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          AZURE_WEBPUBSUB_CONNECTION_STRING: ${{ secrets.AZURE_WEBPUBSUB_CONNECTION_STRING }}
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -298,8 +297,9 @@ jobs:
               CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}" \
               TAVILY_API_KEY="${{ secrets.TAVILY_API_KEY }}" \
               SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
-              AZURE_WEBPUBSUB_CONNECTION_STRING="${{ secrets.AZURE_WEBPUBSUB_CONNECTION_STRING }}" \
               SENTRY_RELEASE="${{ steps.sentry-release.outputs.value }}" \
+              AZURE_NOTIFICATION_HUB_NAME="${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}" \
+              AZURE_NOTIFICATION_HUB_CONNECTION_STRING="${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}" \
               SENTRY_ENVIRONMENT="production"
 
       - name: Verify deployment

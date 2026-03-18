@@ -48,9 +48,10 @@ class Settings(BaseSettings):
     sentry_release: str | None = None
     # Sentry environment name, e.g. "production", "staging", "development"
     sentry_environment: str = "development"
-    # Azure Web PubSub (SignalR API)
-    azure_webpubsub_connection_string: str | None = None
-    azure_webpubsub_hub: str = "chat"
+
+    # Azure Notification Hubs
+    azure_notification_hub_name: str | None = None
+    azure_notification_hub_connection_string: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
