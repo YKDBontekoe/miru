@@ -90,3 +90,19 @@
 - name: jules-fix-submitted
   color: 2196f3
   description: Issues where Jules AI has submitted a pull request
+
+- name: jules-fix-failed
+  color: e53935
+  description: Issues where Jules AI failed to produce a fix
+
+- name: ai-approved
+  color: 43a047
+  description: PR passed AI review with no actionable findings
+
+- name: human-intervention-needed
+  color: e65100
+  description: AI review loop exhausted — requires human review
+
+- name: coderabbit:queued
+  color: 7986cb
+  description: PR queued for CodeRabbit re-review after rate limit

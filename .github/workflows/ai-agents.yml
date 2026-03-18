@@ -6,64 +6,131 @@ on:
   issues:
     types: [labeled]
   schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours for Jules Sentry fixes
-    - cron: '*/5 * * * *'  # Every 5 minutes for CodeRabbit queue
+    - cron: '0 */6 * * *'   # Every 6 hours: Jules Sentry fixes
+    - cron: '*/30 * * * *'  # Every 30 minutes: CodeRabbit queue processor
+    - cron: '0 9 * * 1'     # Every Monday at 9 AM UTC: Jules performance report
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+# Permissions are declared per-job. No workflow-level block — defaults are read-only.
 
 jobs:
-  # --- Jules - CodeRabbit Bridge ---
+  # ---------------------------------------------------------------------------
+  # Jules - CodeRabbit Bridge
+  # Forwards CodeRabbit review prompts to Jules and handles the review loop.
+  #
+  # Required secret:
+  #   JULES_GITHUB_PAT — Fine-grained PAT scoped to this repo only with:
+  #     - issues: write  (post comments, add labels)
+  #     - pull-requests: write  (post PR review comments)
+  # ---------------------------------------------------------------------------
   jules-coderabbit-bridge:
     name: Proxy CodeRabbit to Jules
-    if: github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.user.login == 'coderabbitai[bot]'
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      github.event.comment.user.login == 'coderabbitai[bot]'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       - name: Proxy to Jules
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.JULES_PROXY_PAT }}
+          # Use the fine-grained PAT so the bridge comment appears from a
+          # distinct identity rather than the default GITHUB_TOKEN bot account.
+          # Scope required: issues:write, pull-requests:write on this repo only.
+          github-token: ${{ secrets.JULES_GITHUB_PAT }}
           script: |
             const commentBody = context.payload.comment.body;
             const prNumber = context.issue.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
+            const { owner, repo } = context.repo;
 
+            // When CodeRabbit finds nothing actionable, add the ai-approved label
+            // but do NOT add ready-to-merge. Zero findings on one review pass does
+            // not mean the PR is safe to merge — a human must still approve.
             const noFindingsRegex = /Actionable comments posted:\s*0/i;
             if (noFindingsRegex.test(commentBody)) {
-              await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: ['ready-to-merge', 'ai-approved'] });
-              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: "🎉 **AI Review Complete**: CodeRabbit found no issues." });
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: prNumber,
+                labels: ['ai-approved'],
+              });
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNumber,
+                body: '✅ **AI Review Complete**: CodeRabbit found no actionable issues on this pass.',
+              });
               return;
             }
 
             const promptRegex = /<summary>🤖 Prompt for all review comments with AI agents<\/summary>[\s\S]*?```(?:[\w-]+)?\n([\s\S]*?)\n```/i;
             const match = commentBody.match(promptRegex);
+            if (!match || !match[1]) return;
 
-            if (match && match[1]) {
-              const aiPrompt = match[1].trim();
-              const { data: existingComments } = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
-              const proxyComments = existingComments.filter(c => c.body && c.body.includes("Jules-CodeRabbit Bridge Proxy"));
-              const attemptNumber = proxyComments.length + 1;
-              if (attemptNumber > 3) {
-                await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: "⚠️ **AI Review Loop Detected** ⚠️" });
-                await github.rest.issues.addLabels({ owner, repo, issue_number: prNumber, labels: ['human-intervention-needed'] });
-                return;
-              }
-              const contextInjection = "\n\n**Project Context:** Use local checks (make lint, etc). Update AGENTS.md if needed.";
-              const finalComment = `### Jules-CodeRabbit Bridge Proxy (Attempt ${attemptNumber}/3)\n\n/jules\n\n${aiPrompt}${contextInjection}`;
-              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body: finalComment });
+            const aiPrompt = match[1].trim();
+
+            // Count all AI exchange comments on this PR (both bridge proxy posts
+            // and any Jules response comments) to detect runaway loops reliably.
+            const { data: allComments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber,
+            });
+            const aiExchangeComments = allComments.filter(c =>
+              (c.body && c.body.includes('Jules-CodeRabbit Bridge')) ||
+              (c.user && c.user.login === 'jules[bot]')
+            );
+            const attemptNumber = aiExchangeComments.length + 1;
+
+            if (attemptNumber > 3) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNumber,
+                body: '⚠️ **AI Review Loop Detected**: 3 rounds completed without resolution. Human review required.',
+              });
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: prNumber,
+                labels: ['human-intervention-needed'],
+              });
+              return;
             }
 
-  # --- Jules - Sentry Fixer ---
+            const contextInjection = [
+              '',
+              '',
+              '**Project context (follow these exactly):**',
+              '- Backend: FastAPI/Python — `backend/app/domain/<domain>/` for business logic, `backend/app/api/v1/` for routes.',
+              '- Frontend: Flutter/Dart — flat `frontend/lib/` directory, plain `StatefulWidget` + `setState` only (no Riverpod/BLoC/Provider).',
+              '- Python style: 100-char lines, double quotes, `from __future__ import annotations`, `str | None` not `Optional[str]`.',
+              '- Dart style: 80-char lines, single quotes, `const`/`final` everywhere possible.',
+              '- Lint: `make lint-backend` (ruff + black + mypy) or `make lint-frontend` (dart format + flutter analyze).',
+              '- Tests: `make test-backend` or `make test-frontend`. Mock all external services — never call real APIs.',
+              '- Do not modify files unrelated to the CodeRabbit findings.',
+            ].join('\n');
+            const finalComment = `### Jules-CodeRabbit Bridge (Attempt ${attemptNumber}/3)\n\n@jules\n\n${aiPrompt}${contextInjection}`;
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: prNumber,
+              body: finalComment,
+            });
+
+  # ---------------------------------------------------------------------------
+  # Jules - Sentry / Issue Fixer
+  # Finds open issues labelled jules-fix-pending and invokes Jules on each.
+  #
+  # Caps at 10 issues per run to prevent 6-hour workflow timeout when many
+  # Sentry issues are imported in bulk. Remaining issues are picked up on the
+  # next scheduled run.
+  # ---------------------------------------------------------------------------
   jules-find-issues:
-    name: Find Sentry Issues
-    if: github.event_name == 'issues' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Find Issues for Jules
+    if: |
+      github.event_name == 'issues' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      issues: read
     outputs:
       issues: ${{ steps.find.outputs.issues }}
+      skipped: ${{ steps.find.outputs.skipped }}
+
     steps:
       - name: Find issues with jules-fix-pending label
         id: find
@@ -71,112 +138,394 @@ jobs:
         with:
           script: |
             const { owner, repo } = context.repo;
-            if (github.event_name === 'issues' && github.event.issue) {
-              const issue = github.event.issue;
+            const MAX_PER_RUN = 10;
+
+            // If triggered by a label event, process only that issue immediately.
+            if (context.eventName === 'issues' && context.payload.issue) {
+              const issue = context.payload.issue;
               if (issue.labels.some(l => l.name === 'jules-fix-pending')) {
                 core.setOutput('issues', JSON.stringify([issue.number]));
+                core.setOutput('skipped', '0');
                 return;
               }
             }
-            const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', labels: 'jules-fix-pending' });
-            core.setOutput('issues', JSON.stringify(issues.map(i => i.number)));
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: 'jules-fix-pending',
+            });
+
+            const all = issues.map(i => i.number);
+            const batch = all.slice(0, MAX_PER_RUN);
+            const skipped = all.length - batch.length;
+
+            if (skipped > 0) {
+              core.warning(`${skipped} jules-fix-pending issue(s) deferred to next run (batch limit: ${MAX_PER_RUN}).`);
+            }
+
+            core.setOutput('issues', JSON.stringify(batch));
+            core.setOutput('skipped', String(skipped));
 
   jules-fix:
+    name: Jules Fix
     needs: jules-find-issues
-    if: needs.jules-find-issues.outputs.issues != '[]' && needs.jules-find-issues.outputs.issues != ''
+    if: |
+      needs.jules-find-issues.outputs.issues != '[]' &&
+      needs.jules-find-issues.outputs.issues != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     strategy:
       matrix:
         issue: ${{ fromJSON(needs.jules-find-issues.outputs.issues) }}
       max-parallel: 1
+
     steps:
       - uses: actions/checkout@v4
-      - name: Get Issue Details
+
+      - name: Get issue details
         id: issue
         uses: actions/github-script@v8
         with:
           script: |
-            const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: ${{ matrix.issue }} });
-            if (!issue.labels.some(l => l.name === 'jules-fix-pending')) { core.setOutput('skip', 'true'); return; }
+            const { data: issue } = await github.rest.issues.get({
+              ...context.repo,
+              issue_number: ${{ matrix.issue }},
+            });
+            // Re-check label in case it was removed between the find and fix jobs.
+            if (!issue.labels.some(l => l.name === 'jules-fix-pending')) {
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            const body = issue.body || '';
+
+            // Extract Sentry stacktrace block if present (between ``` fences or
+            // after a "Stacktrace:" / "Stack Trace:" heading).
+            const stacktraceMatch =
+              body.match(/(?:stacktrace|stack trace)[:\s]*\n```[\w]*\n([\s\S]*?)```/i) ||
+              body.match(/```(?:python|dart|text)?\n([\s\S]*?Traceback[\s\S]*?)```/i);
+            const stacktrace = stacktraceMatch ? stacktraceMatch[1].trim() : '';
+
+            // Derive the most likely domain from the issue title / body so Jules
+            // knows which test file to target (e.g. "sentry: MemoryError" → memory).
+            const domains = ['agents', 'auth', 'chat', 'memory', 'agent_tools'];
+            const combined = (issue.title + ' ' + body).toLowerCase();
+            const matchedDomain = domains.find(d => combined.includes(d)) || '';
+            const testHint = matchedDomain
+              ? `backend/tests/test_${matchedDomain}.py`
+              : 'backend/tests/ (pick the most relevant test file for the affected domain)';
+
+            // Detect whether this is a backend (Python) or frontend (Dart/Flutter) issue.
+            const isFrontend =
+              issue.labels.some(l => l.name === 'frontend') ||
+              /flutter|dart|widget|screen|page/i.test(combined);
+            const stack = isFrontend ? 'Flutter/Dart (frontend)' : 'FastAPI/Python (backend)';
+            const lintCmd = isFrontend
+              ? 'make lint-frontend (dart format + flutter analyze)'
+              : 'make lint-backend (ruff + black + mypy)';
+            const testCmd = isFrontend ? 'make test-frontend' : 'make test-backend';
+
             core.setOutput('title', issue.title);
-            core.setOutput('body', issue.body || '');
+            core.setOutput('body', body);
+            core.setOutput('stacktrace', stacktrace);
+            core.setOutput('test_hint', testHint);
+            core.setOutput('stack', stack);
+            core.setOutput('lint_cmd', lintCmd);
+            core.setOutput('test_cmd', testCmd);
             core.setOutput('skip', 'false');
+
       - name: Invoke Jules
         if: steps.issue.outputs.skip != 'true'
         uses: google-labs-code/jules-action@v1.0.0
         with:
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           prompt: |
-            Fix the bug described in this issue:
-            Title: ${{ steps.issue.outputs.title }}
-            Description: ${{ steps.issue.outputs.body }}
-            Requirements: Analyze, fix, write tests, create PR with "Closes #${{ matrix.issue }}".
-      - name: Update Issue
+            Fix the bug described in this GitHub issue.
+
+            ## Issue
+            **Title:** ${{ steps.issue.outputs.title }}
+            **Stack:** ${{ steps.issue.outputs.stack }}
+
+            **Full description:**
+            ${{ steps.issue.outputs.body }}
+
+            ${{ steps.issue.outputs.stacktrace != '' && format('## Stacktrace\n```\n{0}\n```', steps.issue.outputs.stacktrace) || '' }}
+
+            ## Code style & architecture (follow these exactly)
+            - Language: ${{ steps.issue.outputs.stack }}
+            - Line length: 100 chars (Python) / 80 chars (Dart). Double quotes (Python), single quotes (Dart).
+            - All functions need type hints (Python) / explicit types (Dart).
+            - Python import order: stdlib → third-party → first-party (`app.*`), managed by isort.
+            - Use `str | None` not `Optional[str]`; `list[str]` not `List[str]` (Python).
+            - Use `const` constructors and `final` where possible (Dart).
+            - Always include `from __future__ import annotations` at the top of Python files.
+            - Log errors with context; use `logger.exception()` for unexpected errors (Python).
+            - Backend domain packages live under `backend/app/domain/<domain>/`; route handlers under `backend/app/api/v1/`.
+            - Frontend pages live flat under `frontend/lib/`; state management is plain `StatefulWidget` + `setState` — do NOT introduce Riverpod, Provider, BLoC, or GetX.
+            - Mock all external services (Supabase, OpenRouter, Neo4j) in tests — never call real APIs.
+
+            ## Requirements
+            1. Analyse the root cause thoroughly before making any changes.
+            2. Write or update tests to cover the fix. Primary test file to target: `${{ steps.issue.outputs.test_hint }}`.
+            3. Run `${{ steps.issue.outputs.lint_cmd }}` and confirm it exits 0.
+            4. Run `${{ steps.issue.outputs.test_cmd }}` and confirm all tests pass.
+            5. Open a pull request with title matching the issue and body containing "Closes #${{ matrix.issue }}".
+            6. Do not modify files unrelated to the fix.
+
+      - name: Update issue labels and comment
         if: always() && steps.issue.outputs.skip != 'true'
         uses: actions/github-script@v8
         with:
+          # Must use the PAT so Jules can read this comment if it polls the
+          # issue timeline. Comments from GITHUB_TOKEN bot are invisible to Jules.
+          github-token: ${{ secrets.JULES_GITHUB_PAT }}
           script: |
             const issue_number = ${{ matrix.issue }};
-            const label = job.status === 'success' ? 'jules-fix-submitted' : 'jules-fix-failed';
-            const body = job.status === 'success' ? "Jules has submitted a fix." : "Jules failed to submit a fix.";
-            try { await github.rest.issues.removeLabel({ ...context.repo, issue_number, name: 'jules-fix-pending' }); } catch(e) {}
-            await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [label] });
-            await github.rest.issues.createComment({ ...context.repo, issue_number, body });
+            const succeeded = '${{ job.status }}' === 'success';
+            const newLabel = succeeded ? 'jules-fix-submitted' : 'jules-fix-failed';
+            const comment = succeeded
+              ? '@jules has submitted a fix. Please review the linked pull request.'
+              : '@jules failed to submit a fix for this issue. Manual investigation required.';
 
-  # --- CodeRabbit - Rate Limit Handling ---
+            try {
+              await github.rest.issues.removeLabel({
+                ...context.repo, issue_number, name: 'jules-fix-pending',
+              });
+            } catch (_) { /* label may already be absent */ }
+
+            await github.rest.issues.addLabels({
+              ...context.repo, issue_number, labels: [newLabel],
+            });
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number, body: comment,
+            });
+
+  # ---------------------------------------------------------------------------
+  # CodeRabbit - Rate Limit Queue
+  # When CodeRabbit hits a rate limit, mark the PR with coderabbit:queued.
+  # The processor runs every 30 minutes and retries all queued PRs
+  # unconditionally — no timestamp label parsing needed.
+  # ---------------------------------------------------------------------------
   coderabbit-detect-limit:
     name: Detect CodeRabbit Rate Limit
-    if: github.event_name == 'issue_comment' && contains(github.event.comment.body, 'Rate limit exceeded') && contains(github.event.comment.body, 'coderabbit')
+    if: |
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, 'Rate limit exceeded') &&
+      contains(github.event.comment.body, 'coderabbit')
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - name: Queue PR for Review
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body }}
-          COMMENT_CREATED_AT: ${{ github.event.comment.created_at }}
-          PR_NUMBER: ${{ github.event.issue.number }}
-          PR_TITLE: ${{ github.event.issue.title }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python3 -c "
-          import os, re, datetime, json, urllib.request
-          body = os.environ.get('COMMENT_BODY', '')
-          pr_number = os.environ.get('PR_NUMBER')
-          token = os.environ.get('GITHUB_TOKEN')
-          api_base = f'https://api.github.com/repos/{os.environ.get(\"GITHUB_REPOSITORY\")}'
-          headers = {'Authorization': f'token {token}', 'Accept': 'application/vnd.github.v3+json'}
-          
-          min_match = re.search(r'\*\*(\d+)\s*minute', body, re.IGNORECASE)
-          minutes = int(min_match.group(1)) if min_match else 5
-          unlock_time = (datetime.datetime.fromisoformat(os.environ.get('COMMENT_CREATED_AT').replace('Z', '+00:00')) + datetime.timedelta(minutes=minutes)).isoformat()
-          
-          urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{pr_number}/labels', data=json.dumps({'labels': ['coderabbit:queued']}).encode(), headers=headers))
-          urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues', data=json.dumps({'title': f'⏳ CodeRabbit Queue: PR #{pr_number}', 'body': f'**PR:** #{pr_number}\n**Unlock Time (UTC):** {unlock_time}', 'labels': ['coderabbit:tracking']}).encode(), headers=headers))
-          "
+      - name: Queue PR for re-review
+        uses: actions/github-script@v8
+        with:
+          # Use the fine-grained PAT so the queue comment appears from the same
+          # distinct identity as the bridge — keeps bot comments consistent and
+          # avoids GitHub Actions bot identity triggering unintended workflows.
+          github-token: ${{ secrets.JULES_GITHUB_PAT }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.issue.number;
+
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: prNumber,
+              labels: ['coderabbit:queued'],
+            });
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: prNumber,
+              body: '⏳ **CodeRabbit rate-limited.** Re-review will be retried automatically within 30 minutes.',
+            });
 
   coderabbit-process-queue:
     name: Process CodeRabbit Queue
+    # Runs every 30 minutes via the schedule trigger, and on manual dispatch.
+    # All PRs labelled coderabbit:queued are retried unconditionally — no
+    # timestamp parsing required. If CodeRabbit is still rate-limited it will
+    # re-post a rate-limit comment and the detect job will re-queue the PR.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
-      - name: Process Queued PRs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python3 -c "
-          import os, json, datetime, urllib.request, re
-          token = os.environ.get('GITHUB_TOKEN')
-          api_base = f'https://api.github.com/repos/{os.environ.get(\"GITHUB_REPOSITORY\")}'
-          headers = {'Authorization': f'token {token}', 'Accept': 'application/vnd.github.v3+json'}
-          
-          issues = json.loads(urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues?labels=coderabbit:tracking&state=open', headers=headers)).read())
-          now = datetime.datetime.now(datetime.timezone.utc)
-          
-          for issue in issues:
-              pr_match = re.search(r'\*\*PR:\*\* #(\d+)', issue['body'])
-              unlock_match = re.search(r'\*\*Unlock Time \(UTC\):\*\* (.*)', issue['body'])
-              if pr_match and unlock_match and now >= datetime.datetime.fromisoformat(unlock_match.group(1)):
-                  pr_number = pr_match.group(1)
-                  urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{pr_number}/comments', data=json.dumps({'body': '@coderabbitai review'}).encode(), headers=headers))
-                  urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{pr_number}/labels/coderabbit%3Aqueued', headers=headers, method='DELETE'))
-                  urllib.request.urlopen(urllib.request.Request(f'{api_base}/issues/{issue[\"number\"]}', data=json.dumps({'state': 'closed'}).encode(), headers=headers, method='PATCH'))
-          "
+      - name: Re-trigger queued PRs
+        uses: actions/github-script@v8
+        with:
+          # Use the fine-grained PAT so the @coderabbitai mention comes from the
+          # same distinct identity as the bridge. CodeRabbit responds to mentions
+          # from any user, but a consistent identity avoids the GITHUB_TOKEN bot
+          # account appearing as reviewer in the PR timeline.
+          github-token: ${{ secrets.JULES_GITHUB_PAT }}
+          script: |
+            const { owner, repo } = context.repo;
+
+            // Find all open PRs with the coderabbit:queued label.
+            const prs = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: 'coderabbit:queued',
+            });
+
+            if (prs.length === 0) {
+              core.info('No queued PRs found.');
+              return;
+            }
+
+            core.info(`Found ${prs.length} queued PR(s): ${prs.map(p => `#${p.number}`).join(', ')}`);
+
+            for (const pr of prs) {
+              // Remove the label first so a concurrent run doesn't also pick this up.
+              try {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: pr.number,
+                  name: 'coderabbit:queued',
+                });
+              } catch (_) { /* label may already be absent */ }
+
+              // Re-trigger the review. If CodeRabbit is still rate-limited it will
+              // post another rate-limit comment and detect-limit will re-queue it.
+              try {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: pr.number,
+                  body: '@coderabbitai review',
+                });
+                core.info(`Re-triggered CodeRabbit review on PR #${pr.number}.`);
+              } catch (err) {
+                core.warning(`Failed to post re-review comment on PR #${pr.number}: ${err.message}`);
+                // Re-apply the label so the next run picks it up again.
+                try {
+                  await github.rest.issues.addLabels({
+                    owner, repo, issue_number: pr.number,
+                    labels: ['coderabbit:queued'],
+                  });
+                } catch (_) { /* best-effort */ }
+              }
+            }
+
+  # ---------------------------------------------------------------------------
+  # Jules - Performance Tracking
+  # Runs weekly (Monday 9 AM UTC) and on manual dispatch.
+  # Counts issues across all Jules lifecycle labels and posts a summary as a
+  # pinned GitHub issue comment so fix-rate trends are visible over time.
+  #
+  # Tracked states:
+  #   jules-fix-pending   → queued for Jules (assigned but not yet attempted)
+  #   jules-fix-submitted → Jules opened a PR (attempted)
+  #   jules-fix-failed    → Jules could not produce a fix
+  #   ai-approved         → PR passed CodeRabbit review with no findings
+  #   human-intervention-needed → AI loop exhausted, human must step in
+  #
+  # "Merged" rate is approximated by counting jules-fix-submitted issues that
+  # are now closed (closed = PR merged or issue manually resolved).
+  # ---------------------------------------------------------------------------
+  jules-performance-report:
+    name: Jules Performance Report
+    # Only run on the weekly schedule or manual dispatch — not on every
+    # issue_comment / issues event that the other jobs use.
+    if: |
+      (github.event_name == 'schedule' && startsWith('0 9 * * 1', '0 9')) ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Compute and post metrics
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+
+            // Helper: count issues with a given label across open + closed states.
+            async function countIssues(label, state = 'all') {
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner, repo, labels: label, state,
+              });
+              return issues.length;
+            }
+
+            const [
+              pending,
+              submitted,
+              failed,
+              aiApproved,
+              humanNeeded,
+              submittedClosed,
+            ] = await Promise.all([
+              countIssues('jules-fix-pending', 'open'),
+              countIssues('jules-fix-submitted', 'all'),
+              countIssues('jules-fix-failed', 'all'),
+              countIssues('ai-approved', 'all'),
+              countIssues('human-intervention-needed', 'all'),
+              countIssues('jules-fix-submitted', 'closed'),
+            ]);
+
+            const attempted = submitted + failed;
+            const successRate = attempted > 0
+              ? ((submitted / attempted) * 100).toFixed(1)
+              : 'N/A';
+            // Closed jules-fix-submitted issues are a proxy for merged PRs.
+            const mergeRate = submitted > 0
+              ? ((submittedClosed / submitted) * 100).toFixed(1)
+              : 'N/A';
+
+            const now = new Date().toISOString();
+            const reportBody = [
+              `## Jules AI Fix Rate — Weekly Report`,
+              `**Generated:** ${now}`,
+              ``,
+              `| Metric | Count |`,
+              `|--------|-------|`,
+              `| Queued (\`jules-fix-pending\`) | ${pending} |`,
+              `| Fix submitted (\`jules-fix-submitted\`) | ${submitted} |`,
+              `| Fix failed (\`jules-fix-failed\`) | ${failed} |`,
+              `| AI approved (\`ai-approved\`) | ${aiApproved} |`,
+              `| Human intervention needed | ${humanNeeded} |`,
+              ``,
+              `| Rate | Value |`,
+              `|------|-------|`,
+              `| **PR submission rate** (submitted / attempted) | ${successRate}% |`,
+              `| **Estimated merge rate** (closed submitted / submitted) | ${mergeRate}% |`,
+              ``,
+              `> _Merge rate is estimated: closed \`jules-fix-submitted\` issues are used as a_`,
+              `> _proxy since GitHub does not expose PR merge status via issue labels._`,
+              ``,
+              `### Interpretation`,
+              `- Submission rate < 70%: Jules is struggling — review the prompt or issue triage criteria.`,
+              `- Merge rate < 50%: Jules PRs are being rejected — check for code style or test failures.`,
+              `- Human intervention > 20% of attempted: the 3-round loop limit may be too low.`,
+            ].join('\n');
+
+            // Upsert: find an existing open tracking issue or create one.
+            const trackingTitle = '📊 Jules AI Performance Tracking';
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner, repo, labels: 'ai-metrics', state: 'open',
+            });
+            const existing = existingIssues.data.find(i => i.title === trackingTitle);
+
+            if (existing) {
+              // Append the new weekly snapshot as a comment on the tracking issue.
+              await github.rest.issues.createComment({
+                owner, repo,
+                issue_number: existing.number,
+                body: reportBody,
+              });
+              core.info(`Appended weekly report to issue #${existing.number}.`);
+            } else {
+              // First run — create the tracking issue.
+              const created = await github.rest.issues.create({
+                owner, repo,
+                title: trackingTitle,
+                body: [
+                  `This issue tracks Jules AI fix-rate metrics over time.`,
+                  `A new weekly snapshot is appended every Monday at 09:00 UTC.`,
+                  ``,
+                  `---`,
+                  ``,
+                  reportBody,
+                ].join('\n'),
+                labels: ['ai-metrics'],
+              });
+              core.info(`Created tracking issue #${created.data.number}.`);
+            }

@@ -56,21 +56,21 @@ jobs:
           script: |
             const title = '🔒 Security: Vulnerabilities found in Python dependencies';
             const body = `## Security Alert
-            
+
             Automated security scan found vulnerabilities in Python dependencies.
-            
+
             **Run Date:** ${new Date().toISOString()}
             **Workflow:** ${{ github.workflow }}
-            
+
             Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
-            
+
             ### Recommended Actions:
             1. Run \`safety check\` locally
             2. Update vulnerable dependencies
             3. Run tests to ensure compatibility
             4. Create a PR with the updates
             `;
-            
+
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -86,7 +86,9 @@ jobs:
                 repo: context.repo.repo,
                 title: title,
                 body: body,
-                labels: ['security', 'dependencies', 'backend']
+                // jules-fix-pending routes this into the Jules automation loop.
+                // Dependency bumps are mechanical tasks Jules handles well.
+                labels: ['security', 'dependencies', 'backend', 'jules-fix-pending']
               });
             }
 
@@ -125,12 +127,75 @@ jobs:
           flutter pub outdated >> $GITHUB_STEP_SUMMARY || true
 
       - name: Check for discontinued packages
+        id: discontinued
         working-directory: ./frontend
         run: |
-          flutter pub deps --style=tree > deps.txt
-          # Check for any discontinued packages
-          flutter pub publish --dry-run 2>&1 | grep -i "discontinued" || echo "No discontinued packages found"
+          # flutter pub outdated --json reports discontinued packages correctly.
+          # flutter pub publish --dry-run is NOT appropriate here — it validates
+          # publishability to pub.dev, which fails for apps (not packages).
+          flutter pub outdated --json | \
+            python3 -c "
+            import json, sys, os
+            data = json.load(sys.stdin)
+            discontinued = [
+              p['package'] for p in data.get('packages', [])
+              if p.get('discontinued', False)
+            ]
+            if discontinued:
+              print('Discontinued packages found:', ', '.join(discontinued))
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                f.write('discontinued=' + ','.join(discontinued) + '\n')
+              sys.exit(1)
+            else:
+              print('No discontinued packages found.')
+            "
         continue-on-error: true
+
+      - name: Create issue for discontinued Flutter packages
+        if: steps.discontinued.outcome == 'failure'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const discontinued = '${{ steps.discontinued.outputs.discontinued }}';
+            const packageList = discontinued.split(',').map(p => `- \`${p.trim()}\``).join('\n');
+            const title = '📦 Flutter: Discontinued packages detected';
+            const body = `## Discontinued Flutter Packages
+
+            The nightly dependency check found discontinued packages that must be replaced.
+
+            **Packages:**
+            ${packageList}
+
+            **Run Date:** ${new Date().toISOString()}
+            **Workflow:** ${{ github.workflow }}
+
+            ### Recommended Actions:
+            1. Find actively maintained alternatives for each discontinued package
+            2. Update \`frontend/pubspec.yaml\` with the replacement(s)
+            3. Update any import statements and usage in \`frontend/lib/\`
+            4. Run \`flutter pub get\` and \`flutter analyze\`
+            5. Run \`make test-frontend\` to confirm nothing is broken
+            6. Open a PR with the changes
+            `;
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'dependencies,frontend',
+              state: 'open',
+            });
+            const alreadyOpen = existing.data.some(i => i.title === title);
+
+            if (!alreadyOpen) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                // jules-fix-pending routes this into the Jules automation loop.
+                labels: ['dependencies', 'frontend', 'jules-fix-pending'],
+              });
+            }
 
   # Nightly build test
   nightly-build:
@@ -169,6 +234,10 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Enable Windows desktop target
+        if: matrix.target == 'windows'
+        run: flutter config --enable-windows-desktop
+
       - name: Install dependencies
         working-directory: ./frontend
         run: |
@@ -196,29 +265,42 @@ jobs:
         working-directory: ./frontend
         run: flutter build windows --release
 
-      - name: Notify on failure
+      - name: Create issue on failure
         if: failure()
         uses: actions/github-script@v8
         with:
           script: |
             const title = `🔥 Nightly Build Failed: ${{ matrix.target }}`;
-            const body = `## Build Failure
-            
+
+            // De-duplicate: don't open a new issue if one is already open for
+            // this target — repeated nightly failures would otherwise flood the
+            // issue tracker with identical reports.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'bug,ci/cd',
+              state: 'open',
+            });
+            if (existing.data.some(i => i.title === title)) {
+              console.log(`Issue already open for "${title}" — skipping creation.`);
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: `## Build Failure
+
             The nightly build for **${{ matrix.target }}** failed.
-            
+
             **Run Date:** ${new Date().toISOString()}
             **OS:** ${{ matrix.os }}
             **Workflow:** ${{ github.workflow }}
-            
+
             Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
-            `;
-            
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: title,
-              body: body,
-              labels: ['bug', 'ci/cd']
+            `,
+              labels: ['bug', 'ci/cd'],
             });
 
   # Backend build test
@@ -234,7 +316,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: false
@@ -245,7 +327,20 @@ jobs:
       - name: Test Docker image
         run: |
           docker run -d -p 8000:8000 --name miru-backend-test miru-backend:nightly
-          sleep 5
-          curl -f http://localhost:8000/health || (docker logs miru-backend-test && exit 1)
+          echo "Waiting for /health to return HTTP 200..."
+          for i in $(seq 1 24); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/health || echo "000")
+            echo "Attempt ${i}/24: HTTP ${STATUS}"
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed."
+              docker stop miru-backend-test
+              docker rm miru-backend-test
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Container did not become healthy within 2 minutes."
+          docker logs miru-backend-test
           docker stop miru-backend-test
           docker rm miru-backend-test
+          exit 1

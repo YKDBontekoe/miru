@@ -8,13 +8,6 @@ on:
       - 'frontend/**'
       - 'supabase/**'
       - '.github/workflows/**'
-  push:
-    branches: [main, develop]
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'supabase/**'
-      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -76,6 +69,8 @@ jobs:
 
   security-audit:
     name: Security Audit
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -103,7 +98,12 @@ jobs:
           fetch-depth: 0
       - name: Check PR size
         run: |
-          CHANGED_LINES=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD | awk '{print $4 + $6}')
-          if [ "$CHANGED_LINES" -gt 1000 ]; then
-            echo "::warning::PR is large ($CHANGED_LINES lines changed)."
+          # Sum added and deleted lines across all changed files.
+          # git diff --numstat is more reliable than --shortstat whose field positions
+          # shift depending on whether insertions or deletions are present.
+          CHANGED_LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD \
+            | awk '{add+=$1; del+=$2} END {print add+del}')
+          echo "Total lines changed: ${CHANGED_LINES}"
+          if [ "${CHANGED_LINES}" -gt 1000 ]; then
+            echo "::warning::PR is large (${CHANGED_LINES} lines changed). Consider splitting into smaller PRs."
           fi

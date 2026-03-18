@@ -1,0 +1,103 @@
+name: Bug Report
+description: Report a bug to help us improve Miru
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in the fields below as completely as possible — this information is used both for human triage and to give AI agents (Jules) the context they need to fix the issue automatically.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps that reliably reproduce the issue. Be specific — AI agents use this to locate the root cause.
+      placeholder: |
+        1. Navigate to '...'
+        2. Tap / click '...'
+        3. Observe '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - iOS
+        - Android
+        - Web
+        - Windows
+        - macOS
+        - Linux
+        - Backend / API only
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      multiple: true
+      options:
+        - Flutter frontend
+        - FastAPI backend
+        - Database (Supabase / PostgreSQL)
+        - AI / memory (OpenRouter / Neo4j)
+        - Authentication (passkeys / magic link)
+        - Push notifications (Azure Notification Hub)
+        - CI/CD pipeline
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: "e.g. 1.2.3"
+    validations:
+      required: false
+
+  - type: input
+    id: device
+    attributes:
+      label: Device / browser
+      placeholder: "e.g. iPhone 15 Pro, Pixel 8, Chrome 124, Safari 17"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error output
+      description: Paste any stack traces, console output, or Sentry error links here.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, screen recordings, or anything else that helps explain the problem.
+    validations:
+      required: false

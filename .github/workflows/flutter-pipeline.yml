@@ -6,6 +6,9 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/flutter-pipeline.yml'
+      - '.github/workflows/reusable-flutter-build.yml'
+      - '.github/workflows/reusable-flutter-setup.yml'
+      - '.github/actions/flutter-generate-code/**'
   pull_request:
     branches: [main, develop]
     paths:
@@ -14,6 +17,7 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
 
 concurrency:
   group: flutter-pipeline-${{ github.ref }}
@@ -21,14 +25,13 @@ concurrency:
 
 env:
   FLUTTER_VERSION: '3.41.4'
-  WORKING_DIRECTORY: './frontend'
 
 jobs:
   flutter-ci:
     name: Flutter CI
     uses: ./.github/workflows/reusable-flutter-setup.yml
     with:
-      flutter-version: '3.41.4'
+      flutter-version: ${{ vars.FLUTTER_VERSION || '3.41.4' }}
       working-directory: './frontend'
       run-tests: true
       run-lint: true
@@ -37,122 +40,56 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   android-build:
-    name: Build Android (APK & Bundle)
+    name: Build Android
     needs: [flutter-ci]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Pub packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            ${{ env.WORKING_DIRECTORY }}/.dart_tool
-          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-pub-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-      - name: Install dependencies and generate code
-        uses: ./.github/actions/flutter-generate-code
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: Build APK
-        run: flutter build apk --release --dart-define=SENTRY_DSN="${{ secrets.SENTRY_DSN }}" --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
-      - name: Build App Bundle
-        run: flutter build appbundle --release --dart-define=SENTRY_DSN="${{ secrets.SENTRY_DSN }}" --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: ${{ env.WORKING_DIRECTORY }}/build/app/outputs/flutter-apk/app-release.apk
-      - name: Upload Bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-bundle
-          path: ${{ env.WORKING_DIRECTORY }}/build/app/outputs/bundle/release/app-release.aab
+    uses: ./.github/workflows/reusable-flutter-build.yml
+    with:
+      flutter-version: ${{ vars.FLUTTER_VERSION || '3.41.4' }}
+      target: android
+      working-directory: './frontend'
+      artifact-name: android-apk
+      artifact-path: build/app/outputs/flutter-apk/app-release.apk
+    secrets:
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+      BACKEND_URL: ${{ vars.PRODUCTION_URL }}
 
   ios-build:
-    name: Build iOS (IPA)
+    name: Build iOS
     needs: [flutter-ci]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Pub packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            ${{ env.WORKING_DIRECTORY }}/.dart_tool
-          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-pub-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-      - name: Install dependencies and generate code
-        uses: ./.github/actions/flutter-generate-code
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: Build IPA
-        run: flutter build ios --release --no-codesign --dart-define=SENTRY_DSN="${{ secrets.SENTRY_DSN }}" --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-app
-          path: ${{ env.WORKING_DIRECTORY }}/build/ios/iphoneos/Runner.app
+    uses: ./.github/workflows/reusable-flutter-build.yml
+    with:
+      flutter-version: ${{ vars.FLUTTER_VERSION || '3.41.4' }}
+      target: ios
+      runs-on: macos-latest
+      working-directory: './frontend'
+      artifact-name: ios-app
+      artifact-path: build/ios/iphoneos/Runner.app
+    secrets:
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+      BACKEND_URL: ${{ vars.PRODUCTION_URL }}
 
   web-build:
     name: Build Web
     needs: [flutter-ci]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Pub packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            ${{ env.WORKING_DIRECTORY }}/.dart_tool
-          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-pub-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-      - name: Install dependencies and generate code
-        uses: ./.github/actions/flutter-generate-code
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-      - name: Build Web
-        run: flutter build web --release --dart-define=SENTRY_DSN="${{ secrets.SENTRY_DSN }}" --dart-define=SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" --dart-define=SUPABASE_ANON_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" ${{ vars.PRODUCTION_URL != '' && format('--dart-define=BACKEND_URL="{0}/api/v1"', vars.PRODUCTION_URL) || '' }}
-      - name: Upload Web Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: ${{ env.WORKING_DIRECTORY }}/build/web
+    uses: ./.github/workflows/reusable-flutter-build.yml
+    with:
+      flutter-version: ${{ vars.FLUTTER_VERSION || '3.41.4' }}
+      target: web
+      working-directory: './frontend'
+      artifact-name: web-build
+      artifact-path: build/web
+    secrets:
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+      BACKEND_URL: ${{ vars.PRODUCTION_URL }}
 
   smoke-test-web:
     name: Web Smoke Test
@@ -160,7 +97,7 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Download Web Build
         uses: actions/download-artifact@v4
         with:
@@ -168,18 +105,38 @@ jobs:
           path: ./web-dist
       - name: Run Lighthouse (Smoke Test)
         uses: treosh/lighthouse-ci-action@v12
+        # All assertions are 'warn' severity — don't block deploy on score regressions,
+        # but still surface results in the workflow summary.
+        continue-on-error: true
         with:
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: './frontend/.lighthouserc.json'
 
   deploy:
-    name: Deploy Flutter Apps
-    needs: [android-build, ios-build, web-build, smoke-test-web]
+    name: Deploy Web to Azure Static Web Apps
+    # Only depends on smoke-test-web (which depends on web-build).
+    # android-build and ios-build are independent publish targets — they must
+    # not gate web deployment, and are skipped on PRs/develop anyway.
+    needs: [smoke-test-web]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy-web.outputs.static_web_app_url }}
     steps:
-      - name: Deploy Placeholder
-        run: |
-          echo "Deploying to production environments..."
-          # Add actual deployment steps here (e.g. Firebase App Distribution, App Store Connect, S3/Azure, etc.)
+      - name: Download Web Build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./web-dist
+
+      - name: Deploy Web to Azure Static Web Apps
+        id: deploy-web
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: './web-dist'
+          skip_app_build: true

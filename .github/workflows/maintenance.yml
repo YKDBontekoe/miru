@@ -10,11 +10,8 @@ on:
     - cron: '0 * * * *' # Every hour (Sentry Sync)
   workflow_dispatch:
 
-permissions:
-  actions: write
-  contents: write
-  packages: write
-  issues: write
+# Permissions are declared per-job to follow least-privilege.
+# No workflow-level permissions block — defaults are read-only.
 
 jobs:
   # --- GitHub Label Sync ---
@@ -22,6 +19,9 @@ jobs:
     name: Sync GitHub Labels
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: micnncim/action-label-syncer@v1
@@ -34,6 +34,9 @@ jobs:
     name: Cleanup Old Data
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Delete old workflow runs
@@ -49,10 +52,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           name: |
-            flutter-web-build
-            ios-ipa
-            android-aab
-            android-apk-debug
+            web-build
+            web-release
+            ios-app
+            ios-release
+            android-apk
+            android-bundle
           failOnError: false
       - name: Delete stale branches
         run: |
@@ -69,29 +74,69 @@ jobs:
     name: Sentry to GitHub Sync
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - name: Fetch Sentry Issues
-        id: sentry
+      - name: Check required credentials
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_ORG" ]; then
+            echo "SENTRY_AUTH_TOKEN or SENTRY_ORG is not set — skipping Sentry sync."
+            exit 0
+          fi
+          echo "Credentials present, proceeding with sync."
+
+      - name: Fetch and sync backend Sentry issues
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT_BACKEND }}
+        if: env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_ORG != '' && env.SENTRY_PROJECT != ''
         run: |
-          curl -s -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" "https://sentry.io/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/?query=is:unresolved" > /tmp/sentry.json
-          echo "issues=$(cat /tmp/sentry.json | jq -c '.')" >> $GITHUB_OUTPUT
-      - name: Create Issues
+          curl -sf -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+            "https://sentry.io/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/?query=is:unresolved" \
+            > /tmp/sentry-backend.json
+          echo "backend_issues=$(jq -c '.' /tmp/sentry-backend.json)" >> $GITHUB_ENV
+
+      - name: Fetch and sync frontend Sentry issues
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT_FRONTEND }}
+        if: env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_ORG != '' && env.SENTRY_PROJECT != ''
+        run: |
+          curl -sf -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+            "https://sentry.io/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/?query=is:unresolved" \
+            > /tmp/sentry-frontend.json
+          echo "frontend_issues=$(jq -c '.' /tmp/sentry-frontend.json)" >> $GITHUB_ENV
+
+      - name: Create GitHub issues for new Sentry errors
         uses: actions/github-script@v8
+        env:
+          BACKEND_ISSUES: ${{ env.backend_issues }}
+          FRONTEND_ISSUES: ${{ env.frontend_issues }}
         with:
           script: |
-            const issues = JSON.parse(process.env.ISSUES || '[]');
             const { owner, repo } = context.repo;
-            const existing = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', labels: 'sentry-issue' });
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: 'sentry-issue'
+            });
             const openTitles = new Set(existing.map(i => i.title));
-            for (const issue of issues) {
+
+            const allIssues = [
+              ...(JSON.parse(process.env.BACKEND_ISSUES || '[]')),
+              ...(JSON.parse(process.env.FRONTEND_ISSUES || '[]')),
+            ];
+
+            for (const issue of allIssues) {
               const title = `[Sentry] ${issue.title}`;
               if (!openTitles.has(title)) {
-                await github.rest.issues.create({ owner, repo, title, body: `**Sentry**: [${issue.title}](${issue.permalink})\n\n${issue.culprit}`, labels: ['sentry-issue', 'jules-fix-pending'] });
+                await github.rest.issues.create({
+                  owner, repo, title,
+                  body: `**Sentry**: [${issue.title}](${issue.permalink})\n\n${issue.culprit}`,
+                  labels: ['sentry-issue', 'jules-fix-pending'],
+                });
               }
             }
-        env:
-          ISSUES: ${{ steps.sentry.outputs.issues }}

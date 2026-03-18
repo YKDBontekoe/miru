@@ -2,9 +2,11 @@ name: Notify on Failure
 
 on:
   workflow_run:
-    workflows: 
+    workflows:
       - "Backend CI/CD - Deploy to Azure Container Apps"
       - "Flutter CI/CD Pipeline"
+      - "Database Migrations"
+      - "Nightly Build and Dependency Check"
     types:
       - completed
 
@@ -16,19 +18,17 @@ jobs:
 
     steps:
       - name: Send Discord notification
-        if: secrets.DISCORD_WEBHOOK_URL != ''
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        if: ${{ secrets.DISCORD_WEBHOOK_URL != '' }}
+        uses: sarisia/actions-status-discord@v1
         with:
-          args: |
-            🚨 **Deployment Failed**
-            
-            Workflow: ${{ github.event.workflow_run.name }}
-            Branch: ${{ github.event.workflow_run.head_branch }}
-            Commit: ${{ github.event.workflow_run.head_sha }}
-            
-            [View Run](${{ github.event.workflow_run.html_url }})
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: failure
+          title: 'Deployment Failed: ${{ github.event.workflow_run.name }}'
+          description: |
+            **Branch:** ${{ github.event.workflow_run.head_branch }}
+            **Commit:** ${{ github.event.workflow_run.head_sha }}
+          url: ${{ github.event.workflow_run.html_url }}
+          color: 0xff0000
         continue-on-error: true
 
       - name: Send Slack notification
@@ -37,11 +37,11 @@ jobs:
         with:
           status: ${{ github.event.workflow_run.conclusion }}
           text: |
-            🚨 Deployment Failed
-            
+            🚨 Workflow Failed
+
             Workflow: ${{ github.event.workflow_run.name }}
             Branch: ${{ github.event.workflow_run.head_branch }}
-            
+
             <${{ github.event.workflow_run.html_url }}|View Run>
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -56,40 +56,40 @@ jobs:
             const branch = '${{ github.event.workflow_run.head_branch }}';
             const sha = '${{ github.event.workflow_run.head_sha }}';
             const runUrl = '${{ github.event.workflow_run.html_url }}';
-            
-            const title = `🔥 Deployment Failed: ${workflowName}`;
-            const body = `## Deployment Failure
-            
+
+            const title = `🔥 Workflow Failed: ${workflowName}`;
+            const body = `## Workflow Failure
+
             **Workflow:** ${workflowName}
             **Branch:** ${branch}
             **Commit:** ${sha}
             **Time:** ${new Date().toISOString()}
-            
+
             ### Details
             - [View Workflow Run](${runUrl})
-            
+
             ### Troubleshooting Steps
             1. Check the workflow logs for error messages
             2. Verify all secrets are properly configured
             3. Ensure Azure resources are accessible
             4. Check if any dependencies have changed
-            
+
             This issue was automatically created by the CI/CD system.
             `;
-            
-            // Check if there's already an open issue for this failure
+
+            // Check if there's already an open issue for this workflow failure
+            // to avoid duplicate issues accumulating across repeated failures.
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: 'ci/cd,failure',
               state: 'open'
             });
-            
-            const existingIssue = issues.data.find(issue => 
-              issue.title.includes(workflowName) && 
-              issue.body.includes(runId)
+
+            const existingIssue = issues.data.find(issue =>
+              issue.title === title
             );
-            
+
             if (!existingIssue) {
               await github.rest.issues.create({
                 owner: context.repo.owner,

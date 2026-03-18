@@ -11,6 +11,8 @@ updates:
     labels:
       - "dependencies"
       - "python"
+      # Route failing Dependabot PRs through Jules for automated fix attempts.
+      - "jules-fix-pending"
     commit-message:
       prefix: "pip"
       include: "scope"
@@ -32,6 +34,11 @@ updates:
     commit-message:
       prefix: "pub"
       include: "scope"
+    ignore:
+      # Major version bumps for Flutter/Dart packages frequently contain breaking
+      # API changes that require intentional manual upgrades, not auto-PRs.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -40,10 +47,16 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "github-actions"
     commit-message:
       prefix: "actions"
       include: "scope"
+    # Group all action updates into a single weekly PR to reduce noise.
+    # Without grouping, each action patch bump opens a separate PR.
+    groups:
+      github-actions-all:
+        patterns:
+          - "*"
