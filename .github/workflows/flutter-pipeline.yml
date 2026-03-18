@@ -97,9 +97,9 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download Web Build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: web-build
           path: ./web-dist
@@ -126,7 +126,7 @@ jobs:
       url: ${{ steps.deploy-web.outputs.static_web_app_url }}
     steps:
       - name: Download Web Build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: web-build
           path: ./web-dist

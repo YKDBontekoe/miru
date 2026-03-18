@@ -23,7 +23,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: micnncim/action-label-syncer@v1
         with:
           manifest: .github/labels.yml
@@ -38,7 +38,7 @@ jobs:
       actions: write
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
@@ -47,7 +47,7 @@ jobs:
           retain_days: 30
           keep_minimum_runs: 10
       - name: Delete old artifacts
-        uses: geekyeggo/delete-artifact@v4
+        uses: geekyeggo/delete-artifact@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
