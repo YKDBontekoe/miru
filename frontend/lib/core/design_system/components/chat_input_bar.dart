@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import 'package:miru/core/design_system/extensions/build_context_extensions.dart';
-import 'package:miru/core/design_system/tokens/colors.dart';
-import 'package:miru/core/design_system/tokens/spacing.dart';
+import 'package:miru/core/design_system/design_system.dart';
 
 /// The bottom input bar for composing and sending messages.
 ///
@@ -82,17 +79,7 @@ class ChatInputBar extends StatelessWidget {
                           color: borderColor.withValues(alpha: 0.8),
                           width: 1,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                (isDark
-                                        ? AppColors.onSurfaceDark
-                                        : AppColors.onSurfaceLight)
-                                    .withValues(alpha: isDark ? 0.15 : 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        boxShadow: AppShadows.md,
                       ),
                       child: TextField(
                         controller: controller,
@@ -101,19 +88,14 @@ class ChatInputBar extends StatelessWidget {
                         minLines: 1,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => onSend(),
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          height: 1.5,
+                        style: AppTypography.bodyMedium.copyWith(
                           color: isDark
                               ? AppColors.onSurfaceDark
                               : AppColors.onSurfaceLight,
                         ),
                         decoration: InputDecoration(
                           hintText: hintText,
-                          hintStyle: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
+                          hintStyle: AppTypography.bodyMedium.copyWith(
                             color: isDark
                                 ? AppColors.onSurfaceMutedDark
                                 : AppColors.onSurfaceMutedLight,
@@ -173,7 +155,7 @@ class _SendButton extends StatelessWidget {
           height: 12,
           decoration: BoxDecoration(
             color: AppColors.error,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusXs),
           ),
         ),
       );
@@ -215,7 +197,11 @@ class _CircleButton extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
-          child: SizedBox(width: 40, height: 40, child: Center(child: child)),
+          child: SizedBox(
+            width: AppSpacing.avatarMd,
+            height: AppSpacing.avatarMd,
+            child: Center(child: child),
+          ),
         ),
       ),
     );

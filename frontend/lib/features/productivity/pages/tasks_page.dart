@@ -191,7 +191,7 @@ class _TaskTile extends ConsumerWidget {
         ),
         title: Text(
           task.title,
-          style: TextStyle(
+          style: AppTypography.bodyMedium.copyWith(
             decoration: task.isCompleted ? TextDecoration.lineThrough : null,
             color: task.isCompleted
                 ? context.colorScheme.onSurfaceVariant
@@ -203,7 +203,7 @@ class _TaskTile extends ConsumerWidget {
                 task.description!,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: AppTypography.bodySmall.copyWith(
                   decoration: task.isCompleted
                       ? TextDecoration.lineThrough
                       : null,
@@ -214,11 +214,11 @@ class _TaskTile extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit, size: 20),
+              icon: const Icon(Icons.edit, size: AppSpacing.iconSm),
               onPressed: () => _showTaskDialog(context, ref, task),
             ),
             IconButton(
-              icon: const Icon(Icons.delete, size: 20),
+              icon: const Icon(Icons.delete, size: AppSpacing.iconSm),
               onPressed: () async {
                 try {
                   await service.deleteTask(task.id);

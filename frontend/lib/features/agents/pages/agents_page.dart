@@ -1,13 +1,10 @@
-import 'package:miru/core/design_system/tokens/shadows.dart';
-import 'package:miru/core/design_system/tokens/colors.dart';
-import 'package:miru/core/design_system/tokens/spacing.dart';
-
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:miru/core/api/api_service.dart';
 import 'package:miru/core/models/agent.dart';
 import 'package:miru/core/models/agent_info.dart';
+import 'package:miru/core/design_system/design_system.dart';
 
 class AgentsPage extends StatefulWidget {
   const AgentsPage({super.key});

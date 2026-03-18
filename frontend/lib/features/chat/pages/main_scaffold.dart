@@ -161,13 +161,12 @@ class _MainScaffoldState extends State<MainScaffold> {
                 size: 24,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSpacing.xxs),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: AppTypography.labelSmall.copyWith(
+              style: AppTypography.captionSmall.copyWith(
                 color: isActive ? colors.primary : colors.onSurfaceMuted,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 10,
               ),
               child: Text(label),
             ),
