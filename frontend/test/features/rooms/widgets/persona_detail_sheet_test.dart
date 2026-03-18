@@ -34,6 +34,11 @@ void main() {
     expect(find.text('Delete Persona'), findsOneWidget);
 
     await tester.tap(find.text('Delete Persona'));
+    await tester.pump();
+
+    // Check loading indicator
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
     await tester.pumpAndSettle();
     expect(deleteTriggered, isTrue);
   });

@@ -1,16 +1,97 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miru/features/agents/pages/agents_page.dart';
 import 'package:miru/core/design_system/theme/app_theme_data.dart';
+import 'package:miru/core/api/api_service.dart';
+import 'package:miru/core/models/agent.dart';
+import 'package:miru/core/models/agent_info.dart';
+
+class FakeApiService implements ApiService {
+  Future<List<Agent>> Function()? getAgentsMock;
+  Future<List<Capability>> Function()? getAgentCapabilitiesMock;
+  Future<List<Integration>> Function()? getAgentIntegrationsMock;
+
+  @override
+  Future<List<Agent>> getAgents() async {
+    return getAgentsMock?.call() ?? Future.value([]);
+  }
+
+  @override
+  Future<List<Capability>> getAgentCapabilities() async {
+    return getAgentCapabilitiesMock?.call() ?? Future.value([]);
+  }
+
+  @override
+  Future<List<Integration>> getAgentIntegrations() async {
+    return getAgentIntegrationsMock?.call() ?? Future.value([]);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
-  testWidgets('AgentsPage renders basic skeleton', (tester) async {
-    // Basic rendering check to hit the code execution paths in AgentsPage
-    await tester.pumpWidget(
-      MaterialApp(theme: AppTheme.light, home: const AgentsPage()),
-    );
+  late FakeApiService fakeApi;
 
-    // We just want to test that the widget builds (which covers UI code)
-    expect(find.byType(AgentsPage), findsOneWidget);
+  setUp(() {
+    fakeApi = FakeApiService();
+    ApiService.instance =
+        fakeApi; // We need to make sure ApiService allows injecting instance
+  });
+
+  Widget buildTestWidget() {
+    return MaterialApp(theme: AppTheme.light, home: const AgentsPage());
+  }
+
+  testWidgets('AgentsPage simulates loading path', (tester) async {
+    final completer = Completer<List<Agent>>();
+    fakeApi.getAgentsMock = () => completer.future;
+
+    await tester.pumpWidget(buildTestWidget());
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    completer.complete([]);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('AgentsPage simulates API error', (tester) async {
+    fakeApi.getAgentsMock = () => Future.error(Exception('Failed to load'));
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.textContaining('Failed to load'), findsOneWidget);
+  });
+
+  testWidgets('AgentsPage simulates empty agents response', (tester) async {
+    fakeApi.getAgentsMock = () => Future.value([]);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    expect(find.text('No agents created yet.'), findsOneWidget);
+  });
+
+  testWidgets('AgentsPage simulates successful empty list and taps FAB', (
+    tester,
+  ) async {
+    fakeApi.getAgentsMock = () => Future.value([]);
+    fakeApi.getAgentCapabilitiesMock = () => Future.value([]);
+    fakeApi.getAgentIntegrationsMock = () => Future.value([]);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    final fab = find.byType(FloatingActionButton);
+    expect(fab, findsOneWidget);
+
+    await tester.tap(fab);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create New Persona'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
   });
 }

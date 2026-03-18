@@ -46,4 +46,24 @@ void main() {
 
     expect(find.text('Action Button'), findsOneWidget);
   });
+
+  testWidgets('AppEmptyState triggers onSuggestionTap callback', (
+    tester,
+  ) async {
+    String? capturedSuggestion;
+    await tester.pumpWidget(
+      buildTestWidget(
+        child: AppEmptyState(
+          title: 'Hello Miru',
+          suggestions: const ['Ask me anything'],
+          onSuggestionTap: (text) => capturedSuggestion = text,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Ask me anything'));
+    await tester.pump();
+
+    expect(capturedSuggestion, equals('Ask me anything'));
+  });
 }

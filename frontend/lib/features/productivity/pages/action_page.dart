@@ -1,8 +1,10 @@
-import 'package:miru/core/api/productivity_service.dart';
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
+import 'package:miru/core/api/productivity_service.dart';
 
 import '../../../core/design_system/design_system.dart';
 import '../models/calendar_event.dart';
