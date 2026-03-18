@@ -97,7 +97,7 @@ jobs:
 
       # Download the web build artifact to upload source maps
       - name: Download web artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: web-release
           path: frontend/build/web/
