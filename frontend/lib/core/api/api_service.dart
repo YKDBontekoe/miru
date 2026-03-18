@@ -206,14 +206,6 @@ class ApiService {
 
   // --- Chat Rooms API ---
 
-  /// Get a SignalR connection token.
-  Future<Map<String, dynamic>> negotiateSignalR() async {
-    return _handleError((dio) async {
-      final response = await dio.post('negotiate');
-      return response.data as Map<String, dynamic>;
-    });
-  }
-
   Future<List<ChatRoom>> getRooms() async {
     return _handleError((dio) async {
       final response = await dio.get('rooms');

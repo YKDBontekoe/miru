@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:miru/core/api/api_service.dart';
-import 'package:miru/core/services/signalr_service.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/core/models/chat_message.dart';
 import 'package:miru/core/models/message_status.dart';
@@ -42,35 +41,12 @@ class _ChatPageState extends State<ChatPage> {
 
   /// Active stream subscription for cancellation support.
   StreamSubscription<String>? _activeStreamSubscription;
-  StreamSubscription<Map<String, dynamic>>? _signalRSubscription;
 
   static const String _messagesKey = 'miru_chat_messages';
-
-  bool _isConnecting = true;
 
   @override
   void initState() {
     super.initState();
-    _initSignalR();
-
-    _signalRSubscription = SignalRService.instance.onMessage.listen((payload) {
-      if (!mounted) return;
-      if (payload['type'] == 'message') {
-        final content = payload['content'] as String;
-        setState(() {
-          _streamingStatus = null;
-          final lastIndex = _messages.length - 1;
-          if (lastIndex >= 0 &&
-              _messages[lastIndex].status == MessageStatus.streaming) {
-            _messages[lastIndex] = _messages[lastIndex].copyWith(
-              text: content,
-              status: MessageStatus.sent,
-            );
-          }
-        });
-        _scrollToBottom();
-      }
-    });
     _scrollController.addListener(_onScroll);
     _loadMessages();
     // Auto-focus the input field on load.
@@ -150,18 +126,6 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  Future<void> _initSignalR() async {
-    try {
-      await SignalRService.instance.initialize();
-    } catch (e) {
-      debugPrint('SignalR init failed: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isConnecting = false);
-      }
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
@@ -169,14 +133,6 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendMessage() async {
     final text = _inputController.text.trim();
     if (text.isEmpty || _isStreaming) return;
-    if (!SignalRService.instance.isConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not connected. Please wait or check your connection.'),
-        ),
-      );
-      return;
-    }
 
     _inputController.clear();
     _inputFocusNode.requestFocus();
@@ -199,7 +155,7 @@ class _ChatPageState extends State<ChatPage> {
           if (_messages[lastIndex].status != MessageStatus.sent) {
             _messages[lastIndex] = _messages[lastIndex].copyWith(
               text: _messages[lastIndex].text.isEmpty
-                  ? 'Something went wrong. Please try again.'
+                  ? 'Error: $e'
                   : _messages[lastIndex].text,
               status: MessageStatus.failed,
             );
@@ -233,13 +189,27 @@ class _ChatPageState extends State<ChatPage> {
           return;
         }
 
-        // With SignalR handling the actual message content, we don't append text chunks here anymore.
-        // We let the SignalR listener (set up in initState) update the full message content.
+        // Regular text chunk — clear status and append to the reply.
+        setState(() {
+          _streamingStatus = null;
+          final lastIndex = _messages.length - 1;
+          _messages[lastIndex] = _messages[lastIndex].copyWith(
+            text: _messages[lastIndex].text + chunk,
+            status: MessageStatus.streaming,
+          );
+        });
+        _scrollToBottom();
       },
       onDone: () {
         if (!mounted) return;
         setState(() {
           _streamingStatus = null;
+          final lastIndex = _messages.length - 1;
+          if (_messages[lastIndex].status == MessageStatus.streaming) {
+            _messages[lastIndex] = _messages[lastIndex].copyWith(
+              status: MessageStatus.sent,
+            );
+          }
         });
         HapticFeedback.mediumImpact();
       },
@@ -396,19 +366,13 @@ class _ChatPageState extends State<ChatPage> {
                 StreamingStatusPill(label: _streamingStatus!),
 
               // Input bar
-              if (_isConnecting)
-                const Padding(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  child: Center(child: Text('Connecting to chat...')),
-                )
-              else
-                ChatInputBar(
-                  controller: _inputController,
-                  focusNode: _inputFocusNode,
-                  onSend: _sendMessage,
-                  isStreaming: _isStreaming,
-                  onStopStreaming: _stopGeneration,
-                ),
+              ChatInputBar(
+                controller: _inputController,
+                focusNode: _inputFocusNode,
+                onSend: _sendMessage,
+                isStreaming: _isStreaming,
+                onStopStreaming: _stopGeneration,
+              ),
             ],
           ),
 
@@ -430,7 +394,6 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _activeStreamSubscription?.cancel();
-    _signalRSubscription?.cancel();
     _inputController.dispose();
     _scrollController
       ..removeListener(_onScroll)

@@ -81,7 +81,7 @@ class _MiruAppState extends State<MiruApp> {
 
   @override
   void dispose() {
-    _authSub?.cancel();
+    _authSub.cancel();
     super.dispose();
   }
 
