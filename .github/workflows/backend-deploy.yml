@@ -273,34 +273,84 @@ jobs:
 
       - name: Deploy to Azure Container Apps
         id: deploy
+        env:
+          SECRET_PRODUCTION_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+          SECRET_PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          SECRET_PRODUCTION_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+          SECRET_PRODUCTION_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY }}
+          SECRET_PRODUCTION_SUPABASE_JWT_SECRET: ${{ secrets.PRODUCTION_SUPABASE_JWT_SECRET }}
+          SECRET_OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          SECRET_DEFAULT_CHAT_MODEL: ${{ secrets.DEFAULT_CHAT_MODEL }}
+          SECRET_EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
+          SECRET_SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SECRET_WEBAUTHN_RP_ID: ${{ secrets.WEBAUTHN_RP_ID }}
+          SECRET_WEBAUTHN_RP_NAME: ${{ secrets.WEBAUTHN_RP_NAME }}
+          SECRET_WEBAUTHN_EXPECTED_ORIGIN: ${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}
+          SECRET_CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+          SECRET_TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          SECRET_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SECRET_AZURE_NOTIFICATION_HUB_NAME: ${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}
+          SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING: ${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}
         run: |
           # PRODUCTION_SUPABASE_URL must be the Supabase HTTP project URL:
           #   https://<project-ref>.supabase.co
           # NOT the PostgreSQL connection string (postgresql://...).
+
+          # Define secrets (key-value pairs)
+          # Secret names must be lower-case alphanumeric characters and dashes only
+          SECRETS=(
+            "database-url=${SECRET_PRODUCTION_DATABASE_URL}"
+            "supabase-url=${SECRET_PRODUCTION_SUPABASE_URL}"
+            "supabase-key=${SECRET_PRODUCTION_SUPABASE_KEY}"
+            "supabase-service-role-key=${SECRET_PRODUCTION_SUPABASE_SERVICE_ROLE_KEY}"
+            "supabase-jwt-secret=${SECRET_PRODUCTION_SUPABASE_JWT_SECRET}"
+            "openrouter-api-key=${SECRET_OPENROUTER_API_KEY}"
+            "default-chat-model=${SECRET_DEFAULT_CHAT_MODEL}"
+            "embedding-model=${SECRET_EMBEDDING_MODEL}"
+            "secret-key=${SECRET_SECRET_KEY}"
+            "webauthn-rp-id=${SECRET_WEBAUTHN_RP_ID}"
+            "webauthn-rp-name=${SECRET_WEBAUTHN_RP_NAME}"
+            "webauthn-expected-origin=${SECRET_WEBAUTHN_EXPECTED_ORIGIN}"
+            "cors-allowed-origins=${SECRET_CORS_ALLOWED_ORIGINS}"
+            "tavily-api-key=${SECRET_TAVILY_API_KEY}"
+            "sentry-dsn=${SECRET_SENTRY_DSN}"
+            "azure-notification-hub-name=${SECRET_AZURE_NOTIFICATION_HUB_NAME}"
+            "azure-notification-hub-connection-string=${SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING}"
+          )
+
+          # Prepare arrays to hold valid secrets and env vars
+          FILTERED_SECRETS=()
+          FILTERED_ENV_VARS=()
+
+          # Process secrets
+          for secret in "${SECRETS[@]}"; do
+            key="${secret%%=*}"
+            val="${secret#*=}"
+            if [ -n "$val" ]; then
+              FILTERED_SECRETS+=("$key=$val")
+              # Add secretref to environment variables
+              # We map the UPPER_CASE env var name to the lowercase-dashed secret name
+              env_key=$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+              FILTERED_ENV_VARS+=("$env_key=secretref:$key")
+            fi
+          done
+
+          # Add plaintext env vars
+          FILTERED_ENV_VARS+=("SENTRY_RELEASE=${{ steps.sentry-release.outputs.value }}")
+          FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=production")
+
+          # Update the Azure Container App
+          # Note: `az containerapp update` with `--set-secrets` and `--set-env-vars`
+          # only adds or updates entries. It does NOT remove deprecated or missing keys.
+          # If secrets or environment variables are removed from this workflow, they must
+          # be manually cleaned up via the Azure CLI or Portal to avoid leaving stale data.
+          # (e.g., `az containerapp secret remove` and `az containerapp update --remove-env-vars`)
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ needs.build.outputs.image-tag }} \
-            --set-env-vars \
-              DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
-              SUPABASE_URL="${{ secrets.PRODUCTION_SUPABASE_URL }}" \
-              SUPABASE_KEY="${{ secrets.PRODUCTION_SUPABASE_KEY }}" \
-              SUPABASE_SERVICE_ROLE_KEY="${{ secrets.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY }}" \
-              SUPABASE_JWT_SECRET="${{ secrets.PRODUCTION_SUPABASE_JWT_SECRET }}" \
-              OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
-              DEFAULT_CHAT_MODEL="${{ secrets.DEFAULT_CHAT_MODEL }}" \
-              EMBEDDING_MODEL="${{ secrets.EMBEDDING_MODEL }}" \
-              SECRET_KEY="${{ secrets.SECRET_KEY }}" \
-              WEBAUTHN_RP_ID="${{ secrets.WEBAUTHN_RP_ID }}" \
-              WEBAUTHN_RP_NAME="${{ secrets.WEBAUTHN_RP_NAME }}" \
-              WEBAUTHN_EXPECTED_ORIGIN="${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}" \
-              CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}" \
-              TAVILY_API_KEY="${{ secrets.TAVILY_API_KEY }}" \
-              SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
-              SENTRY_RELEASE="${{ steps.sentry-release.outputs.value }}" \
-              AZURE_NOTIFICATION_HUB_NAME="${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}" \
-              AZURE_NOTIFICATION_HUB_CONNECTION_STRING="${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}" \
-              SENTRY_ENVIRONMENT="production"
+            --set-secrets "${FILTERED_SECRETS[@]}" \
+            --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
       - name: Verify deployment
         run: |
