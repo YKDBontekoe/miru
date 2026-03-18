@@ -4,16 +4,23 @@ import 'package:miru/core/design_system/components/chat_input_bar.dart';
 import 'package:miru/core/design_system/theme/app_theme_data.dart';
 
 void main() {
-  Widget buildTestWidget({required Widget child, required Brightness brightness}) {
+  Widget buildTestWidget({
+    required Widget child,
+    required Brightness brightness,
+  }) {
     return MaterialApp(
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: brightness == Brightness.dark
+          ? ThemeMode.dark
+          : ThemeMode.light,
       home: Scaffold(body: child),
     );
   }
 
-  testWidgets('ChatInputBar renders correctly in light and dark mode', (tester) async {
+  testWidgets('ChatInputBar renders correctly in light and dark mode', (
+    tester,
+  ) async {
     final controller = TextEditingController();
     bool sent = false;
 

@@ -7,10 +7,7 @@ void main() {
   testWidgets('AgentsPage renders basic skeleton', (tester) async {
     // Basic rendering check to hit the code execution paths in AgentsPage
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: const AgentsPage(),
-      ),
+      MaterialApp(theme: AppTheme.light, home: const AgentsPage()),
     );
 
     // We just want to test that the widget builds (which covers UI code)

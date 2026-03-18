@@ -8,10 +8,7 @@ void main() {
   testWidgets('ActionPage renders tabs correctly', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const ActionPage(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const ActionPage()),
       ),
     );
 

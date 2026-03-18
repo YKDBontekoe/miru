@@ -14,9 +14,15 @@ class MockProductivityService implements ProductivityService {
   @override
   Future<List<Task>> listTasks() async => [];
   @override
-  Future<Task> createTask(String title, {String? description}) async => throw UnimplementedError();
+  Future<Task> createTask(String title, {String? description}) async =>
+      throw UnimplementedError();
   @override
-  Future<Task> updateTask(String id, {String? title, String? description, bool? isCompleted}) async => throw UnimplementedError();
+  Future<Task> updateTask(
+    String id, {
+    String? title,
+    String? description,
+    bool? isCompleted,
+  }) async => throw UnimplementedError();
   @override
   Future<void> deleteTask(String id) async => throw UnimplementedError();
   @override
@@ -32,19 +38,40 @@ class MockProductivityService implements ProductivityService {
     ),
   ];
   @override
-  Future<Note> createNote(String title, String content, {String? agentId, String? originContext, String? originRoomId, String? originMessageId, bool isPinned = false}) async => throw UnimplementedError();
+  Future<Note> createNote(
+    String title,
+    String content, {
+    String? agentId,
+    String? originContext,
+    String? originRoomId,
+    String? originMessageId,
+    bool isPinned = false,
+  }) async => throw UnimplementedError();
   @override
-  Future<Note> updateNote(String id, {String? title, String? content, bool? isPinned}) async => throw UnimplementedError();
+  Future<Note> updateNote(
+    String id, {
+    String? title,
+    String? content,
+    bool? isPinned,
+  }) async => throw UnimplementedError();
   @override
   Future<void> deleteNote(String id) async => throw UnimplementedError();
   @override
-  Future<List<CalendarEvent>> listCalendarEvents({int limit = 50, int offset = 0}) async => [];
+  Future<List<CalendarEvent>> listCalendarEvents({
+    int limit = 50,
+    int offset = 0,
+  }) async => [];
   @override
-  Future<CalendarEvent> createCalendarEvent(CalendarEventCreate data) async => throw UnimplementedError();
+  Future<CalendarEvent> createCalendarEvent(CalendarEventCreate data) async =>
+      throw UnimplementedError();
   @override
-  Future<CalendarEvent> updateCalendarEvent(String id, CalendarEventUpdate data) async => throw UnimplementedError();
+  Future<CalendarEvent> updateCalendarEvent(
+    String id,
+    CalendarEventUpdate data,
+  ) async => throw UnimplementedError();
   @override
-  Future<void> deleteCalendarEvent(String id) async => throw UnimplementedError();
+  Future<void> deleteCalendarEvent(String id) async =>
+      throw UnimplementedError();
 }
 
 void main() {

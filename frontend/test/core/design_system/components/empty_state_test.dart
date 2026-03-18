@@ -12,7 +12,9 @@ void main() {
     );
   }
 
-  testWidgets('AppEmptyState renders title and subtitle correctly', (tester) async {
+  testWidgets('AppEmptyState renders title and subtitle correctly', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       buildTestWidget(
         child: const AppEmptyState(
@@ -34,7 +36,10 @@ void main() {
       buildTestWidget(
         child: AppEmptyState(
           title: 'Hello Miru',
-          action: ElevatedButton(onPressed: () {}, child: const Text('Action Button')),
+          action: ElevatedButton(
+            onPressed: () {},
+            child: const Text('Action Button'),
+          ),
         ),
       ),
     );

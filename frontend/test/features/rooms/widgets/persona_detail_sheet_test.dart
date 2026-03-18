@@ -5,7 +5,9 @@ import 'package:miru/core/design_system/theme/app_theme_data.dart';
 import 'package:miru/core/models/agent.dart';
 
 void main() {
-  testWidgets('PersonaDetailSheet renders agent details correctly', (tester) async {
+  testWidgets('PersonaDetailSheet renders agent details correctly', (
+    tester,
+  ) async {
     final agent = Agent(
       id: '1',
       name: 'Test Persona',

@@ -42,7 +42,9 @@ void main() {
     expect(find.text('TestAgent'), findsOneWidget);
   });
 
-  testWidgets('ChatBubble renders failed message and action chips', (tester) async {
+  testWidgets('ChatBubble renders failed message and action chips', (
+    tester,
+  ) async {
     bool retryPressed = false;
     await tester.pumpWidget(
       buildTestWidget(
