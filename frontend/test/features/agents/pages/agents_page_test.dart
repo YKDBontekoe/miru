@@ -11,6 +11,7 @@ class FakeApiService implements ApiService {
   Future<List<Agent>> Function()? getAgentsMock;
   Future<List<Capability>> Function()? getAgentCapabilitiesMock;
   Future<List<Integration>> Function()? getAgentIntegrationsMock;
+  Future<AgentGenerationResponse> Function(String)? generateAgentMock;
 
   @override
   Future<List<Agent>> getAgents() async {
@@ -25,6 +26,21 @@ class FakeApiService implements ApiService {
   @override
   Future<List<Integration>> getAgentIntegrations() async {
     return getAgentIntegrationsMock?.call() ?? Future.value([]);
+  }
+
+  @override
+  Future<AgentGenerationResponse> generateAgent(String keywords) async {
+    return generateAgentMock?.call(keywords) ??
+        Future.value(
+          AgentGenerationResponse(
+            name: 'Test',
+            description: 'Test',
+            personality: 'Test',
+            goals: ['Test'],
+            capabilities: [],
+            suggestedIntegrations: [],
+          ),
+        );
   }
 
   @override
@@ -97,5 +113,110 @@ void main() {
 
     expect(find.text('Create New Persona'), findsOneWidget);
     expect(find.byType(AlertDialog), findsOneWidget);
+  });
+
+  testWidgets('AgentsPage tests AI generation UI', (WidgetTester tester) async {
+    fakeApi.getAgentsMock = () => Future.value([]);
+    fakeApi.getAgentCapabilitiesMock = () => Future.value([]);
+    fakeApi.getAgentIntegrationsMock = () => Future.value([]);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    final fab = find.byType(FloatingActionButton);
+    await tester.tap(fab);
+    await tester.pumpAndSettle();
+
+    final generateField = find.widgetWithText(
+      TextField,
+      'e.g. pirate, funny, space',
+    );
+    expect(generateField, findsOneWidget);
+
+    await tester.enterText(generateField, 'pirate');
+    await tester.pumpAndSettle();
+
+    final generateButton = find.byTooltip('Generate with AI');
+    expect(generateButton, findsOneWidget);
+
+    final completer = Completer<AgentGenerationResponse>();
+    fakeApi.generateAgentMock = (keywords) => completer.future;
+
+    await tester.tap(generateButton);
+    await tester.pump();
+
+    expect(find.text('Decoding...'), findsOneWidget);
+
+    completer.complete(
+      AgentGenerationResponse(
+        name: 'Test',
+        description: 'Test',
+        personality: 'Test',
+        goals: ['Test'],
+        capabilities: [],
+        suggestedIntegrations: [],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify the fields are filled out
+    expect(find.text('Test'), findsWidgets);
+  });
+
+  testWidgets('AgentsPage tests submitting creation form', (
+    WidgetTester tester,
+  ) async {
+    fakeApi.getAgentsMock = () => Future.value([]);
+    fakeApi.getAgentCapabilitiesMock = () => Future.value([
+      Capability(id: '1', name: 'Cap1', description: 'desc', icon: 'icon'),
+    ]);
+    fakeApi.getAgentIntegrationsMock = () => Future.value([
+      Integration(
+        type: 'type',
+        displayName: 'Int1',
+        icon: 'icon',
+        description: 'desc',
+        status: 'connected',
+      ),
+    ]);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    final fab = find.byType(FloatingActionButton);
+    await tester.tap(fab);
+    await tester.pumpAndSettle();
+
+    final nameField = find.widgetWithText(TextField, 'e.g. Captain Bluebeard');
+    await tester.enterText(nameField, 'New Agent');
+    await tester.pumpAndSettle();
+
+    final descriptionField = find.widgetWithText(
+      TextField,
+      'A seafaring AI who loves pirate jokes',
+    );
+    await tester.enterText(descriptionField, 'Test desc');
+    await tester.pumpAndSettle();
+
+    // Tap a capability chip to select it
+    final capChip = find.text('Cap1');
+    expect(capChip, findsOneWidget);
+    await tester.ensureVisible(capChip);
+    await tester.tap(capChip);
+    await tester.pumpAndSettle();
+
+    // Tap an integration chip to select it
+    final intChip = find.text('Int1');
+    expect(intChip, findsOneWidget);
+    await tester.ensureVisible(intChip);
+    await tester.tap(intChip);
+    await tester.pumpAndSettle();
+
+    // Tap save
+    final saveButton = find.text('Create');
+    expect(saveButton, findsOneWidget);
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
   });
 }

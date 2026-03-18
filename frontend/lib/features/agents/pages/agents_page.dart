@@ -139,7 +139,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           const SizedBox(width: AppSpacing.sm),
                           isGenerating
                               ? const SizedBox(
-                                  width: 110,
+                                  width: 200,
                                   height: AppSpacing.xxl,
                                   child: Row(
                                     children: [
