@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncGenerator, Generator
+from datetime import UTC
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from tortoise.exceptions import IntegrityError
 
 from app.core.security.auth import get_current_user
-from app.domain.productivity.models import Note, Task
+from app.domain.productivity.models import CalendarEvent, Note, Task
+from app.infrastructure.database.utils import handle_db_errors
 from app.main import app
 
 
@@ -19,9 +22,11 @@ async def clear_productivity_db() -> AsyncGenerator[None]:
     """Clear tasks and notes tables before each test."""
     await Task.all().delete()
     await Note.all().delete()
+    await CalendarEvent.all().delete()
     yield
     await Task.all().delete()
     await Note.all().delete()
+    await CalendarEvent.all().delete()
 
 
 @pytest.fixture
@@ -104,6 +109,22 @@ async def test_update_task(
     data = response.json()
     assert data["title"] == "Updated Task"
     assert data["is_completed"] is True
+
+    # Test update with empty data
+    response = await async_client.patch(
+        f"/api/v1/productivity/tasks/{task.id}",
+        json={},
+    )
+    assert response.status_code == 200
+    assert response.json()["title"] == "Updated Task"
+
+    # Test update with None values to filter out
+    response = await async_client.patch(
+        f"/api/v1/productivity/tasks/{task.id}",
+        json={"title": None, "is_completed": None},
+    )
+    assert response.status_code == 200
+    assert response.json()["title"] == "Updated Task"
 
 
 @pytest.mark.asyncio
@@ -214,6 +235,20 @@ async def test_update_note(
     data = response.json()
     assert data["is_pinned"] is True
 
+    # Test update with empty data
+    response = await async_client.patch(
+        f"/api/v1/productivity/notes/{note.id}",
+        json={},
+    )
+    assert response.status_code == 200
+
+    # Test update with None values to filter out
+    response = await async_client.patch(
+        f"/api/v1/productivity/notes/{note.id}",
+        json={"title": None, "content": None, "is_pinned": None},
+    )
+    assert response.status_code == 200
+
 
 @pytest.mark.asyncio
 async def test_update_note_not_found_or_forbidden(
@@ -265,3 +300,193 @@ async def test_delete_note_not_found_or_forbidden(
 
     response = await async_client.delete(f"/api/v1/productivity/notes/{uuid.uuid4()}")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_create_event(async_client: AsyncClient, override_get_current_user: None) -> None:
+    """Test creating a calendar event."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Test Event",
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(hours=1)).isoformat(),
+        },
+    )
+    assert response.status_code == 201
+    assert response.json()["title"] == "Test Event"
+
+
+@pytest.mark.asyncio
+async def test_create_event_invalid_time(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    """Test creating a calendar event with invalid times."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    # The BaseModel validator catches this before it reaches the service,
+    # so we test the model validation directly to cover lines 202-207.
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Invalid Event",
+            "start_time": now.isoformat(),
+            "end_time": (now - timedelta(hours=1)).isoformat(),
+        },
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_list_events(
+    async_client: AsyncClient,
+    mock_user_id: uuid.UUID,
+    override_get_current_user: None,
+) -> None:
+    """Test listing calendar events."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    await CalendarEvent.create(
+        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+    )
+
+    response = await async_client.get("/api/v1/productivity/events")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_update_event(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
+    """Test updating a calendar event."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+    )
+
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={"title": "Updated Event"},
+    )
+    assert response.status_code == 200
+    assert response.json()["title"] == "Updated Event"
+
+    # Test update with empty data
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={},
+    )
+    assert response.status_code == 200
+
+    # Test update with None values to filter out
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={"title": None, "start_time": None, "end_time": None, "is_all_day": None},
+    )
+    assert response.status_code == 200
+
+    # Test update with invalid time range
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={"end_time": (now - timedelta(hours=1)).isoformat()},
+    )
+    assert response.status_code == 400
+    assert "end_time must be greater than start_time" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_delete_event(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
+    """Test deleting a calendar event."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+    )
+
+    response = await async_client.delete(f"/api/v1/productivity/events/{event.id}")
+    assert response.status_code == 204
+    assert await CalendarEvent.filter(id=event.id).count() == 0
+
+
+@pytest.mark.asyncio
+async def test_handle_db_errors_integrity() -> None:
+    """Test the handle_db_errors context manager handles IntegrityError."""
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("create test"):
+            raise IntegrityError("mock integrity error")
+    assert exc_info.value.status_code == 500
+    assert "Database error occurred while creating test" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_handle_db_errors_unexpected() -> None:
+    """Test the handle_db_errors context manager handles unexpected Exceptions."""
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("list test"):
+            raise ValueError("mock generic error")
+    assert exc_info.value.status_code == 400
+    assert "mock generic error" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("update test"):
+            raise KeyError("mock key error")
+    assert exc_info.value.status_code == 500
+    assert "Failed to update test" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_handle_db_errors_httpexception() -> None:
+    """Test the handle_db_errors context manager re-raises HTTPException."""
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("delete test"):
+            raise HTTPException(status_code=400, detail="existing error")
+    assert exc_info.value.status_code == 400
+    assert "existing error" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_handle_db_errors_action_mapping() -> None:
+    """Test the string replacement in action messages."""
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("list notes"):
+            raise IntegrityError("mock error")
+    assert "listing notes" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("update task"):
+            raise IntegrityError("mock error")
+    assert "updating task" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("delete calendar event"):
+            raise IntegrityError("mock error")
+    assert "deleting calendar event" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("read file"):
+            raise IntegrityError("mock error")
+    assert "reading file" in exc_info.value.detail
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("create task"):
+            raise Exception("unexpected create test")
+    assert exc_info.value.status_code == 500
