@@ -12,7 +12,8 @@ class FakeApiService implements ApiService {
 
   @override
   Future<ChatRoom> createRoom(String name) async {
-    return createRoomMock?.call(name) ?? Future.value(ChatRoom(id: '1', name: name, createdAt: ''));
+    return createRoomMock?.call(name) ??
+        Future.value(ChatRoom(id: '1', name: name, createdAt: ''));
   }
 
   @override
@@ -49,8 +50,18 @@ void main() {
                   isScrollControlled: true,
                   builder: (context) => CreateRoomSheet(
                     availableAgents: [
-                      Agent(id: '1', name: 'Agent1', personality: 'Funny', createdAt: ''),
-                      Agent(id: '2', name: 'Agent2', personality: 'Serious', createdAt: ''),
+                      Agent(
+                        id: '1',
+                        name: 'Agent1',
+                        personality: 'Funny',
+                        createdAt: '',
+                      ),
+                      Agent(
+                        id: '2',
+                        name: 'Agent2',
+                        personality: 'Serious',
+                        createdAt: '',
+                      ),
                     ],
                     onRoomCreated: onCreated,
                   ),
@@ -64,7 +75,9 @@ void main() {
     );
   }
 
-  testWidgets('CreateRoomSheet allows selecting agents and creates room', (tester) async {
+  testWidgets('CreateRoomSheet allows selecting agents and creates room', (
+    tester,
+  ) async {
     String? createdName;
     List<String>? selectedIds;
     bool wasCreated = false;
@@ -79,9 +92,13 @@ void main() {
       return Future.value();
     };
 
-    await tester.pumpWidget(buildTestWidget(onCreated: () {
-      wasCreated = true;
-    }));
+    await tester.pumpWidget(
+      buildTestWidget(
+        onCreated: () {
+          wasCreated = true;
+        },
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Open sheet
@@ -114,11 +131,16 @@ void main() {
 
   testWidgets('CreateRoomSheet handles error gracefully', (tester) async {
     bool wasCreated = false;
-    fakeApi.createRoomMock = (name) => Future.error(Exception('Failed to create'));
+    fakeApi.createRoomMock = (name) =>
+        Future.error(Exception('Failed to create'));
 
-    await tester.pumpWidget(buildTestWidget(onCreated: () {
-      wasCreated = true;
-    }));
+    await tester.pumpWidget(
+      buildTestWidget(
+        onCreated: () {
+          wasCreated = true;
+        },
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Open Sheet'));
