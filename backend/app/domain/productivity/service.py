@@ -52,15 +52,9 @@ async def _handle_db_errors(action: str) -> AsyncGenerator[None, None]:
         if verb in gerund_map:
             gerund = gerund_map[verb]
         else:
-            if verb.endswith("e"):
-                gerund = verb[:-1] + "ing"
-            else:
-                gerund = verb + "ing"
+            gerund = verb[:-1] + "ing" if verb.endswith("e") else verb + "ing"
 
-        if len(parts) > 1:
-            action_ing = f"{gerund} {parts[1]}"
-        else:
-            action_ing = gerund
+        action_ing = f"{gerund} {parts[1]}" if len(parts) > 1 else gerund
 
         raise HTTPException(
             status_code=500, detail=f"Database error occurred while {action_ing}"
