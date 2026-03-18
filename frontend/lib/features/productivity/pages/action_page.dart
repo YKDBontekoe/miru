@@ -333,7 +333,7 @@ class _EventTile extends ConsumerWidget {
                       event.isAllDay
                           ? 'All Day - ${dateFormat.format(startLocal)}'
                           : '${dateFormat.format(startLocal)} ${timeFormat.format(startLocal)} - ${timeFormat.format(endLocal)}',
-                      style: AppTypography.caption.copyWith(
+                      style: AppTypography.captionSmall.copyWith(
                         color: context.colorScheme.primary,
                       ),
                     ),
