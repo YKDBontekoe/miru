@@ -162,7 +162,7 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                 shrinkWrap: true,
                 itemCount: widget.availableAgents.length,
                 separatorBuilder: (context, index) =>
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final agent = widget.availableAgents[index];
                   final isSelected = _selectedAgentIds.contains(agent.id);

@@ -136,7 +136,7 @@ class _AgentsPageState extends State<AgentsPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.sm),
+                          SizedBox(width: AppSpacing.sm),
                           isGenerating
                               ? const SizedBox(
                                   width: 200,
@@ -156,7 +156,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                   ),
                                 )
                               : IconButton(
-                                  icon: const Icon(Icons.auto_awesome),
+                                  icon: Icon(Icons.auto_awesome),
                                   tooltip: 'Generate with AI',
                                   onPressed: () async {
                                     if (keywordsController.text.isEmpty) return;
@@ -202,7 +202,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                 ),
                         ],
                       ),
-                      const Divider(height: AppSpacing.xxxl),
+                      Divider(height: AppSpacing.xxxl),
                       TextField(
                         controller: nameController,
                         decoration: const InputDecoration(
@@ -210,7 +210,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           hintText: 'e.g. Captain Bluebeard',
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: descriptionController,
                         decoration: const InputDecoration(
@@ -218,7 +218,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           hintText: 'A seafaring AI who loves pirate jokes',
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: personalityController,
                         decoration: const InputDecoration(
@@ -227,7 +227,7 @@ class _AgentsPageState extends State<AgentsPage> {
                         ),
                         maxLines: 4,
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: goalsController,
                         decoration: const InputDecoration(
@@ -237,13 +237,13 @@ class _AgentsPageState extends State<AgentsPage> {
                         ),
                         maxLines: 3,
                       ),
-                      const SizedBox(height: AppSpacing.xxl),
+                      SizedBox(height: AppSpacing.xxl),
                       Text(
                         'Capabilities',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(height: AppSpacing.sm),
                       Wrap(
                         spacing: AppSpacing.sm,
                         children: _availableCapabilities.map((cap) {
@@ -265,13 +265,13 @@ class _AgentsPageState extends State<AgentsPage> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: AppSpacing.xxl),
+                      SizedBox(height: AppSpacing.xxl),
                       Text(
                         'Integrations',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(height: AppSpacing.sm),
                       Wrap(
                         spacing: AppSpacing.sm,
                         children: _availableIntegrations.map((integration) {
@@ -298,7 +298,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                     });
                                   },
                             avatar: isComingSoon
-                                ? const Icon(
+                                ? Icon(
                                     Icons.lock_clock,
                                     size: AppSpacing.iconSm,
                                   )
@@ -433,7 +433,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                       ? null
                                       : Text(agent.name[0].toUpperCase()),
                                 ),
-                                const SizedBox(width: AppSpacing.lg),
+                                SizedBox(width: AppSpacing.lg),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -488,7 +488,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                         ],
                                       ),
                                       if (agent.description != null) ...[
-                                        const SizedBox(height: AppSpacing.xxs),
+                                        SizedBox(height: AppSpacing.xxs),
                                         Text(
                                           agent.description!,
                                           style: Theme.of(context)
@@ -503,7 +503,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                               ),
                                         ),
                                       ],
-                                      const SizedBox(height: AppSpacing.sm),
+                                      SizedBox(height: AppSpacing.sm),
                                       Row(
                                         children: [
                                           Icon(
@@ -511,7 +511,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                             size: AppSpacing.iconSm,
                                             color: themeColor,
                                           ),
-                                          const SizedBox(width: AppSpacing.xs),
+                                          SizedBox(width: AppSpacing.xs),
                                           Text(
                                             'Lvl ${agent.connectionLevel}',
                                             style: Theme.of(context)
@@ -522,7 +522,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                                   color: themeColor,
                                                 ),
                                           ),
-                                          const SizedBox(width: AppSpacing.md),
+                                          SizedBox(width: AppSpacing.md),
                                           Icon(
                                             Icons.mood,
                                             size: AppSpacing.iconSm,
@@ -530,7 +530,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                                 ? AppColors.onSurfaceMutedLight
                                                 : AppColors.onSurfaceMutedDark,
                                           ),
-                                          const SizedBox(width: AppSpacing.xs),
+                                          SizedBox(width: AppSpacing.xs),
                                           Text(
                                             agent.mood,
                                             style: Theme.of(context)
@@ -551,7 +551,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(height: AppSpacing.md),
                             Text(
                               agent.personality,
                               maxLines: 2,
@@ -559,7 +559,7 @@ class _AgentsPageState extends State<AgentsPage> {
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             if (agent.capabilities.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.md),
+                              SizedBox(height: AppSpacing.md),
                               Wrap(
                                 spacing: AppSpacing.sm,
                                 runSpacing: AppSpacing.xs,
@@ -594,7 +594,7 @@ class _AgentsPageState extends State<AgentsPage> {
         child: FloatingActionButton(
           elevation: 0,
           onPressed: _showCreateAgentDialog,
-          child: const Icon(Icons.add),
+          child: Icon(Icons.add),
         ),
       ),
     );

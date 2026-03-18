@@ -164,7 +164,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             const SizedBox(height: AppSpacing.xxs),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: Theme.of(context).textTheme.labelSmall!.copyWith(
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: isActive ? colors.primary : colors.onSurfaceMuted,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
