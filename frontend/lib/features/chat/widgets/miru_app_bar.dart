@@ -21,7 +21,8 @@ class MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onNewChat;
 
   /// Callback when the settings button is pressed.
-  final VoidCallback onSettingsPressed;
+  /// If null, the settings button is hidden.
+  final VoidCallback? onSettingsPressed;
 
   /// Creates a [MiruAppBar].
   const MiruAppBar({
@@ -30,7 +31,7 @@ class MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.isDark,
     required this.showNewChat,
     required this.onNewChat,
-    required this.onSettingsPressed,
+    this.onSettingsPressed,
   });
 
   @override
@@ -96,16 +97,18 @@ class MiruAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            Icons.settings_outlined,
-            color: colors.onSurfaceMuted,
-            size: 22,
+        if (onSettingsPressed != null) ...[
+          IconButton(
+            icon: Icon(
+              Icons.settings_outlined,
+              color: colors.onSurfaceMuted,
+              size: 22,
+            ),
+            onPressed: onSettingsPressed,
+            tooltip: 'Settings',
           ),
-          onPressed: onSettingsPressed,
-          tooltip: 'Settings',
-        ),
-        const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: AppSpacing.xs),
+        ],
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),

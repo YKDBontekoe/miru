@@ -117,8 +117,8 @@ class _AgentsPageState extends State<AgentsPage> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: const Text('Create New Persona'),
-              content: SizedBox(
-                width: 500,
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -136,7 +136,7 @@ class _AgentsPageState extends State<AgentsPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.sm),
                           isGenerating
                               ? const SizedBox(
                                   width: 110,
@@ -240,8 +240,9 @@ class _AgentsPageState extends State<AgentsPage> {
                       const SizedBox(height: 24),
                       Text(
                         'Capabilities',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: AppTypography.labelLarge.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -268,8 +269,9 @@ class _AgentsPageState extends State<AgentsPage> {
                       const SizedBox(height: 24),
                       Text(
                         'Integrations',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: AppTypography.labelLarge.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -355,12 +357,23 @@ class _AgentsPageState extends State<AgentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      appBar: AppBar(title: const Text('My Agents')),
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        title: Text(
+          'Personas',
+          style: AppTypography.headingMedium.copyWith(color: colors.onSurface),
+        ),
+        backgroundColor: colors.surfaceHigh,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _agents.isEmpty
-          ? const Center(child: Text('No agents created yet.'))
+          ? AppEmptyState(
+              title: 'No personas yet',
+              subtitle: 'Create your first AI persona\nto start collaborating.',
+            )
           : ListView.builder(
               itemCount: _agents.length,
               itemBuilder: (context, index) {
@@ -427,8 +440,8 @@ class _AgentsPageState extends State<AgentsPage> {
                                   backgroundImage: agent.avatarImage,
                                   radius: 28,
                                   child: agent.avatarUrl == null
-                                      ? null
-                                      : Text(agent.name[0].toUpperCase()),
+                                      ? Text(agent.name[0].toUpperCase())
+                                      : null,
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
@@ -441,60 +454,84 @@ class _AgentsPageState extends State<AgentsPage> {
                                           Expanded(
                                             child: Text(
                                               agent.name,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
+                                              style: AppTypography.headingSmall
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: context
+                                                        .colors
+                                                        .onSurface,
                                                   ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          if (chatter != null)
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.surface,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: themeColor.withValues(
-                                                    alpha: 0.5,
-                                                  ),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                chatter,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.copyWith(
-                                                      color: themeColor,
-                                                    ),
-                                              ),
+                                          AnimatedSwitcher(
+                                            duration: const Duration(
+                                              milliseconds: 250,
                                             ),
+                                            transitionBuilder:
+                                                (child, animation) =>
+                                                    FadeTransition(
+                                                      opacity: animation,
+                                                      child: ScaleTransition(
+                                                        scale: Tween<double>(
+                                                          begin: 0.85,
+                                                          end: 1.0,
+                                                        ).animate(animation),
+                                                        child: child,
+                                                      ),
+                                                    ),
+                                            child: chatter != null
+                                                ? Container(
+                                                    key: ValueKey(chatter),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal:
+                                                              AppSpacing.sm,
+                                                          vertical:
+                                                              AppSpacing.xs,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: context
+                                                          .colors
+                                                          .surface,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            AppSpacing.radiusMd,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: themeColor
+                                                            .withValues(
+                                                              alpha: 0.5,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      chatter,
+                                                      style: AppTypography
+                                                          .bodySmall
+                                                          .copyWith(
+                                                            color: themeColor,
+                                                          ),
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(
+                                                    key: ValueKey('empty'),
+                                                  ),
+                                          ),
                                         ],
                                       ),
                                       if (agent.description != null) ...[
                                         const SizedBox(height: 2),
                                         Text(
                                           agent.description!,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
+                                          style: AppTypography.bodyMedium
+                                              .copyWith(
                                                 color: isDark
                                                     ? AppColors
-                                                          .onSurfaceMutedLight
+                                                          .onSurfaceMutedDark
                                                     : AppColors
-                                                          .onSurfaceMutedDark,
+                                                          .onSurfaceMutedLight,
                                               ),
                                         ),
                                       ],
@@ -509,10 +546,8 @@ class _AgentsPageState extends State<AgentsPage> {
                                           const SizedBox(width: 4),
                                           Text(
                                             'Lvl ${agent.connectionLevel}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
+                                            style: AppTypography.bodySmall
+                                                .copyWith(
                                                   fontWeight: FontWeight.bold,
                                                   color: themeColor,
                                                 ),
@@ -522,21 +557,19 @@ class _AgentsPageState extends State<AgentsPage> {
                                             Icons.mood,
                                             size: 16,
                                             color: isDark
-                                                ? AppColors.onSurfaceMutedLight
-                                                : AppColors.onSurfaceMutedDark,
+                                                ? AppColors.onSurfaceMutedDark
+                                                : AppColors.onSurfaceMutedLight,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             agent.mood,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
+                                            style: AppTypography.bodySmall
+                                                .copyWith(
                                                   color: isDark
                                                       ? AppColors
-                                                            .onSurfaceMutedLight
+                                                            .onSurfaceMutedDark
                                                       : AppColors
-                                                            .onSurfaceMutedDark,
+                                                            .onSurfaceMutedLight,
                                                 ),
                                           ),
                                         ],
@@ -551,7 +584,7 @@ class _AgentsPageState extends State<AgentsPage> {
                               agent.personality,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: AppTypography.bodyMedium,
                             ),
                             if (agent.capabilities.isNotEmpty) ...[
                               const SizedBox(height: 12),
@@ -562,9 +595,7 @@ class _AgentsPageState extends State<AgentsPage> {
                                   return Chip(
                                     label: Text(
                                       cap,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
+                                      style: AppTypography.bodySmall,
                                     ),
                                     materialTapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,

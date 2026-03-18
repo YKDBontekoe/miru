@@ -22,6 +22,9 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  static const String _privacyModeKey = 'miru_privacy_mode';
+  static const String _notificationsKey = 'miru_notifications_enabled';
+
   bool _isPrivacyMode = false;
   bool _notificationsEnabled = true;
 
@@ -41,6 +44,17 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _loadPasskeys();
     _loadMemories();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _isPrivacyMode = prefs.getBool(_privacyModeKey) ?? false;
+        _notificationsEnabled = prefs.getBool(_notificationsKey) ?? true;
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -452,7 +466,11 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: 'Minimize data logging for sessions',
             trailing: Switch(
               value: _isPrivacyMode,
-              onChanged: (value) => setState(() => _isPrivacyMode = value),
+              onChanged: (value) async {
+                setState(() => _isPrivacyMode = value);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool(_privacyModeKey, value);
+              },
             ),
           ),
           _buildSettingTile(
@@ -461,8 +479,11 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: 'Get alerts for long-running tasks',
             trailing: Switch(
               value: _notificationsEnabled,
-              onChanged: (value) =>
-                  setState(() => _notificationsEnabled = value),
+              onChanged: (value) async {
+                setState(() => _notificationsEnabled = value);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool(_notificationsKey, value);
+              },
             ),
           ),
 
@@ -531,7 +552,21 @@ class _SettingsPageState extends State<SettingsPage> {
   String _formatDate(String isoDate) {
     try {
       final date = DateTime.parse(isoDate).toLocal();
-      return '${date.day}/${date.month}/${date.year}';
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
     } catch (_) {
       return isoDate;
     }

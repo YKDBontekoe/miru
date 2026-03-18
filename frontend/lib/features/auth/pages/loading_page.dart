@@ -119,7 +119,7 @@ class _LoadingPageState extends State<LoadingPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                'The server might be down or unreachable.\nError: $error',
+                'The server might be down or unreachable.\nPlease check your connection and try again.',
                 style: AppTypography.bodyMedium.copyWith(
                   color: colors.onSurfaceMuted,
                 ),

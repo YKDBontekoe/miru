@@ -57,14 +57,18 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     completer.complete([]);
-    await tester.pumpAndSettle();
+    // Use pump instead of pumpAndSettle to avoid timeout from repeating animations.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
   });
 
   testWidgets('AgentsPage simulates API error', (tester) async {
     fakeApi.getAgentsMock = () => Future.error(Exception('Failed to load'));
 
     await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
+    // Use pump instead of pumpAndSettle to avoid timeout from repeating animations.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Failed to load'), findsOneWidget);
@@ -74,9 +78,12 @@ void main() {
     fakeApi.getAgentsMock = () => Future.value([]);
 
     await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
+    // Use pump instead of pumpAndSettle to avoid timeout from repeating animations.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('No agents created yet.'), findsOneWidget);
+    // Now uses AppEmptyState with updated text.
+    expect(find.text('No personas yet'), findsOneWidget);
   });
 
   testWidgets('AgentsPage simulates successful empty list and taps FAB', (
@@ -87,13 +94,16 @@ void main() {
     fakeApi.getAgentIntegrationsMock = () => Future.value([]);
 
     await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
+    // Use pump instead of pumpAndSettle to avoid timeout from repeating animations.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     final fab = find.byType(FloatingActionButton);
     expect(fab, findsOneWidget);
 
     await tester.tap(fab);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Create New Persona'), findsOneWidget);
     expect(find.byType(AlertDialog), findsOneWidget);

@@ -8,8 +8,6 @@ import 'package:miru/core/api/api_service.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/core/models/chat_message.dart';
 import 'package:miru/core/models/message_status.dart';
-import 'package:miru/features/settings/pages/settings_page.dart';
-
 import 'package:miru/features/chat/widgets/miru_app_bar.dart';
 import 'package:miru/features/chat/widgets/scroll_to_bottom_button.dart';
 import 'package:miru/features/chat/widgets/streaming_status_pill.dart';
@@ -321,13 +319,7 @@ class _ChatPageState extends State<ChatPage> {
         isDark: isDark,
         showNewChat: _messages.isNotEmpty,
         onNewChat: _newChat,
-        onSettingsPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SettingsPage(onClearHistory: _newChat),
-            ),
-          );
-        },
+        onSettingsPressed: null,
       ),
       body: Stack(
         children: [
@@ -377,15 +369,31 @@ class _ChatPageState extends State<ChatPage> {
           ),
 
           // Scroll-to-bottom FAB
-          if (_showScrollToBottom && _messages.isNotEmpty)
-            Positioned(
-              bottom: 100,
-              right: AppSpacing.lg,
-              child: ScrollToBottomButton(
-                onPressed: _scrollToBottom,
-                colors: colors,
+          Positioned(
+            bottom: 100,
+            right: AppSpacing.lg,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              opacity: (_showScrollToBottom && _messages.isNotEmpty)
+                  ? 1.0
+                  : 0.0,
+              child: AnimatedScale(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                scale: (_showScrollToBottom && _messages.isNotEmpty)
+                    ? 1.0
+                    : 0.8,
+                child: IgnorePointer(
+                  ignoring: !(_showScrollToBottom && _messages.isNotEmpty),
+                  child: ScrollToBottomButton(
+                    onPressed: _scrollToBottom,
+                    colors: colors,
+                  ),
+                ),
               ),
             ),
+          ),
         ],
       ),
     );

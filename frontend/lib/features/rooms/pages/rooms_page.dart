@@ -452,25 +452,28 @@ class _RoomCard extends StatelessWidget {
             child: Row(
               children: [
                 // Avatar
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colors.primaryLight.withValues(alpha: 0.2),
-                        colors.primary.withValues(alpha: 0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                Hero(
+                  tag: 'room_avatar_${room.id}',
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colors.primaryLight.withValues(alpha: 0.2),
+                          colors.primary.withValues(alpha: 0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                     ),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  ),
-                  child: Center(
-                    child: Text(
-                      room.name.substring(0, 1).toUpperCase(),
-                      style: AppTypography.labelLarge.copyWith(
-                        color: colors.primary,
+                    child: Center(
+                      child: Text(
+                        room.name.substring(0, 1).toUpperCase(),
+                        style: AppTypography.labelLarge.copyWith(
+                          color: colors.primary,
+                        ),
                       ),
                     ),
                   ),

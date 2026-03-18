@@ -13,7 +13,7 @@ import 'package:miru/core/design_system/design_system.dart';
 ///   onSuggestionTap: (text) => _sendMessage(text),
 /// )
 /// ```
-class AppEmptyState extends StatelessWidget {
+class AppEmptyState extends StatefulWidget {
   final String title;
   final String? subtitle;
   final Widget? action;
@@ -32,6 +32,29 @@ class AppEmptyState extends StatelessWidget {
     this.suggestions = const [],
     this.onSuggestionTap,
   });
+
+  @override
+  State<AppEmptyState> createState() => _AppEmptyStateState();
+}
+
+class _AppEmptyStateState extends State<AppEmptyState>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,32 +83,50 @@ class AppEmptyState extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.xl),
 
-              // Title -- gradient adapts to theme
-              ShaderMask(
-                shaderCallback: (bounds) {
+              // Title -- animated shimmer gradient adapts to theme
+              AnimatedBuilder(
+                animation: _shimmerController,
+                builder: (context, child) {
                   final isDark = context.isDark;
-                  return LinearGradient(
-                    colors: isDark
-                        ? [AppColors.onSurfaceDark, AppColors.primaryLight]
-                        : [AppColors.onSurfaceLight, AppColors.primaryDark],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ).createShader(bounds);
+                  return ShaderMask(
+                    shaderCallback: (bounds) {
+                      return LinearGradient(
+                        colors: isDark
+                            ? [
+                                AppColors.onSurfaceDark,
+                                AppColors.primaryLight,
+                                AppColors.onSurfaceDark,
+                              ]
+                            : [
+                                AppColors.onSurfaceLight,
+                                AppColors.primaryDark,
+                                AppColors.onSurfaceLight,
+                              ],
+                        stops: [
+                          (_shimmerController.value - 0.3).clamp(0.0, 1.0),
+                          _shimmerController.value.clamp(0.0, 1.0),
+                          (_shimmerController.value + 0.3).clamp(0.0, 1.0),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds);
+                    },
+                    child: Text(
+                      widget.title,
+                      style: AppTypography.headingLarge.copyWith(
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  );
                 },
-                child: Text(
-                  title,
-                  style: AppTypography.headingLarge.copyWith(
-                    color: Colors.white, // ShaderMask paints over this
-                  ),
-                  textAlign: TextAlign.center,
-                ),
               ),
 
               // Subtitle
-              if (subtitle != null) ...[
+              if (widget.subtitle != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  subtitle!,
+                  widget.subtitle!,
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium.copyWith(
                     color: colors.onSurfaceMuted,
@@ -94,19 +135,19 @@ class AppEmptyState extends StatelessWidget {
               ],
 
               // Suggestion chips
-              if (suggestions.isNotEmpty) ...[
+              if (widget.suggestions.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xxl),
                 _SuggestionChips(
-                  suggestions: suggestions,
-                  onTap: onSuggestionTap,
+                  suggestions: widget.suggestions,
+                  onTap: widget.onSuggestionTap,
                   colors: colors,
                 ),
               ],
 
               // Optional action
-              if (action != null) ...[
+              if (widget.action != null) ...[
                 const SizedBox(height: AppSpacing.xxl),
-                action!,
+                widget.action!,
               ],
             ],
           ),

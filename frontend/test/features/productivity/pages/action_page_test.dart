@@ -64,30 +64,31 @@ class MockProductivityService implements ProductivityService {
 }
 
 void main() {
-  testWidgets(
-    'ActionPage renders tabs correctly without calling real services',
-    (tester) async {
-      final mockService = MockProductivityService();
+  testWidgets('ActionPage renders tabs correctly without calling real services', (
+    tester,
+  ) async {
+    final mockService = MockProductivityService();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            productivityServiceProvider.overrideWithValue(mockService),
-            calendarEventsProvider.overrideWith(
-              () => CalendarEventsNotifier(),
-            ), // It reads productivityServiceProvider
-          ],
-          child: MaterialApp(theme: AppTheme.light, home: const ActionPage()),
-        ),
-      );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          productivityServiceProvider.overrideWithValue(mockService),
+          calendarEventsProvider.overrideWith(
+            () => CalendarEventsNotifier(),
+          ), // It reads productivityServiceProvider
+        ],
+        child: MaterialApp(theme: AppTheme.light, home: const ActionPage()),
+      ),
+    );
 
-      // We let the initial Futures complete
-      await tester.pumpAndSettle();
+    // Use pump instead of pumpAndSettle to avoid timeout from repeating animations
+    // (AppEmptyState shimmer uses a repeating AnimationController).
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.byType(ActionPage), findsOneWidget);
-      expect(find.text('Calendar'), findsOneWidget);
-      expect(find.text('Tasks'), findsOneWidget);
-      expect(find.text('Notes'), findsOneWidget);
-    },
-  );
+    expect(find.byType(ActionPage), findsOneWidget);
+    expect(find.text('Calendar'), findsOneWidget);
+    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.text('Notes'), findsOneWidget);
+  });
 }

@@ -188,23 +188,30 @@ class _CalendarTabState extends ConsumerState<_CalendarTab> {
 
     return Scaffold(
       body: state.hasError && state.events.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Unable to load events.'),
-                  TextButton(
-                    onPressed: () =>
-                        ref.read(calendarEventsProvider.notifier).refresh(),
-                    child: const Text('Retry'),
-                  ),
-                ],
+          ? AppEmptyState(
+              title: 'Could not load events',
+              subtitle: 'Something went wrong. Please try again.',
+              action: ElevatedButton.icon(
+                onPressed: () =>
+                    ref.read(calendarEventsProvider.notifier).refresh(),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
               ),
             )
           : state.isLoading && state.events.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : state.events.isEmpty
-          ? const Center(child: Text('No events yet. Add one!'))
+          ? AppEmptyState(
+              title: 'No events yet',
+              subtitle:
+                  'Your calendar is clear.\nTap + to add your first event.',
+              action: FloatingActionButton.extended(
+                heroTag: 'calendar_empty_fab',
+                onPressed: () => _showEventDialog(context),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Event'),
+              ),
+            )
           : RefreshIndicator(
               onRefresh: () =>
                   ref.read(calendarEventsProvider.notifier).refresh(),
@@ -503,80 +510,27 @@ class _EventDialogState extends State<_EventDialog> {
               maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                const Text('Start: '),
-                TextButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedStart,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (date != null && context.mounted) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(_selectedStart),
-                      );
-                      if (time != null) {
-                        if (!mounted) return;
-                        setState(() {
-                          _selectedStart = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                          if (_selectedEnd.isBefore(_selectedStart)) {
-                            _selectedEnd = _selectedStart.add(
-                              const Duration(hours: 1),
-                            );
-                          }
-                        });
-                      }
-                    }
-                  },
-                  child: Text(
-                    DateFormat('MMM d, h:mm a').format(_selectedStart),
-                  ),
-                ),
-              ],
+            _DateTimePickerRow(
+              label: 'Start',
+              dateTime: _selectedStart,
+              onChanged: (newDt) {
+                setState(() {
+                  _selectedStart = newDt;
+                  if (_selectedEnd.isBefore(_selectedStart)) {
+                    _selectedEnd = _selectedStart.add(const Duration(hours: 1));
+                  }
+                });
+              },
             ),
-            Row(
-              children: [
-                const Text('End: '),
-                TextButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedEnd,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (date != null && context.mounted) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(_selectedEnd),
-                      );
-                      if (time != null) {
-                        if (!mounted) return;
-                        setState(() {
-                          _selectedEnd = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                        });
-                      }
-                    }
-                  },
-                  child: Text(DateFormat('MMM d, h:mm a').format(_selectedEnd)),
-                ),
-              ],
+            const SizedBox(height: AppSpacing.sm),
+            _DateTimePickerRow(
+              label: 'End',
+              dateTime: _selectedEnd,
+              onChanged: (newDt) {
+                setState(() {
+                  _selectedEnd = newDt;
+                });
+              },
             ),
           ],
         ),
@@ -657,6 +611,85 @@ class _EventDialogState extends State<_EventDialog> {
               : const Text('Save'),
         ),
       ],
+    );
+  }
+}
+
+class _DateTimePickerRow extends StatelessWidget {
+  final String label;
+  final DateTime dateTime;
+  final ValueChanged<DateTime> onChanged;
+
+  const _DateTimePickerRow({
+    required this.label,
+    required this.dateTime,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final formatted = DateFormat('MMM d, h:mm a').format(dateTime);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      onTap: () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: dateTime,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (date == null || !context.mounted) return;
+        final time = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.fromDateTime(dateTime),
+        );
+        if (time == null) return;
+        onChanged(
+          DateTime(date.year, date.month, date.day, time.hour, time.minute),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: colors.surfaceHigh,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: colors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.schedule_rounded,
+              size: AppSpacing.iconSm,
+              color: colors.primary,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              '$label: ',
+              style: AppTypography.labelSmall.copyWith(
+                color: colors.onSurfaceMuted,
+              ),
+            ),
+            Text(
+              formatted,
+              style: AppTypography.labelSmall.copyWith(
+                color: colors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: AppSpacing.iconSm,
+              color: colors.onSurfaceMuted,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

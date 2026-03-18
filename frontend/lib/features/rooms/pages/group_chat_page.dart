@@ -407,6 +407,36 @@ class _GroupChatPageState extends State<GroupChatPage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Hero(
+                tag: 'room_avatar_${widget.room.id}',
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colors.primaryLight.withValues(alpha: 0.2),
+                        colors.primary.withValues(alpha: 0.1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _roomName.isNotEmpty
+                          ? _roomName.substring(0, 1).toUpperCase()
+                          : 'R',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: colors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Text(_roomName, style: AppTypography.headingSmall),
               const SizedBox(width: AppSpacing.xs),
               Icon(
@@ -445,7 +475,6 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Widget _buildMembersBar(AppThemeColors colors) {
-    final names = ['You', ..._roomAgents.map((a) => a.name)];
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -455,15 +484,76 @@ class _GroupChatPageState extends State<GroupChatPage> {
       color: colors.surfaceHigh,
       child: Row(
         children: [
-          Icon(
-            Icons.group_outlined,
-            size: AppSpacing.iconSm,
-            color: colors.onSurfaceMuted,
+          // Avatar stack
+          SizedBox(
+            height: 28,
+            width: (_roomAgents.length.clamp(1, 4) * 20.0) + 8,
+            child: Stack(
+              children: [
+                // "You" avatar
+                Positioned(
+                  left: 0,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colors.primary.withValues(alpha: 0.2),
+                      border: Border.all(color: colors.surfaceHigh, width: 1.5),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Y',
+                        style: AppTypography.captionSmall.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Agent avatars
+                ..._roomAgents.take(3).toList().asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final agent = entry.value;
+                  final agentColors = [
+                    AppColors.info,
+                    AppColors.success,
+                    AppColors.warning,
+                  ];
+                  final color = agentColors[idx % agentColors.length];
+                  return Positioned(
+                    left: (idx + 1) * 20.0,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: color.withValues(alpha: 0.2),
+                        border: Border.all(
+                          color: colors.surfaceHigh,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          agent.name.substring(0, 1).toUpperCase(),
+                          style: AppTypography.captionSmall.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
           ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              names.join(', '),
+              ['You', ..._roomAgents.map((a) => a.name)].join(', '),
               style: AppTypography.caption.copyWith(
                 color: colors.onSurfaceMuted,
               ),
@@ -471,6 +561,13 @@ class _GroupChatPageState extends State<GroupChatPage> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (_roomAgents.isEmpty)
+            Text(
+              'No personas in this group',
+              style: AppTypography.caption.copyWith(
+                color: colors.onSurfaceMuted,
+              ),
+            ),
         ],
       ),
     );

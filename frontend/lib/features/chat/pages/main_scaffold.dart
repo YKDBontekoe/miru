@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:miru/core/design_system/design_system.dart';
+import 'package:miru/features/chat/pages/chat_page.dart';
 import 'package:miru/features/rooms/pages/rooms_page.dart';
 import 'package:miru/features/rooms/widgets/create_persona_sheet.dart';
 import 'package:miru/features/settings/pages/settings_page.dart';
-import 'package:miru/features/productivity/pages/action_page.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -55,8 +55,8 @@ class _MainScaffoldState extends State<MainScaffold> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          RoomsPage(personaRefreshListenable: _personaRefreshNotifier), // 0
-          const ActionPage(), // 1
+          const ChatPage(), // 0
+          RoomsPage(personaRefreshListenable: _personaRefreshNotifier), // 1
           const SizedBox(), // Placeholder for index 2 (Add button)     // 2
           const SettingsPage(), // 3
         ],
@@ -91,17 +91,17 @@ class _MainScaffoldState extends State<MainScaffold> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildNavItem(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  activeIcon: Icons.chat_bubble_rounded,
-                  label: 'Rooms',
+                  icon: Icons.auto_awesome_outlined,
+                  activeIcon: Icons.auto_awesome_rounded,
+                  label: 'Chat',
                   isActive: _currentIndex == 0,
                   onTap: () => _onItemTapped(0),
                   colors: colors,
                 ),
                 _buildNavItem(
-                  icon: Icons.bolt_outlined,
-                  activeIcon: Icons.bolt_rounded,
-                  label: 'Action',
+                  icon: Icons.chat_bubble_outline_rounded,
+                  activeIcon: Icons.chat_bubble_rounded,
+                  label: 'Rooms',
                   isActive: _currentIndex == 1,
                   onTap: () => _onItemTapped(1),
                   colors: colors,
