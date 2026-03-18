@@ -488,7 +488,7 @@ class _RoomCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.xxs),
                       Row(
                         children: [
                           Icon(
@@ -496,7 +496,7 @@ class _RoomCard extends StatelessWidget {
                             size: 12,
                             color: colors.onSurfaceMuted,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpacing.xs),
                           Text(
                             _memberLabel(),
                             style: AppTypography.caption.copyWith(
