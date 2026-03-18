@@ -13,7 +13,7 @@ from tortoise.exceptions import IntegrityError
 
 from app.core.security.auth import get_current_user
 from app.domain.productivity.models import CalendarEvent, Note, Task
-from app.domain.productivity.service import _handle_db_errors
+from app.infrastructure.database.utils import handle_db_errors
 from app.main import app
 
 
@@ -421,11 +421,11 @@ async def test_delete_event(
 
 @pytest.mark.asyncio
 async def test_handle_db_errors_integrity() -> None:
-    """Test the _handle_db_errors context manager handles IntegrityError."""
+    """Test the handle_db_errors context manager handles IntegrityError."""
     from fastapi import HTTPException
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("create test"):
+        async with handle_db_errors("create test"):
             raise IntegrityError("mock integrity error")
     assert exc_info.value.status_code == 500
     assert "Database error occurred while creating test" in exc_info.value.detail
@@ -433,17 +433,17 @@ async def test_handle_db_errors_integrity() -> None:
 
 @pytest.mark.asyncio
 async def test_handle_db_errors_unexpected() -> None:
-    """Test the _handle_db_errors context manager handles unexpected Exceptions."""
+    """Test the handle_db_errors context manager handles unexpected Exceptions."""
     from fastapi import HTTPException
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("list test"):
+        async with handle_db_errors("list test"):
             raise ValueError("mock generic error")
     assert exc_info.value.status_code == 400
     assert "mock generic error" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("update test"):
+        async with handle_db_errors("update test"):
             raise KeyError("mock key error")
     assert exc_info.value.status_code == 500
     assert "Failed to update test" in exc_info.value.detail
@@ -451,11 +451,11 @@ async def test_handle_db_errors_unexpected() -> None:
 
 @pytest.mark.asyncio
 async def test_handle_db_errors_httpexception() -> None:
-    """Test the _handle_db_errors context manager re-raises HTTPException."""
+    """Test the handle_db_errors context manager re-raises HTTPException."""
     from fastapi import HTTPException
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("delete test"):
+        async with handle_db_errors("delete test"):
             raise HTTPException(status_code=400, detail="existing error")
     assert exc_info.value.status_code == 400
     assert "existing error" in exc_info.value.detail
@@ -467,26 +467,26 @@ async def test_handle_db_errors_action_mapping() -> None:
     from fastapi import HTTPException
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("list notes"):
+        async with handle_db_errors("list notes"):
             raise IntegrityError("mock error")
     assert "listing notes" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("update task"):
+        async with handle_db_errors("update task"):
             raise IntegrityError("mock error")
     assert "updating task" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("delete calendar event"):
+        async with handle_db_errors("delete calendar event"):
             raise IntegrityError("mock error")
     assert "deleting calendar event" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("read file"):
+        async with handle_db_errors("read file"):
             raise IntegrityError("mock error")
     assert "reading file" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
-        async with _handle_db_errors("create task"):
+        async with handle_db_errors("create task"):
             raise Exception("unexpected create test")
     assert exc_info.value.status_code == 500
