@@ -186,9 +186,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # migrate and scan/build must both succeed before deploying. migrate already
-    # depends on test, and scan already depends on build — so needs: [migrate, scan]
-    # covers the full chain without redundantly listing build.
-    needs: [migrate, scan]
+    # depends on test, and scan already depends on build.
+    # build is explicitly listed because we need to access its output image-tag.
+    needs: [migrate, scan, build]
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
