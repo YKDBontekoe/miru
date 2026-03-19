@@ -427,7 +427,7 @@ async def test_handle_db_errors_integrity() -> None:
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("create test"):
             raise IntegrityError("mock integrity error")
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == 500  # type: ignore[unreachable]
     assert "Database error occurred while creating test" in exc_info.value.detail
 
 
@@ -439,13 +439,13 @@ async def test_handle_db_errors_unexpected() -> None:
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("list test"):
             raise ValueError("mock generic error")
-    assert exc_info.value.status_code == 400
+    assert exc_info.value.status_code == 400  # type: ignore[unreachable]
     assert "mock generic error" in exc_info.value.detail
 
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("update test"):
             raise KeyError("mock key error")
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == 500  # type: ignore[unreachable]
     assert "Failed to update test" in exc_info.value.detail
 
 
@@ -457,7 +457,7 @@ async def test_handle_db_errors_httpexception() -> None:
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("delete test"):
             raise HTTPException(status_code=400, detail="existing error")
-    assert exc_info.value.status_code == 400
+    assert exc_info.value.status_code == 400  # type: ignore[unreachable]
     assert "existing error" in exc_info.value.detail
 
 
@@ -469,7 +469,7 @@ async def test_handle_db_errors_action_mapping() -> None:
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("list notes"):
             raise IntegrityError("mock error")
-    assert "listing notes" in exc_info.value.detail
+    assert "listing notes" in exc_info.value.detail  # type: ignore[unreachable]
 
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("update task"):
@@ -489,4 +489,4 @@ async def test_handle_db_errors_action_mapping() -> None:
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("create task"):
             raise Exception("unexpected create test")
-    assert exc_info.value.status_code == 500
+    assert exc_info.value.status_code == 500  # type: ignore[unreachable]

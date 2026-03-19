@@ -399,7 +399,7 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     chunk3 = MagicMock()
     chunk3.choices = []
 
-    async def mock_async_generator():
+    async def mock_async_generator() -> typing.AsyncGenerator[typing.Any, None]:
         yield chunk1
         yield chunk3
         yield chunk2
@@ -466,7 +466,7 @@ async def test_stream_room_responses_slow_kickoff(
         mock_crew_agent.role = "Slow Agent"
         mock_agent_cls.return_value = mock_crew_agent
 
-        async def delayed_kickoff():
+        async def delayed_kickoff() -> str:
             await asyncio.sleep(2.5)
             return "Delayed Crew output"
 
@@ -514,7 +514,7 @@ async def test_stream_room_responses_cancel_task(
         mock_crew_agent = MagicMock()
         mock_agent_cls.return_value = mock_crew_agent
 
-        async def infinite_kickoff():
+        async def infinite_kickoff() -> str:
             await asyncio.sleep(100)
             return "Should not reach here"
 
