@@ -122,3 +122,343 @@ jobs:
           if [ "${CHANGED_LINES}" -gt 1000 ]; then
             echo "::warning::PR is large (${CHANGED_LINES} lines changed). Consider splitting into smaller PRs."
           fi
+
+  # ── Flutter additional checks ─────────────────────────────────────────────────
+
+  flutter-web-build:
+    # Verify the Flutter app compiles for web. Unit tests mock everything, so
+    # compilation errors only surface during a real build.
+    name: Flutter Web Build
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Pub packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.pub-cache
+            frontend/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-flutter-pub-
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies and generate code
+        uses: ./.github/actions/flutter-generate-code
+        with:
+          working-directory: ./frontend
+
+      - name: Write dart-defines
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          jq -n \
+            --arg supabase_url  "${SUPABASE_URL}" \
+            --arg supabase_anon "${SUPABASE_ANON_KEY}" \
+            '{"SENTRY_DSN":"","SUPABASE_URL":$supabase_url,"SUPABASE_ANON_KEY":$supabase_anon}' \
+            > dart_defines.json
+
+      - name: Build web
+        run: flutter build web --release --dart-define-from-file=dart_defines.json
+
+      - name: Remove dart-defines
+        if: always()
+        run: rm -f dart_defines.json
+
+  flutter-integration-tests:
+    # Run the integration_test/ suite on headless Chrome.
+    # These tests exercise real widget rendering and app startup — things that
+    # unit tests with mocks cannot catch.
+    name: Flutter Integration Tests (Chrome)
+    needs: [changes, flutter-checks]
+    if: needs.changes.outputs.frontend == 'true' && needs.flutter-checks.result == 'success'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Pub packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.pub-cache
+            frontend/.dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-flutter-pub-
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies and generate code
+        uses: ./.github/actions/flutter-generate-code
+        with:
+          working-directory: ./frontend
+
+      - name: Write dart-defines
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          jq -n \
+            --arg supabase_url  "${SUPABASE_URL}" \
+            --arg supabase_anon "${SUPABASE_ANON_KEY}" \
+            '{"SENTRY_DSN":"","SUPABASE_URL":$supabase_url,"SUPABASE_ANON_KEY":$supabase_anon}' \
+            > dart_defines.json
+
+      - name: Run integration tests on Chrome
+        run: |
+          flutter test integration_test/ \
+            --platform chrome \
+            --dart-define-from-file=dart_defines.json
+
+      - name: Remove dart-defines
+        if: always()
+        run: rm -f dart_defines.json
+
+  # ── PR Backend Preview Deployment ────────────────────────────────────────────
+  # Builds a PR-tagged Docker image and deploys it to a shared PR preview
+  # Container App so reviewers can test the backend before merging.
+  #
+  # Prerequisites:
+  #   • A 'pr-preview' GitHub Environment exists with the same secrets as
+  #     'staging' (STAGING_DATABASE_URL, STAGING_SUPABASE_URL, etc.) plus
+  #     AZURE_CREDENTIALS with Contributor on the PR Container App.
+  #   • A PR preview Container App exists (default: aca-miru-pr).
+  #     Override via PR_CONTAINER_APP_NAME and PR_RESOURCE_GROUP repo variables.
+  #   • Note: this is a *shared* preview — only one PR is live at a time.
+
+  pr-backend-build:
+    name: Build PR Backend Image
+    needs: [changes, backend-checks]
+    if: needs.changes.outputs.backend == 'true' && needs.backend-checks.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute image tag
+        id: image-tag
+        run: |
+          OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          SHORT_SHA=$(echo '${{ github.sha }}' | cut -c1-7)
+          TAG="ghcr.io/${OWNER}/miru-backend:pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "owner=${OWNER}" >> $GITHUB_OUTPUT
+          echo "Image tag: ${TAG}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.image-tag.outputs.tag }}
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ steps.image-tag.outputs.owner }}/miru-backend:buildcache
+            type=gha
+          platforms: linux/amd64
+
+  pr-backend-deploy:
+    name: Deploy and Smoke-test PR Backend
+    needs: [pr-backend-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    environment:
+      name: pr-preview
+      url: ${{ steps.app-url.outputs.url }}
+    env:
+      PR_APP: ${{ vars.PR_CONTAINER_APP_NAME || 'aca-miru-pr' }}
+      PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy image to PR container app
+        env:
+          # Repo-level secrets (shared across environments)
+          SECRET_DATABASE_URL:                              ${{ secrets.STAGING_DATABASE_URL }}
+          SECRET_SUPABASE_URL:                              ${{ secrets.SUPABASE_URL }}
+          SECRET_SUPABASE_KEY:                              ${{ secrets.SUPABASE_KEY }}
+          SECRET_SUPABASE_SERVICE_ROLE_KEY:                 ${{ secrets.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY }}
+          SECRET_SUPABASE_JWT_SECRET:                       ${{ secrets.PRODUCTION_SUPABASE_JWT_SECRET }}
+          SECRET_OPENROUTER_API_KEY:                        ${{ secrets.OPENROUTER_API_KEY }}
+          SECRET_DEFAULT_CHAT_MODEL:                        ${{ secrets.DEFAULT_CHAT_MODEL }}
+          SECRET_EMBEDDING_MODEL:                           ${{ secrets.EMBEDDING_MODEL }}
+          SECRET_SECRET_KEY:                                ${{ secrets.SECRET_KEY }}
+          SECRET_WEBAUTHN_RP_ID:                            ${{ secrets.WEBAUTHN_RP_ID }}
+          SECRET_WEBAUTHN_RP_NAME:                          ${{ secrets.WEBAUTHN_RP_NAME }}
+          SECRET_WEBAUTHN_EXPECTED_ORIGIN:                  ${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}
+          SECRET_CORS_ALLOWED_ORIGINS:                      ${{ secrets.CORS_ALLOWED_ORIGINS }}
+          SECRET_TAVILY_API_KEY:                            ${{ secrets.TAVILY_API_KEY }}
+          SECRET_SENTRY_DSN:                                ${{ secrets.SENTRY_DSN }}
+          SECRET_AZURE_NOTIFICATION_HUB_NAME:               ${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}
+          SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING:  ${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}
+        run: |
+          IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
+          [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
+
+          SECRETS=(
+            "database-url=${SECRET_DATABASE_URL}"
+            "supabase-url=${SECRET_SUPABASE_URL}"
+            "supabase-key=${SECRET_SUPABASE_KEY}"
+            "supabase-service-role-key=${SECRET_SUPABASE_SERVICE_ROLE_KEY}"
+            "supabase-jwt-secret=${SECRET_SUPABASE_JWT_SECRET}"
+            "openrouter-api-key=${SECRET_OPENROUTER_API_KEY}"
+            "default-chat-model=${SECRET_DEFAULT_CHAT_MODEL}"
+            "embedding-model=${SECRET_EMBEDDING_MODEL}"
+            "secret-key=${SECRET_SECRET_KEY}"
+            "webauthn-rp-id=${SECRET_WEBAUTHN_RP_ID}"
+            "webauthn-rp-name=${SECRET_WEBAUTHN_RP_NAME}"
+            "webauthn-expected-origin=${SECRET_WEBAUTHN_EXPECTED_ORIGIN}"
+            "cors-allowed-origins=${SECRET_CORS_ALLOWED_ORIGINS}"
+            "tavily-api-key=${SECRET_TAVILY_API_KEY}"
+            "sentry-dsn=${SECRET_SENTRY_DSN}"
+            "azure-notification-hub-name=${SECRET_AZURE_NOTIFICATION_HUB_NAME}"
+            "azure-notification-hub-connection-string=${SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING}"
+          )
+
+          FILTERED_SECRETS=()
+          FILTERED_ENV_VARS=()
+          for secret in "${SECRETS[@]}"; do
+            key="${secret%%=*}"; val="${secret#*=}"
+            if [ -n "$val" ]; then
+              FILTERED_SECRETS+=("$key=$val")
+              env_key=$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+              FILTERED_ENV_VARS+=("$env_key=secretref:$key")
+            fi
+          done
+          FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=pr-preview")
+
+          if [ ${#FILTERED_SECRETS[@]} -gt 0 ]; then
+            az containerapp secret set \
+              --name "${{ env.PR_APP }}" \
+              --resource-group "${{ env.PR_RG }}" \
+              --secrets "${FILTERED_SECRETS[@]}"
+          fi
+
+          az containerapp update \
+            --name "${{ env.PR_APP }}" \
+            --resource-group "${{ env.PR_RG }}" \
+            --image "$IMAGE_TAG" \
+            --set-env-vars "${FILTERED_ENV_VARS[@]}"
+
+      - name: Get app URL
+        id: app-url
+        run: |
+          FQDN=$(az containerapp show \
+            --name "${{ env.PR_APP }}" \
+            --resource-group "${{ env.PR_RG }}" \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
+          echo "url=https://${FQDN}" >> $GITHUB_OUTPUT
+
+      - name: Wait for PR deployment to become healthy
+        # Scale-to-zero aware: --max-time 90 keeps the connection open through
+        # a full ACA cold start rather than abandoning it mid-boot.
+        run: |
+          APP_URL="${{ steps.app-url.outputs.url }}"
+
+          for i in $(seq 1 18); do
+            REVISION=$(az containerapp revision list \
+              --name "${{ env.PR_APP }}" \
+              --resource-group "${{ env.PR_RG }}" \
+              --query "sort_by([].{name:name,created:properties.createdTime}, &created) | [-1].name" \
+              --output tsv)
+            STATE=$(az containerapp revision show \
+              --name "${{ env.PR_APP }}" \
+              --resource-group "${{ env.PR_RG }}" \
+              --revision "$REVISION" \
+              --query "properties.runningState" --output tsv)
+            echo "Attempt ${i}/18: ${REVISION} is ${STATE}"
+            if [ "$STATE" = "Running" ] || [ "$STATE" = "RunningAtMaxScale" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          for i in $(seq 1 5); do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 --max-time 90 \
+              "${APP_URL}/health" || echo "000")
+            echo "Attempt ${i}/5: HTTP ${STATUS}"
+            if [ "$STATUS" = "200" ]; then
+              echo "PR deployment is healthy."
+              exit 0
+            fi
+            [ "$i" -lt 5 ] && sleep 5
+          done
+          echo "::error::PR deployment did not become healthy within the expected window."
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          APP_URL="${{ steps.app-url.outputs.url }}"
+          FAILURES=0
+
+          check() {
+            local label="$1" url="$2" expected="$3" fatal="$4"
+            local status
+            status=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+            echo "${label} → HTTP ${status}"
+            if [ "$status" != "$expected" ]; then
+              [ "$fatal" = "true" ] \
+                && { echo "::error::${label} returned ${status} (expected ${expected})"; FAILURES=$((FAILURES+1)); } \
+                || echo "::warning::${label} returned ${status} (expected ${expected})"
+            fi
+          }
+
+          check "/health"       "${APP_URL}/health"       "200" "true"
+          check "/docs"         "${APP_URL}/docs"         "200" "false"
+          check "/openapi.json" "${APP_URL}/openapi.json" "200" "true"
+
+          [ "$FAILURES" -gt 0 ] && { echo "::error::${FAILURES} smoke test(s) failed."; exit 1; }
+          echo "All smoke tests passed."

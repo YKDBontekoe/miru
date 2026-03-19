@@ -83,7 +83,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'http://localhost:54321' }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'test-key' }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || 'test-key' }}
-        run: uv run pytest --cov=app --cov-report=xml --cov-report=term -v
+        # -n auto runs tests in parallel across available CPUs (pytest-xdist).
+        # Each worker gets its own in-memory SQLite DB via the autouse fixture,
+        # so there is no shared-state between workers.
+        run: uv run pytest --cov=app --cov-report=xml --cov-report=term -v -n auto
 
       - name: Upload coverage to Codecov
         if: inputs.run-tests
