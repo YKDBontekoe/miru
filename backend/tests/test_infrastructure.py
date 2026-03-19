@@ -331,6 +331,48 @@ def test_resolve_steam_user_with_vanity_url(client) -> None:  # type: ignore[no-
     assert data["persona_name"] == "VanityPlayer"
 
 
+def test_resolve_steam_user_with_full_vanity_url(client) -> None:  # type: ignore[no-untyped-def]
+    from tests.conftest import auth_headers
+
+    with (
+        patch(
+            "app.api.v1.integrations.resolve_vanity_url",
+            new=AsyncMock(return_value="76561198000000001"),
+        ),
+        patch(
+            "app.api.v1.integrations.get_player_summaries",
+            new=AsyncMock(return_value=[{"personaname": "VanityPlayer"}]),
+        ),
+    ):
+        response = client.get(
+            "/api/v1/integrations/steam/resolve-user?username=https://steamcommunity.com/id/myvanity/",
+            headers=auth_headers(),
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["steam_id"] == "76561198000000001"
+    assert data["persona_name"] == "VanityPlayer"
+
+
+def test_resolve_steam_user_with_full_profile_url(client) -> None:  # type: ignore[no-untyped-def]
+    from tests.conftest import auth_headers
+
+    with (
+        patch(
+            "app.api.v1.integrations.get_player_summaries",
+            new=AsyncMock(return_value=[{"personaname": "TestPlayer"}]),
+        ),
+    ):
+        response = client.get(
+            "/api/v1/integrations/steam/resolve-user?username=https://steamcommunity.com/profiles/12345678901234567/",
+            headers=auth_headers(),
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["steam_id"] == "12345678901234567"
+    assert data["persona_name"] == "TestPlayer"
+
+
 def test_resolve_steam_user_not_found(client) -> None:  # type: ignore[no-untyped-def]
     from tests.conftest import auth_headers
 

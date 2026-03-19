@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, HTTPException
 
 from app.core.security.auth import CurrentUser  # noqa: TCH001
@@ -17,6 +19,16 @@ async def resolve_steam_user(
 ) -> dict[str, str]:
     """Resolve a Steam username or ID and return the Steam64 ID and persona name."""
     steam_id = None
+
+    # Parse username from full URL if provided
+    username = username.strip().rstrip("/")
+    profiles_match = re.search(r"steamcommunity\.com/profiles/(\d+)", username)
+    id_match = re.search(r"steamcommunity\.com/id/([^/]+)", username)
+
+    if profiles_match:
+        username = profiles_match.group(1)
+    elif id_match:
+        username = id_match.group(1)
 
     # Check if it's already a 17-digit numeric string
     if username.isdigit() and len(username) == 17:
