@@ -24,6 +24,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  static const _agentAvatarColors = [
+    AppColors.info,
+    AppColors.success,
+    AppColors.warning,
+  ];
+
   late String _roomName;
   List<ChatMessage> _messages = [];
   List<Agent> _roomAgents = [];
@@ -516,12 +522,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 ..._roomAgents.take(3).toList().asMap().entries.map((entry) {
                   final idx = entry.key;
                   final agent = entry.value;
-                  final agentColors = [
-                    AppColors.info,
-                    AppColors.success,
-                    AppColors.warning,
-                  ];
-                  final color = agentColors[idx % agentColors.length];
+                  final color = _agentAvatarColors[idx % _agentAvatarColors.length];
                   return Positioned(
                     left: (idx + 1) * 20.0,
                     child: Container(
@@ -613,7 +614,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final msg = _messages[index];
-        return MessageItem(message: msg, senderName: _getSenderName(msg));
+        return RepaintBoundary(
+          key: ValueKey(msg.id),
+          child: MessageItem(message: msg, senderName: _getSenderName(msg)),
+        );
       },
     );
   }
