@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -187,10 +189,15 @@ class ChatService:
                 {"role": "system", "content": agent.personality},
                 {"role": "user", "content": user_message},
             ],
+            stream=True,
         )
 
-        content = response.choices[0].message.content or "Error: No response from agent."
-        yield content
+        async for chunk in response:
+            if not chunk.choices:
+                continue
+            delta_content = chunk.choices[0].delta.content
+            if delta_content:
+                yield delta_content
         yield "[[STATUS:done]]\n"
 
     def _create_crew_agents(
@@ -299,7 +306,17 @@ class ChatService:
                 verbose=True,
             )
 
-        result = await crew.kickoff_async()
+        background_task = asyncio.create_task(crew.kickoff_async())
+        try:
+            while not background_task.done():
+                yield "[[STATUS:thinking]]\n"
+                await asyncio.sleep(2)
+            result = background_task.result()
+        finally:
+            if not background_task.done():
+                background_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await background_task
 
         # 5. Save agent response
         # In a hierarchical multi-agent response, attributing to a single agent
