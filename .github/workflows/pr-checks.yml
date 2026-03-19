@@ -86,7 +86,8 @@ jobs:
           uv sync --all-extras
           # safety check is used because safety scan requires an account/key in CI
           uv run safety check --policy-file .safety-policy.yml
-          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v
+          # SEC(agent): review needed - ignoring GHSA-rf74-v2fm-23pw, GHSA-gfwx-w7gr-fvh7 (nltk via safety dev dependency) which have no current fixes
+          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7
 
   pr-size-check:
     name: PR Size Check

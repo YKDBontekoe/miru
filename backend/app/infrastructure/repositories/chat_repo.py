@@ -48,7 +48,7 @@ class ChatRepository:
     async def list_room_agents(self, room_id: UUID) -> list[Agent]:
         """Fetch all agents associated with a room, with integrations prefetched."""
         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
-            "agent__agent_integrations__integration"
+            "agent__capabilities", "agent__agent_integrations__integration"
         )
         return [assoc.agent for assoc in assocs]
 

@@ -56,15 +56,17 @@ class MessageList extends StatelessWidget {
         final isPlaceholder =
             !msg.isUser && msg.text.isEmpty && streamingStatus != null;
 
-        return AnimatedMessageItem(
+        return RepaintBoundary(
           key: ValueKey(msg.id),
-          child: ChatBubble(
-            text: isPlaceholder ? streamingStatus! : msg.text,
-            isUser: msg.isUser,
-            crewTaskType: msg.crewTaskType,
-            status: isPlaceholder ? MessageStatus.streaming : msg.status,
-            onCopy: () => onCopy(msg),
-            onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+          child: AnimatedMessageItem(
+            child: ChatBubble(
+              text: isPlaceholder ? streamingStatus! : msg.text,
+              isUser: msg.isUser,
+              crewTaskType: msg.crewTaskType,
+              status: isPlaceholder ? MessageStatus.streaming : msg.status,
+              onCopy: () => onCopy(msg),
+              onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+            ),
           ),
         );
       },
