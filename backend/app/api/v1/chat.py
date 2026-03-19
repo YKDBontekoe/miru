@@ -106,7 +106,7 @@ async def add_agent_to_room(
         await service.add_agent_to_room(room_id, data.agent_id, user_id)
         return {"status": "ok"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
@@ -119,7 +119,7 @@ async def get_room_agents(
         agents = await service.list_room_agents(room_id, user_id)
         return [AgentResponse.model_validate(a) for a in agents]
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
@@ -131,7 +131,7 @@ async def get_room_messages(
     try:
         return await service.get_room_messages(room_id, user_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/rooms/{room_id}/chat")
