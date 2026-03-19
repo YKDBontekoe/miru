@@ -134,6 +134,11 @@ disable_error_code = ["call-arg", "call-overload", "no-any-return"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "strict"
+markers = [
+    # smoke: lightweight tests that run against a live deployment.
+    # Tag tests with @pytest.mark.smoke and run with: pytest -m smoke
+    "smoke: marks tests as post-deploy smoke checks (run with '-m smoke')",
+]
 
 [tool.aerich]
 tortoise_orm = "app.infrastructure.database.tortoise.TORTOISE_ORM"

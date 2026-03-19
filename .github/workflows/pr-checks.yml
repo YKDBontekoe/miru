@@ -90,6 +90,19 @@ jobs:
           # SEC(agent): review needed - ignoring GHSA-rf74-v2fm-23pw, GHSA-gfwx-w7gr-fvh7, GHSA-jm6w-m3j8-898g (nltk via safety dev dependency) which have no current fixes
           uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g
 
+  actionlint:
+    name: Lint Workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1
+        with:
+          # Fail on any workflow error so bugs are caught before they hit CI.
+          fail-on-error: true
+
   pr-size-check:
     name: PR Size Check
     runs-on: ubuntu-latest

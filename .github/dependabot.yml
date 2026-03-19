@@ -19,6 +19,12 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    # Batch minor and patch updates into a single weekly PR to reduce noise.
+    groups:
+      python-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # Dart/Flutter dependencies
   - package-ecosystem: "pub"
@@ -31,6 +37,8 @@ updates:
     labels:
       - "dependencies"
       - "flutter"
+      # Route failing Dependabot PRs through Jules for automated fix attempts.
+      - "jules-fix-pending"
     commit-message:
       prefix: "pub"
       include: "scope"
@@ -60,3 +68,17 @@ updates:
       github-actions-all:
         patterns:
           - "*"
+
+  # Docker base images (keeps the backend Dockerfile's FROM up to date)
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "docker"
+      include: "scope"

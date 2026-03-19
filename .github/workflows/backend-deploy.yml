@@ -49,8 +49,11 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write    # Cosign keyless signing via GitHub OIDC
+      attestations: write # Build provenance attestation stored in GHCR
     outputs:
       image-tag: ${{ steps.image-tag.outputs.tag }}
+      image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - uses: actions/checkout@v6
@@ -79,14 +82,19 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Registry cache persists across runners and never expires; GHA cache
+          # is kept as a fast fallback for the first push after a cache miss.
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:buildcache
+            type=gha
+          cache-to: type=registry,ref=ghcr.io/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
           platforms: linux/amd64
 
       - name: Set image tag output
@@ -100,6 +108,30 @@ jobs:
           TAG="${{ env.REGISTRY }}/${OWNER}/${{ env.IMAGE_NAME }}:${BRANCH}-${SHORT_SHA}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Image tag: ${TAG}"
+
+      # ── Supply-chain security ────────────────────────────────────────────────
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign Docker image (keyless)
+        # Keyless signing uses the GitHub Actions OIDC token — no long-lived key
+        # is stored anywhere. The signature and transparency-log entry are written
+        # to Rekor and can be verified by anyone with cosign + the workflow URL.
+        run: cosign sign --yes "${{ steps.image-tag.outputs.tag }}"
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.image-tag.outputs.tag }}
+          artifact-name: sbom.spdx.json
+          output-file: sbom.spdx.json
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ env.OWNER }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
   scan:
     name: Scan Docker Image for Vulnerabilities
@@ -200,6 +232,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      id-token: write  # Required for Cosign signature verification
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_ORG: ${{ vars.SENTRY_ORG }}
@@ -265,6 +298,19 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Verify Docker image signature
+        # Confirm the image was signed by THIS workflow before deploying.
+        # Prevents a tampered or unrelated image from reaching production.
+        run: |
+          cosign verify \
+            --certificate-identity-regexp \
+              "https://github.com/${{ github.repository }}/.github/workflows/backend-deploy.yml@.*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${{ needs.build.outputs.image-tag }}"
 
       - name: Ensure ingress target port is 8000
         run: |
@@ -444,6 +490,34 @@ jobs:
           fi
           exit 1
 
+      - name: Run post-deploy smoke tests
+        run: |
+          APP_URL=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
+          FAILURES=0
+
+          check() {
+            local label="$1" url="$2" expected="$3" fatal="$4"
+            local status
+            status=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+            echo "${label} → HTTP ${status}"
+            if [ "$status" != "$expected" ]; then
+              [ "$fatal" = "true" ] \
+                && { echo "::error::${label} returned ${status} (expected ${expected})"; FAILURES=$((FAILURES+1)); } \
+                || echo "::warning::${label} returned ${status} (expected ${expected})"
+            fi
+          }
+
+          check "/health"       "https://${APP_URL}/health"       "200" "true"
+          check "/docs"         "https://${APP_URL}/docs"         "200" "false"
+          check "/openapi.json" "https://${APP_URL}/openapi.json" "200" "true"
+
+          [ "$FAILURES" -gt 0 ] && { echo "::error::${FAILURES} smoke test(s) failed."; exit 1; }
+          echo "All smoke tests passed."
+
       - name: Notify Sentry of backend deploy
         if: env.SENTRY_AUTH_TOKEN != '' && env.SENTRY_ORG != '' && env.SENTRY_PROJECT_BACKEND != ''
         run: |
@@ -456,6 +530,8 @@ jobs:
 
       - name: Write deployment summary
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           STATUS="${{ job.status }}"
           [ "$STATUS" = "success" ] && EMOJI="✅" || EMOJI="❌"
@@ -465,6 +541,19 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "sort_by([].{name:name,created:properties.createdTime}, &created) | [-1].name" \
             --output tsv 2>/dev/null || echo "unknown")
+
+          # DORA: deployment frequency — count successful backend deploys to main in the last 7 days.
+          WEEK_AGO=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+                  || date -u -v-7d    +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+                  || echo "")
+          if [ -n "$WEEK_AGO" ]; then
+            DEPLOYS_7D=$(gh api \
+              "repos/${{ github.repository }}/actions/workflows/backend-deploy.yml/runs?per_page=100&status=success&branch=main" \
+              --jq "[.workflow_runs[] | select(.created_at > \"${WEEK_AGO}\")] | length" 2>/dev/null || echo "?")
+          else
+            DEPLOYS_7D="?"
+          fi
+
           {
             echo "## ${EMOJI} Production Deployment"
             echo ""
@@ -473,12 +562,170 @@ jobs:
             echo "| **Status** | ${EMOJI} ${STATUS^} |"
             echo "| **Image** | \`${{ needs.build.outputs.image-tag }}\` |"
             echo "| **Revision** | \`${NEW_REVISION}\` |"
-            echo "| **Rolled back to** | \`${{ steps.prev-revision.outputs.name }}\` |" \
-              $([ "$STATUS" = "success" ] && echo "<!-- omit -->" || true)
+            if [ "$STATUS" != "success" ]; then
+              echo "| **Rolled back to** | \`${{ steps.prev-revision.outputs.name }}\` |"
+            fi
             echo "| **Commit** | [\`${SHORT_SHA}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |"
             echo "| **Actor** | @${{ github.actor }} |"
             echo "| **URL** | ${{ vars.PRODUCTION_URL }} |"
             echo "| **Sentry release** | \`${{ steps.sentry-release.outputs.value }}\` |"
             echo ""
+            echo "### 📊 DORA"
+            echo "| Metric | Value |"
+            echo "|---|---|"
+            echo "| **Deploy frequency (7d)** | ${DEPLOYS_7D} deploys |"
+            echo ""
             echo "> [View full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # ── Staging deploy (develop branch only) ────────────────────────────────────
+  # Prerequisites:
+  #   • A staging Container App exists (default: aca-miru-staging).
+  #     Override via the STAGING_CONTAINER_APP_NAME repository variable.
+  #   • A 'staging' GitHub Environment exists with the STAGING_* secrets below.
+  #   • The service principal in AZURE_CREDENTIALS has Contributor on the
+  #     staging Container App and join/action on its managed environment.
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [migrate, scan, build]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    env:
+      STAGING_APP: ${{ vars.STAGING_CONTAINER_APP_NAME || 'aca-miru-staging' }}
+      STAGING_RG:  ${{ vars.STAGING_RESOURCE_GROUP    || 'rg-miru' }}
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Verify Docker image signature
+        run: |
+          cosign verify \
+            --certificate-identity-regexp \
+              "https://github.com/${{ github.repository }}/.github/workflows/backend-deploy.yml@.*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${{ needs.build.outputs.image-tag }}"
+
+      - name: Deploy image to staging
+        env:
+          SECRET_DATABASE_URL:                    ${{ secrets.STAGING_DATABASE_URL }}
+          SECRET_SUPABASE_URL:                    ${{ secrets.STAGING_SUPABASE_URL }}
+          SECRET_SUPABASE_KEY:                    ${{ secrets.STAGING_SUPABASE_KEY }}
+          SECRET_SUPABASE_SERVICE_ROLE_KEY:       ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          SECRET_SUPABASE_JWT_SECRET:             ${{ secrets.STAGING_SUPABASE_JWT_SECRET }}
+          SECRET_OPENROUTER_API_KEY:              ${{ secrets.OPENROUTER_API_KEY }}
+          SECRET_DEFAULT_CHAT_MODEL:              ${{ secrets.DEFAULT_CHAT_MODEL }}
+          SECRET_EMBEDDING_MODEL:                 ${{ secrets.EMBEDDING_MODEL }}
+          SECRET_SECRET_KEY:                      ${{ secrets.STAGING_SECRET_KEY }}
+          SECRET_WEBAUTHN_RP_ID:                  ${{ secrets.STAGING_WEBAUTHN_RP_ID }}
+          SECRET_WEBAUTHN_RP_NAME:                ${{ secrets.STAGING_WEBAUTHN_RP_NAME }}
+          SECRET_WEBAUTHN_EXPECTED_ORIGIN:        ${{ secrets.STAGING_WEBAUTHN_EXPECTED_ORIGIN }}
+          SECRET_CORS_ALLOWED_ORIGINS:            ${{ secrets.STAGING_CORS_ALLOWED_ORIGINS }}
+          SECRET_TAVILY_API_KEY:                  ${{ secrets.TAVILY_API_KEY }}
+          SECRET_SENTRY_DSN:                      ${{ secrets.SENTRY_DSN }}
+          SECRET_AZURE_NOTIFICATION_HUB_NAME:     ${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}
+          SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING: ${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}
+        run: |
+          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+          [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
+
+          SECRETS=(
+            "database-url=${SECRET_DATABASE_URL}"
+            "supabase-url=${SECRET_SUPABASE_URL}"
+            "supabase-key=${SECRET_SUPABASE_KEY}"
+            "supabase-service-role-key=${SECRET_SUPABASE_SERVICE_ROLE_KEY}"
+            "supabase-jwt-secret=${SECRET_SUPABASE_JWT_SECRET}"
+            "openrouter-api-key=${SECRET_OPENROUTER_API_KEY}"
+            "default-chat-model=${SECRET_DEFAULT_CHAT_MODEL}"
+            "embedding-model=${SECRET_EMBEDDING_MODEL}"
+            "secret-key=${SECRET_SECRET_KEY}"
+            "webauthn-rp-id=${SECRET_WEBAUTHN_RP_ID}"
+            "webauthn-rp-name=${SECRET_WEBAUTHN_RP_NAME}"
+            "webauthn-expected-origin=${SECRET_WEBAUTHN_EXPECTED_ORIGIN}"
+            "cors-allowed-origins=${SECRET_CORS_ALLOWED_ORIGINS}"
+            "tavily-api-key=${SECRET_TAVILY_API_KEY}"
+            "sentry-dsn=${SECRET_SENTRY_DSN}"
+            "azure-notification-hub-name=${SECRET_AZURE_NOTIFICATION_HUB_NAME}"
+            "azure-notification-hub-connection-string=${SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING}"
+          )
+
+          FILTERED_SECRETS=()
+          FILTERED_ENV_VARS=()
+          for secret in "${SECRETS[@]}"; do
+            key="${secret%%=*}"; val="${secret#*=}"
+            if [ -n "$val" ]; then
+              FILTERED_SECRETS+=("$key=$val")
+              env_key=$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+              FILTERED_ENV_VARS+=("$env_key=secretref:$key")
+            fi
+          done
+          FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=staging")
+
+          if [ ${#FILTERED_SECRETS[@]} -gt 0 ]; then
+            az containerapp secret set \
+              --name "${{ env.STAGING_APP }}" \
+              --resource-group "${{ env.STAGING_RG }}" \
+              --secrets "${FILTERED_SECRETS[@]}"
+          fi
+
+          az containerapp update \
+            --name "${{ env.STAGING_APP }}" \
+            --resource-group "${{ env.STAGING_RG }}" \
+            --image "$IMAGE_TAG" \
+            --set-env-vars "${FILTERED_ENV_VARS[@]}"
+
+      - name: Wait for staging to become healthy
+        run: |
+          APP_URL=$(az containerapp show \
+            --name "${{ env.STAGING_APP }}" \
+            --resource-group "${{ env.STAGING_RG }}" \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
+          echo "Staging URL: https://${APP_URL}"
+
+          for i in $(seq 1 18); do
+            REVISION=$(az containerapp revision list \
+              --name "${{ env.STAGING_APP }}" \
+              --resource-group "${{ env.STAGING_RG }}" \
+              --query "sort_by([].{name:name,created:properties.createdTime}, &created) | [-1].name" \
+              --output tsv)
+            STATE=$(az containerapp revision show \
+              --name "${{ env.STAGING_APP }}" \
+              --resource-group "${{ env.STAGING_RG }}" \
+              --revision "$REVISION" \
+              --query "properties.runningState" --output tsv)
+            echo "Attempt ${i}/18: ${REVISION} is ${STATE}"
+            if [ "$STATE" = "Running" ] || [ "$STATE" = "RunningAtMaxScale" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "https://${APP_URL}/health" || echo "000")
+            echo "Attempt ${i}/12: HTTP ${STATUS}"
+            [ "$STATUS" = "200" ] && { echo "Staging healthy."; exit 0; }
+            sleep 10
+          done
+          echo "::error::Staging did not become healthy within 2 minutes."
+          exit 1
