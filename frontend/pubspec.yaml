@@ -44,14 +44,14 @@ dependencies:
   confetti: ^0.8.0
 
   # State Management
-  flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
 
   # Notifications
   az_notification_hub: ^1.4.0
 
   # Data Modeling
-  freezed_annotation: ^2.4.4
+  freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
   intl: ^0.20.2
 
@@ -70,10 +70,10 @@ dev_dependencies:
   mocktail: ^1.0.4
 
   # Generators
-  build_runner: ^2.4.13
-  freezed: ^2.5.7
-  json_serializable: ^6.9.0
-  riverpod_generator: ^2.6.3
+  build_runner: ^2.13.0
+  freezed: ^3.2.5
+  json_serializable: ^6.11.4
+  riverpod_generator: ^4.0.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
