@@ -412,7 +412,9 @@ jobs:
               --query "properties.runningState" \
               --output tsv)
             echo "Attempt ${i}/18: revision ${REVISION} is ${STATE}"
-            if [ "$STATE" = "Running" ]; then
+            # RunningAtMaxScale means the revision is healthy but has hit its
+            # replica ceiling — treat it the same as Running.
+            if [ "$STATE" = "Running" ] || [ "$STATE" = "RunningAtMaxScale" ]; then
               echo "Revision is active."
               break
             fi
