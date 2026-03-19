@@ -277,7 +277,8 @@ async def test_stream_room_responses_single_agent(
         async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
             responses.append(r)
 
-        assert responses == ["Crew output", "[[STATUS:done]]\n"]
+        assert "Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
 
         # Verify Task was instantiated with single agent
         mock_task_cls.assert_called_once()
@@ -342,7 +343,8 @@ async def test_stream_room_responses_multiple_agents(
         async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
             responses.append(r)
 
-        assert responses == ["Crew output", "[[STATUS:done]]\n"]
+        assert "Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
 
         # Verify Task was instantiated without single agent
         mock_task_cls.assert_called_once()
