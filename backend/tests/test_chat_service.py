@@ -377,55 +377,6 @@ async def test_stream_room_responses_no_agents(
     assert responses == ["No agents in this room. Please add some first."]
 
 @pytest.mark.asyncio
-async def test_stream_room_responses_slow_kickoff(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from unittest.mock import patch
-    import asyncio
-
-    user_id = uuid4()
-    room_id = uuid4()
-
-    agent = MagicMock()
-    agent.id = uuid4()
-    agent.name = "Slow Agent"
-    agent.personality = "Slow"
-    agent.description = "A slow agent"
-    agent.agent_integrations = []
-
-    chat_service.chat_repo.list_room_agents.return_value = [agent]
-
-    mock_llm = MagicMock()
-    mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
-
-    with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,
-    ):
-        mock_crew_agent = MagicMock()
-        mock_crew_agent.role = "Slow Agent"
-        mock_agent_cls.return_value = mock_crew_agent
-
-        async def delayed_kickoff():
-            await asyncio.sleep(2.5)
-            return "Delayed Crew output"
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = delayed_kickoff
-        mock_crew_cls.return_value = mock_crew_instance
-
-        responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello slow", user_id):
-            responses.append(r)
-
-        assert "[[STATUS:thinking]]\n" in responses
-        assert "Delayed Crew output" in responses
-        assert "[[STATUS:done]]\n" in responses
-
-@pytest.mark.asyncio
 async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch) -> None:
     from unittest.mock import AsyncMock
     user_id = uuid4()
@@ -457,7 +408,6 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     mock_client = MagicMock()
     mock_client.openai_client = mock_llm
 
-    from app.domain.chat.service import get_openrouter_client
     monkeypatch.setattr("app.domain.chat.service.get_openrouter_client", MagicMock(return_value=mock_client))
 
     responses = []
@@ -476,6 +426,55 @@ async def test_stream_responses_no_agents(chat_service: typing.Any) -> None:
         responses.append(r)
 
     assert responses == ["No agents available. Please create one first."]
+
+@pytest.mark.asyncio
+async def test_stream_room_responses_slow_kickoff(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import patch
+    import asyncio
+
+    user_id = uuid4()
+    room_id = uuid4()
+
+    agent = MagicMock()
+    agent.id = uuid4()
+    agent.name = "Slow Agent"
+    agent.personality = "Slow"
+    agent.description = "A slow agent"
+    agent.agent_integrations = []
+
+    chat_service.chat_repo.list_room_agents.return_value = [agent]
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,  # noqa: F841
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,  # noqa: F841
+    ):
+        mock_crew_agent = MagicMock()
+        mock_crew_agent.role = "Slow Agent"
+        mock_agent_cls.return_value = mock_crew_agent
+
+        async def delayed_kickoff():
+            await asyncio.sleep(2.5)
+            return "Delayed Crew output"
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = delayed_kickoff
+        mock_crew_cls.return_value = mock_crew_instance
+
+        responses = []
+        async for r in chat_service.stream_room_responses(room_id, "hello slow", user_id):
+            responses.append(r)
+
+        assert "[[STATUS:thinking]]\n" in responses
+        assert "Delayed Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_cancel_task(
@@ -500,10 +499,10 @@ async def test_stream_room_responses_cancel_task(
     monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
+        patch("app.domain.chat.service.Task") as mock_task_cls,  # noqa: F841
         patch("app.domain.chat.service.Crew") as mock_crew_cls,
         patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,
+        patch("app.domain.chat.service.Process") as mock_process,  # noqa: F841
     ):
         mock_crew_agent = MagicMock()
         mock_agent_cls.return_value = mock_crew_agent

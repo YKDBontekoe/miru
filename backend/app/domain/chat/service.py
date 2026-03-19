@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -314,10 +315,8 @@ class ChatService:
         finally:
             if not background_task.done():
                 background_task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await background_task
-                except asyncio.CancelledError:
-                    pass
 
         # 5. Save agent response
         # In a hierarchical multi-agent response, attributing to a single agent
