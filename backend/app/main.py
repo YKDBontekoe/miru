@@ -6,7 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.agents import router as agents_router
@@ -78,6 +78,21 @@ app.include_router(memory_router, prefix="/api/v1/memory")
 app.include_router(productivity_router, prefix="/api/v1/productivity")
 app.include_router(integrations_router, prefix="/api/v1/integrations")
 app.include_router(notifications_router, prefix="/api/v1/notifications")
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next) -> Response:  # type: ignore
+    """Middleware to inject standard security headers into all responses."""
+    response = await call_next(request)
+    # SEC(agent): Inject security headers to mitigate XSS, Clickjacking, and ensure secure transport (CWE-116, CWE-693)
+    # Allows cdn.jsdelivr.net to ensure FastAPI's Swagger UI and ReDoc work
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com"
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 
 @app.get("/health")
