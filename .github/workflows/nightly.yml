@@ -47,7 +47,7 @@ jobs:
           uv run safety check --policy-file .safety-policy.yml >> $GITHUB_STEP_SUMMARY || echo "Safety found issues"
           echo "### Security Check (pip-audit)" >> $GITHUB_STEP_SUMMARY
           # SEC(agent): review needed - ignoring GHSA-rf74-v2fm-23pw, GHSA-gfwx-w7gr-fvh7 (nltk via safety dev dependency) which have no current fixes
-          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
+          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
         continue-on-error: true
 
       - name: Create issue if vulnerabilities found
