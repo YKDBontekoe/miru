@@ -135,23 +135,32 @@ jobs:
         # Guards against version skew: if the backend is unhealthy or not yet
         # deployed, deploying a new frontend that calls new API endpoints will
         # silently break users. We check /health and abort if it doesn't respond.
+        #
+        # Scale-to-zero note: this ACA app scales to zero when idle. The first
+        # request triggers a cold start that can take 30-90 s. We therefore use
+        # a 90 s per-attempt curl timeout so the connection stays open through
+        # the entire cold-start window rather than being abandoned mid-boot.
+        # 5 attempts × 90 s max = up to 7.5 minutes total, which covers any
+        # realistic cold start plus subsequent retries.
         run: |
           BACKEND_URL="${{ vars.PRODUCTION_URL }}"
           if [ -z "$BACKEND_URL" ]; then
             echo "::warning::PRODUCTION_URL is not set — skipping backend health gate."
             exit 0
           fi
-          echo "Checking backend health at ${BACKEND_URL}/health ..."
-          for i in $(seq 1 6); do
-            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "${BACKEND_URL}/health" || echo "000")
-            echo "Attempt ${i}/6: HTTP ${STATUS}"
+          echo "Checking backend health at ${BACKEND_URL}/health (scale-to-zero aware) ..."
+          for i in $(seq 1 5); do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 --max-time 90 \
+              "${BACKEND_URL}/health" || echo "000")
+            echo "Attempt ${i}/5: HTTP ${STATUS}"
             if [ "$STATUS" = "200" ]; then
               echo "Backend is healthy — proceeding with frontend deploy."
               exit 0
             fi
-            sleep 10
+            [ "$i" -lt 5 ] && sleep 5
           done
-          echo "::error::Backend did not respond with HTTP 200 after 60 s. Aborting frontend deploy to avoid API version skew."
+          echo "::error::Backend did not respond with HTTP 200 after 5 attempts. Aborting frontend deploy to avoid API version skew."
           exit 1
 
       - name: Deploy Web to Azure Static Web Apps
