@@ -1,4 +1,4 @@
-name: Notify on Failure
+name: Notify on Workflow Completion
 
 on:
   workflow_run:
@@ -11,8 +11,8 @@ on:
       - completed
 
 jobs:
-  notify:
-    name: Send Notification
+  notify-failure:
+    name: Send Failure Notification
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'failure'
 
@@ -99,3 +99,43 @@ jobs:
                 labels: ['ci/cd', 'failure', 'automated']
               });
             }
+
+  notify-success:
+    name: Send Success Notification
+    runs-on: ubuntu-latest
+    # Only fire for the deploy workflow on main — not every CI run.
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.name == 'Backend CI/CD - Deploy to Azure Container Apps' &&
+      github.event.workflow_run.head_branch == 'main'
+
+    steps:
+      - name: Send Discord notification
+        if: ${{ secrets.DISCORD_WEBHOOK_URL != '' }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: success
+          title: '🚀 Deployed: ${{ github.event.workflow_run.name }}'
+          description: |
+            **Branch:** ${{ github.event.workflow_run.head_branch }}
+            **Commit:** `${{ github.event.workflow_run.head_sha }}`
+          url: ${{ github.event.workflow_run.html_url }}
+          color: 0x00cc44
+        continue-on-error: true
+
+      - name: Send Slack notification
+        if: secrets.SLACK_WEBHOOK_URL != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            ✅ Production Deployed
+
+            Workflow: ${{ github.event.workflow_run.name }}
+            Branch: ${{ github.event.workflow_run.head_branch }}
+
+            <${{ github.event.workflow_run.html_url }}|View Run>
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true

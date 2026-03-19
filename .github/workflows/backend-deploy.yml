@@ -93,9 +93,13 @@ jobs:
         id: image-tag
         run: |
           OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
-          SHORT_SHA=$(git rev-parse --short HEAD)
+          # Use the expression-provided SHA so this step never needs a git command.
+          # git rev-parse can silently fail on shallow clones; ${{ github.sha }} is always set.
+          SHORT_SHA=$(echo '${{ github.sha }}' | cut -c1-7)
           BRANCH=$(echo '${{ github.ref_name }}' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
-          echo "tag=${{ env.REGISTRY }}/${OWNER}/${{ env.IMAGE_NAME }}:${BRANCH}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          TAG="${{ env.REGISTRY }}/${OWNER}/${{ env.IMAGE_NAME }}:${BRANCH}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Image tag: ${TAG}"
 
   scan:
     name: Scan Docker Image for Vulnerabilities
@@ -275,6 +279,17 @@ jobs:
         id: sentry-release
         run: echo "value=miru-backend@$(echo '${{ github.sha }}' | cut -c1-7)" >> $GITHUB_OUTPUT
 
+      - name: Capture active revision for rollback
+        id: prev-revision
+        run: |
+          PREV=$(az containerapp revision list \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "sort_by([?properties.active].{name:name,created:properties.createdTime}, &created) | [-1].name" \
+            --output tsv)
+          echo "name=${PREV}" >> $GITHUB_OUTPUT
+          echo "Active revision before deploy: ${PREV}"
+
       - name: Deploy to Azure Container Apps
         id: deploy
         env:
@@ -357,11 +372,17 @@ jobs:
               --secrets "${FILTERED_SECRETS[@]}"
           fi
 
+          IMAGE_TAG="${{ needs.build.outputs.image-tag }}"
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "::error::needs.build.outputs.image-tag is empty — the build job did not set its output correctly."
+            exit 1
+          fi
+
           # --set-env-vars adds/updates without replacing unrelated env vars.
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ needs.build.outputs.image-tag }} \
+            --image "$IMAGE_TAG" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
       - name: Wait for new revision to become active
@@ -410,6 +431,15 @@ jobs:
           done
 
           echo "::error::App did not become healthy within 4 minutes."
+          PREV="${{ steps.prev-revision.outputs.name }}"
+          if [ -n "$PREV" ]; then
+            echo "::warning::Rolling back traffic to ${PREV}..."
+            az containerapp ingress traffic set \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --revision-weight "${PREV}=100" || true
+            echo "Rollback complete — all traffic redirected to ${PREV}."
+          fi
           exit 1
 
       - name: Notify Sentry of backend deploy
@@ -421,3 +451,32 @@ jobs:
             --org "${{ env.SENTRY_ORG }}" \
             --project "${{ env.SENTRY_PROJECT_BACKEND }}" \
             || echo "Sentry deploy notification failed — continuing."
+
+      - name: Write deployment summary
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          [ "$STATUS" = "success" ] && EMOJI="✅" || EMOJI="❌"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          NEW_REVISION=$(az containerapp revision list \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "sort_by([].{name:name,created:properties.createdTime}, &created) | [-1].name" \
+            --output tsv 2>/dev/null || echo "unknown")
+          {
+            echo "## ${EMOJI} Production Deployment"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| **Status** | ${EMOJI} ${STATUS^} |"
+            echo "| **Image** | \`${{ needs.build.outputs.image-tag }}\` |"
+            echo "| **Revision** | \`${NEW_REVISION}\` |"
+            echo "| **Rolled back to** | \`${{ steps.prev-revision.outputs.name }}\` |" \
+              $([ "$STATUS" = "success" ] && echo "<!-- omit -->" || true)
+            echo "| **Commit** | [\`${SHORT_SHA}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |"
+            echo "| **Actor** | @${{ github.actor }} |"
+            echo "| **URL** | ${{ vars.PRODUCTION_URL }} |"
+            echo "| **Sentry release** | \`${{ steps.sentry-release.outputs.value }}\` |"
+            echo ""
+            echo "> [View full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          } >> "$GITHUB_STEP_SUMMARY"
