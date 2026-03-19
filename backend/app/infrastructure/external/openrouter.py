@@ -30,7 +30,7 @@ class OpenRouterClient:
         )
         self.instructor_client: instructor.AsyncInstructor = instructor.from_openai(
             self.openai_client,
-            mode=instructor.Mode.MD_JSON,
+            mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
 
     async def embed(self, text: str, model: str) -> list[float]:
