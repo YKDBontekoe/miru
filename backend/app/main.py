@@ -86,7 +86,9 @@ async def security_headers_middleware(request: Request, call_next) -> Response: 
     response = await call_next(request)
     # SEC(agent): Inject security headers to mitigate XSS, Clickjacking, and ensure secure transport (CWE-116, CWE-693)
     # Allows cdn.jsdelivr.net to ensure FastAPI's Swagger UI and ReDoc work
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com"
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
