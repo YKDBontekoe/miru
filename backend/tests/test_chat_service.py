@@ -277,7 +277,8 @@ async def test_stream_room_responses_single_agent(
         async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
             responses.append(r)
 
-        assert responses == ["Crew output", "[[STATUS:done]]\n"]
+        assert "Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
 
         # Verify Task was instantiated with single agent
         mock_task_cls.assert_called_once()
@@ -342,7 +343,8 @@ async def test_stream_room_responses_multiple_agents(
         async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
             responses.append(r)
 
-        assert responses == ["Crew output", "[[STATUS:done]]\n"]
+        assert "Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
 
         # Verify Task was instantiated without single agent
         mock_task_cls.assert_called_once()
@@ -373,3 +375,152 @@ async def test_stream_room_responses_no_agents(
         responses.append(r)
 
     assert responses == ["No agents in this room. Please add some first."]
+
+@pytest.mark.asyncio
+async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    from unittest.mock import AsyncMock
+    user_id = uuid4()
+
+    agent = MagicMock()
+    agent.personality = "Helpful"
+    chat_service.agent_repo.list_by_user.return_value = [agent]
+
+    # Create mock chunks
+    chunk1 = MagicMock()
+    chunk1.choices = [MagicMock()]
+    chunk1.choices[0].delta.content = "Hel"
+
+    chunk2 = MagicMock()
+    chunk2.choices = [MagicMock()]
+    chunk2.choices[0].delta.content = "lo!"
+
+    chunk3 = MagicMock()
+    chunk3.choices = []
+
+    async def mock_async_generator():
+        yield chunk1
+        yield chunk3
+        yield chunk2
+
+    mock_llm = MagicMock()
+    mock_llm.chat.completions.create = AsyncMock(return_value=mock_async_generator())
+
+    mock_client = MagicMock()
+    mock_client.openai_client = mock_llm
+
+    monkeypatch.setattr("app.domain.chat.service.get_openrouter_client", MagicMock(return_value=mock_client))
+
+    responses = []
+    async for r in chat_service.stream_responses("Hi", user_id):
+        responses.append(r)
+
+    assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
+
+@pytest.mark.asyncio
+async def test_stream_responses_no_agents(chat_service: typing.Any) -> None:
+    user_id = uuid4()
+    chat_service.agent_repo.list_by_user.return_value = []
+
+    responses = []
+    async for r in chat_service.stream_responses("Hi", user_id):
+        responses.append(r)
+
+    assert responses == ["No agents available. Please create one first."]
+
+@pytest.mark.asyncio
+async def test_stream_room_responses_slow_kickoff(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import patch
+    import asyncio
+
+    user_id = uuid4()
+    room_id = uuid4()
+
+    agent = MagicMock()
+    agent.id = uuid4()
+    agent.name = "Slow Agent"
+    agent.personality = "Slow"
+    agent.description = "A slow agent"
+    agent.agent_integrations = []
+
+    chat_service.chat_repo.list_room_agents.return_value = [agent]
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,  # noqa: F841
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,  # noqa: F841
+    ):
+        mock_crew_agent = MagicMock()
+        mock_crew_agent.role = "Slow Agent"
+        mock_agent_cls.return_value = mock_crew_agent
+
+        async def delayed_kickoff():
+            await asyncio.sleep(2.5)
+            return "Delayed Crew output"
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = delayed_kickoff
+        mock_crew_cls.return_value = mock_crew_instance
+
+        responses = []
+        async for r in chat_service.stream_room_responses(room_id, "hello slow", user_id):
+            responses.append(r)
+
+        assert "[[STATUS:thinking]]\n" in responses
+        assert "Delayed Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
+
+@pytest.mark.asyncio
+async def test_stream_room_responses_cancel_task(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import patch
+    import asyncio
+
+    user_id = uuid4()
+    room_id = uuid4()
+
+    agent = MagicMock()
+    agent.id = uuid4()
+    agent.name = "Test Agent"
+    agent.personality = "Helpful"
+    agent.description = "A helpful agent"
+    agent.agent_integrations = []
+
+    chat_service.chat_repo.list_room_agents.return_value = [agent]
+
+    mock_llm = MagicMock()
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task") as mock_task_cls,  # noqa: F841
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process") as mock_process,  # noqa: F841
+    ):
+        mock_crew_agent = MagicMock()
+        mock_agent_cls.return_value = mock_crew_agent
+
+        async def infinite_kickoff():
+            await asyncio.sleep(100)
+            return "Should not reach here"
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = infinite_kickoff
+        mock_crew_cls.return_value = mock_crew_instance
+
+        iterator = chat_service.stream_room_responses(room_id, "hello", user_id)
+
+        response1 = await anext(iterator)
+        assert response1 == "[[STATUS:thinking]]\n"
+
+        # Simulate client disconnect by closing the generator early
+        await iterator.aclose()
+        # The background task should have been cancelled in the finally block
+        # We can't directly check the background_task status easily but this covers the finally block
