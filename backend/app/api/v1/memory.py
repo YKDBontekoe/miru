@@ -66,11 +66,11 @@ async def store_memory(
 @router.delete("/{memory_id}")
 async def delete_memory(
     memory_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
 ) -> dict[str, str]:
     """Delete a memory."""
-    success = await service.delete_memory(memory_id)
+    success = await service.delete_memory(memory_id, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Memory not found")
     return {"status": "ok"}

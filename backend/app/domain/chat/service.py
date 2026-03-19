@@ -141,22 +141,31 @@ class ChatService:
         rooms = await self.chat_repo.list_rooms(user_id)
         return [RoomResponse(id=r.id, name=r.name, created_at=r.created_at) for r in rooms]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    async def update_room(self, room_id: UUID, name: str, user_id: UUID) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, name, user_id)
         if room:
             return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> None:
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied")
         await self.chat_repo.add_agent_to_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied")
         return await self.chat_repo.list_room_agents(room_id)
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
+    async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessageResponse]:
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            raise ValueError("Room not found or access denied")
         msgs = await self.chat_repo.get_room_messages(room_id)
         return [
             ChatMessageResponse(
@@ -254,6 +263,11 @@ class ChatService:
         self, room_id: UUID, user_message: str, user_id: UUID
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
+        room = await self.chat_repo.get_room(room_id, user_id)
+        if not room:
+            yield "Room not found or access denied."
+            return
+
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
