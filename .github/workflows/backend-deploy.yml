@@ -344,17 +344,25 @@ jobs:
           FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=production")
 
           # Update the Azure Container App
-          # Note: `az containerapp update` with `--secrets` and `--env-vars`
-          # only adds or updates entries. It does NOT remove deprecated or missing keys.
+          # Note: these commands only add or update entries; they do NOT remove deprecated keys.
           # If secrets or environment variables are removed from this workflow, they must
           # be manually cleaned up via the Azure CLI or Portal to avoid leaving stale data.
           # (e.g., `az containerapp secret remove` and `az containerapp update --remove-env-vars`)
+
+          # az containerapp update does not support --secrets; use secret set instead.
+          if [ ${#FILTERED_SECRETS[@]} -gt 0 ]; then
+            az containerapp secret set \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --secrets "${FILTERED_SECRETS[@]}"
+          fi
+
+          # --set-env-vars adds/updates without replacing unrelated env vars.
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ needs.build.outputs.image-tag }} \
-            --secrets "${FILTERED_SECRETS[@]}" \
-            --env-vars "${FILTERED_ENV_VARS[@]}"
+            --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
       - name: Wait for new revision to become active
         run: |
