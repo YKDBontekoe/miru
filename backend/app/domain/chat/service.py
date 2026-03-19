@@ -305,15 +305,19 @@ class ChatService:
                 verbose=True,
             )
 
-        task = asyncio.create_task(crew.kickoff_async())
+        background_task = asyncio.create_task(crew.kickoff_async())
         try:
-            while not task.done():
+            while not background_task.done():
                 yield "[[STATUS:thinking]]\n"
                 await asyncio.sleep(2)
-            result = task.result()
+            result = background_task.result()
         finally:
-            if not task.done():
-                task.cancel()
+            if not background_task.done():
+                background_task.cancel()
+                try:
+                    await background_task
+                except asyncio.CancelledError:
+                    pass
 
         # 5. Save agent response
         # In a hierarchical multi-agent response, attributing to a single agent
