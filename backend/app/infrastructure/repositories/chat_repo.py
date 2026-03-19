@@ -20,21 +20,24 @@ class ChatRepository:
         """List all chat rooms for a user."""
         return await ChatRoom.filter(user_id=user_id).all()
 
-    async def get_room(self, room_id: UUID) -> ChatRoom | None:
+    # SEC(agent): Explicitly filtering by user_id to prevent IDOR
+    async def get_room(self, room_id: UUID, user_id: UUID) -> ChatRoom | None:
         """Fetch a single room."""
-        return await ChatRoom.get_or_none(id=room_id)
+        return await ChatRoom.get_or_none(id=room_id, user_id=user_id)
 
-    async def update_room(self, room_id: UUID, name: str) -> ChatRoom | None:
+    # SEC(agent): Explicitly passing user_id to get_room to prevent IDOR
+    async def update_room(self, room_id: UUID, name: str, user_id: UUID) -> ChatRoom | None:
         """Update a room's name."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id, user_id)
         if room:
             room.name = name
             await room.save()
         return room
 
-    async def delete_room(self, room_id: UUID) -> bool:
+    # SEC(agent): Explicitly passing user_id to get_room to prevent IDOR
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
         """Delete a room."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id, user_id)
         if room:
             await room.delete()
             return True
