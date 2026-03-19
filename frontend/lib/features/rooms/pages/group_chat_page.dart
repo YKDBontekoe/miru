@@ -522,7 +522,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 ..._roomAgents.take(3).toList().asMap().entries.map((entry) {
                   final idx = entry.key;
                   final agent = entry.value;
-                  final color = _agentAvatarColors[idx % _agentAvatarColors.length];
+                  final color =
+                      _agentAvatarColors[idx % _agentAvatarColors.length];
                   return Positioned(
                     left: (idx + 1) * 20.0,
                     child: Container(
