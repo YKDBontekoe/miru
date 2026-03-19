@@ -2,7 +2,7 @@
 FROM python:3.13-slim AS builder
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -13,15 +13,11 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uv/bin/uv
 
 # Copy configuration files
-COPY pyproject.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 
 # Create a virtualenv and install dependencies
-# We create a dummy app to allow uv to satisfy package structure requirements
-# while caching dependencies independently of the actual code changes.
-RUN mkdir app && touch app/__init__.py
-RUN /uv/bin/uv venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    /uv/bin/uv pip install .
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+RUN /uv/bin/uv sync --frozen --no-dev --no-install-project
 
 # Stage 2: Runtime
 FROM python:3.13-slim
@@ -34,7 +30,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 
 # Install only the runtime libraries (e.g., libpq5 for PostgreSQL/Supabase)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
