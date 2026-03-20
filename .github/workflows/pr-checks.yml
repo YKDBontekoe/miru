@@ -238,11 +238,12 @@ jobs:
             ninja-build \
             cmake \
             clang \
-            pkg-config
+            pkg-config \
+            xvfb
 
       - name: Run integration tests on Linux desktop
         run: |
-          flutter test integration_test/ \
+          xvfb-run --auto-servernum flutter test integration_test/ \
             -d linux \
             --dart-define-from-file=dart_defines.json
 
