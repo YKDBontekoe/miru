@@ -45,6 +45,7 @@ class ChatMessage(SupabaseModel):
     content: str = fields.TextField()
     message_type: str = fields.CharField(max_length=50, default="text")  # type: ignore[assignment]
     attachments: list = fields.JSONField(default=[])
+    feedback: str | None = fields.CharField(max_length=20, null=True)  # type: ignore[assignment]
 
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
