@@ -183,8 +183,8 @@ class MemoryService:
                 {
                     "id": str(m.id),
                     "content": m.content,
-                    "collection_id": str(m.collection_id)
-                    if getattr(m, "collection_id", None)
+                    "collection_id": str(getattr(m, "collection_id"))
+                    if hasattr(m, "collection_id") and getattr(m, "collection_id")
                     else None,
                     "created_at": m.created_at.isoformat() if m.created_at else None,
                     "meta": m.meta,
@@ -202,7 +202,7 @@ class MemoryService:
                     [
                         str(m.id),
                         m.content,
-                        str(m.collection_id) if getattr(m, "collection_id", None) else "",
+                        str(getattr(m, "collection_id")) if hasattr(m, "collection_id") and getattr(m, "collection_id") else "",
                         m.created_at.isoformat() if m.created_at else "",
                     ]
                 )

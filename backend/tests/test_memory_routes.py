@@ -1,3 +1,4 @@
+from starlette.testclient import TestClient
 from collections.abc import Generator
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
@@ -177,7 +178,7 @@ def test_store_memory_route_oserror(client: TestClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_memory(client: AsyncClient) -> None:
+async def test_update_memory(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -210,7 +211,7 @@ async def test_update_memory(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_memory_empty(client: AsyncClient) -> None:
+async def test_update_memory_empty(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -227,7 +228,7 @@ async def test_update_memory_empty(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_merge_memories(client: AsyncClient) -> None:
+async def test_merge_memories(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -249,7 +250,7 @@ async def test_merge_memories(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_export_memories(client: AsyncClient) -> None:
+async def test_export_memories(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -268,7 +269,7 @@ async def test_export_memories(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_on_this_day(client: AsyncClient) -> None:
+async def test_get_on_this_day(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -299,7 +300,7 @@ async def test_get_on_this_day(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_list_collections(client: AsyncClient) -> None:
+async def test_list_collections(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -329,7 +330,7 @@ async def test_list_collections(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_collection(client: AsyncClient) -> None:
+async def test_create_collection(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -360,7 +361,7 @@ async def test_create_collection(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_collection(client: AsyncClient) -> None:
+async def test_update_collection(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 
@@ -392,7 +393,7 @@ async def test_update_collection(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_collection(client: AsyncClient) -> None:
+async def test_delete_collection(client: TestClient) -> None:
     mock_service = AsyncMock()
     from app.core.security.auth import get_current_user
 

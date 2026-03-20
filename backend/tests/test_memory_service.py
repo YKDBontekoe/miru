@@ -1,3 +1,4 @@
+from typing import Any
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -9,17 +10,17 @@ from app.domain.memory.service import MemoryService
 
 
 @pytest.fixture
-def mock_repo():
+def mock_repo() -> Any:
     return AsyncMock()
 
 
 @pytest.fixture
-def memory_service(mock_repo):
+def memory_service(mock_repo: Any) -> Any:
     return MemoryService(mock_repo)
 
 
 @pytest.mark.asyncio
-async def test_retrieve_memories_no_query_with_filters(memory_service, mock_repo):
+async def test_retrieve_memories_no_query_with_filters(memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     col_id = uuid4()
 
@@ -36,7 +37,7 @@ async def test_retrieve_memories_no_query_with_filters(memory_service, mock_repo
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
-async def test_retrieve_memories_query_with_collection(mock_embed, memory_service, mock_repo):
+async def test_retrieve_memories_query_with_collection(mock_embed: Any, memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     col_id = uuid4()
 
@@ -54,7 +55,7 @@ async def test_retrieve_memories_query_with_collection(mock_embed, memory_servic
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
-async def test_retrieve_memories_query_without_collection(mock_embed, memory_service, mock_repo):
+async def test_retrieve_memories_query_without_collection(mock_embed: Any, memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     mock_embed.return_value = [0.1, 0.2]
 
@@ -69,7 +70,7 @@ async def test_retrieve_memories_query_without_collection(mock_embed, memory_ser
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
-async def test_update_memory(mock_embed, memory_service, mock_repo):
+async def test_update_memory(mock_embed: Any, memory_service: Any, mock_repo: Any) -> None:
     mem_id = uuid4()
     mock_embed.return_value = [0.5, 0.5]
     expected_mem = Memory(content="New", embedding=[], id=mem_id)
@@ -85,7 +86,7 @@ async def test_update_memory(mock_embed, memory_service, mock_repo):
 
 
 @pytest.mark.asyncio
-async def test_get_on_this_day(memory_service, mock_repo):
+async def test_get_on_this_day(memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     mock_repo.get_on_this_day.return_value = []
 
@@ -95,7 +96,7 @@ async def test_get_on_this_day(memory_service, mock_repo):
 
 
 @pytest.mark.asyncio
-async def test_collection_methods(memory_service, mock_repo):
+async def test_collection_methods(memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     col_id = uuid4()
 
@@ -113,7 +114,7 @@ async def test_collection_methods(memory_service, mock_repo):
 
 
 @pytest.mark.asyncio
-async def test_merge_memories(memory_service, mock_repo):
+async def test_merge_memories(memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     m_id1 = uuid4()
     m_id2 = uuid4()
@@ -130,7 +131,7 @@ async def test_merge_memories(memory_service, mock_repo):
 
 
 @pytest.mark.asyncio
-async def test_export_memories_json(memory_service, mock_repo):
+async def test_export_memories_json(memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     m1 = Memory(id=uuid4(), content="Test 1", user_id=user_id, embedding=[])
     m1.created_at = datetime(2023, 1, 1, tzinfo=UTC)
@@ -146,7 +147,7 @@ async def test_export_memories_json(memory_service, mock_repo):
 
 
 @pytest.mark.asyncio
-async def test_export_memories_csv(memory_service, mock_repo):
+async def test_export_memories_csv(memory_service: Any, mock_repo: Any) -> None:
     user_id = uuid4()
     m1 = Memory(id=uuid4(), content="Test 1", user_id=user_id, embedding=[])
     m1.created_at = datetime(2023, 1, 1, tzinfo=UTC)
