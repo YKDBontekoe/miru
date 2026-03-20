@@ -36,6 +36,7 @@ class ProductivityService:
         async with handle_db_errors("create task"):
             return await Task.create(
                 user_id=user_id,
+                room_id=task_data.room_id,
                 title=task_data.title,
                 description=task_data.description,
                 is_completed=task_data.is_completed,
@@ -107,6 +108,7 @@ class ProductivityService:
         async with handle_db_errors("create note"):
             return await Note.create(
                 user_id=user_id,
+                room_id=note_data.room_id,
                 agent_id=note_data.agent_id,
                 origin_message_id=note_data.origin_message_id,
                 origin_context=note_data.origin_context,
@@ -188,6 +190,7 @@ class ProductivityService:
         async with handle_db_errors("create calendar event"):
             return await CalendarEvent.create(
                 user_id=user_id,
+                room_id=event_data.room_id,
                 agent_id=event_data.agent_id,
                 origin_message_id=event_data.origin_message_id,
                 origin_context=event_data.origin_context,

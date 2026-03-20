@@ -459,18 +459,16 @@ async def test_add_agent_to_room(chat_service: typing.Any) -> None:
 async def test_create_room_invitation(chat_service: typing.Any) -> None:
     from datetime import datetime
 
-    from fastapi import HTTPException
-
     from app.domain.chat.models import RoomInvitationCreate
+    from app.domain.chat.service import RoomNotFoundError
 
     room_id = uuid4()
     inviter_id = uuid4()
     data = RoomInvitationCreate(email="test@example.com", role="admin")
 
     chat_service.chat_repo.get_room.return_value = None
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(RoomNotFoundError):
         await chat_service.create_room_invitation(room_id, inviter_id, data)
-    assert exc.value.status_code == 404
 
     mock_room = MagicMock()
     chat_service.chat_repo.get_room.return_value = mock_room
@@ -496,37 +494,38 @@ async def test_create_room_invitation(chat_service: typing.Any) -> None:
 async def test_accept_invitation(chat_service: typing.Any) -> None:
     from datetime import datetime
 
-    from fastapi import HTTPException
+    from app.domain.chat.service import (
+        InvitationAlreadyAcceptedError,
+        InvitationExpiredError,
+        InvitationNotFoundError,
+    )
 
     token = "some-token"
     user_id = uuid4()
 
     chat_service.chat_repo.get_invitation_by_token.return_value = None
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(InvitationNotFoundError):
         await chat_service.accept_invitation(token, user_id)
-    assert exc.value.status_code == 404
 
     mock_inv = MagicMock()
     mock_inv.accepted_at = datetime.now(tz=UTC)
     chat_service.chat_repo.get_invitation_by_token.return_value = mock_inv
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(InvitationAlreadyAcceptedError):
         await chat_service.accept_invitation(token, user_id)
-    assert exc.value.status_code == 400
 
     mock_inv.accepted_at = None
     from datetime import timedelta
 
     mock_inv.expires_at = datetime.now(tz=UTC) - timedelta(days=1)
-    with pytest.raises(HTTPException) as exc:
+    with pytest.raises(InvitationExpiredError):
         await chat_service.accept_invitation(token, user_id)
-    assert exc.value.status_code == 400
 
     mock_inv.expires_at = datetime.now(tz=UTC) + timedelta(days=1)
     mock_inv.room_id = uuid4()
 
     result = await chat_service.accept_invitation(token, user_id)
-    assert result["status"] == "ok"
-    assert result["room_id"] == str(mock_inv.room_id)
+    assert result.status == "ok"
+    assert result.room_id == mock_inv.room_id
 
     chat_service.chat_repo.accept_invitation.assert_called_once_with(mock_inv, user_id)
     chat_service.chat_repo.log_activity.assert_called_once_with(

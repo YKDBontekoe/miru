@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 
 import crewai
 from crewai import LLM, Crew, Process, Task
-from fastapi import HTTPException
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -29,6 +28,7 @@ from app.domain.chat.models import (
     ActivityLogResponse,
     ChatMessage,
     ChatMessageResponse,
+    InvitationAcceptResult,
     RoomInvitationCreate,
     RoomInvitationResponse,
     RoomMemberResponse,
@@ -36,6 +36,26 @@ from app.domain.chat.models import (
 )
 from app.infrastructure.external.openrouter import get_openrouter_client
 from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
+
+
+class ChatDomainError(Exception):
+    """Base exception for Chat domain errors."""
+
+
+class RoomNotFoundError(ChatDomainError):
+    """Raised when a specified chat room cannot be found."""
+
+
+class InvitationNotFoundError(ChatDomainError):
+    """Raised when a room invitation token is invalid or not found."""
+
+
+class InvitationAlreadyAcceptedError(ChatDomainError):
+    """Raised when attempting to accept an already-accepted invitation."""
+
+
+class InvitationExpiredError(ChatDomainError):
+    """Raised when attempting to accept an expired invitation."""
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -167,12 +187,11 @@ class ChatService:
     async def delete_room(self, room_id: UUID) -> bool:
         return await self.chat_repo.delete_room(room_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID | None = None) -> None:
         await self.chat_repo.add_agent_to_room(room_id, agent_id)
-        # Assuming we don't have user_id, we can log it with just the room_id and agent_id
         await self.chat_repo.log_activity(
             room_id=room_id,
-            user_id=None,
+            user_id=user_id,
             action_type="add",
             entity_type="agent",
             entity_id=agent_id,
@@ -182,6 +201,14 @@ class ChatService:
         return await self.chat_repo.list_room_agents(room_id)
 
     async def list_room_members(self, room_id: UUID) -> list[RoomMemberResponse]:
+        """List all members of a specific chat room.
+
+        Args:
+            room_id: The UUID of the chat room.
+
+        Returns:
+            A list of RoomMemberResponse objects containing member details.
+        """
         members = await self.chat_repo.list_room_members(room_id)
         return [
             RoomMemberResponse(
@@ -197,9 +224,22 @@ class ChatService:
     async def create_room_invitation(
         self, room_id: UUID, inviter_id: UUID, data: RoomInvitationCreate
     ) -> RoomInvitationResponse:
+        """Create an invitation link for a chat room.
+
+        Args:
+            room_id: The UUID of the chat room.
+            inviter_id: The UUID of the user sending the invitation.
+            data: RoomInvitationCreate payload containing role and optional email.
+
+        Returns:
+            RoomInvitationResponse containing the invitation token and details.
+
+        Raises:
+            RoomNotFoundError: If the specified room does not exist.
+        """
         room = await self.chat_repo.get_room(room_id)
         if not room:
-            raise HTTPException(status_code=404, detail="Room not found")
+            raise RoomNotFoundError("Room not found")
 
         # Generate a unique secure token
         token = secrets.token_urlsafe(32)
@@ -226,16 +266,32 @@ class ChatService:
             created_at=invitation.created_at,
         )
 
-    async def accept_invitation(self, token: str, user_id: UUID) -> dict[str, str]:
+    async def accept_invitation(self, token: str, user_id: UUID) -> InvitationAcceptResult:
+        """Accept a room invitation using its token.
+
+        Args:
+            token: The unique invitation token string.
+            user_id: The UUID of the user accepting the invitation.
+
+        Returns:
+            An InvitationAcceptResult containing the status and joined room ID.
+
+        Raises:
+            InvitationNotFoundError: If the token is invalid or not found.
+            InvitationAlreadyAcceptedError: If the invitation was already accepted.
+            InvitationExpiredError: If the invitation has expired.
+        """
+        from app.domain.chat.models import InvitationAcceptResult
+
         invitation = await self.chat_repo.get_invitation_by_token(token)
         if not invitation:
-            raise HTTPException(status_code=404, detail="Invitation not found or invalid token")
+            raise InvitationNotFoundError("Invitation not found or invalid token")
 
         if invitation.accepted_at:
-            raise HTTPException(status_code=400, detail="Invitation already accepted")
+            raise InvitationAlreadyAcceptedError("Invitation already accepted")
 
         if invitation.expires_at < datetime.now(tz=UTC):
-            raise HTTPException(status_code=400, detail="Invitation expired")
+            raise InvitationExpiredError("Invitation expired")
 
         await self.chat_repo.accept_invitation(invitation, user_id)
 
@@ -247,9 +303,17 @@ class ChatService:
             entity_type="room",
         )
 
-        return {"status": "ok", "room_id": str(room_id)}
+        return InvitationAcceptResult(status="ok", room_id=room_id)
 
     async def get_room_activity(self, room_id: UUID) -> list[ActivityLogResponse]:
+        """Fetch the most recent activity logs for a specific chat room.
+
+        Args:
+            room_id: The UUID of the chat room.
+
+        Returns:
+            A list of ActivityLogResponse objects detailing recent events.
+        """
         logs = await self.chat_repo.get_room_activity(room_id)
         return [
             ActivityLogResponse(

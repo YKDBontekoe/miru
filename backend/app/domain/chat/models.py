@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -31,10 +31,10 @@ class ChatRoom(SupabaseModel):
             "ALTER TABLE public.chat_rooms ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY chat_rooms_owner_all ON public.chat_rooms FOR ALL USING (auth.uid() = user_id);",
             "CREATE POLICY chat_rooms_member_select ON public.chat_rooms FOR SELECT USING (EXISTS ("
-            "SELECT 1 FROM chat_room_members WHERE room_id = id AND user_id = auth.uid()"
+            "SELECT 1 FROM chat_room_members WHERE room_id = chat_rooms.id AND user_id = auth.uid()"
             "));",
             "CREATE POLICY chat_rooms_member_update ON public.chat_rooms FOR UPDATE USING (EXISTS ("
-            "SELECT 1 FROM chat_room_members WHERE room_id = id AND user_id = auth.uid() AND role IN ('owner', 'admin')"
+            "SELECT 1 FROM chat_room_members WHERE room_id = chat_rooms.id AND user_id = auth.uid() AND role IN ('owner', 'admin')"
             "));",
         ]
 
@@ -132,11 +132,7 @@ class RoomInvitation(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.room_invitations ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY room_invitations_select ON public.room_invitations "
-            "FOR SELECT USING (inviter_id = auth.uid() OR EXISTS ("
-            "SELECT 1 FROM chat_room_members WHERE room_id = room_invitations.room_id AND user_id = auth.uid()"
-            ") OR EXISTS ("
-            "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
-            "));",
+            "FOR SELECT USING (inviter_id = auth.uid() OR email = (SELECT email FROM auth.users WHERE id = auth.uid()));",
             "CREATE POLICY room_invitations_insert ON public.room_invitations "
             "FOR INSERT WITH CHECK (inviter_id = auth.uid() AND (EXISTS ("
             "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
@@ -167,6 +163,9 @@ class ActivityLog(SupabaseModel):
 
     class Meta:
         table = "activity_logs"
+        sql_indexes = [
+            "CREATE INDEX IF NOT EXISTS activity_logs_room_created_idx ON public.activity_logs (room_id, created_at DESC);"
+        ]
         sql_policies = [
             "ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY activity_logs_select ON public.activity_logs "
@@ -176,7 +175,9 @@ class ActivityLog(SupabaseModel):
             "SELECT 1 FROM chat_rooms WHERE id = room_id AND user_id = auth.uid()"
             "))));",
             "CREATE POLICY activity_logs_insert ON public.activity_logs "
-            "FOR INSERT WITH CHECK (user_id = auth.uid());",
+            "FOR INSERT WITH CHECK (user_id = auth.uid() OR (user_id IS NULL AND agent_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM agents WHERE id = activity_logs.agent_id AND user_id = auth.uid()"
+            ")));",
         ]
 
 
@@ -244,7 +245,12 @@ class RoomMemberResponse(BaseModel):
 
 class RoomInvitationCreate(BaseModel):
     email: str | None = None
-    role: str = "member"
+    role: Literal["owner", "admin", "member", "viewer"] = "member"
+
+
+class InvitationAcceptResult(BaseModel):
+    status: str
+    room_id: UUID
 
 
 class RoomInvitationResponse(BaseModel):
