@@ -10,6 +10,7 @@ import 'package:miru/core/models/chat_message.dart';
 import 'package:miru/core/models/message_status.dart';
 import 'package:miru/features/chat/widgets/miru_app_bar.dart';
 import 'package:miru/features/chat/widgets/scroll_to_bottom_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:miru/features/chat/widgets/streaming_status_pill.dart';
 import 'package:miru/features/chat/widgets/message_list.dart';
 
@@ -51,6 +52,32 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _inputFocusNode.requestFocus();
     });
+  }
+
+  Future<void> _handleFeedback(ChatMessage message, bool isPositive) async {
+    try {
+      await ApiService.instance.submitFeedback(message.id, isPositive);
+      if (!mounted) return;
+
+      // Update local message state to reflect feedback
+      setState(() {
+        final index = _messages.indexWhere((m) => m.id == message.id);
+        if (index != -1) {
+          _messages[index] = _messages[index].copyWith(
+            feedback: isPositive ? 'positive' : 'negative',
+          );
+        }
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Thanks for the feedback!')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to submit feedback')));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -174,7 +201,12 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendStreamingMessage(String text) async {
     final statusRegex = RegExp(r'\[\[STATUS:([^\]]+)\]\]');
 
-    final stream = ApiService.instance.sendMessage(text);
+    final prefs = await SharedPreferences.getInstance();
+    final stylePref = prefs.getString('miru_chat_style');
+    final stream = ApiService.instance.sendMessage(
+      text,
+      stylePreference: stylePref,
+    );
     _activeStreamSubscription = stream.listen(
       (chunk) {
         if (!mounted) return;
@@ -350,6 +382,7 @@ class _ChatPageState extends State<ChatPage> {
                         streamingStatus: _streamingStatus,
                         onCopy: _copyMessage,
                         onRetry: _retryLastMessage,
+                        onFeedback: _handleFeedback,
                       ),
               ),
 

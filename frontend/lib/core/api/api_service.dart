@@ -66,12 +66,16 @@ class ApiService {
   }
 
   /// Streams a chat response from the backend.
-  Stream<String> sendMessage(String message) async* {
+  Stream<String> sendMessage(String message, {String? stylePreference}) async* {
     try {
       final dio = _getDio();
       final response = await dio.post<ResponseBody>(
         'chat', // No leading slash
-        data: {'message': message, 'use_crew': false},
+        data: {
+          'message': message,
+          'use_crew': false,
+          if (stylePreference != null) 'style_preference': stylePreference,
+        },
         options: Options(responseType: ResponseType.stream),
       );
 
@@ -255,12 +259,19 @@ class ApiService {
     });
   }
 
-  Stream<String> streamRoomChat(String roomId, String message) async* {
+  Stream<String> streamRoomChat(
+    String roomId,
+    String message, {
+    String? stylePreference,
+  }) async* {
     try {
       final dio = _getDio();
       final response = await dio.post<ResponseBody>(
         'rooms/$roomId/chat',
-        data: {'content': message},
+        data: {
+          'content': message,
+          if (stylePreference != null) 'style_preference': stylePreference,
+        },
         options: Options(responseType: ResponseType.stream),
       );
 
@@ -286,4 +297,19 @@ class ApiAuthException implements Exception {
 
   @override
   String toString() => 'ApiAuthException: $message';
+}
+
+Future<void> submitFeedback(String messageId, bool isPositive) async {
+  try {
+    final dio = _getDio();
+    await dio.post(
+      'messages/$messageId/feedback',
+      data: {'is_positive': isPositive},
+    );
+  } on DioException catch (e) {
+    final errorBody = e.response?.data?.toString() ?? e.message;
+    throw Exception(
+      'Failed to submit feedback (${e.response?.statusCode}): $errorBody',
+    );
+  }
 }

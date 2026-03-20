@@ -172,7 +172,7 @@ class ChatService:
             for m in msgs
         ]
 
-    async def stream_responses(self, user_message: str, user_id: UUID) -> AsyncIterator[str]:
+    async def stream_responses(self, user_message: str, user_id: UUID, style_preference: str | None = None) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
@@ -186,7 +186,7 @@ class ChatService:
         response = await llm.chat.completions.create(
             model=model_name,
             messages=[
-                {"role": "system", "content": agent.personality},
+                {"role": "system", "content": f"{agent.personality}\nPlease use a {style_preference} response style if requested." if style_preference else agent.personality},
                 {"role": "user", "content": user_message},
             ],
             stream=True,
@@ -258,7 +258,7 @@ class ChatService:
         return {"task_type": "general", "result": str(result)}
 
     async def stream_room_responses(
-        self, room_id: UUID, user_message: str, user_id: UUID
+        self, room_id: UUID, user_message: str, user_id: UUID, style_preference: str | None = None
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         # 1. Save user message
@@ -280,7 +280,7 @@ class ChatService:
         # 4. Define and execute task
         if len(crew_agents) > 1:
             task = Task(
-                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message) + (f"\nIMPORTANT: Ensure the final output is styled as {style_preference}." if style_preference else ""),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
@@ -296,7 +296,7 @@ class ChatService:
                     f"User said: {user_message}. "
                     "Orchestrate a helpful conversation among available agents to assist the user."
                 ),
-                expected_output="A collaborative response from the most relevant agents.",
+                expected_output=f"A collaborative response from the most relevant agents. Ensure the final response adopts a {style_preference} style." if style_preference else "A collaborative response from the most relevant agents.",
                 agent=crew_agents[0],
             )
             crew = Crew(

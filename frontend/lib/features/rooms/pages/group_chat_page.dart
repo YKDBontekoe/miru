@@ -62,6 +62,31 @@ class _GroupChatPageState extends State<GroupChatPage> {
     super.dispose();
   }
 
+  Future<void> _handleFeedback(ChatMessage message, bool isPositive) async {
+    try {
+      await ApiService.instance.submitFeedback(message.id, isPositive);
+      if (!mounted) return;
+
+      setState(() {
+        final index = _messages.indexWhere((m) => m.id == message.id);
+        if (index != -1) {
+          _messages[index] = _messages[index].copyWith(
+            feedback: isPositive ? 'positive' : 'negative',
+          );
+        }
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Thanks for the feedback!')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to submit feedback')),
+      );
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Data loading
   // ---------------------------------------------------------------------------
@@ -129,7 +154,13 @@ class _GroupChatPageState extends State<GroupChatPage> {
     HapticFeedback.lightImpact();
 
     try {
-      final stream = ApiService.instance.streamRoomChat(widget.room.id, text);
+      final prefs = await SharedPreferences.getInstance();
+      final stylePref = prefs.getString('miru_chat_style');
+      final stream = ApiService.instance.streamRoomChat(
+        widget.room.id,
+        text,
+        stylePreference: stylePref,
+      );
 
       // Current agent being streamed — tracked via [[AGENT:id:name]] markers.
       String? activeAgentId;

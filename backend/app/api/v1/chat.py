@@ -52,7 +52,7 @@ async def chat(
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
     return StreamingResponse(
-        service.stream_responses(message, user_id),
+        service.stream_responses(message, user_id, style_preference=request.style_preference),
         media_type="text/event-stream",
     )
 
@@ -137,6 +137,6 @@ async def chat_in_room(
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
     return StreamingResponse(
-        service.stream_room_responses(room_id, message, user_id),
+        service.stream_room_responses(room_id, message, user_id, style_preference=request.style_preference),
         media_type="text/event-stream",
     )
