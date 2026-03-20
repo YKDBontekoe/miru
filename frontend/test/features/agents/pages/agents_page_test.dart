@@ -71,10 +71,11 @@ void main() {
     fakeApi.getAgentsMock = () => Future.error(Exception('Failed to load'));
 
     await tester.pumpWidget(buildTestWidget());
-    // First pump resolves the Future and calls showSnackBar.
+    // Resolve the future and trigger showSnackBar.
     await tester.pump();
-    // The SnackBar entrance animation is 250 ms — pump through it fully so the
-    // widget is present in the tree before we assert.
+    // Give the ScaffoldMessenger a frame to schedule the snack bar.
+    await tester.pump();
+    // Pump through the SnackBar entrance animation (250 ms).
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(SnackBar), findsOneWidget);
