@@ -123,12 +123,12 @@ def main():
                     break
 
             if not found:
-                missing.append(f"{method} {path} (from {source_file})")
+                missing.append((method, path, source_file))
 
     if missing:
-        print("ERROR: New endpoints detected without corresponding Postman tests in backend/tests/postman/*.json!")
-        for m in missing:
-            print(f"  - {m}")
+        print("::error title=Missing Postman Integration Tests::New endpoints detected without corresponding Postman tests in backend/tests/postman/*.json!")
+        for method, path, source_file in missing:
+            print(f"::error file={source_file}::Missing Postman test for {method} {path}")
         print("\nPlease add these endpoints to one of the JSON collections in backend/tests/postman/")
         sys.exit(1)
 
