@@ -175,9 +175,9 @@ class TestChatRepository:
         )
 
         member = await repo.accept_invitation(invitation, user_id)
-        assert member.user_id == user_id
+        assert getattr(member, "user_id") == user_id  # noqa: B009
         assert member.role == "admin"
-        assert member.room_id == room.id
+        assert getattr(member, "room_id") == room.id  # noqa: B009
 
         # Verify it was accepted
         updated_inv = await repo.get_invitation_by_token("test-token")

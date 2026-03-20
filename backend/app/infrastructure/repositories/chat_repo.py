@@ -94,9 +94,10 @@ class ChatRepository:
         """Accept an invitation and add the user to the room."""
         from datetime import datetime
 
+        room_id = getattr(invitation, "room_id")  # noqa: B009
         # Add user to room
         member, _ = await ChatRoomMember.get_or_create(
-            room_id=invitation.room_id,
+            room_id=room_id,
             user_id=user_id,
             defaults={"role": invitation.role}
         )

@@ -89,7 +89,7 @@ class ChatRoomMember(SupabaseModel):
         "models.ChatRoom", related_name="members", on_delete=fields.CASCADE
     )
     user_id: UUID = fields.UUIDField(db_index=True)
-    role: str = fields.CharField(max_length=50, default="member")  # owner, admin, member, viewer
+    role: str = fields.CharField(max_length=50, default="member")  # type: ignore[assignment]
     joined_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
@@ -120,9 +120,9 @@ class RoomInvitation(SupabaseModel):
         "models.ChatRoom", related_name="invitations", on_delete=fields.CASCADE
     )
     inviter_id: UUID = fields.UUIDField(db_index=True)
-    email: str | None = fields.CharField(max_length=255, null=True)
+    email: str | None = fields.CharField(max_length=255, null=True)  # type: ignore[assignment]
     token: str = fields.CharField(max_length=255, unique=True)  # type: ignore[assignment]
-    role: str = fields.CharField(max_length=50, default="member")
+    role: str = fields.CharField(max_length=50, default="member")  # type: ignore[assignment]
     expires_at: datetime = fields.DatetimeField()
     accepted_at: datetime | None = fields.DatetimeField(null=True)
     created_at: datetime = fields.DatetimeField(auto_now_add=True)

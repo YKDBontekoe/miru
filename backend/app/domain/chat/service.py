@@ -239,14 +239,15 @@ class ChatService:
 
         await self.chat_repo.accept_invitation(invitation, user_id)
 
+        room_id = getattr(invitation, "room_id")  # noqa: B009
         await self.chat_repo.log_activity(
-            room_id=getattr(invitation, "room_id"),  # noqa: B009
+            room_id=room_id,
             user_id=user_id,
             action_type="join",
             entity_type="room",
         )
 
-        return {"status": "ok", "room_id": str(invitation.room_id)}
+        return {"status": "ok", "room_id": str(room_id)}
 
     async def get_room_activity(self, room_id: UUID) -> list[ActivityLogResponse]:
         logs = await self.chat_repo.get_room_activity(room_id)
