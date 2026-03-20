@@ -481,4 +481,7 @@ jobs:
       - name: Run Postman integration tests
         run: |
           npm install -g newman
-          newman run backend/tests/postman/smoke_tests.json --env-var baseUrl=${{ steps.app-url.outputs.url }}
+          for collection in backend/tests/postman/*.json; do
+            echo "Running Postman Collection: $collection"
+            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }}
+          done

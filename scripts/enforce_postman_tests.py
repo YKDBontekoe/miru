@@ -98,12 +98,15 @@ def extract_added_routes() -> list:
     return added_routes
 
 def main():
-    collection_path = Path("backend/tests/postman/smoke_tests.json")
-    if not collection_path.exists():
-        print(f"Postman collection not found at {collection_path}")
+    postman_dir = Path("backend/tests/postman")
+    if not postman_dir.exists() or not postman_dir.is_dir():
+        print(f"Postman collections directory not found at {postman_dir}")
         sys.exit(1)
 
-    postman_endpoints = get_postman_endpoints(str(collection_path))
+    postman_endpoints = set()
+    for json_file in postman_dir.glob("*.json"):
+        postman_endpoints.update(get_postman_endpoints(str(json_file)))
+
     added_routes = extract_added_routes()
 
     if not added_routes:
@@ -123,10 +126,10 @@ def main():
                 missing.append(f"{method} {path} (from {source_file})")
 
     if missing:
-        print("ERROR: New endpoints detected without corresponding Postman tests in smoke_tests.json!")
+        print("ERROR: New endpoints detected without corresponding Postman tests in backend/tests/postman/*.json!")
         for m in missing:
             print(f"  - {m}")
-        print("\nPlease add these endpoints to backend/tests/postman/smoke_tests.json")
+        print("\nPlease add these endpoints to one of the JSON collections in backend/tests/postman/")
         sys.exit(1)
 
     print("All new endpoints have Postman tests. Great job!")
