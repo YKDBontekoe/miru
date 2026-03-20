@@ -42,6 +42,10 @@ class Agent(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.agents ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY agents_owner_all ON public.agents FOR ALL USING (auth.uid() = user_id);",
+            "CREATE POLICY agents_room_member_select ON public.agents FOR SELECT USING (EXISTS ("
+            "SELECT 1 FROM chat_room_agents cra JOIN chat_room_members crm ON cra.room_id = crm.room_id "
+            "WHERE cra.agent_id = agents.id AND crm.user_id = auth.uid()"
+            "));",
         ]
 
 

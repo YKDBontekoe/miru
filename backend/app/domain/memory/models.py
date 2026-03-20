@@ -66,6 +66,9 @@ class Memory(SupabaseModel):
             "auth.uid() = user_id OR ("
             "user_id IS NULL AND agent_id IS NOT NULL AND EXISTS ("
             "SELECT 1 FROM agents WHERE id = memories.agent_id AND user_id = auth.uid()"
+            ")) OR ("
+            "room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = memories.room_id AND user_id = auth.uid()"
             ")));",
         ]
 

@@ -5,7 +5,14 @@ from __future__ import annotations
 from uuid import UUID
 
 from app.domain.agents.models import Agent
-from app.domain.chat.models import ChatMessage, ChatRoom, ChatRoomAgent
+from app.domain.chat.models import (
+    ActivityLog,
+    ChatMessage,
+    ChatRoom,
+    ChatRoomAgent,
+    ChatRoomMember,
+    RoomInvitation,
+)
 
 
 class ChatRepository:
@@ -60,3 +67,67 @@ class ChatRepository:
         """Save a new message."""
         await message.save()
         return message
+
+    async def list_room_members(self, room_id: UUID) -> list[ChatRoomMember]:
+        """Fetch all members of a chat room."""
+        return await ChatRoomMember.filter(room_id=room_id).all()
+
+    async def create_invitation(
+        self, room_id: UUID, inviter_id: UUID, token: str, expires_at: "datetime", email: str | None = None, role: str = "member"
+    ) -> RoomInvitation:
+        """Create a new room invitation."""
+        from datetime import datetime
+        return await RoomInvitation.create(
+            room_id=room_id,
+            inviter_id=inviter_id,
+            token=token,
+            expires_at=expires_at,
+            email=email,
+            role=role,
+        )
+
+    async def get_invitation_by_token(self, token: str) -> RoomInvitation | None:
+        """Fetch an invitation by its token."""
+        return await RoomInvitation.get_or_none(token=token)
+
+    async def accept_invitation(self, invitation: RoomInvitation, user_id: UUID) -> ChatRoomMember:
+        """Accept an invitation and add the user to the room."""
+        from datetime import datetime, timezone
+
+        # Add user to room
+        member, _ = await ChatRoomMember.get_or_create(
+            room_id=invitation.room_id,
+            user_id=user_id,
+            defaults={"role": invitation.role}
+        )
+
+        # Mark invitation as accepted
+        invitation.accepted_at = datetime.now(tz=timezone.utc)
+        await invitation.save()
+
+        return member
+
+    async def get_room_activity(self, room_id: UUID) -> list[ActivityLog]:
+        """Fetch activity logs for a room."""
+        return await ActivityLog.filter(room_id=room_id).order_by("-created_at").limit(50).all()
+
+    async def log_activity(
+        self,
+        room_id: UUID | None,
+        user_id: UUID | None,
+        action_type: str,
+        entity_type: str,
+        entity_id: UUID | None = None,
+        details: dict | None = None,
+        agent_id: UUID | None = None,
+    ) -> ActivityLog:
+        """Create an activity log entry."""
+        return await ActivityLog.create(
+            room_id=room_id,
+            user_id=user_id,
+            agent_id=agent_id,
+            action_type=action_type,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            details=details or {},
+        )
