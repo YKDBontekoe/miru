@@ -1,12 +1,13 @@
-import sys
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
+
 
 def get_postman_endpoints(collection_path: str) -> set:
     try:
-        with open(collection_path, 'r', encoding='utf-8') as f:
+        with open(collection_path, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         print(f"Error loading Postman collection: {e}")
@@ -14,49 +15,66 @@ def get_postman_endpoints(collection_path: str) -> set:
 
     endpoints = set()
 
-    def extract_items(items):
+    def extract_items(items: list) -> None:
         for item in items:
-            if 'item' in item:
-                extract_items(item['item'])
-            elif 'request' in item:
-                req = item['request']
-                method = req.get('method', '').upper()
-                url = req.get('url', {})
+            if "item" in item:
+                extract_items(item["item"])
+            elif "request" in item:
+                req = item["request"]
+                method = req.get("method", "").upper()
+                url = req.get("url", {})
                 if isinstance(url, dict):
-                    path_parts = url.get('path', [])
+                    path_parts = url.get("path", [])
                     if isinstance(path_parts, list):
                         path_str = "/" + "/".join(path_parts)
                     else:
-                        path_str = str(url.get('raw', ''))
+                        path_str = str(url.get("raw", ""))
                 elif isinstance(url, str):
                     path_str = url
                 else:
                     path_str = ""
 
-                path_str = re.sub(r'^\{\{.*?\}\}', '', path_str)
-                if not path_str.startswith('/'):
-                    path_str = '/' + path_str
+                path_str = re.sub(r"^\{\{.*?\}\}", "", path_str)
+                if not path_str.startswith("/"):
+                    path_str = "/" + path_str
 
-                path_str = re.sub(r'\{\{.*?\}\}', '{param}', path_str)
-                path_str = re.sub(r':[a-zA-Z0-9_]+', '{param}', path_str)
-                path_str = path_str.rstrip('/')
+                path_str = re.sub(r"\{\{.*?\}\}", "{param}", path_str)
+                path_str = re.sub(r":[a-zA-Z0-9_]+", "{param}", path_str)
+                path_str = path_str.rstrip("/")
 
                 endpoints.add((method, path_str))
 
-    extract_items(data.get('item', []))
+    extract_items(data.get("item", []))
     return endpoints
+
 
 def extract_added_routes() -> list:
     try:
         diff_output = subprocess.check_output(
-            ["git", "diff", "--unified=0", "origin/main...HEAD", "--", "backend/app/api/", "backend/app/domain/"],
-            text=True
+            [
+                "git",
+                "diff",
+                "--unified=0",
+                "origin/main...HEAD",
+                "--",
+                "backend/app/api/",
+                "backend/app/domain/",
+            ],
+            text=True,
         )
     except subprocess.CalledProcessError:
         try:
             diff_output = subprocess.check_output(
-                ["git", "diff", "--unified=0", "HEAD", "--", "backend/app/api/", "backend/app/domain/"],
-                text=True
+                [
+                    "git",
+                    "diff",
+                    "--unified=0",
+                    "HEAD",
+                    "--",
+                    "backend/app/api/",
+                    "backend/app/domain/",
+                ],
+                text=True,
             )
         except subprocess.CalledProcessError:
             diff_output = ""
@@ -65,9 +83,9 @@ def extract_added_routes() -> list:
 
     current_file = ""
     for line in diff_output.splitlines():
-        if line.startswith('+++ b/'):
+        if line.startswith("+++ b/"):
             current_file = line[6:]
-        elif line.startswith('+@router.'):
+        elif line.startswith("+@router."):
             match = re.search(r'\+@router\.(get|post|put|delete|patch)\([\'"]([^\'"]+)[\'"]', line)
             if match:
                 method = match.group(1).upper()
@@ -90,14 +108,15 @@ def extract_added_routes() -> list:
                     prefix = "/api/v1/notifications"
 
                 full_path = prefix + path
-                full_path = re.sub(r'\{[a-zA-Z0-9_]+\}', '{param}', full_path)
-                full_path = full_path.rstrip('/')
+                full_path = re.sub(r"\{[a-zA-Z0-9_]+\}", "{param}", full_path)
+                full_path = full_path.rstrip("/")
 
                 added_routes.append((method, full_path, current_file))
 
     return added_routes
 
-def main():
+
+def main() -> None:
     postman_dir = Path("backend/tests/postman")
     if not postman_dir.exists() or not postman_dir.is_dir():
         print(f"Postman collections directory not found at {postman_dir}")
@@ -126,13 +145,18 @@ def main():
                 missing.append((method, path, source_file))
 
     if missing:
-        print("::error title=Missing Postman Integration Tests::New endpoints detected without corresponding Postman tests in backend/tests/postman/*.json!")
+        print(
+            "::error title=Missing Postman Integration Tests::New endpoints detected without corresponding Postman tests in backend/tests/postman/*.json!"
+        )
         for method, path, source_file in missing:
             print(f"::error file={source_file}::Missing Postman test for {method} {path}")
-        print("\nPlease add these endpoints to one of the JSON collections in backend/tests/postman/")
+        print(
+            "\nPlease add these endpoints to one of the JSON collections in backend/tests/postman/"
+        )
         sys.exit(1)
 
     print("All new endpoints have Postman tests. Great job!")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
