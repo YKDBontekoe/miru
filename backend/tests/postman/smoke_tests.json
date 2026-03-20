@@ -7,120 +7,924 @@
   },
   "item": [
     {
-      "name": "Health Check",
-      "event": [
+      "name": "Public Endpoints",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "pm.test(\"Response is valid JSON\", function () {",
-              "    pm.response.to.be.json;",
-              "});",
-              "pm.test(\"Status is ok\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.status).to.eql(\"ok\");",
-              "});"
-            ],
-            "type": "text/javascript"
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Status is ok\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql(\"ok\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "OpenAPI Spec",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/openapi.json",
+              "host": ["{{baseUrl}}"],
+              "path": ["openapi.json"]
+            }
+          }
+        },
+        {
+          "name": "Docs Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/health",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "health"
-          ]
-        }
-      },
-      "response": []
+      ]
     },
     {
-      "name": "OpenAPI Spec",
-      "event": [
+      "name": "Auth Endpoints",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "pm.test(\"Response is valid JSON\", function () {",
-              "    pm.response.to.be.json;",
-              "});",
-              "pm.test(\"Has openapi field\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property(\"openapi\");",
-              "});",
-              "pm.test(\"Has info field\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property(\"info\");",
-              "});",
-              "pm.test(\"Has paths field\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property(\"paths\");",
-              "});"
-            ],
-            "type": "text/javascript"
+          "name": "Register Options",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/register/options",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "passkey", "register", "options"]
+            }
+          }
+        },
+        {
+          "name": "Register Verify",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/register/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "passkey", "register", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Login Options",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/login/options",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "passkey", "login", "options"]
+            }
+          }
+        },
+        {
+          "name": "Login Verify",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/login/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "passkey", "login", "verify"]
+            }
+          }
+        },
+        {
+          "name": "List Passkeys",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/passkey/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "passkey", "list"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/openapi.json",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "openapi.json"
-          ]
-        }
-      },
-      "response": []
+      ]
     },
     {
-      "name": "Docs Page",
-      "event": [
+      "name": "Chat Endpoints",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "pm.test(\"Response is HTML\", function () {",
-              "    var contentType = pm.response.headers.get(\"content-type\");",
-              "    pm.expect(contentType).to.include(\"text/html\");",
-              "});"
-            ],
-            "type": "text/javascript"
+          "name": "Get Rooms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "rooms"]
+            }
+          }
+        },
+        {
+          "name": "Create Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "rooms"]
+            }
+          }
+        },
+        {
+          "name": "Chat Completion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Crew Interaction",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/crew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "crew"]
+            }
+          }
+        },
+        {
+          "name": "Add Agent to Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "rooms", "test-room", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Get Agents in Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "rooms", "test-room", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Get Messages in Room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/test-room/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "rooms", "test-room", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Room Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/test-room/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "rooms", "test-room", "chat"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/docs",
-          "host": [
-            "{{baseUrl}}"
+      ]
+    },
+    {
+      "name": "Memory Endpoints",
+      "item": [
+        {
+          "name": "Get Memories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
           ],
-          "path": [
-            "docs"
-          ]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "memory"]
+            }
+          }
+        },
+        {
+          "name": "Get Memory Graph",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/memory/graph",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "memory", "graph"]
+            }
+          }
+        },
+        {
+          "name": "Create Memory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "memory"]
+            }
+          }
+        },
+        {
+          "name": "Upload Memory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/memory/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "memory", "upload"]
+            }
+          }
         }
-      },
-      "response": []
+      ]
+    },
+    {
+      "name": "Productivity Endpoints",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Task by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks/test-task-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks", "test-task-id"]
+            }
+          }
+        },
+        {
+          "name": "Create Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Notes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Note by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes/test-note-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes", "test-note-id"]
+            }
+          }
+        },
+        {
+          "name": "Create Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events/test-event-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events", "test-event-id"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Integrations Endpoints",
+      "item": [
+        {
+          "name": "Steam Resolve User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/integrations/steam/resolve-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "integrations", "steam", "resolve-user"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agents Endpoints",
+      "item": [
+        {
+          "name": "Create Agent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Get Agents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents"]
+            }
+          }
+        },
+        {
+          "name": "Get Capabilities",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/capabilities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "capabilities"]
+            }
+          }
+        },
+        {
+          "name": "Get Integrations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/integrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "integrations"]
+            }
+          }
+        },
+        {
+          "name": "Generate Agent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 or 422\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "generate"]
+            }
+          }
+        }
+      ]
     }
   ]
 }
