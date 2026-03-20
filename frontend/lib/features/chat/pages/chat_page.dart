@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:file_picker/file_picker.dart';
+
 import 'package:miru/core/api/api_service.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/core/models/chat_message.dart';
@@ -36,6 +38,9 @@ class _ChatPageState extends State<ChatPage> {
 
   /// Human-readable status shown while the assistant is processing.
   String? _streamingStatus;
+
+  /// Files currently attached to the input.
+  final List<PlatformFile> _attachedFiles = [];
 
   /// Active stream subscription for cancellation support.
   StreamSubscription<String>? _activeStreamSubscription;
@@ -130,13 +135,25 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _sendMessage() async {
     final text = _inputController.text.trim();
-    if (text.isEmpty || _isStreaming) return;
+    if ((text.isEmpty && _attachedFiles.isEmpty) || _isStreaming) return;
+
+    final filesToUpload = List<PlatformFile>.from(_attachedFiles);
 
     _inputController.clear();
+    setState(() => _attachedFiles.clear());
     _inputFocusNode.requestFocus();
 
     setState(() {
-      _messages.add(ChatMessage.user(text));
+      if (text.isNotEmpty || filesToUpload.isNotEmpty) {
+        String msgText = text;
+        if (filesToUpload.isNotEmpty) {
+          final fileNames = filesToUpload.map((f) => f.name).join(', ');
+          msgText = text.isEmpty
+              ? '[Attached: $fileNames]'
+              : '$text\n\n[Attached: $fileNames]';
+        }
+        _messages.add(ChatMessage.user(msgText));
+      }
       _messages.add(ChatMessage.assistantPlaceholder());
       _isStreaming = true;
     });
@@ -144,6 +161,15 @@ class _ChatPageState extends State<ChatPage> {
     HapticFeedback.lightImpact();
 
     try {
+      if (filesToUpload.isNotEmpty) {
+        setState(() => _streamingStatus = 'Uploading attachments...');
+        for (final file in filesToUpload) {
+          if (file.bytes != null) {
+            await ApiService.instance.uploadDocument(file.name, file.bytes!);
+          }
+        }
+      }
+
       await _sendStreamingMessage(text);
     } catch (e) {
       // Don't overwrite if already cancelled.
@@ -303,6 +329,29 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Future<void> _pickFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'],
+        withData: true, // Need bytes for uploading
+      );
+
+      if (result != null) {
+        setState(() {
+          _attachedFiles.addAll(result.files);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick files: $e')));
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
@@ -364,6 +413,11 @@ class _ChatPageState extends State<ChatPage> {
                 onSend: _sendMessage,
                 isStreaming: _isStreaming,
                 onStopStreaming: _stopGeneration,
+                onAttachmentPressed: _pickFiles,
+                attachedFiles: _attachedFiles,
+                onRemoveAttachment: (file) {
+                  setState(() => _attachedFiles.remove(file));
+                },
               ),
             ],
           ),

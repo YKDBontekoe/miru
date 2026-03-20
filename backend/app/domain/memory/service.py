@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import io
 import logging
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.domain.memory.document_service import DocumentService
 from app.domain.memory.models import Memory
 from app.infrastructure.external.openrouter import embed
 
@@ -66,6 +68,44 @@ class MemoryService:
                 logger.warning(f"Relationship creation failed: {e}")
 
         return memory_id
+
+    async def store_document_memory(
+        self,
+        file: io.BytesIO,
+        filename: str,
+        content_type: str,
+        user_id: UUID | str | None = None,
+        agent_id: UUID | str | None = None,
+        room_id: UUID | str | None = None,
+    ) -> list[UUID]:
+        """Process an uploaded document, chunk it, and store as memory."""
+        text = DocumentService.extract_text(file, filename, content_type)
+        if not text:
+            return []
+
+        # Summarize (optional/basic format)
+        intro_content = f"Document: {filename}\nType: {content_type}\nSummary: Contains extracted text from this file."
+        await self.store_memory(
+            content=intro_content,
+            user_id=user_id,
+            agent_id=agent_id,
+            room_id=room_id,
+        )
+
+        chunks = DocumentService.chunk_text(text)
+        memory_ids = []
+        for i, chunk in enumerate(chunks):
+            chunk_content = f"[From document: {filename}, part {i + 1}]\n{chunk}"
+            mid = await self.store_memory(
+                content=chunk_content,
+                user_id=user_id,
+                agent_id=agent_id,
+                room_id=room_id,
+            )
+            if mid:
+                memory_ids.append(mid)
+
+        return memory_ids
 
     async def delete_memory(self, memory_id: UUID) -> bool:
         return await self.repo.delete_memory(memory_id)

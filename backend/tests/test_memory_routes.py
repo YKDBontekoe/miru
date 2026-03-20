@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import AsyncClient  # noqa: TC002
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import get_current_user
@@ -169,6 +170,51 @@ def test_store_memory_route_oserror(client: TestClient) -> None:
         "/api/v1/memory",
         headers={"Authorization": "Bearer fake_token"},
         json={"message": "Important fact"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+
+
+def test_upload_document(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.store_document_memory.return_value = [uuid4(), uuid4()]
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.txt", b"Hello World", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "2 chunks" in data["message"]
+    assert len(data["memory_ids"]) == 2
+    mock_service.store_document_memory.assert_awaited_once()
+
+
+def test_upload_document_service_unavailable(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+    from httpx import Request
+    from openai import APIConnectionError
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.store_document_memory.side_effect = APIConnectionError(
+        request=Request("POST", "https://api.openai.com")
+    )
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.txt", b"Hello World", "text/plain")},
     )
 
     assert response.status_code == 503
