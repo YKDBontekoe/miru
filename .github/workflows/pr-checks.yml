@@ -431,7 +431,7 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             --output tsv)
           APP_NAME="${{ env.PR_APP }}"
-          ENVIRONMENT_DOMAIN="${FQDN#$APP_NAME.}"
+          ENVIRONMENT_DOMAIN="${FQDN#"$APP_NAME".}"
           LABEL="pr-${{ github.event.pull_request.number }}"
           TEST_URL="https://${APP_NAME}---${LABEL}.${ENVIRONMENT_DOMAIN}"
 
