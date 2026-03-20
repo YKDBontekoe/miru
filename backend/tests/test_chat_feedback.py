@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -54,14 +55,15 @@ async def test_handle_feedback_success(
     mock_room = ChatRoom(id=room_id, user_id=user_id, name="Test")
     mock_chat_repo.get_room.return_value = mock_room
 
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     mock_msg = ChatMessage(
         id=message_id,
         room_id=room_id,
         user_id=None,
         agent_id=agent_id,
         content="Hello world",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(UTC),
     )
     mock_chat_repo.get_message.return_value = mock_msg
     mock_chat_repo.update_message.return_value = mock_msg
@@ -120,7 +122,9 @@ async def test_learn_from_feedback_positive() -> None:
     agent_id = uuid4()
     message = ChatMessage(content="A useful answer", agent_id=agent_id, room_id=uuid4())
 
-    with patch("app.domain.memory.service.MemoryService.store_memory", new_callable=AsyncMock) as mock_store:
+    with patch(
+        "app.domain.memory.service.MemoryService.store_memory", new_callable=AsyncMock
+    ) as mock_store:
         await service._learn_from_feedback(message, True, user_id)
         mock_store.assert_awaited_once()
         args = mock_store.call_args.kwargs
@@ -137,7 +141,9 @@ async def test_learn_from_feedback_negative() -> None:
     agent_id = uuid4()
     message = ChatMessage(content="A bad answer", agent_id=agent_id, room_id=uuid4())
 
-    with patch("app.domain.memory.service.MemoryService.store_memory", new_callable=AsyncMock) as mock_store:
+    with patch(
+        "app.domain.memory.service.MemoryService.store_memory", new_callable=AsyncMock
+    ) as mock_store:
         await service._learn_from_feedback(message, False, user_id)
         mock_store.assert_awaited_once()
         args = mock_store.call_args.kwargs
@@ -153,7 +159,9 @@ async def test_submit_feedback_route_success() -> None:
     msg_id = uuid4()
     user_id = uuid4()
 
-    res = await submit_feedback(message_id=msg_id, request=req, user_id=user_id, service=service_mock)
+    res = await submit_feedback(
+        message_id=msg_id, request=req, user_id=user_id, service=service_mock
+    )
     assert res is not None
     service_mock.handle_feedback.assert_awaited_once_with(msg_id, True, user_id)
 
@@ -210,6 +218,7 @@ async def test_stream_responses(chat_service: ChatService, mock_agent_repo: Asyn
         system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
         assert "Pirate" in system_msg
 
+
 @pytest.mark.asyncio
 async def test_run_crew(chat_service: ChatService, mock_agent_repo: AsyncMock) -> None:
     user_id = uuid4()
@@ -229,6 +238,7 @@ async def test_run_crew(chat_service: ChatService, mock_agent_repo: AsyncMock) -
         res = await chat_service.run_crew("Help me", user_id)
         assert res["result"] == "Crew result"
 
+
 @pytest.mark.asyncio
 async def test_stream_room_responses(chat_service: ChatService, mock_chat_repo: AsyncMock) -> None:
     user_id = uuid4()
@@ -242,11 +252,12 @@ async def test_stream_room_responses(chat_service: ChatService, mock_chat_repo: 
     mock_agent.capabilities.related_objects = []
     mock_chat_repo.list_room_agents.return_value = [mock_agent]
 
-    with patch("app.domain.chat.service.Crew") as mock_crew, \
-         patch("app.domain.chat.service.Task") as mock_task, \
-         patch("app.domain.chat.service.asyncio.create_task") as mock_create_task, \
-         patch("app.domain.chat.service.asyncio.sleep") as mock_sleep:
-
+    with (
+        patch("app.domain.chat.service.Crew") as mock_crew,
+        patch("app.domain.chat.service.Task"),
+        patch("app.domain.chat.service.asyncio.create_task") as mock_create_task,
+        patch("app.domain.chat.service.asyncio.sleep"),
+    ):
         mock_crew_instance = MagicMock()
         mock_crew_instance.kickoff_async = AsyncMock(return_value="Room result")
         mock_crew.return_value = mock_crew_instance
@@ -258,7 +269,9 @@ async def test_stream_room_responses(chat_service: ChatService, mock_chat_repo: 
         mock_create_task.return_value = bg_task
 
         chunks = []
-        async for chunk in chat_service.stream_room_responses(room_id, "Hi", user_id, style_preference="Pirate"):
+        async for chunk in chat_service.stream_room_responses(
+            room_id, "Hi", user_id, style_preference="Pirate"
+        ):
             chunks.append(chunk)
 
         assert "[[STATUS:thinking]]\n" in chunks

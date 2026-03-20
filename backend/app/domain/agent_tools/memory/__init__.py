@@ -45,7 +45,9 @@ class StoreMemoryTool(BaseTool):
 
 
 class RetrieveMemoryInput(BaseModel):
-    query: str = Field(..., description="The topic, question, or keyword to search your memory for.")
+    query: str = Field(
+        ..., description="The topic, question, or keyword to search your memory for."
+    )
 
 
 class RetrieveMemoryTool(BaseTool):

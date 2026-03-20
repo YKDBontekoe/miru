@@ -8,21 +8,26 @@ import pytest
 from app.domain.agent_tools.memory_tools import RetrieveMemoryTool, StoreMemoryTool
 from app.domain.memory.models import Memory
 
+
 @pytest.fixture
 def store_tool() -> StoreMemoryTool:
     return StoreMemoryTool(user_id=uuid4(), agent_id=uuid4())
+
 
 @pytest.fixture
 def retrieve_tool() -> RetrieveMemoryTool:
     return RetrieveMemoryTool(user_id=uuid4(), agent_id=uuid4())
 
+
 def test_store_memory_sync_run(store_tool: StoreMemoryTool) -> None:
     with pytest.raises(NotImplementedError):
         store_tool._run("test")
 
+
 def test_retrieve_memory_sync_run(retrieve_tool: RetrieveMemoryTool) -> None:
     with pytest.raises(NotImplementedError):
         retrieve_tool._run("test")
+
 
 @pytest.mark.asyncio
 async def test_store_memory_success(store_tool: StoreMemoryTool) -> None:
@@ -39,6 +44,7 @@ async def test_store_memory_success(store_tool: StoreMemoryTool) -> None:
             agent_id=store_tool.agent_id,
         )
 
+
 @pytest.mark.asyncio
 async def test_store_memory_failure(store_tool: StoreMemoryTool) -> None:
     with patch("app.domain.agent_tools.memory._get_memory_service") as mock_get_service:
@@ -48,6 +54,7 @@ async def test_store_memory_failure(store_tool: StoreMemoryTool) -> None:
 
         result = await store_tool._arun("I like pizza")
         assert result == "Failed to remember or already knew: I like pizza"
+
 
 @pytest.mark.asyncio
 async def test_retrieve_memory_success(retrieve_tool: RetrieveMemoryTool) -> None:
@@ -66,6 +73,7 @@ async def test_retrieve_memory_success(retrieve_tool: RetrieveMemoryTool) -> Non
             query="food",
             user_id=retrieve_tool.user_id,
         )
+
 
 @pytest.mark.asyncio
 async def test_retrieve_memory_empty(retrieve_tool: RetrieveMemoryTool) -> None:

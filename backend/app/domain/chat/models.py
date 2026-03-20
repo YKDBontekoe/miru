@@ -125,7 +125,9 @@ class ChatMessageResponse(BaseModel):
 class MessageFeedbackRequest(BaseModel):
     is_positive: bool
 
+
 class ChatRequest(BaseModel):
     message: str | None = None
     content: str | None = None
     use_crew: bool = False
+    style_preference: str | None = None

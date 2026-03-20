@@ -347,7 +347,9 @@ class ChatService:
         yield str(result)
         yield "[[STATUS:done]]\n"
 
-    async def handle_feedback(self, message_id: UUID, is_positive: bool, user_id: UUID) -> ChatMessageResponse | None:
+    async def handle_feedback(
+        self, message_id: UUID, is_positive: bool, user_id: UUID
+    ) -> ChatMessageResponse | None:
         message = await self.chat_repo.get_message(message_id)
         if not message:
             return None
@@ -374,15 +376,20 @@ class ChatService:
             created_at=message.created_at,
         )
 
-    async def _learn_from_feedback(self, message: ChatMessage, is_positive: bool, user_id: UUID) -> None:
+    async def _learn_from_feedback(
+        self, message: ChatMessage, is_positive: bool, user_id: UUID
+    ) -> None:
         """Evaluate user feedback to extract a memory preference."""
         if not is_positive:
-            preference_str = f"The user did not find this response helpful: {message.content[:100]}..."
+            preference_str = (
+                f"The user did not find this response helpful: {message.content[:100]}..."
+            )
         else:
             preference_str = f"The user found this response helpful: {message.content[:100]}..."
 
         if message.agent_id:
             from app.domain.memory.service import MemoryService
+
             mem_svc = MemoryService(self.memory_repo)
             await mem_svc.store_memory(
                 content=preference_str,
