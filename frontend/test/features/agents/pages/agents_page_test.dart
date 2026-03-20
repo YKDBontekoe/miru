@@ -71,12 +71,15 @@ void main() {
     fakeApi.getAgentsMock = () => Future.error(Exception('Failed to load'));
 
     await tester.pumpWidget(buildTestWidget());
-    // Resolve the future and trigger showSnackBar.
-    await tester.pump();
-    // Give the ScaffoldMessenger a frame to schedule the snack bar.
-    await tester.pump();
-    // Pump through the SnackBar entrance animation (250 ms).
-    await tester.pump(const Duration(milliseconds: 300));
+    // Drain all microtasks so the error future resolves and showSnackBar is
+    // called. Multiple pump() calls are needed because _loadAgents and
+    // _loadAvailableOptions both schedule microtasks from initState, and the
+    // ScaffoldMessenger itself needs a frame to insert the SnackBar widget into
+    // the overlay before the entrance animation begins.
+    await tester.pump(); // resolve futures
+    await tester.pump(); // ScaffoldMessenger processes the queue
+    await tester.pump(); // overlay insertion
+    await tester.pump(const Duration(milliseconds: 300)); // entrance animation
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Failed to load'), findsOneWidget);

@@ -15,15 +15,15 @@ jobs:
     name: Send Failure Notification
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'failure'
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
     steps:
       - name: Send Discord notification
         if: env.DISCORD_WEBHOOK_URL != ''
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         uses: sarisia/actions-status-discord@v1
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          webhook: ${{ env.DISCORD_WEBHOOK_URL }}
           status: failure
           title: 'Deployment Failed: ${{ github.event.workflow_run.name }}'
           description: |
@@ -110,15 +110,15 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.name == 'Backend CI/CD - Deploy to Azure Container Apps' &&
       github.event.workflow_run.head_branch == 'main'
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
     steps:
       - name: Send Discord notification
         if: env.DISCORD_WEBHOOK_URL != ''
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         uses: sarisia/actions-status-discord@v1
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          webhook: ${{ env.DISCORD_WEBHOOK_URL }}
           status: success
           title: '🚀 Deployed: ${{ github.event.workflow_run.name }}'
           description: |

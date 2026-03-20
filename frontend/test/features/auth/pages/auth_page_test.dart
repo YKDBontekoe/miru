@@ -19,16 +19,19 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
+  late StreamController<AuthState> authStateController;
+
   // Inject a never-emitting stream so AuthPage.initState never touches the
   // real Supabase.instance. Also mark the user as not authenticated.
   setUp(() {
-    SupabaseService.authStateChangesOverride =
-        StreamController<AuthState>.broadcast().stream;
+    authStateController = StreamController<AuthState>.broadcast();
+    SupabaseService.authStateChangesOverride = authStateController.stream;
     SupabaseService.isAuthenticatedOverride = false;
     SupabaseService.accessTokenOverride = null;
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await authStateController.close();
     SupabaseService.authStateChangesOverride = null;
     SupabaseService.isAuthenticatedOverride = null;
     SupabaseService.accessTokenOverride = SupabaseService.sentinel;
