@@ -96,6 +96,27 @@ class ApiService {
 
   // --- Memories API ---
 
+  /// Upload a document to extract context and store in memories.
+  Future<Map<String, dynamic>> uploadDocument(
+    String filename,
+    List<int> fileBytes, {
+    String? contentType,
+  }) async {
+    return _handleError((dio) async {
+      final formData = FormData.fromMap({
+        'file': MultipartFile.fromBytes(
+          fileBytes,
+          filename: filename,
+          contentType: contentType != null
+              ? DioMediaType.parse(contentType)
+              : null,
+        ),
+      });
+      final response = await dio.post('memory/upload', data: formData);
+      return response.data as Map<String, dynamic>;
+    });
+  }
+
   Future<List<Memory>> getMemories() async {
     return _handleError((dio) async {
       final response = await dio.get('memory');

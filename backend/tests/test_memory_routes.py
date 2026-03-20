@@ -173,3 +173,87 @@ def test_store_memory_route_oserror(client: TestClient) -> None:
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+
+
+def test_upload_document(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.store_document_memory.return_value = [uuid4(), uuid4()]
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.txt", b"Hello World", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert "2 chunks" in data["message"]
+    assert len(data["memory_ids"]) == 2
+    mock_service.store_document_memory.assert_awaited_once()
+
+
+def test_upload_document_service_unavailable(client: TestClient) -> None:
+    from httpx import Request
+    from openai import APIConnectionError
+
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.store_document_memory.side_effect = APIConnectionError(
+        request=Request("POST", "https://api.openai.com")
+    )
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.txt", b"Hello World", "text/plain")},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+
+
+def test_upload_document_invalid_type(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.exe", b"malicious", "application/x-msdownload")},
+    )
+
+    assert response.status_code == 415
+    assert "Unsupported file type" in response.json()["detail"]
+
+
+def test_upload_document_too_large(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        # 10MB limit, pass 10.1MB
+        files={"file": ("large.txt", b"a" * (10 * 1024 * 1024 + 100), "text/plain")},
+    )
+
+    assert response.status_code == 413
+    assert "File too large" in response.json()["detail"]
