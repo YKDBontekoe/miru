@@ -65,12 +65,14 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
 class AgentService:
     def __init__(self, repo: AgentRepository):
         self.repo = repo
+        self._cached_capabilities: list[Capability] | None = None
+        self._cached_integrations: list[Integration] | None = None
 
     async def list_capabilities(self) -> list[Capability]:
         """List all capabilities from the database."""
         # Justification: Cache capabilities per-request to avoid redundant DB queries
         # when building prompts for multiple agents or repeatedly verifying capabilities.
-        if not hasattr(self, "_cached_capabilities"):
+        if self._cached_capabilities is None:
             self._cached_capabilities = await self.repo.list_capabilities()
         return self._cached_capabilities
 
@@ -78,7 +80,7 @@ class AgentService:
         """List all integrations from the database."""
         # Justification: Cache integrations per-request to avoid redundant DB queries
         # when building agents.
-        if not hasattr(self, "_cached_integrations"):
+        if self._cached_integrations is None:
             self._cached_integrations = await self.repo.list_integrations()
         return self._cached_integrations
 
