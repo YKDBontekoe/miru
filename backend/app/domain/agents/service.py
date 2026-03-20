@@ -68,11 +68,19 @@ class AgentService:
 
     async def list_capabilities(self) -> list[Capability]:
         """List all capabilities from the database."""
-        return await self.repo.list_capabilities()
+        # Justification: Cache capabilities per-request to avoid redundant DB queries
+        # when building prompts for multiple agents or repeatedly verifying capabilities.
+        if not hasattr(self, "_cached_capabilities"):
+            self._cached_capabilities = await self.repo.list_capabilities()
+        return self._cached_capabilities
 
     async def list_integrations(self) -> list[Integration]:
         """List all integrations from the database."""
-        return await self.repo.list_integrations()
+        # Justification: Cache integrations per-request to avoid redundant DB queries
+        # when building agents.
+        if not hasattr(self, "_cached_integrations"):
+            self._cached_integrations = await self.repo.list_integrations()
+        return self._cached_integrations
 
     async def build_system_prompt(
         self,

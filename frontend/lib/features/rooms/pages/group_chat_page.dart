@@ -615,9 +615,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final msg = _messages[index];
-        return RepaintBoundary(
+        // Justification: ListView.builder intrinsically adds a RepaintBoundary
+        // to each item (addRepaintBoundaries: true by default). Manually
+        // wrapping items in another RepaintBoundary is redundant, adding
+        // unnecessary depth and memory overhead to the widget tree.
+        return MessageItem(
           key: ValueKey(msg.id),
-          child: MessageItem(message: msg, senderName: _getSenderName(msg)),
+          message: msg,
+          senderName: _getSenderName(msg),
         );
       },
     );
