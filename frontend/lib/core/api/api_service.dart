@@ -92,9 +92,20 @@ class ApiService {
 
   // --- Memories API ---
 
-  Future<List<Memory>> getMemories() async {
+  Future<List<Memory>> getMemories({
+    String query = '',
+    String? collectionId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     return _handleError((dio) async {
-      final response = await dio.get('memory');
+      final queryParams = <String, dynamic>{
+        if (query.isNotEmpty) 'query': query,
+        if (collectionId != null) 'collection_id': collectionId,
+        if (startDate != null) 'start_date': startDate.toIso8601String(),
+        if (endDate != null) 'end_date': endDate.toIso8601String(),
+      };
+      final response = await dio.get('memory', queryParameters: queryParams);
       final data = response.data as Map<String, dynamic>;
       final memories = data['memories'] as List<dynamic>;
       return memories
@@ -103,8 +114,106 @@ class ApiService {
     });
   }
 
+  Future<Memory> updateMemory(
+    String id, {
+    String? content,
+    String? collectionId,
+  }) async {
+    return _handleError((dio) async {
+      final data = <String, dynamic>{
+        if (content != null) 'content': content,
+        if (collectionId != null) 'collection_id': collectionId,
+      };
+      final response = await dio.patch('memory/$id', data: data);
+      return Memory.fromJson(response.data as Map<String, dynamic>);
+    });
+  }
+
   Future<void> deleteMemory(String id) async {
     await _handleError((dio) => dio.delete('memory/$id'));
+  }
+
+  Future<String> mergeMemories(
+    List<String> memoryIds,
+    String newContent,
+  ) async {
+    return _handleError((dio) async {
+      final response = await dio.post(
+        'memory/merge',
+        data: {'memory_ids': memoryIds, 'new_content': newContent},
+      );
+      final data = response.data as Map<String, dynamic>;
+      return data['id'] as String;
+    });
+  }
+
+  Future<String> exportMemories(String format) async {
+    return _handleError((dio) async {
+      final response = await dio.get(
+        'memory/export',
+        queryParameters: {'format': format},
+      );
+      return response.data as String;
+    });
+  }
+
+  Future<List<Memory>> getOnThisDay() async {
+    return _handleError((dio) async {
+      final response = await dio.get('memory/on-this-day');
+      final data = response.data as Map<String, dynamic>;
+      final memories = data['memories'] as List<dynamic>;
+      return memories
+          .map((e) => Memory.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  // --- Memory Collections API ---
+
+  Future<List<MemoryCollection>> getCollections() async {
+    return _handleError((dio) async {
+      final response = await dio.get('memory/collections');
+      final data = response.data as Map<String, dynamic>;
+      final collections = data['collections'] as List<dynamic>;
+      return collections
+          .map((e) => MemoryCollection.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  Future<MemoryCollection> createCollection(
+    String name, {
+    String? description,
+  }) async {
+    return _handleError((dio) async {
+      final response = await dio.post(
+        'memory/collections',
+        data: {
+          'name': name,
+          if (description != null) 'description': description,
+        },
+      );
+      return MemoryCollection.fromJson(response.data as Map<String, dynamic>);
+    });
+  }
+
+  Future<MemoryCollection> updateCollection(
+    String id, {
+    String? name,
+    String? description,
+  }) async {
+    return _handleError((dio) async {
+      final data = <String, dynamic>{
+        if (name != null) 'name': name,
+        if (description != null) 'description': description,
+      };
+      final response = await dio.patch('memory/collections/$id', data: data);
+      return MemoryCollection.fromJson(response.data as Map<String, dynamic>);
+    });
+  }
+
+  Future<void> deleteCollection(String id) async {
+    await _handleError((dio) => dio.delete('memory/collections/$id'));
   }
 
   Future<MemoryGraph> getMemoryGraph() async {

@@ -167,5 +167,29 @@ class MemoryResponse(BaseModel):
     updated_at: datetime
 
 
+class MemoryCollectionRequest(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class MemoryCollectionResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    name: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
 class MemoryRequest(BaseModel):
     message: str
+
+
+class MemoryUpdateRequest(BaseModel):
+    content: str | None = None
+    collection_id: UUID | None = None
+
+
+class MemoryMergeRequest(BaseModel):
+    memory_ids: list[UUID]
+    new_content: str

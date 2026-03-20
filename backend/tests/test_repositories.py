@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -287,9 +288,13 @@ class TestMemoryRepository:
         mock_conn.execute_query_dict = AsyncMock(return_value=[])
         with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
             mock_tortoise.get_connection.return_value = mock_conn
-            result = await repo.search_fulltext("hello world")
-        assert result == []
-        mock_conn.execute_query_dict.assert_awaited_once()
+            import uuid
+
+            result = await repo.search_fulltext(
+                "hello world", uuid.UUID("12345678-1234-5678-1234-567812345678")
+            )
+            assert result == []
+            mock_conn.execute_query_dict.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------
@@ -364,3 +369,131 @@ class TestAuthRepository:
         }
         result = await repo.create_passkey(row)
         assert isinstance(result, PasskeyRecord)
+
+    @pytest.mark.asyncio
+    async def test_update_memory(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+        memory = Memory(content="Before update", user_id=user_id, embedding=[0.0])
+        await repo.insert_memory(memory)
+
+        updated_memory = await repo.update_memory(memory.id, {"content": "After update"})
+        assert updated_memory is not None
+        assert updated_memory.content == "After update"
+
+    @pytest.mark.asyncio
+    async def test_update_memory_not_found(self) -> None:
+        repo = MemoryRepository()
+        updated_memory = await repo.update_memory(uuid4(), {"content": "After update"})
+        assert updated_memory is None
+
+    @pytest.mark.asyncio
+    async def test_get_on_this_day(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+
+        # Test requires raw SQL mocking since it uses EXTRACT
+        mock_conn = AsyncMock()
+        mock_conn.execute_query_dict = AsyncMock(
+            return_value=[
+                {
+                    "id": uuid4(),
+                    "content": "A memory from last year",
+                    "user_id": user_id,
+                    "embedding": [0.0],
+                }
+            ]
+        )
+        with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
+            mock_tortoise.get_connection.return_value = mock_conn
+            memories = await repo.get_on_this_day(user_id)
+            assert len(memories) == 1
+            assert memories[0].content == "A memory from last year"
+
+    @pytest.mark.asyncio
+    async def test_list_all_memories_filters(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+        collection = await repo.create_collection(user_id, "Test Collection")
+
+        from datetime import datetime, timedelta
+
+        now = datetime.now(UTC)
+
+        m1 = Memory(
+            content="Fact 1",
+            user_id=user_id,
+            collection=collection,
+            created_at=now - timedelta(days=2),
+            embedding=[0.1],
+        )
+        m2 = Memory(
+            content="Fact 2", user_id=user_id, created_at=now - timedelta(days=5), embedding=[0.2]
+        )
+        await m1.save()
+        await m2.save()
+
+        # Filter by collection
+        res1 = await repo.list_all_memories(user_id, collection_id=collection.id)
+        assert len(res1) == 1
+        assert res1[0].id == m1.id
+
+        # Filter by date range
+        res2 = await repo.list_all_memories(user_id, start_date=now - timedelta(days=3))
+        assert len(res2) == 1
+        assert res2[0].id == m1.id
+
+    @pytest.mark.asyncio
+    async def test_collection_crud(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+
+        # Create
+        col = await repo.create_collection(user_id, "My Collection", "Description")
+        assert col.name == "My Collection"
+        assert col.description == "Description"
+
+        # List
+        cols = await repo.list_collections(user_id)
+        assert len(cols) == 1
+        assert cols[0].name == "My Collection"
+
+        # Update
+        updated_col = await repo.update_collection(col.id, name="Updated Name")
+        assert updated_col is not None
+        assert updated_col.name == "Updated Name"
+
+        # Update Not Found
+        not_found = await repo.update_collection(uuid4(), name="Nope")
+        assert not_found is None
+
+        # Delete
+        deleted = await repo.delete_collection(col.id)
+        assert deleted is True
+        cols_after = await repo.list_collections(user_id)
+        assert len(cols_after) == 0
+
+        # Delete Not Found
+        deleted_not_found = await repo.delete_collection(uuid4())
+        assert deleted_not_found is False
+
+    @pytest.mark.asyncio
+    async def test_search_fulltext_with_collection(self) -> None:
+        repo = MemoryRepository()
+        mock_conn = AsyncMock()
+        mock_conn.execute_query_dict = AsyncMock(return_value=[])
+        with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
+            mock_tortoise.get_connection.return_value = mock_conn
+            import uuid
+
+            result = await repo.search_fulltext(
+                "hello",
+                uuid.UUID("12345678-1234-5678-1234-567812345678"),
+                uuid.UUID("87654321-4321-8765-4321-876543218765"),
+            )
+            assert result == []
+
+            # Check arguments
+            args, _ = mock_conn.execute_query_dict.call_args
+            assert "collection_id = $3" in args[0]
+            assert "87654321-4321-8765-4321-876543218765" in args[1]
