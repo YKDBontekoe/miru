@@ -5,7 +5,9 @@ import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/core/design_system/components/chat_input_bar.dart';
 
 void main() {
-  testWidgets('ChatInputBar renders attachments correctly', (WidgetTester tester) async {
+  testWidgets('ChatInputBar renders attachments correctly', (
+    WidgetTester tester,
+  ) async {
     final controller = TextEditingController();
     int removeCallCount = 0;
     int attachCallCount = 0;
@@ -22,9 +24,13 @@ void main() {
           body: ChatInputBar(
             controller: controller,
             onSend: () {},
-            onAttachmentPressed: () { attachCallCount++; },
+            onAttachmentPressed: () {
+              attachCallCount++;
+            },
             attachedFiles: fakeFiles,
-            onRemoveAttachment: (file) { removeCallCount++; },
+            onRemoveAttachment: (file) {
+              removeCallCount++;
+            },
           ),
         ),
       ),

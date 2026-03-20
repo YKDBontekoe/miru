@@ -5,7 +5,6 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from httpx import AsyncClient  # noqa: TC002
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import get_current_user
@@ -178,6 +177,7 @@ def test_store_memory_route_oserror(client: TestClient) -> None:
 
 def test_upload_document(client: TestClient) -> None:
     from app.core.security.auth import get_current_user
+
     user_id = uuid4()
     mock_service = AsyncMock()
     mock_service.store_document_memory.return_value = [uuid4(), uuid4()]
@@ -199,9 +199,10 @@ def test_upload_document(client: TestClient) -> None:
 
 
 def test_upload_document_service_unavailable(client: TestClient) -> None:
-    from app.core.security.auth import get_current_user
     from httpx import Request
     from openai import APIConnectionError
+
+    from app.core.security.auth import get_current_user
 
     user_id = uuid4()
     mock_service = AsyncMock()
