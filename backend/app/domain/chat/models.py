@@ -118,8 +118,12 @@ class ChatMessageResponse(BaseModel):
     user_id: UUID | None = None
     agent_id: UUID | None = None
     content: str
+    feedback: str | None = None
     created_at: datetime
 
+
+class MessageFeedbackRequest(BaseModel):
+    is_positive: bool
 
 class ChatRequest(BaseModel):
     message: str | None = None

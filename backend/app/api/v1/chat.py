@@ -15,6 +15,7 @@ from app.domain.chat.models import (
     AddAgentToRoom,
     ChatMessageResponse,
     ChatRequest,
+    MessageFeedbackRequest,
     RoomCreate,
     RoomResponse,
     RoomUpdate,
@@ -142,3 +143,17 @@ async def chat_in_room(
         ),
         media_type="text/event-stream",
     )
+
+
+@router.post("/messages/{message_id}/feedback", response_model=ChatMessageResponse)
+async def submit_feedback(
+    message_id: UUID,
+    request: MessageFeedbackRequest,
+    user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> ChatMessageResponse:
+    """Submit feedback for a specific chat message."""
+    message = await service.handle_feedback(message_id, request.is_positive, user_id)
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return message

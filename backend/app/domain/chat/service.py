@@ -346,3 +346,47 @@ class ChatService:
 
         yield str(result)
         yield "[[STATUS:done]]\n"
+
+    async def handle_feedback(self, message_id: UUID, is_positive: bool, user_id: UUID) -> ChatMessageResponse | None:
+        message = await self.chat_repo.get_message(message_id)
+        if not message:
+            return None
+
+        # Verify access
+        room = await self.chat_repo.get_room(message.room_id)
+        if not room or room.user_id != user_id:
+            return None
+
+        # Update feedback
+        message.feedback = "positive" if is_positive else "negative"
+        await self.chat_repo.update_message(message)
+
+        # Trigger background learning from feedback
+        asyncio.create_task(self._learn_from_feedback(message, is_positive, user_id))
+
+        return ChatMessageResponse(
+            id=message.id,
+            room_id=message.room_id,
+            user_id=message.user_id,
+            agent_id=message.agent_id,
+            content=message.content,
+            feedback=message.feedback,
+            created_at=message.created_at,
+        )
+
+    async def _learn_from_feedback(self, message: ChatMessage, is_positive: bool, user_id: UUID) -> None:
+        """Evaluate user feedback to extract a memory preference."""
+        if not is_positive:
+            preference_str = f"The user did not find this response helpful: {message.content[:100]}..."
+        else:
+            preference_str = f"The user found this response helpful: {message.content[:100]}..."
+
+        if message.agent_id:
+            from app.domain.memory.service import MemoryService
+            mem_svc = MemoryService(self.memory_repo)
+            await mem_svc.store_memory(
+                content=preference_str,
+                user_id=user_id,
+                agent_id=message.agent_id,
+                room_id=message.room_id,
+            )
