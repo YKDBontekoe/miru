@@ -164,6 +164,7 @@ class TestChatRepository:
         inviter_id = uuid4()
         room = await repo.create_room("Invite Room", inviter_id)
         from datetime import datetime, timedelta
+
         expires_at = datetime.now(tz=UTC) + timedelta(days=1)
 
         invitation = await repo.create_invitation(
@@ -171,7 +172,7 @@ class TestChatRepository:
             inviter_id=inviter_id,
             token="test-token",
             expires_at=expires_at,
-            role="admin"
+            role="admin",
         )
 
         member = await repo.accept_invitation(invitation, user_id)
@@ -195,7 +196,7 @@ class TestChatRepository:
             user_id=user_id,
             action_type="test_action",
             entity_type="test_entity",
-            details={"key": "value"}
+            details={"key": "value"},
         )
 
         assert log.action_type == "test_action"
@@ -205,6 +206,7 @@ class TestChatRepository:
         activities = await repo.get_room_activity(room.id)
         assert len(activities) == 1
         assert activities[0].id == log.id
+
 
 # ---------------------------------------------------------------------------
 # MemoryRepository

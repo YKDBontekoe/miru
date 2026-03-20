@@ -74,7 +74,13 @@ class ChatRepository:
         return await ChatRoomMember.filter(room_id=room_id).all()
 
     async def create_invitation(
-        self, room_id: UUID, inviter_id: UUID, token: str, expires_at: datetime, email: str | None = None, role: str = "member"
+        self,
+        room_id: UUID,
+        inviter_id: UUID,
+        token: str,
+        expires_at: datetime,
+        email: str | None = None,
+        role: str = "member",
     ) -> RoomInvitation:
         """Create a new room invitation."""
         return await RoomInvitation.create(
@@ -97,9 +103,7 @@ class ChatRepository:
         room_id = getattr(invitation, "room_id")  # noqa: B009
         # Add user to room
         member, _ = await ChatRoomMember.get_or_create(
-            room_id=room_id,
-            user_id=user_id,
-            defaults={"role": invitation.role}
+            room_id=room_id, user_id=user_id, defaults={"role": invitation.role}
         )
 
         # Mark invitation as accepted

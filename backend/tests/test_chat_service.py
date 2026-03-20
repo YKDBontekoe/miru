@@ -515,6 +515,7 @@ async def test_accept_invitation(chat_service: typing.Any) -> None:
 
     mock_inv.accepted_at = None
     from datetime import timedelta
+
     mock_inv.expires_at = datetime.now(tz=UTC) - timedelta(days=1)
     with pytest.raises(HTTPException) as exc:
         await chat_service.accept_invitation(token, user_id)
@@ -539,6 +540,7 @@ async def test_accept_invitation(chat_service: typing.Any) -> None:
 @pytest.mark.asyncio
 async def test_get_room_activity(chat_service: typing.Any) -> None:
     from datetime import datetime
+
     room_id = uuid4()
 
     mock_log = MagicMock()
