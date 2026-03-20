@@ -22,47 +22,47 @@ jobs:
     environment:
       name: pr-preview
     env:
-      PR_APP: \${{ vars.PR_CONTAINER_APP_NAME || 'aca-miru-pr' }}
-      PR_RG:  \${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
+      PR_APP: ${{ vars.PR_CONTAINER_APP_NAME || 'aca-miru-pr' }}
+      PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
 
     steps:
       - name: Login to Azure
         uses: azure/login@v3
         with:
-          creds: \${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Remove PR Label and Deactivate Revisions
         run: |
-          LABEL="pr-\${{ github.event.pull_request.number }}"
-          echo "Cleaning up PR revisions for label: \$LABEL"
+          LABEL="pr-${{ github.event.pull_request.number }}"
+          echo "Cleaning up PR revisions for label: $LABEL"
 
           # Remove the label if it exists (so it doesn't hold up traffic mapping)
-          echo "Removing label '\$LABEL'..."
+          echo "Removing label '$LABEL'..."
           az containerapp revision label remove \
-            --name "\${{ env.PR_APP }}" \
-            --resource-group "\${{ env.PR_RG }}" \
-            --label "\$LABEL" --yes || echo "Label may already be removed or not exist."
+            --name "${{ env.PR_APP }}" \
+            --resource-group "${{ env.PR_RG }}" \
+            --label "$LABEL" --yes || echo "Label may already be removed or not exist."
 
           # Find all revisions created for this PR using the suffix
-          REVISIONS=\$(az containerapp revision list \
-            --name "\${{ env.PR_APP }}" \
-            --resource-group "\${{ env.PR_RG }}" \
-            --query "[?contains(name, '\$LABEL')].name" \
+          REVISIONS=$(az containerapp revision list \
+            --name "${{ env.PR_APP }}" \
+            --resource-group "${{ env.PR_RG }}" \
+            --query "[?contains(name, '$LABEL')].name" \
             --output tsv)
 
-          if [ -z "\$REVISIONS" ]; then
-            echo "::warning::No revisions found matching '\$LABEL'. They may have already been cleaned up."
+          if [ -z "$REVISIONS" ]; then
+            echo "::warning::No revisions found matching '$LABEL'. They may have already been cleaned up."
           else
             echo "Found revisions to deactivate:"
-            echo "\$REVISIONS"
+            echo "$REVISIONS"
 
-            for REVISION in \$REVISIONS; do
-              echo "Deactivating revision '\$REVISION'..."
+            for REVISION in $REVISIONS; do
+              echo "Deactivating revision '$REVISION'..."
               az containerapp revision deactivate \
-                --name "\${{ env.PR_APP }}" \
-                --resource-group "\${{ env.PR_RG }}" \
-                --revision "\$REVISION" || echo "Revision '\$REVISION' may already be deactivated."
+                --name "${{ env.PR_APP }}" \
+                --resource-group "${{ env.PR_RG }}" \
+                --revision "$REVISION" || echo "Revision '$REVISION' may already be deactivated."
             done
 
-            echo "Successfully cleaned up PR environment for PR #\${{ github.event.pull_request.number }}."
+            echo "Successfully cleaned up PR environment for PR #${{ github.event.pull_request.number }}."
           fi
