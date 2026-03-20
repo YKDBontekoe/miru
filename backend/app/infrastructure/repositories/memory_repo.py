@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from tortoise import Tortoise
 from tortoise.expressions import Q
 
-from app.domain.memory.models import Memory, MemoryRelationship
+from app.domain.memory.models import Memory, MemoryCollection, MemoryRelationship
 
 
 class MemoryRepository:
@@ -27,9 +29,51 @@ class MemoryRepository:
             return True
         return False
 
-    async def list_all_memories(self, user_id: UUID, limit: int = 100) -> list[Memory]:
-        """Fetch all memories for a user (no vector match)."""
-        return await Memory.filter(user_id=user_id).limit(limit).all()
+    async def list_all_memories(
+        self,
+        user_id: UUID,
+        collection_id: UUID | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        limit: int = 100,
+    ) -> list[Memory]:
+        """Fetch memories for a user, with optional filters."""
+        query = Memory.filter(user_id=user_id)
+        if collection_id:
+            query = query.filter(collection_id=collection_id)
+        if start_date:
+            query = query.filter(created_at__gte=start_date)
+        if end_date:
+            query = query.filter(created_at__lte=end_date)
+
+        return await query.order_by("-created_at").limit(limit).all()
+
+    async def update_memory(self, memory_id: UUID, update_data: dict[str, Any]) -> Memory | None:
+        """Update specific fields of a memory."""
+        memory = await Memory.get_or_none(id=memory_id)
+        if not memory:
+            return None
+
+        for key, value in update_data.items():
+            setattr(memory, key, value)
+
+        await memory.save()
+        return memory
+
+    async def get_on_this_day(self, user_id: UUID, limit: int = 10) -> list[Memory]:
+        """Fetch memories from the same month and day in previous years."""
+        conn = Tortoise.get_connection("default")
+        sql = """
+            SELECT * FROM memories
+            WHERE user_id = $1
+            AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM CURRENT_DATE)
+            AND EXTRACT(DAY FROM created_at) = EXTRACT(DAY FROM CURRENT_DATE)
+            AND EXTRACT(YEAR FROM created_at) < EXTRACT(YEAR FROM CURRENT_DATE)
+            ORDER BY created_at DESC
+            LIMIT $2
+        """
+        records = await conn.execute_query_dict(sql, [str(user_id), limit])
+        return [Memory(**row) for row in records]
 
     async def match_memories(
         self,
@@ -98,13 +142,59 @@ class MemoryRepository:
 
         return await Memory.filter(id__in=list(related_ids)).all()
 
-    async def search_fulltext(self, query: str) -> list[Memory]:
-        """Full-text search for memories using PostgreSQL fts."""
-        # Tortoise doesn't support fts natively well, so we use raw SQL
+    async def search_fulltext(
+        self, query: str, user_id: UUID, collection_id: UUID | None = None
+    ) -> list[Memory]:
+        """Full-text search for memories using PostgreSQL vector or LIKE fallback."""
         conn = Tortoise.get_connection("default")
-        sql = "SELECT * FROM memories WHERE fts @@ plainto_tsquery('english', $1) LIMIT 10"
-        records = await conn.execute_query_dict(sql, [query])
+        # Ensure we use user_id to restrict the search
+        params: list[Any] = [f"%{query}%", str(user_id)]
+
+        sql = "SELECT * FROM memories WHERE content ILIKE $1 AND user_id = $2"
+        if collection_id:
+            sql += " AND collection_id = $3"
+            params.append(str(collection_id))
+
+        sql += " LIMIT 50"
+
+        records = await conn.execute_query_dict(sql, params)
         return [Memory(**row) for row in records]
+
+    # --- Collection Management ---
+
+    async def create_collection(
+        self, user_id: UUID, name: str, description: str | None = None
+    ) -> MemoryCollection:
+        """Create a new memory collection."""
+        return await MemoryCollection.create(user_id=user_id, name=name, description=description)
+
+    async def list_collections(self, user_id: UUID) -> list[MemoryCollection]:
+        """List all collections for a user."""
+        return await MemoryCollection.filter(user_id=user_id).order_by("name").all()
+
+    async def update_collection(
+        self, collection_id: UUID, name: str | None = None, description: str | None = None
+    ) -> MemoryCollection | None:
+        """Update an existing collection."""
+        collection = await MemoryCollection.get_or_none(id=collection_id)
+        if not collection:
+            return None
+
+        if name is not None:
+            collection.name = name
+        if description is not None:
+            collection.description = description
+
+        await collection.save()
+        return collection
+
+    async def delete_collection(self, collection_id: UUID) -> bool:
+        """Delete a collection."""
+        collection = await MemoryCollection.get_or_none(id=collection_id)
+        if collection:
+            await collection.delete()
+            return True
+        return False
 
     async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[MemoryRelationship]:
         """Fetch relationships between a set of memory IDs."""

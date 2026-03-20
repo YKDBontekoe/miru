@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import csv
+import io
+import json
 import logging
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from app.domain.memory.models import Memory
+from app.domain.memory.models import Memory, MemoryCollection
 from app.infrastructure.external.openrouter import embed
 
 if TYPE_CHECKING:
@@ -93,11 +97,115 @@ class MemoryService:
         user_id: UUID | str | None = None,
         agent_id: UUID | str | None = None,
         room_id: UUID | str | None = None,
+        collection_id: UUID | str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[Memory]:
-        """Fetch similar memories from the vector store."""
-        vector = await embed(query) if query else [0.0] * 1536  # Default vector for blank list
+        """Fetch memories from the vector store or database depending on filters."""
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
+        c_id = UUID(str(collection_id)) if collection_id else None
 
-        return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
+        if query:
+            if c_id and u_id:
+                # If both fulltext query and specific collection are provided, use FTS to filter by collection
+                return await self.repo.search_fulltext(query, u_id, collection_id=c_id)
+
+            vector = await embed(query)
+            return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
+
+        # If no query, list memories with optional filters
+        if not u_id:
+            return []
+
+        return await self.repo.list_all_memories(
+            user_id=u_id,
+            collection_id=c_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    async def update_memory(self, memory_id: UUID, update_data: dict[str, Any]) -> Memory | None:
+        """Update a memory's content or collection."""
+        if "content" in update_data:
+            update_data["embedding"] = await embed(update_data["content"])
+
+        if "collection_id" in update_data and update_data["collection_id"] is not None:
+            update_data["collection_id"] = UUID(str(update_data["collection_id"]))
+
+        return await self.repo.update_memory(memory_id, update_data)
+
+    async def get_on_this_day(self, user_id: UUID, limit: int = 10) -> list[Memory]:
+        """Get memories from the same day in previous years."""
+        return await self.repo.get_on_this_day(user_id, limit)
+
+    # --- Collection Management ---
+
+    async def create_collection(
+        self, user_id: UUID, name: str, description: str | None = None
+    ) -> MemoryCollection:
+        """Create a new memory collection."""
+        return await self.repo.create_collection(user_id, name, description)
+
+    async def list_collections(self, user_id: UUID) -> list[MemoryCollection]:
+        """List all collections for a user."""
+        return await self.repo.list_collections(user_id)
+
+    async def update_collection(
+        self, collection_id: UUID, name: str | None = None, description: str | None = None
+    ) -> MemoryCollection | None:
+        """Update an existing collection."""
+        return await self.repo.update_collection(collection_id, name, description)
+
+    async def delete_collection(self, collection_id: UUID) -> bool:
+        """Delete a collection."""
+        return await self.repo.delete_collection(collection_id)
+
+    # --- Actions ---
+
+    async def merge_memories(
+        self, user_id: UUID, memory_ids: list[UUID], new_content: str
+    ) -> UUID | None:
+        """Merge multiple memories into a single new memory."""
+        new_id = await self.store_memory(content=new_content, user_id=user_id)
+        if new_id:
+            for m_id in memory_ids:
+                await self.delete_memory(m_id)
+        return new_id
+
+    async def export_memories(self, user_id: UUID, format_type: str = "json") -> str:
+        """Export all user memories to JSON or CSV format."""
+        memories = await self.repo.list_all_memories(user_id, limit=10000)
+
+        if format_type.lower() == "json":
+            data = [
+                {
+                    "id": str(m.id),
+                    "content": m.content,
+                    "collection_id": str(m.collection_id)
+                    if getattr(m, "collection_id", None)
+                    else None,
+                    "created_at": m.created_at.isoformat() if m.created_at else None,
+                    "meta": m.meta,
+                }
+                for m in memories
+            ]
+            return json.dumps(data, indent=2)
+
+        elif format_type.lower() == "csv":
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["id", "content", "collection_id", "created_at"])
+            for m in memories:
+                writer.writerow(
+                    [
+                        str(m.id),
+                        m.content,
+                        str(m.collection_id) if getattr(m, "collection_id", None) else "",
+                        m.created_at.isoformat() if m.created_at else "",
+                    ]
+                )
+            return output.getvalue()
+
+        return ""

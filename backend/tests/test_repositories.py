@@ -287,9 +287,10 @@ class TestMemoryRepository:
         mock_conn.execute_query_dict = AsyncMock(return_value=[])
         with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
             mock_tortoise.get_connection.return_value = mock_conn
-            result = await repo.search_fulltext("hello world")
-        assert result == []
-        mock_conn.execute_query_dict.assert_awaited_once()
+            import uuid
+            result = await repo.search_fulltext("hello world", uuid.UUID("12345678-1234-5678-1234-567812345678"))
+            assert result == []
+            mock_conn.execute_query_dict.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------

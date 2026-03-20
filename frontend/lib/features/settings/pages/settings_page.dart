@@ -7,10 +7,7 @@ import 'package:credential_manager/credential_manager.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/core/services/passkey_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
-import 'package:miru/core/api/api_service.dart';
-import 'package:miru/core/models/memory.dart';
-import 'package:miru/features/settings/widgets/memory_graph_view.dart';
-import 'package:miru/features/settings/widgets/memory_list_item.dart';
+import 'package:miru/features/settings/widgets/memory_browser.dart';
 import 'package:miru/features/settings/widgets/passkey_list_item.dart';
 import 'package:miru/features/settings/widgets/settings_list_item.dart';
 
@@ -36,17 +33,10 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _loadingPasskeys = false;
   bool _addingPasskey = false;
 
-  // Memories state
-  List<Memory> _memories = [];
-  List<MemoryEdge> _memoryEdges = [];
-  bool _loadingMemories = false;
-  bool _showMemoryGraph = false;
-
   @override
   void initState() {
     super.initState();
     _loadPasskeys();
-    _loadMemories();
     _loadPreferences();
   }
 
@@ -201,81 +191,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ---------------------------------------------------------------------------
-  // Memories management
-  // ---------------------------------------------------------------------------
-
-  Future<void> _loadMemories() async {
-    if (!SupabaseService.isAuthenticated) return;
-    setState(() => _loadingMemories = true);
-    try {
-      final graphData = await ApiService.instance.getMemoryGraph();
-      if (!mounted) return;
-
-      setState(() {
-        _memories = graphData.nodes;
-        _memoryEdges = graphData.edges;
-      });
-    } on Exception {
-      try {
-        final memories = await ApiService.instance.getMemories();
-        if (!mounted) return;
-        setState(() {
-          _memories = memories;
-          _memoryEdges = [];
-        });
-      } catch (_) {
-        // Non-fatal
-      }
-    } finally {
-      if (mounted) setState(() => _loadingMemories = false);
-    }
-  }
-
-  Future<void> _deleteMemory(Memory memory) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Forget memory?'),
-        content: Text('Should I forget this detail?\n\n"${memory.content}"'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Forget'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await ApiService.instance.deleteMemory(memory.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Memory forgotten')));
-      await _loadMemories();
-    } catch (e, s) {
-      developer.log(
-        'settings_page error: Failed to delete memory',
-        error: e,
-        stackTrace: s,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to remove item. Please try again.'),
-        ),
-      );
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // Sign out
   // ---------------------------------------------------------------------------
 
@@ -354,39 +269,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
           // Memories section
           const Divider(),
-          const SectionHeader(title: 'Personal Memories'),
-          if (_loadingMemories)
-            const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else ...[
-            if (_memories.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                child: Text(
-                  'No memories stored yet. As you talk to Miru, she will learn more about you.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: colors.onSurfaceMuted,
-                  ),
-                ),
-              )
-            else ...[
-              _buildMemoryViewToggle(),
-              if (_showMemoryGraph)
-                MemoryGraphView(memories: _memories, memoryEdges: _memoryEdges)
-              else
-                ..._memories.map(
-                  (m) => MemoryListItem(
-                    memory: m,
-                    onDelete: () => _deleteMemory(m),
-                  ),
-                ),
-            ],
-          ],
+          const SectionHeader(title: 'Memory Browser'),
+          const MemoryBrowser(),
 
           // Passkeys section
           const Divider(),
@@ -521,46 +405,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: AppSpacing.xxl),
         ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
-  Widget _buildMemoryViewToggle() {
-    final colors = context.colors;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.xs,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: SegmentedButton<bool>(
-        segments: const [
-          ButtonSegment<bool>(
-            value: false,
-            icon: Icon(Icons.view_list_rounded),
-            label: Text('List'),
-          ),
-          ButtonSegment<bool>(
-            value: true,
-            icon: Icon(Icons.hub_rounded),
-            label: Text('Graph'),
-          ),
-        ],
-        selected: {_showMemoryGraph},
-        showSelectedIcon: false,
-        style: ButtonStyle(
-          foregroundColor: WidgetStatePropertyAll(colors.onSurface),
-        ),
-        onSelectionChanged: (selection) {
-          if (selection.isEmpty) return;
-          setState(() => _showMemoryGraph = selection.first);
-        },
       ),
     );
   }

@@ -1,0 +1,15 @@
+--- backend/tests/test_repositories.py
++++ backend/tests/test_repositories.py
+@@ -282,10 +282,10 @@
+
+     @pytest.mark.asyncio
+     async def test_search_fulltext_delegates_to_raw_sql(self) -> None:
+         repo = MemoryRepository()
+         mock_conn = AsyncMock()
+         mock_conn.execute_query_dict = AsyncMock(return_value=[])
+         with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
+             mock_tortoise.get_connection.return_value = mock_conn
+-        import uuid
+-        result = await repo.search_fulltext("hello world", uuid.UUID("12345678-1234-5678-1234-567812345678"))
++            import uuid
++            result = await repo.search_fulltext("hello world", uuid.UUID("12345678-1234-5678-1234-567812345678"))
