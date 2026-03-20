@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:miru/core/design_system/design_system.dart';
 
 /// The bottom input bar for composing and sending messages.
@@ -24,9 +23,6 @@ class ChatInputBar extends StatelessWidget {
   final VoidCallback onSend;
   final bool isStreaming;
   final String hintText;
-  final VoidCallback? onAttachmentPressed;
-  final List<PlatformFile> attachedFiles;
-  final void Function(PlatformFile file)? onRemoveAttachment;
 
   /// Called when the user taps the stop button during streaming.
   final VoidCallback? onStopStreaming;
@@ -39,9 +35,6 @@ class ChatInputBar extends StatelessWidget {
     this.isStreaming = false,
     this.onStopStreaming,
     this.hintText = 'Message Miru...',
-    this.onAttachmentPressed,
-    this.attachedFiles = const [],
-    this.onRemoveAttachment,
   });
 
   @override
@@ -62,83 +55,6 @@ class ChatInputBar extends StatelessWidget {
           children: [
             // Hairline separator
             Container(height: 1, color: borderColor.withValues(alpha: 0.5)),
-
-            // Attached files preview area
-            if (attachedFiles.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: AppSpacing.md,
-                  right: AppSpacing.md,
-                  top: AppSpacing.md,
-                ),
-                child: SizedBox(
-                  height: 60,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: attachedFiles.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(width: AppSpacing.sm),
-                    itemBuilder: (context, index) {
-                      final file = attachedFiles[index];
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.surfaceHighDark
-                              : AppColors.surfaceHighLight,
-                          borderRadius: BorderRadius.circular(
-                            AppSpacing.radiusMd,
-                          ),
-                          border: Border.all(color: borderColor),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _getFileIcon(file.name),
-                              size: 20,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 100),
-                              child: Text(
-                                file.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.bodySmall,
-                              ),
-                            ),
-                            if (onRemoveAttachment != null) ...[
-                              const SizedBox(width: AppSpacing.xs),
-                              Semantics(
-                                label: 'Remove attachment ${file.name}',
-                                button: true,
-                                child: InkWell(
-                                  onTap: () => onRemoveAttachment!(file),
-                                  child: Tooltip(
-                                    message: 'Remove attachment',
-                                    child: Icon(
-                                      Icons.close_rounded,
-                                      size: 16,
-                                      color: isDark
-                                          ? AppColors.onSurfaceMutedDark
-                                          : AppColors.onSurfaceMutedLight,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -149,25 +65,6 @@ class ChatInputBar extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Attachment button
-                  if (onAttachmentPressed != null)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        right: AppSpacing.sm,
-                        bottom: AppSpacing.xs,
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.attach_file_rounded,
-                          color: isDark
-                              ? AppColors.onSurfaceMutedDark
-                              : AppColors.onSurfaceMutedLight,
-                        ),
-                        onPressed: onAttachmentPressed,
-                        tooltip: 'Attach file',
-                      ),
-                    ),
-
                   // Text field in a card-like container
                   Expanded(
                     child: Container(
@@ -228,27 +125,6 @@ class ChatInputBar extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static IconData _getFileIcon(String filename) {
-    if (!filename.contains('.')) return Icons.insert_drive_file_rounded;
-    final ext = filename.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'pdf':
-        return Icons.picture_as_pdf_rounded;
-      case 'doc':
-      case 'docx':
-        return Icons.description_rounded;
-      case 'txt':
-        return Icons.text_snippet_rounded;
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'gif':
-        return Icons.image_rounded;
-      default:
-        return Icons.insert_drive_file_rounded;
-    }
   }
 }
 

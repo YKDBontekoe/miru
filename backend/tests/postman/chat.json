@@ -1,210 +1,43 @@
 {
   "info": {
-    "_postman_id": "11111111-1111-1111-1111-000000000003",
-    "name": "Chat Endpoints",
-    "description": "Integration tests for chat endpoints.",
+    "_postman_id": "4b971dc0-f04b-449e-bc4f-4d929f0ab0eb",
+    "name": "Chat",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Get Rooms",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401\", function () {",
-              "    pm.response.to.have.status(401);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms"]
-        }
-      }
-    },
-    {
-      "name": "Create Room",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
+      "name": "Submit Feedback",
       "request": {
         "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms"]
-        }
-      }
-    },
-    {
-      "name": "Chat Completion",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"is_positive\": true}"
+        },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/chat",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "chat"]
+          "raw": "{{base_url}}/api/v1/messages/{{message_id}}/feedback",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "messages",
+            "{{message_id}}",
+            "feedback"
+          ]
         }
-      }
-    },
-    {
-      "name": "Crew Interaction",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/crew",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "crew"]
-        }
-      }
-    },
-    {
-      "name": "Add Agent to Room",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "agents"]
-        }
-      }
-    },
-    {
-      "name": "Get Agents in Room",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "agents"]
-        }
-      }
-    },
-    {
-      "name": "Get Messages in Room",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms/test-room/messages",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "messages"]
-        }
-      }
-    },
-    {
-      "name": "Room Chat",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms/test-room/chat",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "chat"]
-        }
-      }
+      },
+      "response": []
     }
   ]
 }
