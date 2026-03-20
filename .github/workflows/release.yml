@@ -137,12 +137,13 @@ jobs:
 
           # Upload Flutter web source maps if present
           if [ -d "frontend/build/web" ]; then
+            url_prefix='~/'
             sentry-cli releases files "${{ steps.version.outputs.VERSION }}" upload-sourcemaps \
               frontend/build/web \
               --org "${{ env.SENTRY_ORG }}" \
               --project "${{ env.SENTRY_PROJECT_FRONTEND }}" \
               --rewrite \
-              --url-prefix '~/' \
+              --url-prefix "$url_prefix" \
               || echo "No source maps found — skipping upload."
           fi
 
