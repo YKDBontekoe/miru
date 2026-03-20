@@ -21,7 +21,7 @@ class MemoryListItem extends StatelessWidget {
       leading: Icon(
         Icons.auto_awesome_rounded,
         color: colors.primary,
-        size: 20,
+        size: AppSpacing.iconMd,
       ),
       title: Text(
         memory.content,
@@ -35,7 +35,7 @@ class MemoryListItem extends StatelessWidget {
         icon: Icon(
           Icons.delete_outline_rounded,
           color: colors.onSurfaceMuted,
-          size: 20,
+          size: AppSpacing.iconMd,
         ),
         onPressed: onDelete,
         tooltip: 'Forget memory',

@@ -35,7 +35,7 @@ class PasskeyListItem extends StatelessWidget {
         icon: Icon(
           Icons.delete_outline_rounded,
           color: AppColors.error,
-          size: 20,
+          size: AppSpacing.iconMd,
         ),
         onPressed: onDelete,
         tooltip: 'Remove passkey',
