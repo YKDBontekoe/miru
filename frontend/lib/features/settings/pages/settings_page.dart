@@ -1,5 +1,4 @@
 import 'dart:developer' as developer;
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +9,10 @@ import 'package:miru/core/services/passkey_service.dart';
 import 'package:miru/core/services/supabase_service.dart';
 import 'package:miru/core/api/api_service.dart';
 import 'package:miru/core/models/memory.dart';
+import 'package:miru/features/settings/widgets/memory_graph_view.dart';
+import 'package:miru/features/settings/widgets/memory_list_item.dart';
+import 'package:miru/features/settings/widgets/passkey_list_item.dart';
+import 'package:miru/features/settings/widgets/settings_list_item.dart';
 
 class SettingsPage extends StatefulWidget {
   /// Called when the user clears chat history from settings.
@@ -320,7 +323,7 @@ class _SettingsPageState extends State<SettingsPage> {
           // Account section
           if (user != null) ...[
             const SizedBox(height: AppSpacing.md),
-            _buildSectionHeader('Account'),
+            const SectionHeader(title: 'Account'),
             ListTile(
               leading: Icon(
                 Icons.person_outline_rounded,
@@ -340,7 +343,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
             ),
-            _buildSettingTile(
+            SettingTile(
               icon: Icons.logout_rounded,
               title: 'Sign out',
               subtitle: 'Sign out of your Miru account',
@@ -351,7 +354,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
           // Memories section
           const Divider(),
-          _buildSectionHeader('Personal Memories'),
+          const SectionHeader(title: 'Personal Memories'),
           if (_loadingMemories)
             const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
@@ -374,15 +377,20 @@ class _SettingsPageState extends State<SettingsPage> {
             else ...[
               _buildMemoryViewToggle(),
               if (_showMemoryGraph)
-                _buildMemoryGraph()
+                MemoryGraphView(memories: _memories, memoryEdges: _memoryEdges)
               else
-                ..._memories.map(_buildMemoryListItem),
+                ..._memories.map(
+                  (m) => MemoryListItem(
+                    memory: m,
+                    onDelete: () => _deleteMemory(m),
+                  ),
+                ),
             ],
           ],
 
           // Passkeys section
           const Divider(),
-          _buildSectionHeader('Passkeys'),
+          const SectionHeader(title: 'Passkeys'),
           if (_loadingPasskeys)
             const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
@@ -391,37 +399,9 @@ class _SettingsPageState extends State<SettingsPage> {
           else ...[
             // List existing passkeys
             ..._passkeys.map(
-              (passkey) => ListTile(
-                leading: Icon(
-                  Icons.fingerprint_rounded,
-                  color: colors.onSurfaceMuted,
-                  size: AppSpacing.iconMd,
-                ),
-                title: Text(
-                  passkey.deviceName ?? 'Passkey',
-                  style: AppTypography.labelLarge.copyWith(
-                    color: colors.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  'Added ${_formatDate(passkey.createdAt)}',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: colors.onSurfaceMuted,
-                  ),
-                ),
-                trailing: IconButton(
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    color: AppColors.error,
-                    size: 20,
-                  ),
-                  onPressed: () => _deletePasskey(passkey),
-                  tooltip: 'Remove passkey',
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.xs,
-                ),
+              (passkey) => PasskeyListItem(
+                passkey: passkey,
+                onDelete: () => _deletePasskey(passkey),
               ),
             ),
             if (_passkeys.isEmpty)
@@ -459,8 +439,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
           // Preferences
           const Divider(),
-          _buildSectionHeader('Preferences'),
-          _buildSettingTile(
+          const SectionHeader(title: 'Preferences'),
+          SettingTile(
             icon: Icons.security_rounded,
             title: 'Privacy Mode',
             subtitle: 'Minimize data logging for sessions',
@@ -473,7 +453,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
           ),
-          _buildSettingTile(
+          SettingTile(
             icon: Icons.notifications_none_rounded,
             title: 'Notifications',
             subtitle: 'Get alerts for long-running tasks',
@@ -489,8 +469,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
           // Data
           const Divider(),
-          _buildSectionHeader('Data'),
-          _buildSettingTile(
+          const SectionHeader(title: 'Data'),
+          SettingTile(
             icon: Icons.delete_outline_rounded,
             title: 'Clear Chat History',
             subtitle: 'Permanently delete all conversations',
@@ -533,8 +513,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
           // About
           const Divider(),
-          _buildSectionHeader('About'),
-          _buildSettingTile(
+          const SectionHeader(title: 'About'),
+          SettingTile(
             icon: Icons.info_outline_rounded,
             title: 'Miru Version',
             subtitle: '1.0.0 (Beta)',
@@ -548,29 +528,6 @@ class _SettingsPageState extends State<SettingsPage> {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-
-  String _formatDate(String isoDate) {
-    try {
-      final date = DateTime.parse(isoDate).toLocal();
-      final months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${months[date.month - 1]} ${date.day}, ${date.year}';
-    } catch (_) {
-      return isoDate;
-    }
-  }
 
   Widget _buildMemoryViewToggle() {
     final colors = context.colors;
@@ -606,236 +563,5 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       ),
     );
-  }
-
-  Widget _buildMemoryListItem(Memory memory) {
-    final colors = context.colors;
-    return ListTile(
-      leading: Icon(
-        Icons.auto_awesome_rounded,
-        color: colors.primary,
-        size: 20,
-      ),
-      title: Text(
-        memory.content,
-        style: AppTypography.bodyMedium.copyWith(color: colors.onSurface),
-      ),
-      subtitle: Text(
-        'Learned ${_formatDate(memory.createdAt)}',
-        style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
-      ),
-      trailing: IconButton(
-        icon: Icon(
-          Icons.delete_outline_rounded,
-          color: colors.onSurfaceMuted,
-          size: 20,
-        ),
-        onPressed: () => _deleteMemory(memory),
-        tooltip: 'Forget memory',
-      ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
-      ),
-    );
-  }
-
-  Widget _buildMemoryGraph() {
-    final colors = context.colors;
-
-    if (_memories.length == 1) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.sm,
-        ),
-        child: Text(
-          'Only one memory available. More connections appear as Miru learns.',
-          style: AppTypography.bodySmall.copyWith(color: colors.onSurfaceMuted),
-        ),
-      );
-    }
-
-    final nodes = _memories.map(_GraphNode.fromMemory).toList();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.xs,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: Container(
-        height: 280,
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.md),
-          border: Border.all(color: colors.border.withValues(alpha: 0.3)),
-        ),
-        child: CustomPaint(
-          painter: _MemoryGraphPainter(
-            colors: colors,
-            nodes: nodes,
-            edges: _memoryEdges,
-          ),
-          child: const SizedBox.expand(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: Text(
-        title.toUpperCase(),
-        style: AppTypography.labelSmall.copyWith(
-          color: context.colors.onSurfaceMuted,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingTile({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    Widget? trailing,
-    VoidCallback? onTap,
-    bool destructive = false,
-  }) {
-    final colors = context.colors;
-    final contentColor = destructive ? AppColors.error : colors.onSurface;
-
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: destructive ? AppColors.error : colors.onSurfaceMuted,
-        size: AppSpacing.iconMd,
-      ),
-      title: Text(
-        title,
-        style: AppTypography.labelLarge.copyWith(color: contentColor),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: AppTypography.bodySmall.copyWith(
-                color: colors.onSurfaceMuted,
-              ),
-            )
-          : null,
-      trailing: trailing,
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
-      ),
-    );
-  }
-}
-
-class _GraphNode {
-  final String id;
-  final String content;
-
-  const _GraphNode({required this.id, required this.content});
-
-  factory _GraphNode.fromMemory(Memory memory) {
-    return _GraphNode(id: memory.id, content: memory.content);
-  }
-}
-
-class _MemoryGraphPainter extends CustomPainter {
-  final AppThemeColors colors;
-  final List<_GraphNode> nodes;
-  final List<MemoryEdge> edges;
-
-  const _MemoryGraphPainter({
-    required this.colors,
-    required this.nodes,
-    required this.edges,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (nodes.isEmpty) {
-      return;
-    }
-
-    final nodePositions = <String, Offset>{};
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * 0.33;
-
-    for (var i = 0; i < nodes.length; i++) {
-      final angle = (2 * math.pi * i) / nodes.length;
-      nodePositions[nodes[i].id] = Offset(
-        center.dx + radius * math.cos(angle),
-        center.dy + radius * math.sin(angle),
-      );
-    }
-
-    final edgePaint = Paint()
-      ..color = colors.primary.withValues(alpha: 0.32)
-      ..strokeWidth = 1.6
-      ..style = PaintingStyle.stroke;
-
-    for (final edge in edges) {
-      final sourceId = edge.source;
-      final targetId = edge.target;
-
-      final sourcePoint = nodePositions[sourceId];
-      final targetPoint = nodePositions[targetId];
-      if (sourcePoint == null || targetPoint == null) {
-        continue;
-      }
-
-      canvas.drawLine(sourcePoint, targetPoint, edgePaint);
-    }
-
-    for (final node in nodes) {
-      final point = nodePositions[node.id];
-      if (point == null) {
-        continue;
-      }
-
-      final nodePaint = Paint()..color = colors.primary;
-      canvas.drawCircle(point, 8, nodePaint);
-
-      final label = _shortLabel(node.content);
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: label,
-          style: AppTypography.bodySmall.copyWith(color: colors.onSurface),
-        ),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-        ellipsis: '...',
-      )..layout(maxWidth: 110);
-
-      final dx = point.dx - textPainter.width / 2;
-      final dy = point.dy + 12;
-
-      textPainter.paint(canvas, Offset(dx, dy));
-    }
-  }
-
-  String _shortLabel(String content) {
-    final trimmed = content.trim();
-    if (trimmed.length <= 18) {
-      return trimmed;
-    }
-    return '${trimmed.substring(0, 18)}...';
-  }
-
-  @override
-  bool shouldRepaint(covariant _MemoryGraphPainter oldDelegate) {
-    return oldDelegate.nodes != nodes || oldDelegate.edges != edges;
   }
 }
