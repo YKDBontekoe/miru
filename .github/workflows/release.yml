@@ -137,13 +137,14 @@ jobs:
 
           # Upload Flutter web source maps if present
           if [ -d "frontend/build/web" ]; then
-            url_prefix='~/'
+            # shellcheck disable=SC2088
+            # ~/ is the Sentry URL prefix convention, not a filesystem path.
             sentry-cli releases files "${{ steps.version.outputs.VERSION }}" upload-sourcemaps \
               frontend/build/web \
               --org "${{ env.SENTRY_ORG }}" \
               --project "${{ env.SENTRY_PROJECT_FRONTEND }}" \
               --rewrite \
-              --url-prefix "$url_prefix" \
+              --url-prefix '~/' \
               || echo "No source maps found — skipping upload."
           fi
 

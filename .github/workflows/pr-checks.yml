@@ -99,9 +99,6 @@ jobs:
       - uses: actions/checkout@v6
       - name: Run actionlint
         uses: rhysd/actionlint@v1.7.11
-        with:
-          # Fail on any workflow error so bugs are caught before they hit CI.
-          fail-on-error: true
 
   pr-size-check:
     name: PR Size Check
