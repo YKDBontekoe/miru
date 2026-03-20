@@ -93,7 +93,7 @@ jobs:
 
       - name: Set release version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
       # Download the web build artifact to upload source maps
       - name: Download web artifact
@@ -142,7 +142,7 @@ jobs:
               --org "${{ env.SENTRY_ORG }}" \
               --project "${{ env.SENTRY_PROJECT_FRONTEND }}" \
               --rewrite \
-              --url-prefix "~/" \
+              --url-prefix ~/ \
               || echo "No source maps found — skipping upload."
           fi
 
