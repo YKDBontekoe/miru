@@ -481,7 +481,20 @@ jobs:
       - name: Run Postman integration tests
         run: |
           npm install -g newman
+          PIDS=()
           for collection in backend/tests/postman/*.json; do
-            echo "Running Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }}
+            echo "Starting Postman Collection: $collection"
+            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            PIDS+=($!)
           done
+
+          FAILURES=0
+          for pid in "${PIDS[@]}"; do
+            wait "$pid" || FAILURES=$((FAILURES+1))
+          done
+
+          if [ "$FAILURES" -gt 0 ]; then
+            echo "::error::${FAILURES} Postman collection(s) failed."
+            exit 1
+          fi
+          echo "All Postman collections passed."
