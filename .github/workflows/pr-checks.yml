@@ -475,3 +475,8 @@ jobs:
 
           [ "$FAILURES" -gt 0 ] && { echo "::error::${FAILURES} smoke test(s) failed."; exit 1; }
           echo "All smoke tests passed."
+
+      - name: Run Postman integration tests
+        run: |
+          npm install -g newman
+          newman run backend/tests/postman/smoke_tests.json --env-var baseUrl=${{ steps.app-url.outputs.url }}
