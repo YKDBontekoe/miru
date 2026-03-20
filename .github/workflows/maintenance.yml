@@ -62,7 +62,7 @@ jobs:
       - name: Delete stale branches
         run: |
           git fetch --prune origin
-          git branch -r --merged origin/main | grep -v "HEAD\|origin/main\|origin/develop" | sed 's|origin/||' | while read BRANCH; do
+          git branch -r --merged origin/main | grep -v "HEAD\|origin/main\|origin/develop" | sed 's|origin/||' | while read -r BRANCH; do
             LAST=$(git log -1 --format=%ct "origin/$BRANCH" 2>/dev/null || echo 0)
             if [ "$(( ($(date +%s) - LAST) / 86400 ))" -gt 90 ]; then
               git push origin --delete "$BRANCH" || true
@@ -98,7 +98,7 @@ jobs:
           curl -sf -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
             "https://sentry.io/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/?query=is:unresolved" \
             > /tmp/sentry-backend.json
-          echo "backend_issues=$(jq -c '.' /tmp/sentry-backend.json)" >> $GITHUB_ENV
+          echo "backend_issues=$(jq -c '.' /tmp/sentry-backend.json)" >> "$GITHUB_ENV"
 
       - name: Fetch and sync frontend Sentry issues
         env:
@@ -110,7 +110,7 @@ jobs:
           curl -sf -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
             "https://sentry.io/api/0/projects/$SENTRY_ORG/$SENTRY_PROJECT/issues/?query=is:unresolved" \
             > /tmp/sentry-frontend.json
-          echo "frontend_issues=$(jq -c '.' /tmp/sentry-frontend.json)" >> $GITHUB_ENV
+          echo "frontend_issues=$(jq -c '.' /tmp/sentry-frontend.json)" >> "$GITHUB_ENV"
 
       - name: Create GitHub issues for new Sentry errors
         uses: actions/github-script@v8

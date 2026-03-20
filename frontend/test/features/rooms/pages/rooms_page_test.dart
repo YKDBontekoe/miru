@@ -5,6 +5,7 @@ import 'package:miru/features/rooms/pages/rooms_page.dart';
 import 'package:miru/core/api/api_service.dart';
 import 'package:miru/core/models/chat_room.dart';
 import 'package:miru/core/models/agent.dart';
+import 'package:miru/core/services/supabase_service.dart';
 
 class MockRoomsApiService extends ApiService {
   bool shouldThrow = false;
@@ -30,6 +31,12 @@ void main() {
   setUp(() {
     mockApi = MockRoomsApiService();
     ApiService.instance = mockApi;
+    SupabaseService.accessTokenOverride = null;
+  });
+
+  tearDown(() {
+    ApiService.instance = null;
+    SupabaseService.accessTokenOverride = SupabaseService.sentinel;
   });
 
   testWidgets('RoomsPage renders empty state successfully', (

@@ -93,7 +93,7 @@ jobs:
 
       - name: Set release version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
       # Download the web build artifact to upload source maps
       - name: Download web artifact
@@ -137,12 +137,14 @@ jobs:
 
           # Upload Flutter web source maps if present
           if [ -d "frontend/build/web" ]; then
+            # shellcheck disable=SC2088
+            # ~/ is the Sentry URL prefix convention, not a filesystem path.
             sentry-cli releases files "${{ steps.version.outputs.VERSION }}" upload-sourcemaps \
               frontend/build/web \
               --org "${{ env.SENTRY_ORG }}" \
               --project "${{ env.SENTRY_PROJECT_FRONTEND }}" \
               --rewrite \
-              --url-prefix "~/" \
+              --url-prefix '~/' \
               || echo "No source maps found — skipping upload."
           fi
 

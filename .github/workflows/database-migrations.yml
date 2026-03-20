@@ -60,9 +60,9 @@ jobs:
 
       - name: Validate migration SQL syntax
         run: |
-          echo "### Migration files" >> $GITHUB_STEP_SUMMARY
+          echo "### Migration files" >> "$GITHUB_STEP_SUMMARY"
           for f in supabase/migrations/*.sql; do
-            echo "- \`$(basename $f)\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`$(basename "$f")\`" >> "$GITHUB_STEP_SUMMARY"
           done
           echo "✓ Migration files found"
 

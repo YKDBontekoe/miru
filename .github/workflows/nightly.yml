@@ -42,12 +42,12 @@ jobs:
         working-directory: ./backend
         run: |
           uv sync --all-extras
-          echo "### Security Check (Safety)" >> $GITHUB_STEP_SUMMARY
+          echo "### Security Check (Safety)" >> "$GITHUB_STEP_SUMMARY"
           # safety check is used because safety scan requires an account/key in CI
-          uv run safety check --policy-file .safety-policy.yml >> $GITHUB_STEP_SUMMARY || echo "Safety found issues"
-          echo "### Security Check (pip-audit)" >> $GITHUB_STEP_SUMMARY
+          uv run safety check --policy-file .safety-policy.yml >> "$GITHUB_STEP_SUMMARY" || echo "Safety found issues"
+          echo "### Security Check (pip-audit)" >> "$GITHUB_STEP_SUMMARY"
           # SEC(agent): review needed - ignoring GHSA-rf74-v2fm-23pw, GHSA-gfwx-w7gr-fvh7 (nltk via safety dev dependency) which have no current fixes
-          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g >> $GITHUB_STEP_SUMMARY || echo "pip-audit found issues"
+          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g >> "$GITHUB_STEP_SUMMARY" || echo "pip-audit found issues"
         continue-on-error: true
 
       - name: Create issue if vulnerabilities found
@@ -123,9 +123,9 @@ jobs:
         working-directory: ./frontend
         run: |
           flutter pub get
-          echo "### Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          flutter pub outdated >> $GITHUB_STEP_SUMMARY || true
+          echo "### Outdated Dependencies" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          flutter pub outdated >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Check for discontinued packages
         id: discontinued

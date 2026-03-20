@@ -71,15 +71,38 @@ class SupabaseService {
   /// The current [Session], or null if not signed in.
   static Session? get currentSession => _client.auth.currentSession;
 
+  /// Override for testing — set to avoid calling [_client] when Supabase is
+  /// not initialised.
+  @visibleForTesting
+  static bool? isAuthenticatedOverride;
+
   /// Whether a user is currently authenticated.
-  static bool get isAuthenticated => currentUser != null;
+  static bool get isAuthenticated =>
+      isAuthenticatedOverride ?? (currentUser != null);
+
+  /// Override for testing — inject a fake [Stream<AuthState>] so tests don't
+  /// need a real Supabase instance.
+  @visibleForTesting
+  static Stream<AuthState>? authStateChangesOverride;
 
   /// Stream of [AuthState] changes — listen to react to sign-in / sign-out.
   static Stream<AuthState> get authStateChanges =>
-      _client.auth.onAuthStateChange;
+      authStateChangesOverride ?? _client.auth.onAuthStateChange;
+
+  /// Sentinel value meaning "no override — use the real implementation".
+  /// Reset [accessTokenOverride] to this value in tearDown to undo the override.
+  @visibleForTesting
+  static const Object sentinel = Object();
+
+  /// Override for testing — set to a fixed value (or null) to avoid calling
+  /// [_client] when Supabase is not initialised.
+  @visibleForTesting
+  static Object? accessTokenOverride = sentinel;
 
   /// The JWT access token for the current session (to send to the backend).
-  static String? get accessToken => currentSession?.accessToken;
+  static String? get accessToken => identical(accessTokenOverride, sentinel)
+      ? currentSession?.accessToken
+      : accessTokenOverride as String?;
 
   // ---------------------------------------------------------------------------
   // Auth operations

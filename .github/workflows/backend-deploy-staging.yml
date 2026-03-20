@@ -46,7 +46,7 @@ jobs:
           OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
           SHORT_SHA=$(echo '${{ github.event.workflow_run.head_sha }}' | cut -c1-7)
           TAG="${{ env.REGISTRY }}/${OWNER}/${{ env.IMAGE_NAME }}:develop-${SHORT_SHA}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Image tag: ${TAG}"
 
       - name: Login to Azure
