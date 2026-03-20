@@ -12,10 +12,14 @@ from app.api.dependencies import get_chat_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import AgentResponse
 from app.domain.chat.models import (
+    ActivityLogResponse,
     AddAgentToRoom,
     ChatMessageResponse,
     ChatRequest,
     RoomCreate,
+    RoomInvitationCreate,
+    RoomInvitationResponse,
+    RoomMemberResponse,
     RoomResponse,
     RoomUpdate,
 )
@@ -99,10 +103,10 @@ async def delete_room(
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    await service.add_agent_to_room(room_id, data.agent_id)
+    await service.add_agent_to_room(room_id, data.agent_id, user_id=user_id)
     return {"status": "ok"}
 
 
@@ -140,3 +144,60 @@ async def chat_in_room(
         service.stream_room_responses(room_id, message, user_id),
         media_type="text/event-stream",
     )
+
+
+@router.get("/rooms/{room_id}/members", response_model=list[RoomMemberResponse])
+async def list_room_members(
+    room_id: UUID,
+    _user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> list[RoomMemberResponse]:
+    """List all members of a chat room."""
+    return await service.list_room_members(room_id)
+
+
+@router.post("/rooms/{room_id}/invitations", response_model=RoomInvitationResponse)
+async def create_room_invitation(
+    room_id: UUID,
+    data: RoomInvitationCreate,
+    user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> RoomInvitationResponse:
+    """Create an invitation to join a chat room."""
+    from app.domain.chat.service import RoomNotFoundError
+    try:
+        return await service.create_room_invitation(room_id, user_id, data)
+    except RoomNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.post("/invitations/{token}/accept")
+async def accept_room_invitation(
+    token: str,
+    user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> dict[str, str]:
+    """Accept a room invitation token."""
+    from app.domain.chat.service import (
+        InvitationAlreadyAcceptedError,
+        InvitationExpiredError,
+        InvitationNotFoundError,
+    )
+
+    try:
+        result = await service.accept_invitation(token, user_id)
+        return {"status": result.status, "room_id": str(result.room_id)}
+    except InvitationNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except (InvitationAlreadyAcceptedError, InvitationExpiredError) as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.get("/rooms/{room_id}/activity", response_model=list[ActivityLogResponse])
+async def get_room_activity(
+    room_id: UUID,
+    _user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> list[ActivityLogResponse]:
+    """Get the activity feed for a chat room."""
+    return await service.get_room_activity(room_id)

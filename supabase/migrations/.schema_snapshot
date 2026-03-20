@@ -118,6 +118,20 @@ CREATE TABLE IF NOT EXISTS "agent_action_logs" (
 );
 CREATE INDEX IF NOT EXISTS "idx_agent_actio_user_id_8ec6ac" ON "agent_action_logs" ("user_id");
 COMMENT ON TABLE "agent_action_logs" IS 'Audit log of agent thoughts and tool usage.';
+CREATE TABLE IF NOT EXISTS "activity_logs" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID,
+    "agent_id" UUID,
+    "action_type" VARCHAR(100) NOT NULL,
+    "entity_type" VARCHAR(50) NOT NULL,
+    "entity_id" UUID,
+    "details" JSONB NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "room_id" UUID REFERENCES "chat_rooms" ("id") ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "idx_activity_lo_user_id_b3aede" ON "activity_logs" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_activity_lo_agent_i_8cbeb4" ON "activity_logs" ("agent_id");
+COMMENT ON TABLE "activity_logs" IS 'Audit/activity feed for chat rooms and productivity items.';
 CREATE TABLE IF NOT EXISTS "chat_messages" (
     "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID,
@@ -141,6 +155,29 @@ CREATE TABLE IF NOT EXISTS "chat_room_agents" (
     CONSTRAINT "uid_chat_room_a_room_id_260b22" UNIQUE ("room_id", "agent_id")
 );
 COMMENT ON TABLE "chat_room_agents" IS 'Junction table for Chat Rooms and Agents.';
+CREATE TABLE IF NOT EXISTS "chat_room_members" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "role" VARCHAR(50) NOT NULL DEFAULT 'member',
+    "joined_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "room_id" UUID NOT NULL REFERENCES "chat_rooms" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_chat_room_m_room_id_0cc343" UNIQUE ("room_id", "user_id")
+);
+CREATE INDEX IF NOT EXISTS "idx_chat_room_m_user_id_2bf086" ON "chat_room_members" ("user_id");
+COMMENT ON TABLE "chat_room_members" IS 'Junction table for Chat Rooms and Users (Members).';
+CREATE TABLE IF NOT EXISTS "room_invitations" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "inviter_id" UUID NOT NULL,
+    "email" VARCHAR(255),
+    "token" VARCHAR(255) NOT NULL UNIQUE,
+    "role" VARCHAR(50) NOT NULL DEFAULT 'member',
+    "expires_at" TIMESTAMPTZ NOT NULL,
+    "accepted_at" TIMESTAMPTZ,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "room_id" UUID NOT NULL REFERENCES "chat_rooms" ("id") ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "idx_room_invita_inviter_b8eeec" ON "room_invitations" ("inviter_id");
+COMMENT ON TABLE "room_invitations" IS 'Invitations to join a Chat Room.';
 CREATE TABLE IF NOT EXISTS "memory_collections" (
     "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID NOT NULL,
@@ -242,11 +279,13 @@ CREATE TABLE IF NOT EXISTS "calendar_events" (
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ,
     "agent_id" UUID REFERENCES "agents" ("id") ON DELETE SET NULL,
-    "origin_message_id" UUID REFERENCES "chat_messages" ("id") ON DELETE SET NULL
+    "origin_message_id" UUID REFERENCES "chat_messages" ("id") ON DELETE SET NULL,
+    "room_id" UUID REFERENCES "chat_rooms" ("id") ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS "idx_calendar_ev_user_id_499dc5" ON "calendar_events" ("user_id");
 CREATE INDEX IF NOT EXISTS "idx_calendar_ev_agent_i_ca76fe" ON "calendar_events" ("agent_id");
 CREATE INDEX IF NOT EXISTS "idx_calendar_ev_origin__532920" ON "calendar_events" ("origin_message_id");
+CREATE INDEX IF NOT EXISTS "idx_calendar_ev_room_id_717155" ON "calendar_events" ("room_id");
 COMMENT ON TABLE "calendar_events" IS 'Database entity for User Calendar Events.';
 CREATE TABLE IF NOT EXISTS "notes" (
     "id" UUID NOT NULL PRIMARY KEY,
@@ -259,11 +298,13 @@ CREATE TABLE IF NOT EXISTS "notes" (
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ,
     "agent_id" UUID REFERENCES "agents" ("id") ON DELETE SET NULL,
-    "origin_message_id" UUID REFERENCES "chat_messages" ("id") ON DELETE SET NULL
+    "origin_message_id" UUID REFERENCES "chat_messages" ("id") ON DELETE SET NULL,
+    "room_id" UUID REFERENCES "chat_rooms" ("id") ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS "idx_notes_user_id_9d616a" ON "notes" ("user_id");
 CREATE INDEX IF NOT EXISTS "idx_notes_agent_i_72e862" ON "notes" ("agent_id");
 CREATE INDEX IF NOT EXISTS "idx_notes_origin__be1941" ON "notes" ("origin_message_id");
+CREATE INDEX IF NOT EXISTS "idx_notes_room_id_ceca8d" ON "notes" ("room_id");
 COMMENT ON TABLE "notes" IS 'Database entity for User Notes.';
 CREATE TABLE IF NOT EXISTS "tasks" (
     "id" UUID NOT NULL PRIMARY KEY,
@@ -273,9 +314,11 @@ CREATE TABLE IF NOT EXISTS "tasks" (
     "is_completed" BOOL NOT NULL DEFAULT False,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deleted_at" TIMESTAMPTZ
+    "deleted_at" TIMESTAMPTZ,
+    "room_id" UUID REFERENCES "chat_rooms" ("id") ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS "idx_tasks_user_id_7d4869" ON "tasks" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_tasks_room_id_5cdfbc" ON "tasks" ("room_id");
 COMMENT ON TABLE "tasks" IS 'Database entity for User Tasks.';
 CREATE TABLE IF NOT EXISTS "agents_capabilities" (
     "agents_id" UUID NOT NULL REFERENCES "agents" ("id") ON DELETE CASCADE,

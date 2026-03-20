@@ -13,7 +13,7 @@ from app.infrastructure.database.base import SupabaseModel
 
 if TYPE_CHECKING:
     from app.domain.agents.models import Agent
-    from app.domain.chat.models import ChatMessage
+    from app.domain.chat.models import ChatMessage, ChatRoom
 
 
 class Task(SupabaseModel):
@@ -21,6 +21,13 @@ class Task(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
+    room: fields.ForeignKeyNullableRelation[ChatRoom] = fields.ForeignKeyField(
+        "models.ChatRoom",
+        related_name="tasks",
+        null=True,
+        db_index=True,
+        on_delete=fields.CASCADE,
+    )
     title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
     description: str | None = fields.TextField(null=True)
     is_completed: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
@@ -33,6 +40,14 @@ class Task(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY tasks_owner_all ON public.tasks FOR ALL USING (auth.uid() = user_id);",
+            "CREATE POLICY tasks_room_select ON public.tasks "
+            "FOR SELECT USING (room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = tasks.room_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY tasks_room_update ON public.tasks "
+            "FOR UPDATE USING (room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = tasks.room_id AND user_id = auth.uid() AND role IN ('owner', 'admin', 'member')"
+            "));",
         ]
 
 
@@ -41,6 +56,13 @@ class Note(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
+    room: fields.ForeignKeyNullableRelation[ChatRoom] = fields.ForeignKeyField(
+        "models.ChatRoom",
+        related_name="notes",
+        null=True,
+        db_index=True,
+        on_delete=fields.CASCADE,
+    )
     agent: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
         "models.Agent",
         related_name="notes",
@@ -68,6 +90,14 @@ class Note(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY notes_owner_all ON public.notes FOR ALL USING (auth.uid() = user_id);",
+            "CREATE POLICY notes_room_select ON public.notes "
+            "FOR SELECT USING (room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = notes.room_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY notes_room_update ON public.notes "
+            "FOR UPDATE USING (room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = notes.room_id AND user_id = auth.uid() AND role IN ('owner', 'admin', 'member')"
+            "));",
         ]
 
 
@@ -97,11 +127,13 @@ class TaskCreate(BaseModel):
         title: The title of the task.
         description: An optional description.
         is_completed: Indicates whether the task is complete. Defaults to False.
+        room_id: Optional ID of the room this task belongs to.
     """
 
     title: str
     description: str | None = None
     is_completed: bool = False
+    room_id: UUID | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -126,6 +158,7 @@ class TaskResponse(BaseModel):
     Args:
         id: Unique identifier for the task.
         user_id: Unique identifier for the owning user.
+        room_id: Optional identifier for the room the task belongs to.
         title: The title of the task.
         description: The description of the task, if any.
         is_completed: Whether the task is completed.
@@ -137,11 +170,18 @@ class TaskResponse(BaseModel):
 
     id: UUID
     user_id: UUID
+    room_id: UUID | None = Field(None, validation_alias="room")
     title: str
     description: str | None = None
     is_completed: bool
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("room_id", mode="before")
+    @classmethod
+    def extract_uuid(cls, v: Any) -> UUID | None:
+        """Extract raw UUID from Tortoise relation proxy if needed."""
+        return extract_uuid_from_relation(v)
 
 
 class NoteCreate(BaseModel):
@@ -151,6 +191,7 @@ class NoteCreate(BaseModel):
         title: The title of the note.
         content: The text content of the note.
         is_pinned: Whether the note is pinned. Defaults to False.
+        room_id: Optional ID of the room this note belongs to.
         agent_id: Optional ID of the agent that created the note.
         origin_message_id: Optional ID of the message that triggered the note creation.
         origin_context: Optional context/description of why the note was created.
@@ -159,6 +200,7 @@ class NoteCreate(BaseModel):
     title: str
     content: str
     is_pinned: bool = False
+    room_id: UUID | None = None
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
     origin_context: str | None = None
@@ -186,6 +228,7 @@ class NoteResponse(BaseModel):
     Args:
         id: Unique identifier for the note.
         user_id: Unique identifier for the owning user.
+        room_id: Optional identifier for the room the note belongs to.
         title: The title of the note.
         content: The text content of the note.
         is_pinned: Whether the note is pinned.
@@ -200,6 +243,7 @@ class NoteResponse(BaseModel):
 
     id: UUID
     user_id: UUID
+    room_id: UUID | None = Field(None, validation_alias="room")
     agent_id: UUID | None = Field(None, validation_alias="agent")
     origin_message_id: UUID | None = Field(None, validation_alias="origin_message")
     origin_context: str | None = None
@@ -209,7 +253,7 @@ class NoteResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("agent_id", "origin_message_id", mode="before")
+    @field_validator("room_id", "agent_id", "origin_message_id", mode="before")
     @classmethod
     def extract_uuid(cls, v: Any) -> UUID | None:
         """Extract raw UUID from Tortoise relation proxy if needed."""
@@ -221,6 +265,13 @@ class CalendarEvent(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
+    room: fields.ForeignKeyNullableRelation[ChatRoom] = fields.ForeignKeyField(
+        "models.ChatRoom",
+        related_name="calendar_events",
+        null=True,
+        db_index=True,
+        on_delete=fields.CASCADE,
+    )
     agent: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
         "models.Agent",
         related_name="calendar_events",
@@ -251,6 +302,14 @@ class CalendarEvent(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.calendar_events ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY calendar_events_owner_all ON public.calendar_events FOR ALL USING (auth.uid() = user_id);",
+            "CREATE POLICY calendar_events_room_select ON public.calendar_events "
+            "FOR SELECT USING (room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = calendar_events.room_id AND user_id = auth.uid()"
+            "));",
+            "CREATE POLICY calendar_events_room_update ON public.calendar_events "
+            "FOR UPDATE USING (room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = calendar_events.room_id AND user_id = auth.uid() AND role IN ('owner', 'admin', 'member')"
+            "));",
             "ALTER TABLE public.calendar_events ADD CONSTRAINT check_end_after_start CHECK (end_time > start_time);",
         ]
 
@@ -264,6 +323,7 @@ class CalendarEventCreate(BaseModel):
     end_time: datetime
     is_all_day: bool = False
     location: str | None = None
+    room_id: UUID | None = None
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
     origin_context: str | None = None
@@ -293,6 +353,7 @@ class CalendarEventResponse(BaseModel):
 
     id: UUID
     user_id: UUID
+    room_id: UUID | None = Field(None, validation_alias="room")
     agent_id: UUID | None = Field(None, validation_alias="agent")
     origin_message_id: UUID | None = Field(None, validation_alias="origin_message")
     origin_context: str | None = None
@@ -305,7 +366,7 @@ class CalendarEventResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("agent_id", "origin_message_id", mode="before")
+    @field_validator("room_id", "agent_id", "origin_message_id", mode="before")
     @classmethod
     def extract_uuid(cls, v: Any) -> UUID | None:
         """Extract raw UUID from Tortoise relation proxy if needed."""

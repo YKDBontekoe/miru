@@ -67,6 +67,10 @@ class Memory(SupabaseModel):
             "user_id IS NULL AND agent_id IS NOT NULL AND EXISTS ("
             "SELECT 1 FROM agents WHERE id = memories.agent_id AND user_id = auth.uid()"
             ")));",
+            "CREATE POLICY memories_room_select ON public.memories FOR SELECT USING ("
+            "room_id IS NOT NULL AND EXISTS ("
+            "SELECT 1 FROM chat_room_members WHERE room_id = memories.room_id AND user_id = auth.uid()"
+            "));",
         ]
 
 

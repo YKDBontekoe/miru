@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import typing
+from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -419,6 +420,144 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
         responses.append(r)
 
     assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
+
+
+@pytest.mark.asyncio
+async def test_create_room(chat_service: typing.Any) -> None:
+    from datetime import datetime
+
+    room_id = uuid4()
+    user_id = uuid4()
+    mock_room = MagicMock()
+    mock_room.id = room_id
+    mock_room.name = "New Room"
+    mock_room.created_at = datetime.now(tz=UTC)
+
+    chat_service.chat_repo.create_room.return_value = mock_room
+    result = await chat_service.create_room("New Room", user_id)
+    assert result is not None
+
+
+@pytest.mark.asyncio
+async def test_add_agent_to_room(chat_service: typing.Any) -> None:
+    room_id = uuid4()
+    agent_id = uuid4()
+
+    await chat_service.add_agent_to_room(room_id, agent_id)
+
+    chat_service.chat_repo.add_agent_to_room.assert_called_once_with(room_id, agent_id)
+    chat_service.chat_repo.log_activity.assert_called_once_with(
+        room_id=room_id,
+        user_id=None,
+        action_type="add",
+        entity_type="agent",
+        entity_id=agent_id,
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_room_invitation(chat_service: typing.Any) -> None:
+    from datetime import datetime
+
+    from app.domain.chat.models import RoomInvitationCreate
+    from app.domain.chat.service import RoomNotFoundError
+
+    room_id = uuid4()
+    inviter_id = uuid4()
+    data = RoomInvitationCreate(email="test@example.com", role="admin")
+
+    chat_service.chat_repo.get_room.return_value = None
+    with pytest.raises(RoomNotFoundError):
+        await chat_service.create_room_invitation(room_id, inviter_id, data)
+
+    mock_room = MagicMock()
+    chat_service.chat_repo.get_room.return_value = mock_room
+
+    mock_invitation = MagicMock()
+    mock_invitation.id = uuid4()
+    mock_invitation.room_id = room_id
+    mock_invitation.inviter_id = inviter_id
+    mock_invitation.email = "test@example.com"
+    mock_invitation.role = "admin"
+    mock_invitation.expires_at = datetime.now(tz=UTC)
+    mock_invitation.accepted_at = None
+    mock_invitation.created_at = datetime.now(tz=UTC)
+
+    chat_service.chat_repo.create_invitation.return_value = mock_invitation
+
+    result = await chat_service.create_room_invitation(room_id, inviter_id, data)
+    assert result.room_id == room_id
+    assert result.role == "admin"
+
+
+@pytest.mark.asyncio
+async def test_accept_invitation(chat_service: typing.Any) -> None:
+    from datetime import datetime
+
+    from app.domain.chat.service import (
+        InvitationAlreadyAcceptedError,
+        InvitationExpiredError,
+        InvitationNotFoundError,
+    )
+
+    token = "some-token"
+    user_id = uuid4()
+
+    chat_service.chat_repo.get_invitation_by_token.return_value = None
+    with pytest.raises(InvitationNotFoundError):
+        await chat_service.accept_invitation(token, user_id)
+
+    mock_inv = MagicMock()
+    mock_inv.accepted_at = datetime.now(tz=UTC)
+    chat_service.chat_repo.get_invitation_by_token.return_value = mock_inv
+    with pytest.raises(InvitationAlreadyAcceptedError):
+        await chat_service.accept_invitation(token, user_id)
+
+    mock_inv.accepted_at = None
+    from datetime import timedelta
+
+    mock_inv.expires_at = datetime.now(tz=UTC) - timedelta(days=1)
+    with pytest.raises(InvitationExpiredError):
+        await chat_service.accept_invitation(token, user_id)
+
+    mock_inv.expires_at = datetime.now(tz=UTC) + timedelta(days=1)
+    mock_inv.room_id = uuid4()
+
+    result = await chat_service.accept_invitation(token, user_id)
+    assert result.status == "ok"
+    assert result.room_id == mock_inv.room_id
+
+    chat_service.chat_repo.accept_invitation.assert_called_once_with(mock_inv, user_id)
+    chat_service.chat_repo.log_activity.assert_called_once_with(
+        room_id=mock_inv.room_id,
+        user_id=user_id,
+        action_type="join",
+        entity_type="room",
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_room_activity(chat_service: typing.Any) -> None:
+    from datetime import datetime
+
+    room_id = uuid4()
+
+    mock_log = MagicMock()
+    mock_log.id = uuid4()
+    mock_log.room_id = room_id
+    mock_log.user_id = uuid4()
+    mock_log.agent_id = None
+    mock_log.action_type = "test"
+    mock_log.entity_type = "test_entity"
+    mock_log.entity_id = uuid4()
+    mock_log.details = {}
+    mock_log.created_at = datetime.now(tz=UTC)
+
+    chat_service.chat_repo.get_room_activity.return_value = [mock_log]
+
+    result = await chat_service.get_room_activity(room_id)
+    assert len(result) == 1
+    assert result[0].id == mock_log.id
 
 
 @pytest.mark.asyncio
