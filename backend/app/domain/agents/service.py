@@ -131,8 +131,14 @@ class AgentService:
             await agent.capabilities.add(*caps)
 
         if agent_data.integrations:
+            # PERF(agent): Fetch all required integrations in a single batch query
+            # to avoid N+1 database roundtrips during agent creation.
+            # Reduced Integration.get_or_none calls from N to 1.
+            integrations = await Integration.filter(id__in=agent_data.integrations).all()
+            integration_map = {i.id: i for i in integrations}
+
             for integration_id in agent_data.integrations:
-                integration = await Integration.get_or_none(id=integration_id)
+                integration = integration_map.get(integration_id)
                 if integration:
                     config = agent_data.integration_configs.get(integration_id, {})
                     await AgentIntegration.create(
