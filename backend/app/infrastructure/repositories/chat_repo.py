@@ -60,3 +60,12 @@ class ChatRepository:
         """Save a new message."""
         await message.save()
         return message
+
+    async def get_message(self, message_id: UUID) -> ChatMessage | None:
+        """Fetch a single chat message by ID."""
+        return await ChatMessage.get_or_none(id=message_id)
+
+    async def update_message(self, message: ChatMessage) -> ChatMessage:
+        """Update an existing chat message."""
+        await message.save()
+        return message

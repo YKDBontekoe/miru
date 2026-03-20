@@ -355,7 +355,8 @@ class ChatService:
             return None
 
         # Verify access
-        room = await self.chat_repo.get_room(message.room_id)
+        room_id: UUID = getattr(message, "room_id")  # noqa: B009
+        room = await self.chat_repo.get_room(room_id)
         if not room or room.user_id != user_id:
             return None
 
@@ -368,7 +369,7 @@ class ChatService:
 
         return ChatMessageResponse(
             id=message.id,
-            room_id=message.room_id,
+            room_id=getattr(message, "room_id"),  # noqa: B009
             user_id=message.user_id,
             agent_id=message.agent_id,
             content=message.content,
@@ -395,5 +396,5 @@ class ChatService:
                 content=preference_str,
                 user_id=user_id,
                 agent_id=message.agent_id,
-                room_id=message.room_id,
+                room_id=getattr(message, "room_id"),  # noqa: B009
             )

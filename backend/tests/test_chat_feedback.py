@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -193,7 +194,7 @@ async def test_stream_responses(chat_service: ChatService, mock_agent_repo: Asyn
     with patch("app.domain.chat.service.get_openrouter_client") as mock_get_client:
         mock_llm = MagicMock()
 
-        async def mock_stream():
+        async def mock_stream() -> AsyncGenerator[MagicMock, None]:
             yield MagicMock(choices=[MagicMock(delta=MagicMock(content="Hello"))])
             yield MagicMock(choices=[MagicMock(delta=MagicMock(content=" World"))])
             yield MagicMock(choices=[])
