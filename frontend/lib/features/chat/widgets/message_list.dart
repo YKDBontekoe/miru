@@ -56,17 +56,19 @@ class MessageList extends StatelessWidget {
         final isPlaceholder =
             !msg.isUser && msg.text.isEmpty && streamingStatus != null;
 
-        return RepaintBoundary(
+        // Justification: ListView.builder intrinsically adds a RepaintBoundary
+        // to each item (addRepaintBoundaries: true by default). Manually
+        // wrapping items in another RepaintBoundary is redundant, adding
+        // unnecessary depth and memory overhead to the widget tree.
+        return AnimatedMessageItem(
           key: ValueKey(msg.id),
-          child: AnimatedMessageItem(
-            child: ChatBubble(
-              text: isPlaceholder ? streamingStatus! : msg.text,
-              isUser: msg.isUser,
-              crewTaskType: msg.crewTaskType,
-              status: isPlaceholder ? MessageStatus.streaming : msg.status,
-              onCopy: () => onCopy(msg),
-              onRetry: msg.status == MessageStatus.failed ? onRetry : null,
-            ),
+          child: ChatBubble(
+            text: isPlaceholder ? streamingStatus! : msg.text,
+            isUser: msg.isUser,
+            crewTaskType: msg.crewTaskType,
+            status: isPlaceholder ? MessageStatus.streaming : msg.status,
+            onCopy: () => onCopy(msg),
+            onRetry: msg.status == MessageStatus.failed ? onRetry : null,
           ),
         );
       },

@@ -113,3 +113,34 @@ def test_build_agent_response_without_avatar() -> None:
     assert response.integrations == ["steam"]
     assert response.integration_configs == {"steam": {"steam_id": "123"}}
     assert not hasattr(response, "avatar_url")
+
+
+@pytest.mark.asyncio
+async def test_agent_service_caching() -> None:
+    from app.domain.agents.models import Capability, Integration
+    from app.domain.agents.service import AgentService
+
+    mock_repo = MagicMock()
+    mock_repo.list_capabilities = AsyncMock(return_value=[Capability(id="cap1", name="Cap 1")])
+    mock_repo.list_integrations = AsyncMock(return_value=[Integration(id="int1", type="Int 1")])
+
+    service = AgentService(repo=mock_repo)
+
+    # First call: hits repo
+    caps1 = await service.list_capabilities()
+    ints1 = await service.list_integrations()
+
+    assert len(caps1) == 1
+    assert len(ints1) == 1
+    mock_repo.list_capabilities.assert_called_once()
+    mock_repo.list_integrations.assert_called_once()
+
+    # Second call: uses cache
+    caps2 = await service.list_capabilities()
+    ints2 = await service.list_integrations()
+
+    assert caps2 == caps1
+    assert ints2 == ints1
+    # Call count should still be 1
+    mock_repo.list_capabilities.assert_called_once()
+    mock_repo.list_integrations.assert_called_once()

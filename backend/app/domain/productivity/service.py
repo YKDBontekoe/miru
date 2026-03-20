@@ -45,6 +45,8 @@ class ProductivityService:
     async def list_tasks(user_id: UUID, limit: int = 50, offset: int = 0) -> list[Task]:
         """List tasks for the user with pagination."""
         async with handle_db_errors("list tasks"):
+            # Justification: Task schema has no related foreign keys (unlike Note or CalendarEvent),
+            # so prefetch_related is not needed here to prevent N+1 queries.
             return (
                 await Task.filter(user_id=user_id)
                 .order_by("-created_at")
@@ -56,6 +58,8 @@ class ProductivityService:
     async def get_task(user_id: UUID, task_id: UUID) -> Task:
         """Get a specific task."""
         async with handle_db_errors("get task"):
+            # Justification: Task schema has no related foreign keys (unlike Note or CalendarEvent),
+            # so prefetch_related is not needed here to prevent N+1 queries.
             task = await Task.get_or_none(id=task_id, user_id=user_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -115,8 +119,11 @@ class ProductivityService:
     async def list_notes(user_id: UUID, limit: int = 50, offset: int = 0) -> list[Note]:
         """List notes for the user, pinned first, then by creation date."""
         async with handle_db_errors("list notes"):
+            # Justification: Prefetch related agent and origin_message fields to
+            # eliminate N+1 queries during Pydantic schema validation.
             return (
                 await Note.filter(user_id=user_id)
+                .prefetch_related("agent", "origin_message")
                 .order_by("-is_pinned", "-created_at")
                 .limit(limit)
                 .offset(offset)
@@ -126,7 +133,11 @@ class ProductivityService:
     async def get_note(user_id: UUID, note_id: UUID) -> Note:
         """Get a specific note."""
         async with handle_db_errors("get note"):
-            note = await Note.get_or_none(id=note_id, user_id=user_id)
+            # Justification: Prefetch related agent and origin_message fields to
+            # eliminate N+1 queries during Pydantic schema validation.
+            note = await Note.get_or_none(id=note_id, user_id=user_id).prefetch_related(
+                "agent", "origin_message"
+            )
         if not note:
             raise HTTPException(status_code=404, detail="Note not found")
         return note
@@ -192,8 +203,11 @@ class ProductivityService:
     async def list_events(user_id: UUID, limit: int = 50, offset: int = 0) -> list[CalendarEvent]:
         """List calendar events for the user."""
         async with handle_db_errors("list calendar events"):
+            # Justification: Prefetch related agent and origin_message fields to
+            # eliminate N+1 queries during Pydantic schema validation.
             return (
                 await CalendarEvent.filter(user_id=user_id)
+                .prefetch_related("agent", "origin_message")
                 .order_by("start_time")
                 .limit(limit)
                 .offset(offset)
@@ -203,7 +217,11 @@ class ProductivityService:
     async def get_event(user_id: UUID, event_id: UUID) -> CalendarEvent:
         """Get a specific calendar event."""
         async with handle_db_errors("get calendar event"):
-            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id)
+            # Justification: Prefetch related agent and origin_message fields to
+            # eliminate N+1 queries during Pydantic schema validation.
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
+                "agent", "origin_message"
+            )
         if not event:
             raise HTTPException(status_code=404, detail="Calendar event not found")
         return event
