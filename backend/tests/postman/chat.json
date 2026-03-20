@@ -1,0 +1,43 @@
+{
+  "info": {
+    "_postman_id": "4b971dc0-f04b-449e-bc4f-4d929f0ab0eb",
+    "name": "Chat",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Submit Feedback",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"is_positive\": true}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/messages/{{message_id}}/feedback",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "messages",
+            "{{message_id}}",
+            "feedback"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

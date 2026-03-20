@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
 from uuid import uuid4
-from datetime import datetime, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -30,6 +30,7 @@ from app.domain.chat.models import (
     RoomUpdate,
 )
 
+
 @pytest.fixture
 def mock_service() -> AsyncMock:
     return AsyncMock()
@@ -44,14 +45,14 @@ def room_id() -> uuid4:
 
 @pytest.mark.asyncio
 async def test_list_rooms(mock_service: AsyncMock, user_id: uuid4) -> None:
-    mock_service.list_rooms.return_value = [RoomResponse(id=uuid4(), name="Test", created_at=datetime.now(timezone.utc))]
+    mock_service.list_rooms.return_value = [RoomResponse(id=uuid4(), name="Test", created_at=datetime.now(UTC))]
     res = await list_rooms(user_id=user_id, service=mock_service)
     assert len(res) == 1
 
 @pytest.mark.asyncio
 async def test_create_room(mock_service: AsyncMock, user_id: uuid4) -> None:
     req = RoomCreate(name="New Room")
-    mock_service.create_room.return_value = RoomResponse(id=uuid4(), name="New Room", created_at=datetime.now(timezone.utc))
+    mock_service.create_room.return_value = RoomResponse(id=uuid4(), name="New Room", created_at=datetime.now(UTC))
     res = await create_room(data=req, user_id=user_id, service=mock_service)
     assert res.name == "New Room"
 
@@ -85,7 +86,7 @@ async def test_run_crew_no_message(mock_service: AsyncMock, user_id: uuid4) -> N
 @pytest.mark.asyncio
 async def test_update_room(mock_service: AsyncMock, user_id: uuid4, room_id: uuid4) -> None:
     req = RoomUpdate(name="Updated")
-    mock_service.update_room.return_value = RoomResponse(id=room_id, name="Updated", created_at=datetime.now(timezone.utc))
+    mock_service.update_room.return_value = RoomResponse(id=room_id, name="Updated", created_at=datetime.now(UTC))
     res = await update_room(room_id=room_id, data=req, _user_id=user_id, service=mock_service)
     assert res.name == "Updated"
 
@@ -127,8 +128,8 @@ async def test_get_room_agents(mock_service: AsyncMock, user_id: uuid4, room_id:
             self.status = "active"
             self.mood = "Neutral"
             self.message_count = 0
-            self.created_at = datetime.now(timezone.utc)
-            self.updated_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
+            self.updated_at = datetime.now(UTC)
             self.capabilities = []
             self.integrations = []
             self.goals = []
@@ -139,7 +140,7 @@ async def test_get_room_agents(mock_service: AsyncMock, user_id: uuid4, room_id:
 
 @pytest.mark.asyncio
 async def test_get_room_messages(mock_service: AsyncMock, user_id: uuid4, room_id: uuid4) -> None:
-    mock_msg = ChatMessageResponse(id=uuid4(), room_id=room_id, content="Hi", created_at=datetime.now(timezone.utc))
+    mock_msg = ChatMessageResponse(id=uuid4(), room_id=room_id, content="Hi", created_at=datetime.now(UTC))
     mock_service.get_room_messages.return_value = [mock_msg]
     res = await get_room_messages(room_id=room_id, _user_id=user_id, service=mock_service)
     assert len(res) == 1
@@ -162,6 +163,6 @@ async def test_chat_in_room_no_message(mock_service: AsyncMock, user_id: uuid4, 
 async def test_submit_feedback(mock_service: AsyncMock, user_id: uuid4, room_id: uuid4) -> None:
     req = MessageFeedbackRequest(is_positive=True)
     msg_id = uuid4()
-    mock_service.handle_feedback.return_value = ChatMessageResponse(id=msg_id, room_id=room_id, content="C", feedback="positive", created_at=datetime.now(timezone.utc))
+    mock_service.handle_feedback.return_value = ChatMessageResponse(id=msg_id, room_id=room_id, content="C", feedback="positive", created_at=datetime.now(UTC))
     res = await submit_feedback(message_id=msg_id, request=req, user_id=user_id, service=mock_service)
     assert res.feedback == "positive"
