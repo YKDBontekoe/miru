@@ -323,6 +323,8 @@ jobs:
       PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Login to Azure
         uses: azure/login@v3
         with:
