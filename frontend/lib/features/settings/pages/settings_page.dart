@@ -556,7 +556,7 @@ class _SettingsPageState extends State<SettingsPage> {
               );
               if (confirmed == true) {
                 // Delete all memories one by one
-                for (final memory in List.from(_memories)) {
+                for (final memory in _memories.toList()) {
                   await _deleteMemory(memory);
                 }
                 if (!context.mounted) return;

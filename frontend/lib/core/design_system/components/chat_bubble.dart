@@ -28,25 +28,23 @@ class ChatBubble extends StatelessWidget {
   final bool isUser;
   final MessageStatus status;
   final String? agentName;
-
-  /// If set, shows a [CrewTaskBadge] above the bubble.
   final String? crewTaskType;
-
-  /// Called when the user long-presses to copy the message.
   final VoidCallback? onCopy;
-
-  /// Called when the user taps retry on a failed message.
   final VoidCallback? onRetry;
+  final void Function(bool isPositive)? onFeedback;
+  final String? feedback;
 
   const ChatBubble({
     super.key,
     required this.text,
     required this.isUser,
-    this.agentName,
     this.status = MessageStatus.sent,
-    this.crewTaskType,
     this.onCopy,
+    this.agentName,
+    this.crewTaskType,
     this.onRetry,
+    this.onFeedback,
+    this.feedback,
   });
 
   @override
@@ -63,6 +61,8 @@ class ChatBubble extends StatelessWidget {
       agentName: agentName,
       onCopy: onCopy,
       onRetry: onRetry,
+      onFeedback: onFeedback,
+      feedback: feedback,
       screenWidth: screenWidth,
     );
   }
@@ -128,6 +128,8 @@ class _AssistantBubble extends StatelessWidget {
   final String? agentName;
   final VoidCallback? onCopy;
   final VoidCallback? onRetry;
+  final void Function(bool isPositive)? onFeedback;
+  final String? feedback;
   final double screenWidth;
 
   const _AssistantBubble({
@@ -136,6 +138,8 @@ class _AssistantBubble extends StatelessWidget {
     this.agentName,
     this.onCopy,
     this.onRetry,
+    this.onFeedback,
+    this.feedback,
     required this.screenWidth,
   });
 
@@ -233,6 +237,8 @@ class _AssistantBubble extends StatelessWidget {
                     _ActionRow(
                       onCopy: onCopy,
                       onRetry: isFailed ? onRetry : null,
+                      onFeedback: onFeedback,
+                      feedback: feedback,
                       colors: colors,
                     ),
                 ],
@@ -429,11 +435,15 @@ class _AssistantContent extends StatelessWidget {
 class _ActionRow extends StatelessWidget {
   final VoidCallback? onCopy;
   final VoidCallback? onRetry;
+  final void Function(bool isPositive)? onFeedback;
+  final String? feedback;
   final AppThemeColors colors;
 
   const _ActionRow({
     required this.onCopy,
     required this.onRetry,
+    this.onFeedback,
+    this.feedback,
     required this.colors,
   });
 
@@ -458,6 +468,30 @@ class _ActionRow extends StatelessWidget {
               label: 'Retry',
               onPressed: onRetry!,
               color: AppColors.error,
+            ),
+          ],
+          if (onFeedback != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            _ActionChip(
+              icon: feedback == 'positive'
+                  ? Icons.thumb_up_alt_rounded
+                  : Icons.thumb_up_alt_outlined,
+              label: 'Helpful',
+              onPressed: () => onFeedback!(true),
+              color: feedback == 'positive'
+                  ? colors.primary
+                  : colors.onSurfaceMuted,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            _ActionChip(
+              icon: feedback == 'negative'
+                  ? Icons.thumb_down_alt_rounded
+                  : Icons.thumb_down_alt_outlined,
+              label: 'Unhelpful',
+              onPressed: () => onFeedback!(false),
+              color: feedback == 'negative'
+                  ? colors.primary
+                  : colors.onSurfaceMuted,
             ),
           ],
         ],

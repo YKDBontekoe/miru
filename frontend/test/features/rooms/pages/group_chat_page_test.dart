@@ -7,6 +7,7 @@ import 'package:miru/core/models/chat_room.dart';
 import 'package:miru/core/models/agent.dart';
 import 'package:miru/core/models/chat_message.dart';
 import 'package:miru/core/api/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockApiService extends ApiService {
   bool shouldThrow = false;
@@ -34,7 +35,11 @@ class MockApiService extends ApiService {
   }
 
   @override
-  Stream<String> streamRoomChat(String roomId, String message) async* {
+  Stream<String> streamRoomChat(
+    String roomId,
+    String message, {
+    String? stylePreference,
+  }) async* {
     streamCalled = true;
     yield "[[STATUS:loading_agent:1:Alice]]";
     // Delay slightly to allow the UI to consume the status before the agent switch event
@@ -49,6 +54,7 @@ void main() {
   late ChatRoom room;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     mockApi = MockApiService();
     ApiService.instance = mockApi;
     room = ChatRoom(

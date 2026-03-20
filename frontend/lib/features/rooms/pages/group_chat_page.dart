@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:confetti/confetti.dart';
@@ -654,6 +655,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           key: ValueKey(msg.id),
           message: msg,
           senderName: _getSenderName(msg),
+          onFeedback: _handleFeedback,
         );
       },
     );

@@ -10,7 +10,7 @@ import 'package:miru/core/models/chat_message.dart';
 import 'package:miru/core/models/message_status.dart';
 import 'package:miru/features/chat/widgets/miru_app_bar.dart';
 import 'package:miru/features/chat/widgets/scroll_to_bottom_button.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:miru/features/chat/widgets/streaming_status_pill.dart';
 import 'package:miru/features/chat/widgets/message_list.dart';
 
@@ -382,7 +382,8 @@ class _ChatPageState extends State<ChatPage> {
                         streamingStatus: _streamingStatus,
                         onCopy: _copyMessage,
                         onRetry: _retryLastMessage,
-                        onFeedback: _handleFeedback,
+                        onFeedback: (msg, isPositive) =>
+                            _handleFeedback(msg, isPositive),
                       ),
               ),
 

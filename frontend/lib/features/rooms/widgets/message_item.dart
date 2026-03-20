@@ -5,11 +5,13 @@ import 'package:miru/core/design_system/design_system.dart';
 class MessageItem extends StatelessWidget {
   final ChatMessage message;
   final String senderName;
+  final void Function(ChatMessage, bool)? onFeedback;
 
   const MessageItem({
     super.key,
     required this.message,
     required this.senderName,
+    this.onFeedback,
   });
 
   @override

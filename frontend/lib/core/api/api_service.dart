@@ -289,6 +289,21 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<void> submitFeedback(String messageId, bool isPositive) async {
+    try {
+      final dio = _getDio();
+      await dio.post(
+        'messages/$messageId/feedback',
+        data: {'is_positive': isPositive},
+      );
+    } on DioException catch (e) {
+      final errorBody = e.response?.data?.toString() ?? e.message;
+      throw Exception(
+        'Failed to submit feedback (${e.response?.statusCode}): $errorBody',
+      );
+    }
+  }
 }
 
 class ApiAuthException implements Exception {
@@ -297,19 +312,4 @@ class ApiAuthException implements Exception {
 
   @override
   String toString() => 'ApiAuthException: $message';
-}
-
-Future<void> submitFeedback(String messageId, bool isPositive) async {
-  try {
-    final dio = _getDio();
-    await dio.post(
-      'messages/$messageId/feedback',
-      data: {'is_positive': isPositive},
-    );
-  } on DioException catch (e) {
-    final errorBody = e.response?.data?.toString() ?? e.message;
-    throw Exception(
-      'Failed to submit feedback (${e.response?.statusCode}): $errorBody',
-    );
-  }
 }

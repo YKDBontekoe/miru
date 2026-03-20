@@ -19,6 +19,7 @@ class ChatMessage with _$ChatMessage {
     @JsonKey(name: 'created_at') required DateTime timestamp,
     @Default(MessageStatus.sent) MessageStatus status,
     String? crewTaskType,
+    String? feedback,
   }) = _ChatMessage;
 
   bool get isUser => userId != null;
