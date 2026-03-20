@@ -79,7 +79,9 @@ class MemoryService:
         room_id: UUID | str | None = None,
     ) -> list[UUID]:
         """Process an uploaded document, chunk it, and store as memory."""
-        text = DocumentService.extract_text(file, filename, content_type)
+        import asyncio
+
+        text = await asyncio.to_thread(DocumentService.extract_text, file, filename, content_type)
         if not text:
             return []
 
@@ -92,7 +94,7 @@ class MemoryService:
             room_id=room_id,
         )
 
-        chunks = DocumentService.chunk_text(text)
+        chunks = await asyncio.to_thread(DocumentService.chunk_text, text)
         memory_ids = []
         for i, chunk in enumerate(chunks):
             chunk_content = f"[From document: {filename}, part {i + 1}]\n{chunk}"

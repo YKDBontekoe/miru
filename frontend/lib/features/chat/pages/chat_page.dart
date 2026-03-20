@@ -139,8 +139,6 @@ class _ChatPageState extends State<ChatPage> {
 
     final filesToUpload = List<PlatformFile>.from(_attachedFiles);
 
-    _inputController.clear();
-    setState(() => _attachedFiles.clear());
     _inputFocusNode.requestFocus();
 
     setState(() {
@@ -171,16 +169,31 @@ class _ChatPageState extends State<ChatPage> {
       }
 
       await _sendStreamingMessage(text);
+
+      _inputController.clear();
+      setState(() => _attachedFiles.clear());
     } catch (e) {
       // Don't overwrite if already cancelled.
       if (_messages.isNotEmpty) {
         setState(() {
           final lastIndex = _messages.length - 1;
           if (_messages[lastIndex].status != MessageStatus.sent) {
+            // Map known exception types to friendly text
+            final errorString = e.toString();
+            String userFriendlyMessage =
+                "Unable to send message. Please try again.";
+            if (errorString.contains('413') ||
+                errorString.contains('too large')) {
+              userFriendlyMessage = "Upload failed: File is too large.";
+            } else if (errorString.contains('415') ||
+                errorString.contains('Unsupported file')) {
+              userFriendlyMessage = "Upload failed: Unsupported file type.";
+            }
+
             _messages[lastIndex] = _messages[lastIndex].copyWith(
               text: _messages[lastIndex].text.isEmpty
-                  ? 'Error: $e'
-                  : _messages[lastIndex].text,
+                  ? userFriendlyMessage
+                  : '${_messages[lastIndex].text}\n\n[Error: $userFriendlyMessage]',
               status: MessageStatus.failed,
             );
           }
@@ -334,7 +347,7 @@ class _ChatPageState extends State<ChatPage> {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg'],
+        allowedExtensions: ['pdf', 'docx', 'txt', 'png', 'jpg', 'jpeg'],
         withData: true, // Need bytes for uploading
       );
 

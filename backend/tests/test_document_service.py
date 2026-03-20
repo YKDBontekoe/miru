@@ -42,3 +42,40 @@ def test_chunk_text_long() -> None:
     assert len(chunks) == 3
     assert " ".join(words[:10]) in chunks[0]
     assert " ".join(words[5:15]) in chunks[1]
+
+
+def test_extract_text_txt_latin1() -> None:
+    import io
+
+    from app.domain.memory.document_service import DocumentService
+
+    # Invalid UTF-8 but valid bytes
+    file = io.BytesIO(b"Hello \xff World")
+    text = DocumentService.extract_text(file, "test.txt", "text/plain")
+    assert "Hello" in text
+    assert "World" in text
+
+
+def test_chunk_text_zero_chunk_size() -> None:
+    import pytest
+
+    from app.domain.memory.document_service import DocumentService
+
+    with pytest.raises(ValueError, match="chunk_size must be greater than 0"):
+        DocumentService.chunk_text("test", chunk_size=0)
+
+
+def test_chunk_text_negative_overlap() -> None:
+    import pytest
+
+    from app.domain.memory.document_service import DocumentService
+
+    with pytest.raises(ValueError, match="overlap must be non-negative"):
+        DocumentService.chunk_text("test", overlap=-1)
+
+
+def test_chunk_text_large_overlap() -> None:
+    from app.domain.memory.document_service import DocumentService
+
+    chunks = DocumentService.chunk_text("a b c d", chunk_size=2, overlap=10)
+    assert len(chunks) == 4

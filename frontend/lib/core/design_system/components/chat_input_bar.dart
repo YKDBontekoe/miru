@@ -113,14 +113,21 @@ class ChatInputBar extends StatelessWidget {
                             ),
                             if (onRemoveAttachment != null) ...[
                               const SizedBox(width: AppSpacing.xs),
-                              InkWell(
-                                onTap: () => onRemoveAttachment!(file),
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  size: 16,
-                                  color: isDark
-                                      ? AppColors.onSurfaceMutedDark
-                                      : AppColors.onSurfaceMutedLight,
+                              Semantics(
+                                label: 'Remove attachment ${file.name}',
+                                button: true,
+                                child: InkWell(
+                                  onTap: () => onRemoveAttachment!(file),
+                                  child: Tooltip(
+                                    message: 'Remove attachment',
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 16,
+                                      color: isDark
+                                          ? AppColors.onSurfaceMutedDark
+                                          : AppColors.onSurfaceMutedLight,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -223,7 +230,8 @@ class ChatInputBar extends StatelessWidget {
     );
   }
 
-  IconData _getFileIcon(String filename) {
+  static IconData _getFileIcon(String filename) {
+    if (!filename.contains('.')) return Icons.insert_drive_file_rounded;
     final ext = filename.split('.').last.toLowerCase();
     switch (ext) {
       case 'pdf':

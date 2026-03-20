@@ -69,14 +69,42 @@ async def upload_document(
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Upload a document to extract text and store in memories."""
+    # 1. Validate content type
+    allowed_types = {
+        "text/plain",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+    }
+    content_type = file.content_type or "application/octet-stream"
+    if content_type not in allowed_types:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type: {content_type}. Must be text, PDF, DOCX, or Image.",
+        )
+
+    # 2. Validate max size (e.g. 10MB limit)
+    max_file_size = 10 * 1024 * 1024  # 10 MB
+    content = b""
+    while chunk := await file.read(1024 * 1024):
+        content += chunk
+        if len(content) > max_file_size:
+            raise HTTPException(
+                status_code=413,
+                detail="File too large. Maximum allowed size is 10MB.",
+            )
+
     try:
-        content = await file.read()
         file_obj = io.BytesIO(content)
 
         memory_ids = await service.store_document_memory(
             file=file_obj,
             filename=file.filename or "unknown",
-            content_type=file.content_type or "application/octet-stream",
+            content_type=content_type,
             user_id=user_id,
         )
         return {
