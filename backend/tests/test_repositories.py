@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -156,6 +157,54 @@ class TestChatRepository:
         agents = await repo.list_room_agents(room.id)
         assert agents == []
 
+    @pytest.mark.asyncio
+    async def test_accept_invitation(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        inviter_id = uuid4()
+        room = await repo.create_room("Invite Room", inviter_id)
+        from datetime import datetime, timedelta
+        expires_at = datetime.now(tz=UTC) + timedelta(days=1)
+
+        invitation = await repo.create_invitation(
+            room_id=room.id,
+            inviter_id=inviter_id,
+            token="test-token",
+            expires_at=expires_at,
+            role="admin"
+        )
+
+        member = await repo.accept_invitation(invitation, user_id)
+        assert member.user_id == user_id
+        assert member.role == "admin"
+        assert member.room_id == room.id
+
+        # Verify it was accepted
+        updated_inv = await repo.get_invitation_by_token("test-token")
+        assert updated_inv is not None
+        assert updated_inv.accepted_at is not None
+
+    @pytest.mark.asyncio
+    async def test_log_and_get_activity(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        room = await repo.create_room("Log Room", user_id)
+
+        log = await repo.log_activity(
+            room_id=room.id,
+            user_id=user_id,
+            action_type="test_action",
+            entity_type="test_entity",
+            details={"key": "value"}
+        )
+
+        assert log.action_type == "test_action"
+        assert log.entity_type == "test_entity"
+        assert log.details == {"key": "value"}
+
+        activities = await repo.get_room_activity(room.id)
+        assert len(activities) == 1
+        assert activities[0].id == log.id
 
 # ---------------------------------------------------------------------------
 # MemoryRepository

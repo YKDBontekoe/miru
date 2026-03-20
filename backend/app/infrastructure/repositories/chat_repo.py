@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 from app.domain.agents.models import Agent
@@ -73,10 +74,9 @@ class ChatRepository:
         return await ChatRoomMember.filter(room_id=room_id).all()
 
     async def create_invitation(
-        self, room_id: UUID, inviter_id: UUID, token: str, expires_at: "datetime", email: str | None = None, role: str = "member"
+        self, room_id: UUID, inviter_id: UUID, token: str, expires_at: datetime, email: str | None = None, role: str = "member"
     ) -> RoomInvitation:
         """Create a new room invitation."""
-        from datetime import datetime
         return await RoomInvitation.create(
             room_id=room_id,
             inviter_id=inviter_id,
@@ -92,7 +92,7 @@ class ChatRepository:
 
     async def accept_invitation(self, invitation: RoomInvitation, user_id: UUID) -> ChatRoomMember:
         """Accept an invitation and add the user to the room."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         # Add user to room
         member, _ = await ChatRoomMember.get_or_create(
@@ -102,7 +102,7 @@ class ChatRepository:
         )
 
         # Mark invitation as accepted
-        invitation.accepted_at = datetime.now(tz=timezone.utc)
+        invitation.accepted_at = datetime.now(tz=UTC)
         await invitation.save()
 
         return member
