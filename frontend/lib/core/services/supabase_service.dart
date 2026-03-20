@@ -89,8 +89,20 @@ class SupabaseService {
   static Stream<AuthState> get authStateChanges =>
       authStateChangesOverride ?? _client.auth.onAuthStateChange;
 
+  /// Sentinel value meaning "no override — use the real implementation".
+  /// Reset [accessTokenOverride] to this value in tearDown to undo the override.
+  @visibleForTesting
+  static const Object sentinel = Object();
+
+  /// Override for testing — set to a fixed value (or null) to avoid calling
+  /// [_client] when Supabase is not initialised.
+  @visibleForTesting
+  static Object? accessTokenOverride = sentinel;
+
   /// The JWT access token for the current session (to send to the backend).
-  static String? get accessToken => currentSession?.accessToken;
+  static String? get accessToken => identical(accessTokenOverride, sentinel)
+      ? currentSession?.accessToken
+      : accessTokenOverride as String?;
 
   // ---------------------------------------------------------------------------
   // Auth operations

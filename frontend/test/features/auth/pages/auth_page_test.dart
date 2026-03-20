@@ -25,11 +25,13 @@ void main() {
     SupabaseService.authStateChangesOverride =
         StreamController<AuthState>.broadcast().stream;
     SupabaseService.isAuthenticatedOverride = false;
+    SupabaseService.accessTokenOverride = null;
   });
 
   tearDown(() {
     SupabaseService.authStateChangesOverride = null;
     SupabaseService.isAuthenticatedOverride = null;
+    SupabaseService.accessTokenOverride = SupabaseService.sentinel;
   });
 
   // -------------------------------------------------------------------------
