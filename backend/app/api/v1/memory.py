@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import io
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from openai import APIConnectionError
 
 from app.api.dependencies import get_memory_service
@@ -59,6 +60,64 @@ async def store_memory(
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
+
+
+@router.post("/upload", response_model=dict[str, Any])
+async def upload_document(
+    user_id: CurrentUser,
+    service: Annotated[MemoryService, Depends(get_memory_service)],
+    file: UploadFile = File(...),
+) -> dict[str, Any]:
+    """Upload a document to extract text and store in memories."""
+    # 1. Validate content type
+    allowed_types = {
+        "text/plain",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+    }
+    content_type = file.content_type or "application/octet-stream"
+    if content_type not in allowed_types:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type: {content_type}. Must be text, PDF, DOCX, or Image.",
+        )
+
+    # 2. Validate max size (e.g. 10MB limit)
+    max_file_size = 10 * 1024 * 1024  # 10 MB
+    content = b""
+    while chunk := await file.read(1024 * 1024):
+        content += chunk
+        if len(content) > max_file_size:
+            raise HTTPException(
+                status_code=413,
+                detail="File too large. Maximum allowed size is 10MB.",
+            )
+
+    try:
+        file_obj = io.BytesIO(content)
+
+        memory_ids = await service.store_document_memory(
+            file=file_obj,
+            filename=file.filename or "unknown",
+            content_type=content_type,
+            user_id=user_id,
+        )
+        return {
+            "status": "ok",
+            "message": f"Document processed and stored in {len(memory_ids)} chunks.",
+            "memory_ids": [str(m) for m in memory_ids],
+        }
+    except (APIConnectionError, OSError) as e:
+        raise HTTPException(
+            status_code=503, detail="Upstream AI service is currently unreachable"
+        ) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
 
 
 @router.delete("/{memory_id}")
