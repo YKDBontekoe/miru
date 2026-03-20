@@ -66,9 +66,11 @@ void main() {
     fakeApi.getAgentsMock = () => Future.error(Exception('Failed to load'));
 
     await tester.pumpWidget(buildTestWidget());
-    // Use pump instead of pumpAndSettle to avoid timeout from repeating animations.
+    // First pump resolves the Future and calls showSnackBar.
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    // The SnackBar entrance animation is 250 ms — pump through it fully so the
+    // widget is present in the tree before we assert.
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Failed to load'), findsOneWidget);
