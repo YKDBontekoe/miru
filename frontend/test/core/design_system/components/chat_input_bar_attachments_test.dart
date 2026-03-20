@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:miru/core/design_system/design_system.dart';
-import 'package:miru/core/design_system/components/chat_input_bar.dart';
 
 void main() {
   testWidgets('ChatInputBar renders attachments correctly', (
