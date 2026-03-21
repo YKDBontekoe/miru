@@ -2,8 +2,19 @@ import { createClient } from '@supabase/supabase-js';
 import { SecureLocalStorage } from './storage';
 import { AppState } from 'react-native';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl =
+  process.env.EXPO_PUBLIC_SUPABASE_URL &&
+  process.env.EXPO_PUBLIC_SUPABASE_URL !== 'undefined' &&
+  process.env.EXPO_PUBLIC_SUPABASE_URL !== ''
+    ? process.env.EXPO_PUBLIC_SUPABASE_URL.trim()
+    : 'https://your-project.supabase.co';
+
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY &&
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY !== 'undefined' &&
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY !== ''
+    ? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY.trim()
+    : 'your-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
