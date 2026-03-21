@@ -83,8 +83,23 @@ void main() {
     tester,
   ) async {
     fakeApi.getAgentsMock = () => Future.value([]);
-    fakeApi.getAgentCapabilitiesMock = () => Future.value([]);
-    fakeApi.getAgentIntegrationsMock = () => Future.value([]);
+    fakeApi.getAgentCapabilitiesMock = () => Future.value([
+      const Capability(
+        id: 'cap_1',
+        name: 'Web Browsing',
+        description: 'Browse the web',
+        icon: 'language',
+      ),
+    ]);
+    fakeApi.getAgentIntegrationsMock = () => Future.value([
+      const Integration(
+        type: 'int_1',
+        displayName: 'Google Docs',
+        description: 'Read docs',
+        status: 'active',
+        icon: 'article',
+      ),
+    ]);
 
     await tester.pumpWidget(buildTestWidget());
     // Use pump instead of pumpAndSettle to avoid timeout from repeating animations.
@@ -96,9 +111,61 @@ void main() {
 
     await tester.tap(fab);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(
+      const Duration(milliseconds: 500),
+    ); // wait for dialog animation to finish without pumpAndSettle hanging on indeterminate shimmer
 
     expect(find.text('Create New Persona'), findsOneWidget);
     expect(find.byType(AlertDialog), findsOneWidget);
+
+    // Verify dialog content is rendered and tokens were evaluated
+    expect(find.text('AI Generation Keywords'), findsOneWidget);
+    expect(find.text('Agent Name'), findsOneWidget);
+    expect(find.text('Short Description'), findsOneWidget);
+    expect(find.text('Personality & Behavior'), findsOneWidget);
+    expect(find.text('Goals (one per line)'), findsOneWidget);
+    expect(find.text('Capabilities'), findsOneWidget);
+    expect(find.text('Integrations'), findsOneWidget);
+    expect(find.text('Web Browsing'), findsOneWidget);
+    expect(find.text('Google Docs'), findsOneWidget);
+  });
+
+  testWidgets('AgentsPage renders list of personas', (tester) async {
+    fakeApi.getAgentsMock = () => Future.value([
+      const Agent(
+        id: 'agent_1',
+        name: 'Captain Bluebeard',
+        personality: 'You speak with a pirate accent.',
+        description: 'A seafaring AI who loves pirate jokes.',
+        messageCount: 50,
+        mood: 'Happy',
+        capabilities: ['Web Browsing'],
+        createdAt: '2023-01-01',
+      ),
+    ]);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pump();
+    await tester.pump(
+      const Duration(milliseconds: 500),
+    ); // wait for AnimatedSwitcher
+
+    // Verify persona card content is rendered
+    expect(find.text('Captain Bluebeard'), findsOneWidget);
+    expect(find.text('A seafaring AI who loves pirate jokes.'), findsOneWidget);
+    expect(find.text('You speak with a pirate accent.'), findsOneWidget);
+    expect(find.text('Happy'), findsOneWidget);
+    expect(find.text('Web Browsing'), findsOneWidget);
+    expect(find.text('Lvl 6'), findsOneWidget); // 50 / 10 + 1 = 6
+
+    // Test the InkWell tap target
+    final inkWell = find.descendant(
+      of: find.byType(Card),
+      matching: find.byType(InkWell),
+    );
+    expect(
+      inkWell,
+      findsWidgets,
+    ); // findsWidgets since an InkWell spawns an inner InkWell too
   });
 }
