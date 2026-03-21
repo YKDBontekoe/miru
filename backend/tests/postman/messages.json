@@ -1,7 +1,7 @@
 {
   "info": {
-    "_postman_id": "4b971dc0-f04b-449e-bc4f-4d929f0ab0eb",
-    "name": "Chat",
+    "_postman_id": "4b971dc0-f04b-449e-bc4f-4d929f0ab0ec",
+    "name": "Messages",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -36,8 +36,7 @@
             "feedback"
           ]
         }
-      },
-      "response": []
+      }
     }
   ]
 }

@@ -137,6 +137,7 @@ jobs:
           az containerapp update \
             --name "${{ env.STAGING_APP }}" \
             --resource-group "${{ env.STAGING_RG }}" \
+            --target-label staging \
             --image "$IMAGE_TAG" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}"
 

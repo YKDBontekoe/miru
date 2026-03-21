@@ -27,6 +27,7 @@ class MessageList extends StatelessWidget {
 
   /// Callback to retry a failed message.
   final VoidCallback onRetry;
+  final void Function(ChatMessage, bool)? onFeedback;
 
   /// Creates a [MessageList].
   const MessageList({
@@ -37,6 +38,7 @@ class MessageList extends StatelessWidget {
     required this.streamingStatus,
     required this.onCopy,
     required this.onRetry,
+    this.onFeedback,
   });
 
   @override
@@ -69,6 +71,10 @@ class MessageList extends StatelessWidget {
             status: isPlaceholder ? MessageStatus.streaming : msg.status,
             onCopy: () => onCopy(msg),
             onRetry: msg.status == MessageStatus.failed ? onRetry : null,
+            onFeedback: onFeedback != null && !msg.isUser && !isPlaceholder
+                ? (bool isPositive) => onFeedback!(msg, isPositive)
+                : null,
+            feedback: msg.feedback,
           ),
         );
       },

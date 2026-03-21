@@ -99,10 +99,6 @@ class _LoadingPageState extends State<LoadingPage> {
 
   Widget _buildErrorScreen(BuildContext context, Object? error) {
     final colors = context.colors;
-    final detail = error is FormatException
-        ? error.message
-        : 'The server might be down or unreachable.\n'
-              'Please check your connection and try again.';
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -123,7 +119,7 @@ class _LoadingPageState extends State<LoadingPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                detail,
+                'The server might be down or unreachable.\nPlease check your connection and try again.',
                 style: AppTypography.bodyMedium.copyWith(
                   color: colors.onSurfaceMuted,
                 ),

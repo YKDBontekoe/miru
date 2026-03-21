@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 
-import nest_asyncio
 from crewai.tools import BaseTool
 from pydantic import Field
 
@@ -28,6 +27,8 @@ class SteamPlayerSummaryTool(BaseTool):
         """Run the tool synchronously."""
         try:
             asyncio.get_running_loop()
+            import nest_asyncio
+
             nest_asyncio.apply()
         except RuntimeError:
             pass
@@ -81,6 +82,8 @@ class SteamOwnedGamesTool(BaseTool):
         """Run the tool synchronously."""
         try:
             asyncio.get_running_loop()
+            import nest_asyncio
+
             nest_asyncio.apply()
         except RuntimeError:
             pass

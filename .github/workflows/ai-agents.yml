@@ -5,9 +5,6 @@ on:
     types: [created, edited]
   issues:
     types: [labeled]
-  workflow_run:
-    workflows: ["PR Checks and Linting"]
-    types: [completed]
   schedule:
     - cron: '0 */6 * * *'   # Every 6 hours: Jules Sentry fixes
     - cron: '*/30 * * * *'  # Every 30 minutes: CodeRabbit queue processor
@@ -65,12 +62,7 @@ jobs:
               return;
             }
 
-            // Match the fenced code block inside the "Prompt for all review comments"
-            // <details> section. CodeRabbit emits:
-            //   <details>\n<summary>🤖 Prompt …</summary>\n\n```\n<content>\n```\n</details>
-            // The closing fence may have trailing whitespace or be immediately followed
-            // by a newline + </details>, so we stop at any line that is *only* backticks.
-            const promptRegex = /<summary>🤖 Prompt for all review comments with AI agents<\/summary>[\s\S]*?```(?:[\w-]*)\n([\s\S]*?)\n```[ \t]*(?:\n|$)/i;
+            const promptRegex = /<summary>🤖 Prompt for all review comments with AI agents<\/summary>[\s\S]*?```(?:[\w-]+)?\n([\s\S]*?)\n```/i;
             const match = commentBody.match(promptRegex);
             if (!match || !match[1]) return;
 
@@ -117,85 +109,6 @@ jobs:
               owner, repo, issue_number: prNumber,
               body: finalComment,
             });
-
-  # ---------------------------------------------------------------------------
-  # CodeRabbit - Auto-trigger after CI passes
-  #
-  # Fires when "PR Checks and Linting" completes successfully on a PR branch.
-  # Posts "@coderabbitai full review" the first time (no prior non-queued
-  # CodeRabbit comment) or "@coderabbitai review" on subsequent passes.
-  #
-  # Required secret:
-  #   JULES_GITHUB_PAT — same PAT used by the bridge (issues:write,
-  #                       pull-requests:write on this repo only)
-  # ---------------------------------------------------------------------------
-  coderabbit-trigger:
-    name: Trigger CodeRabbit After CI
-    if: |
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
-    steps:
-      - name: Post CodeRabbit review trigger
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.JULES_GITHUB_PAT }}
-          script: |
-            const { owner, repo } = context.repo;
-            const run = context.payload.workflow_run;
-
-            // Resolve the PR number from the workflow run's associated pull requests.
-            // workflow_run provides pull_requests[] only for same-repo branches.
-            // Fall back to a search query for fork PRs.
-            let prNumber = null;
-            if (run.pull_requests && run.pull_requests.length > 0) {
-              prNumber = run.pull_requests[0].number;
-            } else {
-              const prs = await github.rest.pulls.list({
-                owner, repo, state: 'open',
-                head: `${run.head_repository.owner.login}:${run.head_branch}`,
-              });
-              if (prs.data.length > 0) prNumber = prs.data[0].number;
-            }
-
-            if (!prNumber) {
-              core.info('No open PR found for this workflow run. Skipping.');
-              return;
-            }
-
-            // Fetch all PR comments and look for an existing CodeRabbit review
-            // comment that was NOT a rate-limit queued placeholder.
-            // A "real" CodeRabbit review comment contains its standard review
-            // header (the walkthrough / summary block).
-            const { data: comments } = await github.rest.issues.listComments({
-              owner, repo, issue_number: prNumber, per_page: 100,
-            });
-
-            const hasRealReview = comments.some(c => {
-              if (c.user.login !== 'coderabbitai[bot]') return false;
-              // Exclude the queued/rate-limit notice which does NOT contain a review
-              const isQueueNotice = /rate limit exceeded/i.test(c.body);
-              // A real review always contains the walkthrough or actionable comments header
-              const isReview = /Actionable comments posted/i.test(c.body) ||
-                               /## Summary by CodeRabbit/i.test(c.body) ||
-                               /<!-- walkthrough_start -->/i.test(c.body);
-              return !isQueueNotice && isReview;
-            });
-
-            const command = hasRealReview
-              ? '@coderabbitai review'
-              : '@coderabbitai full review';
-
-            await github.rest.issues.createComment({
-              owner, repo, issue_number: prNumber,
-              body: command,
-            });
-
-            core.info(`PR #${prNumber}: posted "${command}" (prior real review: ${hasRealReview}).`);
 
   # ---------------------------------------------------------------------------
   # Jules - Sentry / Issue Fixer

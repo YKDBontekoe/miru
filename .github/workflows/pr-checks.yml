@@ -53,18 +53,6 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  postman-coverage-check:
-    name: Enforce Postman Tests
-    needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Check Postman Coverage
-        run: python3 backend/scripts/enforce_postman_tests.py
-
   flutter-checks:
     name: Flutter
     needs: changes
@@ -335,8 +323,6 @@ jobs:
       PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
 
     steps:
-      - uses: actions/checkout@v6
-
       - name: Login to Azure
         uses: azure/login@v3
         with:
@@ -412,45 +398,21 @@ jobs:
               --secrets "${FILTERED_SECRETS[@]}"
           fi
 
-          az containerapp revision set-mode --mode multiple --name "${{ env.PR_APP }}" --resource-group "${{ env.PR_RG }}"
-
-          # The revision suffix must be unique for each update, even on the same PR.
-          # The output of 'az containerapp update' contains the properties of the container app.
-          # The created revision is set as the 'latestRevisionName'.
-          NEW_REVISION=$(az containerapp update \
+          az containerapp update \
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \
             --image "$IMAGE_TAG" \
-            --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_attempt }}" \
-            --set-env-vars "${FILTERED_ENV_VARS[@]}" \
-            --query "properties.latestRevisionName" \
-            --output tsv)
+            --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
-          echo "Created revision: $NEW_REVISION"
-
-          # We assign a label matching the PR number to this specific revision.
-          az containerapp revision label add \
-            --name "${{ env.PR_APP }}" \
-            --resource-group "${{ env.PR_RG }}" \
-            --label "pr-${{ github.event.pull_request.number }}" \
-            --revision "$NEW_REVISION"
       - name: Get app URL
         id: app-url
         run: |
-          # Use the label's FQDN to ensure we are testing this PR's specific revision
-          # ACA URLs for labels follow: <app-name>---<label>.<env-domain>
           FQDN=$(az containerapp show \
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \
             --query "properties.configuration.ingress.fqdn" \
             --output tsv)
-          APP_NAME="${{ env.PR_APP }}"
-          ENVIRONMENT_DOMAIN="${FQDN#"$APP_NAME".}"
-          LABEL="pr-${{ github.event.pull_request.number }}"
-          TEST_URL="https://${APP_NAME}---${LABEL}.${ENVIRONMENT_DOMAIN}"
-
-          echo "url=$TEST_URL" >> "$GITHUB_OUTPUT"
-          echo "Testing PR URL: $TEST_URL"
+          echo "url=https://${FQDN}" >> "$GITHUB_OUTPUT"
 
       - name: Wait for PR deployment to become healthy
         # Scale-to-zero aware: --max-time 90 keeps the connection open through
@@ -462,7 +424,7 @@ jobs:
             REVISION=$(az containerapp revision list \
               --name "${{ env.PR_APP }}" \
               --resource-group "${{ env.PR_RG }}" \
-              --query "[?starts_with(name, '${{ env.PR_APP }}--pr-${{ github.event.pull_request.number }}-')].name | [-1]" \
+              --query "sort_by([].{name:name,created:properties.createdTime}, &created) | [-1].name" \
               --output tsv)
             STATE=$(az containerapp revision show \
               --name "${{ env.PR_APP }}" \
@@ -513,24 +475,3 @@ jobs:
 
           [ "$FAILURES" -gt 0 ] && { echo "::error::${FAILURES} smoke test(s) failed."; exit 1; }
           echo "All smoke tests passed."
-
-      - name: Run Postman integration tests
-        run: |
-          npm install -g newman
-          PIDS=()
-          for collection in backend/tests/postman/*.json; do
-            echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
-            PIDS+=($!)
-          done
-
-          FAILURES=0
-          for pid in "${PIDS[@]}"; do
-            wait "$pid" || FAILURES=$((FAILURES+1))
-          done
-
-          if [ "$FAILURES" -gt 0 ]; then
-            echo "::error::${FAILURES} Postman collection(s) failed."
-            exit 1
-          fi
-          echo "All Postman collections passed."

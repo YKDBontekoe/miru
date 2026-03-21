@@ -41,6 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
   List<MemoryEdge> _memoryEdges = [];
   bool _loadingMemories = false;
   bool _showMemoryGraph = false;
+  String _responseStyle = '';
 
   @override
   void initState() {
@@ -54,7 +55,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
+        _responseStyle = prefs.getString('miru_chat_style') ?? '';
         _isPrivacyMode = prefs.getBool(_privacyModeKey) ?? false;
+
         _notificationsEnabled = prefs.getBool(_notificationsKey) ?? true;
       });
     }
@@ -441,6 +444,58 @@ class _SettingsPageState extends State<SettingsPage> {
           const Divider(),
           const SectionHeader(title: 'Preferences'),
           SettingTile(
+            icon: Icons.chat_bubble_outline_rounded,
+            title: 'Response Style',
+            subtitle: _responseStyle.isEmpty ? 'Default' : _responseStyle,
+            onTap: () async {
+              final styles = [
+                'Default',
+                'Concise',
+                'Detailed',
+                'Humorous',
+                'Professional',
+                'Empathetic',
+              ];
+              final result = await showDialog<String>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Select Response Style'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: styles
+                        .map(
+                          (style) => ListTile(
+                            title: Text(style),
+                            trailing:
+                                _responseStyle == style ||
+                                    (_responseStyle.isEmpty &&
+                                        style == 'Default')
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                            onTap: () => Navigator.pop(context, style),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              );
+              if (result != null) {
+                final prefs = await SharedPreferences.getInstance();
+                if (result == 'Default') {
+                  await prefs.remove('miru_chat_style');
+                  setState(() => _responseStyle = '');
+                } else {
+                  await prefs.setString('miru_chat_style', result);
+                  setState(() => _responseStyle = result);
+                }
+              }
+            },
+          ),
+
+          SettingTile(
             icon: Icons.security_rounded,
             title: 'Privacy Mode',
             subtitle: 'Minimize data logging for sessions',
@@ -470,6 +525,49 @@ class _SettingsPageState extends State<SettingsPage> {
           // Data
           const Divider(),
           const SectionHeader(title: 'Data'),
+          SettingTile(
+            icon: Icons.psychology_alt_rounded,
+            title: 'Reset Learning & Memories',
+            subtitle: 'Delete all preferences and facts learned about you',
+            onTap: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Reset Learning'),
+                  content: const Text(
+                    'This will permanently delete everything Miru has learned about you, '
+                    'including all stored memories and preferences. '
+                    'This action cannot be undone.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                      ),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Reset'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true) {
+                // Delete all memories one by one
+                for (final memory in _memories.toList()) {
+                  await _deleteMemory(memory);
+                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Learning reset successfully')),
+                );
+              }
+            },
+            destructive: true,
+          ),
+
           SettingTile(
             icon: Icons.delete_outline_rounded,
             title: 'Clear Chat History',

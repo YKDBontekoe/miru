@@ -172,7 +172,9 @@ class ChatService:
             for m in msgs
         ]
 
-    async def stream_responses(self, user_message: str, user_id: UUID) -> AsyncIterator[str]:
+    async def stream_responses(
+        self, user_message: str, user_id: UUID, style_preference: str | None = None
+    ) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
@@ -186,7 +188,12 @@ class ChatService:
         response = await llm.chat.completions.create(
             model=model_name,
             messages=[
-                {"role": "system", "content": agent.personality},
+                {
+                    "role": "system",
+                    "content": f"{agent.personality}\nPlease use a {style_preference} response style if requested."
+                    if style_preference
+                    else agent.personality,
+                },
                 {"role": "user", "content": user_message},
             ],
             stream=True,
@@ -258,7 +265,7 @@ class ChatService:
         return {"task_type": "general", "result": str(result)}
 
     async def stream_room_responses(
-        self, room_id: UUID, user_message: str, user_id: UUID
+        self, room_id: UUID, user_message: str, user_id: UUID, style_preference: str | None = None
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         # 1. Save user message
@@ -280,7 +287,12 @@ class ChatService:
         # 4. Define and execute task
         if len(crew_agents) > 1:
             task = Task(
-                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message)
+                + (
+                    f"\nIMPORTANT: Ensure the final output is styled as {style_preference}."
+                    if style_preference
+                    else ""
+                ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
@@ -296,7 +308,9 @@ class ChatService:
                     f"User said: {user_message}. "
                     "Orchestrate a helpful conversation among available agents to assist the user."
                 ),
-                expected_output="A collaborative response from the most relevant agents.",
+                expected_output=f"A collaborative response from the most relevant agents. Ensure the final response adopts a {style_preference} style."
+                if style_preference
+                else "A collaborative response from the most relevant agents.",
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -332,3 +346,55 @@ class ChatService:
 
         yield str(result)
         yield "[[STATUS:done]]\n"
+
+    async def handle_feedback(
+        self, message_id: UUID, is_positive: bool, user_id: UUID
+    ) -> ChatMessageResponse | None:
+        message = await self.chat_repo.get_message(message_id)
+        if not message:
+            return None
+
+        # Verify access
+        room_id: UUID = getattr(message, "room_id")  # noqa: B009
+        room = await self.chat_repo.get_room(room_id)
+        if not room or room.user_id != user_id:
+            return None
+
+        # Update feedback
+        message.feedback = "positive" if is_positive else "negative"
+        await self.chat_repo.update_message(message)
+
+        # Trigger background learning from feedback
+        asyncio.create_task(self._learn_from_feedback(message, is_positive, user_id))
+
+        return ChatMessageResponse(
+            id=message.id,
+            room_id=getattr(message, "room_id"),  # noqa: B009
+            user_id=message.user_id,
+            agent_id=message.agent_id,
+            content=message.content,
+            feedback=message.feedback,
+            created_at=message.created_at,
+        )
+
+    async def _learn_from_feedback(
+        self, message: ChatMessage, is_positive: bool, user_id: UUID
+    ) -> None:
+        """Evaluate user feedback to extract a memory preference."""
+        if not is_positive:
+            preference_str = (
+                f"The user did not find this response helpful: {message.content[:100]}..."
+            )
+        else:
+            preference_str = f"The user found this response helpful: {message.content[:100]}..."
+
+        if message.agent_id:
+            from app.domain.memory.service import MemoryService
+
+            mem_svc = MemoryService(self.memory_repo)
+            await mem_svc.store_memory(
+                content=preference_str,
+                user_id=user_id,
+                agent_id=message.agent_id,
+                room_id=getattr(message, "room_id"),  # noqa: B009
+            )

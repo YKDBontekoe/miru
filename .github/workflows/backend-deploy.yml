@@ -428,6 +428,7 @@ jobs:
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
+            --target-label production \
             --image "$IMAGE_TAG" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
