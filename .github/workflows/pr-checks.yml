@@ -323,7 +323,6 @@ jobs:
           #
           # In 'labels' revision mode, --target-label is required. We use a label
           # matching the PR number to ensure we can route traffic to this revision.
-          az extension add --name containerapp --upgrade --allow-preview true --yes > /dev/null
           NEW_REVISION=$(az containerapp update \
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \

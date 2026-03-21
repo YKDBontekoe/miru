@@ -50,7 +50,6 @@ echo "==> Creating Container App '${PR_APP}'..."
 #
 # In 'labels' revision mode, --target-label is required. We initialize with a
 # 'placeholder' label.
-az extension add --name containerapp --upgrade --allow-preview true --yes > /dev/null
 az containerapp create \
   --name "${PR_APP}" \
   --resource-group "${RESOURCE_GROUP}" \
