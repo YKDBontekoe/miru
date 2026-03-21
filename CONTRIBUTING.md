@@ -25,7 +25,7 @@ This project adheres to a code of conduct. By participating, you are expected to
 ### Prerequisites
 
 - **Backend**: Python 3.11+, Docker
-- **Frontend**: Flutter SDK 3.19+, Xcode (for iOS), Android Studio (for Android)
+- **Frontend**: Node.js 18+, npm/yarn/bun
 - **Tools**: Git, Make
 
 ### Setup
@@ -38,7 +38,7 @@ This project adheres to a code of conduct. By participating, you are expected to
    make setup-backend
    
    # Frontend
-   cd frontend && flutter pub get
+   cd frontend && npm install
    ```
 4. Start the database: `make db`
 5. Run the backend: `make backend`
@@ -144,24 +144,25 @@ Style guidelines:
 - Write docstrings (Google style)
 - Maximum line length: 100 characters
 
-### Dart (Flutter)
+### TypeScript (React Native)
 
 We use:
-- **flutter_lints**: Dart/Flutter linting
-- **dart format**: Code formatting
+- **ESLint**: Linting and standardisation
+- **Prettier**: Code formatting
+- **TypeScript**: Static type checking
 
 Run checks locally:
 ```bash
 cd frontend
-flutter analyze
-dart format --output=none --set-exit-if-changed .
+npm run lint
+npm run type-check
 ```
 
 Style guidelines:
-- Follow Effective Dart
-- Use `const` constructors where possible
-- Prefer single quotes for strings
-- Organize imports properly
+- Use functional components and hooks
+- Use NativeWind for styling
+- Follow the structure in `src/` for stores, components, and services
+- Maximum line length: 100 characters (ESLint/Prettier default)
 
 ## Testing
 
@@ -181,11 +182,11 @@ Requirements:
 
 ```bash
 cd frontend
-flutter test --coverage
+npm test
 ```
 
 Requirements:
-- Widget tests for UI components
+- Component tests for UI components
 - Integration tests for critical flows
 - Minimum 70% code coverage
 
@@ -199,8 +200,8 @@ Requirements:
 ### Deployment Process
 
 1. Backend: Docker image built and deployed to Azure Container Apps
-2. Flutter Web: Built and deployed to Azure Static Web Apps
-3. Flutter iOS: Built and uploaded to TestFlight
+2. Frontend Web: Built and deployed to Azure Static Web Apps
+3. Frontend App (Expo): Built and uploaded to App Store / Play Store
 
 ### Manual Deployment
 
@@ -212,8 +213,8 @@ make deploy-backend
 # Frontend (Web)
 make deploy-web
 
-# Frontend (iOS)
-make deploy-ios
+# Frontend (App)
+make deploy-app
 ```
 
 ## Questions?

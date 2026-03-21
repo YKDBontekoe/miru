@@ -4,11 +4,11 @@ This document provides essential information for AI agents working on the Miru c
 
 ## Project Overview
 
-Miru is a personal AI assistant with a **FastAPI backend** (Python) and **Flutter frontend** (Dart). It uses Supabase (PostgreSQL + pgvector) as the primary database, Neo4j for memory graph relationships, and OpenRouter for LLM and embeddings.
+Miru is a personal AI assistant with a **FastAPI backend** (Python) and **React Native frontend** (TypeScript/Expo). It uses Supabase (PostgreSQL + pgvector) as the primary database, Neo4j for memory graph relationships, and OpenRouter for LLM and embeddings.
 
 **Key Technologies:**
 - **Backend:** FastAPI, Supabase Python SDK, Neo4j, CrewAI, PyJWT, Sentry, webauthn
-- **Frontend:** Flutter, Dart, supabase_flutter, credential_manager
+- **Frontend:** React Native, TypeScript, Expo Router, Zustand, NativeWind, @supabase/supabase-js
 - **AI:** OpenRouter (LLM + embeddings)
 - **Database:** Supabase (PostgreSQL + pgvector), Neo4j
 
@@ -27,16 +27,16 @@ ruff check . && black --check . && isort --check-only . && mypy app/ # Lint
 ruff check --fix . && black . && isort .                             # Auto-fix
 ```
 
-### Frontend (Flutter/Dart)
+### Frontend (React Native/TypeScript)
 ```bash
 cd frontend
 
-flutter run                                                # Run app
-flutter test --coverage                                    # Run all tests
-flutter test test/widget_test.dart --name="test name"     # Run single test
-flutter analyze                                           # Lint
-dart format --output=none --set-exit-if-changed .         # Check formatting
-dart format .                                             # Fix formatting
+npx expo start                                        # Run app
+npm test                                              # Run all tests
+npm test -- -t "test name"                            # Run single test
+npm run lint                                          # Lint
+npm run type-check                                    # Type check
+npm run format                                        # Fix formatting
 ```
 
 ### Make Commands (Root)
@@ -108,34 +108,21 @@ backend/
   Dockerfile
 
 frontend/
-  lib/
-    main.dart              # Entry point — Supabase + BackendService init, auth stream routing
-    main_scaffold.dart     # Bottom nav (Rooms + Settings), CreatePersona sheet
-    auth_page.dart         # Magic link, password, and passkey login flows
-    api_service.dart       # All backend HTTP calls as static methods
-    backend_service.dart   # SharedPreferences-backed base URL, health poller
-    chat_page.dart         # Solo chat with streaming
-    rooms_page.dart        # Chat room listing
-    group_chat_page.dart   # Multi-agent group chat with streaming
-    agents_page.dart       # Agent creation and listing
-    introduction_page.dart # Onboarding flow
-    loading_page.dart      # Backend cold-start poller
-    settings_page.dart     # Settings, sign-out, backend URL override
-    models/
-      agent.dart
-      chat_message.dart
-      chat_room.dart
-      message_status.dart
-    services/
-      supabase_service.dart  # Supabase auth wrapper (magic link, password, passkey)
-      passkey_service.dart   # WebAuthn credential_manager integration
-    design_system/           # Custom design system (tokens, components, theme, extensions)
-  test/
-    widget_test.dart         # Design system widget tests
-  integration_test/
-    smoke_test.dart
-  pubspec.yaml
-  analysis_options.yaml
+  app/                     # Expo Router file-based routing
+    (auth)/                # Auth group (login, onboarding)
+    (main)/                # Main app group (chat, agents, productivity)
+    _layout.tsx            # Root layout with providers
+  src/
+    components/            # Reusable UI components
+    core/
+      api/                 # API client (axios), domain services
+      models.ts            # TypeScript interfaces/types for domain entities
+    features/              # Feature-specific components and logic
+    store/                 # Zustand store definitions (useChatStore, useAuthStore, etc.)
+  __tests__/               # Jest tests
+  package.json
+  tsconfig.json
+  tailwind.config.js       # NativeWind configuration
 
 supabase/
   migrations/              # Source of truth for schema — committed SQL applied by Supabase CLI
@@ -165,11 +152,15 @@ Application code is organised into bounded-context packages under `app/domain/`.
 
 ### Frontend
 
-The frontend is a **flat `lib/` directory** — there is no feature-based folder structure. State management uses **plain `StatefulWidget` + `setState`** throughout; there is no Riverpod, Provider, BLoC, or GetX. Routing is driven by a `StreamBuilder<AuthState>` and an `IndexedStack` — there is no go_router or named routes.
+The frontend is a **React Native (Expo) application** using **TypeScript**. It follows a structured approach with **Expo Router** for navigation and **Zustand** for state management.
 
-- **`api_service.dart`** — All HTTP calls to the backend as static methods using `package:http`. Attaches the Supabase JWT as a Bearer token.
-- **`backend_service.dart`** — `ValueNotifier<String>` backed by `SharedPreferences` for the backend base URL. Also provides a `waitForBackend()` health poller for cold-start scenarios.
-- **`services/supabase_service.dart`** — Wraps `supabase_flutter` for auth: magic link, password login, passkey session injection. Persists sessions via `FlutterSecureStorage` (mobile) or `SharedPreferences` (web).
+- **`app/` (Expo Router)** — File-based routing. Uses route groups like `(auth)` and `(main)` to separate authentication flows from the main application. Layouts (`_layout.tsx`) handle shared providers and navigation structures.
+- **`src/store/` (Zustand)** — Centralised state management. Each domain (auth, chat, agents) has its own store (e.g., `useChatStore`, `useAuthStore`) for managing complex application state and side effects (API calls).
+- **`src/core/api/`** — Axios-based API client. Handles authentication headers (Supabase JWT), base URL configuration, and error handling. Domain-specific services use this client to communicate with the FastAPI backend.
+- **`src/components/`** — Reusable, atomic UI components styled with **NativeWind** (Tailwind CSS for React Native).
+- **`src/core/models.ts`** — Unified TypeScript interfaces for all domain entities, ensuring type safety across the application.
+
+**Authentication:** Handled via `@supabase/supabase-js`. Supports magic links and password-based login. Passkey support is integrated through native modules and backend-coordinated sessions. Sessions are persisted using `expo-secure-store` or `react-native-mmkv`.
 
 ### Database
 
@@ -210,19 +201,20 @@ The CI pipeline (`database-migrations.yml`) validates and applies migrations aut
 
 **Naming:** `snake_case` functions/variables, `PascalCase` classes, `UPPER_SNAKE_CASE` constants, `_leading_underscore` for private
 
-### Dart
+### TypeScript / React Native
 
-- Line length: 80 characters
-- Single quotes for strings, trailing commas on multi-line structures
-- Import order: `dart:` → `package:` → relative
-- Use `const` constructors wherever possible
-- Use `final` for variables that don't reassign
-- Use `Future<void>` not bare `Future`; `late final` over nullable when deferred
-- All public APIs need explicit types
-- Use `debugPrint` in development; `developer.log` for structured logging
-- Always `rethrow` caught exceptions unless you're handling them fully
+- Line length: 100 characters (ESLint/Prettier default)
+- Use functional components and React Hooks (no class components)
+- `PascalCase` for components, `camelCase` for props, variables, and functions
+- Import order: `react` → `react-native` → third-party → internal components → styles/assets
+- Prefer interfaces over types for domain entities
+- Use absolute imports (e.g., `@/components`, `@/store`)
+- Use **NativeWind** (Tailwind CSS) classes for all styling; avoid inline `StyleSheet` objects
+- Always use `const` for components and internal functions
+- Document complex logic with JSDoc-style comments
+- Use optional chaining (`?.`) and nullish coalescing (`??`) appropriately
 
-**Naming:** `PascalCase` classes, `camelCase` functions/variables/constants, `snake_case.dart` files, `_leadingUnderscore` private members
+**Naming:** `ComponentName.tsx` for files, `useStoreName` for Zustand hooks, `domainService.ts` for API layers.
 
 ---
 
@@ -244,11 +236,12 @@ The CI pipeline (`database-migrations.yml`) validates and applies migrations aut
 - Route tests use `fastapi.testclient.TestClient` (synchronous)
 
 ### Frontend
-- Use `flutter_test` and `mockito` for widget and unit tests
-- Test user interactions (taps, inputs, scroll)
-- Test loading states, error states, and empty states
-- Mock `ApiService` static methods — never make real HTTP calls in tests
-- Use `findsOneWidget` / `findsNothing` / `findsNWidgets` appropriately
+- Use **Jest** and **React Testing Library (@testing-library/react-native)**
+- Mock all API calls and Zustand stores to isolate component behavior
+- Focus on testing user interactions (pressing buttons, entering text)
+- Ensure all screens handle loading, error, and empty states gracefully
+- Use `screen.getByText`, `screen.getByPlaceholderText` (semantic queries)
+- Run tests with `npm test` or `npm test -- --watch` during development
 
 ---
 
@@ -260,7 +253,7 @@ The CI pipeline (`database-migrations.yml`) validates and applies migrations aut
 - Validate Supabase JWTs in `auth.py` middleware; never re-validate in individual routes
 - The `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS — use it only in admin-only operations (passkey session minting)
 - WebAuthn challenges are stored in-memory with a 5-minute TTL — do not persist them
-- Never store tokens in plain text on the frontend (use `FlutterSecureStorage` on mobile)
+- Never store tokens in plain text on the frontend (use `expo-secure-store` on frontend)
 - Clear auth state on logout via `SupabaseService`
 
 ---
@@ -393,8 +386,8 @@ CORS_ALLOWED_ORIGINS=*
 Runs automatically on `git commit`:
 - `ruff check .`
 - `black --check .`
-- `flutter analyze`
-- `dart format --output=none --set-exit-if-changed .`
+- `eslint .`
+- `npm run type-check`
 
 Install with: `make setup-hooks`
 
@@ -409,13 +402,14 @@ Install with: `make setup-hooks`
 4. Write tests in `backend/tests/`, mocking Supabase and any external services
 5. Run `make test-backend` and `make lint-backend`
 
-### Adding a New Flutter Screen
-1. Create the new page file directly under `frontend/lib/` (e.g., `new_feature_page.dart`)
-2. Add any new models to `frontend/lib/models/`
-3. Add any new backend calls to `api_service.dart` as static methods
-4. Wire navigation in `main.dart` or `main_scaffold.dart` using the existing `StreamBuilder`/`IndexedStack` pattern
-5. Write widget tests in `frontend/test/`
-6. Run `flutter test` and `flutter analyze`
+### Adding a New React Native Screen
+1. Create a new route file in `frontend/app/(main)/` (e.g., `new-feature.tsx`)
+2. Define the functional component and exports
+3. Update navigation if necessary (e.g., adding to bottom tabs in `_layout.tsx`)
+4. Create a new store in `src/store/` if the feature manages complex state
+5. Add domain-specific API calls to `src/core/api/`
+6. Write a component test in `frontend/__tests__/`
+7. Run `npm test` and `npm run lint`
 
 ### Adding a Database Migration
 1. Edit the relevant Tortoise ORM model(s) in `backend/app/domain/**/models.py`.

@@ -1,0 +1,74 @@
+name: Reusable - Frontend Setup and Test
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node.js version to use'
+        type: string
+        default: '20'
+      working-directory:
+        description: 'Working directory'
+        type: string
+        default: './frontend'
+      run-tests:
+        description: 'Whether to run tests'
+        type: boolean
+        default: true
+      run-lint:
+        description: 'Whether to run lint'
+        type: boolean
+        default: true
+      upload-coverage:
+        description: 'Whether to upload coverage to Codecov'
+        type: boolean
+        default: false
+      runs-on:
+        description: 'Runner OS'
+        type: string
+        default: 'ubuntu-latest'
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+jobs:
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify types
+        if: inputs.run-lint
+        run: npm run type-check
+
+      - name: Run lint
+        if: inputs.run-lint
+        run: npm run lint
+
+      - name: Run tests with coverage
+        if: inputs.run-tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage to Codecov
+        if: inputs.upload-coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ${{ inputs.working-directory }}/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}

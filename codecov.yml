@@ -22,10 +22,10 @@ coverage:
         target: 75%
         flags:
           - backend
-      flutter:
+      frontend:
         target: 70%
         flags:
-          - flutter
+          - frontend
     patch:
       default:
         target: 80%
@@ -41,9 +41,9 @@ flags:
     paths:
       - backend/app/
     carryforward: true
-  flutter:
+  frontend:
     paths:
-      - frontend/lib/
+      - frontend/src/
     carryforward: true
 
 comment:
@@ -59,7 +59,6 @@ ignore:
   - "backend/**/__pycache__/**/*"
   - "backend/**/test*/**/*"
   - "backend/tests/**/*"
-  - "frontend/.dart_tool/**/*"
-  - "frontend/build/**/*"
-  - "frontend/test/**/*"
-  - "frontend/integration_test/**/*"
+  - "frontend/node_modules/**/*"
+  - "frontend/dist/**/*"
+  - "frontend/__tests__/**/*"

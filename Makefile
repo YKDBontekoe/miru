@@ -25,9 +25,9 @@ setup-hooks:
 backend:
 	cd backend && .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Run Flutter in the simulator / connected device
+# Run React Native in the simulator / connected device
 frontend:
-	cd frontend && flutter run
+	cd frontend && npx expo start
 
 # Start everything (DB + backend). Open a second terminal for frontend.
 dev: db
@@ -39,7 +39,7 @@ test-backend:
 
 # Run frontend tests
 test-frontend:
-	cd frontend && flutter test --coverage
+	cd frontend && npm test
 
 # Run all tests
 test: test-backend test-frontend
@@ -54,9 +54,7 @@ lint-backend:
 
 # Run frontend linting
 lint-frontend:
-	cd frontend && \
-	flutter analyze && \
-	dart format --output=none --set-exit-if-changed .
+	cd frontend && npm run lint && npm run type-check
 
 # Run all linting
 lint: lint-backend lint-frontend
@@ -70,7 +68,7 @@ fix-backend:
 
 # Fix frontend code style
 fix-frontend:
-	cd frontend && dart format .
+	cd frontend && npm run lint -- --fix
 
 # Fix all code style
 fix: fix-backend fix-frontend
@@ -83,17 +81,13 @@ docker-build:
 docker-run:
 	docker run -p 8000:8000 --env-file backend/.env miru-backend:latest
 
-# Build Flutter web release
+# Build frontend web release
 build-web:
-	cd frontend && flutter build web --release
-
-# Build Flutter iOS release
-build-ios:
-	cd frontend && flutter build ios --release
+	cd frontend && npx expo export -p web
 
 # Clean build artifacts
 clean:
-	cd frontend && flutter clean
+	cd frontend && rm -rf dist
 	rm -rf backend/__pycache__ backend/**/__pycache__
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
