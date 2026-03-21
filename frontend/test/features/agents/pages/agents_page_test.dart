@@ -111,7 +111,9 @@ void main() {
 
     await tester.tap(fab);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500)); // wait for dialog animation to finish without pumpAndSettle hanging on indeterminate shimmer
+    await tester.pump(
+      const Duration(milliseconds: 500),
+    ); // wait for dialog animation to finish without pumpAndSettle hanging on indeterminate shimmer
 
     expect(find.text('Create New Persona'), findsOneWidget);
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -144,7 +146,9 @@ void main() {
 
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500)); // wait for AnimatedSwitcher
+    await tester.pump(
+      const Duration(milliseconds: 500),
+    ); // wait for AnimatedSwitcher
 
     // Verify persona card content is rendered
     expect(find.text('Captain Bluebeard'), findsOneWidget);
