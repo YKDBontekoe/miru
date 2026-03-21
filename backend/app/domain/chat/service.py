@@ -337,9 +337,18 @@ class ChatService:
         )
         await self.chat_repo.save_message(agent_msg)
 
-        # 6. Increment message_count for all agents that participated
+        # 6. Refresh room's updated_at so clients can sort by last activity
+        await self.chat_repo.touch_room(room_id)
+
+        # 7. Best-effort message_count increment for each participant.
+        # All agents in the room contributed (they were all passed to the crew),
+        # so db_agents is the correct participant set. Each increment is wrapped
+        # individually so a single failure doesn't abort the stream.
         for agent in db_agents:
-            await self.agent_repo.increment_message_count(agent.id)
+            try:
+                await self.agent_repo.increment_message_count(agent.id)
+            except Exception:
+                logger.warning("Failed to increment message_count for agent %s", agent.id)
 
         yield str(result)
         yield "[[STATUS:done]]\n"

@@ -346,12 +346,10 @@ function SectionHeader({
 // ─── New chat modal (inline, minimal) ────────────────────────────────────────
 function NewChatModal({
   visible,
-  agents,
   onClose,
   onCreated,
 }: {
   visible: boolean;
-  agents: Agent[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -465,19 +463,25 @@ export default function HomeScreen() {
   const completedCount = tasks.filter((t) => t.completed).length;
   const topAgents = agents.slice(0, 5);
 
-  const loadAll = async () => {
-    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
-  };
-
   useEffect(() => {
-    loadAll();
-  }, []);
+    Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
+  }, [fetchRooms, fetchAgents, fetchTasks]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadAll();
+    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
     setRefreshing(false);
   };
+
+  if (isLoadingRooms && rooms.length === 0) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <ActivityIndicator size="large" color={C.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -733,7 +737,6 @@ export default function HomeScreen() {
 
       <NewChatModal
         visible={showNewChat}
-        agents={agents}
         onClose={() => setShowNewChat(false)}
         onCreated={fetchRooms}
       />

@@ -428,14 +428,8 @@ export default function ChatListScreen() {
         <View style={{ paddingHorizontal: 20 }}>
           <AppText
             variant="caption"
-            style={{
-              textTransform: 'uppercase',
-              letterSpacing: 1.2,
-              fontSize: 11,
-              fontWeight: '700',
-              color: C.muted,
-              marginBottom: 14,
-            }}
+            color="muted"
+            className="uppercase tracking-widest font-bold mb-3.5"
           >
             Chats
           </AppText>
