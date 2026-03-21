@@ -72,40 +72,49 @@ export async function streamChat(
   data: unknown,
   onChunk: (chunk: string) => void,
   signal?: AbortSignal
-) {
-  try {
-    const storeUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-    const fullUrl = `${storeUrl.endsWith('/') ? storeUrl : `${storeUrl}/`}${endpoint}`;
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
+): Promise<void> {
+  const storeUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
+  const fullUrl = `${storeUrl.endsWith('/') ? storeUrl : `${storeUrl}/`}${endpoint}`;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
 
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(data),
-      signal,
-    });
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', fullUrl);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
-    if (!response.body) throw new Error('No response body');
+    let processedLength = 0;
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let done = false;
+    xhr.onprogress = () => {
+      const newText = xhr.responseText.slice(processedLength);
+      processedLength = xhr.responseText.length;
+      if (newText) onChunk(newText);
+    };
 
-    while (!done) {
-      const { value, done: readerDone } = await reader.read();
-      done = readerDone;
-      if (value) {
-        onChunk(decoder.decode(value, { stream: true }));
+    xhr.onload = () => {
+      // Flush any remaining text not caught by onprogress
+      const remaining = xhr.responseText.slice(processedLength);
+      if (remaining) onChunk(remaining);
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`HTTP ${xhr.status}`));
       }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error'));
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        xhr.abort();
+        reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
+      });
     }
-  } catch (error) {
-    console.error('Stream chat error:', error);
-    throw error;
-  }
+
+    xhr.send(JSON.stringify(data));
+  });
 }
