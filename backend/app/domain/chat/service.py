@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import crewai
 from crewai import LLM, Crew, Process, Task
@@ -332,3 +332,179 @@ class ChatService:
 
         yield str(result)
         yield "[[STATUS:done]]\n"
+
+    async def run_room_chat_ws(
+        self,
+        room_id: UUID,
+        user_message: str,
+        user_id: UUID,
+    ) -> None:
+        """Process a room message and push all updates via the WebSocket hub.
+
+        This is the SignalR-compatible replacement for ``stream_room_responses``.
+        Instead of yielding SSE chunks, it broadcasts typed frames to every
+        connected client in the room via ``chat_hub``.
+        """
+        # Import here to avoid circular import at module level
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
+        # 1. Persist the user message
+        user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
+        await self.chat_repo.save_message(user_msg)
+
+        # 2. Broadcast the user message to all room members (except sender — they
+        #    already added it optimistically on the frontend)
+        await chat_hub.broadcast_to_room(
+            room_id,
+            {
+                "type": "message",
+                "data": {
+                    "id": str(user_msg.id),
+                    "room_id": str(room_id),
+                    "user_id": str(user_id),
+                    "agent_id": None,
+                    "content": user_message,
+                    "created_at": user_msg.created_at.isoformat(),
+                },
+            },
+            exclude=user_id,
+        )
+
+        # 3. Fetch agents
+        db_agents = await self.chat_repo.list_room_agents(room_id)
+        if not db_agents:
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": "No agents in this room."}},
+            )
+            return
+
+        agent_names = [a.name for a in db_agents]
+
+        # 4. Signal "thinking" to all room members
+        await chat_hub.broadcast_to_room(
+            room_id,
+            {
+                "type": "agent_activity",
+                "data": {
+                    "room_id": str(room_id),
+                    "agent_names": agent_names,
+                    "activity": "thinking",
+                    "detail": "Processing your message…",
+                },
+            },
+        )
+
+        # 5. Build CrewAI agents with a step-callback that broadcasts live activity
+        llm = self._get_crew_llm()
+        loop = asyncio.get_running_loop()
+
+        def _step_callback(output: Any) -> None:  # noqa: ANN401
+            """Translate a CrewAI step output into an agent_activity frame."""
+            try:
+                tool_name: str | None = getattr(output, "tool", None)
+                if tool_name:
+                    activity = "using_tool"
+                    detail = f"Using {tool_name}"
+                else:
+                    log_text = str(getattr(output, "log", ""))
+                    activity = "thinking"
+                    detail = log_text[:120] if log_text else "Thinking…"
+
+                raw_agent = getattr(output, "agent", None)
+                acting_name = (
+                    str(raw_agent) if raw_agent else (agent_names[0] if agent_names else "Agent")
+                )
+
+                asyncio.run_coroutine_threadsafe(
+                    chat_hub.broadcast_to_room(
+                        room_id,
+                        {
+                            "type": "agent_activity",
+                            "data": {
+                                "room_id": str(room_id),
+                                "agent_names": [acting_name],
+                                "activity": activity,
+                                "detail": detail,
+                            },
+                        },
+                    ),
+                    loop,
+                )
+            except Exception:
+                logger.debug("step_callback error — suppressed", exc_info=True)
+
+        crew_agents = self._create_crew_agents(
+            db_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg.id
+        )
+
+        if len(crew_agents) > 1:
+            task = Task(
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+            )
+            crew = Crew(
+                agents=crew_agents,  # type: ignore[arg-type]
+                tasks=[task],
+                process=Process.hierarchical,
+                manager_llm=llm,
+                verbose=True,
+                step_callback=_step_callback,
+            )
+        else:
+            task = Task(
+                description=(
+                    f"User said: {user_message}. "
+                    "Orchestrate a helpful conversation among available agents to assist the user."
+                ),
+                expected_output="A collaborative response from the most relevant agents.",
+                agent=crew_agents[0],
+            )
+            crew = Crew(
+                agents=crew_agents,  # type: ignore[arg-type]
+                tasks=[task],
+                process=Process.sequential,
+                verbose=True,
+                step_callback=_step_callback,
+            )
+
+        result = await crew.kickoff_async()
+
+        # 6. Signal completion
+        await chat_hub.broadcast_to_room(
+            room_id,
+            {
+                "type": "agent_activity",
+                "data": {
+                    "room_id": str(room_id),
+                    "agent_names": agent_names,
+                    "activity": "done",
+                    "detail": "",
+                },
+            },
+        )
+
+        # 7. Persist agent response
+        agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
+        agent_msg = ChatMessage(
+            room_id=room_id,
+            agent_id=agent_id_for_msg,
+            content=str(result),
+        )
+        await self.chat_repo.save_message(agent_msg)
+
+        # 8. Broadcast the agent message to the whole room
+        await chat_hub.broadcast_to_room(
+            room_id,
+            {
+                "type": "message",
+                "data": {
+                    "id": str(agent_msg.id),
+                    "room_id": str(room_id),
+                    "user_id": None,
+                    "agent_id": str(agent_id_for_msg) if agent_id_for_msg else None,
+                    "content": str(result),
+                    "created_at": agent_msg.created_at.isoformat(),
+                },
+            },
+        )

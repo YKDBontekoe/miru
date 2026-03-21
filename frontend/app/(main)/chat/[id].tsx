@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../../src/components/AppText';
 import { ChatBubble } from '../../../src/components/ChatBubble';
 import { ChatInputBar } from '../../../src/components/ChatInputBar';
+import { AgentActivityIndicator } from '../../../src/components/AgentActivityIndicator';
 import { useChatStore } from '../../../src/store/useChatStore';
 import { useAgentStore } from '../../../src/store/useAgentStore';
 import { ApiService } from '../../../src/core/api/ApiService';
@@ -44,6 +45,7 @@ export default function ChatRoomScreen() {
   const router = useRouter();
   const {
     messages,
+    agentActivity,
     fetchMessages,
     sendMessage,
     stopStreaming,
@@ -51,6 +53,10 @@ export default function ChatRoomScreen() {
     isLoadingMessages,
     rooms,
     addAgentToRoom,
+    connectHub,
+    disconnectHub,
+    joinRoom,
+    leaveRoom,
   } = useChatStore();
   const { agents, fetchAgents } = useAgentStore();
   const [inputText, setInputText] = useState('');
@@ -61,16 +67,29 @@ export default function ChatRoomScreen() {
 
   const room = rooms.find((r) => r.id === roomId);
   const roomMessages = messages[roomId ?? ''] ?? [];
+  const currentActivity = roomId ? agentActivity[roomId] : null;
   const agentMap = Object.fromEntries(roomAgents.map((a) => [a.id, a]));
 
+  // Connect hub and join room when screen mounts
   useEffect(() => {
     if (!roomId) return;
+
     fetchMessages(roomId);
     fetchAgents();
     ApiService.getRoomAgents(roomId)
       .then(setRoomAgents)
       .catch(() => {});
-  }, [roomId, fetchMessages, fetchAgents]);
+
+    connectHub().then(() => {
+      joinRoom(roomId);
+    });
+
+    return () => {
+      if (roomId) leaveRoom(roomId);
+      disconnectHub();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   // Scroll to end only when the list grows (new message added)
   useEffect(() => {
@@ -79,6 +98,13 @@ export default function ChatRoomScreen() {
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
     }
   }, [roomMessages.length]);
+
+  // Scroll to end when activity indicator appears/disappears
+  useEffect(() => {
+    if (currentActivity) {
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
+    }
+  }, [currentActivity]);
 
   const handleSend = useCallback(() => {
     if (!inputText.trim() || !roomId || isStreaming) return;
@@ -257,7 +283,6 @@ export default function ChatRoomScreen() {
             }
             renderItem={({ item }) => {
               const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
-              // Find the last user message before this error bubble for retry
               const isLastUserMsg =
                 !item.user_id &&
                 item.status === 'error' &&
@@ -286,6 +311,9 @@ export default function ChatRoomScreen() {
                 />
               );
             }}
+            ListFooterComponent={
+              currentActivity ? <AgentActivityIndicator activity={currentActivity} /> : null
+            }
           />
         )}
 
