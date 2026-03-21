@@ -27,7 +27,15 @@ from app.domain.chat.models import (
     ChatMessageResponse,
     RoomResponse,
 )
+
+# ARCH(miru-agent): violation
+# Correct layer: Application layer
+# Recommended fix: Domain/Application layer should not import infrastructure directly. Inject an LLM client interface into ChatService instead.
 from app.infrastructure.external.openrouter import get_openrouter_client
+
+# ARCH(miru-agent): violation
+# Correct layer: Application layer
+# Recommended fix: Domain/Application layer should not import infrastructure directly. Inject a tool provider/registry interface into ChatService instead.
 from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
 
 if TYPE_CHECKING:

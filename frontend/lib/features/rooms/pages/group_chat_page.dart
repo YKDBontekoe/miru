@@ -129,6 +129,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
     HapticFeedback.lightImpact();
 
     try {
+      // ARCH(miru-agent): violation
+      // Correct layer: Application / Hooks layer
+      // Recommended fix: Extract the direct ApiService call and complex stream chunk parsing (regex for agents and status) into a GroupChatService or hook.
       final stream = ApiService.instance.streamRoomChat(widget.room.id, text);
 
       // Current agent being streamed — tracked via [[AGENT:id:name]] markers.

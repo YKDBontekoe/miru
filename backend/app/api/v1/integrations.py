@@ -5,6 +5,10 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from app.core.security.auth import CurrentUser  # noqa: TCH001
+
+# ARCH(miru-agent): violation
+# Correct layer: Application layer
+# Recommended fix: Infrastructure implementations (like get_player_summaries, resolve_vanity_url) should not be imported directly into the API layer. They should be accessed via an Application layer service through an interface.
 from app.infrastructure.external.steam import get_player_summaries, resolve_vanity_url
 
 router = APIRouter(tags=["Integrations"])
@@ -16,6 +20,9 @@ async def resolve_steam_user(
     user_id: CurrentUser,
 ) -> dict[str, str]:
     """Resolve a Steam username or ID and return the Steam64 ID and persona name."""
+    # ARCH(miru-agent): violation
+    # Correct layer: Application layer (e.g., SteamIntegrationService)
+    # Recommended fix: Move the steam_id resolution and player summary logic into a dedicated service. The route handler should only receive the request, delegate to the service, and return the response.
     steam_id = None
 
     # Check if it's already a 17-digit numeric string
