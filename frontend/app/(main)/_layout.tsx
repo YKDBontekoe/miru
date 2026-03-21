@@ -47,6 +47,21 @@ export default function MainLayout() {
       }}
     >
       <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, focused, size }) => (
+            <TabIcon
+              name="home-outline"
+              activeName="home"
+              color={color}
+              focused={focused}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: 'Chat',

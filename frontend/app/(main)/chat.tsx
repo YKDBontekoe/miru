@@ -426,30 +426,19 @@ export default function ChatListScreen() {
 
         {/* Chats */}
         <View style={{ paddingHorizontal: 20 }}>
-          <View
+          <AppText
+            variant="caption"
             style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: 1.2,
+              fontSize: 11,
+              fontWeight: '700',
+              color: C.muted,
               marginBottom: 14,
             }}
           >
-            <AppText
-              variant="caption"
-              style={{
-                textTransform: 'uppercase',
-                letterSpacing: 1.2,
-                fontSize: 11,
-                fontWeight: '700',
-                color: C.muted,
-              }}
-            >
-              Chats
-            </AppText>
-            <TouchableOpacity onPress={() => setShowCreateModal(true)}>
-              <Ionicons name="add-circle-outline" size={22} color={C.primary} />
-            </TouchableOpacity>
-          </View>
+            Chats
+          </AppText>
 
           {rooms.length === 0 && !isLoadingRooms ? (
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>

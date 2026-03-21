@@ -84,7 +84,10 @@ export const ApiService = {
     return response.data;
   },
 
-  async updateTask(id: string, data: Partial<Pick<Task, 'completed' | 'title'>>): Promise<Task> {
+  async updateTask(
+    id: string,
+    data: Partial<Pick<Task, 'completed' | 'title' | 'due_date'>>
+  ): Promise<Task> {
     const response = await apiClient.patch<Task>(`productivity/tasks/${id}`, data);
     return response.data;
   },

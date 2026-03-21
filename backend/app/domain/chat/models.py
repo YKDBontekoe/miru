@@ -110,6 +110,7 @@ class RoomResponse(BaseModel):
     id: UUID
     name: str
     created_at: datetime
+    updated_at: datetime
 
 
 class ChatMessageResponse(BaseModel):
