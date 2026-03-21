@@ -429,11 +429,11 @@ jobs:
           echo "Created revision: $NEW_REVISION"
 
           # ContainerAppLabelsModeTargetLabelRequired error workaround:
-          # First set traffic configuration, then add the label
+          # First set traffic configuration for this new revision, then add the label.
           az containerapp ingress traffic set \
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \
-            --revision-weight "latest=100" || true
+            --revision-weight "$NEW_REVISION=100" || true
 
           # We assign a label matching the PR number to this specific revision.
           az containerapp revision label add \
