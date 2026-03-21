@@ -7,6 +7,7 @@ import 'package:miru/features/rooms/pages/group_chat_page.dart';
 import 'package:miru/features/rooms/widgets/persona_detail_sheet.dart';
 import 'package:miru/features/rooms/widgets/create_persona_sheet.dart';
 import 'package:miru/features/rooms/widgets/create_room_sheet.dart';
+import 'package:miru/features/rooms/widgets/room_card.dart';
 import 'package:miru/core/design_system/design_system.dart';
 
 class RoomsPage extends StatefulWidget {
@@ -206,7 +207,7 @@ class _RoomsPageState extends State<RoomsPage> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final room = _rooms[index];
-                    return _RoomCard(
+                    return RoomCard(
                       room: room,
                       agents: _agents,
                       onTap: () => Navigator.push(
@@ -417,118 +418,5 @@ class _RoomsPageState extends State<RoomsPage> {
         ],
       ),
     );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Room card
-// ---------------------------------------------------------------------------
-
-class _RoomCard extends StatelessWidget {
-  final ChatRoom room;
-  final List<Agent> agents;
-  final VoidCallback onTap;
-
-  const _RoomCard({
-    required this.room,
-    required this.agents,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Material(
-        color: colors.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                // Avatar
-                Hero(
-                  tag: 'room_avatar_${room.id}',
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colors.primaryLight.withValues(alpha: 0.2),
-                          colors.primary.withValues(alpha: 0.1),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    ),
-                    child: Center(
-                      child: Text(
-                        room.name.substring(0, 1).toUpperCase(),
-                        style: AppTypography.labelLarge.copyWith(
-                          color: colors.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                // Text content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        room.name,
-                        style: AppTypography.labelLarge.copyWith(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.group_outlined,
-                            size: 12,
-                            color: colors.onSurfaceMuted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _memberLabel(),
-                            style: AppTypography.caption.copyWith(
-                              color: colors.onSurfaceMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: colors.onSurfaceMuted.withValues(alpha: 0.5),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _memberLabel() {
-    if (agents.isEmpty) return 'No personas yet';
-    if (agents.length == 1) return 'You + ${agents.first.name}';
-    if (agents.length == 2) {
-      return 'You, ${agents[0].name} & ${agents[1].name}';
-    }
-    return 'You + ${agents.length} personas';
   }
 }
