@@ -33,6 +33,8 @@ export interface HubMessageData {
   agent_id: string | null;
   content: string;
   created_at: string;
+  /** Echoed back to the sender to replace optimistic bubbles */
+  clientTempId?: string | null;
 }
 
 export type HubFrameType =
@@ -61,7 +63,9 @@ const LOCAL_BACKEND_URL = Platform.select({
 });
 
 function toWsUrl(httpBase: string): string {
-  return httpBase.replace(/^http/, 'ws').replace(/\/+$/, '') + '/api/v1/ws/chat';
+  const base = httpBase.replace(/^http/, 'ws').replace(/\/+$/, '');
+  // Avoid doubling the /api/v1 segment when the baseUrl already includes it
+  return base.endsWith('/api/v1') ? `${base}/ws/chat` : `${base}/api/v1/ws/chat`;
 }
 
 type FrameListener = (frame: HubFrame) => void;
@@ -90,7 +94,16 @@ class ChatHubService {
       data: { session },
     } = await supabase.auth.getSession();
     const token = session?.access_token;
-    if (!token) return;
+    if (!token) {
+      // No session yet — retry via the same reconnect path instead of silently aborting
+      if (this.active) {
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
+          this.connect();
+        }, this.reconnectDelay);
+      }
+      return;
+    }
 
     const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
     const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}`;
@@ -150,8 +163,8 @@ class ChatHubService {
     this._send({ type: 'leave_room', room_id: roomId });
   }
 
-  sendMessage(roomId: string, content: string): void {
-    this._send({ type: 'send_message', room_id: roomId, content });
+  sendMessage(roomId: string, content: string, clientTempId?: string): void {
+    this._send({ type: 'send_message', room_id: roomId, content, clientTempId });
   }
 
   // ------------------------------------------------------------------
@@ -169,7 +182,9 @@ class ChatHubService {
   // ------------------------------------------------------------------
 
   get isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    // Guard against environments (e.g. Jest) where WebSocket global may be absent
+    const WS_OPEN = typeof WebSocket !== 'undefined' ? WebSocket.OPEN : 1;
+    return this.ws?.readyState === WS_OPEN;
   }
 
   // ------------------------------------------------------------------

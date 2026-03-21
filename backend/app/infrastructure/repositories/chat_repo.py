@@ -56,6 +56,10 @@ class ChatRepository:
         """Fetch all messages in a room."""
         return await ChatMessage.filter(room_id=room_id).order_by("created_at").all()
 
+    async def room_belongs_to_user(self, room_id: UUID, user_id: UUID) -> bool:
+        """Return True if the room exists and is owned by *user_id*."""
+        return await ChatRoom.filter(id=room_id, user_id=user_id).exists()
+
     async def save_message(self, message: ChatMessage) -> ChatMessage:
         """Save a new message."""
         await message.save()

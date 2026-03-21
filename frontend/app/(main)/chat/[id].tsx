@@ -80,9 +80,15 @@ export default function ChatRoomScreen() {
       .then(setRoomAgents)
       .catch(() => {});
 
-    connectHub().then(() => {
-      joinRoom(roomId);
-    });
+    connectHub()
+      .then(() => {
+        joinRoom(roomId);
+      })
+      .catch(() => {
+        useChatStore.setState({
+          hubError: 'Failed to connect to chat. Please go back and try again.',
+        });
+      });
 
     return () => {
       if (roomId) leaveRoom(roomId);

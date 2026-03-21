@@ -15,6 +15,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withDelay,
+  FadeIn,
+  FadeOut,
   Easing,
 } from 'react-native-reanimated';
 import { AppText } from './AppText';
@@ -88,33 +90,21 @@ interface AgentActivityIndicatorProps {
 }
 
 export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps) {
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 200 });
-    return () => {
-      opacity.value = withTiming(0, { duration: 150 });
-    };
-  }, [opacity]);
-
-  const containerStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
   const color = activityColor(activity.activity);
   const names = activity.agent_names.join(', ');
   const label = activityLabel(activity.activity);
 
   return (
     <Animated.View
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 14,
-          paddingVertical: 10,
-          gap: 8,
-        },
-        containerStyle,
-      ]}
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(150)}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        gap: 8,
+      }}
     >
       {/* Agent avatar chip */}
       <View

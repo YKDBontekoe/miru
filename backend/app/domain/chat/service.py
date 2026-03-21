@@ -333,11 +333,16 @@ class ChatService:
         yield str(result)
         yield "[[STATUS:done]]\n"
 
+    async def user_in_room(self, user_id: UUID, room_id: UUID) -> bool:
+        """Return True if *user_id* owns the room (authorised to send messages)."""
+        return await self.chat_repo.room_belongs_to_user(room_id, user_id)
+
     async def run_room_chat_ws(
         self,
         room_id: UUID,
         user_message: str,
         user_id: UUID,
+        client_temp_id: str | None = None,
     ) -> None:
         """Process a room message and push all updates via the WebSocket hub.
 
@@ -352,22 +357,29 @@ class ChatService:
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
 
-        # 2. Broadcast the user message to all room members (except sender — they
-        #    already added it optimistically on the frontend)
+        # 2. Broadcast the user message to other room members; send a confirmation
+        #    frame back to the sender so the frontend can replace the optimistic bubble.
+        user_msg_data = {
+            "id": str(user_msg.id),
+            "room_id": str(room_id),
+            "user_id": str(user_id),
+            "agent_id": None,
+            "content": user_message,
+            "created_at": user_msg.created_at.isoformat(),
+        }
         await chat_hub.broadcast_to_room(
             room_id,
+            {"type": "message", "data": user_msg_data},
+            exclude=user_id,
+        )
+        # Sender confirmation includes clientTempId so the UI can swap out the
+        # optimistic bubble for the persisted one.
+        await chat_hub.send_to_user(
+            user_id,
             {
                 "type": "message",
-                "data": {
-                    "id": str(user_msg.id),
-                    "room_id": str(room_id),
-                    "user_id": str(user_id),
-                    "agent_id": None,
-                    "content": user_message,
-                    "created_at": user_msg.created_at.isoformat(),
-                },
+                "data": {**user_msg_data, "clientTempId": client_temp_id},
             },
-            exclude=user_id,
         )
 
         # 3. Fetch agents
@@ -432,7 +444,7 @@ class ChatService:
                     loop,
                 )
             except Exception:
-                logger.debug("step_callback error — suppressed", exc_info=True)
+                logger.exception("step_callback error — suppressed")
 
         crew_agents = self._create_crew_agents(
             db_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg.id
@@ -470,7 +482,36 @@ class ChatService:
 
         result = await crew.kickoff_async()
 
-        # 6. Signal completion
+        # 6. Persist agent response first — only signal done after a successful save
+        agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
+        agent_msg = ChatMessage(
+            room_id=room_id,
+            agent_id=agent_id_for_msg,
+            content=str(result),
+        )
+        try:
+            await self.chat_repo.save_message(agent_msg)
+        except Exception:
+            logger.exception("Failed to persist agent message  room=%s", room_id)
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "agent_activity",
+                    "data": {
+                        "room_id": str(room_id),
+                        "agent_names": agent_names,
+                        "activity": "done",
+                        "detail": "",
+                    },
+                },
+            )
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": "Failed to save agent response."}},
+            )
+            return
+
+        # 7. Signal completion (after successful persist)
         await chat_hub.broadcast_to_room(
             room_id,
             {
@@ -483,15 +524,6 @@ class ChatService:
                 },
             },
         )
-
-        # 7. Persist agent response
-        agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
-        agent_msg = ChatMessage(
-            room_id=room_id,
-            agent_id=agent_id_for_msg,
-            content=str(result),
-        )
-        await self.chat_repo.save_message(agent_msg)
 
         # 8. Broadcast the agent message to the whole room
         await chat_hub.broadcast_to_room(

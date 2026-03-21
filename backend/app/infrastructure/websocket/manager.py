@@ -8,6 +8,7 @@ equivalent of a SignalR hub.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from typing import TYPE_CHECKING
@@ -34,13 +35,21 @@ class ChatHub:
         self._connections: dict[UUID, WebSocket] = {}
         # room_id -> set of user_ids currently in that room
         self._rooms: dict[UUID, set[UUID]] = {}
+        # user_ids whose connection broke and are awaiting async cleanup
+        self._pending_disconnects: set[UUID] = set()
 
     # ------------------------------------------------------------------
     # Connection lifecycle
     # ------------------------------------------------------------------
 
     async def connect(self, websocket: WebSocket, user_id: UUID) -> None:
-        """Accept the upgrade and register the connection."""
+        """Accept the upgrade, closing any previous connection for this user."""
+        existing = self._connections.get(user_id)
+        if existing is not None:
+            with contextlib.suppress(Exception):
+                await existing.close()
+            self.disconnect(user_id)
+
         await websocket.accept()
         self._connections[user_id] = websocket
         logger.info("WS connected  user=%s  total=%d", user_id, len(self._connections))
@@ -48,6 +57,7 @@ class ChatHub:
     def disconnect(self, user_id: UUID) -> None:
         """Remove the connection and evict the user from all rooms."""
         self._connections.pop(user_id, None)
+        self._pending_disconnects.discard(user_id)
         for members in self._rooms.values():
             members.discard(user_id)
         logger.info("WS disconnected  user=%s  total=%d", user_id, len(self._connections))
@@ -69,14 +79,26 @@ class ChatHub:
     # ------------------------------------------------------------------
 
     async def _send(self, user_id: UUID, payload: dict) -> None:
+        if user_id in self._pending_disconnects:
+            return
         ws = self._connections.get(user_id)
         if not ws:
             return
         try:
             await ws.send_text(json.dumps(payload, default=str))
         except Exception:
-            logger.warning("WS send failed  user=%s — disconnecting", user_id)
-            self.disconnect(user_id)
+            logger.warning("WS send failed  user=%s — scheduling disconnect", user_id)
+            if user_id not in self._pending_disconnects:
+                self._pending_disconnects.add(user_id)
+                asyncio.create_task(self._disconnect_worker(user_id))
+
+    async def _disconnect_worker(self, user_id: UUID) -> None:
+        """Close the broken socket and clean up outside any broadcast iteration."""
+        ws = self._connections.get(user_id)
+        if ws is not None:
+            with contextlib.suppress(Exception):
+                await ws.close()
+        self.disconnect(user_id)
 
     async def send_to_user(self, user_id: UUID, payload: dict) -> None:
         """Send a message to a single connected user."""

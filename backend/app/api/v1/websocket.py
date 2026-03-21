@@ -8,7 +8,7 @@ Client → Server frame shapes
 ``{"type": "ping"}``
 ``{"type": "join_room",  "room_id": "<uuid>"}``
 ``{"type": "leave_room", "room_id": "<uuid>"}``
-``{"type": "send_message", "room_id": "<uuid>", "content": "<text>"}``
+``{"type": "send_message", "room_id": "<uuid>", "content": "<text>", "clientTempId": "<str>"}``
 
 Server → Client frame shapes
 -----------------------------
@@ -17,7 +17,7 @@ Server → Client frame shapes
 ``{"type": "joined_room",    "room_id": "<uuid>"}``
 ``{"type": "message",        "data": {ChatMessage fields}}``
 ``{"type": "agent_activity", "data": {room_id, agent_names, activity, detail}}``
-``{"type": "error",          "data": {"message": "<text>"}}``
+``{"type": "error",          "action": "<action>", "data": {"message": "<text>"}}``
 """
 
 from __future__ import annotations
@@ -27,13 +27,13 @@ import json
 import logging
 from uuid import UUID
 
-import jwt
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from app.core.config import get_settings
-from app.domain.auth.models import JWTPayload
+from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
+from app.infrastructure.database.supabase import get_supabase
 from app.infrastructure.repositories.agent_repo import AgentRepository
+from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 from app.infrastructure.websocket.manager import chat_hub
@@ -42,33 +42,18 @@ router = APIRouter(tags=["WebSocket"])
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# JWT authentication (no HTTP bearer — uses query-param token for WS upgrade)
+# JWT authentication — delegates to AuthService so algorithm/claims handling
+# stays centralised; uses a query-param token because WS upgrades cannot carry
+# a custom Authorization header from most clients.
 # ---------------------------------------------------------------------------
 
 
 async def _verify_token(token: str) -> UUID | None:
-    """Decode a Supabase JWT without needing a repository or Depends chain."""
-    settings = get_settings()
+    """Decode a Supabase JWT by delegating to AuthService.decode_jwt."""
     try:
-        header = jwt.get_unverified_header(token)
-        alg = header.get("alg", "HS256")
-        if alg == "HS256":
-            payload = jwt.decode(
-                token,
-                settings.supabase_jwt_secret,
-                algorithms=["HS256"],
-                audience="authenticated",
-            )
-        else:
-            jwks_client = jwt.PyJWKClient(f"{settings.supabase_url}/auth/v1/.well-known/jwks.json")
-            key = jwks_client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                key.key,
-                algorithms=["ES256", "RS256"],
-                audience="authenticated",
-            )
-        return JWTPayload(**payload).sub
+        auth_service = AuthService(AuthRepository(get_supabase()))
+        payload = await auth_service.decode_jwt(token)
+        return payload.sub
     except Exception:
         logger.warning("WS auth rejected: invalid token")
         return None
@@ -84,6 +69,7 @@ async def _handle_send_message(
     user_id: UUID,
     room_id: UUID,
     content: str,
+    client_temp_id: str | None,
 ) -> None:
     """Process a user message and push results via the hub."""
     try:
@@ -91,6 +77,7 @@ async def _handle_send_message(
             room_id=room_id,
             user_message=content,
             user_id=user_id,
+            client_temp_id=client_temp_id,
         )
     except Exception:
         logger.exception("WS message processing failed  room=%s  user=%s", room_id, user_id)
@@ -146,6 +133,17 @@ async def websocket_chat_hub(
                 try:
                     room_id = UUID(msg["room_id"])
                 except (KeyError, ValueError):
+                    await chat_hub.send_to_user(
+                        user_id,
+                        {
+                            "type": "error",
+                            "action": "join_room",
+                            "data": {
+                                "message": "invalid room_id",
+                                "room_id": msg.get("room_id"),
+                            },
+                        },
+                    )
                     continue
                 chat_hub.join_room(user_id, room_id)
                 await chat_hub.send_to_user(
@@ -156,6 +154,17 @@ async def websocket_chat_hub(
                 try:
                     room_id = UUID(msg["room_id"])
                 except (KeyError, ValueError):
+                    await chat_hub.send_to_user(
+                        user_id,
+                        {
+                            "type": "error",
+                            "action": "leave_room",
+                            "data": {
+                                "message": "invalid room_id",
+                                "room_id": msg.get("room_id"),
+                            },
+                        },
+                    )
                     continue
                 chat_hub.leave_room(user_id, room_id)
 
@@ -164,11 +173,41 @@ async def websocket_chat_hub(
                     room_id = UUID(msg["room_id"])
                     content = str(msg.get("content", "")).strip()
                 except (KeyError, ValueError):
+                    await chat_hub.send_to_user(
+                        user_id,
+                        {
+                            "type": "error",
+                            "action": "send_message",
+                            "data": {
+                                "message": "invalid room_id",
+                                "room_id": msg.get("room_id"),
+                            },
+                        },
+                    )
                     continue
                 if not content:
                     continue
+
+                # Authorisation: only the room owner may send messages to it
+                if not await service.user_in_room(user_id, room_id):
+                    await chat_hub.send_to_user(
+                        user_id,
+                        {
+                            "type": "error",
+                            "action": "send_message",
+                            "data": {
+                                "message": "not authorised for this room",
+                                "room_id": str(room_id),
+                            },
+                        },
+                    )
+                    continue
+
+                client_temp_id: str | None = msg.get("clientTempId") or None
                 # Fire-and-forget — the hub pushes results back asynchronously
-                asyncio.create_task(_handle_send_message(service, user_id, room_id, content))
+                asyncio.create_task(
+                    _handle_send_message(service, user_id, room_id, content, client_temp_id)
+                )
 
     except WebSocketDisconnect:
         chat_hub.disconnect(user_id)
