@@ -423,6 +423,7 @@ jobs:
             --image "$IMAGE_TAG" \
             --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_attempt }}" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}" \
+            --target-label "pr-${{ github.event.pull_request.number }}" \
             --query "properties.latestRevisionName" \
             --output tsv)
 
