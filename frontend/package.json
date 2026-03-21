@@ -36,6 +36,7 @@
     ]
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "@supabase/supabase-js": "^2.99.3",
     "axios": "^1.13.6",
     "babel-preset-expo": "^55.0.12",

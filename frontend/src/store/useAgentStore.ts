@@ -7,6 +7,7 @@ interface AgentState {
   isLoading: boolean;
   fetchAgents: () => Promise<void>;
   createAgent: (data: Partial<Agent>) => Promise<Agent>;
+  generateAgent: (keywords: string) => Promise<{ name: string; personality: string }>;
 }
 
 export const useAgentStore = create<AgentState>((set) => ({
@@ -28,5 +29,9 @@ export const useAgentStore = create<AgentState>((set) => ({
     const agent = await ApiService.createAgent(data);
     set((state) => ({ agents: [agent, ...state.agents] }));
     return agent;
+  },
+
+  generateAgent: async (keywords: string) => {
+    return ApiService.generateAgent(keywords);
   },
 }));

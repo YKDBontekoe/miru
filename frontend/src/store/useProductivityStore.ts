@@ -8,9 +8,14 @@ interface ProductivityState {
   isLoading: boolean;
   fetchNotes: () => Promise<void>;
   fetchTasks: () => Promise<void>;
+  createNote: (title: string, content: string) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+  createTask: (title: string) => Promise<void>;
+  toggleTask: (id: string) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
 }
 
-export const useProductivityStore = create<ProductivityState>((set) => ({
+export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
   tasks: [],
   isLoading: false,
@@ -35,5 +40,32 @@ export const useProductivityStore = create<ProductivityState>((set) => ({
       console.error('Error fetching tasks:', error);
       set({ isLoading: false });
     }
+  },
+
+  createNote: async (title: string, content: string) => {
+    const note = await ApiService.createNote(title, content);
+    set((state) => ({ notes: [note, ...state.notes] }));
+  },
+
+  deleteNote: async (id: string) => {
+    await ApiService.deleteNote(id);
+    set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
+  },
+
+  createTask: async (title: string) => {
+    const task = await ApiService.createTask(title);
+    set((state) => ({ tasks: [task, ...state.tasks] }));
+  },
+
+  toggleTask: async (id: string) => {
+    const task = get().tasks.find((t) => t.id === id);
+    if (!task) return;
+    const updated = await ApiService.updateTask(id, { completed: !task.completed });
+    set((state) => ({ tasks: state.tasks.map((t) => (t.id === id ? updated : t)) }));
+  },
+
+  deleteTask: async (id: string) => {
+    await ApiService.deleteTask(id);
+    set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
   },
 }));

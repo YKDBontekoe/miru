@@ -10,12 +10,13 @@ interface AppState {
 }
 
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
+const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_URL;
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       isOnboardingComplete: false,
-      baseUrl: FALLBACK_URL,
+      baseUrl: DEFAULT_URL,
       setOnboardingComplete: (complete) => set({ isOnboardingComplete: complete }),
       setBaseUrl: (url) => set({ baseUrl: url }),
     }),

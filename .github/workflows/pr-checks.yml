@@ -78,6 +78,8 @@ jobs:
       upload-coverage: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
 
   security-audit:
     name: Security Audit

@@ -30,6 +30,10 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: false
+      SUPABASE_URL:
+        required: false
+      SUPABASE_ANON_KEY:
+        required: false
 
 jobs:
   frontend-ci:
@@ -38,6 +42,9 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
     steps:
       - uses: actions/checkout@v6

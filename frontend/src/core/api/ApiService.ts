@@ -23,6 +23,16 @@ export const ApiService = {
     return response.data;
   },
 
+  async generateAgent(keywords: string): Promise<{ name: string; personality: string }> {
+    const response = await apiClient.post<{ name: string; personality: string }>(
+      'agents/generate',
+      {
+        keywords,
+      }
+    );
+    return response.data;
+  },
+
   // --- Chat Rooms API ---
   async getRooms(): Promise<ChatRoom[]> {
     const response = await apiClient.get<ChatRoom[]>('rooms');
@@ -48,19 +58,48 @@ export const ApiService = {
     await apiClient.post(`rooms/${roomId}/agents`, { agent_id: agentId });
   },
 
-  // --- Productivity API ---
+  // --- Productivity: Notes ---
   async getNotes(): Promise<Note[]> {
     const response = await apiClient.get<Note[]>('productivity/notes');
     return response.data;
   },
 
+  async createNote(title: string, content: string): Promise<Note> {
+    const response = await apiClient.post<Note>('productivity/notes', { title, content });
+    return response.data;
+  },
+
+  async deleteNote(id: string): Promise<void> {
+    await apiClient.delete(`productivity/notes/${id}`);
+  },
+
+  // --- Productivity: Tasks ---
   async getTasks(): Promise<Task[]> {
     const response = await apiClient.get<Task[]>('productivity/tasks');
     return response.data;
   },
 
+  async createTask(title: string): Promise<Task> {
+    const response = await apiClient.post<Task>('productivity/tasks', { title });
+    return response.data;
+  },
+
+  async updateTask(id: string, data: Partial<Pick<Task, 'completed' | 'title'>>): Promise<Task> {
+    const response = await apiClient.patch<Task>(`productivity/tasks/${id}`, data);
+    return response.data;
+  },
+
+  async deleteTask(id: string): Promise<void> {
+    await apiClient.delete(`productivity/tasks/${id}`);
+  },
+
   // Streaming Chat
-  streamRoomChat(roomId: string, content: string, onChunk: (chunk: string) => void) {
-    return streamChat(`rooms/${roomId}/chat`, { content }, onChunk);
+  streamRoomChat(
+    roomId: string,
+    content: string,
+    onChunk: (chunk: string) => void,
+    signal?: AbortSignal
+  ) {
+    return streamChat(`rooms/${roomId}/chat`, { content }, onChunk, signal);
   },
 };

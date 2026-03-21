@@ -32,14 +32,11 @@ export default function RootLayout() {
     }
   }, [user, isLoading, segments, isOnboardingComplete, router]);
 
-  if (isLoading) {
-    return null; // Or a splash screen component
-  }
-
   return (
     <>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(main)" options={{ headerShown: false }} />
       </Stack>

@@ -2,63 +2,60 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import LoginScreen from '../app/(auth)/login';
 import { useAuthStore } from '../src/store/useAuthStore';
-import { Alert } from 'react-native';
 
 // Mock useAuthStore
 jest.mock('../src/store/useAuthStore');
 
-// Mock Alert
-jest.spyOn(Alert, 'alert');
-
 describe('LoginScreen', () => {
   const mockSignInWithMagicLink = jest.fn();
+  const mockSignInWithPassword = jest.fn();
+  const mockSignInWithPasskey = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useAuthStore as unknown as jest.Mock).mockReturnValue({
       signInWithMagicLink: mockSignInWithMagicLink,
+      signInWithPassword: mockSignInWithPassword,
+      signInWithPasskey: mockSignInWithPasskey,
     });
   });
 
-  it('shows error if email is empty', async () => {
+  it('shows error if email is empty on magic link', async () => {
     const { getByText } = render(<LoginScreen />);
-    const loginButton = getByText('Continue with Email');
-
-    fireEvent.press(loginButton);
-
-    expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please enter your email');
+    fireEvent.press(getByText('Send magic link'));
+    await waitFor(() => {
+      expect(getByText('Please enter your email address')).toBeTruthy();
+    });
     expect(mockSignInWithMagicLink).not.toHaveBeenCalled();
   });
 
-  it('calls signInWithMagicLink with email', async () => {
-    mockSignInWithMagicLink.mockResolvedValueOnce(undefined);
-
-    const { getByPlaceholderText, getByText } = render(<LoginScreen />);
-    const emailInput = getByPlaceholderText('Enter your email');
-    const loginButton = getByText('Continue with Email');
-
-    fireEvent.changeText(emailInput, 'test@example.com');
-    fireEvent.press(loginButton);
-
+  it('shows error for invalid email', async () => {
+    const { getByText, getByPlaceholderText } = render(<LoginScreen />);
+    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'notanemail');
+    fireEvent.press(getByText('Send magic link'));
     await waitFor(() => {
-      expect(mockSignInWithMagicLink).toHaveBeenCalledWith('test@example.com');
-      expect(Alert.alert).toHaveBeenCalledWith('Success', expect.any(String));
+      expect(getByText('Please enter a valid email address')).toBeTruthy();
     });
   });
 
-  it('shows error alert if sign in fails', async () => {
+  it('calls signInWithMagicLink with valid email', async () => {
+    mockSignInWithMagicLink.mockResolvedValueOnce(undefined);
+    const { getByText, getByPlaceholderText } = render(<LoginScreen />);
+    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
+    fireEvent.press(getByText('Send magic link'));
+    await waitFor(() => {
+      expect(mockSignInWithMagicLink).toHaveBeenCalledWith('test@example.com');
+    });
+  });
+
+  it('shows error banner if sign in fails', async () => {
     const errorMessage = 'Network error';
     mockSignInWithMagicLink.mockRejectedValueOnce(new Error(errorMessage));
-
-    const { getByPlaceholderText, getByText } = render(<LoginScreen />);
-    const emailInput = getByPlaceholderText('Enter your email');
-    const loginButton = getByText('Continue with Email');
-
-    fireEvent.changeText(emailInput, 'fail@example.com');
-    fireEvent.press(loginButton);
-
+    const { getByText, getByPlaceholderText } = render(<LoginScreen />);
+    fireEvent.changeText(getByPlaceholderText('you@example.com'), 'fail@example.com');
+    fireEvent.press(getByText('Send magic link'));
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', errorMessage);
+      expect(getByText(errorMessage)).toBeTruthy();
     });
   });
 });

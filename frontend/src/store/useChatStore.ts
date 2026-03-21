@@ -12,9 +12,13 @@ interface ChatState {
   fetchRooms: () => Promise<void>;
   fetchMessages: (roomId: string) => Promise<void>;
   sendMessage: (roomId: string, content: string) => Promise<void>;
+  stopStreaming: () => void;
   addAgentToRoom: (roomId: string, agentId: string) => Promise<void>;
   createRoom: (name: string) => Promise<ChatRoom>;
 }
+
+// Held outside state so it doesn't cause re-renders
+let activeController: AbortController | null = null;
 
 export const useChatStore = create<ChatState>((set, get) => ({
   rooms: [],
@@ -28,8 +32,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const rooms = await ApiService.getRooms();
       set({ rooms, isLoadingRooms: false });
-    } catch (error) {
-      console.error('Error fetching rooms:', error);
+    } catch {
       set({ isLoadingRooms: false });
     }
   },
@@ -42,19 +45,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages: { ...state.messages, [roomId]: messages },
         isLoadingMessages: false,
       }));
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+    } catch {
       set({ isLoadingMessages: false });
     }
   },
 
+  stopStreaming: () => {
+    activeController?.abort();
+  },
+
   addAgentToRoom: async (roomId: string, agentId: string) => {
-    try {
-      await ApiService.addAgentToRoom(roomId, agentId);
-    } catch (error) {
-      console.error('Error adding agent to room:', error);
-      throw error;
-    }
+    await ApiService.addAgentToRoom(roomId, agentId);
   },
 
   createRoom: async (name: string) => {
@@ -64,72 +65,67 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   sendMessage: async (roomId: string, content: string) => {
+    // Optimistically add the user bubble
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}`,
       room_id: roomId,
       content,
       created_at: new Date().toISOString(),
       status: MessageStatus.sent,
-      user_id: 'me', // Temporary
+      user_id: 'me',
     };
 
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [roomId]: [...(state.messages[roomId] || []), userMessage],
-      },
-    }));
-
+    const placeholderId = `assistant-${Date.now() + 1}`;
     const assistantPlaceholder: ChatMessage = {
-      id: (Date.now() + 1).toString(),
+      id: placeholderId,
       room_id: roomId,
       content: '',
       created_at: new Date().toISOString(),
       status: MessageStatus.streaming,
-      agent_id: 'assistant', // Temporary
+      agent_id: 'assistant',
     };
 
     set((state) => ({
       messages: {
         ...state.messages,
-        [roomId]: [...(state.messages[roomId] || []), assistantPlaceholder],
+        [roomId]: [...(state.messages[roomId] ?? []), userMessage, assistantPlaceholder],
       },
       isStreaming: true,
     }));
 
-    try {
-      await ApiService.streamRoomChat(roomId, content, (chunk) => {
-        set((state) => {
-          const roomMessages = [...(state.messages[roomId] || [])];
-          const lastIdx = roomMessages.length - 1;
-          if (lastIdx >= 0) {
-            roomMessages[lastIdx] = {
-              ...roomMessages[lastIdx],
-              content: roomMessages[lastIdx].content + chunk,
-            };
-          }
-          return {
-            messages: { ...state.messages, [roomId]: roomMessages },
-          };
-        });
+    // Helper to update the streaming bubble
+    const updatePlaceholder = (update: Partial<ChatMessage>) =>
+      set((state) => {
+        const list = [...(state.messages[roomId] ?? [])];
+        const idx = list.findIndex((m) => m.id === placeholderId);
+        if (idx >= 0) list[idx] = { ...list[idx], ...update };
+        return { messages: { ...state.messages, [roomId]: list } };
       });
 
-      set((state) => {
-        const roomMessages = [...(state.messages[roomId] || [])];
-        const lastIdx = roomMessages.length - 1;
-        if (lastIdx >= 0) {
-          roomMessages[lastIdx] = {
-            ...roomMessages[lastIdx],
-            status: MessageStatus.sent,
-          };
-        }
-        return {
-          messages: { ...state.messages, [roomId]: roomMessages },
-          isStreaming: false,
-        };
-      });
-    } catch (error) {
-      console.error('Error streaming chat:', error);
+    activeController = new AbortController();
+
+    try {
+      await ApiService.streamRoomChat(
+        roomId,
+        content,
+        (chunk) =>
+          updatePlaceholder({
+            content:
+              (get().messages[roomId]?.find((m) => m.id === placeholderId)?.content ?? '') + chunk,
+          }),
+        activeController.signal
+      );
+      updatePlaceholder({ status: MessageStatus.sent });
+    } catch (error: unknown) {
+      const isAbort = error instanceof Error && error.name === 'AbortError';
+      if (isAbort) {
+        // Keep whatever partial content was received
+        updatePlaceholder({ status: MessageStatus.sent });
+      } else {
+        updatePlaceholder({ status: MessageStatus.error });
+      }
+    } finally {
+      activeController = null;
       set({ isStreaming: false });
     }
   },

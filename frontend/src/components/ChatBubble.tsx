@@ -1,17 +1,44 @@
 import React from 'react';
-import { View, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageStatus } from '../core/models';
+
+const C = {
+  userBubble: '#2563EB',
+  userText: '#FFFFFF',
+  agentBubble: '#F0F0F6',
+  agentBubbleBorder: '#E0E0EC',
+  agentText: '#12121A',
+  errorBubble: '#FEF2F2',
+  errorBubbleBorder: '#FECACA',
+  errorText: '#DC2626',
+  muted: '#6E6E80',
+  faint: '#B0B0C0',
+};
 
 interface ChatBubbleProps {
   text: string;
   isUser: boolean;
   status?: MessageStatus;
   agentName?: string;
-  onCopy?: () => void;
+  timestamp?: string;
   onRetry?: () => void;
+}
+
+function getAgentColor(name: string) {
+  const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function formatTime(iso?: string) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export function ChatBubble({
@@ -19,98 +46,145 @@ export function ChatBubble({
   isUser,
   status = MessageStatus.sent,
   agentName,
-  onCopy,
+  timestamp,
   onRetry,
 }: ChatBubbleProps) {
-  const isDark = useColorScheme() === 'dark';
+  const isFailed = status === MessageStatus.error;
+  const isStreaming = status === MessageStatus.streaming;
+  const accentColor = agentName ? getAgentColor(agentName) : '#2563EB';
 
   if (isUser) {
     return (
-      <View className="items-end mb-sm ml-xxxl">
-        <View className="bg-primary px-lg py-md rounded-t-xl rounded-bl-xl rounded-br-xs shadow-md">
-          <AppText className="text-white">{text}</AppText>
+      <View style={{ alignItems: 'flex-end', marginBottom: 12, marginLeft: 56 }}>
+        <View
+          style={{
+            backgroundColor: C.userBubble,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            borderRadius: 18,
+            borderBottomRightRadius: 4,
+            maxWidth: '100%',
+          }}
+        >
+          <AppText style={{ color: C.userText, fontSize: 16, lineHeight: 22 }}>{text}</AppText>
         </View>
+        {timestamp && (
+          <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginRight: 2 }}>
+            {formatTime(timestamp)}
+          </AppText>
+        )}
       </View>
     );
   }
 
-  const isFailed = status === MessageStatus.error;
-  const accentColor = agentName ? getAgentColor(agentName) : '#2563EB';
-
   return (
-    <View className="items-start mb-sm mr-xxxl flex-row">
-      {/* Avatar */}
-      <View
-        className="w-7 h-7 rounded-full items-center justify-center mr-sm mt-1"
-        style={{
-          backgroundColor: isFailed ? '#F8717120' : `${accentColor}20`,
-          borderWidth: 1,
-          borderColor: isFailed ? '#F8717140' : `${accentColor}40`,
-        }}
-      >
-        <AppText
-          className="text-[10px] font-bold"
-          style={{ color: isFailed ? '#F87171' : accentColor }}
+    <View style={{ alignItems: 'flex-start', marginBottom: 12, marginRight: 56 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+        {/* Avatar */}
+        <View
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: isFailed ? C.errorBubble : `${accentColor}18`,
+            borderWidth: 1,
+            borderColor: isFailed ? C.errorBubbleBorder : `${accentColor}35`,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 8,
+            marginBottom: 2,
+            flexShrink: 0,
+          }}
         >
-          {agentName ? agentName[0].toUpperCase() : 'A'}
-        </AppText>
-      </View>
-
-      <View className="flex-1">
-        {agentName && (
-          <AppText className="text-xs font-semibold mb-xxs" style={{ color: accentColor }}>
-            {agentName}
+          <AppText
+            style={{ color: isFailed ? C.errorText : accentColor, fontSize: 10, fontWeight: '700' }}
+          >
+            {agentName ? agentName[0].toUpperCase() : 'A'}
           </AppText>
-        )}
+        </View>
 
-        <TouchableOpacity
-          onLongPress={onCopy}
-          activeOpacity={0.9}
-          className="bg-surface-highLight dark:bg-surface-highDark px-lg py-md rounded-t-sm rounded-r-xl rounded-b-xl border border-border-light dark:border-border-dark"
-          style={isFailed ? { backgroundColor: '#F8717110', borderColor: '#F8717140' } : {}}
-        >
-          {text === '' && status === MessageStatus.streaming ? (
-            <TypingIndicator dotColor={accentColor} />
-          ) : (
-            <Markdown
-              style={{
-                body: {
-                  color: isFailed ? '#F87171' : isDark ? '#F0EFF4' : '#12121A',
-                  fontSize: 16,
-                },
-                paragraph: {
-                  marginTop: 0,
-                  marginBottom: 0,
-                },
-              }}
+        <View style={{ flex: 1 }}>
+          {agentName && (
+            <AppText
+              style={{ color: accentColor, fontSize: 12, fontWeight: '600', marginBottom: 3 }}
             >
-              {text}
-            </Markdown>
+              {agentName}
+            </AppText>
           )}
-        </TouchableOpacity>
 
-        {isFailed && onRetry && (
-          <TouchableOpacity onPress={onRetry} className="mt-xs flex-row items-center">
-            <AppText className="text-status-error text-xs font-medium">Retry</AppText>
-          </TouchableOpacity>
-        )}
+          <View
+            style={{
+              backgroundColor: isFailed ? C.errorBubble : C.agentBubble,
+              borderWidth: 1,
+              borderColor: isFailed ? C.errorBubbleBorder : C.agentBubbleBorder,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 18,
+              borderBottomLeftRadius: 4,
+            }}
+          >
+            {text === '' && isStreaming ? (
+              <TypingIndicator dotColor={accentColor} />
+            ) : (
+              <Markdown
+                style={{
+                  body: { color: isFailed ? C.errorText : C.agentText, fontSize: 16, margin: 0 },
+                  paragraph: { marginTop: 0, marginBottom: 0 },
+                  code_inline: {
+                    backgroundColor: '#E8E8F0',
+                    borderRadius: 4,
+                    paddingHorizontal: 4,
+                    color: '#12121A',
+                    fontSize: 14,
+                  },
+                  fence: {
+                    backgroundColor: '#F0F0F6',
+                    borderRadius: 8,
+                    padding: 12,
+                    marginVertical: 4,
+                  },
+                  code_block: {
+                    backgroundColor: '#F0F0F6',
+                    borderRadius: 8,
+                    padding: 12,
+                    color: '#12121A',
+                    fontSize: 13,
+                  },
+                  strong: { fontWeight: '700' },
+                  em: { fontStyle: 'italic' },
+                }}
+              >
+                {text}
+              </Markdown>
+            )}
+          </View>
+
+          {/* Error / retry row */}
+          {isFailed && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
+              <Ionicons name="alert-circle-outline" size={13} color={C.errorText} />
+              <AppText style={{ color: C.errorText, fontSize: 12 }}>Failed to send</AppText>
+              {onRetry && (
+                <TouchableOpacity
+                  onPress={onRetry}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
+                >
+                  <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
+                  <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
+                    Retry
+                  </AppText>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
       </View>
+
+      {timestamp && !isFailed && (
+        <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginLeft: 36 }}>
+          {formatTime(timestamp)}
+        </AppText>
+      )}
     </View>
   );
-}
-
-function getAgentColor(name: string) {
-  const palette = [
-    '#3B82F6', // blue
-    '#14B8A6', // teal
-    '#EC4899', // pink
-    '#8B5CF6', // violet
-    '#F59E0B', // amber
-    '#10B981', // emerald
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return palette[Math.abs(hash) % palette.length];
 }

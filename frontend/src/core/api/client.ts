@@ -67,7 +67,12 @@ export async function waitForBackend(maxAttempts = 30, initialDelay = 1000): Pro
   throw new Error(`Failed to reach backend after ${maxAttempts} attempts`);
 }
 
-export async function streamChat(endpoint: string, data: any, onChunk: (chunk: string) => void) {
+export async function streamChat(
+  endpoint: string,
+  data: unknown,
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal
+) {
   try {
     const storeUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
     const fullUrl = `${storeUrl.endsWith('/') ? storeUrl : `${storeUrl}/`}${endpoint}`;
@@ -83,6 +88,7 @@ export async function streamChat(endpoint: string, data: any, onChunk: (chunk: s
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(data),
+      signal,
     });
 
     if (!response.body) throw new Error('No response body');

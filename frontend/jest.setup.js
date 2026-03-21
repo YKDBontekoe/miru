@@ -2,6 +2,10 @@ jest.mock('expo', () => ({
   registerRootComponent: jest.fn(),
 }));
 
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: 'Ionicons',
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: jest.fn(),
