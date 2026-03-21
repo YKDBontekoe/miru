@@ -144,7 +144,6 @@ jobs:
             --resource-group "${{ env.STAGING_RG }}" \
             --image "$IMAGE_TAG" \
             --revision-suffix "rev-${SHORT_SHA}" \
-            --target-label "latest" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
       - name: Wait for staging to become healthy
