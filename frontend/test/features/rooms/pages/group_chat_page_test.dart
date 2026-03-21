@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:miru/core/design_system/design_system.dart';
 import 'package:miru/features/rooms/pages/group_chat_page.dart';
+import 'package:miru/features/rooms/widgets/status_pill.dart';
 import 'package:miru/core/models/chat_room.dart';
 import 'package:miru/core/models/agent.dart';
 import 'package:miru/core/models/chat_message.dart';
