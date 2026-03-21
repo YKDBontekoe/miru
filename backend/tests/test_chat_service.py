@@ -484,6 +484,52 @@ async def test_stream_room_responses_slow_kickoff(
 
 
 @pytest.mark.asyncio
+async def test_stream_room_responses_increment_failure(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """increment_message_count failure is swallowed; stream completes normally."""
+    from unittest.mock import patch
+
+    user_id = uuid4()
+    room_id = uuid4()
+
+    agent = MagicMock()
+    agent.id = uuid4()
+    agent.name = "Test Agent"
+    agent.personality = "Helpful"
+    agent.description = "A helpful agent"
+    agent.agent_integrations = []
+
+    chat_service.chat_repo.list_room_agents.return_value = [agent]
+    chat_service.agent_repo.increment_message_count = AsyncMock(side_effect=Exception("DB down"))
+
+    mock_llm = MagicMock()
+    mock_llm.model = "openrouter/test-model"
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task"),
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.service.Process"),
+    ):
+        mock_crew_agent = MagicMock()
+        mock_agent_cls.return_value = mock_crew_agent
+
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        responses = []
+        async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+            responses.append(r)
+
+        # Despite increment failure, stream ends with result and done status
+        assert "Crew output" in responses
+        assert "[[STATUS:done]]\n" in responses
+
+
+@pytest.mark.asyncio
 async def test_stream_room_responses_cancel_task(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:

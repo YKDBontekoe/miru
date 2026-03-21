@@ -95,6 +95,43 @@ async def test_list_tasks(
 
 
 @pytest.mark.asyncio
+async def test_create_task_with_due_date(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    """Test creating a task with a due_date."""
+    response = await async_client.post(
+        "/api/v1/productivity/tasks",
+        json={"title": "Timed Task", "due_date": "2026-12-31T00:00:00Z"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == "Timed Task"
+    assert data["due_date"] is not None
+
+
+@pytest.mark.asyncio
+async def test_update_task_due_date(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
+    """Test setting and clearing due_date on a task."""
+    task = await Task.create(user_id=mock_user_id, title="Task With Due Date")
+
+    response = await async_client.patch(
+        f"/api/v1/productivity/tasks/{task.id}",
+        json={"due_date": "2026-06-01T00:00:00Z"},
+    )
+    assert response.status_code == 200
+    assert response.json()["due_date"] is not None
+
+    # Clear due_date by setting to None
+    response = await async_client.patch(
+        f"/api/v1/productivity/tasks/{task.id}",
+        json={"due_date": None},
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_update_task(
     async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
 ) -> None:
