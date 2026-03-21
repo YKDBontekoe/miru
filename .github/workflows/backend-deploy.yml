@@ -424,11 +424,19 @@ jobs:
             exit 1
           fi
 
+          az containerapp revision set-mode \
+            --mode multiple \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }}
+
           # --set-env-vars adds/updates without replacing unrelated env vars.
+          # In 'labels' revision mode, --target-label is required.
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image "$IMAGE_TAG" \
+            --revision-suffix "rev-${{ steps.sentry-release.outputs.value }}" \
+            --target-label "latest" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
       - name: Wait for new revision to become active

@@ -16,7 +16,7 @@ concurrency:
 
 env:
   PYTHON_VERSION: '3.13'
-  FLUTTER_VERSION: '3.41.4'
+  NODE_VERSION: '20'
 
 jobs:
   # Backend dependency check
@@ -75,207 +75,129 @@ jobs:
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: 'security,dependencies,backend',
+              labels: 'security,dependencies,frontend',
               state: 'open'
-            });
+              });
 
-            const alreadyOpen = existing.data.some(issue => issue.title === title);
+              const alreadyOpen = existing.data.some(issue => issue.title === title);
 
-            if (!alreadyOpen) {
+              if (!alreadyOpen) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: title,
                 body: body,
-                // jules-fix-pending routes this into the Jules automation loop.
-                // Dependency bumps are mechanical tasks Jules handles well.
-                labels: ['security', 'dependencies', 'backend', 'jules-fix-pending']
+                labels: ['security', 'dependencies', 'frontend', 'jules-fix-pending']
               });
-            }
+              }
 
-  # Flutter dependency check
-  flutter-dependencies:
-    name: Check Flutter Dependencies
+
+  # Frontend dependency check
+  frontend-dependencies:
+    name: Check Frontend Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache Pub packages
-        uses: actions/cache@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.pub-cache
-            frontend/.dart_tool
-          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-pub-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
 
       - name: Check for outdated dependencies
         working-directory: ./frontend
         run: |
-          flutter pub get
           echo "### Outdated Dependencies" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          flutter pub outdated >> "$GITHUB_STEP_SUMMARY" || true
+          npm outdated >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Check for discontinued packages
-        id: discontinued
+      - name: Run security audit
+        id: npm_audit
         working-directory: ./frontend
-        run: |
-          # flutter pub outdated --json reports discontinued packages correctly.
-          # flutter pub publish --dry-run is NOT appropriate here — it validates
-          # publishability to pub.dev, which fails for apps (not packages).
-          flutter pub outdated --json | \
-            python3 -c "
-            import json, sys, os
-            data = json.load(sys.stdin)
-            discontinued = [
-              p['package'] for p in data.get('packages', [])
-              if p.get('discontinued', False)
-            ]
-            if discontinued:
-              print('Discontinued packages found:', ', '.join(discontinued))
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-                f.write('discontinued=' + ','.join(discontinued) + '\n')
-              sys.exit(1)
-            else:
-              print('No discontinued packages found.')
-            "
+        run: npm audit
         continue-on-error: true
 
-      - name: Create issue for discontinued Flutter packages
-        if: steps.discontinued.outcome == 'failure'
+      - name: Create issue if vulnerabilities found
+        if: steps.npm_audit.outcome == 'failure'
         uses: actions/github-script@v8
         with:
           script: |
-            const discontinued = '${{ steps.discontinued.outputs.discontinued }}';
-            const packageList = discontinued.split(',').map(p => `- \`${p.trim()}\``).join('\n');
-            const title = '📦 Flutter: Discontinued packages detected';
-            const body = `## Discontinued Flutter Packages
+            const title = '🔒 Security: Vulnerabilities found in Frontend dependencies';
+            const body = `## Security Alert
 
-            The nightly dependency check found discontinued packages that must be replaced.
-
-            **Packages:**
-            ${packageList}
+            Automated \`npm audit\` found vulnerabilities in Frontend dependencies.
 
             **Run Date:** ${new Date().toISOString()}
             **Workflow:** ${{ github.workflow }}
 
+            Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+
             ### Recommended Actions:
-            1. Find actively maintained alternatives for each discontinued package
-            2. Update \`frontend/pubspec.yaml\` with the replacement(s)
-            3. Update any import statements and usage in \`frontend/lib/\`
-            4. Run \`flutter pub get\` and \`flutter analyze\`
-            5. Run \`make test-frontend\` to confirm nothing is broken
-            6. Open a PR with the changes
+            1. Run \`npm audit fix\` locally
+            2. Update vulnerable dependencies
+            3. Run tests to ensure compatibility
+            4. Create a PR with the updates
             `;
 
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              labels: 'dependencies,frontend',
-              state: 'open',
-            });
-            const alreadyOpen = existing.data.some(i => i.title === title);
+              labels: 'security,dependencies,frontend',
+              state: 'open'
+              });
 
-            if (!alreadyOpen) {
+              const alreadyOpen = existing.data.some(issue => issue.title === title);
+
+              if (!alreadyOpen) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title,
-                body,
-                // jules-fix-pending routes this into the Jules automation loop.
-                labels: ['dependencies', 'frontend', 'jules-fix-pending'],
+                title: title,
+                body: body,
+                labels: ['security', 'dependencies', 'frontend', 'jules-fix-pending']
               });
-            }
+              }
+
 
   # Nightly build test
   nightly-build:
     name: Nightly Build Test
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            target: web
-          - os: macos-latest
-            target: ios
-          - os: windows-latest
-            target: windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache Pub packages
-        uses: actions/cache@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.pub-cache
-            frontend/.dart_tool
-          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-pub-
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-
-      - name: Enable Windows desktop target
-        if: matrix.target == 'windows'
-        run: flutter config --enable-windows-desktop
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: |
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
+        run: npm ci
 
       - name: Build Web
-        if: matrix.target == 'web'
         working-directory: ./frontend
-        run: flutter build web --release
-
-      - name: Setup Xcode
-        if: matrix.target == 'ios'
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-
-      - name: Build iOS (no signing)
-        if: matrix.target == 'ios'
-        working-directory: ./frontend
-        run: flutter build ios --release --no-codesign
-
-      - name: Build Windows
-        if: matrix.target == 'windows'
-        working-directory: ./frontend
-        run: flutter build windows --release
+        run: npx expo export -p web
 
       - name: Create issue on failure
         if: failure()
         uses: actions/github-script@v8
         with:
           script: |
-            const title = `🔥 Nightly Build Failed: ${{ matrix.target }}`;
+            const title = `🔥 Nightly Build Failed: Frontend Web`;
 
-            // De-duplicate: don't open a new issue if one is already open for
-            // this target — repeated nightly failures would otherwise flood the
-            // issue tracker with identical reports.
             const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -293,10 +215,9 @@ jobs:
               title,
               body: `## Build Failure
 
-            The nightly build for **${{ matrix.target }}** failed.
+            The nightly build for **Frontend Web** failed.
 
             **Run Date:** ${new Date().toISOString()}
-            **OS:** ${{ matrix.os }}
             **Workflow:** ${{ github.workflow }}
 
             Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.

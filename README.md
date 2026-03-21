@@ -38,8 +38,8 @@
 **Multi-Platform**
 - iOS
 - Android
-- Web (Azure Static Web Apps)
-- macOS, Windows, Linux (Flutter desktop)
+- Web (Expo Web)
+- macOS, Windows, Linux (React Native Desktop)
 
 ### Use Cases
 
@@ -58,14 +58,14 @@
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────────────────┐    ┌───────────────────────────┐  │
-│  │  Frontend (Flutter)      │    │  Backend (FastAPI)        │  │
+│  │  Frontend (React Native) │    │  Backend (FastAPI)        │  │
 │  │  ├─ iOS / Android        │◄──►│  ├─ REST API (/api/v1)   │  │
-│  │  ├─ Web                  │    │  ├─ Streaming (SSE)       │  │
-│  │  └─ Desktop (mac/win/lnx)│    │  ├─ Vector Search         │  │
+│  │  ├─ Web (Expo)           │    │  ├─ Streaming (SSE)       │  │
+│  │  └─ Desktop (RN-Desktop) │    │  ├─ Vector Search         │  │
 │  │                          │    │  ├─ CrewAI Orchestration   │  │
-│  │  State: Riverpod +       │    │  └─ Agent Tool System     │  │
-│  │         StatefulWidget   │    │                           │  │
-│  │  Models: Freezed         │    │  Supabase (PostgreSQL     │  │
+│  │  State: Zustand          │    │  └─ Agent Tool System     │  │
+│  │  Models: TypeScript      │    │                           │  │
+│  │  Router: Expo Router     │    │  Supabase (PostgreSQL     │  │
 │  └──────────────────────────┘    │    + pgvector)            │  │
 │                                  └───────────────────────────┘  │
 │                                                                  │
@@ -93,7 +93,7 @@
 ### Prerequisites
 
 - **Python 3.13+** - Backend runtime
-- **Flutter SDK 3.11+** - Frontend framework
+- **Node.js 18+** - Frontend runtime (npm/yarn/bun)
 - **Docker & Docker Compose** - Local development database
 - **Make** - Build automation
 - **Supabase account** - Database and auth ([supabase.com](https://supabase.com))
@@ -119,8 +119,8 @@ make db
 # Run backend server (Terminal 1)
 make backend
 
-# Run Flutter frontend (Terminal 2)
-cd frontend && flutter pub get
+# Run React Native frontend (Terminal 2)
+cd frontend && npm install
 make frontend
 ```
 
@@ -167,24 +167,17 @@ miru/
 │   ├── Dockerfile
 │   └── pyproject.toml
 │
-├── frontend/                    # Flutter multi-platform frontend
-│   ├── lib/
-│   │   ├── main.dart            # Entry point, ProviderScope, auth routing
-│   │   ├── core/
-│   │   │   ├── api/             # API service, agents service, productivity service
-│   │   │   ├── design_system/   # Components, tokens, themes
-│   │   │   ├── models/          # Freezed data models
-│   │   │   └── services/        # Supabase, Passkey, Notification services
-│   │   └── features/
-│   │       ├── agents/          # Agent management pages
-│   │       ├── auth/            # Login flows (magic link, password, passkey)
-│   │       ├── chat/            # Solo chat interface
-│   │       ├── rooms/           # Group chat rooms
-│   │       ├── productivity/    # Tasks, Notes, Calendar Events
-│   │       ├── onboarding/      # First-launch experience
-│   │       └── settings/        # App configuration
-│   ├── test/                    # Widget and unit tests
-│   └── pubspec.yaml
+├── frontend/                    # React Native multi-platform frontend
+│   ├── app/                     # Expo Router file-based routing
+│   │   ├── (auth)/              # Login and onboarding flows
+│   │   └── (main)/              # Main app screens
+│   ├── src/
+│   │   ├── components/          # Reusable UI components
+│   │   ├── core/                # Models, API services, system services
+│   │   ├── features/            # Feature-specific logic
+│   │   └── store/               # Zustand state management
+│   ├── __tests__/               # Jest test suite
+│   └── package.json
 │
 ├── supabase/
 │   └── migrations/              # SQL migration files (source of truth for schema)
@@ -219,9 +212,9 @@ Interactive API docs are available at `http://localhost:8000/docs` when the back
 
 | Workflow | Trigger | Description |
 |----------|---------|-------------|
-| `pr-checks.yml` | Pull requests | Backend tests + lint, Flutter tests + lint, security audit, PR size check |
+| `pr-checks.yml` | Pull requests | Backend tests + lint, Frontend tests + lint, security audit, PR size check |
 | `backend-deploy.yml` | Push to main/develop | Test, Docker build to GHCR, Trivy scan, migrate DB, deploy to Azure Container Apps |
-| `flutter-pipeline.yml` | Push to main/develop | Flutter CI, build APK/iOS/Web, Lighthouse test, deploy web to Azure Static Web Apps |
+| `frontend-pipeline.yml` | Push to main/develop | Frontend CI, build APK/iOS/Web, Lighthouse test, deploy web to Azure Static Web Apps |
 | `database-migrations.yml` | Push/PR touching migrations | Validate migration drift, deploy to staging/production via Supabase CLI |
 | `release.yml` | Tag push (v*) | GitHub release with changelog, build artifacts, Sentry release |
 | `codeql-analysis.yml` | Push/PR, weekly | Python security analysis |
@@ -274,19 +267,18 @@ ruff check --fix . && black . && isort .
 ```bash
 cd frontend
 
-# Get dependencies and generate models
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
+# Install dependencies
+npm install
 
 # Run app
-flutter run
+npx expo start
 
 # Run tests
-flutter test --coverage
+npm test
 
 # Lint
-flutter analyze
-dart format --output=none --set-exit-if-changed .
+npm run lint
+npm run type-check
 ```
 
 ### Make Commands
@@ -297,9 +289,9 @@ make setup-hooks     # Install pre-commit hook
 make db              # Start local pgvector Docker container
 make db-stop         # Stop local Docker container
 make backend         # Run FastAPI server
-make frontend        # Run Flutter app
-make test            # Run all tests
-make lint            # Run all linting
+make frontend        # Run React Native app (npx expo start)
+make test            # Run all tests (backend + frontend)
+make lint            # Run all linting (backend + frontend)
 make fix             # Auto-fix lint issues
 make clean           # Remove build artifacts
 ```
@@ -327,9 +319,9 @@ See [AGENTS.md](AGENTS.md) for full migration workflow details.
 ## Code Quality
 
 - **Backend:** 75%+ test coverage, strict type hints, Google-style docstrings
-- **Frontend:** 70%+ test coverage, Effective Dart style
+- **Frontend:** 70%+ test coverage, React Native / TypeScript style
 - **Security:** CodeQL scanning, Trivy container scanning, dependency audits
-- **Pre-commit hooks:** ruff, black, flutter analyze, dart format
+- **Pre-commit hooks:** ruff, black, eslint, type-check
 
 Install hooks: `make setup-hooks`
 
@@ -356,7 +348,8 @@ See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnera
 ## Acknowledgments
 
 - [FastAPI](https://fastapi.tiangolo.com/) - Python web framework
-- [Flutter](https://flutter.dev/) - Multi-platform UI framework
+- [React Native](https://reactnative.dev/) - Multi-platform UI framework
+- [Expo](https://expo.dev/) - React Native toolset and ecosystem
 - [Supabase](https://supabase.com/) - Auth, database, and real-time
 - [OpenRouter](https://openrouter.ai/) - LLM routing and access
 - [pgvector](https://github.com/pgvector/pgvector) - Vector similarity search for PostgreSQL
@@ -366,4 +359,4 @@ See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnera
 
 ---
 
-<p align="center">Built with FastAPI + Flutter + Supabase</p>
+<p align="center">Built with FastAPI + React Native + Supabase</p>

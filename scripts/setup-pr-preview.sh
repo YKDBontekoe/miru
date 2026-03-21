@@ -47,6 +47,9 @@ echo "==> Creating Container App '${PR_APP}'..."
 
 # Use the helloworld image as a placeholder; pr-checks.yml overwrites it on
 # every PR push.
+#
+# In 'labels' revision mode, --target-label is required. We initialize with a
+# 'placeholder' label.
 az containerapp create \
   --name "${PR_APP}" \
   --resource-group "${RESOURCE_GROUP}" \
@@ -54,6 +57,9 @@ az containerapp create \
   --image "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest" \
   --target-port 8000 \
   --ingress external \
+  --revisions-mode multiple \
+  --revision-suffix "initial" \
+  --target-label "placeholder" \
   --cpu 0.5 \
   --memory 1.0Gi \
   --min-replicas 0 \
