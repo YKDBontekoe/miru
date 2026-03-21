@@ -144,7 +144,9 @@ void main() {
 
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300)); // AnimatedSwitcher duration
+    await tester.pump(
+      const Duration(milliseconds: 300),
+    ); // AnimatedSwitcher duration
 
     // Verify persona card content is rendered
     expect(find.text('Captain Bluebeard'), findsOneWidget);
@@ -159,6 +161,9 @@ void main() {
       of: find.byType(Card),
       matching: find.byType(InkWell),
     );
-    expect(inkWell, findsWidgets); // findsWidgets since an InkWell spawns an inner InkWell too
+    expect(
+      inkWell,
+      findsWidgets,
+    ); // findsWidgets since an InkWell spawns an inner InkWell too
   });
 }
