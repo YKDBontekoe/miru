@@ -14,6 +14,9 @@ from app.domain.agents.models import (
     Capability,
     Integration,
 )
+# ARCH(miru-agent): violation
+# Correct layer: Application layer
+# Recommended fix: Domain/Application layer should not import infrastructure directly. Inject an LLM client interface into AgentService instead.
 from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:

@@ -163,6 +163,9 @@ class _ChatPageState extends State<ChatPage> {
         setState(() => _streamingStatus = 'Uploading attachments...');
         for (final file in filesToUpload) {
           if (file.bytes != null) {
+            // ARCH(miru-agent): violation
+            // Correct layer: Application / Hooks layer
+            // Recommended fix: Extract the direct ApiService calls into a dedicated ChatService or custom hook. The UI component should only handle user interaction and rendering.
             await ApiService.instance.uploadDocument(file.name, file.bytes!);
           }
         }
@@ -213,6 +216,9 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _sendStreamingMessage(String text) async {
     final statusRegex = RegExp(r'\[\[STATUS:([^\]]+)\]\]');
 
+    // ARCH(miru-agent): violation
+    // Correct layer: Application / Hooks layer
+    // Recommended fix: Extract stream parsing and status regex logic into an Application layer service or hook. UI components should not contain business logic.
     final stream = ApiService.instance.sendMessage(text);
     _activeStreamSubscription = stream.listen(
       (chunk) {
