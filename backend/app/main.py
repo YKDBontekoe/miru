@@ -6,7 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.agents import router as agents_router
@@ -70,6 +70,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:
+    """
+    SEC(agent): Remediation for Area 7 (Transport & Headers).
+    Vulnerabilities: Clickjacking, MIME-type sniffing, XSS (CSP Bypass), and insecure transport.
+    Risk: Without these headers, the application is vulnerable to being framed by malicious sites
+    (Clickjacking), browsers incorrectly interpreting file types (MIME sniffing), execution of
+    untrusted scripts (XSS), and downgrade attacks (missing HSTS).
+    """
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; img-src 'self' data: fastapi.tiangolo.com;"
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 
 app.include_router(agents_router, prefix="/api/v1/agents")
 app.include_router(auth_router, prefix="/api/v1/auth")

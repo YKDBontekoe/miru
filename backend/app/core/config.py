@@ -36,7 +36,11 @@ class Settings(BaseSettings):
     # e.g. "https://miru.app,https://www.miru.app"
     webauthn_expected_origin: str = "http://localhost"
     # Comma-separated allowed CORS origins — tighten in production
-    cors_allowed_origins: str = "*"
+    # SEC(agent): Remediation for Area 7 (Transport & Headers).
+    # Vulnerability: Insecure CORS Configuration.
+    # Risk: Using the '*' wildcard with allow_credentials=True violates CORS security specifications,
+    # allowing any malicious site to read authenticated API responses.
+    cors_allowed_origins: str = "http://localhost"
     # Tavily Search API key for web search capabilities
     tavily_api_key: str | None = None
     # Steam Web API key for Steam games integration
