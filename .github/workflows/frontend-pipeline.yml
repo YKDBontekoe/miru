@@ -64,7 +64,7 @@ jobs:
           EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
         run: npx expo export -p web
       - name: Upload artifact
-        uses: actions/upload-artifact@v8
+        uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: ./frontend/dist
@@ -77,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Download Web Build
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: web-build
           path: ./web-dist
@@ -99,7 +99,7 @@ jobs:
       url: ${{ steps.deploy-web.outputs.static_web_app_url }}
     steps:
       - name: Download Web Build
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: web-build
           path: ./web-dist
