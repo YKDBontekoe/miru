@@ -139,6 +139,7 @@ jobs:
             --name "${{ env.STAGING_APP }}" \
             --resource-group "${{ env.STAGING_RG }}"
 
+          az extension add --name containerapp --upgrade --allow-preview true --yes > /dev/null
           az containerapp update \
             --name "${{ env.STAGING_APP }}" \
             --resource-group "${{ env.STAGING_RG }}" \

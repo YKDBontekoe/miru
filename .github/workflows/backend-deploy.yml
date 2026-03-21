@@ -431,6 +431,7 @@ jobs:
 
           # --set-env-vars adds/updates without replacing unrelated env vars.
           # In 'labels' revision mode, --target-label is required.
+          az extension add --name containerapp --upgrade --allow-preview true --yes > /dev/null
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
