@@ -9,6 +9,7 @@ from uuid import UUID
 
 from app.domain.memory.document_service import DocumentService
 from app.domain.memory.models import Memory
+
 # ARCH(miru-agent): violation
 # Correct layer: Application layer
 # Recommended fix: Domain/Application layer should not import infrastructure directly. Inject an embedding provider interface into MemoryService instead.

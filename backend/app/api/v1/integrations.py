@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from app.core.security.auth import CurrentUser  # noqa: TCH001
+
 # ARCH(miru-agent): violation
 # Correct layer: Application layer
 # Recommended fix: Infrastructure implementations (like get_player_summaries, resolve_vanity_url) should not be imported directly into the API layer. They should be accessed via an Application layer service through an interface.
