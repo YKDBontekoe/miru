@@ -308,8 +308,6 @@ jobs:
           done
           FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=pr-preview")
 
-          az containerapp revision set-mode --mode labels --name "${{ env.PR_APP }}" --resource-group "${{ env.PR_RG }}"
-
           # The revision suffix must be unique for each update, even on the same PR.
           # The output of 'az containerapp update' contains the properties of the container app.
           # The created revision is set as the 'latestRevisionName'.
