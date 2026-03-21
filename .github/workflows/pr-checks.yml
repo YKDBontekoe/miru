@@ -240,6 +240,8 @@ jobs:
       PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Login to Azure
         uses: azure/login@v3
         with:
@@ -293,7 +295,7 @@ jobs:
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \
             --image "$IMAGE_TAG" \
-            --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_attempt }}" \
+            --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_id }}" \
             --target-label "pr-${{ github.event.pull_request.number }}" \
             --set-env-vars "${ENV_VARS[@]}" \
             --query "properties.latestRevisionName" \
