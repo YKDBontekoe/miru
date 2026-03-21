@@ -210,7 +210,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           hintText: 'e.g. Captain Bluebeard',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: descriptionController,
                         decoration: const InputDecoration(
@@ -218,7 +218,7 @@ class _AgentsPageState extends State<AgentsPage> {
                           hintText: 'A seafaring AI who loves pirate jokes',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: personalityController,
                         decoration: const InputDecoration(
@@ -227,7 +227,7 @@ class _AgentsPageState extends State<AgentsPage> {
                         ),
                         maxLines: 4,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: goalsController,
                         decoration: const InputDecoration(
@@ -237,16 +237,16 @@ class _AgentsPageState extends State<AgentsPage> {
                         ),
                         maxLines: 3,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       Text(
                         'Capabilities',
                         style: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Wrap(
-                        spacing: 8,
+                        spacing: AppSpacing.sm,
                         children: _availableCapabilities.map((cap) {
                           final id = cap.id;
                           final name = cap.name;
@@ -266,16 +266,16 @@ class _AgentsPageState extends State<AgentsPage> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       Text(
                         'Integrations',
                         style: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Wrap(
-                        spacing: 8,
+                        spacing: AppSpacing.sm,
                         children: _availableIntegrations.map((integration) {
                           final type = integration.type;
                           final name = integration.displayName;
@@ -367,111 +367,125 @@ class _AgentsPageState extends State<AgentsPage> {
         ),
         backgroundColor: colors.surfaceHigh,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _agents.isEmpty
-          ? AppEmptyState(
-              title: 'No personas yet',
-              subtitle: 'Create your first AI persona\nto start collaborating.',
-            )
-          : ListView.builder(
-              itemCount: _agents.length,
-              itemBuilder: (context, index) {
-                final agent = _agents[index];
-                final String? chatter = _activeChatter[agent.id];
+      body: AnimatedSwitcher(
+        duration: AppDurations.medium,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _agents.isEmpty
+            ? const AppEmptyState(
+                title: 'No personas yet',
+                subtitle:
+                    'Create your first AI persona\nto start collaborating.',
+              )
+            : ListView.builder(
+                itemCount: _agents.length,
+                itemBuilder: (context, index) {
+                  final agent = _agents[index];
+                  final String? chatter = _activeChatter[agent.id];
 
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final baseColors = [
-                  AppColors.primary,
-                  AppColors.info,
-                  AppColors.error,
-                  AppColors.primaryDark,
-                  AppColors.primaryLight,
-                  AppColors.warning,
-                ];
-                final themeColor =
-                    baseColors[agent.name.hashCode.abs() % baseColors.length];
-                final bgColors = isDark
-                    ? [
-                        themeColor.withValues(alpha: 0.2),
-                        themeColor.withValues(alpha: 0.05),
-                      ]
-                    : [
-                        themeColor.withValues(alpha: 0.15),
-                        themeColor.withValues(alpha: 0.05),
-                      ];
+                  final isDark = context.isDark;
+                  final baseColors = [
+                    colors.primary,
+                    colors.info,
+                    colors.error,
+                    colors.success,
+                    colors.primaryLight,
+                    colors.warning,
+                  ];
+                  final themeColor =
+                      baseColors[agent.name.hashCode.abs() % baseColors.length];
+                  final bgColors = isDark
+                      ? [
+                          themeColor.withValues(alpha: 0.2),
+                          themeColor.withValues(alpha: 0.05),
+                        ]
+                      : [
+                          themeColor.withValues(alpha: 0.15),
+                          themeColor.withValues(alpha: 0.05),
+                        ];
 
-                return Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                    boxShadow: AppShadows.sm,
-                  ),
-                  child: Card(
-                    margin: AppSpacing.paddingNone,
-                    clipBehavior: Clip.antiAlias,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                      side: BorderSide(
-                        color: themeColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
+                  return Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: bgColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      boxShadow: AppShadows.sm,
+                    ),
+                    child: Card(
+                      margin: AppSpacing.paddingNone,
+                      clipBehavior: Clip.antiAlias,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusLg,
+                        ),
+                        side: BorderSide(
+                          color: themeColor.withValues(alpha: 0.3),
+                          width: 1,
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      child: InkWell(
+                        onTap: () {
+                          // Tap target for persona card future hooks
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: bgColors,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(
-                                  backgroundImage: agent.avatarImage,
-                                  radius: 28,
-                                  child: agent.avatarUrl == null
-                                      ? Text(agent.name[0].toUpperCase())
-                                      : null,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundImage: agent.avatarImage,
+                                      radius: AppSpacing.avatarLg / 2,
+                                      child: agent.avatarUrl == null
+                                          ? Text(agent.name[0].toUpperCase())
+                                          : null,
+                                    ),
+                                    const SizedBox(width: AppSpacing.lg),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: Text(
-                                              agent.name,
-                                              style: AppTypography.headingSmall
-                                                  .copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                    color: context
-                                                        .colors
-                                                        .onSurface,
-                                                  ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          AnimatedSwitcher(
-                                            duration: const Duration(
-                                              milliseconds: 250,
-                                            ),
-                                            transitionBuilder:
-                                                (child, animation) =>
-                                                    FadeTransition(
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  agent.name,
+                                                  style: AppTypography
+                                                      .headingSmall
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: context
+                                                            .colors
+                                                            .onSurface,
+                                                      ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              AnimatedSwitcher(
+                                                duration: const Duration(
+                                                  milliseconds: 250,
+                                                ),
+                                                transitionBuilder:
+                                                    (
+                                                      child,
+                                                      animation,
+                                                    ) => FadeTransition(
                                                       opacity: animation,
                                                       child: ScaleTransition(
                                                         scale: Tween<double>(
@@ -481,137 +495,142 @@ class _AgentsPageState extends State<AgentsPage> {
                                                         child: child,
                                                       ),
                                                     ),
-                                            child: chatter != null
-                                                ? Container(
-                                                    key: ValueKey(chatter),
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal:
-                                                              AppSpacing.sm,
-                                                          vertical:
-                                                              AppSpacing.xs,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color: context
-                                                          .colors
-                                                          .surface,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            AppSpacing.radiusMd,
-                                                          ),
-                                                      border: Border.all(
-                                                        color: themeColor
-                                                            .withValues(
-                                                              alpha: 0.5,
+                                                child: chatter != null
+                                                    ? Container(
+                                                        key: ValueKey(chatter),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  AppSpacing.sm,
+                                                              vertical:
+                                                                  AppSpacing.xs,
                                                             ),
-                                                      ),
-                                                    ),
-                                                    child: Text(
-                                                      chatter,
-                                                      style: AppTypography
-                                                          .bodySmall
-                                                          .copyWith(
-                                                            color: themeColor,
+                                                        decoration: BoxDecoration(
+                                                          color: context
+                                                              .colors
+                                                              .surface,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                AppSpacing
+                                                                    .radiusMd,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: themeColor
+                                                                .withValues(
+                                                                  alpha: 0.5,
+                                                                ),
                                                           ),
-                                                    ),
-                                                  )
-                                                : const SizedBox.shrink(
-                                                    key: ValueKey('empty'),
-                                                  ),
-                                          ),
-                                        ],
-                                      ),
-                                      if (agent.description != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          agent.description!,
-                                          style: AppTypography.bodyMedium
-                                              .copyWith(
-                                                color: isDark
-                                                    ? AppColors
-                                                          .onSurfaceMutedDark
-                                                    : AppColors
-                                                          .onSurfaceMutedLight,
+                                                        ),
+                                                        child: Text(
+                                                          chatter,
+                                                          style: AppTypography
+                                                              .bodySmall
+                                                              .copyWith(
+                                                                color:
+                                                                    themeColor,
+                                                              ),
+                                                        ),
+                                                      )
+                                                    : const SizedBox.shrink(
+                                                        key: ValueKey('empty'),
+                                                      ),
                                               ),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.military_tech,
-                                            size: 16,
-                                            color: themeColor,
+                                            ],
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Lvl ${agent.connectionLevel}',
-                                            style: AppTypography.bodySmall
-                                                .copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: themeColor,
-                                                ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Icon(
-                                            Icons.mood,
-                                            size: 16,
-                                            color: isDark
-                                                ? AppColors.onSurfaceMutedDark
-                                                : AppColors.onSurfaceMutedLight,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            agent.mood,
-                                            style: AppTypography.bodySmall
-                                                .copyWith(
-                                                  color: isDark
-                                                      ? AppColors
-                                                            .onSurfaceMutedDark
-                                                      : AppColors
-                                                            .onSurfaceMutedLight,
-                                                ),
+                                          if (agent.description != null) ...[
+                                            const SizedBox(
+                                              height: AppSpacing.xxs,
+                                            ),
+                                            Text(
+                                              agent.description!,
+                                              style: AppTypography.bodyMedium
+                                                  .copyWith(
+                                                    color:
+                                                        colors.onSurfaceMuted,
+                                                  ),
+                                            ),
+                                          ],
+                                          const SizedBox(height: AppSpacing.sm),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.military_tech,
+                                                size: AppSpacing.iconSm,
+                                                color: themeColor,
+                                              ),
+                                              const SizedBox(
+                                                width: AppSpacing.xs,
+                                              ),
+                                              Text(
+                                                'Lvl ${agent.connectionLevel}',
+                                                style: AppTypography.bodySmall
+                                                    .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: themeColor,
+                                                    ),
+                                              ),
+                                              const SizedBox(
+                                                width: AppSpacing.md,
+                                              ),
+                                              Icon(
+                                                Icons.mood,
+                                                size: AppSpacing.iconSm,
+                                                color: colors.onSurfaceMuted,
+                                              ),
+                                              const SizedBox(
+                                                width: AppSpacing.xs,
+                                              ),
+                                              Text(
+                                                agent.mood,
+                                                style: AppTypography.bodySmall
+                                                    .copyWith(
+                                                      color:
+                                                          colors.onSurfaceMuted,
+                                                    ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
+                                const SizedBox(height: AppSpacing.md),
+                                Text(
+                                  agent.personality,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.bodyMedium,
+                                ),
+                                if (agent.capabilities.isNotEmpty) ...[
+                                  const SizedBox(height: AppSpacing.md),
+                                  Wrap(
+                                    spacing: AppSpacing.sm,
+                                    runSpacing: AppSpacing.xs,
+                                    children: agent.capabilities.map((cap) {
+                                      return Chip(
+                                        label: Text(
+                                          cap,
+                                          style: AppTypography.bodySmall,
+                                        ),
+                                        materialTapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        padding: AppSpacing.paddingNone,
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              agent.personality,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.bodyMedium,
-                            ),
-                            if (agent.capabilities.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: agent.capabilities.map((cap) {
-                                  return Chip(
-                                    label: Text(
-                                      cap,
-                                      style: AppTypography.bodySmall,
-                                    ),
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    padding: AppSpacing.paddingNone,
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
