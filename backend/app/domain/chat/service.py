@@ -137,16 +137,23 @@ class ChatService:
 
     async def create_room(self, name: str, user_id: UUID) -> RoomResponse:
         room = await self.chat_repo.create_room(name, user_id)
-        return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
+        return RoomResponse(
+            id=room.id, name=room.name, created_at=room.created_at, updated_at=room.updated_at
+        )
 
     async def list_rooms(self, user_id: UUID) -> list[RoomResponse]:
         rooms = await self.chat_repo.list_rooms(user_id)
-        return [RoomResponse(id=r.id, name=r.name, created_at=r.created_at) for r in rooms]
+        return [
+            RoomResponse(id=r.id, name=r.name, created_at=r.created_at, updated_at=r.updated_at)
+            for r in rooms
+        ]
 
     async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
         room = await self.chat_repo.update_room(room_id, name)
         if room:
-            return RoomResponse(id=room.id, name=room.name, created_at=room.created_at)
+            return RoomResponse(
+                id=room.id, name=room.name, created_at=room.created_at, updated_at=room.updated_at
+            )
         return None
 
     async def delete_room(self, room_id: UUID) -> bool:
@@ -329,6 +336,19 @@ class ChatService:
             content=str(result),
         )
         await self.chat_repo.save_message(agent_msg)
+
+        # 6. Refresh room's updated_at so clients can sort by last activity
+        await self.chat_repo.touch_room(room_id)
+
+        # 7. Best-effort message_count increment for each participant.
+        # All agents in the room contributed (they were all passed to the crew),
+        # so db_agents is the correct participant set. Each increment is wrapped
+        # individually so a single failure doesn't abort the stream.
+        for agent in db_agents:
+            try:
+                await self.agent_repo.increment_message_count(agent.id)
+            except Exception:
+                logger.warning("Failed to increment message_count for agent %s", agent.id)
 
         yield str(result)
         yield "[[STATUS:done]]\n"

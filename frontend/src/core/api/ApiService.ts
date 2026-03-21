@@ -1,6 +1,12 @@
 import { apiClient, streamChat } from './client';
 import { Agent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
 
+// The backend Task schema uses is_completed; normalise to the frontend shape.
+function normalizeTask(raw: Record<string, unknown>): Task {
+  const { is_completed, ...rest } = raw as Record<string, unknown> & { is_completed?: boolean };
+  return { ...rest, completed: is_completed ?? false } as unknown as Task;
+}
+
 export const ApiService = {
   // --- Memories API ---
   async getMemories(): Promise<Memory[]> {
@@ -75,18 +81,28 @@ export const ApiService = {
 
   // --- Productivity: Tasks ---
   async getTasks(): Promise<Task[]> {
-    const response = await apiClient.get<Task[]>('productivity/tasks');
-    return response.data;
+    const response = await apiClient.get<Record<string, unknown>[]>('productivity/tasks');
+    return response.data.map(normalizeTask);
   },
 
   async createTask(title: string): Promise<Task> {
-    const response = await apiClient.post<Task>('productivity/tasks', { title });
-    return response.data;
+    const response = await apiClient.post<Record<string, unknown>>('productivity/tasks', { title });
+    return normalizeTask(response.data);
   },
 
-  async updateTask(id: string, data: Partial<Pick<Task, 'completed' | 'title'>>): Promise<Task> {
-    const response = await apiClient.patch<Task>(`productivity/tasks/${id}`, data);
-    return response.data;
+  async updateTask(
+    id: string,
+    data: Partial<{ completed: boolean; title: string; due_date: string | null }>
+  ): Promise<Task> {
+    // Map completed -> is_completed for the backend schema.
+    const { completed, ...rest } = data;
+    const payload: Record<string, unknown> = { ...rest };
+    if (completed !== undefined) payload.is_completed = completed;
+    const response = await apiClient.patch<Record<string, unknown>>(
+      `productivity/tasks/${id}`,
+      payload
+    );
+    return normalizeTask(response.data);
   },
 
   async deleteTask(id: string): Promise<void> {

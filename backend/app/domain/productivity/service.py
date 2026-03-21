@@ -39,6 +39,7 @@ class ProductivityService:
                 title=task_data.title,
                 description=task_data.description,
                 is_completed=task_data.is_completed,
+                due_date=task_data.due_date,
             )
 
     @staticmethod

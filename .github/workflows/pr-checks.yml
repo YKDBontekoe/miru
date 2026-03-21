@@ -240,6 +240,8 @@ jobs:
       PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Login to Azure
         uses: azure/login@v3
         with:
@@ -252,84 +254,50 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upgrade containerapp CLI extension
+        run: az extension add --name containerapp --upgrade --yes
+
       - name: Deploy image to PR container app
-        env:
-          # Repo-level secrets (shared across environments)
-          SECRET_DATABASE_URL:                              ${{ secrets.STAGING_DATABASE_URL }}
-          SECRET_SUPABASE_URL:                              ${{ secrets.SUPABASE_URL }}
-          SECRET_SUPABASE_KEY:                              ${{ secrets.SUPABASE_KEY }}
-          SECRET_SUPABASE_SERVICE_ROLE_KEY:                 ${{ secrets.PRODUCTION_SUPABASE_SERVICE_ROLE_KEY }}
-          SECRET_SUPABASE_JWT_SECRET:                       ${{ secrets.PRODUCTION_SUPABASE_JWT_SECRET }}
-          SECRET_OPENROUTER_API_KEY:                        ${{ secrets.OPENROUTER_API_KEY }}
-          SECRET_DEFAULT_CHAT_MODEL:                        ${{ secrets.DEFAULT_CHAT_MODEL }}
-          SECRET_EMBEDDING_MODEL:                           ${{ secrets.EMBEDDING_MODEL }}
-          SECRET_SECRET_KEY:                                ${{ secrets.SECRET_KEY }}
-          SECRET_WEBAUTHN_RP_ID:                            ${{ secrets.WEBAUTHN_RP_ID }}
-          SECRET_WEBAUTHN_RP_NAME:                          ${{ secrets.WEBAUTHN_RP_NAME }}
-          SECRET_WEBAUTHN_EXPECTED_ORIGIN:                  ${{ secrets.WEBAUTHN_EXPECTED_ORIGIN }}
-          SECRET_CORS_ALLOWED_ORIGINS:                      ${{ secrets.CORS_ALLOWED_ORIGINS }}
-          SECRET_TAVILY_API_KEY:                            ${{ secrets.TAVILY_API_KEY }}
-          SECRET_SENTRY_DSN:                                ${{ secrets.SENTRY_DSN }}
-          SECRET_AZURE_NOTIFICATION_HUB_NAME:               ${{ secrets.AZURE_NOTIFICATION_HUB_NAME }}
-          SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING:  ${{ secrets.AZURE_NOTIFICATION_HUB_CONNECTION_STRING }}
         run: |
           IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
           [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
 
-          SECRETS=(
-            "database-url=${SECRET_DATABASE_URL}"
-            "supabase-url=${SECRET_SUPABASE_URL}"
-            "supabase-key=${SECRET_SUPABASE_KEY}"
-            "supabase-service-role-key=${SECRET_SUPABASE_SERVICE_ROLE_KEY}"
-            "supabase-jwt-secret=${SECRET_SUPABASE_JWT_SECRET}"
-            "openrouter-api-key=${SECRET_OPENROUTER_API_KEY}"
-            "default-chat-model=${SECRET_DEFAULT_CHAT_MODEL}"
-            "embedding-model=${SECRET_EMBEDDING_MODEL}"
-            "secret-key=${SECRET_SECRET_KEY}"
-            "webauthn-rp-id=${SECRET_WEBAUTHN_RP_ID}"
-            "webauthn-rp-name=${SECRET_WEBAUTHN_RP_NAME}"
-            "webauthn-expected-origin=${SECRET_WEBAUTHN_EXPECTED_ORIGIN}"
-            "cors-allowed-origins=${SECRET_CORS_ALLOWED_ORIGINS}"
-            "tavily-api-key=${SECRET_TAVILY_API_KEY}"
-            "sentry-dsn=${SECRET_SENTRY_DSN}"
-            "azure-notification-hub-name=${SECRET_AZURE_NOTIFICATION_HUB_NAME}"
-            "azure-notification-hub-connection-string=${SECRET_AZURE_NOTIFICATION_HUB_CONNECTION_STRING}"
+          # aca-miru-pr is permanently in 'Labels' revision mode. In this mode every
+          # write operation (secret set, revision set-mode) requires --target-label,
+          # which those commands do not support. All 17 secrets are pre-configured on
+          # the app and do not need to be re-set per deploy.
+          #
+          # az containerapp update is the only command that accepts --target-label, so
+          # it is the sole deploy command. Env vars wire up the already-configured
+          # secrets by name via secretref:.
+          ENV_VARS=(
+            "DATABASE_URL=secretref:database-url"
+            "SUPABASE_URL=secretref:supabase-url"
+            "SUPABASE_KEY=secretref:supabase-key"
+            "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
+            "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
+            "OPENROUTER_API_KEY=secretref:openrouter-api-key"
+            "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
+            "EMBEDDING_MODEL=secretref:embedding-model"
+            "SECRET_KEY=secretref:secret-key"
+            "WEBAUTHN_RP_ID=secretref:webauthn-rp-id"
+            "WEBAUTHN_RP_NAME=secretref:webauthn-rp-name"
+            "WEBAUTHN_EXPECTED_ORIGIN=secretref:webauthn-expected-origin"
+            "CORS_ALLOWED_ORIGINS=secretref:cors-allowed-origins"
+            "TAVILY_API_KEY=secretref:tavily-api-key"
+            "SENTRY_DSN=secretref:sentry-dsn"
+            "AZURE_NOTIFICATION_HUB_NAME=secretref:azure-notification-hub-name"
+            "AZURE_NOTIFICATION_HUB_CONNECTION_STRING=secretref:azure-notification-hub-connection-string"
+            "SENTRY_ENVIRONMENT=pr-preview"
           )
 
-          FILTERED_SECRETS=()
-          FILTERED_ENV_VARS=()
-          for secret in "${SECRETS[@]}"; do
-            key="${secret%%=*}"; val="${secret#*=}"
-            if [ -n "$val" ]; then
-              FILTERED_SECRETS+=("$key=$val")
-              env_key=$(echo "$key" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-              FILTERED_ENV_VARS+=("$env_key=secretref:$key")
-            fi
-          done
-          FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=pr-preview")
-
-          if [ ${#FILTERED_SECRETS[@]} -gt 0 ]; then
-            az containerapp secret set \
-              --name "${{ env.PR_APP }}" \
-              --resource-group "${{ env.PR_RG }}" \
-              --secrets "${FILTERED_SECRETS[@]}"
-          fi
-
-          az containerapp revision set-mode --mode multiple --name "${{ env.PR_APP }}" --resource-group "${{ env.PR_RG }}"
-
-          # The revision suffix must be unique for each update, even on the same PR.
-          # The output of 'az containerapp update' contains the properties of the container app.
-          # The created revision is set as the 'latestRevisionName'.
-          #
-          # In 'labels' revision mode, --target-label is required. We use a label
-          # matching the PR number to ensure we can route traffic to this revision.
           NEW_REVISION=$(az containerapp update \
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \
             --image "$IMAGE_TAG" \
-            --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_attempt }}" \
+            --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_id }}" \
             --target-label "pr-${{ github.event.pull_request.number }}" \
-            --set-env-vars "${FILTERED_ENV_VARS[@]}" \
+            --set-env-vars "${ENV_VARS[@]}" \
             --query "properties.latestRevisionName" \
             --output tsv)
 

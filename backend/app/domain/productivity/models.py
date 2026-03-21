@@ -24,6 +24,7 @@ class Task(SupabaseModel):
     title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
     description: str | None = fields.TextField(null=True)
     is_completed: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
+    due_date: datetime | None = fields.DatetimeField(null=True)
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
@@ -97,11 +98,13 @@ class TaskCreate(BaseModel):
         title: The title of the task.
         description: An optional description.
         is_completed: Indicates whether the task is complete. Defaults to False.
+        due_date: Optional due date for the task.
     """
 
     title: str
     description: str | None = None
     is_completed: bool = False
+    due_date: datetime | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -111,11 +114,13 @@ class TaskUpdate(BaseModel):
         title: Optional new title for the task.
         description: Optional new description.
         is_completed: Optional new completion status.
+        due_date: Optional new due date.
     """
 
     title: str | None = None
     description: str | None = None
     is_completed: bool | None = None
+    due_date: datetime | None = None
 
 
 class TaskResponse(BaseModel):
@@ -129,6 +134,7 @@ class TaskResponse(BaseModel):
         title: The title of the task.
         description: The description of the task, if any.
         is_completed: Whether the task is completed.
+        due_date: Optional due date for the task.
         created_at: The timestamp when the task was created.
         updated_at: The timestamp when the task was last updated.
     """
@@ -140,6 +146,7 @@ class TaskResponse(BaseModel):
     title: str
     description: str | None = None
     is_completed: bool
+    due_date: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
