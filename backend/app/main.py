@@ -20,7 +20,7 @@ from app.domain.notifications.api.router import router as notifications_router
 from app.infrastructure.database.tortoise import close_db, init_db
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Awaitable, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,9 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def add_security_headers(request: Request, call_next) -> Response:
+async def add_security_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """
     SEC(agent): Remediation for Area 7 (Transport & Headers).
     Vulnerabilities: Clickjacking, MIME-type sniffing, XSS (CSP Bypass), and insecure transport.
