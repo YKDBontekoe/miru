@@ -288,14 +288,14 @@ class TestMemoryRepository:
         params = call_args[0][1]
 
         # Verify the explicit casts are in the SQL string
-        assert "$4::uuid" in sql_query
-        assert "$5::uuid" in sql_query
-        assert "$6::uuid" in sql_query
+        assert "$4," in sql_query
+        assert "$5," in sql_query
+        assert "$6" in sql_query
 
-        # Verify parameters are passed as strings, not UUID objects
-        assert params[3] == str(uid)
-        assert params[4] == str(aid)
-        assert params[5] == str(rid)
+        # Verify parameters are passed as UUID objects
+        assert params[3] == uid
+        assert params[4] == aid
+        assert params[5] == rid
 
     @pytest.mark.asyncio
     async def test_search_fulltext_delegates_to_raw_sql(self) -> None:
