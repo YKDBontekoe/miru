@@ -405,6 +405,9 @@ jobs:
           done
           FILTERED_ENV_VARS+=("SENTRY_ENVIRONMENT=pr-preview")
 
+          # Ensure the latest Azure Container Apps extension is installed so --target-label is supported
+          az extension add --name containerapp --upgrade --yes
+
           if [ ${#FILTERED_SECRETS[@]} -gt 0 ]; then
             az containerapp secret set \
               --name "${{ env.PR_APP }}" \
@@ -412,7 +415,8 @@ jobs:
               --secrets "${FILTERED_SECRETS[@]}"
           fi
 
-          az containerapp revision set-mode --mode multiple --name "${{ env.PR_APP }}" --resource-group "${{ env.PR_RG }}"
+          # Switch to labels mode instead of multiple, as labels mode is correct for PR previews
+          az containerapp revision set-mode --mode labels --name "${{ env.PR_APP }}" --resource-group "${{ env.PR_RG }}"
 
           # The revision suffix must be unique for each update, even on the same PR.
           # The output of 'az containerapp update' contains the properties of the container app.
@@ -423,17 +427,11 @@ jobs:
             --image "$IMAGE_TAG" \
             --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_attempt }}" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}" \
+            --target-label "pr-${{ github.event.pull_request.number }}" \
             --query "properties.latestRevisionName" \
             --output tsv)
 
           echo "Created revision: $NEW_REVISION"
-
-          # We assign a label matching the PR number to this specific revision.
-          az containerapp revision label add \
-            --name "${{ env.PR_APP }}" \
-            --resource-group "${{ env.PR_RG }}" \
-            --label "pr-${{ github.event.pull_request.number }}" \
-            --revision "$NEW_REVISION"
       - name: Get app URL
         id: app-url
         run: |
