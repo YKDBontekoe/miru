@@ -1,362 +1,153 @@
-# Miru - AI Personal Assistant with Memory
+actionlint
+==========
+[![CI Badge][]][CI]
+[![API Document][api-badge]][apidoc]
 
-**Miru** is a personal AI assistant that actually remembers you. Unlike typical chatbots that start fresh every conversation, Miru uses vector memory powered by Supabase (PostgreSQL + pgvector) to store and retrieve your past interactions, creating a truly personalized experience that grows smarter over time.
+[actionlint][repo] is a static checker for GitHub Actions workflow files. [Try it online!][playground]
 
-## What Miru Does
+Features:
 
-### Core Features
+- **Syntax check for workflow files** to check unexpected or missing keys following [workflow syntax][syntax-doc]
+- **Strong type check for `${{ }}` expressions** to catch several semantic errors like access to not existing property,
+  type mismatches, ...
+- **Actions usage check** to check that inputs at `with:` and outputs in `steps.{id}.outputs` are correct
+- **Reusable workflow check** to check inputs/outputs/secrets of reusable workflows and workflow calls
+- **[shellcheck][] and [pyflakes][] integrations** for scripts at `run:`
+- **Security checks**; [script injection][script-injection-doc] by untrusted inputs, hard-coded credentials
+- **Other several useful checks**; [glob syntax][filter-pattern-doc] validation, dependencies check for `needs:`,
+  runner label validation, cron syntax validation, ...
 
-**Long-term Memory**
-- Every conversation is stored as a vector embedding in pgvector
-- Automatically retrieves relevant memories based on cosine similarity (HNSW-indexed)
-- Remembers facts, preferences, and past discussions
-- Memory collections for grouping related memories
-- Knowledge graph with entities and relationships stored in PostgreSQL
+See [the full list](docs/checks.md) of checks done by actionlint.
 
-**AI-Powered Agents**
-- Create custom AI personas with unique personalities, goals, and capabilities
-- AI-assisted agent generation from keywords
-- Agent templates for quick setup
-- Extensible tool system (web search, productivity tools, Steam integration)
-- Multi-agent orchestration via CrewAI
+<img src="https://github.com/rhysd/ss/blob/master/actionlint/main.gif?raw=true" alt="actionlint reports 7 errors" width="806" height="492"/>
 
-**Chat Rooms & Group Chat**
-- Solo chat with any agent using streaming responses
-- Multi-agent group chat rooms
-- Context-aware replies that reference your history
+**Example of broken workflow:**
 
-**Productivity Suite**
-- Tasks with completion tracking
-- Notes with pinning and agent-created notes
-- Calendar events with all-day support and location
-
-**Authentication**
-- Magic link (email)
-- Password login
-- Passwordless passkey/WebAuthn support
-
-**Multi-Platform**
-- iOS
-- Android
-- Web (Expo Web)
-- macOS, Windows, Linux (React Native Desktop)
-
-### Use Cases
-
-- **Personal Journal** - Reflect on past thoughts and track personal growth
-- **Learning Companion** - Remember what you're studying and build on it
-- **Task Management** - Manage tasks, notes, and calendar events conversationally
-- **Creative Writing** - Maintain continuity across writing sessions
-- **Knowledge Base** - Store and retrieve information conversationally
-- **Multi-Agent Collaboration** - Orchestrate multiple AI personas for complex tasks
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                            MIRU                                  │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────────────────┐    ┌───────────────────────────┐  │
-│  │  Frontend (React Native) │    │  Backend (FastAPI)        │  │
-│  │  ├─ iOS / Android        │◄──►│  ├─ REST API (/api/v1)   │  │
-│  │  ├─ Web (Expo)           │    │  ├─ Streaming (SSE)       │  │
-│  │  └─ Desktop (RN-Desktop) │    │  ├─ Vector Search         │  │
-│  │                          │    │  ├─ CrewAI Orchestration   │  │
-│  │  State: Zustand          │    │  └─ Agent Tool System     │  │
-│  │  Models: TypeScript      │    │                           │  │
-│  │  Router: Expo Router     │    │  Supabase (PostgreSQL     │  │
-│  └──────────────────────────┘    │    + pgvector)            │  │
-│                                  └───────────────────────────┘  │
-│                                                                  │
-│  External Services:                                              │
-│  • OpenRouter — LLM & embeddings (Claude, GPT, etc.)            │
-│  • Supabase — Auth, database, RLS                                │
-│  • Azure — Container Apps, Static Web Apps, Notification Hubs    │
-│  • Sentry — Error tracking                                       │
-│  • Tavily — Web search for agents                                │
-│  • Steam Web API — Gaming integration                            │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+```yaml
+on:
+  push:
+    branch: main
+    tags:
+      - 'v\d+'
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, linux-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - run: echo "Checking commit '${{ github.event.head_commit.message }}'"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node_version: 18.x
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ matrix.platform }}-node-${{ hashFiles('**/package-lock.json') }}
+        if: ${{ github.repository.permissions.admin == true }}
+      - run: npm install && npm test
 ```
 
-### How It Works
-
-1. **User sends message** -> Frontend sends request to `/api/v1/rooms/{id}/messages`
-2. **Memory retrieval** -> Backend embeds the query via OpenRouter, searches pgvector for similar memories
-3. **Context injection** -> Relevant memories are injected into the agent's system prompt
-4. **Streaming response** -> Agent generates a response streamed back via SSE
-5. **Memory storage** -> The conversation is embedded and stored for future retrieval
-
-## Quick Start
-
-### Prerequisites
-
-- **Python 3.13+** - Backend runtime
-- **Node.js 18+** - Frontend runtime (npm/yarn/bun)
-- **Docker & Docker Compose** - Local development database
-- **Make** - Build automation
-- **Supabase account** - Database and auth ([supabase.com](https://supabase.com))
-- **OpenRouter API key** - LLM access ([openrouter.ai](https://openrouter.ai))
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/miru.git
-cd miru
-
-# Setup Python virtual environment and install dependencies
-make setup-backend
-
-# Configure environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env — see the .env.example for required keys
-
-# Start local PostgreSQL database with pgvector (optional, for local dev)
-make db
-
-# Run backend server (Terminal 1)
-make backend
-
-# Run React Native frontend (Terminal 2)
-cd frontend && npm install
-make frontend
-```
-
-### Environment Variables
-
-See [`backend/.env.example`](backend/.env.example) for the full list. Key variables:
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `OPENROUTER_API_KEY` | Yes | OpenRouter API key for LLM and embeddings |
-| `SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_KEY` | Yes | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (backend only) |
-| `SUPABASE_JWT_SECRET` | Yes | JWT secret for token validation |
-| `DATABASE_URL` | Yes | Direct PostgreSQL connection string |
-| `WEBAUTHN_RP_ID` | Yes | Passkey relying party ID (`localhost` for dev) |
-| `TAVILY_API_KEY` | No | Tavily API key for agent web search |
-
-## Project Structure
+**actionlint reports 7 errors:**
 
 ```
-miru/
-├── backend/                      # FastAPI Python backend
-│   ├── app/
-│   │   ├── main.py              # Entry point, lifespan, CORS, Sentry, router mounts
-│   │   ├── core/
-│   │   │   ├── config.py        # pydantic-settings configuration
-│   │   │   └── security/auth.py # Supabase JWT validation, get_current_user()
-│   │   ├── domain/              # Bounded contexts
-│   │   │   ├── agents/          # Agent models, service, schemas
-│   │   │   ├── auth/            # Profile, Passkey models, service
-│   │   │   ├── chat/            # ChatRoom, ChatMessage, streaming
-│   │   │   ├── memory/          # Memory, graph nodes/edges, embeddings
-│   │   │   ├── productivity/    # Tasks, Notes, Calendar Events
-│   │   │   ├── notifications/   # Push notification service
-│   │   │   └── agent_tools/     # Extensible agent tool system
-│   │   ├── api/v1/              # Route handlers per domain
-│   │   └── infrastructure/      # Database, external services, repositories
-│   │       ├── database/        # Supabase client, Tortoise ORM config
-│   │       ├── external/        # OpenRouter, Steam, CrewAI
-│   │       └── repositories/    # Data access layer
-│   ├── tests/                   # Pytest test suite
-│   ├── manage.py                # Migration CLI (makemigrations, check, migrate, status)
-│   ├── Dockerfile
-│   └── pyproject.toml
-│
-├── frontend/                    # React Native multi-platform frontend
-│   ├── app/                     # Expo Router file-based routing
-│   │   ├── (auth)/              # Login and onboarding flows
-│   │   └── (main)/              # Main app screens
-│   ├── src/
-│   │   ├── components/          # Reusable UI components
-│   │   ├── core/                # Models, API services, system services
-│   │   ├── features/            # Feature-specific logic
-│   │   └── store/               # Zustand state management
-│   ├── __tests__/               # Jest test suite
-│   └── package.json
-│
-├── supabase/
-│   └── migrations/              # SQL migration files (source of truth for schema)
-│
-├── .github/workflows/           # CI/CD automation
-├── docker-compose.yml           # Local dev: pgvector container
-├── Makefile                     # Development commands
-└── AGENTS.md                    # Guidelines for AI coding agents
+test.yaml:3:5: unexpected key "branch" for "push" section. expected one of "branches", "branches-ignore", "paths", "paths-ignore", "tags", "tags-ignore", "types", "workflows" [syntax-check]
+  |
+3 |     branch: main
+  |     ^~~~~~~
+test.yaml:5:11: character '\' is invalid for branch and tag names. only special characters [, ?, +, *, \ ! can be escaped with \. see `man git-check-ref-format` for more details. note that regular expression is unavailable. note: filter pattern syntax is explained at https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet [glob]
+  |
+5 |       - 'v\d+'
+  |           ^~~~
+test.yaml:10:28: label "linux-latest" is unknown. available labels are "windows-latest", "windows-2022", "windows-2019", "windows-2016", "ubuntu-latest", "ubuntu-22.04", "ubuntu-20.04", "ubuntu-18.04", "macos-latest", "macos-12", "macos-12.0", "macos-11", "macos-11.0", "macos-10.15", "self-hosted", "x64", "arm", "arm64", "linux", "macos", "windows". if it is a custom label for self-hosted runner, set list of labels in actionlint.yaml config file [runner-label]
+   |
+10 |         os: [macos-latest, linux-latest]
+   |                            ^~~~~~~~~~~~~
+test.yaml:13:41: "github.event.head_commit.message" is potentially untrusted. avoid using it directly in inline scripts. instead, pass it through an environment variable. see https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions for more details [expression]
+   |
+13 |       - run: echo "Checking commit '${{ github.event.head_commit.message }}'"
+   |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test.yaml:17:11: input "node_version" is not defined in action "actions/setup-node@v4". available inputs are "always-auth", "architecture", "cache", "cache-dependency-path", "check-latest", "node-version", "node-version-file", "registry-url", "scope", "token" [action]
+   |
+17 |           node_version: 18.x
+   |           ^~~~~~~~~~~~~
+test.yaml:21:20: property "platform" is not defined in object type {os: string} [expression]
+   |
+21 |           key: ${{ matrix.platform }}-node-${{ hashFiles('**/package-lock.json') }}
+   |                    ^~~~~~~~~~~~~~~
+test.yaml:22:17: receiver of object dereference "permissions" must be type of object but got "string" [expression]
+   |
+22 |         if: ${{ github.repository.permissions.admin == true }}
+   |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
-## API
+## Why?
 
-All routes are under `/api/v1` and require a Supabase JWT Bearer token (except health check).
+- **Running a workflow is time consuming.** You need to push the changes and wait until the workflow runs on GitHub even if
+  it contains some trivial mistakes. [act][] is useful to debug the workflow locally. But it is not suitable for CI and still
+  time consuming when your workflow gets larger.
+- **Checks of workflow files by GitHub are very loose.** It reports no error even if unexpected keys are in mappings
+  (meant that some typos in keys). And also it reports no error when accessing to property which is actually not existing.
+  For example `matrix.foo` when no `foo` is defined in `matrix:` section, it is evaluated to `null` and causes no error.
+- **Some mistakes silently break a workflow.** Most common case I saw is specifying missing property to cache key. In the
+  case cache silently does not work properly but a workflow itself runs without error. So you might not notice the mistake
+  forever.
 
-| Prefix | Description |
-|--------|-------------|
-| `GET /health` | Health check |
-| `/api/v1/agents` | Agent CRUD, AI generation, capabilities, integrations |
-| `/api/v1/auth` | Passkey registration and login (WebAuthn) |
-| `/api/v1/rooms` | Chat rooms, messages, streaming responses |
-| `/api/v1/crew` | CrewAI multi-agent orchestration |
-| `/api/v1/memory` | Memory storage and retrieval |
-| `/api/v1/productivity` | Tasks, Notes, Calendar Events |
-| `/api/v1/integrations` | Steam integration |
-| `/api/v1/notifications` | Push notification registration |
+## Quick start
 
-Interactive API docs are available at `http://localhost:8000/docs` when the backend is running.
+Install `actionlint` command by downloading [the released binary][releases] or by Homebrew or by `go install`. See
+[the installation document](docs/install.md) for more details like how to manage the command with several package managers
+or run via Docker container.
 
-## CI/CD & Automation
-
-### GitHub Actions Workflows
-
-| Workflow | Trigger | Description |
-|----------|---------|-------------|
-| `pr-checks.yml` | Pull requests | Backend tests + lint, Frontend tests + lint, security audit, PR size check |
-| `backend-deploy.yml` | Push to main/develop | Test, Docker build to GHCR, Trivy scan, migrate DB, deploy to Azure Container Apps |
-| `frontend-pipeline.yml` | Push to main/develop | Frontend CI, build APK/iOS/Web, Lighthouse test, deploy web to Azure Static Web Apps |
-| `database-migrations.yml` | Push/PR touching migrations | Validate migration drift, deploy to staging/production via Supabase CLI |
-| `release.yml` | Tag push (v*) | GitHub release with changelog, build artifacts, Sentry release |
-| `codeql-analysis.yml` | Push/PR, weekly | Python security analysis |
-| `nightly.yml` | Daily 2 AM UTC | Security audit, dependency check, multi-platform build test |
-| `maintenance.yml` | Weekly/hourly | Label sync, artifact cleanup, branch cleanup, Sentry issue sync |
-| `notify-failure.yml` | Workflow failure | Discord + Slack notifications, auto-create GitHub issues |
-| `ai-agents.yml` | Issues, schedule | Jules auto-fix for Sentry issues, CodeRabbit bridge, performance reports |
-
-### Required GitHub Secrets
-
-**Azure Deployment:**
-- `AZURE_CREDENTIALS`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`
-- `AZURE_STATIC_WEB_APPS_API_TOKEN`
-
-**Supabase:**
-- `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_PROJECT_REF_STAGING`
-
-**Backend:**
-- `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_JWT_SECRET`, `DATABASE_URL`
-
-**Quality & Monitoring:**
-- `CODECOV_TOKEN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`
-
-**Notifications:**
-- `SLACK_WEBHOOK_URL`, `DISCORD_WEBHOOK_URL`
-
-## Development
-
-### Backend
-
-```bash
-cd backend
-
-# Run server
-.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Run tests with coverage
-.venv/bin/pytest --cov=app --cov-report=term-missing
-
-# Lint
-ruff check . && black --check . && isort --check-only . && mypy app/
-
-# Auto-fix
-ruff check --fix . && black . && isort .
+```sh
+go install github.com/rhysd/actionlint/cmd/actionlint@latest
 ```
 
-### Frontend
+Basically all you need to do is run the `actionlint` command in your repository. actionlint automatically detects workflows and
+checks errors. actionlint focuses on finding out mistakes. It tries to catch errors as much as possible and make false positives
+as minimal as possible.
 
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run app
-npx expo start
-
-# Run tests
-npm test
-
-# Lint
-npm run lint
-npm run type-check
+```sh
+actionlint
 ```
 
-### Make Commands
+Another option to try actionlint is [the online playground][playground]. Your browser can run actionlint through WebAssembly.
 
-```bash
-make setup-backend   # Create venv, install deps
-make setup-hooks     # Install pre-commit hook
-make db              # Start local pgvector Docker container
-make db-stop         # Stop local Docker container
-make backend         # Run FastAPI server
-make frontend        # Run React Native app (npx expo start)
-make test            # Run all tests (backend + frontend)
-make lint            # Run all linting (backend + frontend)
-make fix             # Auto-fix lint issues
-make clean           # Remove build artifacts
-```
+See [the usage document](docs/usage.md) for more details.
 
-### Database Migrations
+## Documents
 
-Schema changes are code-first via Tortoise ORM models:
+- [Checks](docs/checks.md): Full list of all checks done by actionlint with example inputs, outputs, and playground links.
+- [Installation](docs/install.md): Installation instructions. Prebuilt binaries, Homebrew package, a Docker image, building from
+  source, a download script (for CI) are available.
+- [Usage](docs/usage.md): How to use `actionlint` command locally or on GitHub Actions, the online playground, an official Docker
+  image, and integrations with reviewdog, Problem Matchers, super-linter, pre-commit, VS Code.
+- [Configuration](docs/config.md): How to configure actionlint behavior. Currently only labels of self-hosted runners can be
+  configured.
+- [Go API](docs/api.md): How to use actionlint as Go library.
+- [References](docs/reference.md): Links to resources.
 
-```bash
-cd backend
+## Bug reporting
 
-# 1. Edit models in app/domain/**/models.py
-# 2. Generate migration
-python manage.py makemigrations <name>
-
-# 3. Apply locally
-supabase db reset --local
-
-# 4. Check for uncommitted drift
-python manage.py check
-```
-
-See [AGENTS.md](AGENTS.md) for full migration workflow details.
-
-## Code Quality
-
-- **Backend:** 75%+ test coverage, strict type hints, Google-style docstrings
-- **Frontend:** 70%+ test coverage, React Native / TypeScript style
-- **Security:** CodeQL scanning, Trivy container scanning, dependency audits
-- **Pre-commit hooks:** ruff, black, eslint, type-check
-
-Install hooks: `make setup-hooks`
-
-## Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make changes following our code style
-4. Run tests: `make test`
-5. Run linting: `make lint`
-6. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
-7. Push and create a Pull Request
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities.
+When you see some bugs or false positives, it is helpful to [file a new issue][issue-form] with a minimal example
+of input. Giving me some feedbacks like feature requests or ideas of additional checks is also welcome.
 
 ## License
 
-[MIT License](LICENSE)
+actionlint is distributed under [the MIT license](./LICENSE.txt).
 
-## Acknowledgments
-
-- [FastAPI](https://fastapi.tiangolo.com/) - Python web framework
-- [React Native](https://reactnative.dev/) - Multi-platform UI framework
-- [Expo](https://expo.dev/) - React Native toolset and ecosystem
-- [Supabase](https://supabase.com/) - Auth, database, and real-time
-- [OpenRouter](https://openrouter.ai/) - LLM routing and access
-- [pgvector](https://github.com/pgvector/pgvector) - Vector similarity search for PostgreSQL
-- [CrewAI](https://www.crewai.com/) - Multi-agent orchestration
-- [Sentry](https://sentry.io/) - Error tracking
-- [Azure](https://azure.microsoft.com/) - Cloud hosting
-
----
-
-<p align="center">Built with FastAPI + React Native + Supabase</p>
+[CI Badge]: https://github.com/rhysd/actionlint/workflows/CI/badge.svg?branch=main&event=push
+[CI]: https://github.com/rhysd/actionlint/actions?query=workflow%3ACI+branch%3Amain
+[api-badge]: https://pkg.go.dev/badge/github.com/rhysd/actionlint.svg
+[apidoc]: https://pkg.go.dev/github.com/rhysd/actionlint
+[repo]: https://github.com/rhysd/actionlint
+[playground]: https://rhysd.github.io/actionlint/
+[shellcheck]: https://github.com/koalaman/shellcheck
+[pyflakes]: https://github.com/PyCQA/pyflakes
+[act]: https://github.com/nektos/act
+[syntax-doc]: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+[filter-pattern-doc]: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+[script-injection-doc]: https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+[issue-form]: https://github.com/rhysd/actionlint/issues/new
+[releases]: https://github.com/rhysd/actionlint/releases
