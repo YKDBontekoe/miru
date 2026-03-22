@@ -429,12 +429,16 @@ jobs:
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }}
 
+          # Sanitize revision suffix: replace '@' with '-' and ensure it's lowercase
+          # rev-miru-backend@1234567 -> rev-miru-backend-1234567
+          SAFE_REVISION_SUFFIX=$(echo "rev-${{ steps.sentry-release.outputs.value }}" | tr '@' '-' | tr '[:upper:]' '[:lower:]')
+
           # --set-env-vars adds/updates without replacing unrelated env vars.
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image "$IMAGE_TAG" \
-            --revision-suffix "rev-${{ steps.sentry-release.outputs.value }}" \
+            --revision-suffix "$SAFE_REVISION_SUFFIX" \
             --set-env-vars "${FILTERED_ENV_VARS[@]}"
 
       - name: Wait for new revision to become active

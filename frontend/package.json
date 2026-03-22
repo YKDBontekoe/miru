@@ -4,8 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
     "lint": "eslint .",
@@ -47,6 +47,7 @@
     "expo-router": "~55.0.7",
     "expo-secure-store": "~55.0.9",
     "expo-status-bar": "~55.0.4",
+    "expo-build-properties": "~0.13.2",
     "nativewind": "^4.2.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
