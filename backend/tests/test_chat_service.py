@@ -585,8 +585,10 @@ async def test_handle_message_persistence_and_broadcast(chat_service: ChatServic
 
         async def _save_mock(msg):
             from datetime import datetime
+
             msg.created_at = datetime.now()
             return msg
+
         chat_service.chat_repo.save_message = AsyncMock(side_effect=_save_mock)
 
         user_msg = await chat_service._handle_message_persistence_and_broadcast(
@@ -716,8 +718,10 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
 
         async def _save_mock(msg):
             from datetime import datetime
+
             msg.created_at = datetime.now()
             return msg
+
         chat_service.chat_repo.save_message = AsyncMock(side_effect=_save_mock)
 
         await chat_service._persist_and_broadcast_agent_response(
