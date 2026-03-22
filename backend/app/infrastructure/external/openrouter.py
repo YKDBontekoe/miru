@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import TYPE_CHECKING, TypeVar
 
+import openai
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
@@ -37,7 +42,14 @@ class OpenRouterClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type(Exception),
+        retry=retry_if_exception_type(
+            (
+                openai.APIConnectionError,
+                openai.RateLimitError,
+                openai.InternalServerError,
+                openai.APITimeoutError,
+            )
+        ),
         reraise=True,
     )
     async def embed(self, text: str, model: str) -> list[float]:
@@ -51,7 +63,14 @@ class OpenRouterClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type(Exception),
+        retry=retry_if_exception_type(
+            (
+                openai.APIConnectionError,
+                openai.RateLimitError,
+                openai.InternalServerError,
+                openai.APITimeoutError,
+            )
+        ),
         reraise=True,
     )
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
@@ -68,7 +87,14 @@ class OpenRouterClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type(Exception),
+        retry=retry_if_exception_type(
+            (
+                openai.APIConnectionError,
+                openai.RateLimitError,
+                openai.InternalServerError,
+                openai.APITimeoutError,
+            )
+        ),
         reraise=True,
     )
     async def structured_completion(
@@ -102,9 +128,14 @@ async def chat_completion(
     chosen_model = model or get_settings().default_chat_model
     try:
         return await client.chat_completion(messages, chosen_model)
-    except Exception:
+    except Exception as e:
+        if isinstance(e, asyncio.CancelledError):
+            raise
         fallback = get_settings().fallback_chat_model
         if fallback and fallback != chosen_model:
+            logger.warning(
+                "chat_completion failed with model %s, falling back to %s", chosen_model, fallback
+            )
             return await client.chat_completion(messages, fallback)
         raise
 
@@ -118,9 +149,16 @@ async def structured_completion(
     chosen_model = model or get_settings().default_chat_model
     try:
         return await client.structured_completion(messages, chosen_model, response_model)
-    except Exception:
+    except Exception as e:
+        if isinstance(e, asyncio.CancelledError):
+            raise
         fallback = get_settings().fallback_chat_model
         if fallback and fallback != chosen_model:
+            logger.warning(
+                "structured_completion failed with model %s, falling back to %s",
+                chosen_model,
+                fallback,
+            )
             return await client.structured_completion(messages, fallback, response_model)
         raise
 
