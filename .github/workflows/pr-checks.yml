@@ -393,15 +393,13 @@ jobs:
 
           # 1. Run the setup collection to get the bearerToken, exporting the environment
           echo "Starting Postman Setup Collection for Auth..."
-          newman run backend/tests/postman/00_setup_auth.json \
-            --env-var baseUrl=${{ steps.app-url.outputs.url }} \
-            --env-var supabaseUrl=$SUPABASE_URL \
-            --env-var supabaseKey=$SUPABASE_KEY \
-            --env-var testEmail=$SUPABASE_TEST_EMAIL \
-            --env-var testPassword=$SUPABASE_TEST_PASSWORD \
-            --export-environment backend/tests/postman/test_env.json
-
-          if [ $? -ne 0 ]; then
+          if ! newman run backend/tests/postman/00_setup_auth.json \
+            --env-var baseUrl="${{ steps.app-url.outputs.url }}" \
+            --env-var supabaseUrl="$SUPABASE_URL" \
+            --env-var supabaseKey="$SUPABASE_KEY" \
+            --env-var testEmail="$SUPABASE_TEST_EMAIL" \
+            --env-var testPassword="$SUPABASE_TEST_PASSWORD" \
+            --export-environment backend/tests/postman/test_env.json; then
             echo "::error::Failed to run setup auth collection."
             exit 1
           fi
