@@ -627,7 +627,12 @@ class ChatService:
 
         try:
             result_text = await self._execute_crew_task(
-                room_agents, user_message, user_id, user_msg.id, step_callback, accept_language
+                room_agents,
+                user_message,
+                user_id,
+                user_msg.id,
+                step_callback,
+                accept_language=accept_language,
             )
 
             await self._persist_and_broadcast_agent_response(

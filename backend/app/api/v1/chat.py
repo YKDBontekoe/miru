@@ -69,7 +69,7 @@ async def run_crew(
     message = request.message or request.content
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
-    return await service.run_crew(message, user_id, accept_language)
+    return await service.run_crew(message, user_id, accept_language=accept_language)
 
 
 @router.patch("/rooms/{room_id}", response_model=RoomResponse)
