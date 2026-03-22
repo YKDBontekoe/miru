@@ -190,12 +190,16 @@ class ChatService:
         agent = db_agents[0]
         # Use the default chat model from settings (configured via env)
         model_name = get_settings().default_chat_model
+        from app.core.pii_scrubber import scrub_messages
+
+        messages: list[Any] = [
+            {"role": "system", "content": agent.personality},
+            {"role": "user", "content": user_message},
+        ]
+        safe_messages = scrub_messages(messages)
         response = await llm.chat.completions.create(
             model=model_name,
-            messages=[
-                {"role": "system", "content": agent.personality},
-                {"role": "user", "content": user_message},
-            ],
+            messages=safe_messages,
             stream=True,
         )
 

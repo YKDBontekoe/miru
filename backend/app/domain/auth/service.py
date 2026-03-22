@@ -71,3 +71,13 @@ class AuthService:
     async def delete_passkey(self, passkey_id: str | UUID, user_id: str | UUID) -> bool:
         """Delete a passkey belonging to a user."""
         return await self.repo.delete_passkey(passkey_id, user_id)
+
+    async def update_consent(
+        self, user_id: str | UUID, marketing_consent: bool, data_processing_consent: bool
+    ) -> bool:
+        """Update user consent settings."""
+        return await self.repo.update_consent(user_id, marketing_consent, data_processing_consent)
+
+    async def delete_account(self, user_id: str | UUID) -> bool:
+        """Delete the user account completely, wiping out all associated data."""
+        return await self.repo.delete_account(user_id)
