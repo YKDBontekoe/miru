@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # Chat model used for all responses — required, no fallback.
     # Must be a valid OpenRouter model ID, e.g. "google/gemma-3-27b-it:free"
     default_chat_model: str
+    fallback_chat_model: str | None = None
     # WebAuthn / Passkey configuration
     # rp_id must match the domain of your app exactly (no scheme, no port for standard ports)
     # e.g. "miru.app" for production, "localhost" for local dev
