@@ -123,6 +123,18 @@ class TestChatRepository:
         assert result is True
 
     @pytest.mark.asyncio
+    async def test_unauthorized_room_access_raises_value_error(self) -> None:
+        repo = ChatRepository()
+        with pytest.raises(ValueError, match="Unauthorized or not found"):
+            await repo.add_agent_to_room(uuid4(), uuid4(), uuid4())
+
+        with pytest.raises(ValueError, match="Unauthorized or not found"):
+            await repo.list_room_agents(uuid4(), uuid4())
+
+        with pytest.raises(ValueError, match="Unauthorized or not found"):
+            await repo.get_room_messages(uuid4(), uuid4())
+
+    @pytest.mark.asyncio
     async def test_update_room_name(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -210,6 +222,17 @@ class TestMemoryRepository:
         repo = MemoryRepository()
         result = await repo.delete_memory(uuid4(), uuid4())
         assert result is False
+
+    @pytest.mark.asyncio
+    async def test_delete_memory_unauthorized_raises_value_error(self) -> None:
+        repo = MemoryRepository()
+        owner_id = uuid4()
+        other_id = uuid4()
+        memory = Memory(content="To delete", user_id=owner_id, embedding=[0.0])
+        await repo.insert_memory(memory)
+
+        with pytest.raises(ValueError, match="Unauthorized or not found"):
+            await repo.delete_memory(memory.id, other_id)
 
     @pytest.mark.asyncio
     async def test_create_relationship(self) -> None:
