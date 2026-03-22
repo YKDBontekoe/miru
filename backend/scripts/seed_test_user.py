@@ -1,8 +1,9 @@
+import json
 import os
 import sys
-import urllib.request
 import urllib.error
-import json
+import urllib.request
+
 
 def seed_user():
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -17,14 +18,12 @@ def seed_user():
     headers = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     # 1. Check if user exists
     get_req = urllib.request.Request(
-        f"{supabase_url}/auth/v1/admin/users",
-        headers=headers,
-        method="GET"
+        f"{supabase_url}/auth/v1/admin/users", headers=headers, method="GET"
     )
 
     user_id = None
@@ -42,16 +41,13 @@ def seed_user():
 
     if user_id:
         print(f"User {email} already exists with ID {user_id}. Updating password and confirming.")
-        update_data = json.dumps({
-            "password": password,
-            "email_confirm": True
-        }).encode("utf-8")
+        update_data = json.dumps({"password": password, "email_confirm": True}).encode("utf-8")
 
         update_req = urllib.request.Request(
             f"{supabase_url}/auth/v1/admin/users/{user_id}",
             data=update_data,
             headers=headers,
-            method="PUT"
+            method="PUT",
         )
         try:
             with urllib.request.urlopen(update_req) as response:
@@ -61,17 +57,12 @@ def seed_user():
             sys.exit(1)
     else:
         print(f"User {email} does not exist. Creating and confirming.")
-        create_data = json.dumps({
-            "email": email,
-            "password": password,
-            "email_confirm": True
-        }).encode("utf-8")
+        create_data = json.dumps(
+            {"email": email, "password": password, "email_confirm": True}
+        ).encode("utf-8")
 
         create_req = urllib.request.Request(
-            f"{supabase_url}/auth/v1/admin/users",
-            data=create_data,
-            headers=headers,
-            method="POST"
+            f"{supabase_url}/auth/v1/admin/users", data=create_data, headers=headers, method="POST"
         )
         try:
             with urllib.request.urlopen(create_req) as response:
@@ -81,6 +72,7 @@ def seed_user():
             if hasattr(e, "read"):
                 print(e.read().decode("utf-8"))
             sys.exit(1)
+
 
 if __name__ == "__main__":
     seed_user()
