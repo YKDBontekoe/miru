@@ -20,7 +20,6 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 # AgentRepository
 # ---------------------------------------------------------------------------
 
-
 class TestAgentRepository:
     @pytest.mark.asyncio
     @pytest.mark.asyncio
@@ -79,11 +78,9 @@ class TestAgentRepository:
         repo = AgentRepository()
         await repo.increment_message_count(uuid4())
 
-
 # ---------------------------------------------------------------------------
 # ChatRepository
 # ---------------------------------------------------------------------------
-
 
 class TestChatRepository:
     @pytest.mark.asyncio
@@ -99,19 +96,19 @@ class TestChatRepository:
     @pytest.mark.asyncio
     async def test_get_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.get_room(uuid4())
+        result = await repo.get_room(uuid4(), uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_update_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.update_room(uuid4(), "New Name")
+        result = await repo.update_room(uuid4(), uuid4(), "New Name")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_delete_room_returns_false_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.delete_room(uuid4())
+        result = await repo.delete_room(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio
@@ -119,7 +116,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Delete Me", user_id)
-        result = await repo.delete_room(room.id)
+        result = await repo.delete_room(room.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
@@ -127,7 +124,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Old Name", user_id)
-        updated = await repo.update_room(room.id, "New Name")
+        updated = await repo.update_room(room.id, user_id, "New Name")
         assert updated is not None
         assert updated.name == "New Name"
 
@@ -136,7 +133,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Msg Room", user_id)
-        messages = await repo.get_room_messages(room.id)
+        messages = await repo.get_room_messages(room.id, user_id)
         assert messages == []
 
     @pytest.mark.asyncio
@@ -153,7 +150,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Agent Room", user_id)
-        agents = await repo.list_room_agents(room.id)
+        agents = await repo.list_room_agents(room.id, user_id)
         assert agents == []
 
     @pytest.mark.asyncio
@@ -162,8 +159,8 @@ class TestChatRepository:
         user_id = uuid4()
         room = await repo.create_room("Touch Room", user_id)
         original_updated_at = room.updated_at
-        await repo.touch_room(room.id)
-        refreshed = await repo.get_room(room.id)
+        await repo.touch_room(room.id, user_id)
+        refreshed = await repo.get_room(room.id, user_id)
         assert refreshed is not None
         assert refreshed.updated_at >= original_updated_at
 
@@ -171,13 +168,11 @@ class TestChatRepository:
     async def test_touch_room_noop_for_unknown(self) -> None:
         repo = ChatRepository()
         # Should not raise even if the room doesn't exist
-        await repo.touch_room(uuid4())
-
+        await repo.touch_room(uuid4(), uuid4())
 
 # ---------------------------------------------------------------------------
 # MemoryRepository
 # ---------------------------------------------------------------------------
-
 
 class TestMemoryRepository:
     @pytest.mark.asyncio
@@ -202,13 +197,13 @@ class TestMemoryRepository:
         user_id = uuid4()
         memory = Memory(content="To delete", user_id=user_id, embedding=[0.0])
         await repo.insert_memory(memory)
-        result = await repo.delete_memory(memory.id)
+        result = await repo.delete_memory(memory.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
     async def test_delete_memory_returns_false_for_unknown(self) -> None:
         repo = MemoryRepository()
-        result = await repo.delete_memory(uuid4())
+        result = await repo.delete_memory(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio
@@ -278,9 +273,11 @@ class TestMemoryRepository:
         uid = uuid4()
         aid = uuid4()
         rid = uuid4()
-        with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
-            mock_tortoise.get_connection.return_value = mock_conn
+
+        with patch("tortoise.Tortoise.get_connection") as mock_conn_func:
+            mock_conn_func.return_value = mock_conn
             result = await repo.match_memories([0.1, 0.2], 0.5, 5, uid, aid, rid)
+
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
         call_args = mock_conn.execute_query_dict.call_args
@@ -302,17 +299,16 @@ class TestMemoryRepository:
         repo = MemoryRepository()
         mock_conn = AsyncMock()
         mock_conn.execute_query_dict = AsyncMock(return_value=[])
-        with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
-            mock_tortoise.get_connection.return_value = mock_conn
+
+        with patch("tortoise.Tortoise.get_connection") as mock_conn_func:
+            mock_conn_func.return_value = mock_conn
             result = await repo.search_fulltext("hello world")
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
 
-
 # ---------------------------------------------------------------------------
 # AuthRepository
 # ---------------------------------------------------------------------------
-
 
 class TestAuthRepository:
     def _make_db(self, data: list[dict] | None = None) -> MagicMock:

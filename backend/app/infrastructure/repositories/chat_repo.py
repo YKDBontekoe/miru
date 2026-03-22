@@ -20,39 +20,45 @@ class ChatRepository:
         """List all chat rooms for a user."""
         return await ChatRoom.filter(user_id=user_id).all()
 
-    async def get_room(self, room_id: UUID) -> ChatRoom | None:
+    async def get_room(self, room_id: UUID, user_id: UUID) -> ChatRoom | None:
         """Fetch a single room."""
-        return await ChatRoom.get_or_none(id=room_id)
+        return await ChatRoom.get_or_none(id=room_id, user_id=user_id)
 
-    async def update_room(self, room_id: UUID, name: str) -> ChatRoom | None:
+    async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> ChatRoom | None:
         """Update a room's name."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id, user_id)
         if room:
             room.name = name
             await room.save()
         return room
 
-    async def delete_room(self, room_id: UUID) -> bool:
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
         """Delete a room."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id, user_id)
         if room:
             await room.delete()
             return True
         return False
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> ChatRoomAgent:
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> ChatRoomAgent:
+        if not await self.room_belongs_to_user(room_id, user_id):
+            raise ValueError("Unauthorized or not found")
         """Associate an agent with a room."""
         # Use _id for foreign keys when passing pure UUIDs in Tortoise
         return await ChatRoomAgent.create(room_id=room_id, agent_id=agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        if not await self.room_belongs_to_user(room_id, user_id):
+            raise ValueError("Unauthorized or not found")
         """Fetch all agents associated with a room, with integrations prefetched."""
         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
             "agent__capabilities", "agent__agent_integrations__integration"
         )
         return [assoc.agent for assoc in assocs]
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessage]:
+    async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessage]:
+        if not await self.room_belongs_to_user(room_id, user_id):
+            raise ValueError("Unauthorized or not found")
         """Fetch all messages in a room."""
         return await ChatMessage.filter(room_id=room_id).order_by("created_at").all()
 
@@ -65,8 +71,8 @@ class ChatRepository:
         await message.save()
         return message
 
-    async def touch_room(self, room_id: UUID) -> None:
+    async def touch_room(self, room_id: UUID, user_id: UUID) -> None:
         """Bump updated_at on a room so recent-chat sorting reflects new messages."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id, user_id)
         if room:
             await room.save()  # auto_now=True on updated_at refreshes the timestamp
