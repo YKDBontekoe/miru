@@ -5,17 +5,17 @@ import urllib.error
 import urllib.request
 
 
-def seed_user():
+def seed_user() -> None:
     supabase_url = os.environ.get("SUPABASE_URL")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
     email = os.environ.get("SUPABASE_TEST_EMAIL")
     password = os.environ.get("SUPABASE_TEST_PASSWORD")
 
-    if not all([supabase_url, service_key, email, password]):
+    if not supabase_url or not service_key or not email or not password:
         print("Missing required Supabase environment variables.")
         sys.exit(1)
 
-    headers = {
+    headers: dict[str, str] = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
         "Content-Type": "application/json",
