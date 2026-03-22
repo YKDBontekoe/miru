@@ -357,28 +357,19 @@ class ChatService:
         """Return True if *user_id* owns the room (authorised to send messages)."""
         return await self.chat_repo.room_belongs_to_user(room_id, user_id)
 
-    async def run_room_chat_ws(
+    async def _handle_message_persistence_and_broadcast(
         self,
         room_id: UUID,
         user_message: str,
         user_id: UUID,
         client_temp_id: str | None = None,
-    ) -> None:
-        """Process a room message and push all updates via the WebSocket hub.
-
-        This is the SignalR-compatible replacement for ``stream_room_responses``.
-        Instead of yielding SSE chunks, it broadcasts typed frames to every
-        connected client in the room via ``chat_hub``.
-        """
-        # Import here to avoid circular import at module level
+    ) -> ChatMessage:
+        """Persist the user message and broadcast to room members."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
-        # 1. Persist the user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
 
-        # 2. Broadcast the user message to other room members; send a confirmation
-        #    frame back to the sender so the frontend can replace the optimistic bubble.
         user_msg_data = {
             "id": str(user_msg.id),
             "room_id": str(room_id),
@@ -392,8 +383,6 @@ class ChatService:
             {"type": "message", "data": user_msg_data},
             exclude=user_id,
         )
-        # Sender confirmation includes clientTempId so the UI can swap out the
-        # optimistic bubble for the persisted one.
         await chat_hub.send_to_user(
             user_id,
             {
@@ -401,19 +390,12 @@ class ChatService:
                 "data": {**user_msg_data, "clientTempId": client_temp_id},
             },
         )
+        return user_msg
 
-        # 3. Fetch agents
-        db_agents = await self.chat_repo.list_room_agents(room_id)
-        if not db_agents:
-            await chat_hub.broadcast_to_room(
-                room_id,
-                {"type": "error", "data": {"message": "No agents in this room."}},
-            )
-            return
+    async def _broadcast_thinking_status(self, room_id: UUID, agent_names: list[str]) -> None:
+        """Broadcast thinking status to all room members."""
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
-        agent_names = [a.name for a in db_agents]
-
-        # 4. Signal "thinking" to all room members
         await chat_hub.broadcast_to_room(
             room_id,
             {
@@ -427,12 +409,16 @@ class ChatService:
             },
         )
 
-        # 5. Build CrewAI agents with a step-callback that broadcasts live activity
-        llm = self._get_crew_llm()
+    def _create_step_callback(self, room_id: UUID, agent_names: list[str]) -> Any:
+        """Create a callback for CrewAI to broadcast live activity."""
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
         loop = asyncio.get_running_loop()
 
         def _step_callback(output: Any) -> None:  # noqa: ANN401
-            """Translate a CrewAI step output into an agent_activity frame."""
+            acting_name = "Agent"
+            activity = "thinking"
+            detail = ""
             try:
                 tool_name: str | None = getattr(output, "tool", None)
                 if tool_name:
@@ -463,11 +449,32 @@ class ChatService:
                     ),
                     loop,
                 )
-            except Exception:
-                logger.exception("step_callback error — suppressed")
+            except Exception as e:
+                logger.exception(
+                    "step_callback error — suppressed",
+                    extra={
+                        "room_id": str(room_id),
+                        "acting_name": acting_name,
+                        "activity": activity,
+                        "detail": detail,
+                        "exception": str(e),
+                    },
+                )
 
+        return _step_callback
+
+    async def _execute_crew_task(
+        self,
+        room_agents: list[Agent],
+        user_message: str,
+        user_id: UUID,
+        user_msg_id: UUID,
+        step_callback: Any,
+    ) -> str:
+        """Build and execute the CrewAI task."""
+        llm = self._get_crew_llm()
         crew_agents = self._create_crew_agents(
-            db_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg.id
+            room_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg_id
         )
 
         if len(crew_agents) > 1:
@@ -481,7 +488,7 @@ class ChatService:
                 process=Process.hierarchical,
                 manager_llm=llm,
                 verbose=True,
-                step_callback=_step_callback,
+                step_callback=step_callback,
             )
         else:
             task = Task(
@@ -497,22 +504,99 @@ class ChatService:
                 tasks=[task],
                 process=Process.sequential,
                 verbose=True,
-                step_callback=_step_callback,
+                step_callback=step_callback,
             )
 
         result = await crew.kickoff_async()
+        return str(result)
 
-        # 6. Persist agent response first — only signal done after a successful save
-        agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
+    async def _persist_and_broadcast_agent_response(
+        self,
+        room_id: UUID,
+        room_agents: list[Agent],
+        result_text: str,
+        agent_names: list[str],
+    ) -> None:
+        """Save the agent response and broadcast to room."""
+        from tortoise.exceptions import BaseORMException
+
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
+        agent_id_for_msg = None if len(room_agents) > 1 else room_agents[0].id
         agent_msg = ChatMessage(
             room_id=room_id,
             agent_id=agent_id_for_msg,
-            content=str(result),
+            content=result_text,
         )
         try:
             await self.chat_repo.save_message(agent_msg)
-        except Exception:
+        except BaseORMException:
             logger.exception("Failed to persist agent message  room=%s", room_id)
+            raise
+
+        await self.chat_repo.touch_room(room_id)
+        for agent in room_agents:
+            try:
+                await self.agent_repo.increment_message_count(agent.id)
+            except BaseORMException:
+                logger.warning("Failed to increment message_count for agent %s", agent.id)
+
+        await chat_hub.broadcast_to_room(
+            room_id,
+            {
+                "type": "message",
+                "data": {
+                    "id": str(agent_msg.id),
+                    "room_id": str(room_id),
+                    "user_id": None,
+                    "agent_id": str(agent_id_for_msg) if agent_id_for_msg else None,
+                    "content": result_text,
+                    "created_at": agent_msg.created_at.isoformat(),
+                },
+            },
+        )
+
+    async def run_room_chat_ws(
+        self,
+        room_id: UUID,
+        user_message: str,
+        user_id: UUID,
+        client_temp_id: str | None = None,
+    ) -> None:
+        """Process a room message and push all updates via the WebSocket hub.
+
+        This is the SignalR-compatible replacement for ``stream_room_responses``.
+        Instead of yielding SSE chunks, it broadcasts typed frames to every
+        connected client in the room via ``chat_hub``.
+        """
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
+        user_msg = await self._handle_message_persistence_and_broadcast(
+            room_id, user_message, user_id, client_temp_id
+        )
+
+        room_agents = await self.chat_repo.list_room_agents(room_id)
+        if not room_agents:
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": "No agents in this room."}},
+            )
+            return
+
+        agent_names = [a.name for a in room_agents]
+
+        await self._broadcast_thinking_status(room_id, agent_names)
+
+        step_callback = self._create_step_callback(room_id, agent_names)
+
+        try:
+            result_text = await self._execute_crew_task(
+                room_agents, user_message, user_id, user_msg.id, step_callback
+            )
+
+            await self._persist_and_broadcast_agent_response(
+                room_id, room_agents, result_text, agent_names
+            )
             await chat_hub.broadcast_to_room(
                 room_id,
                 {
@@ -525,38 +609,21 @@ class ChatService:
                     },
                 },
             )
+        except Exception as e:
+            logger.exception("Failed processing crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
-                {"type": "error", "data": {"message": "Failed to save agent response."}},
+                {
+                    "type": "agent_activity",
+                    "data": {
+                        "room_id": str(room_id),
+                        "agent_names": agent_names,
+                        "activity": "error",
+                        "detail": "",
+                    },
+                },
             )
-            return
-
-        # 7. Signal completion (after successful persist)
-        await chat_hub.broadcast_to_room(
-            room_id,
-            {
-                "type": "agent_activity",
-                "data": {
-                    "room_id": str(room_id),
-                    "agent_names": agent_names,
-                    "activity": "done",
-                    "detail": "",
-                },
-            },
-        )
-
-        # 8. Broadcast the agent message to the whole room
-        await chat_hub.broadcast_to_room(
-            room_id,
-            {
-                "type": "message",
-                "data": {
-                    "id": str(agent_msg.id),
-                    "room_id": str(room_id),
-                    "user_id": None,
-                    "agent_id": str(agent_id_for_msg) if agent_id_for_msg else None,
-                    "content": str(result),
-                    "created_at": agent_msg.created_at.isoformat(),
-                },
-            },
-        )
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": f"Processing error: {e!s}"}},
+            )

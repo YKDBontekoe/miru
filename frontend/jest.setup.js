@@ -43,18 +43,3 @@ jest.mock('nativewind', () => ({
 
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
-
-// Mock for reanimated avoiding Worklets issues completely
-jest.mock('react-native-reanimated', () => {
-  return {
-    useSharedValue: jest.fn(() => ({ value: 1 })),
-    useAnimatedStyle: jest.fn(() => ({})),
-    withSpring: jest.fn((val) => val),
-    withTiming: jest.fn((val) => val),
-    createAnimatedComponent: jest.fn((comp) => comp),
-    default: {
-      createAnimatedComponent: jest.fn((comp) => comp),
-      call: jest.fn(),
-    },
-  };
-});

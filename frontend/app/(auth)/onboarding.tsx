@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../src/components/AppText';
+import { AppButton } from '../../src/components/AppButton';
 import { useAppStore } from '../../src/store/useAppStore';
 
 const { width } = Dimensions.get('window');

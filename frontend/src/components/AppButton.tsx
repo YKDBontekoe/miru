@@ -1,25 +1,12 @@
-import React, { useCallback } from 'react';
-import { Pressable, ActivityIndicator, PressableProps } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import resolveConfig from 'tailwindcss/resolveConfig';
-import tailwindConfig from '../../tailwind.config.js';
+import React from 'react';
+import { TouchableOpacity, ActivityIndicator, TouchableOpacityProps } from 'react-native';
 import { AppText } from './AppText';
 
-const fullConfig = resolveConfig(tailwindConfig);
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export interface AppButtonProps extends Omit<PressableProps, 'style'> {
+export interface AppButtonProps extends TouchableOpacityProps {
   label: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
   className?: string;
-  style?: any;
 }
 
 export function AppButton({
@@ -28,41 +15,9 @@ export function AppButton({
   isLoading = false,
   disabled,
   className = '',
-  style,
-  onPressIn,
-  onPressOut,
   ...props
 }: AppButtonProps) {
   const isDisabled = disabled || isLoading;
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const handlePressIn = useCallback(
-    (e: any) => {
-      if (!isDisabled) {
-        scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-        opacity.value = withTiming(0.8, { duration: 100 });
-      }
-      onPressIn?.(e);
-    },
-    [isDisabled, scale, opacity, onPressIn]
-  );
-
-  const handlePressOut = useCallback(
-    (e: any) => {
-      if (!isDisabled) {
-        scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-        opacity.value = withTiming(1, { duration: 150 });
-      }
-      onPressOut?.(e);
-    },
-    [isDisabled, scale, opacity, onPressOut]
-  );
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
 
   let bgClass = '';
   let textClass = '';
@@ -88,34 +43,19 @@ export function AppButton({
       break;
   }
 
-  // Instead of hardcoding 44px height, we use Tailwind spacing which was mapped
-  // in tailwind config but `h-[44px]` was magic.
-  // Tailwind config has spacing: { lg: '16px', xl: '20px', xxl: '24px', xxxl: '32px', huge: '40px', massive: '48px' }
-  // 44px is exactly 44. Since it's a touch target, standard is 44-48.
-  // We'll use h-[44px] but mapped via min-h-[44px] to avoid layout jank if text scales up
-  const baseClasses = 'min-h-[44px] flex-row items-center justify-center rounded-xl px-lg';
-
   return (
-    <AnimatedPressable
+    <TouchableOpacity
+      activeOpacity={0.8}
       disabled={isDisabled}
       testID="app-button"
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      className={`${baseClasses} ${bgClass} ${className}`}
-      style={[animatedStyle, style]}
+      className={`h-[44px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${className}`}
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator
-          color={
-            variant === 'primary' && !isDisabled
-              ? (fullConfig.theme as any).colors.surface.light
-              : '#60A5FA'
-          }
-        />
+        <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
       ) : (
         <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
       )}
-    </AnimatedPressable>
+    </TouchableOpacity>
   );
 }
