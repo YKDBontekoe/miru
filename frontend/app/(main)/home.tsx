@@ -184,7 +184,7 @@ function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void 
           backgroundColor: C.primarySurface,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginEnd: 12,
         }}
       >
         <AppText style={{ color: C.primary, fontSize: 16, fontWeight: '700' }}>{initial}</AppText>
@@ -194,13 +194,14 @@ function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void 
         <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>Tap to continue</AppText>
       </View>
       <AppText style={{ fontSize: 11, color: C.faint }}>{relativeTime()}</AppText>
-      <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginLeft: 6 }} />
+      <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginStart: 6 }} />
     </TouchableOpacity>
   );
 }
 
 // ─── Task row ────────────────────────────────────────────────────────────────
 function TaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
+  const { i18n } = useTranslation();
   return (
     <TouchableOpacity
       onPress={onToggle}
@@ -223,7 +224,7 @@ function TaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
           backgroundColor: task.completed ? C.success : 'transparent',
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginEnd: 12,
         }}
       >
         {task.completed && <Ionicons name="checkmark" size={12} color="white" />}
@@ -240,7 +241,9 @@ function TaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
       </AppText>
       {task.due_date && (
         <AppText style={{ fontSize: 11, color: C.warning }}>
-          {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          {new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
+            new Date(task.due_date)
+          )}
         </AppText>
       )}
     </TouchableOpacity>
@@ -263,7 +266,7 @@ function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
         paddingHorizontal: 12,
         borderWidth: 1,
         borderColor: `${color}25`,
-        marginRight: 8,
+        marginEnd: 8,
         marginBottom: 8,
       }}
     >
@@ -275,7 +278,7 @@ function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
           backgroundColor: `${color}20`,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 7,
+          marginEnd: 7,
         }}
       >
         <AppText style={{ color, fontSize: 12, fontWeight: '700' }}>
@@ -290,7 +293,7 @@ function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
             borderRadius: 8,
             paddingHorizontal: 5,
             paddingVertical: 1,
-            marginLeft: 6,
+            marginStart: 6,
           }}
         >
           <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
@@ -443,6 +446,7 @@ function NewChatModal({
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -604,8 +608,8 @@ export default function HomeScreen() {
             }}
           >
             <SectionHeader
-              title="Recent Chats"
-              actionLabel="See All"
+              title={t('home.sections.recent_chats', 'Recent Chats')}
+              actionLabel={t('home.actions.see_all', 'See All')}
               onAction={() => router.push('/(main)/chat')}
             />
             {recentRooms.map((room, i) => (
@@ -634,9 +638,9 @@ export default function HomeScreen() {
               title={
                 pendingTasks.length > 0
                   ? `Tasks · ${pendingTasks.length} open`
-                  : 'Tasks · All done!'
+                  : t('home.tasks.all_done', 'Tasks · All done!')
               }
-              actionLabel="See All"
+              actionLabel={t('home.actions.see_all', 'See All')}
               onAction={() => router.push('/(main)/productivity')}
             />
             {pendingTasks.length === 0 ? (
@@ -647,7 +651,9 @@ export default function HomeScreen() {
                   color={C.success}
                   style={{ marginBottom: 6 }}
                 />
-                <AppText style={{ color: C.muted, fontSize: 13 }}>You're all caught up!</AppText>
+                <AppText style={{ color: C.muted, fontSize: 13 }}>
+                  {t('home.tasks.caught_up', "You're all caught up!")}
+                </AppText>
               </View>
             ) : (
               pendingTasks.map((task) => (
@@ -670,8 +676,8 @@ export default function HomeScreen() {
             }}
           >
             <SectionHeader
-              title="Your Agents"
-              actionLabel="Manage"
+              title={t('home.sections.your_agents', 'Your Agents')}
+              actionLabel={t('home.actions.manage', 'Manage')}
               onAction={() => router.push('/(main)/agents')}
             />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -705,7 +711,7 @@ export default function HomeScreen() {
               <Ionicons name="sparkles" size={36} color={C.primary} />
             </View>
             <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-              Welcome to Miru
+              {t('home.empty.title', 'Welcome to Miru')}
             </AppText>
             <AppText
               style={{
@@ -715,7 +721,7 @@ export default function HomeScreen() {
                 marginBottom: 24,
               }}
             >
-              Create an agent and start a chat to get going.
+              {t('home.empty.desc', 'Create an agent and start a chat to get going.')}
             </AppText>
             <TouchableOpacity
               onPress={() => setShowNewChat(true)}
@@ -728,8 +734,10 @@ export default function HomeScreen() {
                 paddingHorizontal: 24,
               }}
             >
-              <Ionicons name="add" size={18} color="white" style={{ marginRight: 6 }} />
-              <AppText style={{ color: 'white', fontWeight: '700' }}>Start a Chat</AppText>
+              <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
+              <AppText style={{ color: 'white', fontWeight: '700' }}>
+                {t('home.actions.start_chat', 'Start a Chat')}
+              </AppText>
             </TouchableOpacity>
           </View>
         )}

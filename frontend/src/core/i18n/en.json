@@ -1,0 +1,140 @@
+{
+  "navigation": {
+    "home": "Home",
+    "chat": "Chat",
+    "agents": "Agents",
+    "productivity": "Productivity",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {
+      "account": "Account",
+      "preferences": "Preferences",
+      "about": "About"
+    },
+    "items": {
+      "signed_in": "Signed in",
+      "personal_memories": "Personal Memories",
+      "memories_desc": "Manage facts Miru learned about you",
+      "no_memories": "No memories yet. As you talk to Miru, she will learn more about you.",
+      "notifications": "Notifications",
+      "notifications_desc": "Get alerts for long-running tasks",
+      "privacy_mode": "Privacy Mode",
+      "privacy_desc": "Minimize data logging for sessions",
+      "version": "Version",
+      "version_value": "1.0.0 (Beta)",
+      "tech_stack": "Built with React Native",
+      "tech_desc": "Powered by Expo & NativeWind",
+      "sign_out": "Sign Out",
+      "sign_out_desc": "Sign out of your Miru account"
+    },
+    "actions": {
+      "sign_out_confirm_title": "Sign Out",
+      "sign_out_confirm_desc": "You will need to sign in again to use Miru.",
+      "cancel": "Cancel",
+      "refresh": "Refresh",
+      "forget": "Forget",
+      "forget_memory_title": "Forget memory?",
+      "forget_memory_desc": "Are you sure you want to forget \"{{content}}\"?",
+      "error": "Error",
+      "delete_memory_failed": "Failed to delete memory."
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "sections": {
+      "quick_actions": "Quick Actions",
+      "your_agents": "Your Agents",
+      "recent_chats": "Recent Chats"
+    },
+    "actions": {
+      "new_chat": "New Chat",
+      "new_agent": "New Agent",
+      "new_task": "New Task",
+      "new_note": "New Note",
+      "see_all": "See All",
+      "manage": "Manage",
+      "chats": "Chats",
+      "agents": "Agents",
+      "done": "Done",
+      "create": "Create",
+      "start_chat": "Start a Chat"
+    },
+    "chat_modal": {
+      "title": "New Chat",
+      "placeholder": "Chat name…",
+      "name_required": "Name required",
+      "please_enter_name": "Please enter a name for this chat.",
+      "error": "Error",
+      "failed_to_create": "Failed to create chat. Please try again."
+    },
+    "tasks": {
+      "all_done": "Tasks · All done!",
+      "caught_up": "You're all caught up!"
+    },
+    "empty": {
+      "title": "Welcome to Miru",
+      "desc": "Create an agent and start a chat to get going."
+    }
+  },
+  "chat": {
+    "title": "Miru",
+    "personas": "Personas",
+    "chats": "Chats",
+    "new_chat": "New Chat",
+    "chat_name_label": "Chat Name",
+    "chat_name_placeholder": "e.g. Gaming Session",
+    "add_agents": "Add Agents",
+    "create_chat": "Create Chat",
+    "no_agents_yet": "No agents yet",
+    "no_conversations_title": "No conversations yet",
+    "no_conversations_desc": "Create a chat and start collaborating with your AI personas.",
+    "error": "Error",
+    "failed_to_create": "Failed to create chat. Please try again.",
+    "name_required": "Name required",
+    "please_enter_name": "Please enter a name for this chat."
+  },
+  "agents": {
+    "title": "Agents",
+    "subtitle": "Your AI persona collection",
+    "new": "New",
+    "create_agent": "Create Agent",
+    "no_agents_title": "No agents yet",
+    "no_agents_desc": "Create your first AI persona to get started.",
+    "level": "Lv {{level}}",
+    "msgs": "{{count}} msgs",
+    "stats": {
+      "messages": "Messages",
+      "level": "Level",
+      "integrations": "Integrations"
+    },
+    "labels": {
+      "personality": "Personality",
+      "about": "About",
+      "goals": "Goals",
+      "integrations": "Integrations",
+      "level": "Level {{level}}"
+    },
+    "create_modal": {
+      "title": "New Agent",
+      "subtitle": "Powered by Miru AI",
+      "name_label": "Agent Name",
+      "name_placeholder": "e.g. friendly chef, sci-fi expert",
+      "keywords_label": "Keywords & Traits",
+      "keywords_placeholder": "Describe how this agent thinks and communicates...",
+      "generate": "Generate Persona",
+      "required": "Required",
+      "keywords_required": "Keywords required",
+      "enter_keywords": "Enter keywords to generate a persona.",
+      "error": "Error",
+      "generate_failed": "Could not generate persona. Try again.",
+      "create_failed": "Failed to create agent. Please try again.",
+      "name_required": "Name and personality are required."
+    }
+  }
+}

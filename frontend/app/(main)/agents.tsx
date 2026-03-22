@@ -119,7 +119,7 @@ function CreateAgentSheet({
             }}
           >
             <AppText variant="h2" style={{ color: C.text }}>
-              New Agent
+              {t('agents.create_modal.title', 'New Agent')}
             </AppText>
             <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close-circle" size={26} color={C.faint} />
@@ -139,16 +139,19 @@ function CreateAgentSheet({
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                <Ionicons name="sparkles" size={16} color={C.primary} style={{ marginRight: 6 }} />
+                <Ionicons name="sparkles" size={16} color={C.primary} style={{ marginEnd: 6 }} />
                 <AppText style={{ color: C.primary, fontWeight: '600', fontSize: 13 }}>
-                  Generate with AI
+                  {t('agents.create_modal.generate_ai', 'Generate with AI')}
                 </AppText>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TextInput
                   value={keywords}
                   onChangeText={setKeywords}
-                  placeholder="e.g. friendly chef, sci-fi expert"
+                  placeholder={t(
+                    'agents.create_modal.name_placeholder',
+                    'e.g. friendly chef, sci-fi expert'
+                  )}
                   placeholderTextColor={C.faint}
                   style={{
                     flex: 1,
@@ -192,12 +195,12 @@ function CreateAgentSheet({
                 letterSpacing: 1,
               }}
             >
-              Name
+              {t('agents.create_modal.name_label', 'Name')}
             </AppText>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Agent name"
+              placeholder={t('agents.create_modal.name_placeholder_fallback', 'Agent name')}
               placeholderTextColor={C.faint}
               style={{
                 backgroundColor: C.surfaceHigh,
@@ -221,12 +224,15 @@ function CreateAgentSheet({
                 letterSpacing: 1,
               }}
             >
-              Personality
+              {t('agents.labels.personality', 'Personality')}
             </AppText>
             <TextInput
               value={personality}
               onChangeText={setPersonality}
-              placeholder="Describe how this agent thinks and communicates..."
+              placeholder={t(
+                'agents.create_modal.keywords_placeholder',
+                'Describe how this agent thinks and communicates...'
+              )}
               placeholderTextColor={C.faint}
               multiline
               numberOfLines={4}
@@ -260,7 +266,7 @@ function CreateAgentSheet({
                 <ActivityIndicator color="white" />
               ) : (
                 <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-                  Create Agent
+                  {t('agents.create_agent', 'Create Agent')}
                 </AppText>
               )}
             </TouchableOpacity>
@@ -317,7 +323,7 @@ function AgentDetailSheet({
                   borderColor: `${color}40`,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginRight: 14,
+                  marginEnd: 14,
                 }}
               >
                 <AppText style={{ color, fontSize: 24, fontWeight: '700' }}>
@@ -339,7 +345,7 @@ function AgentDetailSheet({
                     alignSelf: 'flex-start',
                   }}
                 >
-                  <Ionicons name="flash" size={11} color={color} style={{ marginRight: 3 }} />
+                  <Ionicons name="flash" size={11} color={color} style={{ marginEnd: 3 }} />
                   <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
                     Level {level}
                   </AppText>
@@ -444,7 +450,7 @@ function AgentDetailSheet({
                       name="checkmark-circle"
                       size={16}
                       color={color}
-                      style={{ marginRight: 8, marginTop: 2 }}
+                      style={{ marginEnd: 8, marginTop: 2 }}
                     />
                     <AppText style={{ flex: 1, lineHeight: 20, color: C.text }}>{goal}</AppText>
                   </View>
@@ -499,6 +505,7 @@ function AgentDetailSheet({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AgentsScreen() {
+  const { t } = useTranslation();
   const { agents, fetchAgents, isLoading } = useAgentStore();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
@@ -536,7 +543,7 @@ export default function AgentsScreen() {
             borderColor: `${color}35`,
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: 14,
+            marginEnd: 14,
           }}
         >
           <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
@@ -563,7 +570,7 @@ export default function AgentsScreen() {
               marginBottom: 4,
             }}
           >
-            <Ionicons name="flash" size={11} color={color} style={{ marginRight: 3 }} />
+            <Ionicons name="flash" size={11} color={color} style={{ marginEnd: 3 }} />
             <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>Lv {level}</AppText>
           </View>
           <AppText variant="caption" style={{ color: C.muted, fontSize: 10 }}>
@@ -605,7 +612,7 @@ export default function AgentsScreen() {
             paddingVertical: 8,
           }}
         >
-          <Ionicons name="add" size={18} color="white" style={{ marginRight: 4 }} />
+          <Ionicons name="add" size={18} color="white" style={{ marginEnd: 4 }} />
           <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>New</AppText>
         </TouchableOpacity>
       </View>
@@ -652,7 +659,7 @@ export default function AgentsScreen() {
                 paddingHorizontal: 24,
               }}
             >
-              <Ionicons name="add" size={18} color="white" style={{ marginRight: 6 }} />
+              <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
               <AppText style={{ color: 'white', fontWeight: '700' }}>Create Agent</AppText>
             </TouchableOpacity>
           </View>
