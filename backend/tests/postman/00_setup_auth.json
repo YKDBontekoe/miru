@@ -10,42 +10,6 @@
       "name": "Login to Supabase",
       "event": [
         {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "const supabaseUrl = pm.environment.get(\"supabaseUrl\");",
-              "const supabaseKey = pm.environment.get(\"supabaseKey\");",
-              "const testEmail = pm.environment.get(\"testEmail\");",
-              "const testPassword = pm.environment.get(\"testPassword\");",
-              "",
-              "// Seed the user first by attempting a signup",
-              "const signupRequest = {",
-              "  url: `${supabaseUrl}/auth/v1/signup`,",
-              "  method: 'POST',",
-              "  header: {",
-              "    'apikey': supabaseKey,",
-              "    'Content-Type': 'application/json'",
-              "  },",
-              "  body: {",
-              "    mode: 'raw',",
-              "    raw: JSON.stringify({ email: testEmail, password: testPassword })",
-              "  }",
-              "};",
-              "",
-              "pm.sendRequest(signupRequest, function (err, res) {",
-              "    if (err) {",
-              "        console.log(\"Signup request failed entirely:\", err);",
-              "    } else {",
-              "        console.log(\"Signup attempted. Status:\", res.code);",
-              "        // If code is 400 with 'User already registered', that is fine.",
-              "        // If code is 200, user is created.",
-              "    }",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        },
-        {
           "listen": "test",
           "script": {
             "exec": [

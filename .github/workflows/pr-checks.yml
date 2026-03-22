@@ -388,8 +388,15 @@ jobs:
           SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           npm install -g newman
+
+          echo "Seeding Test User via Admin API..."
+          if ! python backend/scripts/seed_test_user.py; then
+            echo "::error::Failed to seed test user."
+            exit 1
+          fi
 
           # 1. Run the setup collection to get the bearerToken, exporting the environment
           echo "Starting Postman Setup Collection for Auth..."
