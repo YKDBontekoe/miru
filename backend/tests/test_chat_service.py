@@ -365,7 +365,7 @@ async def test_stream_room_responses_no_agents(
     user_id = uuid4()
     room_id = uuid4()
 
-    typing.cast(AsyncMock, chat_service.chat_repo.list_room_agents).return_value = []
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
 
     responses = []
     async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
@@ -589,15 +589,15 @@ async def test_handle_message_persistence_and_broadcast(chat_service: ChatServic
             msg.created_at = datetime.now()
             return msg
 
-        typing.cast(AsyncMock, chat_service.chat_repo.save_message).side_effect = _save_mock
+        typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
 
         user_msg = await chat_service._handle_message_persistence_and_broadcast(
             room_id, message, user_id, "temp123"
         )
 
         assert user_msg.content == message
-        assert getattr(user_msg, "room_id") == room_id
-        typing.cast(AsyncMock, chat_service.chat_repo.save_message).assert_called_once_with(
+        assert getattr(user_msg, "room_id") == room_id  # noqa: B009
+        typing.cast("AsyncMock", chat_service.chat_repo.save_message).assert_called_once_with(
             user_msg
         )
         mock_hub.broadcast_to_room.assert_called_once()
@@ -671,7 +671,7 @@ async def test_execute_crew_task(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await chat_service._execute_crew_task(
-            typing.cast(list[typing.Any], room_agents), "Hello", user_id, user_msg_id, MagicMock()
+            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock()
         )
         assert result == "Result"
 
@@ -704,7 +704,7 @@ async def test_execute_crew_task_multi(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await chat_service._execute_crew_task(
-            typing.cast(list[typing.Any], room_agents), "Hello", user_id, user_msg_id, MagicMock()
+            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock()
         )
         assert result == "ResultMulti"
 
@@ -724,14 +724,21 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             msg.created_at = datetime.now()
             return msg
 
-        typing.cast(AsyncMock, chat_service.chat_repo.save_message).side_effect = _save_mock
+        typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
+        typing.cast(
+            "AsyncMock", chat_service.agent_repo.increment_message_count
+        ).return_value = None
 
         await chat_service._persist_and_broadcast_agent_response(
-            room_id, typing.cast(list[typing.Any], room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
-        typing.cast(typing.Any, chat_service.chat_repo.save_message).assert_called_once()
-        assert mock_hub.broadcast_to_room.call_count == 2
+        typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
+        typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
+        typing.cast(
+            "AsyncMock", chat_service.agent_repo.increment_message_count
+        ).assert_called_once_with(room_agents[0].id)
+        assert mock_hub.broadcast_to_room.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -742,18 +749,12 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
 
     chat_service.chat_repo.save_message = AsyncMock(side_effect=BaseORMException("DB error"))  # type: ignore[method-assign]
 
-    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
-        mock_hub.broadcast_to_room = AsyncMock()
-
+    with pytest.raises(BaseORMException, match="DB error"):
         await chat_service._persist_and_broadcast_agent_response(
-            room_id, typing.cast(list[typing.Any], room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
-        typing.cast(typing.Any, chat_service.chat_repo.save_message).assert_called_once()
-        assert mock_hub.broadcast_to_room.call_count == 2
-
-        error_call = mock_hub.broadcast_to_room.call_args_list[1]
-        assert error_call[0][1]["type"] == "error"
+    typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -761,7 +762,7 @@ async def test_run_room_chat_ws_no_agents(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
 
-    typing.cast(AsyncMock, chat_service.chat_repo.list_room_agents).return_value = []
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
 
     with (
         patch.object(
@@ -780,7 +781,7 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
 
-    typing.cast(AsyncMock, chat_service.chat_repo.list_room_agents).return_value = [
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
         MagicMock(id=uuid4(), name="Agent1")
     ]
 
@@ -794,8 +795,9 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         patch.object(
             chat_service, "_persist_and_broadcast_agent_response", new_callable=AsyncMock
         ) as m_agent_resp,
-        patch("app.infrastructure.websocket.manager.chat_hub"),
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
     ):
+        mock_hub.broadcast_to_room = AsyncMock()
         m_persist.return_value = MagicMock(id=uuid4())
         m_exec.return_value = "Result"
 
@@ -806,3 +808,6 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         m_cb.assert_called_once()
         m_exec.assert_called_once()
         m_agent_resp.assert_called_once()
+        mock_hub.broadcast_to_room.assert_called_once()
+        assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "agent_activity"
+        assert mock_hub.broadcast_to_room.call_args[0][1]["data"]["activity"] == "done"

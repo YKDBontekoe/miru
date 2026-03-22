@@ -416,6 +416,9 @@ class ChatService:
         loop = asyncio.get_running_loop()
 
         def _step_callback(output: Any) -> None:  # noqa: ANN401
+            acting_name = "Agent"
+            activity = "thinking"
+            detail = ""
             try:
                 tool_name: str | None = getattr(output, "tool", None)
                 if tool_name:
@@ -446,9 +449,17 @@ class ChatService:
                     ),
                     loop,
                 )
-            except AttributeError:
-                # Replace broad except Exception with specific exception
-                logger.exception("step_callback error — suppressed")
+            except Exception as e:
+                logger.exception(
+                    "step_callback error — suppressed",
+                    extra={
+                        "room_id": str(room_id),
+                        "acting_name": acting_name,
+                        "activity": activity,
+                        "detail": detail,
+                        "exception": str(e),
+                    },
+                )
 
         return _step_callback
 
@@ -521,36 +532,14 @@ class ChatService:
             await self.chat_repo.save_message(agent_msg)
         except BaseORMException:
             logger.exception("Failed to persist agent message  room=%s", room_id)
-            await chat_hub.broadcast_to_room(
-                room_id,
-                {
-                    "type": "agent_activity",
-                    "data": {
-                        "room_id": str(room_id),
-                        "agent_names": agent_names,
-                        "activity": "done",
-                        "detail": "",
-                    },
-                },
-            )
-            await chat_hub.broadcast_to_room(
-                room_id,
-                {"type": "error", "data": {"message": "Failed to save agent response."}},
-            )
-            return
+            raise
 
-        await chat_hub.broadcast_to_room(
-            room_id,
-            {
-                "type": "agent_activity",
-                "data": {
-                    "room_id": str(room_id),
-                    "agent_names": agent_names,
-                    "activity": "done",
-                    "detail": "",
-                },
-            },
-        )
+        await self.chat_repo.touch_room(room_id)
+        for agent in room_agents:
+            try:
+                await self.agent_repo.increment_message_count(agent.id)
+            except BaseORMException:
+                logger.warning("Failed to increment message_count for agent %s", agent.id)
 
         await chat_hub.broadcast_to_room(
             room_id,
@@ -600,10 +589,41 @@ class ChatService:
 
         step_callback = self._create_step_callback(room_id, agent_names)
 
-        result_text = await self._execute_crew_task(
-            room_agents, user_message, user_id, user_msg.id, step_callback
-        )
+        try:
+            result_text = await self._execute_crew_task(
+                room_agents, user_message, user_id, user_msg.id, step_callback
+            )
 
-        await self._persist_and_broadcast_agent_response(
-            room_id, room_agents, result_text, agent_names
-        )
+            await self._persist_and_broadcast_agent_response(
+                room_id, room_agents, result_text, agent_names
+            )
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "agent_activity",
+                    "data": {
+                        "room_id": str(room_id),
+                        "agent_names": agent_names,
+                        "activity": "done",
+                        "detail": "",
+                    },
+                },
+            )
+        except Exception as e:
+            logger.exception("Failed processing crew task for room=%s", room_id)
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "agent_activity",
+                    "data": {
+                        "room_id": str(room_id),
+                        "agent_names": agent_names,
+                        "activity": "error",
+                        "detail": "",
+                    },
+                },
+            )
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": f"Processing error: {e!s}"}},
+            )
