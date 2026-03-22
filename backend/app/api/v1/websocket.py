@@ -70,6 +70,7 @@ async def _handle_send_message(
     room_id: UUID,
     content: str,
     client_temp_id: str | None,
+    accept_language: str | None = None,
 ) -> None:
     """Process a user message and push results via the hub."""
     try:
@@ -78,6 +79,7 @@ async def _handle_send_message(
             user_message=content,
             user_id=user_id,
             client_temp_id=client_temp_id,
+            accept_language=accept_language,
         )
     except Exception:
         logger.exception("WS message processing failed  room=%s  user=%s", room_id, user_id)
@@ -96,6 +98,7 @@ async def _handle_send_message(
 async def websocket_chat_hub(
     websocket: WebSocket,
     token: str = Query(..., description="Supabase JWT access token"),
+    lang: str | None = Query(None, description="Preferred language"),
 ) -> None:
     """Main WebSocket endpoint — acts as a SignalR hub for chat rooms."""
     user_id = await _verify_token(token)
@@ -206,7 +209,7 @@ async def websocket_chat_hub(
                 client_temp_id: str | None = msg.get("clientTempId") or None
                 # Fire-and-forget — the hub pushes results back asynchronously
                 asyncio.create_task(
-                    _handle_send_message(service, user_id, room_id, content, client_temp_id)
+                    _handle_send_message(service, user_id, room_id, content, client_temp_id, lang)
                 )
 
     except WebSocketDisconnect:

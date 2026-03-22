@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { Note, Task } from '../../src/core/models';
@@ -288,10 +289,11 @@ function CreateTaskModal({
 // ─── Note Card ────────────────────────────────────────────────────────────────
 
 function NoteCard({ note, onDelete }: { note: Note; onDelete: () => void }) {
-  const date = new Date(note.created_at).toLocaleDateString(undefined, {
+  const { i18n } = useTranslation();
+  const date = new Intl.DateTimeFormat(i18n.language, {
     month: 'short',
     day: 'numeric',
-  });
+  }).format(new Date(note.created_at));
   return (
     <View
       style={{
@@ -306,9 +308,7 @@ function NoteCard({ note, onDelete }: { note: Note; onDelete: () => void }) {
       <View
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}
       >
-        <AppText
-          style={{ fontSize: 15, fontWeight: '600', color: C.text, flex: 1, marginRight: 8 }}
-        >
+        <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, flex: 1, marginEnd: 8 }}>
           {note.title}
         </AppText>
         <TouchableOpacity onPress={onDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -342,6 +342,7 @@ function TaskCard({
   onToggle: () => void;
   onDelete: () => void;
 }) {
+  const { i18n } = useTranslation();
   return (
     <View
       style={{
@@ -358,7 +359,7 @@ function TaskCard({
       <TouchableOpacity
         onPress={onToggle}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginRight: 14 }}
+        style={{ marginEnd: 14 }}
       >
         <Ionicons
           name={task.completed ? 'checkmark-circle' : 'ellipse-outline'}
@@ -379,7 +380,7 @@ function TaskCard({
         </AppText>
         {task.due_date && (
           <AppText variant="caption" style={{ color: C.muted, marginTop: 3, fontSize: 11 }}>
-            Due {new Date(task.due_date).toLocaleDateString()}
+            Due {new Intl.DateTimeFormat(i18n.language).format(new Date(task.due_date))}
           </AppText>
         )}
       </View>
@@ -525,7 +526,7 @@ export default function ProductivityScreen() {
                   paddingHorizontal: 24,
                 }}
               >
-                <Ionicons name="add" size={18} color="white" style={{ marginRight: 6 }} />
+                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
                 <AppText style={{ color: 'white', fontWeight: '700' }}>New Note</AppText>
               </TouchableOpacity>
             </View>
@@ -575,7 +576,7 @@ export default function ProductivityScreen() {
                   paddingHorizontal: 24,
                 }}
               >
-                <Ionicons name="add" size={18} color="white" style={{ marginRight: 6 }} />
+                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
                 <AppText style={{ color: 'white', fontWeight: '700' }}>New Task</AppText>
               </TouchableOpacity>
             </View>

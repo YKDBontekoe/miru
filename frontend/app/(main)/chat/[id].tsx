@@ -202,7 +202,7 @@ export default function ChatRoomScreen() {
                     borderColor: C.surface,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginLeft: i === 0 ? 0 : -8,
+                    marginStart: i === 0 ? 0 : -8,
                   }}
                 >
                   <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
@@ -390,7 +390,7 @@ export default function ChatRoomScreen() {
                         backgroundColor: `${color}18`,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        marginRight: 14,
+                        marginEnd: 14,
                       }}
                     >
                       <AppText style={{ color, fontWeight: '700', fontSize: 17 }}>

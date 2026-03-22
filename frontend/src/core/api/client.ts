@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { supabase } from '../services/supabase';
 import { Platform } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
+import i18next from 'i18next';
 
 const LOCAL_BACKEND_URL = Platform.select({
   android: 'http://10.0.2.2:8000',
@@ -28,6 +29,10 @@ apiClient.interceptors.request.use(async (config) => {
   } = await supabase.auth.getSession();
   if (session?.access_token) {
     config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  if (i18next.language) {
+    config.headers['Accept-Language'] = i18next.language;
   }
   return config;
 });
@@ -85,6 +90,7 @@ export async function streamChat(
     xhr.open('POST', fullUrl);
     xhr.setRequestHeader('Content-Type', 'application/json');
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    if (i18next.language) xhr.setRequestHeader('Accept-Language', i18next.language);
 
     let processedLength = 0;
 
