@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import typing
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from tortoise.exceptions import BaseORMException
 
 from app.domain.chat.service import ChatService
 
@@ -124,7 +125,6 @@ def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
 async def test_run_crew_task_has_single_agent(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from unittest.mock import patch
 
     user_id = uuid4()
 
@@ -177,7 +177,6 @@ async def test_run_crew_task_has_single_agent(
 async def test_run_crew_task_has_multiple_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from unittest.mock import patch
 
     user_id = uuid4()
 
@@ -241,7 +240,6 @@ async def test_run_crew_task_has_multiple_agents(
 async def test_stream_room_responses_single_agent(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from unittest.mock import patch
 
     user_id = uuid4()
     room_id = uuid4()
@@ -298,7 +296,6 @@ async def test_stream_room_responses_single_agent(
 async def test_stream_room_responses_multiple_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from unittest.mock import patch
 
     user_id = uuid4()
     room_id = uuid4()
@@ -438,7 +435,6 @@ async def test_stream_room_responses_slow_kickoff(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import asyncio
-    from unittest.mock import patch
 
     user_id = uuid4()
     room_id = uuid4()
@@ -488,7 +484,6 @@ async def test_stream_room_responses_increment_failure(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """increment_message_count failure is swallowed; stream completes normally."""
-    from unittest.mock import patch
 
     user_id = uuid4()
     room_id = uuid4()
@@ -534,7 +529,6 @@ async def test_stream_room_responses_cancel_task(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import asyncio
-    from unittest.mock import patch
 
     user_id = uuid4()
     room_id = uuid4()
@@ -577,3 +571,230 @@ async def test_stream_room_responses_cancel_task(
         await iterator.aclose()
         # The background task should have been cancelled in the finally block
         # We can't directly check the background_task status easily but this covers the finally block
+
+
+@pytest.mark.asyncio
+async def test_handle_message_persistence_and_broadcast(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    message = "Hello WS"
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+        mock_hub.send_to_user = AsyncMock()
+
+        async def _save_mock(msg):
+            from datetime import datetime
+            msg.created_at = datetime.now()
+            return msg
+        chat_service.chat_repo.save_message = AsyncMock(side_effect=_save_mock)
+
+        user_msg = await chat_service._handle_message_persistence_and_broadcast(
+            room_id, message, user_id, "temp123"
+        )
+
+        assert user_msg.content == message
+        assert user_msg.room_id == room_id
+        chat_service.chat_repo.save_message.assert_called_once_with(user_msg)
+        mock_hub.broadcast_to_room.assert_called_once()
+        mock_hub.send_to_user.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_broadcast_thinking_status(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    agent_names = ["Agent1", "Agent2"]
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+
+        await chat_service._broadcast_thinking_status(room_id, agent_names)
+
+        mock_hub.broadcast_to_room.assert_called_once()
+        call_args = mock_hub.broadcast_to_room.call_args[0]
+        assert call_args[0] == room_id
+        assert call_args[1]["type"] == "agent_activity"
+        assert call_args[1]["data"]["activity"] == "thinking"
+
+
+@pytest.mark.asyncio
+async def test_create_step_callback(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    agent_names = ["Agent1"]
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+
+        callback = chat_service._create_step_callback(room_id, agent_names)
+
+        mock_output = MagicMock()
+        mock_output.tool = "SearchTool"
+        mock_output.agent = "Agent1"
+
+        callback(mock_output)
+        # It schedules a task in the loop, wait for it
+        import asyncio
+
+        await asyncio.sleep(0.01)
+
+        mock_hub.broadcast_to_room.assert_called_once()
+        call_args = mock_hub.broadcast_to_room.call_args[0]
+        assert call_args[1]["data"]["activity"] == "using_tool"
+
+
+@pytest.mark.asyncio
+async def test_execute_crew_task(
+    chat_service: ChatService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    room_agents = [
+        MagicMock(
+            id=uuid4(), name="Agent1", personality="Good", description="desc", agent_integrations=[]
+        )
+    ]
+    user_id = uuid4()
+    user_msg_id = uuid4()
+
+    mock_llm = MagicMock()
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task"),
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent"),
+    ):
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="Result")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        result = await chat_service._execute_crew_task(
+            room_agents, "Hello", user_id, user_msg_id, MagicMock()
+        )
+        assert result == "Result"
+
+
+@pytest.mark.asyncio
+async def test_execute_crew_task_multi(
+    chat_service: ChatService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    room_agents = [
+        MagicMock(
+            id=uuid4(), name="Agent1", personality="Good", description="desc", agent_integrations=[]
+        ),
+        MagicMock(
+            id=uuid4(), name="Agent2", personality="Bad", description="desc", agent_integrations=[]
+        ),
+    ]
+    user_id = uuid4()
+    user_msg_id = uuid4()
+
+    mock_llm = MagicMock()
+    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+
+    with (
+        patch("app.domain.chat.service.Task"),
+        patch("app.domain.chat.service.Crew") as mock_crew_cls,
+        patch("app.domain.chat.service.crewai.Agent"),
+    ):
+        mock_crew_instance = MagicMock()
+        mock_crew_instance.kickoff_async = AsyncMock(return_value="ResultMulti")
+        mock_crew_cls.return_value = mock_crew_instance
+
+        result = await chat_service._execute_crew_task(
+            room_agents, "Hello", user_id, user_msg_id, MagicMock()
+        )
+        assert result == "ResultMulti"
+
+
+@pytest.mark.asyncio
+async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    room_agents = [MagicMock(id=uuid4(), name="Agent1")]
+    agent_names = ["Agent1"]
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+
+        async def _save_mock(msg):
+            from datetime import datetime
+            msg.created_at = datetime.now()
+            return msg
+        chat_service.chat_repo.save_message = AsyncMock(side_effect=_save_mock)
+
+        await chat_service._persist_and_broadcast_agent_response(
+            room_id, room_agents, "Done!", agent_names
+        )
+
+        chat_service.chat_repo.save_message.assert_called_once()
+        assert mock_hub.broadcast_to_room.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_persist_and_broadcast_agent_response_error(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    room_agents = [MagicMock(id=uuid4(), name="Agent1")]
+    agent_names = ["Agent1"]
+
+    chat_service.chat_repo.save_message = AsyncMock(side_effect=BaseORMException("DB error"))
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+
+        await chat_service._persist_and_broadcast_agent_response(
+            room_id, room_agents, "Done!", agent_names
+        )
+
+        chat_service.chat_repo.save_message.assert_called_once()
+        assert mock_hub.broadcast_to_room.call_count == 2
+
+        error_call = mock_hub.broadcast_to_room.call_args_list[1]
+        assert error_call[0][1]["type"] == "error"
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_no_agents(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    chat_service.chat_repo.list_room_agents.return_value = []
+
+    with (
+        patch.object(
+            chat_service, "_handle_message_persistence_and_broadcast", new_callable=AsyncMock
+        ),
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        mock_hub.broadcast_to_room.assert_called_once()
+        assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "error"
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    chat_service.chat_repo.list_room_agents.return_value = [MagicMock(id=uuid4(), name="Agent1")]
+
+    with (
+        patch.object(
+            chat_service, "_handle_message_persistence_and_broadcast", new_callable=AsyncMock
+        ) as m_persist,
+        patch.object(chat_service, "_broadcast_thinking_status", new_callable=AsyncMock) as m_think,
+        patch.object(chat_service, "_create_step_callback", return_value=MagicMock()) as m_cb,
+        patch.object(chat_service, "_execute_crew_task", new_callable=AsyncMock) as m_exec,
+        patch.object(
+            chat_service, "_persist_and_broadcast_agent_response", new_callable=AsyncMock
+        ) as m_agent_resp,
+        patch("app.infrastructure.websocket.manager.chat_hub"),
+    ):
+        m_persist.return_value = MagicMock(id=uuid4())
+        m_exec.return_value = "Result"
+
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+
+        m_persist.assert_called_once()
+        m_think.assert_called_once()
+        m_cb.assert_called_once()
+        m_exec.assert_called_once()
+        m_agent_resp.assert_called_once()
