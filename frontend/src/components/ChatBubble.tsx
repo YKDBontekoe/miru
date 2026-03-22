@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
@@ -35,10 +36,10 @@ function getAgentColor(name: string) {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function formatTime(iso?: string) {
+function formatTime(iso?: string, language: string = 'en') {
   if (!iso) return '';
   const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
 export function ChatBubble({
@@ -49,13 +50,14 @@ export function ChatBubble({
   timestamp,
   onRetry,
 }: ChatBubbleProps) {
+  const { i18n } = useTranslation();
   const isFailed = status === MessageStatus.error;
   const isStreaming = status === MessageStatus.streaming;
   const accentColor = agentName ? getAgentColor(agentName) : '#2563EB';
 
   if (isUser) {
     return (
-      <View style={{ alignItems: 'flex-end', marginBottom: 12, marginLeft: 56 }}>
+      <View style={{ alignItems: 'flex-end', marginBottom: 12, marginStart: 56 }}>
         <View
           style={{
             backgroundColor: C.userBubble,
@@ -69,8 +71,8 @@ export function ChatBubble({
           <AppText style={{ color: C.userText, fontSize: 16, lineHeight: 22 }}>{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginRight: 2 }}>
-            {formatTime(timestamp)}
+          <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginEnd: 2 }}>
+            {formatTime(timestamp, i18n.language)}
           </AppText>
         )}
       </View>
@@ -78,7 +80,7 @@ export function ChatBubble({
   }
 
   return (
-    <View style={{ alignItems: 'flex-start', marginBottom: 12, marginRight: 56 }}>
+    <View style={{ alignItems: 'flex-start', marginBottom: 12, marginEnd: 56 }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
         {/* Avatar */}
         <View
@@ -91,7 +93,7 @@ export function ChatBubble({
             borderColor: isFailed ? C.errorBubbleBorder : `${accentColor}35`,
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: 8,
+            marginEnd: 8,
             marginBottom: 2,
             flexShrink: 0,
           }}
@@ -181,8 +183,8 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginLeft: 36 }}>
-          {formatTime(timestamp)}
+        <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginStart: 36 }}>
+          {formatTime(timestamp, i18n.language)}
         </AppText>
       )}
     </View>

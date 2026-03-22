@@ -179,7 +179,9 @@ class ChatService:
             for m in msgs
         ]
 
-    async def stream_responses(self, user_message: str, user_id: UUID) -> AsyncIterator[str]:
+    async def stream_responses(
+        self, user_message: str, user_id: UUID, accept_language: str | None = None
+    ) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
@@ -190,10 +192,17 @@ class ChatService:
         agent = db_agents[0]
         # Use the default chat model from settings (configured via env)
         model_name = get_settings().default_chat_model
+
+        system_message = agent.personality
+        if accept_language:
+            system_message += (
+                f"\n\nIMPORTANT: Please respond in the following language locale: {accept_language}"
+            )
+
         response = await llm.chat.completions.create(
             model=model_name,
             messages=[
-                {"role": "system", "content": agent.personality},
+                {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message},
             ],
             stream=True,
@@ -228,7 +237,9 @@ class ChatService:
             for a in db_agents
         ]
 
-    async def run_crew(self, user_message: str, user_id: UUID) -> dict[str, str]:
+    async def run_crew(
+        self, user_message: str, user_id: UUID, accept_language: str | None = None
+    ) -> dict[str, str]:
         """Execute a full CrewAI orchestration and return a structured result."""
         # list_by_user prefetches agent_integrations__integration
         db_agents = await self.agent_repo.list_by_user(user_id)
@@ -238,9 +249,16 @@ class ChatService:
         llm = self._get_crew_llm()
         crew_agents = self._create_crew_agents(db_agents, llm, user_id, allow_delegation=True)
 
+        locale_instruction = (
+            f" Ensure you respond in the following language locale: {accept_language}."
+            if accept_language
+            else ""
+        )
+
         if len(crew_agents) > 1:
             task = Task(
-                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message)
+                + locale_instruction,
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
@@ -251,7 +269,7 @@ class ChatService:
             )
         else:
             task = Task(
-                description=user_message,
+                description=user_message + locale_instruction,
                 expected_output="A comprehensive multi-agent analysis.",
                 agent=crew_agents[0],
             )
@@ -265,7 +283,7 @@ class ChatService:
         return {"task_type": "general", "result": str(result)}
 
     async def stream_room_responses(
-        self, room_id: UUID, user_message: str, user_id: UUID
+        self, room_id: UUID, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         # 1. Save user message
@@ -284,10 +302,17 @@ class ChatService:
             db_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg.id
         )
 
+        locale_instruction = (
+            f" Ensure you respond in the following language locale: {accept_language}."
+            if accept_language
+            else ""
+        )
+
         # 4. Define and execute task
         if len(crew_agents) > 1:
             task = Task(
-                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message)
+                + locale_instruction,
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
@@ -302,6 +327,7 @@ class ChatService:
                 description=(
                     f"User said: {user_message}. "
                     "Orchestrate a helpful conversation among available agents to assist the user."
+                    f"{locale_instruction}"
                 ),
                 expected_output="A collaborative response from the most relevant agents.",
                 agent=crew_agents[0],
@@ -470,6 +496,7 @@ class ChatService:
         user_id: UUID,
         user_msg_id: UUID,
         step_callback: Any,
+        accept_language: str | None = None,
     ) -> str:
         """Build and execute the CrewAI task."""
         llm = self._get_crew_llm()
@@ -477,9 +504,16 @@ class ChatService:
             room_agents, llm, user_id, allow_delegation=False, origin_message_id=user_msg_id
         )
 
+        locale_instruction = (
+            f" Ensure you respond in the following language locale: {accept_language}."
+            if accept_language
+            else ""
+        )
+
         if len(crew_agents) > 1:
             task = Task(
-                description=MULTI_AGENT_PROMPT.format(user_message=user_message),
+                description=MULTI_AGENT_PROMPT.format(user_message=user_message)
+                + locale_instruction,
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
@@ -495,6 +529,7 @@ class ChatService:
                 description=(
                     f"User said: {user_message}. "
                     "Orchestrate a helpful conversation among available agents to assist the user."
+                    f"{locale_instruction}"
                 ),
                 expected_output="A collaborative response from the most relevant agents.",
                 agent=crew_agents[0],
@@ -562,6 +597,7 @@ class ChatService:
         user_message: str,
         user_id: UUID,
         client_temp_id: str | None = None,
+        accept_language: str | None = None,
     ) -> None:
         """Process a room message and push all updates via the WebSocket hub.
 
@@ -591,7 +627,7 @@ class ChatService:
 
         try:
             result_text = await self._execute_crew_task(
-                room_agents, user_message, user_id, user_msg.id, step_callback
+                room_agents, user_message, user_id, user_msg.id, step_callback, accept_language
             )
 
             await self._persist_and_broadcast_agent_response(

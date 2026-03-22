@@ -12,6 +12,7 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { useAppStore } from '../../store/useAppStore';
+import i18next from 'i18next';
 
 // ---------------------------------------------------------------------------
 // Frame types
@@ -106,7 +107,8 @@ class ChatHubService {
     }
 
     const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-    const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}`;
+    const lang = i18next.language || 'en';
+    const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}&lang=${encodeURIComponent(lang)}`;
 
     const ws = new WebSocket(url);
     this.ws = ws;

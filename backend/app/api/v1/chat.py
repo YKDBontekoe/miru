@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 from uuid import UUID  # noqa: TCH003
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import get_chat_service
@@ -46,13 +46,14 @@ async def chat(
     request: ChatRequest,
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
+    accept_language: Annotated[str | None, Header()] = None,
 ) -> StreamingResponse:
     """General chat stream without a specified room."""
     message = request.message or request.content
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
     return StreamingResponse(
-        service.stream_responses(message, user_id),
+        service.stream_responses(message, user_id, accept_language),
         media_type="text/event-stream",
     )
 
@@ -62,12 +63,13 @@ async def run_crew(
     request: ChatRequest,
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
+    accept_language: Annotated[str | None, Header()] = None,
 ) -> dict[str, Any]:
     """Run a full CrewAI orchestration for a single task and return structured output."""
     message = request.message or request.content
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
-    return await service.run_crew(message, user_id)
+    return await service.run_crew(message, user_id, accept_language)
 
 
 @router.patch("/rooms/{room_id}", response_model=RoomResponse)
@@ -131,12 +133,13 @@ async def chat_in_room(
     request: ChatRequest,
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
+    accept_language: Annotated[str | None, Header()] = None,
 ) -> StreamingResponse:
     """Stream responses from agents in the room."""
     message = request.message or request.content
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
     return StreamingResponse(
-        service.stream_room_responses(room_id, message, user_id),
+        service.stream_room_responses(room_id, message, user_id, accept_language),
         media_type="text/event-stream",
     )

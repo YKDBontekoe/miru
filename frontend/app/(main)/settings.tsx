@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { ApiService } from '../../src/core/api/ApiService';
@@ -87,7 +88,7 @@ function SettingRow({
           borderColor: destructive ? C.destructiveBorder : C.border,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginEnd: 12,
         }}
       >
         <Ionicons
@@ -117,10 +118,11 @@ function SettingRow({
 }
 
 function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
-  const date = new Date(memory.created_at).toLocaleDateString(undefined, {
+  const { i18n } = useTranslation();
+  const date = new Intl.DateTimeFormat(i18n.language, {
     month: 'short',
     day: 'numeric',
-  });
+  }).format(new Date(memory.created_at));
   return (
     <View
       style={{
@@ -141,7 +143,7 @@ function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void
           borderRadius: 4,
           backgroundColor: C.primary,
           marginTop: 6,
-          marginRight: 12,
+          marginEnd: 12,
         }}
       />
       <View style={{ flex: 1 }}>
@@ -153,7 +155,7 @@ function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void
       <TouchableOpacity
         onPress={onDelete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginLeft: 8 }}
+        style={{ marginStart: 8 }}
       >
         <Ionicons name="close" size={16} color={C.faint} />
       </TouchableOpacity>
@@ -162,6 +164,7 @@ function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void
 }
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { signOut, user } = useAuthStore();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoadingMemories, setIsLoadingMemories] = useState(false);
@@ -213,7 +216,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
         <AppText variant="h1" style={{ fontSize: 28, fontWeight: '700', color: C.text }}>
-          Settings
+          {t('settings.title', 'Settings')}
         </AppText>
       </View>
 
@@ -222,7 +225,7 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
       >
         {/* ── Account ─────────────────────────────── */}
-        <SectionHeader title="Account" />
+        <SectionHeader title={t('settings.sections.account', 'Account')} />
 
         <View
           style={{
@@ -246,14 +249,14 @@ export default function SettingsScreen() {
               borderColor: `${C.primary}25`,
               alignItems: 'center',
               justifyContent: 'center',
-              marginRight: 14,
+              marginEnd: 14,
             }}
           >
             <Ionicons name="person" size={22} color={C.primary} />
           </View>
           <View style={{ flex: 1 }}>
             <AppText style={{ fontWeight: '600', fontSize: 15, color: C.text }} numberOfLines={1}>
-              {user?.email ?? 'Signed in'}
+              {user?.email ?? t('settings.items.signed_in', 'Signed in')}
             </AppText>
             <AppText variant="caption" style={{ color: C.muted, fontSize: 12 }}>
               Signed in with magic link
@@ -263,15 +266,15 @@ export default function SettingsScreen() {
 
         <SettingRow
           icon="log-out-outline"
-          title="Sign Out"
-          subtitle="Sign out of your Miru account"
+          title={t('settings.items.sign_out', 'Sign Out')}
+          subtitle={t('settings.items.sign_out_desc', 'Sign out of your Miru account')}
           onPress={handleSignOut}
           destructive
         />
 
         {/* ── Personal Memories ────────────────────── */}
         <View style={{ marginTop: 16 }}>
-          <SectionHeader title="Personal Memories" />
+          <SectionHeader title={t('settings.items.personal_memories', 'Personal Memories')} />
 
           {isLoadingMemories ? (
             <View style={{ alignItems: 'center', paddingVertical: 20 }}>
@@ -295,7 +298,10 @@ export default function SettingsScreen() {
                 style={{ marginBottom: 8 }}
               />
               <AppText style={{ textAlign: 'center', fontSize: 13, color: C.muted }}>
-                No memories yet. As you talk to Miru, she will learn more about you.
+                {t(
+                  'settings.items.no_memories',
+                  'No memories yet. As you talk to Miru, she will learn more about you.'
+                )}
               </AppText>
             </View>
           ) : (
@@ -312,7 +318,7 @@ export default function SettingsScreen() {
                 style={{ alignItems: 'center', paddingVertical: 8 }}
               >
                 <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
-                  Refresh
+                  {t('settings.actions.refresh', 'Refresh')}
                 </AppText>
               </TouchableOpacity>
             </>
@@ -321,13 +327,13 @@ export default function SettingsScreen() {
 
         {/* ── Preferences ─────────────────────────── */}
         <View style={{ marginTop: 16 }}>
-          <SectionHeader title="Preferences" />
+          <SectionHeader title={t('settings.sections.preferences', 'Preferences')} />
 
           <SettingRow
             icon="shield-checkmark-outline"
             iconColor="#8B5CF6"
-            title="Privacy Mode"
-            subtitle="Minimize data logging for sessions"
+            title={t('settings.items.privacy_mode', 'Privacy Mode')}
+            subtitle={t('settings.items.privacy_desc', 'Minimize data logging for sessions')}
             rightElement={
               <Switch
                 value={privacyMode}
@@ -340,8 +346,8 @@ export default function SettingsScreen() {
           <SettingRow
             icon="notifications-outline"
             iconColor="#F59E0B"
-            title="Notifications"
-            subtitle="Get alerts for long-running tasks"
+            title={t('settings.items.notifications', 'Notifications')}
+            subtitle={t('settings.items.notifications_desc', 'Get alerts for long-running tasks')}
             rightElement={
               <Switch
                 value={notificationsEnabled}
@@ -355,18 +361,18 @@ export default function SettingsScreen() {
 
         {/* ── About ───────────────────────────────── */}
         <View style={{ marginTop: 16 }}>
-          <SectionHeader title="About" />
+          <SectionHeader title={t('settings.sections.about', 'About')} />
           <SettingRow
             icon="information-circle-outline"
             iconColor={C.primary}
-            title="Version"
-            subtitle="1.0.0 (Beta)"
+            title={t('settings.items.version', 'Version')}
+            subtitle={t('settings.items.version_value', '1.0.0 (Beta)')}
           />
           <SettingRow
             icon="code-slash-outline"
             iconColor="#10B981"
-            title="Built with React Native"
-            subtitle="Powered by Expo & NativeWind"
+            title={t('settings.items.tech_stack', 'Built with React Native')}
+            subtitle={t('settings.items.tech_desc', 'Powered by Expo & NativeWind')}
           />
         </View>
       </ScrollView>

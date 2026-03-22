@@ -1,0 +1,24 @@
+{
+  "navigation": {
+    "home": "בית",
+    "chat": "צ'אט",
+    "agents": "סוכנים",
+    "productivity": "פרודוקטיביות",
+    "settings": "הגדרות"
+  },
+  "settings": {
+    "title": "הגדרות",
+    "sections": {
+      "account": "חשבון",
+      "preferences": "העדפות",
+      "about": "אודות"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "בוקר טוב",
+      "afternoon": "צהריים טובים",
+      "evening": "ערב טוב"
+    }
+  }
+}

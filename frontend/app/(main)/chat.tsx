@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
@@ -45,7 +46,7 @@ function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ width: 72, alignItems: 'center', marginRight: 12 }}
+      style={{ width: 72, alignItems: 'center', marginEnd: 12 }}
     >
       <View
         style={{
@@ -84,9 +85,10 @@ function RoomCard({
   agents: Agent[];
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const memberLabel = () => {
-    if (agents.length === 0) return 'No agents yet';
+    if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
     if (agents.length === 1) return `You + ${agents[0].name}`;
     if (agents.length === 2) return `You, ${agents[0].name} & ${agents[1].name}`;
     return `You + ${agents.length} agents`;
@@ -115,7 +117,7 @@ function RoomCard({
           backgroundColor: C.primarySurface,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 14,
+          marginEnd: 14,
         }}
       >
         <AppText style={{ color: C.primary, fontSize: 20, fontWeight: '700' }}>{initial}</AppText>
@@ -125,7 +127,7 @@ function RoomCard({
           {room.name}
         </AppText>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="people-outline" size={12} color={C.muted} style={{ marginRight: 4 }} />
+          <Ionicons name="people-outline" size={12} color={C.muted} style={{ marginEnd: 4 }} />
           <AppText variant="caption" style={{ fontSize: 12, color: C.muted }}>
             {memberLabel()}
           </AppText>
@@ -147,6 +149,7 @@ function CreateRoomModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { createRoom, addAgentToRoom } = useChatStore();
@@ -159,7 +162,10 @@ function CreateRoomModal({
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Please enter a name for this chat.');
+      Alert.alert(
+        t('chat.name_required', 'Name required'),
+        t('chat.please_enter_name', 'Please enter a name for this chat.')
+      );
       return;
     }
     setIsSaving(true);
@@ -171,7 +177,10 @@ function CreateRoomModal({
       onCreated();
       onClose();
     } catch {
-      Alert.alert('Error', 'Failed to create chat. Please try again.');
+      Alert.alert(
+        t('chat.error', 'Error'),
+        t('chat.failed_to_create', 'Failed to create chat. Please try again.')
+      );
     } finally {
       setIsSaving(false);
     }
@@ -275,7 +284,7 @@ function CreateRoomModal({
                           backgroundColor: `${color}18`,
                           alignItems: 'center',
                           justifyContent: 'center',
-                          marginRight: 12,
+                          marginEnd: 12,
                         }}
                       >
                         <AppText style={{ color, fontWeight: '700' }}>
@@ -324,6 +333,7 @@ function CreateRoomModal({
 }
 
 export default function ChatListScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
   const { agents, fetchAgents } = useAgentStore();
@@ -349,7 +359,7 @@ export default function ChatListScreen() {
         }}
       >
         <AppText variant="h1" style={{ fontSize: 28, fontWeight: '700', color: C.text }}>
-          Miru
+          {t('chat.title', 'Miru')}
         </AppText>
         <TouchableOpacity
           onPress={() => setShowCreateModal(true)}
@@ -395,7 +405,7 @@ export default function ChatListScreen() {
                 marginBottom: 14,
               }}
             >
-              Personas
+              {t('chat.personas', 'Personas')}
             </AppText>
             <ScrollView
               horizontal
@@ -431,7 +441,7 @@ export default function ChatListScreen() {
             color="muted"
             className="uppercase tracking-widest font-bold mb-3.5"
           >
-            Chats
+            {t('chat.chats', 'Chats')}
           </AppText>
 
           {rooms.length === 0 && !isLoadingRooms ? (
@@ -452,7 +462,7 @@ export default function ChatListScreen() {
                 <Ionicons name="chatbubbles-outline" size={32} color={C.faint} />
               </View>
               <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-                No conversations yet
+                {t('chat.no_conversations_title', 'No conversations yet')}
               </AppText>
               <AppText
                 style={{
@@ -462,7 +472,10 @@ export default function ChatListScreen() {
                   color: C.muted,
                 }}
               >
-                Create a chat and start collaborating with your AI personas.
+                {t(
+                  'chat.no_conversations_desc',
+                  'Create a chat and start collaborating with your AI personas.'
+                )}
               </AppText>
               <TouchableOpacity
                 onPress={() => setShowCreateModal(true)}
@@ -475,8 +488,10 @@ export default function ChatListScreen() {
                   paddingHorizontal: 24,
                 }}
               >
-                <Ionicons name="add" size={18} color="white" style={{ marginRight: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>New Chat</AppText>
+                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
+                <AppText style={{ color: 'white', fontWeight: '700' }}>
+                  {t('chat.new_chat', 'New Chat')}
+                </AppText>
               </TouchableOpacity>
             </View>
           ) : (
