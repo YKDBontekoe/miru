@@ -6,14 +6,8 @@ from uuid import UUID
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.models import TaskCreate, TaskUpdate
-from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
-from app.infrastructure.repositories.productivity_repo import ProductivityRepository
-
-
-def get_productivity_use_case() -> ManageProductivityUseCase:
-    return ManageProductivityUseCase(repository=ProductivityRepository())
-
 
 logger = logging.getLogger(__name__)
 

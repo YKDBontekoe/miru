@@ -19,7 +19,7 @@ from app.domain.productivity.models import CalendarEvent
 @pytest.fixture
 def mock_service() -> Generator[MagicMock, None, None]:
     with patch(
-        "app.domain.agent_tools.productivity.events_tools.ManageProductivityUseCase"
+        "app.domain.agent_tools.productivity.events_tools.get_productivity_use_case"
     ) as mock:
         yield mock
 

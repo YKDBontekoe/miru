@@ -436,7 +436,7 @@ async def test_update_event(
         json={"end_time": (now - timedelta(hours=1)).isoformat()},
     )
     assert response.status_code == 400
-    assert "end_time must be greater than start_time" in response.json()["detail"]
+    assert "end_time must be after start_time" in response.json()["detail"]["message"]
 
 
 @pytest.mark.asyncio

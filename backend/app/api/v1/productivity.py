@@ -86,7 +86,9 @@ async def get_task(
         task = await use_case.get_task(user_id, task_id)
         return TaskResponse.model_validate(task)
     except TaskNotFoundError:
-        raise HTTPException(status_code=404, detail="Task not found") from None
+        raise HTTPException(
+            status_code=404, detail={"error": "task_not_found", "message": "Task not found"}
+        ) from None
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskResponse)
@@ -101,7 +103,9 @@ async def update_task(
         task = await use_case.update_task(user_id, task_id, task_data)
         return TaskResponse.model_validate(task)
     except TaskNotFoundError:
-        raise HTTPException(status_code=404, detail="Task not found") from None
+        raise HTTPException(
+            status_code=404, detail={"error": "task_not_found", "message": "Task not found"}
+        ) from None
 
 
 @router.delete("/tasks/{task_id}", status_code=204)
@@ -114,7 +118,9 @@ async def delete_task(
     try:
         await use_case.delete_task(user_id, task_id)
     except TaskNotFoundError:
-        raise HTTPException(status_code=404, detail="Task not found") from None
+        raise HTTPException(
+            status_code=404, detail={"error": "task_not_found", "message": "Task not found"}
+        ) from None
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +162,9 @@ async def get_note(
         note = await use_case.get_note(user_id, note_id)
         return NoteResponse.model_validate(note)
     except NoteNotFoundError:
-        raise HTTPException(status_code=404, detail="Note not found") from None
+        raise HTTPException(
+            status_code=404, detail={"error": "note_not_found", "message": "Note not found"}
+        ) from None
 
 
 @router.patch("/notes/{note_id}", response_model=NoteResponse)
@@ -171,7 +179,9 @@ async def update_note(
         note = await use_case.update_note(user_id, note_id, note_data)
         return NoteResponse.model_validate(note)
     except NoteNotFoundError:
-        raise HTTPException(status_code=404, detail="Note not found") from None
+        raise HTTPException(
+            status_code=404, detail={"error": "note_not_found", "message": "Note not found"}
+        ) from None
 
 
 @router.delete("/notes/{note_id}", status_code=204)
@@ -184,7 +194,9 @@ async def delete_note(
     try:
         await use_case.delete_note(user_id, note_id)
     except NoteNotFoundError:
-        raise HTTPException(status_code=404, detail="Note not found") from None
+        raise HTTPException(
+            status_code=404, detail={"error": "note_not_found", "message": "Note not found"}
+        ) from None
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +215,9 @@ async def create_event(
         event = await use_case.create_event(user_id, event_data)
         return CalendarEventResponse.model_validate(event)
     except InvalidTimeRangeError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(
+            status_code=400, detail={"error": "invalid_time_range", "message": str(e)}
+        ) from e
 
 
 @router.get("/events", response_model=list[CalendarEventResponse])
@@ -229,7 +243,10 @@ async def get_event(
         event = await use_case.get_event(user_id, event_id)
         return CalendarEventResponse.model_validate(event)
     except CalendarEventNotFoundError:
-        raise HTTPException(status_code=404, detail="Calendar event not found") from None
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "calendar_event_not_found", "message": "Calendar event not found"},
+        ) from None
 
 
 @router.patch("/events/{event_id}", response_model=CalendarEventResponse)
@@ -244,9 +261,14 @@ async def update_event(
         event = await use_case.update_event(user_id, event_id, event_data)
         return CalendarEventResponse.model_validate(event)
     except CalendarEventNotFoundError:
-        raise HTTPException(status_code=404, detail="Calendar event not found") from None
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "calendar_event_not_found", "message": "Calendar event not found"},
+        ) from None
     except InvalidTimeRangeError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise HTTPException(
+            status_code=400, detail={"error": "invalid_time_range", "message": str(e)}
+        ) from e
 
 
 @router.delete("/events/{event_id}", status_code=204)
@@ -259,4 +281,7 @@ async def delete_event(
     try:
         await use_case.delete_event(user_id, event_id)
     except CalendarEventNotFoundError:
-        raise HTTPException(status_code=404, detail="Calendar event not found") from None
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "calendar_event_not_found", "message": "Calendar event not found"},
+        ) from None

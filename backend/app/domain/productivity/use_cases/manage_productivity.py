@@ -78,15 +78,18 @@ class ManageProductivityUseCase:
             valid_keys[k] = v
 
         if not valid_keys:
-            return task
+            return task  # type: ignore[return-value]
 
-        return await self._repo.update_task(user_id, task_id, valid_keys)
+        updated_task = await self._repo.update_task(user_id, task_id, valid_keys)
+        if not updated_task:
+            raise TaskNotFoundError("Task not found")
+        return updated_task
 
     async def delete_task(self, user_id: UUID, task_id: UUID) -> None:
         """Delete a specific task."""
-        # Ensure task exists
-        await self.get_task(user_id, task_id)
-        await self._repo.delete_task(user_id, task_id)
+        deleted_count = await self._repo.delete_task(user_id, task_id)
+        if deleted_count == 0:
+            raise TaskNotFoundError("Task not found")
 
     # ---------------------------------------------------------------------------
     # Notes
@@ -125,15 +128,18 @@ class ManageProductivityUseCase:
             valid_keys[k] = v
 
         if not valid_keys:
-            return note
+            return note  # type: ignore[return-value]
 
-        return await self._repo.update_note(user_id, note_id, valid_keys)
+        updated_note = await self._repo.update_note(user_id, note_id, valid_keys)
+        if not updated_note:
+            raise NoteNotFoundError("Note not found")
+        return updated_note
 
     async def delete_note(self, user_id: UUID, note_id: UUID) -> None:
         """Delete a specific note."""
-        # Ensure note exists
-        await self.get_note(user_id, note_id)
-        await self._repo.delete_note(user_id, note_id)
+        deleted_count = await self._repo.delete_note(user_id, note_id)
+        if deleted_count == 0:
+            raise NoteNotFoundError("Note not found")
 
     # ---------------------------------------------------------------------------
     # Calendar Events
@@ -145,7 +151,7 @@ class ManageProductivityUseCase:
         """Create a new calendar event for the user."""
         if event_data.end_time <= event_data.start_time:
             logger.warning("Attempted to create event with end_time before start_time")
-            raise InvalidTimeRangeError("end_time must be greater than start_time")
+            raise InvalidTimeRangeError("end_time must be after start_time")
 
         return await self._repo.create_event(user_id, event_data)
 
@@ -180,19 +186,22 @@ class ManageProductivityUseCase:
             valid_keys[k] = v
 
         if not valid_keys:
-            return event
+            return event  # type: ignore[return-value]
 
         new_start = valid_keys.get("start_time", event.start_time)
         new_end = valid_keys.get("end_time", event.end_time)
 
         if new_end <= new_start:
             logger.warning("Attempted to update event with end_time before start_time")
-            raise InvalidTimeRangeError("end_time must be greater than start_time")
+            raise InvalidTimeRangeError("end_time must be after start_time")
 
-        return await self._repo.update_event(user_id, event_id, valid_keys)
+        updated_event = await self._repo.update_event(user_id, event_id, valid_keys)
+        if not updated_event:
+            raise CalendarEventNotFoundError("Calendar event not found")
+        return updated_event
 
     async def delete_event(self, user_id: UUID, event_id: UUID) -> None:
         """Delete a specific calendar event."""
-        # Ensure event exists
-        await self.get_event(user_id, event_id)
-        await self._repo.delete_event(user_id, event_id)
+        deleted_count = await self._repo.delete_event(user_id, event_id)
+        if deleted_count == 0:
+            raise CalendarEventNotFoundError("Calendar event not found")

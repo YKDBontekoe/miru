@@ -138,17 +138,21 @@ class ProductivityRepository(IProductivityRepository):
                 return _map_task(task)
             return None
 
-    async def update_task(self, user_id: UUID, task_id: UUID, valid_keys: dict) -> TaskEntity:
+    async def update_task(
+        self, user_id: UUID, task_id: UUID, valid_keys: dict
+    ) -> TaskEntity | None:
         async with handle_db_errors("update task"):
-            task = await Task.get(id=task_id, user_id=user_id)
+            task = await Task.get_or_none(id=task_id, user_id=user_id)
+            if not task:
+                return None
             for field, value in valid_keys.items():
                 setattr(task, field, value)
             await task.save(update_fields=list(valid_keys.keys()))
             return _map_task(task)
 
-    async def delete_task(self, user_id: UUID, task_id: UUID) -> None:
+    async def delete_task(self, user_id: UUID, task_id: UUID) -> int:
         async with handle_db_errors("delete task"):
-            await Task.filter(id=task_id, user_id=user_id).delete()
+            return await Task.filter(id=task_id, user_id=user_id).delete()
 
     async def create_note(self, user_id: UUID, note_data: NoteCreate) -> NoteEntity:
         async with handle_db_errors("create note"):
@@ -183,19 +187,23 @@ class ProductivityRepository(IProductivityRepository):
                 return _map_note(note)
             return None
 
-    async def update_note(self, user_id: UUID, note_id: UUID, valid_keys: dict) -> NoteEntity:
+    async def update_note(
+        self, user_id: UUID, note_id: UUID, valid_keys: dict
+    ) -> NoteEntity | None:
         async with handle_db_errors("update note"):
-            note = await Note.get(id=note_id, user_id=user_id).prefetch_related(
+            note = await Note.get_or_none(id=note_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
+            if not note:
+                return None
             for field, value in valid_keys.items():
                 setattr(note, field, value)
             await note.save(update_fields=list(valid_keys.keys()))
             return _map_note(note)
 
-    async def delete_note(self, user_id: UUID, note_id: UUID) -> None:
+    async def delete_note(self, user_id: UUID, note_id: UUID) -> int:
         async with handle_db_errors("delete note"):
-            await Note.filter(id=note_id, user_id=user_id).delete()
+            return await Note.filter(id=note_id, user_id=user_id).delete()
 
     async def create_event(
         self, user_id: UUID, event_data: CalendarEventCreate
@@ -249,6 +257,6 @@ class ProductivityRepository(IProductivityRepository):
             await event.save(update_fields=list(valid_keys.keys()))
             return _map_event(event)
 
-    async def delete_event(self, user_id: UUID, event_id: UUID) -> None:
+    async def delete_event(self, user_id: UUID, event_id: UUID) -> int:
         async with handle_db_errors("delete calendar event"):
-            await CalendarEvent.filter(id=event_id, user_id=user_id).delete()
+            return await CalendarEvent.filter(id=event_id, user_id=user_id).delete()

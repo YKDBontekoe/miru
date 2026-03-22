@@ -6,16 +6,13 @@ from typing import Any
 from uuid import UUID
 
 from crewai.tools import BaseTool
-from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
-from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
-from app.infrastructure.repositories.productivity_repo import ProductivityRepository
-
-
-def get_productivity_use_case() -> ManageProductivityUseCase:
-    return ManageProductivityUseCase(repository=ProductivityRepository())
-
+from app.domain.productivity.dependencies import get_productivity_use_case
+from app.domain.productivity.use_cases.manage_productivity import (
+    CalendarEventNotFoundError,
+    InvalidTimeRangeError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +132,7 @@ class CreateEventTool(BaseTool):
             )
 
             return f"Successfully created calendar event '{event.title}' with ID {event.id}."
-        except HTTPException:
+        except (CalendarEventNotFoundError, InvalidTimeRangeError):
             raise
         except Exception:
             logger.exception("Error in CreateEventTool")
@@ -203,7 +200,7 @@ class UpdateEventTool(BaseTool):
             )
 
             return f"Successfully updated calendar event '{event.title}' with ID {event.id}."
-        except HTTPException:
+        except (CalendarEventNotFoundError, InvalidTimeRangeError):
             raise
         except Exception:
             logger.exception("Error in UpdateEventTool")
@@ -235,7 +232,7 @@ class DeleteEventTool(BaseTool):
         try:
             await get_productivity_use_case().delete_event(user_id=self.user_id, event_id=event_id)
             return f"Successfully deleted calendar event with ID {event_id}."
-        except HTTPException:
+        except (CalendarEventNotFoundError, InvalidTimeRangeError):
             raise
         except Exception:
             logger.exception("Error in DeleteEventTool")

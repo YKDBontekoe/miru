@@ -15,7 +15,7 @@ from app.domain.productivity.models import Note
 
 @pytest.fixture
 def mock_service() -> Iterator[MagicMock]:
-    with patch("app.domain.agent_tools.productivity.notes_tools.ManageProductivityUseCase") as mock:
+    with patch("app.domain.agent_tools.productivity.notes_tools.get_productivity_use_case") as mock:
         yield mock
 
 
