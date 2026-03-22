@@ -24,7 +24,6 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "image": "latest",
         "simulator": true
       },
       "env": {
@@ -33,9 +32,7 @@
     },
     "production": {
       "autoIncrement": true,
-      "ios": {
-        "image": "latest"
-      },
+      "ios": {},
       "env": {
         "APP_ENV": "production"
       }

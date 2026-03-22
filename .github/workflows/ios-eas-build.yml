@@ -27,9 +27,8 @@ concurrency:
 
 jobs:
   ios-build:
-    name: Build iOS (EAS Cloud)
-    # Cloud builds run on EAS servers — the runner just orchestrates, no macOS needed
-    runs-on: ubuntu-latest
+    name: Build iOS (local) & Publish to EAS
+    runs-on: macos-26
     defaults:
       run:
         working-directory: ./frontend
@@ -43,6 +42,14 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Set locale (required by Fastlane)
+        run: |
+          echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
+          echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
+
+      - name: Install Fastlane
+        run: brew install fastlane
 
       - name: Install EAS CLI
         run: npm install -g eas-cli
@@ -63,7 +70,7 @@ jobs:
           fi
           echo "value=$PROFILE" >> $GITHUB_OUTPUT
 
-      - name: Build iOS on EAS
+      - name: Build iOS locally
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
@@ -73,34 +80,23 @@ jobs:
           eas build \
             --platform ios \
             --profile ${{ steps.profile.outputs.value }} \
-            --non-interactive
+            --local \
+            --non-interactive \
+            --output ./build/app.ipa
 
-      - name: Download build artifact
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          mkdir -p build
-          eas build:download \
-            --platform ios \
-            --latest \
-            --output ./build/artifact \
-            --non-interactive
-        continue-on-error: true
-
-      - name: Upload artifact
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-${{ steps.profile.outputs.value }}-${{ github.sha }}
-          path: ./frontend/build/artifact
+          path: ./frontend/build/app.ipa
           retention-days: 14
-          if-no-files-found: warn
 
-      - name: Submit to TestFlight
+      - name: Submit to EAS / TestFlight
         if: steps.profile.outputs.value == 'production'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas submit \
             --platform ios \
-            --latest \
+            --path ./build/app.ipa \
             --non-interactive
