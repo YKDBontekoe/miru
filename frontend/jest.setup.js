@@ -43,3 +43,20 @@ jest.mock('nativewind', () => ({
 
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
+
+// Mock reanimated
+jest.mock('react-native-reanimated', () => {
+  const Reanimated = require('react-native-reanimated/mock');
+  Reanimated.default.call = () => {};
+  return Reanimated;
+});
+
+// Mock react-native-worklets globally
+jest.mock('react-native-worklets', () => {
+    return {
+        Worklets: {
+            createRunInContextFn: jest.fn(),
+        },
+        createSerializable: () => ({ set: jest.fn(), get: jest.fn() }),
+    }
+});
