@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -32,6 +33,32 @@ const C = {
   primary: '#2563EB',
   primarySurface: '#EFF6FF',
 };
+
+// Performance Log: Extracted styles to StyleSheet to avoid inline object recreation on each render.
+const styles = StyleSheet.create({
+  agentModalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  agentModalIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  agentModalInitial: { fontWeight: '700', fontSize: 17 },
+  agentModalTitle: { fontSize: 15, fontWeight: '500', color: C.text },
+  agentModalSubtitle: { fontSize: 12, color: C.muted },
+  agentModalAddedWrapper: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  agentModalAddedText: { fontSize: 12, color: C.muted },
+});
 
 function getAgentColor(name: string) {
   const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
@@ -134,6 +161,81 @@ export default function ChatRoomScreen() {
     setRoomAgents(updated);
     setIsModalVisible(false);
   };
+
+  const renderMessageItem = useCallback(
+    ({ item }: { item: any }) => {
+      const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
+      const isLastUserMsg =
+        !item.user_id &&
+        item.status === 'error' &&
+        roomMessages.findIndex((m) => m.id === item.id) > 0;
+      const prevUserMsg = isLastUserMsg
+        ? roomMessages
+            .slice(
+              0,
+              roomMessages.findIndex((m) => m.id === item.id)
+            )
+            .reverse()
+            .find((m) => !!m.user_id)
+        : undefined;
+
+      return (
+        <ChatBubble
+          text={item.content}
+          isUser={!!item.user_id}
+          status={item.status}
+          agentName={
+            agent?.name ??
+            (item.agent_id && item.agent_id !== 'assistant' ? 'Assistant' : undefined)
+          }
+          timestamp={item.created_at}
+          onRetry={prevUserMsg ? () => handleRetry(prevUserMsg.content) : undefined}
+        />
+      );
+    },
+    [agentMap, roomMessages, handleRetry]
+  );
+
+  const renderAgentModalItem = useCallback(
+    ({ item: agent }: { item: Agent }) => {
+      const color = getAgentColor(agent.name);
+      const alreadyAdded = roomAgents.some((a) => a.id === agent.id);
+      return (
+        <TouchableOpacity
+          onPress={() => !alreadyAdded && handleAddAgent(agent.id)}
+          activeOpacity={alreadyAdded ? 1 : 0.75}
+          style={[
+            styles.agentModalItem,
+            {
+              backgroundColor: alreadyAdded ? C.surfaceHigh : C.surface,
+              opacity: alreadyAdded ? 0.6 : 1,
+            },
+          ]}
+        >
+          <View style={[styles.agentModalIcon, { backgroundColor: `${color}18` }]}>
+            <AppText style={[styles.agentModalInitial, { color }]}>
+              {agent.name[0].toUpperCase()}
+            </AppText>
+          </View>
+          <View style={{ flex: 1 }}>
+            <AppText style={styles.agentModalTitle}>{agent.name}</AppText>
+            <AppText style={styles.agentModalSubtitle} numberOfLines={1}>
+              {agent.personality}
+            </AppText>
+          </View>
+          {alreadyAdded ? (
+            <View style={styles.agentModalAddedWrapper}>
+              <Ionicons name="checkmark-circle" size={16} color={C.primary} />
+              <AppText style={styles.agentModalAddedText}>Added</AppText>
+            </View>
+          ) : (
+            <Ionicons name="add-circle-outline" size={20} color={C.primary} />
+          )}
+        </TouchableOpacity>
+      );
+    },
+    [roomAgents, handleAddAgent]
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
@@ -287,36 +389,7 @@ export default function ChatRoomScreen() {
                 </AppText>
               </View>
             }
-            renderItem={({ item }) => {
-              const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
-              const isLastUserMsg =
-                !item.user_id &&
-                item.status === 'error' &&
-                roomMessages.findIndex((m) => m.id === item.id) > 0;
-              const prevUserMsg = isLastUserMsg
-                ? roomMessages
-                    .slice(
-                      0,
-                      roomMessages.findIndex((m) => m.id === item.id)
-                    )
-                    .reverse()
-                    .find((m) => !!m.user_id)
-                : undefined;
-
-              return (
-                <ChatBubble
-                  text={item.content}
-                  isUser={!!item.user_id}
-                  status={item.status}
-                  agentName={
-                    agent?.name ??
-                    (item.agent_id && item.agent_id !== 'assistant' ? 'Assistant' : undefined)
-                  }
-                  timestamp={item.created_at}
-                  onRetry={prevUserMsg ? () => handleRetry(prevUserMsg.content) : undefined}
-                />
-              );
-            }}
+            renderItem={renderMessageItem}
             ListFooterComponent={
               currentActivity ? <AgentActivityIndicator activity={currentActivity} /> : null
             }
@@ -361,75 +434,26 @@ export default function ChatRoomScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {agents.map((agent) => {
-                const color = getAgentColor(agent.name);
-                const alreadyAdded = roomAgents.some((a) => a.id === agent.id);
-                return (
-                  <TouchableOpacity
-                    key={agent.id}
-                    onPress={() => !alreadyAdded && handleAddAgent(agent.id)}
-                    activeOpacity={alreadyAdded ? 1 : 0.75}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: alreadyAdded ? C.surfaceHigh : C.surface,
-                      borderRadius: 14,
-                      padding: 14,
-                      marginBottom: 10,
-                      borderWidth: 1,
-                      borderColor: C.border,
-                      opacity: alreadyAdded ? 0.6 : 1,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        backgroundColor: `${color}18`,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: 14,
-                      }}
-                    >
-                      <AppText style={{ color, fontWeight: '700', fontSize: 17 }}>
-                        {agent.name[0].toUpperCase()}
-                      </AppText>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <AppText style={{ fontSize: 15, fontWeight: '500', color: C.text }}>
-                        {agent.name}
-                      </AppText>
-                      <AppText style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
-                        {agent.personality}
-                      </AppText>
-                    </View>
-                    {alreadyAdded ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Ionicons name="checkmark-circle" size={16} color={C.primary} />
-                        <AppText style={{ fontSize: 12, color: C.muted }}>Added</AppText>
-                      </View>
-                    ) : (
-                      <Ionicons name="add-circle-outline" size={20} color={C.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-              {agents.length === 0 && (
-                <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-                  <Ionicons
-                    name="people-outline"
-                    size={36}
-                    color={C.faint}
-                    style={{ marginBottom: 12 }}
-                  />
-                  <AppText style={{ textAlign: 'center', color: C.muted }}>
-                    No agents yet. Create one in the Agents tab.
-                  </AppText>
-                </View>
-              )}
-            </ScrollView>
+            {agents.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+                <Ionicons
+                  name="people-outline"
+                  size={36}
+                  color={C.faint}
+                  style={{ marginBottom: 12 }}
+                />
+                <AppText style={{ textAlign: 'center', color: C.muted }}>
+                  No agents yet. Create one in the Agents tab.
+                </AppText>
+              </View>
+            ) : (
+              <FlatList
+                data={agents}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                renderItem={renderAgentModalItem}
+              />
+            )}
           </View>
         </View>
       </Modal>
