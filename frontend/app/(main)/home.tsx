@@ -364,7 +364,10 @@ function NewChatModal({
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      Alert.alert(t('home.chat_modal.name_required', 'Name required'), t('home.chat_modal.please_enter_name', 'Please enter a name for this chat.'));
+      Alert.alert(
+        t('home.chat_modal.name_required', 'Name required'),
+        t('home.chat_modal.please_enter_name', 'Please enter a name for this chat.')
+      );
       return;
     }
     setIsSaving(true);
@@ -374,7 +377,10 @@ function NewChatModal({
       onCreated();
       onClose();
     } catch {
-      Alert.alert(t('home.chat_modal.error', 'Error'), t('home.chat_modal.failed_to_create', 'Failed to create chat. Please try again.'));
+      Alert.alert(
+        t('home.chat_modal.error', 'Error'),
+        t('home.chat_modal.failed_to_create', 'Failed to create chat. Please try again.')
+      );
     } finally {
       setIsSaving(false);
     }
@@ -437,7 +443,9 @@ function NewChatModal({
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>{t('home.actions.create', 'Create')}</AppText>
+              <AppText style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>
+                {t('home.actions.create', 'Create')}
+              </AppText>
             )}
           </TouchableOpacity>
         </View>

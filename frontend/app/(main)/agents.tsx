@@ -58,7 +58,10 @@ function CreateAgentSheet({
 
   const handleGenerate = async () => {
     if (!keywords.trim()) {
-      Alert.alert('Keywords required', 'Enter keywords to generate a persona.');
+      Alert.alert(
+        t('agents.create_modal.keywords_required', 'Keywords required'),
+        t('agents.create_modal.enter_keywords', 'Enter keywords to generate a persona.')
+      );
       return;
     }
     setIsGenerating(true);
@@ -67,7 +70,10 @@ function CreateAgentSheet({
       setName(result.name);
       setPersonality(result.personality);
     } catch {
-      Alert.alert('Error', 'Could not generate persona. Try again.');
+      Alert.alert(
+        t('agents.create_modal.error', 'Error'),
+        t('agents.create_modal.generate_failed', 'Could not generate persona. Try again.')
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -75,7 +81,10 @@ function CreateAgentSheet({
 
   const handleSave = async () => {
     if (!name.trim() || !personality.trim()) {
-      Alert.alert('Required', 'Name and personality are required.');
+      Alert.alert(
+        t('agents.create_modal.required', 'Required'),
+        t('agents.create_modal.name_required', 'Name and personality are required.')
+      );
       return;
     }
     setIsSaving(true);
@@ -87,7 +96,10 @@ function CreateAgentSheet({
       onCreated();
       onClose();
     } catch {
-      Alert.alert('Error', 'Failed to create agent. Please try again.');
+      Alert.alert(
+        t('agents.create_modal.error', 'Error'),
+        t('agents.create_modal.create_failed', 'Failed to create agent. Please try again.')
+      );
     } finally {
       setIsSaving(false);
     }
@@ -507,7 +519,6 @@ function AgentDetailSheet({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AgentsScreen() {
-  const { t } = useTranslation();
   const { agents, fetchAgents, isLoading } = useAgentStore();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
@@ -517,7 +528,6 @@ export default function AgentsScreen() {
   }, [fetchAgents]);
 
   const renderAgentItem = ({ item }: { item: Agent }) => {
-    const { t } = useTranslation();
     const color = getAgentColor(item.name);
     const level = Math.floor(item.message_count / 10) + 1;
 

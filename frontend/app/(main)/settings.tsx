@@ -118,7 +118,7 @@ function SettingRow({
 }
 
 function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const date = new Intl.DateTimeFormat(i18n.language, {
     month: 'short',
     day: 'numeric',
