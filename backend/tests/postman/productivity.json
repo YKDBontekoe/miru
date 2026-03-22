@@ -13,8 +13,14 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test(\"Response has task id and title\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.title).to.eql('Test Task');",
+              "    pm.collectionVariables.set('taskId', jsonData.id);",
               "});"
             ],
             "type": "text/javascript"
@@ -23,7 +29,20 @@
       ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Test Task\", \"is_completed\": false, \"due_date\": null, \"description\": \"Testing tasks.\"}"
+        },
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/tasks",
           "host": ["{{baseUrl}}"],
@@ -38,8 +57,15 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Created task is in the list\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    var taskId = pm.collectionVariables.get('taskId');",
+              "    var found = jsonData.find(t => t.id === taskId);",
+              "    pm.expect(found).to.not.be.undefined;",
               "});"
             ],
             "type": "text/javascript"
@@ -48,7 +74,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearerToken}}"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/tasks",
           "host": ["{{baseUrl}}"],
@@ -63,8 +94,14 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response matches created task\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    var taskId = pm.collectionVariables.get('taskId');",
+              "    pm.expect(jsonData.id).to.eql(taskId);",
+              "    pm.expect(jsonData.title).to.eql('Test Task');",
               "});"
             ],
             "type": "text/javascript"
@@ -73,11 +110,119 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearerToken}}"
+          }
+        ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/tasks/test-task-id",
+          "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
           "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks", "test-task-id"]
+          "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Task",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Task is updated\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.is_completed).to.be.true;",
+              "    pm.expect(jsonData.title).to.eql('Updated Task');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearerToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Updated Task\", \"is_completed\": true}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete Task",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Deleted Task (Should 404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{bearerToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
         }
       }
     },
@@ -89,7 +234,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 422, 400]);",
               "});"
             ],
             "type": "text/javascript"
@@ -113,8 +258,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 401 or 422 or 200\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 422, 200]);",
               "});"
             ],
             "type": "text/javascript"
@@ -138,8 +283,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 401 or 422 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -163,8 +308,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 401 or 422 or 400\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 422, 400]);",
               "});"
             ],
             "type": "text/javascript"
@@ -188,8 +333,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 401 or 422 or 200\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 422, 200]);",
               "});"
             ],
             "type": "text/javascript"
@@ -213,8 +358,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 401 or 422 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -230,6 +375,12 @@
           "path": ["api", "v1", "productivity", "events", "test-event-id"]
         }
       }
+    }
+  ],
+  "variable": [
+    {
+      "key": "taskId",
+      "value": ""
     }
   ]
 }

@@ -383,12 +383,37 @@ jobs:
           echo "All smoke tests passed."
 
       - name: Run Postman integration tests
+        env:
+          SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
+          SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           npm install -g newman
+
+          # 1. Run the setup collection to get the bearerToken, exporting the environment
+          echo "Starting Postman Setup Collection for Auth..."
+          newman run backend/tests/postman/00_setup_auth.json \
+            --env-var baseUrl=${{ steps.app-url.outputs.url }} \
+            --env-var supabaseUrl=$SUPABASE_URL \
+            --env-var supabaseKey=$SUPABASE_KEY \
+            --env-var testEmail=$SUPABASE_TEST_EMAIL \
+            --env-var testPassword=$SUPABASE_TEST_PASSWORD \
+            --export-environment backend/tests/postman/test_env.json
+
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to run setup auth collection."
+            exit 1
+          fi
+
           PIDS=()
+          # 2. Run the rest of the collections using the exported environment
           for collection in backend/tests/postman/*.json; do
+            if [[ "$collection" == *"00_setup_auth.json" ]] || [[ "$collection" == *"test_env.json" ]]; then
+              continue
+            fi
             echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            newman run "$collection" -e backend/tests/postman/test_env.json &
             PIDS+=($!)
           done
 
