@@ -1,10 +1,13 @@
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 
 def test_websocket_endpoint_unauthorized(client: TestClient) -> None:
     with client.websocket_connect("/api/v1/ws/chat?token=invalid") as websocket:
         try:
             _ = websocket.receive_json()
+        except WebSocketDisconnect as e:
+            assert e.code == 4001
         except Exception as e:
             assert "4001" in str(e) or "close" in str(e).lower()
 
