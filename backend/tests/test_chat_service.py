@@ -155,16 +155,17 @@ async def test_run_crew_task_has_single_agent(
         mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
         mock_crew_cls.return_value = mock_crew_instance
 
-        result = await chat_service.run_crew("hello", user_id)
+        result = await chat_service.run_crew("hello", user_id, accept_language="es-ES")
 
         assert result["task_type"] == "general"
         assert result["result"] == "Crew output"
 
-        # Verify Task was instantiated with single agent
+        # Verify Task was instantiated with single agent and locale instruction
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
         assert "agent" in kwargs
         assert kwargs["agent"] == mock_crew_agent
+        assert "es-ES" in kwargs["description"]
 
         # Verify Crew was instantiated with agents list
         mock_crew_cls.assert_called_once()
@@ -216,7 +217,7 @@ async def test_run_crew_task_has_multiple_agents(
         mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
         mock_crew_cls.return_value = mock_crew_instance
 
-        result = await chat_service.run_crew("hello", user_id)
+        result = await chat_service.run_crew("hello", user_id, accept_language="es-ES")
 
         assert result["task_type"] == "general"
         assert result["result"] == "Crew output"
@@ -225,6 +226,7 @@ async def test_run_crew_task_has_multiple_agents(
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
         assert "agent" not in kwargs
+        assert "es-ES" in kwargs["description"]
 
         # Verify Crew was instantiated hierarchically with manager_llm
         mock_crew_cls.assert_called_once()
@@ -272,11 +274,15 @@ async def test_stream_room_responses_single_agent(
         mock_crew_cls.return_value = mock_crew_instance
 
         responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+        async for r in chat_service.stream_room_responses(room_id, "hello", user_id, accept_language="de-DE"):
             responses.append(r)
 
         assert "Crew output" in responses
         assert "[[STATUS:done]]\n" in responses
+
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "de-DE" in kwargs["description"]
 
         # Verify Task was instantiated with single agent
         mock_task_cls.assert_called_once()
@@ -337,11 +343,15 @@ async def test_stream_room_responses_multiple_agents(
         mock_crew_cls.return_value = mock_crew_instance
 
         responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+        async for r in chat_service.stream_room_responses(room_id, "hello", user_id, accept_language="pt-BR"):
             responses.append(r)
 
         assert "Crew output" in responses
         assert "[[STATUS:done]]\n" in responses
+
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "pt-BR" in kwargs["description"]
 
         # Verify Task was instantiated without single agent
         mock_task_cls.assert_called_once()
@@ -412,10 +422,13 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     )
 
     responses = []
-    async for r in chat_service.stream_responses("Hi", user_id):
+    async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
         responses.append(r)
 
     assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
+    mock_llm.chat.completions.create.assert_called_once()
+    called_messages = mock_llm.chat.completions.create.call_args[1]["messages"]
+    assert "fr-FR" in called_messages[0]["content"]
 
 
 @pytest.mark.asyncio
@@ -662,7 +675,7 @@ async def test_execute_crew_task(
     monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
 
     with (
-        patch("app.domain.chat.service.Task"),
+        patch("app.domain.chat.service.Task") as mock_task_cls,
         patch("app.domain.chat.service.Crew") as mock_crew_cls,
         patch("app.domain.chat.service.crewai.Agent"),
     ):
@@ -671,9 +684,13 @@ async def test_execute_crew_task(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await chat_service._execute_crew_task(
-            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock()
+            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock(), accept_language="ja-JP"
         )
         assert result == "Result"
+
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "ja-JP" in kwargs["description"]
 
 
 @pytest.mark.asyncio
@@ -695,7 +712,7 @@ async def test_execute_crew_task_multi(
     monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
 
     with (
-        patch("app.domain.chat.service.Task"),
+        patch("app.domain.chat.service.Task") as mock_task_cls,
         patch("app.domain.chat.service.Crew") as mock_crew_cls,
         patch("app.domain.chat.service.crewai.Agent"),
     ):
@@ -704,9 +721,13 @@ async def test_execute_crew_task_multi(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await chat_service._execute_crew_task(
-            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock()
+            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock(), accept_language="hi-IN"
         )
         assert result == "ResultMulti"
+
+        mock_task_cls.assert_called_once()
+        _, kwargs = mock_task_cls.call_args
+        assert "hi-IN" in kwargs["description"]
 
 
 @pytest.mark.asyncio
@@ -801,12 +822,13 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         m_persist.return_value = MagicMock(id=uuid4())
         m_exec.return_value = "Result"
 
-        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id, accept_language="es-MX")
 
         m_persist.assert_called_once()
         m_think.assert_called_once()
         m_cb.assert_called_once()
         m_exec.assert_called_once()
+        assert "es-MX" in m_exec.call_args[0]
         m_agent_resp.assert_called_once()
         mock_hub.broadcast_to_room.assert_called_once()
         assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "agent_activity"
