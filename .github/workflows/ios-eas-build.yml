@@ -29,7 +29,7 @@ concurrency:
 jobs:
   ios-build:
     name: Build iOS (local) & Publish to EAS
-    runs-on: macos-26
+    runs-on: macos-latest
     defaults:
       run:
         working-directory: ./frontend
@@ -46,8 +46,8 @@ jobs:
 
       - name: Set locale (required by Fastlane)
         run: |
-          echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
-          echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
+          echo "LANG=en_US.UTF-8" >> "$GITHUB_ENV"
+          echo "LC_ALL=en_US.UTF-8" >> "$GITHUB_ENV"
 
       - name: Install Fastlane
         run: brew install fastlane
@@ -69,7 +69,7 @@ jobs:
               PROFILE="development"
             fi
           fi
-          echo "value=$PROFILE" >> $GITHUB_OUTPUT
+          echo "value=$PROFILE" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS locally
         env:
