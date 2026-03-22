@@ -11,7 +11,9 @@ interface AppState {
   } | null;
   setOnboardingComplete: (complete: boolean) => void;
   setBaseUrl: (url: string) => void;
-  setPendingConsents: (consents: { dataConsent: boolean; marketingConsent: boolean } | null) => void;
+  setPendingConsents: (
+    consents: { dataConsent: boolean; marketingConsent: boolean } | null
+  ) => void;
 }
 
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';

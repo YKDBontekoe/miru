@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../src/components/AppText';
-import { AppButton } from '../../src/components/AppButton';
 import { useAppStore } from '../../src/store/useAppStore';
 
 const { width } = Dimensions.get('window');
@@ -52,7 +51,7 @@ export default function OnboardingScreen() {
 
   const finish = () => {
     if (currentIndex === PAGES.length - 1 && !dataConsent) {
-      alert("Please agree to the Data Processing Terms to use AI features.");
+      alert('Please agree to the Data Processing Terms to use AI features.');
       return;
     }
     useAppStore.getState().setPendingConsents({ dataConsent, marketingConsent });
@@ -200,7 +199,11 @@ export default function OnboardingScreen() {
         {/* Consent Tracking on Last Page */}
         {currentIndex === PAGES.length - 1 && (
           <View style={{ marginBottom: 16 }}>
-            <AppText variant="caption" color="muted" style={{ textAlign: 'center', marginBottom: 16 }}>
+            <AppText
+              variant="caption"
+              color="muted"
+              style={{ textAlign: 'center', marginBottom: 16 }}
+            >
               Before we begin, please review our privacy settings:
             </AppText>
 
@@ -208,7 +211,19 @@ export default function OnboardingScreen() {
               onPress={() => setDataConsent(!dataConsent)}
               style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
             >
-              <View style={{ width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: dataConsent ? '#8B5CF6' : '#D8D8E4', backgroundColor: dataConsent ? '#8B5CF6' : 'transparent', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 4,
+                  borderWidth: 1,
+                  borderColor: dataConsent ? '#8B5CF6' : '#D8D8E4',
+                  backgroundColor: dataConsent ? '#8B5CF6' : 'transparent',
+                  marginRight: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 {dataConsent && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
               </View>
               <AppText variant="caption" style={{ flex: 1 }}>
@@ -220,7 +235,19 @@ export default function OnboardingScreen() {
               onPress={() => setMarketingConsent(!marketingConsent)}
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >
-              <View style={{ width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: marketingConsent ? '#8B5CF6' : '#D8D8E4', backgroundColor: marketingConsent ? '#8B5CF6' : 'transparent', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 4,
+                  borderWidth: 1,
+                  borderColor: marketingConsent ? '#8B5CF6' : '#D8D8E4',
+                  backgroundColor: marketingConsent ? '#8B5CF6' : 'transparent',
+                  marginRight: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 {marketingConsent && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
               </View>
               <AppText variant="caption" style={{ flex: 1 }}>

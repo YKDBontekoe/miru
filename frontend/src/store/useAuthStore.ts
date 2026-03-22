@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../core/services/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { apiClient } from '../core/api/client';
+import { useAppStore } from './useAppStore';
 
 interface AuthState {
   user: User | null;
@@ -28,15 +29,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ session, user: session?.user ?? null });
       if (event === 'SIGNED_IN' && session?.user) {
         // Check if there are pending consents from onboarding
-        const { useAppStore } = require('./useAppStore');
         const pendingConsents = useAppStore.getState().pendingConsents;
         if (pendingConsents) {
-          apiClient.post('auth/consent', {
-            marketing_consent: pendingConsents.marketingConsent,
-            data_processing_consent: pendingConsents.dataConsent,
-          }).then(() => {
-            useAppStore.getState().setPendingConsents(null);
-          }).catch(console.error);
+          apiClient
+            .post('auth/consent', {
+              marketing_consent: pendingConsents.marketingConsent,
+              data_processing_consent: pendingConsents.dataConsent,
+            })
+            .then(() => {
+              useAppStore.getState().setPendingConsents(null);
+            })
+            .catch(console.error);
         }
       }
     });
