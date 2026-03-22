@@ -207,7 +207,11 @@ async def test_audit_log_middleware() -> None:
             mock_create.assert_called_once()
 
             mock_create.reset_mock()
-            mock_create.side_effect = Exception("db fail")
+            import asyncio
+            if asyncio.iscoroutinefunction(mock_create):
+                mock_create.side_effect = Exception("db fail")
+            else:
+                mock_create.side_effect = Exception("db fail")
             await client.get("/api/v1/agents")
             await asyncio.sleep(0.05)
             mock_create.assert_called_once()
