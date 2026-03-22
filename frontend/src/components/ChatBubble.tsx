@@ -41,7 +41,8 @@ function formatTime(iso?: string) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function ChatBubble({
+// Performance Log: Memoized ChatBubble to prevent re-renders on every parent state change.
+export const ChatBubble = React.memo(function ChatBubble({
   text,
   isUser,
   status = MessageStatus.sent,
@@ -187,4 +188,4 @@ export function ChatBubble({
       )}
     </View>
   );
-}
+});

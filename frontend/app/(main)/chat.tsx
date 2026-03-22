@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -39,50 +40,79 @@ function getAgentColor(name: string) {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+// Performance Log: Extracted styles to StyleSheet and memoized components.
+const styles = StyleSheet.create({
+  agentPillWrapper: { width: 72, alignItems: 'center', marginRight: 12 },
+  agentPillIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  agentPillInitial: { fontSize: 20, fontWeight: '700' },
+  agentPillName: { textAlign: 'center', fontSize: 11, color: C.muted },
+  roomCardWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  roomCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: C.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  roomCardInitial: { color: C.primary, fontSize: 20, fontWeight: '700' },
+  roomCardTitle: { fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 },
+  roomCardSubtitleWrapper: { flexDirection: 'row', alignItems: 'center' },
+  roomCardSubtitleIcon: { marginRight: 4 },
+  roomCardSubtitleText: { fontSize: 12, color: C.muted },
+});
+
+const AgentPill = React.memo(function AgentPill({
+  agent,
+  onPress,
+}: {
+  agent: Agent;
+  onPress: (id: string) => void;
+}) {
   const color = getAgentColor(agent.name);
+  const handlePress = useCallback(() => onPress(agent.id), [agent.id, onPress]);
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ width: 72, alignItems: 'center', marginRight: 12 }}
-    >
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.75} style={styles.agentPillWrapper}>
       <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          backgroundColor: `${color}18`,
-          borderWidth: 1.5,
-          borderColor: `${color}40`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 6,
-        }}
+        style={[styles.agentPillIcon, { backgroundColor: `${color}18`, borderColor: `${color}40` }]}
       >
-        <AppText style={{ color, fontSize: 20, fontWeight: '700' }}>
+        <AppText style={[styles.agentPillInitial, { color }]}>
           {agent.name[0].toUpperCase()}
         </AppText>
       </View>
-      <AppText
-        variant="caption"
-        numberOfLines={1}
-        style={{ textAlign: 'center', fontSize: 11, color: C.muted }}
-      >
+      <AppText variant="caption" numberOfLines={1} style={styles.agentPillName}>
         {agent.name}
       </AppText>
     </TouchableOpacity>
   );
-}
+});
 
-function RoomCard({
+const RoomCard = React.memo(function RoomCard({
   room,
   agents,
   onPress,
 }: {
   room: ChatRoom;
   agents: Agent[];
-  onPress: () => void;
+  onPress: (id: string) => void;
 }) {
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const memberLabel = () => {
@@ -92,41 +122,23 @@ function RoomCard({
     return `You + ${agents.length} agents`;
   };
 
+  const handlePress = useCallback(() => onPress(room.id), [room.id, onPress]);
+
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        padding: 14,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: C.border,
-      }}
-    >
-      <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 14,
-          backgroundColor: C.primarySurface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 14,
-        }}
-      >
-        <AppText style={{ color: C.primary, fontSize: 20, fontWeight: '700' }}>{initial}</AppText>
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.75} style={styles.roomCardWrapper}>
+      <View style={styles.roomCardIcon}>
+        <AppText style={styles.roomCardInitial}>{initial}</AppText>
       </View>
       <View style={{ flex: 1 }}>
-        <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 }}>
-          {room.name}
-        </AppText>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="people-outline" size={12} color={C.muted} style={{ marginRight: 4 }} />
-          <AppText variant="caption" style={{ fontSize: 12, color: C.muted }}>
+        <AppText style={styles.roomCardTitle}>{room.name}</AppText>
+        <View style={styles.roomCardSubtitleWrapper}>
+          <Ionicons
+            name="people-outline"
+            size={12}
+            color={C.muted}
+            style={styles.roomCardSubtitleIcon}
+          />
+          <AppText variant="caption" style={styles.roomCardSubtitleText}>
             {memberLabel()}
           </AppText>
         </View>
@@ -134,7 +146,7 @@ function RoomCard({
       <Ionicons name="chevron-forward" size={18} color={C.faint} />
     </TouchableOpacity>
   );
-}
+});
 
 function CreateRoomModal({
   visible,
@@ -335,6 +347,32 @@ export default function ChatListScreen() {
     fetchAgents();
   }, [fetchRooms, fetchAgents]);
 
+  const handleAgentPress = useCallback(
+    (id: string) => {
+      router.push('/(main)/agents');
+    },
+    [router]
+  );
+
+  const renderAgentPill = useCallback(
+    ({ item }: { item: Agent }) => <AgentPill agent={item} onPress={handleAgentPress} />,
+    [handleAgentPress]
+  );
+
+  const handleRoomPress = useCallback(
+    (id: string) => {
+      router.push(`/(main)/chat/${id}`);
+    },
+    [router]
+  );
+
+  const renderRoomCard = useCallback(
+    ({ item }: { item: ChatRoom }) => (
+      <RoomCard room={item} agents={roomAgents[item.id] ?? []} onPress={handleRoomPress} />
+    ),
+    [roomAgents, handleRoomPress]
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
@@ -397,19 +435,14 @@ export default function ChatListScreen() {
             >
               Personas
             </AppText>
-            <ScrollView
+            <FlatList
+              data={agents}
+              keyExtractor={(item) => item.id}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4 }}
-            >
-              {agents.map((agent) => (
-                <AgentPill
-                  key={agent.id}
-                  agent={agent}
-                  onPress={() => router.push('/(main)/agents')}
-                />
-              ))}
-            </ScrollView>
+              renderItem={renderAgentPill}
+            />
           </View>
         )}
 
@@ -480,14 +513,12 @@ export default function ChatListScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            rooms.map((room) => (
-              <RoomCard
-                key={room.id}
-                room={room}
-                agents={roomAgents[room.id] ?? []}
-                onPress={() => router.push(`/(main)/chat/${room.id}`)}
-              />
-            ))
+            <FlatList
+              data={rooms}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={renderRoomCard}
+            />
           )}
         </View>
       </ScrollView>

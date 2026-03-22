@@ -342,13 +342,15 @@ class ChatService:
 
         # 7. Best-effort message_count increment for each participant.
         # All agents in the room contributed (they were all passed to the crew),
-        # so db_agents is the correct participant set. Each increment is wrapped
-        # individually so a single failure doesn't abort the stream.
-        for agent in db_agents:
-            try:
-                await self.agent_repo.increment_message_count(agent.id)
-            except Exception:
-                logger.warning("Failed to increment message_count for agent %s", agent.id)
+        # so db_agents is the correct participant set.
+        # Performance Log: Identified N+1 query in agent message count increment.
+        # Reduced database roundtrips from N to 1 by batching the update operation.
+        try:
+            agent_ids = [agent.id for agent in db_agents]
+            if agent_ids:
+                await self.agent_repo.increment_message_counts(agent_ids)
+        except Exception:
+            logger.warning("Failed to increment message_counts for agents in room %s", room_id)
 
         yield str(result)
         yield "[[STATUS:done]]\n"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,41 @@ const C = {
   primary: '#2563EB',
   primarySurface: '#EFF6FF',
 };
+
+// Performance Log: Extracted styles to StyleSheet to avoid inline object recreation on each render.
+const styles = StyleSheet.create({
+  goalRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  goalIcon: {
+    marginRight: 8,
+    marginTop: 2,
+  },
+  goalText: {
+    flex: 1,
+    lineHeight: 20,
+    color: C.text,
+  },
+  integrationWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  integrationPill: {
+    backgroundColor: C.surfaceHigh,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  integrationText: {
+    textTransform: 'capitalize',
+    color: C.text,
+  },
+});
 
 function getAgentColor(name: string) {
   const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
@@ -435,18 +471,15 @@ function AgentDetailSheet({
                 >
                   Goals
                 </AppText>
-                {agent.goals.map((goal, i) => (
-                  <View
-                    key={i}
-                    style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}
-                  >
+                {agent.goals.map((goal, index) => (
+                  <View key={goal} style={styles.goalRow}>
                     <Ionicons
                       name="checkmark-circle"
                       size={16}
                       color={color}
-                      style={{ marginRight: 8, marginTop: 2 }}
+                      style={styles.goalIcon}
                     />
-                    <AppText style={{ flex: 1, lineHeight: 20, color: C.text }}>{goal}</AppText>
+                    <AppText style={styles.goalText}>{goal}</AppText>
                   </View>
                 ))}
               </View>
@@ -465,23 +498,10 @@ function AgentDetailSheet({
                 >
                   Integrations
                 </AppText>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {agent.integrations.map((integration, i) => (
-                    <View
-                      key={i}
-                      style={{
-                        backgroundColor: C.surfaceHigh,
-                        borderRadius: 8,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderWidth: 1,
-                        borderColor: C.border,
-                      }}
-                    >
-                      <AppText
-                        variant="caption"
-                        style={{ textTransform: 'capitalize', color: C.text }}
-                      >
+                <View style={styles.integrationWrapper}>
+                  {agent.integrations.map((integration) => (
+                    <View key={integration} style={styles.integrationPill}>
+                      <AppText variant="caption" style={styles.integrationText}>
                         {integration}
                       </AppText>
                     </View>
@@ -507,72 +527,79 @@ export default function AgentsScreen() {
     fetchAgents();
   }, [fetchAgents]);
 
-  const renderAgentItem = ({ item }: { item: Agent }) => {
-    const color = getAgentColor(item.name);
-    const level = Math.floor(item.message_count / 10) + 1;
+  const handleAgentSelect = useCallback((agent: Agent) => {
+    setSelectedAgent(agent);
+  }, []);
 
-    return (
-      <TouchableOpacity
-        onPress={() => setSelectedAgent(item)}
-        activeOpacity={0.75}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: C.surface,
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 10,
-          borderWidth: 1,
-          borderColor: C.border,
-        }}
-      >
-        <View
+  const renderAgentItem = useCallback(
+    ({ item }: { item: Agent }) => {
+      const color = getAgentColor(item.name);
+      const level = Math.floor(item.message_count / 10) + 1;
+
+      return (
+        <TouchableOpacity
+          onPress={() => handleAgentSelect(item)}
+          activeOpacity={0.75}
           style={{
-            width: 52,
-            height: 52,
-            borderRadius: 26,
-            backgroundColor: `${color}18`,
-            borderWidth: 1.5,
-            borderColor: `${color}35`,
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 14,
+            backgroundColor: C.surface,
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: C.border,
           }}
         >
-          <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
-            {item.name[0].toUpperCase()}
-          </AppText>
-        </View>
-        <View style={{ flex: 1 }}>
-          <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 }}>
-            {item.name}
-          </AppText>
-          <AppText variant="caption" style={{ color: C.muted, fontSize: 12 }} numberOfLines={1}>
-            {item.personality}
-          </AppText>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
           <View
             style={{
-              flexDirection: 'row',
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: `${color}18`,
+              borderWidth: 1.5,
+              borderColor: `${color}35`,
               alignItems: 'center',
-              backgroundColor: `${color}12`,
-              borderRadius: 8,
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              marginBottom: 4,
+              justifyContent: 'center',
+              marginRight: 14,
             }}
           >
-            <Ionicons name="flash" size={11} color={color} style={{ marginRight: 3 }} />
-            <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>Lv {level}</AppText>
+            <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
+              {item.name[0].toUpperCase()}
+            </AppText>
           </View>
-          <AppText variant="caption" style={{ color: C.muted, fontSize: 10 }}>
-            {item.message_count} msgs
-          </AppText>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+          <View style={{ flex: 1 }}>
+            <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 }}>
+              {item.name}
+            </AppText>
+            <AppText variant="caption" style={{ color: C.muted, fontSize: 12 }} numberOfLines={1}>
+              {item.personality}
+            </AppText>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: `${color}12`,
+                borderRadius: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                marginBottom: 4,
+              }}
+            >
+              <Ionicons name="flash" size={11} color={color} style={{ marginRight: 3 }} />
+              <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>Lv {level}</AppText>
+            </View>
+            <AppText variant="caption" style={{ color: C.muted, fontSize: 10 }}>
+              {item.message_count} msgs
+            </AppText>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [handleAgentSelect]
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>

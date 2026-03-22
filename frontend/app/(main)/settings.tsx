@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../src/components/AppText';
@@ -25,25 +33,64 @@ const C = {
   destructiveBorder: '#FECACA',
 };
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <AppText
-      style={{
-        textTransform: 'uppercase',
-        letterSpacing: 1.2,
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.muted,
-        marginBottom: 10,
-        marginTop: 8,
-      }}
-    >
-      {title}
-    </AppText>
-  );
-}
+// Performance Log: Extracted styles to StyleSheet and memoized components.
+const styles = StyleSheet.create({
+  sectionHeader: {
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.muted,
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  settingRowWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  settingRowIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  settingRowTitle: { fontSize: 15, fontWeight: '500' },
+  settingRowSubtitle: { color: C.muted, marginTop: 2, fontSize: 12 },
+  memoryItemWrapper: {
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  memoryItemDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: C.primary,
+    marginTop: 6,
+    marginRight: 12,
+  },
+  memoryItemContent: { lineHeight: 20, fontSize: 14, color: C.text },
+  memoryItemDate: { color: C.muted, marginTop: 4, fontSize: 11 },
+  memoryItemDeleteButton: { marginLeft: 8 },
+});
 
-function SettingRow({
+const SectionHeader = React.memo(function SectionHeader({ title }: { title: string }) {
+  return <AppText style={styles.sectionHeader}>{title}</AppText>;
+});
+
+const SettingRow = React.memo(function SettingRow({
   icon,
   iconColor,
   title,
@@ -66,29 +113,22 @@ function SettingRow({
   return (
     <Wrapper
       {...(wrapperProps as any)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: destructive ? C.destructiveSurface : C.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: destructive ? C.destructiveBorder : C.border,
-      }}
+      style={[
+        styles.settingRowWrapper,
+        {
+          backgroundColor: destructive ? C.destructiveSurface : C.surface,
+          borderColor: destructive ? C.destructiveBorder : C.border,
+        },
+      ]}
     >
       <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
-          borderWidth: 1,
-          borderColor: destructive ? C.destructiveBorder : C.border,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-        }}
+        style={[
+          styles.settingRowIconWrapper,
+          {
+            backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
+            borderColor: destructive ? C.destructiveBorder : C.border,
+          },
+        ]}
       >
         <Ionicons
           name={icon}
@@ -97,13 +137,11 @@ function SettingRow({
         />
       </View>
       <View style={{ flex: 1 }}>
-        <AppText
-          style={{ fontSize: 15, fontWeight: '500', color: destructive ? C.destructive : C.text }}
-        >
+        <AppText style={[styles.settingRowTitle, { color: destructive ? C.destructive : C.text }]}>
           {title}
         </AppText>
         {subtitle && (
-          <AppText variant="caption" style={{ color: C.muted, marginTop: 2, fontSize: 12 }}>
+          <AppText variant="caption" style={styles.settingRowSubtitle}>
             {subtitle}
           </AppText>
         )}
@@ -114,52 +152,39 @@ function SettingRow({
         ) : null)}
     </Wrapper>
   );
-}
+});
 
-function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
+const MemoryItem = React.memo(function MemoryItem({
+  memory,
+  onDelete,
+}: {
+  memory: Memory;
+  onDelete: (id: string) => void;
+}) {
   const date = new Date(memory.created_at).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   });
+  const handleDelete = useCallback(() => onDelete(memory.id), [memory.id, onDelete]);
   return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: C.border,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-      }}
-    >
-      <View
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: C.primary,
-          marginTop: 6,
-          marginRight: 12,
-        }}
-      />
+    <View style={styles.memoryItemWrapper}>
+      <View style={styles.memoryItemDot} />
       <View style={{ flex: 1 }}>
-        <AppText style={{ lineHeight: 20, fontSize: 14, color: C.text }}>{memory.content}</AppText>
-        <AppText variant="caption" style={{ color: C.muted, marginTop: 4, fontSize: 11 }}>
+        <AppText style={styles.memoryItemContent}>{memory.content}</AppText>
+        <AppText variant="caption" style={styles.memoryItemDate}>
           {date}
         </AppText>
       </View>
       <TouchableOpacity
-        onPress={onDelete}
+        onPress={handleDelete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginLeft: 8 }}
+        style={styles.memoryItemDeleteButton}
       >
         <Ionicons name="close" size={16} color={C.faint} />
       </TouchableOpacity>
     </View>
   );
-}
+});
 
 export default function SettingsScreen() {
   const { signOut, user } = useAuthStore();
@@ -184,23 +209,28 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleDeleteMemory = (memory: Memory) => {
-    Alert.alert('Forget memory?', `Should Miru forget this?\n\n"${memory.content}"`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Forget',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await ApiService.deleteMemory(memory.id);
-            setMemories((prev) => prev.filter((m) => m.id !== memory.id));
-          } catch {
-            Alert.alert('Error', 'Failed to delete memory.');
-          }
+  const handleDeleteMemory = useCallback(
+    (id: string) => {
+      const memory = memories.find((m) => m.id === id);
+      if (!memory) return;
+      Alert.alert('Forget memory?', `Should Miru forget this?\n\n"${memory.content}"`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Forget',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await ApiService.deleteMemory(id);
+              setMemories((prev) => prev.filter((m) => m.id !== id));
+            } catch {
+              Alert.alert('Error', 'Failed to delete memory.');
+            }
+          },
         },
-      },
-    ]);
-  };
+      ]);
+    },
+    [memories]
+  );
 
   const handleSignOut = () => {
     Alert.alert('Sign out', 'You will need to sign in again to use Miru.', [
@@ -301,11 +331,7 @@ export default function SettingsScreen() {
           ) : (
             <>
               {memories.map((memory) => (
-                <MemoryItem
-                  key={memory.id}
-                  memory={memory}
-                  onDelete={() => handleDeleteMemory(memory)}
-                />
+                <MemoryItem key={memory.id} memory={memory} onDelete={handleDeleteMemory} />
               ))}
               <TouchableOpacity
                 onPress={loadMemories}

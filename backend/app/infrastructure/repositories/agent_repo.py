@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from tortoise.expressions import F
+
 from app.domain.agents.models import Agent, Capability, Integration
 
 
@@ -56,3 +58,13 @@ class AgentRepository:
         if agent:
             agent.message_count += 1
             await agent.save()
+
+    async def increment_message_counts(self, agent_ids: list[UUID] | list[str]) -> None:
+        """Batch increment message count for multiple agents to avoid N+1 queries."""
+        # Performance Log: Reduced database roundtrips from N to 1 by batching update
+        if not agent_ids:
+            return
+
+        # Convert all to UUIDs for consistency if needed, though tortoise usually handles it
+        ids = [UUID(aid) if isinstance(aid, str) else aid for aid in agent_ids]
+        await Agent.filter(id__in=ids).update(message_count=F("message_count") + 1)

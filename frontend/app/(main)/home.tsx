@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   RefreshControl,
   Modal,
   TextInput,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -63,8 +65,121 @@ function getFirstName(email?: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
+// Performance Log: Extracted styles to StyleSheet to avoid inline object recreation on each render.
+const styles = StyleSheet.create({
+  quickActionWrapper: { flex: 1, alignItems: 'center' },
+  quickActionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    borderWidth: 1,
+  },
+  quickActionText: { fontSize: 12, fontWeight: '600', color: C.muted, textAlign: 'center' },
+  statCardWrapper: {
+    flex: 1,
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: 'flex-start',
+  },
+  statCardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  statCardValue: { fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 2 },
+  statCardLabel: { fontSize: 12, color: C.muted },
+  recentChatWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: C.borderLight,
+  },
+  recentChatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: C.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  recentChatInitial: { color: C.primary, fontSize: 16, fontWeight: '700' },
+  recentChatTitle: { fontSize: 14, fontWeight: '600', color: C.text },
+  recentChatSubtitle: { fontSize: 12, color: C.muted, marginTop: 1 },
+  recentChatTime: { fontSize: 11, color: C.faint },
+  taskRowWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: C.borderLight,
+  },
+  taskRowIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  taskRowTitle: { flex: 1, fontSize: 14 },
+  taskRowDate: { fontSize: 11, color: C.warning },
+  agentChipWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  agentChipIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 7,
+  },
+  agentChipInitial: { fontSize: 12, fontWeight: '700' },
+  agentChipName: { fontSize: 13, fontWeight: '600', color: C.text },
+  agentChipBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginLeft: 6,
+  },
+  agentChipBadgeText: { fontSize: 10, color: 'white', fontWeight: '700' },
+  sectionHeaderWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  sectionHeaderAction: { fontSize: 13, color: C.primary, fontWeight: '600' },
+});
+
 // ─── Quick-action button ─────────────────────────────────────────────────────
-function QuickAction({
+const QuickAction = React.memo(function QuickAction({
   icon,
   label,
   color,
@@ -78,35 +193,17 @@ function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ flex: 1, alignItems: 'center' }}
-    >
-      <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 16,
-          backgroundColor: bg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 6,
-          borderWidth: 1,
-          borderColor: `${color}20`,
-        }}
-      >
+    <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={styles.quickActionWrapper}>
+      <View style={[styles.quickActionIcon, { backgroundColor: bg, borderColor: `${color}20` }]}>
         <Ionicons name={icon} size={22} color={color} />
       </View>
-      <AppText style={{ fontSize: 12, fontWeight: '600', color: C.muted, textAlign: 'center' }}>
-        {label}
-      </AppText>
+      <AppText style={styles.quickActionText}>{label}</AppText>
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({
+const StatCard = React.memo(function StatCard({
   value,
   label,
   icon,
@@ -120,40 +217,24 @@ function StatCard({
   bg: string;
 }) {
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        padding: 14,
-        borderWidth: 1,
-        borderColor: C.border,
-        alignItems: 'flex-start',
-      }}
-    >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: bg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 10,
-        }}
-      >
+    <View style={styles.statCardWrapper}>
+      <View style={[styles.statCardIcon, { backgroundColor: bg }]}>
         <Ionicons name={icon} size={18} color={color} />
       </View>
-      <AppText style={{ fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 2 }}>
-        {value}
-      </AppText>
-      <AppText style={{ fontSize: 12, color: C.muted }}>{label}</AppText>
+      <AppText style={styles.statCardValue}>{value}</AppText>
+      <AppText style={styles.statCardLabel}>{label}</AppText>
     </View>
   );
-}
+});
 
 // ─── Recent chat row ─────────────────────────────────────────────────────────
-function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void }) {
+const RecentChatRow = React.memo(function RecentChatRow({
+  room,
+  onPress,
+}: {
+  room: ChatRoom;
+  onPress: (id: string) => void;
+}) {
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const relativeTime = () => {
     const diff = Date.now() - new Date(room.updated_at).getTime();
@@ -164,146 +245,101 @@ function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void 
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  const handlePress = useCallback(() => onPress(room.id), [room.id, onPress]);
+
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: C.borderLight,
-      }}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          backgroundColor: C.primarySurface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-        }}
-      >
-        <AppText style={{ color: C.primary, fontSize: 16, fontWeight: '700' }}>{initial}</AppText>
+    <TouchableOpacity onPress={handlePress} activeOpacity={0.75} style={styles.recentChatWrapper}>
+      <View style={styles.recentChatIcon}>
+        <AppText style={styles.recentChatInitial}>{initial}</AppText>
       </View>
       <View style={{ flex: 1 }}>
-        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>{room.name}</AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>Tap to continue</AppText>
+        <AppText style={styles.recentChatTitle}>{room.name}</AppText>
+        <AppText style={styles.recentChatSubtitle}>Tap to continue</AppText>
       </View>
-      <AppText style={{ fontSize: 11, color: C.faint }}>{relativeTime()}</AppText>
+      <AppText style={styles.recentChatTime}>{relativeTime()}</AppText>
       <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginLeft: 6 }} />
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Task row ────────────────────────────────────────────────────────────────
-function TaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
+const TaskRow = React.memo(function TaskRow({
+  task,
+  onToggle,
+}: {
+  task: Task;
+  onToggle: (id: string) => void;
+}) {
+  const handleToggle = useCallback(() => onToggle(task.id), [task.id, onToggle]);
   return (
-    <TouchableOpacity
-      onPress={onToggle}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: C.borderLight,
-      }}
-    >
+    <TouchableOpacity onPress={handleToggle} activeOpacity={0.75} style={styles.taskRowWrapper}>
       <View
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 11,
-          borderWidth: 2,
-          borderColor: task.completed ? C.success : C.faint,
-          backgroundColor: task.completed ? C.success : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-        }}
+        style={[
+          styles.taskRowIcon,
+          {
+            borderColor: task.completed ? C.success : C.faint,
+            backgroundColor: task.completed ? C.success : 'transparent',
+          },
+        ]}
       >
         {task.completed && <Ionicons name="checkmark" size={12} color="white" />}
       </View>
       <AppText
-        style={{
-          flex: 1,
-          fontSize: 14,
-          color: task.completed ? C.faint : C.text,
-          textDecorationLine: task.completed ? 'line-through' : 'none',
-        }}
+        style={[
+          styles.taskRowTitle,
+          {
+            color: task.completed ? C.faint : C.text,
+            textDecorationLine: task.completed ? 'line-through' : 'none',
+          },
+        ]}
       >
         {task.title}
       </AppText>
       {task.due_date && (
-        <AppText style={{ fontSize: 11, color: C.warning }}>
+        <AppText style={styles.taskRowDate}>
           {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </AppText>
       )}
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Agent chip ──────────────────────────────────────────────────────────────
-function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+const AgentChip = React.memo(function AgentChip({
+  agent,
+  onPress,
+}: {
+  agent: Agent;
+  onPress: (id: string) => void;
+}) {
   const color = getAgentColor(agent.name);
+  const handlePress = useCallback(() => onPress(agent.id), [agent.id, onPress]);
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: `${color}10`,
-        borderRadius: 20,
-        paddingVertical: 7,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: `${color}25`,
-        marginRight: 8,
-        marginBottom: 8,
-      }}
+      style={[
+        styles.agentChipWrapper,
+        { backgroundColor: `${color}10`, borderColor: `${color}25` },
+      ]}
     >
-      <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          backgroundColor: `${color}20`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 7,
-        }}
-      >
-        <AppText style={{ color, fontSize: 12, fontWeight: '700' }}>
+      <View style={[styles.agentChipIcon, { backgroundColor: `${color}20` }]}>
+        <AppText style={[styles.agentChipInitial, { color }]}>
           {agent.name[0].toUpperCase()}
         </AppText>
       </View>
-      <AppText style={{ fontSize: 13, fontWeight: '600', color: C.text }}>{agent.name}</AppText>
+      <AppText style={styles.agentChipName}>{agent.name}</AppText>
       {agent.message_count > 0 && (
-        <View
-          style={{
-            backgroundColor: color,
-            borderRadius: 8,
-            paddingHorizontal: 5,
-            paddingVertical: 1,
-            marginLeft: 6,
-          }}
-        >
-          <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
-            {agent.message_count}
-          </AppText>
+        <View style={[styles.agentChipBadge, { backgroundColor: color }]}>
+          <AppText style={styles.agentChipBadgeText}>{agent.message_count}</AppText>
         </View>
       )}
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Section header ──────────────────────────────────────────────────────────
-function SectionHeader({
+const SectionHeader = React.memo(function SectionHeader({
   title,
   actionLabel,
   onAction,
@@ -313,35 +349,16 @@ function SectionHeader({
   onAction?: () => void;
 }) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}
-    >
-      <AppText
-        style={{
-          fontSize: 11,
-          fontWeight: '700',
-          color: C.muted,
-          textTransform: 'uppercase',
-          letterSpacing: 1.2,
-        }}
-      >
-        {title}
-      </AppText>
+    <View style={styles.sectionHeaderWrapper}>
+      <AppText style={styles.sectionHeaderTitle}>{title}</AppText>
       {actionLabel && onAction && (
         <TouchableOpacity onPress={onAction}>
-          <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
-            {actionLabel}
-          </AppText>
+          <AppText style={styles.sectionHeaderAction}>{actionLabel}</AppText>
         </TouchableOpacity>
       )}
     </View>
   );
-}
+});
 
 // ─── New chat modal (inline, minimal) ────────────────────────────────────────
 function NewChatModal({
@@ -472,6 +489,32 @@ export default function HomeScreen() {
     await Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
     setRefreshing(false);
   };
+
+  const handleRecentChatPress = useCallback(
+    (id: string) => {
+      router.push(`/(main)/chat/${id}`);
+    },
+    [router]
+  );
+
+  const handleAgentPress = useCallback(
+    (id: string) => {
+      router.push('/(main)/agents');
+    },
+    [router]
+  );
+
+  const handleSeeAllChats = useCallback(() => {
+    router.push('/(main)/chat');
+  }, [router]);
+
+  const handleSeeAllTasks = useCallback(() => {
+    router.push('/(main)/productivity');
+  }, [router]);
+
+  const handleSeeAllAgents = useCallback(() => {
+    router.push('/(main)/agents');
+  }, [router]);
 
   if (isLoadingRooms && rooms.length === 0) {
     return (
@@ -606,14 +649,10 @@ export default function HomeScreen() {
             <SectionHeader
               title="Recent Chats"
               actionLabel="See All"
-              onAction={() => router.push('/(main)/chat')}
+              onAction={handleSeeAllChats}
             />
-            {recentRooms.map((room, i) => (
-              <RecentChatRow
-                key={room.id}
-                room={room}
-                onPress={() => router.push(`/(main)/chat/${room.id}`)}
-              />
+            {recentRooms.map((room) => (
+              <RecentChatRow key={room.id} room={room} onPress={handleRecentChatPress} />
             ))}
           </View>
         )}
@@ -637,7 +676,7 @@ export default function HomeScreen() {
                   : 'Tasks · All done!'
               }
               actionLabel="See All"
-              onAction={() => router.push('/(main)/productivity')}
+              onAction={handleSeeAllTasks}
             />
             {pendingTasks.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: 12 }}>
@@ -651,7 +690,7 @@ export default function HomeScreen() {
               </View>
             ) : (
               pendingTasks.map((task) => (
-                <TaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />
+                <TaskRow key={task.id} task={task} onToggle={toggleTask} />
               ))
             )}
           </View>
@@ -669,18 +708,10 @@ export default function HomeScreen() {
               marginBottom: 20,
             }}
           >
-            <SectionHeader
-              title="Your Agents"
-              actionLabel="Manage"
-              onAction={() => router.push('/(main)/agents')}
-            />
+            <SectionHeader title="Your Agents" actionLabel="Manage" onAction={handleSeeAllAgents} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {topAgents.map((agent) => (
-                <AgentChip
-                  key={agent.id}
-                  agent={agent}
-                  onPress={() => router.push('/(main)/agents')}
-                />
+                <AgentChip key={agent.id} agent={agent} onPress={handleAgentPress} />
               ))}
             </View>
           </View>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -285,80 +286,106 @@ function CreateTaskModal({
   );
 }
 
+// Performance Log: Extracted styles to StyleSheet and memoized components.
+const styles = StyleSheet.create({
+  noteCardWrapper: {
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  noteCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  noteCardTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.text,
+    flex: 1,
+    marginRight: 8,
+  },
+  noteCardContent: { color: C.muted, marginTop: 6, lineHeight: 18 },
+  noteCardDate: { color: C.faint, marginTop: 8, fontSize: 10 },
+  taskCardWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  taskCardCheckButton: { marginRight: 14 },
+  taskCardTitleWrapper: { flex: 1 },
+  taskCardTitle: { fontSize: 15, fontWeight: '500' },
+  taskCardDate: { color: C.muted, marginTop: 3, fontSize: 11 },
+});
+
 // ─── Note Card ────────────────────────────────────────────────────────────────
 
-function NoteCard({ note, onDelete }: { note: Note; onDelete: () => void }) {
+const NoteCard = React.memo(function NoteCard({
+  note,
+  onDelete,
+}: {
+  note: Note;
+  onDelete: (id: string) => void;
+}) {
   const date = new Date(note.created_at).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   });
+  const handleDelete = useCallback(() => onDelete(note.id), [note.id, onDelete]);
   return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: C.border,
-      }}
-    >
-      <View
-        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}
-      >
-        <AppText
-          style={{ fontSize: 15, fontWeight: '600', color: C.text, flex: 1, marginRight: 8 }}
-        >
-          {note.title}
-        </AppText>
-        <TouchableOpacity onPress={onDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+    <View style={styles.noteCardWrapper}>
+      <View style={styles.noteCardHeader}>
+        <AppText style={styles.noteCardTitle}>{note.title}</AppText>
+        <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Ionicons name="trash-outline" size={17} color={C.faint} />
         </TouchableOpacity>
       </View>
       {note.content ? (
-        <AppText
-          variant="caption"
-          style={{ color: C.muted, marginTop: 6, lineHeight: 18 }}
-          numberOfLines={2}
-        >
+        <AppText variant="caption" style={styles.noteCardContent} numberOfLines={2}>
           {note.content}
         </AppText>
       ) : null}
-      <AppText variant="caption" style={{ color: C.faint, marginTop: 8, fontSize: 10 }}>
+      <AppText variant="caption" style={styles.noteCardDate}>
         {date}
       </AppText>
     </View>
   );
-}
+});
 
 // ─── Task Card ────────────────────────────────────────────────────────────────
 
-function TaskCard({
+const TaskCard = React.memo(function TaskCard({
   task,
   onToggle,
   onDelete,
 }: {
   task: Task;
-  onToggle: () => void;
-  onDelete: () => void;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
+  const handleToggle = useCallback(() => onToggle(task.id), [task.id, onToggle]);
+  const handleDelete = useCallback(() => onDelete(task.id), [task.id, onDelete]);
+
   return (
     <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: task.completed ? C.successSurface : C.surface,
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: task.completed ? `${C.success}30` : C.border,
-      }}
+      style={[
+        styles.taskCardWrapper,
+        {
+          backgroundColor: task.completed ? C.successSurface : C.surface,
+          borderColor: task.completed ? `${C.success}30` : C.border,
+        },
+      ]}
     >
       <TouchableOpacity
-        onPress={onToggle}
+        onPress={handleToggle}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginRight: 14 }}
+        style={styles.taskCardCheckButton}
       >
         <Ionicons
           name={task.completed ? 'checkmark-circle' : 'ellipse-outline'}
@@ -366,29 +393,30 @@ function TaskCard({
           color={task.completed ? C.success : C.faint}
         />
       </TouchableOpacity>
-      <View style={{ flex: 1 }}>
+      <View style={styles.taskCardTitleWrapper}>
         <AppText
-          style={{
-            fontSize: 15,
-            fontWeight: '500',
-            textDecorationLine: task.completed ? 'line-through' : 'none',
-            color: task.completed ? C.muted : C.text,
-          }}
+          style={[
+            styles.taskCardTitle,
+            {
+              textDecorationLine: task.completed ? 'line-through' : 'none',
+              color: task.completed ? C.muted : C.text,
+            },
+          ]}
         >
           {task.title}
         </AppText>
         {task.due_date && (
-          <AppText variant="caption" style={{ color: C.muted, marginTop: 3, fontSize: 11 }}>
+          <AppText variant="caption" style={styles.taskCardDate}>
             Due {new Date(task.due_date).toLocaleDateString()}
           </AppText>
         )}
       </View>
-      <TouchableOpacity onPress={onDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+      <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
         <Ionicons name="trash-outline" size={17} color={C.faint} />
       </TouchableOpacity>
     </View>
   );
-}
+});
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
@@ -404,15 +432,42 @@ export default function ProductivityScreen() {
     else fetchTasks();
   }, [activeTab, fetchNotes, fetchTasks]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     if (activeTab === 'notes') fetchNotes();
     else fetchTasks();
-  };
-  const confirmDelete = (action: () => Promise<void>) =>
-    Alert.alert('Delete', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => action() },
-    ]);
+  }, [activeTab, fetchNotes, fetchTasks]);
+
+  const confirmDeleteNote = useCallback(
+    (id: string) => {
+      Alert.alert('Delete', 'Are you sure?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteNote(id) },
+      ]);
+    },
+    [deleteNote]
+  );
+
+  const confirmDeleteTask = useCallback(
+    (id: string) => {
+      Alert.alert('Delete', 'Are you sure?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteTask(id) },
+      ]);
+    },
+    [deleteTask]
+  );
+
+  const renderNoteCard = useCallback(
+    ({ item }: { item: Note }) => <NoteCard note={item} onDelete={confirmDeleteNote} />,
+    [confirmDeleteNote]
+  );
+
+  const renderTaskCard = useCallback(
+    ({ item }: { item: Task }) => (
+      <TaskCard task={item} onToggle={toggleTask} onDelete={confirmDeleteTask} />
+    ),
+    [toggleTask, confirmDeleteTask]
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -497,9 +552,7 @@ export default function ProductivityScreen() {
               tintColor={C.primary}
             />
           }
-          renderItem={({ item }) => (
-            <NoteCard note={item} onDelete={() => confirmDelete(() => deleteNote(item.id))} />
-          )}
+          renderItem={renderNoteCard}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons
@@ -543,13 +596,7 @@ export default function ProductivityScreen() {
               tintColor={C.primary}
             />
           }
-          renderItem={({ item }) => (
-            <TaskCard
-              task={item}
-              onToggle={() => toggleTask(item.id)}
-              onDelete={() => confirmDelete(() => deleteTask(item.id))}
-            />
-          )}
+          renderItem={renderTaskCard}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <Ionicons
