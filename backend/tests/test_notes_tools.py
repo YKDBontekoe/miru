@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -10,7 +11,7 @@ from app.domain.agent_tools.productivity.notes_tools import (
     CreateNoteTool,
     ListNotesTool,
 )
-from app.domain.productivity.models import Note
+from app.domain.productivity.entities import NoteEntity
 
 
 @pytest.fixture
@@ -29,10 +30,24 @@ async def test_list_notes_tool_empty(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_list_notes_tool_with_notes(mock_service: MagicMock) -> None:
-    note1 = Note(
-        id=uuid4(), title="Note 1", content="Short content", is_pinned=False, user_id=uuid4()
+    note1 = NoteEntity(
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        id=uuid4(),
+        title="Note 1",
+        content="Short content",
+        is_pinned=False,
+        user_id=uuid4(),
     )
-    note2 = Note(id=uuid4(), title="Note 2", content="Content", is_pinned=True, user_id=uuid4())
+    note2 = NoteEntity(
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        id=uuid4(),
+        title="Note 2",
+        content="Content",
+        is_pinned=True,
+        user_id=uuid4(),
+    )
     mock_service.return_value.list_notes = AsyncMock(return_value=[note1, note2])
 
     tool = ListNotesTool(user_id=uuid4())
@@ -56,8 +71,14 @@ async def test_list_notes_tool_error(mock_service: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_create_note_tool_success(mock_service: MagicMock) -> None:
     note_id = uuid4()
-    mock_note = Note(
-        id=note_id, title="New Note", content="Content", is_pinned=False, user_id=uuid4()
+    mock_note = NoteEntity(
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        id=note_id,
+        title="New Note",
+        content="Content",
+        is_pinned=False,
+        user_id=uuid4(),
     )
     mock_service.return_value.create_note = AsyncMock(return_value=mock_note)
 

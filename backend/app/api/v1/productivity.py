@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.security.auth import CurrentUser
+from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.models import (
     CalendarEventCreate,
     CalendarEventResponse,
@@ -27,19 +28,10 @@ from app.domain.productivity.use_cases.manage_productivity import (
     NoteNotFoundError,
     TaskNotFoundError,
 )
-from app.infrastructure.repositories.productivity_repo import ProductivityRepository
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["productivity"])
-
-
-def get_productivity_use_case() -> ManageProductivityUseCase:
-    """Dependency injection for the productivity use case."""
-    # Instantiating the concrete repository here keeps the framework route
-    # as the composition root, wiring dependencies for the use case.
-    repository = ProductivityRepository()
-    return ManageProductivityUseCase(repository=repository)
 
 
 ProductivityUseCaseDep = Annotated[ManageProductivityUseCase, Depends(get_productivity_use_case)]
