@@ -6,9 +6,7 @@ import {
   TouchableOpacity,
   View,
   Modal,
-  ScrollView,
   ActivityIndicator,
-  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -93,7 +91,7 @@ export default function ChatRoomScreen() {
   const messageCount = useRef(0);
 
   const room = rooms.find((r) => r.id === roomId);
-  const roomMessages = messages[roomId ?? ''] ?? [];
+  const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
   const currentActivity = roomId ? agentActivity[roomId] : null;
   const agentMap = Object.fromEntries(roomAgents.map((a) => [a.id, a]));
 
@@ -154,13 +152,16 @@ export default function ChatRoomScreen() {
     [roomId, sendMessage]
   );
 
-  const handleAddAgent = async (agentId: string) => {
-    if (!roomId) return;
-    await addAgentToRoom(roomId, agentId);
-    const updated = await ApiService.getRoomAgents(roomId);
-    setRoomAgents(updated);
-    setIsModalVisible(false);
-  };
+  const handleAddAgent = useCallback(
+    async (agentId: string) => {
+      if (!roomId) return;
+      await addAgentToRoom(roomId, agentId);
+      const updated = await ApiService.getRoomAgents(roomId);
+      setRoomAgents(updated);
+      setIsModalVisible(false);
+    },
+    [roomId, addAgentToRoom]
+  );
 
   const renderMessageItem = useCallback(
     ({ item }: { item: any }) => {

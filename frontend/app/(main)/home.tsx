@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   Modal,
@@ -268,14 +267,25 @@ const TaskRow = React.memo(function TaskRow({
   onToggle,
 }: {
   task: Task;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, completed: boolean) => Promise<void> | void;
 }) {
-  const handleToggle = useCallback(() => onToggle(task.id), [task.id, onToggle]);
+  const handleToggle = useCallback(async () => {
+    try {
+      await onToggle(task.id, !task.completed);
+    } catch {
+      // Best effort toggle
+    }
+  }, [task.id, task.completed, onToggle]);
+
   return (
-    <TouchableOpacity onPress={handleToggle} activeOpacity={0.75} style={styles.taskRowWrapper}>
+    <TouchableOpacity
+      onPress={handleToggle}
+      activeOpacity={0.75}
+      className="flex-row items-center bg-surfaceHigh rounded-2xl p-3.5 mb-2"
+    >
       <View
+        className="w-5 h-5 rounded-full border-[1.5px] items-center justify-center mr-3"
         style={[
-          styles.taskRowIcon,
           {
             borderColor: task.completed ? C.success : C.faint,
             backgroundColor: task.completed ? C.success : 'transparent',
@@ -285,8 +295,8 @@ const TaskRow = React.memo(function TaskRow({
         {task.completed && <Ionicons name="checkmark" size={12} color="white" />}
       </View>
       <AppText
+        className="flex-1 text-[15px] font-medium"
         style={[
-          styles.taskRowTitle,
           {
             color: task.completed ? C.faint : C.text,
             textDecorationLine: task.completed ? 'line-through' : 'none',
@@ -296,7 +306,7 @@ const TaskRow = React.memo(function TaskRow({
         {task.title}
       </AppText>
       {task.due_date && (
-        <AppText style={styles.taskRowDate}>
+        <AppText className="text-xs ml-2" style={{ color: C.muted }}>
           {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         </AppText>
       )}

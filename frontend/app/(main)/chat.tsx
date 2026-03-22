@@ -468,57 +468,30 @@ export default function ChatListScreen() {
           </AppText>
 
           {rooms.length === 0 && !isLoadingRooms ? (
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+            <View className="items-center py-12">
               <View
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  backgroundColor: C.surfaceHigh,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                }}
+                className="w-[72px] h-[72px] rounded-full items-center justify-center mb-4 border"
+                style={{ backgroundColor: C.surfaceHigh, borderColor: C.border }}
               >
                 <Ionicons name="chatbubbles-outline" size={32} color={C.faint} />
               </View>
-              <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
+              <AppText variant="h3" className="mb-2 text-center" style={{ color: C.text }}>
                 No conversations yet
               </AppText>
-              <AppText
-                style={{
-                  textAlign: 'center',
-                  marginBottom: 24,
-                  paddingHorizontal: 24,
-                  color: C.muted,
-                }}
-              >
+              <AppText className="text-center mb-6 px-6" style={{ color: C.muted }}>
                 Create a chat and start collaborating with your AI personas.
               </AppText>
               <TouchableOpacity
                 onPress={() => setShowCreateModal(true)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: C.primary,
-                  borderRadius: 14,
-                  paddingVertical: 12,
-                  paddingHorizontal: 24,
-                }}
+                className="flex-row items-center rounded-2xl py-3 px-6"
+                style={{ backgroundColor: C.primary }}
               >
-                <Ionicons name="add" size={18} color="white" style={{ marginRight: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>New Chat</AppText>
+                <Ionicons name="add" size={18} color="white" className="mr-1.5" />
+                <AppText className="font-bold text-white">New Chat</AppText>
               </TouchableOpacity>
             </View>
           ) : (
-            <FlatList
-              data={rooms}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={renderRoomCard}
-            />
+            rooms.map((room) => renderRoomCard({ item: room }))
           )}
         </View>
       </ScrollView>

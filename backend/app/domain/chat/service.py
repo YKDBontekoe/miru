@@ -349,8 +349,10 @@ class ChatService:
             agent_ids = [agent.id for agent in db_agents]
             if agent_ids:
                 await self.agent_repo.increment_message_counts(agent_ids)
-        except Exception:
-            logger.warning("Failed to increment message_counts for agents in room %s", room_id)
+        except Exception as e:
+            if isinstance(e, (KeyboardInterrupt, asyncio.CancelledError)):
+                raise
+            logger.exception("Failed to increment message_counts for agents in room %s", room_id)
 
         yield str(result)
         yield "[[STATUS:done]]\n"
@@ -465,7 +467,9 @@ class ChatService:
                     ),
                     loop,
                 )
-            except Exception:
+            except Exception as e:
+                if isinstance(e, (KeyboardInterrupt, asyncio.CancelledError)):
+                    raise
                 logger.exception("step_callback error — suppressed")
 
         crew_agents = self._create_crew_agents(
@@ -513,7 +517,9 @@ class ChatService:
         )
         try:
             await self.chat_repo.save_message(agent_msg)
-        except Exception:
+        except Exception as e:
+            if isinstance(e, (KeyboardInterrupt, asyncio.CancelledError)):
+                raise
             logger.exception("Failed to persist agent message  room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,

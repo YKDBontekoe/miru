@@ -498,10 +498,13 @@ function AgentDetailSheet({
                 >
                   Integrations
                 </AppText>
-                <View style={styles.integrationWrapper}>
+                <View className="flex-row flex-wrap gap-2">
                   {agent.integrations.map((integration) => (
-                    <View key={integration} style={styles.integrationPill}>
-                      <AppText variant="caption" style={styles.integrationText}>
+                    <View
+                      key={integration}
+                      className="bg-surfaceHigh rounded-md px-2.5 py-[5px] border border-border"
+                    >
+                      <AppText variant="caption" className="capitalize" style={{ color: C.text }}>
                         {integration}
                       </AppText>
                     </View>
