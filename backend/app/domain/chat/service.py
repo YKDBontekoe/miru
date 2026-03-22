@@ -148,25 +148,25 @@ class ChatService:
             for r in rooms
         ]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, user_id, name)
         if room:
             return RoomResponse(
                 id=room.id, name=room.name, created_at=room.created_at, updated_at=room.updated_at
             )
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
-        await self.chat_repo.add_agent_to_room(room_id, agent_id)
+    async def add_agent_to_room(self, room_id: UUID, user_id: UUID, agent_id: UUID) -> None:
+        await self.chat_repo.add_agent_to_room(room_id, agent_id, user_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
-        return await self.chat_repo.list_room_agents(room_id)
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        return await self.chat_repo.list_room_agents(room_id, user_id)
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
-        msgs = await self.chat_repo.get_room_messages(room_id)
+    async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessageResponse]:
+        msgs = await self.chat_repo.get_room_messages(room_id, user_id)
         return [
             ChatMessageResponse(
                 id=m.id,
@@ -273,7 +273,7 @@ class ChatService:
         await self.chat_repo.save_message(user_msg)
 
         # 2. Get agents in room (agent_integrations prefetched by list_room_agents)
-        db_agents = await self.chat_repo.list_room_agents(room_id)
+        db_agents = await self.chat_repo.list_room_agents(room_id, user_id)
         if not db_agents:
             yield "No agents in this room. Please add some first."
             return
@@ -338,7 +338,7 @@ class ChatService:
         await self.chat_repo.save_message(agent_msg)
 
         # 6. Refresh room's updated_at so clients can sort by last activity
-        await self.chat_repo.touch_room(room_id)
+        await self.chat_repo.touch_room(room_id, user_id)
 
         # 7. Best-effort message_count increment for each participant.
         # All agents in the room contributed (they were all passed to the crew),
@@ -403,7 +403,7 @@ class ChatService:
         )
 
         # 3. Fetch agents
-        db_agents = await self.chat_repo.list_room_agents(room_id)
+        db_agents = await self.chat_repo.list_room_agents(room_id, user_id)
         if not db_agents:
             await chat_hub.broadcast_to_room(
                 room_id,

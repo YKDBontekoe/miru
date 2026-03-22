@@ -20,6 +20,7 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 # AgentRepository
 # ---------------------------------------------------------------------------
 
+
 class TestAgentRepository:
     @pytest.mark.asyncio
     @pytest.mark.asyncio
@@ -78,9 +79,11 @@ class TestAgentRepository:
         repo = AgentRepository()
         await repo.increment_message_count(uuid4())
 
+
 # ---------------------------------------------------------------------------
 # ChatRepository
 # ---------------------------------------------------------------------------
+
 
 class TestChatRepository:
     @pytest.mark.asyncio
@@ -170,9 +173,11 @@ class TestChatRepository:
         # Should not raise even if the room doesn't exist
         await repo.touch_room(uuid4(), uuid4())
 
+
 # ---------------------------------------------------------------------------
 # MemoryRepository
 # ---------------------------------------------------------------------------
+
 
 class TestMemoryRepository:
     @pytest.mark.asyncio
@@ -273,11 +278,9 @@ class TestMemoryRepository:
         uid = uuid4()
         aid = uuid4()
         rid = uuid4()
-
-        with patch("tortoise.Tortoise.get_connection") as mock_conn_func:
-            mock_conn_func.return_value = mock_conn
+        with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
+            mock_tortoise.get_connection.return_value = mock_conn
             result = await repo.match_memories([0.1, 0.2], 0.5, 5, uid, aid, rid)
-
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
         call_args = mock_conn.execute_query_dict.call_args
@@ -299,16 +302,17 @@ class TestMemoryRepository:
         repo = MemoryRepository()
         mock_conn = AsyncMock()
         mock_conn.execute_query_dict = AsyncMock(return_value=[])
-
-        with patch("tortoise.Tortoise.get_connection") as mock_conn_func:
-            mock_conn_func.return_value = mock_conn
+        with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
+            mock_tortoise.get_connection.return_value = mock_conn
             result = await repo.search_fulltext("hello world")
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
 
+
 # ---------------------------------------------------------------------------
 # AuthRepository
 # ---------------------------------------------------------------------------
+
 
 class TestAuthRepository:
     def _make_db(self, data: list[dict] | None = None) -> MagicMock:

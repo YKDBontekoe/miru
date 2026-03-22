@@ -40,26 +40,28 @@ class ChatRepository:
             return True
         return False
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> ChatRoomAgent:
+    async def add_agent_to_room(
+        self, room_id: UUID, agent_id: UUID, user_id: UUID
+    ) -> ChatRoomAgent:
+        """Associate an agent with a room."""
         if not await self.room_belongs_to_user(room_id, user_id):
             raise ValueError("Unauthorized or not found")
-        """Associate an agent with a room."""
         # Use _id for foreign keys when passing pure UUIDs in Tortoise
         return await ChatRoomAgent.create(room_id=room_id, agent_id=agent_id)
 
     async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        """Fetch all agents associated with a room, with integrations prefetched."""
         if not await self.room_belongs_to_user(room_id, user_id):
             raise ValueError("Unauthorized or not found")
-        """Fetch all agents associated with a room, with integrations prefetched."""
         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
             "agent__capabilities", "agent__agent_integrations__integration"
         )
         return [assoc.agent for assoc in assocs]
 
     async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessage]:
+        """Fetch all messages in a room."""
         if not await self.room_belongs_to_user(room_id, user_id):
             raise ValueError("Unauthorized or not found")
-        """Fetch all messages in a room."""
         return await ChatMessage.filter(room_id=room_id).order_by("created_at").all()
 
     async def room_belongs_to_user(self, room_id: UUID, user_id: UUID) -> bool:
