@@ -74,10 +74,13 @@ async def run_crew(
 async def update_room(
     room_id: UUID,
     data: RoomUpdate,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    room = await service.update_room(room_id, data.name)
+    try:
+        room = await service.update_room(room_id, user_id, data.name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="Room not found") from e
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     return room
@@ -86,10 +89,13 @@ async def update_room(
 @router.delete("/rooms/{room_id}")
 async def delete_room(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    success = await service.delete_room(room_id)
+    try:
+        success = await service.delete_room(room_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="Room not found") from e
     if not success:
         raise HTTPException(status_code=404, detail="Room not found")
     return {"status": "ok"}
@@ -99,30 +105,39 @@ async def delete_room(
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    await service.add_agent_to_room(room_id, data.agent_id)
+    try:
+        await service.add_agent_to_room(room_id, user_id, data.agent_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="Room not found") from e
     return {"status": "ok"}
 
 
 @router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
 async def get_room_agents(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    agents = await service.list_room_agents(room_id)
+    try:
+        agents = await service.list_room_agents(room_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="Room not found") from e
     return [AgentResponse.model_validate(a) for a in agents]
 
 
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
 async def get_room_messages(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(room_id)
+    try:
+        return await service.get_room_messages(room_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="Room not found") from e
 
 
 @router.post("/rooms/{room_id}/chat")

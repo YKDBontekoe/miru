@@ -19,13 +19,15 @@ class MemoryRepository:
         await memory.save()
         return memory
 
-    async def delete_memory(self, memory_id: UUID) -> bool:
+    async def delete_memory(self, memory_id: UUID, user_id: UUID) -> bool:
         """Delete a memory."""
         memory = await Memory.get_or_none(id=memory_id)
-        if memory:
-            await memory.delete()
-            return True
-        return False
+        if not memory:
+            return False
+        if memory.user_id != user_id:
+            raise ValueError("Unauthorized or not found")
+        await memory.delete()
+        return True
 
     async def list_all_memories(self, user_id: UUID, limit: int = 100) -> list[Memory]:
         """Fetch all memories for a user (no vector match)."""

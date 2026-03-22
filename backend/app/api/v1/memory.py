@@ -123,11 +123,14 @@ async def upload_document(
 @router.delete("/{memory_id}")
 async def delete_memory(
     memory_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
 ) -> dict[str, str]:
     """Delete a memory."""
-    success = await service.delete_memory(memory_id)
+    try:
+        success = await service.delete_memory(memory_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="Memory not found") from e
     if not success:
         raise HTTPException(status_code=404, detail="Memory not found")
     return {"status": "ok"}
