@@ -834,7 +834,9 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         m_think.assert_called_once()
         m_cb.assert_called_once()
         m_exec.assert_called_once()
-        assert "es-MX" in m_exec.call_args[0]
+        # Verify language is passed as a keyword to ensure robustness
+        _, exec_kwargs = m_exec.call_args
+        assert exec_kwargs.get("accept_language") == "es-MX"
         m_agent_resp.assert_called_once()
         mock_hub.broadcast_to_room.assert_called_once()
         assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "agent_activity"

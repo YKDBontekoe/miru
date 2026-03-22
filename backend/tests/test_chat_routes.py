@@ -59,7 +59,8 @@ def test_run_crew_route(client: TestClient) -> None:
 
         # Verify the Accept-Language header is passed correctly
         mock_service.run_crew.assert_called_once()
-        assert mock_service.run_crew.call_args[0][2] == "de-DE"
+        _, kwargs = mock_service.run_crew.call_args
+        assert kwargs.get("accept_language") == "de-DE"
     finally:
         app.dependency_overrides.clear()
 
