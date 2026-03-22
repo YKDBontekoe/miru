@@ -24,7 +24,7 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "image": "macos-sonoma-14.7-xcode-16.1",
+        "image": "latest",
         "simulator": true
       },
       "env": {
@@ -34,7 +34,7 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "image": "macos-sonoma-14.7-xcode-16.1"
+        "image": "latest"
       },
       "env": {
         "APP_ENV": "production"
