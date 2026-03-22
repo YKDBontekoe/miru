@@ -136,7 +136,10 @@ async def chat_completion(
             logger.warning(
                 "chat_completion failed with model %s, falling back to %s", chosen_model, fallback
             )
-            return await client.chat_completion(messages, fallback)
+            try:
+                return await client.chat_completion(messages, fallback)
+            except Exception as fallback_e:
+                raise fallback_e from e
         raise
 
 
@@ -159,7 +162,10 @@ async def structured_completion(
                 chosen_model,
                 fallback,
             )
-            return await client.structured_completion(messages, fallback, response_model)
+            try:
+                return await client.structured_completion(messages, fallback, response_model)
+            except Exception as fallback_e:
+                raise fallback_e from e
         raise
 
 
