@@ -285,10 +285,6 @@ async def test_stream_room_responses_single_agent(
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
         assert "de-DE" in kwargs["description"]
-
-        # Verify Task was instantiated with single agent
-        mock_task_cls.assert_called_once()
-        _, kwargs = mock_task_cls.call_args
         assert "agent" in kwargs
         assert kwargs["agent"] == mock_crew_agent
 
@@ -356,10 +352,6 @@ async def test_stream_room_responses_multiple_agents(
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
         assert "pt-BR" in kwargs["description"]
-
-        # Verify Task was instantiated without single agent
-        mock_task_cls.assert_called_once()
-        _, kwargs = mock_task_cls.call_args
         assert "agent" not in kwargs
 
         # Verify Crew was instantiated with multiple agents

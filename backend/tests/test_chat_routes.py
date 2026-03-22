@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 import typing
 from unittest.mock import AsyncMock
 from uuid import uuid4
-
-from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_chat_service
 from app.core.security.auth import get_current_user
 from app.domain.chat.service import ChatService
 from app.main import app
+
+if typing.TYPE_CHECKING:
+    from fastapi.testclient import TestClient
 
 
 def test_chat_route(client: TestClient) -> None:
@@ -17,8 +20,9 @@ def test_chat_route(client: TestClient) -> None:
     mock_service = AsyncMock(spec=ChatService)
 
     async def mock_stream(
-        *args: typing.Any, **kwargs: typing.Any
+        *args: typing.Any, accept_language: str | None = None, **kwargs: typing.Any
     ) -> typing.AsyncGenerator[str, None]:
+        assert accept_language == "fr-FR"
         yield "Hello"
         yield " World"
 
@@ -52,6 +56,10 @@ def test_run_crew_route(client: TestClient) -> None:
         )
         assert response.status_code == 200
         assert response.json() == {"task_type": "general", "result": "Test result"}
+
+        # Verify the Accept-Language header is passed correctly
+        mock_service.run_crew.assert_called_once()
+        assert mock_service.run_crew.call_args[0][2] == "de-DE"
     finally:
         app.dependency_overrides.clear()
 
@@ -63,8 +71,9 @@ def test_chat_in_room_route(client: TestClient) -> None:
     mock_service = AsyncMock(spec=ChatService)
 
     async def mock_stream(
-        *args: typing.Any, **kwargs: typing.Any
+        *args: typing.Any, accept_language: str | None = None, **kwargs: typing.Any
     ) -> typing.AsyncGenerator[str, None]:
+        assert accept_language == "es-ES"
         yield "Room"
         yield " Message"
 

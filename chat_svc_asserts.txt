@@ -1,0 +1,212 @@
+159-
+160-        assert result["task_type"] == "general"
+161-        assert result["result"] == "Crew output"
+162-
+163-        # Verify Task was instantiated with single agent and locale instruction
+164:        mock_task_cls.assert_called_once()
+165-        _, kwargs = mock_task_cls.call_args
+166-        assert "agent" in kwargs
+167-        assert kwargs["agent"] == mock_crew_agent
+168-        assert "es-ES" in kwargs["description"]
+169-
+170-        # Verify Crew was instantiated with agents list
+171:        mock_crew_cls.assert_called_once()
+172-        _, crew_kwargs = mock_crew_cls.call_args
+173-        assert "agents" in crew_kwargs
+174-        assert crew_kwargs["agents"] == [mock_crew_agent]
+175-
+176-
+--
+221-
+222-        assert result["task_type"] == "general"
+223-        assert result["result"] == "Crew output"
+224-
+225-        # Verify Task was instantiated without an assigned agent (hierarchical)
+226:        mock_task_cls.assert_called_once()
+227-        _, kwargs = mock_task_cls.call_args
+228-        assert "agent" not in kwargs
+229-        assert "es-ES" in kwargs["description"]
+230-
+231-        # Verify Crew was instantiated hierarchically with manager_llm
+232:        mock_crew_cls.assert_called_once()
+233-        _, crew_kwargs = mock_crew_cls.call_args
+234-        assert "agents" in crew_kwargs
+235-        assert crew_kwargs["agents"] == [mock_crew_agent1, mock_crew_agent2]
+236-        assert "manager_llm" in crew_kwargs
+237-        assert crew_kwargs["manager_llm"] == mock_llm
+--
+280-            responses.append(r)
+281-
+282-        assert "Crew output" in responses
+283-        assert "[[STATUS:done]]\n" in responses
+284-
+285:        mock_task_cls.assert_called_once()
+286-        _, kwargs = mock_task_cls.call_args
+287-        assert "de-DE" in kwargs["description"]
+288-
+289-        # Verify Task was instantiated with single agent
+290:        mock_task_cls.assert_called_once()
+291-        _, kwargs = mock_task_cls.call_args
+292-        assert "agent" in kwargs
+293-        assert kwargs["agent"] == mock_crew_agent
+294-
+295-        # Verify Crew was instantiated with agents list
+296:        mock_crew_cls.assert_called_once()
+297-        _, crew_kwargs = mock_crew_cls.call_args
+298-        assert "agents" in crew_kwargs
+299-        assert crew_kwargs["agents"] == [mock_crew_agent]
+300-        assert crew_kwargs["process"] == mock_process.sequential
+301-
+--
+351-            responses.append(r)
+352-
+353-        assert "Crew output" in responses
+354-        assert "[[STATUS:done]]\n" in responses
+355-
+356:        mock_task_cls.assert_called_once()
+357-        _, kwargs = mock_task_cls.call_args
+358-        assert "pt-BR" in kwargs["description"]
+359-
+360-        # Verify Task was instantiated without single agent
+361:        mock_task_cls.assert_called_once()
+362-        _, kwargs = mock_task_cls.call_args
+363-        assert "agent" not in kwargs
+364-
+365-        # Verify Crew was instantiated with multiple agents
+366:        mock_crew_cls.assert_called_once()
+367-        _, crew_kwargs = mock_crew_cls.call_args
+368-        assert "agents" in crew_kwargs
+369-        assert crew_kwargs["agents"] == [mock_crew_agent1, mock_crew_agent2]
+370-        assert crew_kwargs["process"] == mock_process.hierarchical
+371-        assert "manager_llm" in crew_kwargs
+--
+428-    responses = []
+429-    async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
+430-        responses.append(r)
+431-
+432-    assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
+433:    mock_llm.chat.completions.create.assert_called_once()
+434-    called_messages = mock_llm.chat.completions.create.call_args[1]["messages"]
+435-    assert "fr-FR" in called_messages[0]["content"]
+436-
+437-
+438-@pytest.mark.asyncio
+--
+612-            room_id, message, user_id, "temp123"
+613-        )
+614-
+615-        assert user_msg.content == message
+616-        assert getattr(user_msg, "room_id") == room_id  # noqa: B009
+617:        typing.cast("AsyncMock", chat_service.chat_repo.save_message).assert_called_once_with(
+618-            user_msg
+619-        )
+620:        mock_hub.broadcast_to_room.assert_called_once()
+621:        mock_hub.send_to_user.assert_called_once()
+622-
+623-
+624-@pytest.mark.asyncio
+625-async def test_broadcast_thinking_status(chat_service: ChatService) -> None:
+626-    room_id = uuid4()
+--
+629-    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+630-        mock_hub.broadcast_to_room = AsyncMock()
+631-
+632-        await chat_service._broadcast_thinking_status(room_id, agent_names)
+633-
+634:        mock_hub.broadcast_to_room.assert_called_once()
+635-        call_args = mock_hub.broadcast_to_room.call_args[0]
+636-        assert call_args[0] == room_id
+637-        assert call_args[1]["type"] == "agent_activity"
+638-        assert call_args[1]["data"]["activity"] == "thinking"
+639-
+--
+656-        # It schedules a task in the loop, wait for it
+657-        import asyncio
+658-
+659-        await asyncio.sleep(0.01)
+660-
+661:        mock_hub.broadcast_to_room.assert_called_once()
+662-        call_args = mock_hub.broadcast_to_room.call_args[0]
+663-        assert call_args[1]["data"]["activity"] == "using_tool"
+664-
+665-
+666-@pytest.mark.asyncio
+--
+695-            MagicMock(),
+696-            accept_language="ja-JP",
+697-        )
+698-        assert result == "Result"
+699-
+700:        mock_task_cls.assert_called_once()
+701-        _, kwargs = mock_task_cls.call_args
+702-        assert "ja-JP" in kwargs["description"]
+703-
+704-
+705-@pytest.mark.asyncio
+--
+737-            MagicMock(),
+738-            accept_language="hi-IN",
+739-        )
+740-        assert result == "ResultMulti"
+741-
+742:        mock_task_cls.assert_called_once()
+743-        _, kwargs = mock_task_cls.call_args
+744-        assert "hi-IN" in kwargs["description"]
+745-
+746-
+747-@pytest.mark.asyncio
+--
+766-
+767-        await chat_service._persist_and_broadcast_agent_response(
+768-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+769-        )
+770-
+771:        typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
+772:        typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
+773-        typing.cast(
+774-            "AsyncMock", chat_service.agent_repo.increment_message_count
+775:        ).assert_called_once_with(room_agents[0].id)
+776-        assert mock_hub.broadcast_to_room.call_count == 1
+777-
+778-
+779-@pytest.mark.asyncio
+780-async def test_persist_and_broadcast_agent_response_error(chat_service: ChatService) -> None:
+--
+787-    with pytest.raises(BaseORMException, match="DB error"):
+788-        await chat_service._persist_and_broadcast_agent_response(
+789-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+790-        )
+791-
+792:    typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
+793-
+794-
+795-@pytest.mark.asyncio
+796-async def test_run_room_chat_ws_no_agents(chat_service: ChatService) -> None:
+797-    room_id = uuid4()
+--
+805-        ),
+806-        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
+807-    ):
+808-        mock_hub.broadcast_to_room = AsyncMock()
+809-        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+810:        mock_hub.broadcast_to_room.assert_called_once()
+811-        assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "error"
+812-
+813-
+814-@pytest.mark.asyncio
+815-async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
+--
+836-        m_persist.return_value = MagicMock(id=uuid4())
+837-        m_exec.return_value = "Result"
+838-
+839-        await chat_service.run_room_chat_ws(room_id, "Hello", user_id, accept_language="es-MX")
+840-
+841:        m_persist.assert_called_once()
+842:        m_think.assert_called_once()
+843:        m_cb.assert_called_once()
+844:        m_exec.assert_called_once()
+845-        assert "es-MX" in m_exec.call_args[0]
+846:        m_agent_resp.assert_called_once()
+847:        mock_hub.broadcast_to_room.assert_called_once()
+848-        assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "agent_activity"
+849-        assert mock_hub.broadcast_to_room.call_args[0][1]["data"]["activity"] == "done"
