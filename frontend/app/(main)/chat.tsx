@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
@@ -84,9 +85,10 @@ function RoomCard({
   agents: Agent[];
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const memberLabel = () => {
-    if (agents.length === 0) return 'No agents yet';
+    if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
     if (agents.length === 1) return `You + ${agents[0].name}`;
     if (agents.length === 2) return `You, ${agents[0].name} & ${agents[1].name}`;
     return `You + ${agents.length} agents`;

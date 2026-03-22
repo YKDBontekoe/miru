@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { ApiService } from '../../src/core/api/ApiService';
@@ -117,7 +118,7 @@ function SettingRow({
 }
 
 function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const date = new Intl.DateTimeFormat(i18n.language, {
     month: 'short',
     day: 'numeric',

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { Agent } from '../../src/core/models';
@@ -47,6 +48,7 @@ function CreateAgentSheet({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation();
   const { createAgent, generateAgent } = useAgentStore();
   const [name, setName] = useState('');
   const [personality, setPersonality] = useState('');
@@ -515,6 +517,7 @@ export default function AgentsScreen() {
   }, [fetchAgents]);
 
   const renderAgentItem = ({ item }: { item: Agent }) => {
+    const { t } = useTranslation();
     const color = getAgentColor(item.name);
     const level = Math.floor(item.message_count / 10) + 1;
 

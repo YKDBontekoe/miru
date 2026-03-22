@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
@@ -356,13 +357,14 @@ function NewChatModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { createRoom } = useChatStore();
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Please enter a name for this chat.');
+      Alert.alert(t('home.chat_modal.name_required', 'Name required'), t('home.chat_modal.please_enter_name', 'Please enter a name for this chat.'));
       return;
     }
     setIsSaving(true);
@@ -372,7 +374,7 @@ function NewChatModal({
       onCreated();
       onClose();
     } catch {
-      Alert.alert('Error', 'Failed to create chat. Please try again.');
+      Alert.alert(t('home.chat_modal.error', 'Error'), t('home.chat_modal.failed_to_create', 'Failed to create chat. Please try again.'));
     } finally {
       setIsSaving(false);
     }
@@ -398,7 +400,7 @@ function NewChatModal({
             }}
           >
             <AppText variant="h2" style={{ color: C.text }}>
-              New Chat
+              {t('home.chat_modal.title', 'New Chat')}
             </AppText>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close-circle" size={26} color={C.faint} />
@@ -407,7 +409,7 @@ function NewChatModal({
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Chat name…"
+            placeholder={t('home.chat_modal.placeholder', 'Chat name…')}
             placeholderTextColor={C.faint}
             autoFocus
             style={{
@@ -435,7 +437,7 @@ function NewChatModal({
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>Create</AppText>
+              <AppText style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>{t('home.actions.create', 'Create')}</AppText>
             )}
           </TouchableOpacity>
         </View>

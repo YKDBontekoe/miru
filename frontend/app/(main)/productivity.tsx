@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { Note, Task } from '../../src/core/models';
@@ -341,7 +342,7 @@ function TaskCard({
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   return (
     <View
       style={{
