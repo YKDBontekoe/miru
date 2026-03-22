@@ -7,9 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from app.api.dependencies import get_chat_service
 from app.domain.chat.service import ChatService
-from app.main import app
 
 if typing.TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -32,27 +30,36 @@ def test_websocket_endpoint_authorized(client: TestClient) -> None:
 
         # Create a mock ChatService and instrument run_room_chat_ws
         mock_service = AsyncMock(spec=ChatService)
+        mock_service.user_in_room.return_value = True
         mock_service.run_room_chat_ws = AsyncMock()
 
-        app.dependency_overrides[get_chat_service] = lambda: mock_service
+        # In websocket endpoint, the service is instantiated directly!
+        # Wait, the code in websocket.py has: service = ChatService(...)
+        # It doesn't use Depends()! So app.dependency_overrides won't work.
+        # We need to patch ChatService directly in app.api.v1.websocket.
 
-        try:
+        with patch("app.api.v1.websocket.ChatService", return_value=mock_service):
             with client.websocket_connect("/api/v1/ws/chat?token=valid&lang=fr-FR") as websocket:
-                # The connection was accepted; send a chat message
+                # Need to read the 'connected' message first
+                _ = websocket.receive_json()
+
+                # Send a join_room first? Not required to send a message.
                 websocket.send_json(
                     {
-                        "type": "message",
+                        "type": "send_message",
                         "room_id": "11111111-1111-1111-1111-111111111111",
-                        "message": "Bonjour",
+                        "content": "Bonjour",
                     }
                 )
 
-                # We expect our mocked run_room_chat_ws to be awaited and it shouldn't produce a real response since it's mocked,
-                # so we can disconnect.
+                # We expect our mocked run_room_chat_ws to be awaited
+                # Since it's fired as an asyncio task, in TestClient it might need a small sleep
+                # or we just trigger another message and receive a response to flush the loop.
+                websocket.send_json({"type": "ping"})
+                pong = websocket.receive_json()
+                assert pong["type"] == "pong"
 
             # Now verify run_room_chat_ws was called with the expected language
             mock_service.run_room_chat_ws.assert_called_once()
             _, kwargs = mock_service.run_room_chat_ws.call_args
             assert kwargs.get("accept_language") == "fr-FR"
-        finally:
-            app.dependency_overrides.clear()

@@ -20,7 +20,7 @@ def test_chat_route(client: TestClient) -> None:
     mock_service = AsyncMock(spec=ChatService)
 
     async def mock_stream(
-        *args: typing.Any, accept_language: str | None = None, **kwargs: typing.Any
+        message: str, user_id: typing.Any, accept_language: str | None = None, **kwargs: typing.Any
     ) -> typing.AsyncGenerator[str, None]:
         assert accept_language == "fr-FR"
         yield "Hello"
@@ -71,7 +71,11 @@ def test_chat_in_room_route(client: TestClient) -> None:
     mock_service = AsyncMock(spec=ChatService)
 
     async def mock_stream(
-        *args: typing.Any, accept_language: str | None = None, **kwargs: typing.Any
+        room_id: typing.Any,
+        message: str,
+        user_id: typing.Any,
+        accept_language: str | None = None,
+        **kwargs: typing.Any,
     ) -> typing.AsyncGenerator[str, None]:
         assert accept_language == "es-ES"
         yield "Room"
