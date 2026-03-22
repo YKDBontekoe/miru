@@ -1,0 +1,101 @@
+name: iOS EAS Build & Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ios-eas-build.yml'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'EAS build profile'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+        default: preview
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ios-eas-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios-build:
+    name: Build iOS (local) & Publish to EAS
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Set locale (required by Fastlane)
+        run: |
+          echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
+          echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
+
+      - name: Install Fastlane
+        run: brew install fastlane
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve build profile
+        id: profile
+        run: |
+          PROFILE="${{ inputs.profile }}"
+          if [ -z "$PROFILE" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              PROFILE="preview"
+            else
+              PROFILE="development"
+            fi
+          fi
+          echo "value=$PROFILE" >> $GITHUB_OUTPUT
+
+      - name: Build iOS locally
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+          EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          eas build \
+            --platform ios \
+            --profile ${{ steps.profile.outputs.value }} \
+            --local \
+            --non-interactive \
+            --output ./build/app.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ steps.profile.outputs.value }}-${{ github.sha }}
+          path: ./frontend/build/app.ipa
+          retention-days: 14
+
+      - name: Submit to EAS / TestFlight
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas submit \
+            --platform ios \
+            --path ./build/app.ipa \
+            --non-interactive
