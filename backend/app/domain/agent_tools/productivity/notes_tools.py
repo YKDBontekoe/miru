@@ -6,8 +6,8 @@ from uuid import UUID
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.models import NoteCreate
-from app.domain.productivity.service import ProductivityService
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class ListNotesTool(BaseTool):
 
     async def _run(self) -> str:
         try:
-            notes = await ProductivityService.list_notes(user_id=self.user_id)
+            notes = await get_productivity_use_case().list_notes(user_id=self.user_id)
 
             if not notes:
                 return "No notes found."
@@ -88,7 +88,9 @@ class CreateNoteTool(BaseTool):
                 origin_message_id=self.origin_message_id,
                 origin_context=origin_context,
             )
-            note = await ProductivityService.create_note(user_id=self.user_id, note_data=note_data)
+            note = await get_productivity_use_case().create_note(
+                user_id=self.user_id, note_data=note_data
+            )
 
             return f"Successfully created note '{note.title}' with ID {note.id}."
         except Exception:
