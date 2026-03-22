@@ -26,4 +26,7 @@ def test_scrub_messages() -> None:
     ]
     scrubbed = scrub_messages(messages)  # type: ignore[arg-type]
     assert scrubbed[0]["content"] == "My phone is [PHONE]."
-    assert scrubbed[1]["content"][0]["text"] == "Got it, your phone is [PHONE] and email is [EMAIL]."  # type: ignore[index]
+    assert isinstance(scrubbed[1]["content"], list)
+    assert (
+        scrubbed[1]["content"][0]["text"] == "Got it, your phone is [PHONE] and email is [EMAIL]."
+    )  # type: ignore[index]

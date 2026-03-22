@@ -63,7 +63,11 @@ class AuthRepository:
                 )
                 return True
             return False
-        except Exception:
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error("Failed to update consent for user %s: %s", user_id, e)
             return False
 
     async def delete_account(self, user_id: str | UUID) -> bool:
@@ -83,7 +87,12 @@ class AuthRepository:
         try:
             # Note: We must delete from Supabase Auth explicitly.
             # Using the service_role client to delete auth.users
-            self.db.auth.admin.delete_user(str(user_id))
+            import asyncio
+
+            if asyncio.iscoroutinefunction(self.db.auth.admin.delete_user):
+                await self.db.auth.admin.delete_user(str(user_id))
+            else:
+                self.db.auth.admin.delete_user(str(user_id))
 
             # Since many tables have ON DELETE CASCADE to auth.users in Postgres
             # (assuming standard Supabase setup), or we can delete manually via Tortoise.
