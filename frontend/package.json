@@ -46,7 +46,6 @@
     "expo-router": "~55.0.7",
     "expo-secure-store": "~55.0.9",
     "expo-status-bar": "~55.0.4",
-    "markdown-it": "^12.3.2",
     "nativewind": "^4.2.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -63,7 +62,7 @@
   },
   "overrides": {
     "markdown-it": "^12.3.2",
-    "@tootallnate/once": "3.0.1"
+    "http-proxy-agent": "^7.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
