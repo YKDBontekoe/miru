@@ -15,13 +15,13 @@ from app.domain.productivity.models import Note
 
 @pytest.fixture
 def mock_service() -> Iterator[MagicMock]:
-    with patch("app.domain.agent_tools.productivity.notes_tools.ProductivityService") as mock:
+    with patch("app.domain.agent_tools.productivity.notes_tools.ManageProductivityUseCase") as mock:
         yield mock
 
 
 @pytest.mark.asyncio
 async def test_list_notes_tool_empty(mock_service: MagicMock) -> None:
-    mock_service.list_notes = AsyncMock(return_value=[])
+    mock_service.return_value.list_notes = AsyncMock(return_value=[])
     tool = ListNotesTool(user_id=uuid4())
     result = await tool._run()
     assert result == "No notes found."
@@ -33,7 +33,7 @@ async def test_list_notes_tool_with_notes(mock_service: MagicMock) -> None:
         id=uuid4(), title="Note 1", content="Short content", is_pinned=False, user_id=uuid4()
     )
     note2 = Note(id=uuid4(), title="Note 2", content="Content", is_pinned=True, user_id=uuid4())
-    mock_service.list_notes = AsyncMock(return_value=[note1, note2])
+    mock_service.return_value.list_notes = AsyncMock(return_value=[note1, note2])
 
     tool = ListNotesTool(user_id=uuid4())
     result = await tool._run()
@@ -47,7 +47,7 @@ async def test_list_notes_tool_with_notes(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_list_notes_tool_error(mock_service: MagicMock) -> None:
-    mock_service.list_notes = AsyncMock(side_effect=Exception("DB Error"))
+    mock_service.return_value.list_notes = AsyncMock(side_effect=Exception("DB Error"))
     tool = ListNotesTool(user_id=uuid4())
     result = await tool._run()
     assert "Error fetching notes." in result
@@ -59,7 +59,7 @@ async def test_create_note_tool_success(mock_service: MagicMock) -> None:
     mock_note = Note(
         id=note_id, title="New Note", content="Content", is_pinned=False, user_id=uuid4()
     )
-    mock_service.create_note = AsyncMock(return_value=mock_note)
+    mock_service.return_value.create_note = AsyncMock(return_value=mock_note)
 
     tool = CreateNoteTool(user_id=uuid4())
     result = await tool._run(title="New Note", content="Content", origin_context="Origin")
@@ -69,7 +69,7 @@ async def test_create_note_tool_success(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_create_note_tool_error(mock_service: MagicMock) -> None:
-    mock_service.create_note = AsyncMock(side_effect=Exception("DB Error"))
+    mock_service.return_value.create_note = AsyncMock(side_effect=Exception("DB Error"))
     tool = CreateNoteTool(user_id=uuid4())
     result = await tool._run(title="New Note", content="Content")
     assert "Error creating note." in result

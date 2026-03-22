@@ -9,7 +9,13 @@ from crewai.tools import BaseTool
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
-from app.domain.productivity.service import ProductivityService
+from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
+from app.infrastructure.repositories.productivity_repo import ProductivityRepository
+
+
+def get_productivity_use_case() -> ManageProductivityUseCase:
+    return ManageProductivityUseCase(repository=ProductivityRepository())
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +45,7 @@ class ListEventsTool(BaseTool):
 
     async def _run(self) -> str:
         try:
-            events = await ProductivityService.list_events(user_id=self.user_id)
+            events = await get_productivity_use_case().list_events(user_id=self.user_id)
 
             if not events:
                 return "No calendar events found."
@@ -124,7 +130,7 @@ class CreateEventTool(BaseTool):
                 origin_message_id=self.origin_message_id,
                 origin_context=origin_context,
             )
-            event = await ProductivityService.create_event(
+            event = await get_productivity_use_case().create_event(
                 user_id=self.user_id, event_data=event_data
             )
 
@@ -192,7 +198,7 @@ class UpdateEventTool(BaseTool):
 
             update_data = CalendarEventUpdate(**update_fields)
 
-            event = await ProductivityService.update_event(
+            event = await get_productivity_use_case().update_event(
                 user_id=self.user_id, event_id=event_id, update_data=update_data
             )
 
@@ -227,7 +233,7 @@ class DeleteEventTool(BaseTool):
 
     async def _run(self, event_id: UUID) -> str:
         try:
-            await ProductivityService.delete_event(user_id=self.user_id, event_id=event_id)
+            await get_productivity_use_case().delete_event(user_id=self.user_id, event_id=event_id)
             return f"Successfully deleted calendar event with ID {event_id}."
         except HTTPException:
             raise
