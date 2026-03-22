@@ -487,7 +487,7 @@ async def test_stream_room_responses_slow_kickoff(
 async def test_stream_room_responses_increment_failure(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """increment_message_count failure is swallowed; stream completes normally."""
+    """increment_message_counts failure is swallowed; stream completes normally."""
     from unittest.mock import patch
 
     user_id = uuid4()
@@ -501,7 +501,7 @@ async def test_stream_room_responses_increment_failure(
     agent.agent_integrations = []
 
     chat_service.chat_repo.list_room_agents.return_value = [agent]
-    chat_service.agent_repo.increment_message_count = AsyncMock(side_effect=Exception("DB down"))
+    chat_service.agent_repo.increment_message_counts = AsyncMock(side_effect=Exception("DB down"))
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"

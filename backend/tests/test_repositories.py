@@ -79,6 +79,44 @@ class TestAgentRepository:
         repo = AgentRepository()
         await repo.increment_message_count(uuid4())
 
+    @pytest.mark.asyncio
+    async def test_increment_message_counts(self) -> None:
+        repo = AgentRepository()
+        # Create two agents
+        agent1 = await repo.create(
+            Agent(
+                user_id=uuid4(),
+                name="Agent 1",
+                personality="Personality 1",
+                message_count=0,
+            )
+        )
+        agent2 = await repo.create(
+            Agent(
+                user_id=uuid4(),
+                name="Agent 2",
+                personality="Personality 2",
+                message_count=5,
+            )
+        )
+
+        await repo.increment_message_counts([agent1.id, str(agent2.id)])
+
+        # Verify counts
+        fetched_agent1 = await repo.get_by_id(agent1.id)
+        fetched_agent2 = await repo.get_by_id(agent2.id)
+
+        assert fetched_agent1 is not None
+        assert fetched_agent2 is not None
+        assert fetched_agent1.message_count == 1
+        assert fetched_agent2.message_count == 6
+
+    @pytest.mark.asyncio
+    async def test_increment_message_counts_empty_list(self) -> None:
+        repo = AgentRepository()
+        # Should not raise exception
+        await repo.increment_message_counts([])
+
 
 # ---------------------------------------------------------------------------
 # ChatRepository
