@@ -14,8 +14,9 @@ on:
         options:
           - development
           - preview
+          - preview:device
           - production
-        default: preview
+        default: preview:device
 
 permissions:
   contents: read
@@ -63,7 +64,7 @@ jobs:
           PROFILE="${{ inputs.profile }}"
           if [ -z "$PROFILE" ]; then
             if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              PROFILE="preview"
+              PROFILE="preview:device"
             else
               PROFILE="development"
             fi

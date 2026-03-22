@@ -30,6 +30,15 @@
         "APP_ENV": "preview"
       }
     },
+    "preview:device": {
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "APP_ENV": "preview"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "ios": {},
