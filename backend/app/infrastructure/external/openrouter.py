@@ -38,6 +38,7 @@ class OpenRouterClient:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
+        reraise=True,
     )
     async def embed(self, text: str, model: str) -> list[float]:
         response = await self.openai_client.embeddings.create(
@@ -51,6 +52,7 @@ class OpenRouterClient:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
+        reraise=True,
     )
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
         response = await self.openai_client.chat.completions.create(
@@ -67,6 +69,7 @@ class OpenRouterClient:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
+        reraise=True,
     )
     async def structured_completion(
         self,
