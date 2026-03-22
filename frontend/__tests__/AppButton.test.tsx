@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { AppButton } from '../src/components/AppButton';
-import { Text } from 'react-native';
 
 describe('AppButton', () => {
   it('renders correctly with label', () => {
@@ -35,7 +34,13 @@ describe('AppButton', () => {
     const onPressOutMock = jest.fn();
 
     const { getByTestId } = render(
-      <AppButton label="Wait" isLoading={true} onPress={onPressMock} onPressIn={onPressInMock} onPressOut={onPressOutMock} />
+      <AppButton
+        label="Wait"
+        isLoading={true}
+        onPress={onPressMock}
+        onPressIn={onPressInMock}
+        onPressOut={onPressOutMock}
+      />
     );
     const button = getByTestId('app-button');
     fireEvent(button, 'pressIn');

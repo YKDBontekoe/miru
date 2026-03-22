@@ -25,7 +25,7 @@ describe('AppCard Component', () => {
 
   it('handles press interactions when onTap is provided', () => {
     const onTapMock = jest.fn();
-    const { getByText, getByRole } = render(
+    const { getByText } = render(
       <AppCard testID="test-card" onTap={onTapMock}>
         <Text>Content</Text>
       </AppCard>
