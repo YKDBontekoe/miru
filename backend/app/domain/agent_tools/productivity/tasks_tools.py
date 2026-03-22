@@ -7,7 +7,13 @@ from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from app.domain.productivity.models import TaskCreate, TaskUpdate
-from app.domain.productivity.service import ProductivityService
+from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
+from app.infrastructure.repositories.productivity_repo import ProductivityRepository
+
+
+def get_productivity_use_case() -> ManageProductivityUseCase:
+    return ManageProductivityUseCase(repository=ProductivityRepository())
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +41,7 @@ class ListTasksTool(BaseTool):
 
     async def _run(self) -> str:
         try:
-            tasks = await ProductivityService.list_tasks(user_id=self.user_id)
+            tasks = await get_productivity_use_case().list_tasks(user_id=self.user_id)
 
             if not tasks:
                 return "No tasks found."
@@ -77,7 +83,9 @@ class CreateTaskTool(BaseTool):
     async def _run(self, title: str, description: str | None = None) -> str:
         try:
             task_data = TaskCreate(title=title, description=description, is_completed=False)
-            task = await ProductivityService.create_task(user_id=self.user_id, task_data=task_data)
+            task = await get_productivity_use_case().create_task(
+                user_id=self.user_id, task_data=task_data
+            )
 
             return f"Successfully created task '{task.title}' with ID {task.id}."
         except Exception:
@@ -113,7 +121,7 @@ class UpdateTaskTool(BaseTool):
     ) -> str:
         try:
             update_data = TaskUpdate(is_completed=is_completed, title=title)
-            task = await ProductivityService.update_task(
+            task = await get_productivity_use_case().update_task(
                 user_id=self.user_id, task_id=task_id, update_data=update_data
             )
 

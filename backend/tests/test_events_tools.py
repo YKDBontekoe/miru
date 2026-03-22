@@ -18,13 +18,15 @@ from app.domain.productivity.models import CalendarEvent
 
 @pytest.fixture
 def mock_service() -> Generator[MagicMock, None, None]:
-    with patch("app.domain.agent_tools.productivity.events_tools.ProductivityService") as mock:
+    with patch(
+        "app.domain.agent_tools.productivity.events_tools.ManageProductivityUseCase"
+    ) as mock:
         yield mock
 
 
 @pytest.mark.asyncio
 async def test_list_events_tool_empty(mock_service: MagicMock) -> None:
-    mock_service.list_events = AsyncMock(return_value=[])
+    mock_service.return_value.list_events = AsyncMock(return_value=[])
     tool = ListEventsTool(user_id=uuid4())
     result = await tool._run()
     assert result == "No calendar events found."
@@ -60,7 +62,7 @@ async def test_list_events_tool_with_events(mock_service: MagicMock) -> None:
         is_all_day=True,
         user_id=uuid4(),
     )
-    mock_service.list_events = AsyncMock(return_value=[event1, event2, event3])
+    mock_service.return_value.list_events = AsyncMock(return_value=[event1, event2, event3])
 
     tool = ListEventsTool(user_id=uuid4())
     result = await tool._run()
@@ -78,7 +80,7 @@ async def test_list_events_tool_with_events(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_list_events_tool_error(mock_service: MagicMock) -> None:
-    mock_service.list_events = AsyncMock(side_effect=Exception("DB Error"))
+    mock_service.return_value.list_events = AsyncMock(side_effect=Exception("DB Error"))
     tool = ListEventsTool(user_id=uuid4())
     result = await tool._run()
     assert "Error fetching calendar events." in result
@@ -95,7 +97,7 @@ async def test_create_event_tool_success(mock_service: MagicMock) -> None:
         is_all_day=False,
         user_id=uuid4(),
     )
-    mock_service.create_event = AsyncMock(return_value=mock_event)
+    mock_service.return_value.create_event = AsyncMock(return_value=mock_event)
 
     tool = CreateEventTool(user_id=uuid4())
     result = await tool._run(
@@ -111,7 +113,7 @@ async def test_create_event_tool_success(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_create_event_tool_error(mock_service: MagicMock) -> None:
-    mock_service.create_event = AsyncMock(side_effect=Exception("DB Error"))
+    mock_service.return_value.create_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = CreateEventTool(user_id=uuid4())
     result = await tool._run(
         title="New Event",
@@ -132,7 +134,7 @@ async def test_update_event_tool_success(mock_service: MagicMock) -> None:
         is_all_day=False,
         user_id=uuid4(),
     )
-    mock_service.update_event = AsyncMock(return_value=mock_event)
+    mock_service.return_value.update_event = AsyncMock(return_value=mock_event)
 
     tool = UpdateEventTool(user_id=uuid4())
     result = await tool._run(
@@ -150,7 +152,7 @@ async def test_update_event_tool_success(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_update_event_tool_error(mock_service: MagicMock) -> None:
-    mock_service.update_event = AsyncMock(side_effect=Exception("DB Error"))
+    mock_service.return_value.update_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = UpdateEventTool(user_id=uuid4())
     result = await tool._run(event_id=uuid4(), title="Updated Event")
     assert "Error updating calendar event." in result
@@ -158,7 +160,7 @@ async def test_update_event_tool_error(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_delete_event_tool_success(mock_service: MagicMock) -> None:
-    mock_service.delete_event = AsyncMock()
+    mock_service.return_value.delete_event = AsyncMock()
 
     event_id = uuid4()
     tool = DeleteEventTool(user_id=uuid4())
@@ -169,7 +171,7 @@ async def test_delete_event_tool_success(mock_service: MagicMock) -> None:
 
 @pytest.mark.asyncio
 async def test_delete_event_tool_error(mock_service: MagicMock) -> None:
-    mock_service.delete_event = AsyncMock(side_effect=Exception("DB Error"))
+    mock_service.return_value.delete_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = DeleteEventTool(user_id=uuid4())
     result = await tool._run(event_id=uuid4())
     assert "Error deleting calendar event." in result
