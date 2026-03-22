@@ -1,16 +1,10 @@
+import React, { useCallback } from 'react';
+import { View, Pressable, ViewProps, StyleProp, ViewStyle, Platform } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import resolveConfig from 'tailwindcss/resolveConfig';
 import tailwindConfig from '../../tailwind.config.js';
 
 const fullConfig = resolveConfig(tailwindConfig);
-const theme = fullConfig.theme as any;
-import React, { useCallback } from 'react';
-import { View, Pressable, ViewProps, StyleProp, ViewStyle, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -36,7 +30,7 @@ export function AppCard({
   // Apply Miru Elevation Scale
   const elevationStyle = Platform.select({
     ios: {
-      shadowColor: 'theme.colors.onSurface.light',
+      shadowColor: (fullConfig.theme as any).colors.onSurface.light,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.05,
       shadowRadius: 4,

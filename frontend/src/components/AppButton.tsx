@@ -1,17 +1,16 @@
-import resolveConfig from 'tailwindcss/resolveConfig';
-import tailwindConfig from '../../tailwind.config.js';
-
-const fullConfig = resolveConfig(tailwindConfig);
-const theme = fullConfig.theme as any;
 import React, { useCallback } from 'react';
-import { Pressable, ActivityIndicator, PressableProps, StyleSheet } from 'react-native';
+import { Pressable, ActivityIndicator, PressableProps } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import resolveConfig from 'tailwindcss/resolveConfig';
+import tailwindConfig from '../../tailwind.config.js';
 import { AppText } from './AppText';
+
+const fullConfig = resolveConfig(tailwindConfig);
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -107,7 +106,13 @@ export function AppButton({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'theme.colors.surface.light' : '#60A5FA'} />
+        <ActivityIndicator
+          color={
+            variant === 'primary' && !isDisabled
+              ? (fullConfig.theme as any).colors.surface.light
+              : '#60A5FA'
+          }
+        />
       ) : (
         <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
       )}

@@ -44,19 +44,25 @@ jest.mock('nativewind', () => ({
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
 
-// Mock reanimated
+// Fix reanimated mock
+require('react-native-reanimated').setUpTests();
+
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
+
+  // The mock for `call` immediately calls the callback which is incorrect
+  // So we override it with a no-op
   Reanimated.default.call = () => {};
+
   return Reanimated;
 });
 
 // Mock react-native-worklets globally
 jest.mock('react-native-worklets', () => {
-    return {
-        Worklets: {
-            createRunInContextFn: jest.fn(),
-        },
-        createSerializable: () => ({ set: jest.fn(), get: jest.fn() }),
-    }
+  return {
+    Worklets: {
+      createRunInContextFn: jest.fn(),
+    },
+    createSerializable: () => ({ set: jest.fn(), get: jest.fn() }),
+  };
 });

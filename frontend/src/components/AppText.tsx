@@ -76,7 +76,7 @@ export function AppText({
     <Text
       className={`${textClass} ${colorClass} ${className}`}
       style={[variantStyle, platformStyle, style]}
-      {...props as any}
+      {...(props as any)}
     >
       {children}
     </Text>
