@@ -15,7 +15,7 @@ from app.domain.chat.models import AddAgentToRoom, RoomUpdate
 
 
 @pytest.mark.asyncio
-async def test_update_room_value_error():
+async def test_update_room_value_error() -> None:
     service = AsyncMock()
     service.update_room.side_effect = ValueError("Unauthorized")
     with pytest.raises(HTTPException) as exc_info:
@@ -25,7 +25,7 @@ async def test_update_room_value_error():
 
 
 @pytest.mark.asyncio
-async def test_delete_room_value_error():
+async def test_delete_room_value_error() -> None:
     service = AsyncMock()
     service.delete_room.side_effect = ValueError("Unauthorized")
     with pytest.raises(HTTPException) as exc_info:
@@ -35,7 +35,7 @@ async def test_delete_room_value_error():
 
 
 @pytest.mark.asyncio
-async def test_add_agent_to_room_value_error():
+async def test_add_agent_to_room_value_error() -> None:
     service = AsyncMock()
     service.add_agent_to_room.side_effect = ValueError("Unauthorized")
     with pytest.raises(HTTPException) as exc_info:
@@ -45,7 +45,7 @@ async def test_add_agent_to_room_value_error():
 
 
 @pytest.mark.asyncio
-async def test_get_room_agents_value_error():
+async def test_get_room_agents_value_error() -> None:
     service = AsyncMock()
     service.list_room_agents.side_effect = ValueError("Unauthorized")
     with pytest.raises(HTTPException) as exc_info:
@@ -55,7 +55,7 @@ async def test_get_room_agents_value_error():
 
 
 @pytest.mark.asyncio
-async def test_get_room_messages_value_error():
+async def test_get_room_messages_value_error() -> None:
     service = AsyncMock()
     service.get_room_messages.side_effect = ValueError("Unauthorized")
     with pytest.raises(HTTPException) as exc_info:

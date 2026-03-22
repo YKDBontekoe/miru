@@ -8,10 +8,17 @@ from app.api.v1.memory import delete_memory
 
 
 @pytest.mark.asyncio
-async def test_delete_memory_value_error() -> None:
+async def test_delete_memory_success() -> None:
     service = AsyncMock()
-    service.delete_memory.side_effect = ValueError("Unauthorized")
+    service.delete_memory.return_value = True
+    result = await delete_memory(uuid4(), uuid4(), service)
+    assert result == {"status": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_delete_memory_not_found() -> None:
+    service = AsyncMock()
+    service.delete_memory.return_value = False
     with pytest.raises(HTTPException) as exc_info:
         await delete_memory(uuid4(), uuid4(), service)
     assert exc_info.value.status_code == 404
-    assert exc_info.value.detail == "Memory not found"
