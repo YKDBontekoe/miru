@@ -274,7 +274,9 @@ async def test_stream_room_responses_single_agent(
         mock_crew_cls.return_value = mock_crew_instance
 
         responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello", user_id, accept_language="de-DE"):
+        async for r in chat_service.stream_room_responses(
+            room_id, "hello", user_id, accept_language="de-DE"
+        ):
             responses.append(r)
 
         assert "Crew output" in responses
@@ -343,7 +345,9 @@ async def test_stream_room_responses_multiple_agents(
         mock_crew_cls.return_value = mock_crew_instance
 
         responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello", user_id, accept_language="pt-BR"):
+        async for r in chat_service.stream_room_responses(
+            room_id, "hello", user_id, accept_language="pt-BR"
+        ):
             responses.append(r)
 
         assert "Crew output" in responses
@@ -684,7 +688,12 @@ async def test_execute_crew_task(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await chat_service._execute_crew_task(
-            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock(), accept_language="ja-JP"
+            typing.cast("list[typing.Any]", room_agents),
+            "Hello",
+            user_id,
+            user_msg_id,
+            MagicMock(),
+            accept_language="ja-JP",
         )
         assert result == "Result"
 
@@ -721,7 +730,12 @@ async def test_execute_crew_task_multi(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await chat_service._execute_crew_task(
-            typing.cast("list[typing.Any]", room_agents), "Hello", user_id, user_msg_id, MagicMock(), accept_language="hi-IN"
+            typing.cast("list[typing.Any]", room_agents),
+            "Hello",
+            user_id,
+            user_msg_id,
+            MagicMock(),
+            accept_language="hi-IN",
         )
         assert result == "ResultMulti"
 
