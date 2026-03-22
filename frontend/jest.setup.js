@@ -44,25 +44,20 @@ jest.mock('nativewind', () => ({
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
 
-// Fix reanimated mock
-require('react-native-reanimated').setUpTests();
-
+// Mock for reanimated avoiding Worklets issues completely
 jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
+  const React = require('react');
+  const Component = React.Component;
 
-  // The mock for `call` immediately calls the callback which is incorrect
-  // So we override it with a no-op
-  Reanimated.default.call = () => {};
-
-  return Reanimated;
-});
-
-// Mock react-native-worklets globally
-jest.mock('react-native-worklets', () => {
   return {
-    Worklets: {
-      createRunInContextFn: jest.fn(),
-    },
-    createSerializable: () => ({ set: jest.fn(), get: jest.fn() }),
+    useSharedValue: jest.fn(() => ({ value: 1 })),
+    useAnimatedStyle: jest.fn(() => ({})),
+    withSpring: jest.fn((val) => val),
+    withTiming: jest.fn((val) => val),
+    createAnimatedComponent: jest.fn((comp) => comp),
+    default: {
+      createAnimatedComponent: jest.fn((comp) => comp),
+      call: jest.fn(),
+    }
   };
 });
