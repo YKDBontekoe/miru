@@ -47,7 +47,8 @@ describe('AppButton', () => {
     fireEvent(button, 'pressOut');
     fireEvent.press(button);
     expect(onPressMock).not.toHaveBeenCalled();
-    // The handlePressIn and Out are called but the internal state ignores it since isDisabled is true
+    expect(onPressInMock).not.toHaveBeenCalled();
+    expect(onPressOutMock).not.toHaveBeenCalled();
   });
 
   // Reanimated creates complex deeply nested nodes so we check the text node color instead

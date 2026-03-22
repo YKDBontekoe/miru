@@ -9,6 +9,12 @@ describe('AppText Component', () => {
     expect(textElement.props.className).toContain('text-base');
   });
 
+  it('renders bodySm variant correctly', () => {
+    const { getByText } = render(<AppText variant="bodySm">Hello</AppText>);
+    const textElement = getByText('Hello');
+    expect(textElement.props.className).toContain('text-sm');
+  });
+
   it('renders h1 variant correctly', () => {
     const { getByText } = render(<AppText variant="h1">Hello</AppText>);
     const textElement = getByText('Hello');
@@ -31,6 +37,13 @@ describe('AppText Component', () => {
     const { getByText } = render(<AppText variant="caption">Hello</AppText>);
     const textElement = getByText('Hello');
     expect(textElement.props.className).toContain('text-xs');
+  });
+
+  it('renders default primary color correctly', () => {
+    const { getByText } = render(<AppText>Hello</AppText>);
+    const textElement = getByText('Hello');
+    // Using string stringify for exact class matching
+    expect(textElement.props.className).toContain('text-onSurface-light');
   });
 
   it('renders disabled color correctly', () => {

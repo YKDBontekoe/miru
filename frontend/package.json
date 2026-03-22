@@ -60,6 +60,7 @@
     "tailwindcss": "^3.4.19",
     "zustand": "^5.0.12"
   },
+  "overridesRationale": "markdown-it is pinned to ^14.1.1 to address the ReDoS vulnerability (CVE-2026-2327). http-proxy-agent is pinned to ^7.0.0 to avoid the ESM-only 8.x release and maintain CommonJS compatibility.",
   "overrides": {
     "markdown-it": "^14.1.1",
     "http-proxy-agent": "^7.0.0"

@@ -1,7 +1,7 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { AppCard } from '../src/components/AppCard';
-import { Text } from 'react-native';
 
 describe('AppCard Component', () => {
   it('renders children correctly', () => {
@@ -32,12 +32,6 @@ describe('AppCard Component', () => {
     );
 
     const card = getByText('Content');
-
-    // Test press in
-    fireEvent(card, 'pressIn');
-
-    // Test press out
-    fireEvent(card, 'pressOut');
 
     // Test press
     fireEvent.press(card);

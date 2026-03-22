@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 import crewai
 from crewai import LLM, Crew, Process, Task
 
+from tortoise.exceptions import BaseORMException
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
     CreateEventTool,
@@ -340,6 +341,7 @@ class ChatService:
         # 6. Refresh room's updated_at so clients can sort by last activity
         await self.chat_repo.touch_room(room_id)
 
+        from tortoise.exceptions import BaseORMException
         # 7. Best-effort message_count increment for each participant.
         # All agents in the room contributed (they were all passed to the crew),
         # so db_agents is the correct participant set. Each increment is wrapped
@@ -347,7 +349,8 @@ class ChatService:
         for agent in db_agents:
             try:
                 await self.agent_repo.increment_message_count(agent.id)
-            except Exception:
+
+            except BaseORMException:
                 logger.warning("Failed to increment message_count for agent %s", agent.id)
 
         yield str(result)
@@ -515,7 +518,6 @@ class ChatService:
         room_id: UUID,
         room_agents: list[Agent],
         result_text: str,
-        agent_names: list[str],
     ) -> None:
         """Save the agent response and broadcast to room."""
         from tortoise.exceptions import BaseORMException
@@ -538,6 +540,7 @@ class ChatService:
         for agent in room_agents:
             try:
                 await self.agent_repo.increment_message_count(agent.id)
+
             except BaseORMException:
                 logger.warning("Failed to increment message_count for agent %s", agent.id)
 
@@ -595,7 +598,7 @@ class ChatService:
             )
 
             await self._persist_and_broadcast_agent_response(
-                room_id, room_agents, result_text, agent_names
+                room_id, room_agents, result_text
             )
             await chat_hub.broadcast_to_room(
                 room_id,
@@ -625,5 +628,5 @@ class ChatService:
             )
             await chat_hub.broadcast_to_room(
                 room_id,
-                {"type": "error", "data": {"message": f"Processing error: {e!s}"}},
+                {"type": "error", "data": {"message": "An internal error occurred while processing your request"}},
             )

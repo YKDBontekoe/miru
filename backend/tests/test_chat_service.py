@@ -496,7 +496,7 @@ async def test_stream_room_responses_increment_failure(
     agent.agent_integrations = []
 
     chat_service.chat_repo.list_room_agents.return_value = [agent]
-    chat_service.agent_repo.increment_message_count = AsyncMock(side_effect=Exception("DB down"))
+    chat_service.agent_repo.increment_message_count = AsyncMock(side_effect=BaseORMException("DB down"))
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
@@ -639,7 +639,10 @@ async def test_create_step_callback(chat_service: ChatService) -> None:
         # It schedules a task in the loop, wait for it
         import asyncio
 
-        await asyncio.sleep(0.01)
+        for _ in range(10):
+            if mock_hub.broadcast_to_room.call_count > 0:
+                break
+            await asyncio.sleep(0.01)
 
         mock_hub.broadcast_to_room.assert_called_once()
         call_args = mock_hub.broadcast_to_room.call_args[0]
@@ -730,7 +733,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
         ).return_value = None
 
         await chat_service._persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), "Done!"
         )
 
         typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
@@ -751,7 +754,7 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
 
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service._persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), "Done!"
         )
 
     typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
@@ -811,3 +814,46 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room.assert_called_once()
         assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "agent_activity"
         assert mock_hub.broadcast_to_room.call_args[0][1]["data"]["activity"] == "done"
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_error_path(
+    chat_service: ChatService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    mock_agent = MagicMock()
+    mock_agent.id = uuid4()
+    mock_agent.name = "TestAgent"
+
+    chat_service.chat_repo.list_room_agents = AsyncMock(return_value=[mock_agent])
+
+    with (
+        patch.object(chat_service, "_handle_message_persistence_and_broadcast", new_callable=AsyncMock),
+        patch.object(chat_service, "_broadcast_thinking_status", new_callable=AsyncMock),
+        patch.object(chat_service, "_create_step_callback", return_value=MagicMock()),
+        patch.object(chat_service, "_execute_crew_task", new_callable=AsyncMock) as mock_execute,
+        patch("app.domain.chat.service.logger") as mock_logger,
+        patch("app.infrastructure.websocket.manager.chat_hub.broadcast_to_room", new_callable=AsyncMock) as mock_broadcast,
+    ):
+        mock_execute.side_effect = ValueError("Some internal processing error")
+
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+
+        # It should log the exception
+        mock_logger.exception.assert_called_once()
+
+        # It should broadcast an error activity
+        activity_broadcasts = [
+            call for call in mock_broadcast.call_args_list
+            if call[0][1].get("type") == "agent_activity" and call[0][1].get("data", {}).get("activity") == "error"
+        ]
+        assert len(activity_broadcasts) == 1
+
+        # It should broadcast the generic error payload
+        error_broadcasts = [
+            call for call in mock_broadcast.call_args_list
+            if call[0][1].get("type") == "error"
+        ]
+        assert len(error_broadcasts) >= 1
+        assert "internal error" in error_broadcasts[-1][0][1]["data"]["message"]
