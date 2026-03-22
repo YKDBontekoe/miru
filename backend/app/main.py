@@ -17,6 +17,7 @@ from app.api.v1.memory import router as memory_router
 from app.api.v1.productivity import router as productivity_router
 from app.api.v1.websocket import router as websocket_router
 from app.core.config import get_settings
+from app.core.middleware import AuditLogMiddleware
 from app.domain.notifications.api.router import router as notifications_router
 from app.infrastructure.database.tortoise import close_db, init_db
 
@@ -71,6 +72,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuditLogMiddleware)
 
 app.include_router(agents_router, prefix="/api/v1/agents")
 app.include_router(auth_router, prefix="/api/v1/auth")

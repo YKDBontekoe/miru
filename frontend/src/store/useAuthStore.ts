@@ -24,8 +24,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ session, user: session?.user ?? null, isLoading: false });
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null });
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Check if there are pending consents from onboarding
+        const { useAppStore } = require('./useAppStore');
+        const pendingConsents = useAppStore.getState().pendingConsents;
+        if (pendingConsents) {
+          apiClient.post('auth/consent', {
+            marketing_consent: pendingConsents.marketingConsent,
+            data_processing_consent: pendingConsents.dataConsent,
+          }).then(() => {
+            useAppStore.getState().setPendingConsents(null);
+          }).catch(console.error);
+        }
+      }
     });
   },
 

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import get_auth_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.auth.models import (
+    ConsentUpdateRequest,
     PasskeyLoginOptionsRequest,
     PasskeyLoginVerifyRequest,
     PasskeyRecord,
@@ -83,4 +84,35 @@ async def delete_passkey(
     deleted = await service.delete_passkey(passkey_id, user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Passkey not found")
+    return {"status": "ok"}
+
+
+@router.post("/consent")
+async def update_consent(
+    data: ConsentUpdateRequest,
+    user_id: CurrentUser,
+    service: Annotated[AuthService, Depends(get_auth_service)],
+) -> dict[str, Any]:
+    """Update marketing and data-processing consent toggles."""
+    # SEC(agent): Remediation for Consent Tracking Vulnerability:
+    # Explicitly track and update user consent for GDPR/CCPA.
+    success = await service.update_consent(
+        user_id, data.marketing_consent, data.data_processing_consent
+    )
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update consent")
+    return {"status": "ok"}
+
+
+@router.delete("/account")
+async def delete_account(
+    user_id: CurrentUser,
+    service: Annotated[AuthService, Depends(get_auth_service)],
+) -> dict[str, Any]:
+    """Delete the user account completely, wiping out all associated data (Right to Erasure)."""
+    # SEC(agent): Remediation for Right to Erasure / GDPR Compliance Vulnerability:
+    # Users must be able to completely delete their accounts and all related PII/data.
+    deleted = await service.delete_account(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Account not found or could not be deleted")
     return {"status": "ok"}

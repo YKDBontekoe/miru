@@ -43,12 +43,19 @@ const PAGES = [
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [dataConsent, setDataConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const setOnboardingComplete = useAppStore((state) => state.setOnboardingComplete);
   const router = useRouter();
 
   const finish = () => {
+    if (currentIndex === PAGES.length - 1 && !dataConsent) {
+      alert("Please agree to the Data Processing Terms to use AI features.");
+      return;
+    }
+    useAppStore.getState().setPendingConsents({ dataConsent, marketingConsent });
     setOnboardingComplete(true);
     router.replace('/(auth)/login');
   };
@@ -189,6 +196,39 @@ export default function OnboardingScreen() {
             />
           ))}
         </View>
+
+        {/* Consent Tracking on Last Page */}
+        {currentIndex === PAGES.length - 1 && (
+          <View style={{ marginBottom: 16 }}>
+            <AppText variant="caption" color="muted" style={{ textAlign: 'center', marginBottom: 16 }}>
+              Before we begin, please review our privacy settings:
+            </AppText>
+
+            <TouchableOpacity
+              onPress={() => setDataConsent(!dataConsent)}
+              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+            >
+              <View style={{ width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: dataConsent ? '#8B5CF6' : '#D8D8E4', backgroundColor: dataConsent ? '#8B5CF6' : 'transparent', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
+                {dataConsent && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+              </View>
+              <AppText variant="caption" style={{ flex: 1 }}>
+                I agree to the Data Processing Terms (required for AI features).
+              </AppText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setMarketingConsent(!marketingConsent)}
+              style={{ flexDirection: 'row', alignItems: 'center' }}
+            >
+              <View style={{ width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: marketingConsent ? '#8B5CF6' : '#D8D8E4', backgroundColor: marketingConsent ? '#8B5CF6' : 'transparent', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
+                {marketingConsent && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+              </View>
+              <AppText variant="caption" style={{ flex: 1 }}>
+                I consent to receiving marketing and product updates.
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Next / Get Started */}
         <TouchableOpacity

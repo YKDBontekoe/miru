@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, TypeVar
 from pydantic import BaseModel
 
 from app.core.config import get_settings
+from app.core.pii_scrubber import scrub_messages
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
@@ -42,9 +43,10 @@ class OpenRouterClient:
         return response.data[0].embedding
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
+        safe_messages = scrub_messages(messages)
         response = await self.openai_client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=safe_messages,
             stream=False,
         )
         if not hasattr(response, "choices"):
@@ -58,9 +60,10 @@ class OpenRouterClient:
         model: str,
         response_model: type[T],
     ) -> T:
+        safe_messages = scrub_messages(messages)
         return await self.instructor_client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=safe_messages,
             response_model=response_model,
         )
 
