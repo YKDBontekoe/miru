@@ -4,15 +4,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from app.domain.chat.models import ChatMessage
-from app.infrastructure.repositories.chat_repo import ChatRepository
 
 if TYPE_CHECKING:
     from app.domain.agents.models import Agent
     from app.infrastructure.repositories.agent_repo import AgentRepository
+    from app.infrastructure.repositories.chat_repo import ChatRepository
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class ChatWebSocketBroadcaster:
             },
         )
 
-    def create_step_callback(self, room_id: UUID, agent_names: list[str]) -> Any:
+    def create_step_callback(self, room_id: UUID, agent_names: list[str]) -> Callable[[Any], None]:
         """Create a callback for CrewAI to broadcast live activity."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 

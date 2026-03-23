@@ -137,6 +137,10 @@ class CrewOrchestrator:
         allow_delegation: bool = False,
     ) -> str:
         """Build and execute the CrewAI task."""
+        if not room_agents:
+            logger.error("Cannot execute CrewAI task: room_agents list is empty.")
+            raise ValueError("No agents available to execute the task.")
+
         llm = CrewOrchestrator.get_crew_llm()
         crew_agents = CrewOrchestrator.create_crew_agents(
             room_agents,

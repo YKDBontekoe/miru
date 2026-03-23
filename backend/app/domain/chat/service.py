@@ -195,7 +195,7 @@ class ChatService:
             except Exception:
                 logger.warning("Failed to increment message_count for agent %s", agent.id)
 
-        yield str(result)
+        yield result
         yield "[[STATUS:done]]\n"
 
     async def user_in_room(self, user_id: UUID, room_id: UUID) -> bool:
