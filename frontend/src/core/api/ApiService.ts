@@ -109,6 +109,10 @@ export const ApiService = {
     await apiClient.delete(`productivity/tasks/${id}`);
   },
 
+  async updatePreferences(data: { marketing_consent?: boolean; data_processing_consent?: boolean }): Promise<void> {
+    await apiClient.patch('auth/account/preferences', data);
+  },
+
   // Streaming Chat
   streamRoomChat(
     roomId: string,

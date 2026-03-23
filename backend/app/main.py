@@ -19,6 +19,7 @@ from app.api.v1.websocket import router as websocket_router
 from app.core.config import get_settings
 from app.domain.notifications.api.router import router as notifications_router
 from app.infrastructure.database.tortoise import close_db, init_db
+from app.api.middleware import AuditMiddleware
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -71,6 +72,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuditMiddleware)
 
 app.include_router(agents_router, prefix="/api/v1/agents")
 app.include_router(auth_router, prefix="/api/v1/auth")

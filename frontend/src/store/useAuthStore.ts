@@ -24,8 +24,28 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ session, user: session?.user ?? null, isLoading: false });
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange(async (_event, session) => {
       set({ session, user: session?.user ?? null });
+
+      if (_event === 'SIGNED_IN' && session?.user) {
+        try {
+          const { SecureLocalStorage } = await import('../core/services/storage');
+          const pendingMarketing = await SecureLocalStorage.getItem('pending_marketing_consent');
+          const pendingData = await SecureLocalStorage.getItem('pending_data_processing_consent');
+
+          if (pendingMarketing !== null || pendingData !== null) {
+            const { ApiService } = await import('../core/api/ApiService');
+            await ApiService.updatePreferences({
+              marketing_consent: pendingMarketing === 'true',
+              data_processing_consent: pendingData === 'true'
+            });
+            await SecureLocalStorage.removeItem('pending_marketing_consent');
+            await SecureLocalStorage.removeItem('pending_data_processing_consent');
+          }
+        } catch (err) {
+          console.warn('Failed to sync pending preferences on SIGNED_IN', err);
+        }
+      }
     });
   },
 
