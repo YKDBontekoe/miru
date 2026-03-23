@@ -1,12 +1,23 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
 
+/**
+ * Props for the AppText component.
+ *
+ * @property {'h1'|'h2'|'h3'|'body'|'bodySm'|'caption'} [variant='body'] - Typography variant, controls font size and weight.
+ * @property {'primary'|'muted'|'disabled'|'brand'} [color='primary'] - Color variant for the text.
+ * @property {string} [className] - Optional NativeWind/Tailwind class string for additional styling.
+ */
 export interface AppTextProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySm' | 'caption';
   color?: 'primary' | 'muted' | 'disabled' | 'brand';
   className?: string;
 }
 
+/**
+ * Reusable text component styled with NativeWind.
+ * Provides consistent typography across the application.
+ */
 export function AppText({
   children,
   variant = 'body',

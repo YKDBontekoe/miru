@@ -2,6 +2,14 @@ import React from 'react';
 import { TouchableOpacity, ActivityIndicator, TouchableOpacityProps } from 'react-native';
 import { AppText } from './AppText';
 
+/**
+ * Props for the AppButton component.
+ *
+ * @property {string} label - The text displayed on the button.
+ * @property {'primary'|'secondary'|'outline'|'ghost'} [variant='primary'] - The styling variant of the button.
+ * @property {boolean} [isLoading=false] - Whether the button is in a loading state. Displays an ActivityIndicator if true.
+ * @property {string} [className] - Optional NativeWind/Tailwind class string for additional styling.
+ */
 export interface AppButtonProps extends TouchableOpacityProps {
   label: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
@@ -9,6 +17,10 @@ export interface AppButtonProps extends TouchableOpacityProps {
   className?: string;
 }
 
+/**
+ * Reusable button component styled with NativeWind.
+ * Provides multiple variants, loading state support, and disabled state styling.
+ */
 export function AppButton({
   label,
   variant = 'primary',

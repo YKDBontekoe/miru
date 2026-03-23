@@ -160,7 +160,7 @@ miru/
 │   │   ├── api/v1/              # Route handlers per domain
 │   │   └── infrastructure/      # Database, external services, repositories
 │   │       ├── database/        # Supabase client, Tortoise ORM config
-│   │       ├── external/        # OpenRouter, Steam, CrewAI
+│   │       ├── external/        # OpenRouter, Steam, CrewAI, Tavily
 │   │       └── repositories/    # Data access layer
 │   ├── tests/                   # Pytest test suite
 │   ├── manage.py                # Migration CLI (makemigrations, check, migrate, status)

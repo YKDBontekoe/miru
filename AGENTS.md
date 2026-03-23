@@ -514,3 +514,24 @@ on every backend PR, so drift is caught at review time before it can reach the m
 - Read the tests to understand expected behaviour
 - Run `make help` for available commands
 - API docs available at `http://localhost:8000/docs` when the backend is running
+
+## Agent Roster & Responsibilities
+
+The following AI agents operate autonomously on this repository:
+
+### Jules
+- **Mission:** Autonomous software engineer capable of writing code, debugging issues, and performing code reviews via CodeRabbit.
+- **Scope & Authorisation:** Authorised to modify the Python backend (`backend/app/domain/`, `backend/app/api/v1/`, `backend/tests/`) and the frontend (`frontend/src/`). Cannot call real external APIs during tests.
+- **Triggers:**
+  - CodeRabbit review proxy: Triggered by PR comments mentioning CodeRabbit.
+  - Sentry/Issue auto-fix: Runs every 6 hours (`0 */6 * * *`) to scan for issues labelled `jules-fix-pending`.
+  - Performance tracking: Runs weekly on Mondays (`0 9 * * 1`) to generate metrics.
+- **Known Issues:**
+  - `// DOCS(miru-agent): prompt mismatch` — Jules's system prompt in `.github/workflows/ai-agents.yml` still instructs it to write Flutter/Dart code in `frontend/lib/`, but the project has been migrated to React Native (TypeScript) in `frontend/src/`.
+
+### CodeRabbit
+- **Mission:** Automated code reviewer that checks for bugs, code quality, and security issues.
+- **Scope & Authorisation:** Read-only access to PR diffs. Can leave PR comments and summaries.
+- **Triggers:**
+  - Auto-triggered when the "PR Checks and Linting" workflow succeeds on a pull request.
+  - Rate limit queue processor runs every 30 minutes (`*/30 * * * *`) to re-trigger queued reviews.

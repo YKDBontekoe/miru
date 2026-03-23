@@ -39,6 +39,13 @@ interface ChatState {
 // Hub unsubscribe kept outside state so it doesn't trigger re-renders
 let _hubUnsub: (() => void) | null = null;
 
+/**
+ * Zustand store for managing chat functionality and WebSocket hub connection.
+ *
+ * Manages the state of chat rooms, messages, active streaming connections,
+ * and live agent activity. Orchestrates the connection lifecycle of the chatHub
+ * and handles incoming WebSocket frames to update the UI reactively.
+ */
 export const useChatStore = create<ChatState>((set, get) => ({
   rooms: [],
   messages: {},
