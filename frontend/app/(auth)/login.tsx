@@ -12,6 +12,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../src/components/AppText';
 import { AppButton } from '../../src/components/AppButton';
 import { useAuthStore } from '../../src/store/useAuthStore';
+import { ApiService } from '../../src/core/api/ApiService';
+import { SecureLocalStorage } from '../../src/core/services/storage';
+import { Switch } from 'react-native';
 
 type AuthMode = 'magic-link' | 'password' | 'passkey';
 
@@ -60,6 +63,8 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [dataProcessingConsent, setDataProcessingConsent] = useState(false);
 
   const { signInWithMagicLink, signInWithPassword, signInWithPasskey } = useAuthStore();
 
@@ -80,12 +85,37 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError(null);
     try {
+      // Store preferences locally before redirect so they can be synced after authentication
+      if (hasTouchedConsents) {
+        const payload = JSON.stringify({
+          marketing_consent: marketingConsent,
+          data_processing_consent: dataProcessingConsent
+        });
+        await SecureLocalStorage.setItem(`pending_consents_${email.trim()}`, payload);
+      }
       await signInWithMagicLink(email.trim());
       setMagicLinkSent(true);
     } catch (e: any) {
       setError(e.message || 'Failed to send magic link. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const syncPreferences = async () => {
+    try {
+      await ApiService.updatePreferences({
+        marketing_consent: marketingConsent,
+        data_processing_consent: dataProcessingConsent,
+      });
+    } catch (e) {
+      console.warn('Failed to sync preferences:', e);
+      // Enqueue retry
+      const payload = JSON.stringify({
+        marketing_consent: marketingConsent,
+        data_processing_consent: dataProcessingConsent
+      });
+      await SecureLocalStorage.setItem(`pending_consents_${email.trim()}`, payload);
     }
   };
 
@@ -99,6 +129,7 @@ export default function LoginScreen() {
     setError(null);
     try {
       await signInWithPassword(email.trim(), password);
+      await syncPreferences();
     } catch (e: any) {
       setError(e.message || 'Incorrect email or password.');
     } finally {
@@ -112,6 +143,7 @@ export default function LoginScreen() {
     setError(null);
     try {
       await signInWithPasskey(email.trim());
+      await syncPreferences();
     } catch (e: any) {
       setError(e.message || 'Passkey authentication failed. Please try another method.');
     } finally {
@@ -277,6 +309,38 @@ export default function LoginScreen() {
                   </AppText>
                 </View>
               )}
+
+              {/* Consents */}
+              <View className="mb-lg">
+                <View className="flex-row items-center justify-between mb-sm">
+                  <AppText
+                    variant="caption"
+                    className="flex-1 mr-xs text-onSurface-light dark:text-onSurface-dark"
+                  >
+                    I consent to marketing emails and notifications.
+                  </AppText>
+                  <Switch
+                    value={marketingConsent}
+                    onValueChange={setMarketingConsent}
+                    trackColor={{ false: '#3F3F46', true: '#2563EB' }}
+                    thumbColor={marketingConsent ? '#ffffff' : '#f4f3f4'}
+                  />
+                </View>
+                <View className="flex-row items-center justify-between">
+                  <AppText
+                    variant="caption"
+                    className="flex-1 mr-xs text-onSurface-light dark:text-onSurface-dark"
+                  >
+                    I consent to my data being processed for AI context.
+                  </AppText>
+                  <Switch
+                    value={dataProcessingConsent}
+                    onValueChange={setDataProcessingConsent}
+                    trackColor={{ false: '#3F3F46', true: '#2563EB' }}
+                    thumbColor={dataProcessingConsent ? '#ffffff' : '#f4f3f4'}
+                  />
+                </View>
+              </View>
 
               {/* Error */}
               {error && <ErrorBanner message={error} />}

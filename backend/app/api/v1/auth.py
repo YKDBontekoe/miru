@@ -14,6 +14,8 @@ from app.domain.auth.models import (
     PasskeyRecord,
     PasskeyRegisterOptionsRequest,
     PasskeyRegisterVerifyRequest,
+    PreferencesUpdateRequest,
+    Profile,
 )
 from app.domain.auth.service import AuthService  # noqa: TCH001
 
@@ -83,4 +85,36 @@ async def delete_passkey(
     deleted = await service.delete_passkey(passkey_id, user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Passkey not found")
+    return {"status": "ok"}
+
+
+@router.delete("/account")
+async def delete_account(
+    user_id: CurrentUser,
+    service: Annotated[AuthService, Depends(get_auth_service)],
+) -> dict[str, Any]:
+    """Delete a user account entirely."""
+    await service.delete_account(user_id)
+    return {"status": "ok"}
+
+
+@router.patch("/account/preferences")
+async def update_preferences(
+    data: PreferencesUpdateRequest,
+    user_id: CurrentUser,
+) -> dict[str, Any]:
+    """Update user consent preferences."""
+    profile = await Profile.get_or_none(id=user_id)
+    if not profile:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "profile_not_found", "message": "Profile not found"}
+        )
+
+    if data.marketing_consent is not None:
+        profile.marketing_consent = data.marketing_consent
+    if data.data_processing_consent is not None:
+        profile.data_processing_consent = data.data_processing_consent
+
+    await profile.save()
     return {"status": "ok"}

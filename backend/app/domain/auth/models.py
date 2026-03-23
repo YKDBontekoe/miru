@@ -22,6 +22,8 @@ class Profile(SupabaseModel):
     theme_preference = fields.CharField(max_length=20, default="system")
     privacy_mode = fields.BooleanField(default=False)
     notifications_enabled = fields.BooleanField(default=True)
+    marketing_consent = fields.BooleanField(default=False)
+    data_processing_consent = fields.BooleanField(default=False)
 
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
@@ -54,6 +56,25 @@ class Profile(SupabaseModel):
               FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
             """,
         ]
+
+
+class AuditLog(SupabaseModel):
+    """Secure, non-malleable log of who accessed what data and when."""
+
+    id: UUID = fields.UUIDField(primary_key=True)
+    user_id: UUID = fields.UUIDField(db_index=True)
+    action: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    resource: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+
+    class Meta:
+        table = "audit_logs"
+        sql_policies = [
+            "ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;",
+            "CREATE POLICY audit_logs_select ON public.audit_logs FOR SELECT USING (auth.uid() = user_id);",
+        ]
+        sql_indexes = []  # type: ignore
+        sql_functions = []  # type: ignore
 
 
 class Passkey(SupabaseModel):
@@ -126,3 +147,8 @@ class PasskeyLoginOptionsRequest(BaseModel):
 class PasskeyLoginVerifyRequest(BaseModel):
     challenge_id: str
     credential: str  # JSON-encoded PublicKeyCredential (assertion)
+
+
+class PreferencesUpdateRequest(BaseModel):
+    marketing_consent: bool | None = None
+    data_processing_consent: bool | None = None

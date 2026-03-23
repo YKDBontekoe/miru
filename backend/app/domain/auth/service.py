@@ -71,3 +71,16 @@ class AuthService:
     async def delete_passkey(self, passkey_id: str | UUID, user_id: str | UUID) -> bool:
         """Delete a passkey belonging to a user."""
         return await self.repo.delete_passkey(passkey_id, user_id)
+
+    async def delete_account(self, user_id: UUID) -> None:
+        """Delete a user account entirely."""
+        import asyncio
+        from app.infrastructure.database.supabase import get_supabase
+
+        try:
+            supabase = get_supabase()
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, supabase.auth.admin.delete_user, str(user_id))
+        except Exception:
+            logger.exception(f"Failed to delete account for user_id={user_id}")
+            raise

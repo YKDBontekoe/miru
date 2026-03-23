@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import typing
 from typing import TYPE_CHECKING, TypeVar
 
@@ -21,6 +22,25 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=BaseModel)
 
 
+def _scrub_pii(messages: list[ChatCompletionMessageParam]) -> list[ChatCompletionMessageParam]:
+    """Scrub PII (email, phone, address) from messages before sending to OpenAI."""
+    scrubbed = []
+
+    email_pattern = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")
+    phone_pattern = re.compile(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b")
+
+    for msg in messages:
+        msg_dict = dict(msg)
+        if "content" in msg_dict and isinstance(msg_dict["content"], str):
+            content = msg_dict["content"]
+            content = email_pattern.sub("[EMAIL_REDACTED]", content)
+            content = phone_pattern.sub("[PHONE_REDACTED]", content)
+            msg_dict["content"] = content
+        scrubbed.append(msg_dict)
+
+    return scrubbed  # type: ignore[return-value]
+
+
 class ChatResponse(BaseModel):
     """Fallback generic Pydantic schema for non-structured chat outputs."""
 
@@ -29,7 +49,6 @@ class ChatResponse(BaseModel):
 
 class OpenRouterClient:
     def __init__(self, api_key: str):
-        # We defer imports to bypass Python 3.13 circular import bugs at startup
         import instructor
         from openai import AsyncOpenAI
 
@@ -47,7 +66,6 @@ class OpenRouterClient:
         )
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
-        # Internally enforce strict JSON structured output even for generic strings
         structured_resp = await self.structured_completion(messages, model, ChatResponse)
         return structured_resp.message
 
@@ -113,9 +131,10 @@ class OpenRouterClient:
         model: str,
         response_model: type[T],
     ) -> T:
+        scrubbed_messages = _scrub_pii(messages)
         return await self.instructor_client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=scrubbed_messages,
             response_model=response_model,
         )
 
