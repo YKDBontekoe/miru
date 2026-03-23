@@ -38,13 +38,13 @@ class TestAgentRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_returns_none_for_unknown(self) -> None:
         repo = AgentRepository()
-        result = await repo.get_by_id(uuid4())
+        result = await repo.get_by_id(uuid4(), uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_by_id_accepts_str(self) -> None:
         repo = AgentRepository()
-        result = await repo.get_by_id(str(uuid4()))
+        result = await repo.get_by_id(str(uuid4()), str(uuid4()))
         assert result is None
 
     @pytest.mark.asyncio
@@ -72,12 +72,12 @@ class TestAgentRepository:
     async def test_update_mood_noop_for_unknown(self) -> None:
         repo = AgentRepository()
         # Should not raise even if agent doesn't exist
-        await repo.update_mood(uuid4(), "happy")
+        await repo.update_mood(uuid4(), uuid4(), "happy")
 
     @pytest.mark.asyncio
     async def test_increment_message_count_noop_for_unknown(self) -> None:
         repo = AgentRepository()
-        await repo.increment_message_count(uuid4())
+        await repo.increment_message_count(uuid4(), uuid4())
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +162,7 @@ class TestChatRepository:
         user_id = uuid4()
         room = await repo.create_room("Touch Room", user_id)
         original_updated_at = room.updated_at
-        await repo.touch_room(room.id)
+        await repo.touch_room(room.id, user_id)
         refreshed = await repo.get_room(room.id, user_id)
         assert refreshed is not None
         assert refreshed.updated_at >= original_updated_at
@@ -171,7 +171,7 @@ class TestChatRepository:
     async def test_touch_room_noop_for_unknown(self) -> None:
         repo = ChatRepository()
         # Should not raise even if the room doesn't exist
-        await repo.touch_room(uuid4())
+        await repo.touch_room(uuid4(), uuid4())
 
     @pytest.mark.asyncio
     async def test_room_belongs_to_user(self) -> None:
@@ -342,11 +342,6 @@ class TestMemoryRepository:
         # Invalid user_id check
         not_found = await repo.get_by_id(agent.id, user_id=other_user_id)
         assert not_found is None
-
-        # Original usage without user_id
-        original = await repo.get_by_id(agent.id)
-        assert original is not None
-        assert original.id == agent.id
 
 
 # ---------------------------------------------------------------------------

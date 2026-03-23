@@ -149,6 +149,17 @@ class ChatService:
         ]
 
     async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> RoomResponse | None:
+        """Update a room's name if the user owns it.
+
+        Args:
+            room_id: The ID of the room.
+            user_id: The current user's ID for ownership verification.
+            name: The new name for the room.
+
+        Returns:
+            RoomResponse | None: The updated room response object, or None if the room
+                is not found or unauthorized.
+        """
         room = await self.chat_repo.update_room(room_id, user_id, name)
         if room:
             return RoomResponse(
@@ -157,20 +168,69 @@ class ChatService:
         return None
 
     async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        """Delete a room if the user owns it.
+
+        Args:
+            room_id: The ID of the room.
+            user_id: The current user's ID for ownership verification.
+
+        Returns:
+            bool: True if the deletion was successful, False if the room is not found
+                or unauthorized.
+        """
         return await self.chat_repo.delete_room(room_id, user_id)
 
     async def add_agent_to_room(self, room_id: UUID, user_id: UUID, agent_id: UUID) -> None:
-        if await self.chat_repo.room_belongs_to_user(room_id, user_id):
-            await self.chat_repo.add_agent_to_room(room_id, agent_id)
-        else:
+        """Add an agent to a room if the user owns both the room and the agent.
+
+        Args:
+            room_id: The ID of the room.
+            user_id: The current user's ID for ownership verification.
+            agent_id: The ID of the agent to add.
+
+        Raises:
+            ValueError: If the room is not found, the agent is not found, or
+                the user is unauthorized.
+        """
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             raise ValueError("Room not found or unauthorized")
 
+        agent = await self.agent_repo.get_by_id(agent_id, user_id=user_id)
+        if not agent:
+            raise ValueError("Agent not found or unauthorized")
+
+        await self.chat_repo.add_agent_to_room(room_id, agent_id)
+
     async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        """List agents in a room if the user owns the room.
+
+        Args:
+            room_id: The ID of the room.
+            user_id: The current user's ID for ownership verification.
+
+        Returns:
+            list[Agent]: A list of agents associated with the room.
+
+        Raises:
+            ValueError: If the room is not found or the user is unauthorized.
+        """
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             raise ValueError("Room not found or unauthorized")
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessageResponse]:
+        """Get messages for a room if the user owns the room.
+
+        Args:
+            room_id: The ID of the room.
+            user_id: The current user's ID for ownership verification.
+
+        Returns:
+            list[ChatMessageResponse]: A list of chat message responses.
+
+        Raises:
+            ValueError: If the room is not found or the user is unauthorized.
+        """
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             raise ValueError("Room not found or unauthorized")
         msgs = await self.chat_repo.get_room_messages(room_id)
@@ -294,8 +354,7 @@ class ChatService:
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
-            yield "Room not found or unauthorized"
-            return
+            raise ValueError("Room not found or unauthorized")
 
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
@@ -375,7 +434,7 @@ class ChatService:
         await self.chat_repo.save_message(agent_msg)
 
         # 6. Refresh room's updated_at so clients can sort by last activity
-        await self.chat_repo.touch_room(room_id)
+        await self.chat_repo.touch_room(room_id, user_id)
 
         # 7. Best-effort message_count increment for each participant.
         # All agents in the room contributed (they were all passed to the crew),
@@ -383,7 +442,7 @@ class ChatService:
         # individually so a single failure doesn't abort the stream.
         for agent in db_agents:
             try:
-                await self.agent_repo.increment_message_count(agent.id)
+                await self.agent_repo.increment_message_count(agent.id, user_id)
             except Exception:
                 logger.warning("Failed to increment message_count for agent %s", agent.id)
 
@@ -580,12 +639,14 @@ class ChatService:
             logger.exception("Failed to persist agent message  room=%s", room_id)
             raise
 
-        await self.chat_repo.touch_room(room_id)
-        for agent in room_agents:
-            try:
-                await self.agent_repo.increment_message_count(agent.id)
-            except BaseORMException:
-                logger.warning("Failed to increment message_count for agent %s", agent.id)
+        owner_id = room_agents[0].user_id if room_agents else None
+        if owner_id:
+            await self.chat_repo.touch_room(room_id, owner_id)
+            for agent in room_agents:
+                try:
+                    await self.agent_repo.increment_message_count(agent.id, owner_id)
+                except Exception:
+                    logger.warning("Failed to increment message_count for agent %s", agent.id)
 
         await chat_hub.broadcast_to_room(
             room_id,

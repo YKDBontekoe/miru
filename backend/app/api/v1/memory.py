@@ -117,7 +117,17 @@ async def upload_document(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to process document.") from e
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.exception("Unexpected error in /upload document processing")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_server_error",
+                "message": "An unexpected error occurred while processing the document",
+            },
+        ) from e
 
 
 @router.delete("/{memory_id}")

@@ -214,7 +214,12 @@ def test_upload_document_exception(client: TestClient) -> None:
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "Failed to process document."}
+    assert response.json() == {
+        "detail": {
+            "error": "internal_server_error",
+            "message": "An unexpected error occurred while processing the document",
+        }
+    }
 
 
 def test_delete_memory_not_found(client: TestClient) -> None:

@@ -421,11 +421,9 @@ async def test_stream_room_responses_unauthorized(
 
     typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
 
-    responses = []
-    async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
-        responses.append(r)
-
-    assert responses == ["Room not found or unauthorized"]
+    with pytest.raises(ValueError, match="Room not found or unauthorized"):
+        async for _r in chat_service.stream_room_responses(room_id, "hello", user_id):
+            pass
 
 
 @pytest.mark.asyncio
@@ -826,10 +824,12 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
         )
 
         typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
-        typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
+        typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(
+            room_id, room_agents[0].user_id
+        )
         typing.cast(
             "AsyncMock", chat_service.agent_repo.increment_message_count
-        ).assert_called_once_with(room_agents[0].id)
+        ).assert_called_once_with(room_agents[0].id, room_agents[0].user_id)
         assert mock_hub.broadcast_to_room.call_count == 1
 
 

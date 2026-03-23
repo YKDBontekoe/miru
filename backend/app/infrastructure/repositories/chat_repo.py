@@ -65,8 +65,8 @@ class ChatRepository:
         await message.save()
         return message
 
-    async def touch_room(self, room_id: UUID) -> None:
+    async def touch_room(self, room_id: UUID, user_id: UUID) -> None:
         """Bump updated_at on a room so recent-chat sorting reflects new messages."""
-        room = await ChatRoom.get_or_none(id=room_id)
+        room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
         if room:
             await room.save()  # auto_now=True on updated_at refreshes the timestamp

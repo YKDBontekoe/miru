@@ -81,7 +81,9 @@ async def update_room(
 ) -> RoomResponse:
     room = await service.update_room(room_id, user_id, data.name)
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise HTTPException(
+            status_code=404, detail={"error": "room_not_found", "message": "Room not found"}
+        )
     return room
 
 
@@ -93,7 +95,9 @@ async def delete_room(
 ) -> dict[str, str]:
     success = await service.delete_room(room_id, user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise HTTPException(
+            status_code=404, detail={"error": "room_not_found", "message": "Room not found"}
+        )
     return {"status": "ok"}
 
 
@@ -108,7 +112,9 @@ async def add_agent_to_room(
         await service.add_agent_to_room(room_id, user_id, data.agent_id)
         return {"status": "ok"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail="Room not found") from e
+        raise HTTPException(
+            status_code=404, detail={"error": "room_not_found", "message": str(e)}
+        ) from e
 
 
 @router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
@@ -121,7 +127,9 @@ async def get_room_agents(
         agents = await service.list_room_agents(room_id, user_id)
         return [AgentResponse.model_validate(a) for a in agents]
     except ValueError as e:
-        raise HTTPException(status_code=404, detail="Room not found") from e
+        raise HTTPException(
+            status_code=404, detail={"error": "room_not_found", "message": str(e)}
+        ) from e
 
 
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
@@ -133,7 +141,9 @@ async def get_room_messages(
     try:
         return await service.get_room_messages(room_id, user_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail="Room not found") from e
+        raise HTTPException(
+            status_code=404, detail={"error": "room_not_found", "message": str(e)}
+        ) from e
 
 
 @router.post("/rooms/{room_id}/chat")
@@ -148,6 +158,12 @@ async def chat_in_room(
     message = request.message or request.content
     if not message:
         raise HTTPException(status_code=400, detail="Message or content is required")
+
+    if not await service.user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=404, detail={"error": "room_not_found", "message": "Room not found"}
+        )
+
     return StreamingResponse(
         service.stream_room_responses(room_id, message, user_id, accept_language),
         media_type="text/event-stream",
