@@ -9,6 +9,7 @@ from uuid import uuid4
 import pytest
 from tortoise.exceptions import BaseORMException
 
+from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.service import ChatService
 
 
@@ -28,7 +29,7 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     agent1.agent_integrations = []
 
     user_id = uuid4()
-    tools = chat_service._get_agent_tools(agent1, user_id)
+    tools = CrewOrchestrator.get_agent_tools(agent1, user_id)
     # Ensure expected productivity and calendar tools are present
     tool_types = [type(t).__name__ for t in tools]
     assert "ListTasksTool" in tool_types
@@ -53,7 +54,7 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
 
     agent2.agent_integrations = [mock_ai]
 
-    tools = chat_service._get_agent_tools(agent2, user_id)
+    tools = CrewOrchestrator.get_agent_tools(agent2, user_id)
     # Ensure expected productivity and calendar tools are present
     tool_types = [type(t).__name__ for t in tools]
     assert "ListTasksTool" in tool_types
@@ -82,7 +83,7 @@ def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
     agent.agent_integrations = [mock_ai]
 
     user_id = uuid4()
-    tools = chat_service._get_agent_tools(agent, user_id)
+    tools = CrewOrchestrator.get_agent_tools(agent, user_id)
     # Ensure expected productivity and calendar tools are present
     tool_types = [type(t).__name__ for t in tools]
     assert "ListTasksTool" in tool_types
@@ -107,7 +108,7 @@ def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
     agent.agent_integrations = [mock_ai]
 
     user_id = uuid4()
-    tools = chat_service._get_agent_tools(agent, user_id)
+    tools = CrewOrchestrator.get_agent_tools(agent, user_id)
     # Ensure expected productivity and calendar tools are present
     tool_types = [type(t).__name__ for t in tools]
     assert "ListTasksTool" in tool_types
@@ -140,12 +141,15 @@ async def test_run_crew_task_has_single_agent(
     # Mock _get_crew_llm to prevent it looking for OPENAI_API_KEY
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
     ):
         mock_crew_agent = MagicMock()
         mock_crew_agent.role = "Test Agent"
@@ -199,13 +203,16 @@ async def test_run_crew_task_has_multiple_agents(
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,
     ):
         mock_crew_agent1 = MagicMock()
         mock_crew_agent1.role = "Agent 1"
@@ -257,13 +264,16 @@ async def test_stream_room_responses_single_agent(
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,
     ):
         mock_crew_agent = MagicMock()
         mock_crew_agent.role = "Test Agent"
@@ -322,13 +332,16 @@ async def test_stream_room_responses_multiple_agents(
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,
     ):
         mock_crew_agent1 = MagicMock()
         mock_crew_agent1.role = "Test Agent 1"
@@ -459,13 +472,16 @@ async def test_stream_room_responses_slow_kickoff(
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,  # noqa: F841
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,  # noqa: F841
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,  # noqa: F841
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,  # noqa: F841
     ):
         mock_crew_agent = MagicMock()
         mock_crew_agent.role = "Slow Agent"
@@ -509,13 +525,16 @@ async def test_stream_room_responses_increment_failure(
 
     mock_llm = MagicMock()
     mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task"),
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process"),
+        patch("app.domain.chat.crew_orchestrator.Task"),
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Process"),
     ):
         mock_crew_agent = MagicMock()
         mock_agent_cls.return_value = mock_crew_agent
@@ -552,13 +571,16 @@ async def test_stream_room_responses_cancel_task(
     chat_service.chat_repo.list_room_agents.return_value = [agent]
 
     mock_llm = MagicMock()
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,  # noqa: F841
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.service.Process") as mock_process,  # noqa: F841
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,  # noqa: F841
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
+        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,  # noqa: F841
     ):
         mock_crew_agent = MagicMock()
         mock_agent_cls.return_value = mock_crew_agent
@@ -600,7 +622,7 @@ async def test_handle_message_persistence_and_broadcast(chat_service: ChatServic
 
         typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
 
-        user_msg = await chat_service._handle_message_persistence_and_broadcast(
+        user_msg = await chat_service.ws_broadcaster.handle_message_persistence_and_broadcast(
             room_id, message, user_id, "temp123"
         )
 
@@ -621,7 +643,7 @@ async def test_broadcast_thinking_status(chat_service: ChatService) -> None:
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
 
-        await chat_service._broadcast_thinking_status(room_id, agent_names)
+        await chat_service.ws_broadcaster.broadcast_thinking_status(room_id, agent_names)
 
         mock_hub.broadcast_to_room.assert_called_once()
         call_args = mock_hub.broadcast_to_room.call_args[0]
@@ -638,7 +660,7 @@ async def test_create_step_callback(chat_service: ChatService) -> None:
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
 
-        callback = chat_service._create_step_callback(room_id, agent_names)
+        callback = chat_service.ws_broadcaster.create_step_callback(room_id, agent_names)
 
         mock_output = MagicMock()
         mock_output.tool = "SearchTool"
@@ -668,18 +690,21 @@ async def test_execute_crew_task(
     user_msg_id = uuid4()
 
     mock_llm = MagicMock()
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent"),
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
     ):
         mock_crew_instance = MagicMock()
         mock_crew_instance.kickoff_async = AsyncMock(return_value="Result")
         mock_crew_cls.return_value = mock_crew_instance
 
-        result = await chat_service._execute_crew_task(
+        result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
             "Hello",
             user_id,
@@ -710,18 +735,21 @@ async def test_execute_crew_task_multi(
     user_msg_id = uuid4()
 
     mock_llm = MagicMock()
-    monkeypatch.setattr(chat_service, "_get_crew_llm", MagicMock(return_value=mock_llm))
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
 
     with (
-        patch("app.domain.chat.service.Task") as mock_task_cls,
-        patch("app.domain.chat.service.Crew") as mock_crew_cls,
-        patch("app.domain.chat.service.crewai.Agent"),
+        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
     ):
         mock_crew_instance = MagicMock()
         mock_crew_instance.kickoff_async = AsyncMock(return_value="ResultMulti")
         mock_crew_cls.return_value = mock_crew_instance
 
-        result = await chat_service._execute_crew_task(
+        result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
             "Hello",
             user_id,
@@ -756,7 +784,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
 
-        await chat_service._persist_and_broadcast_agent_response(
+        await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
@@ -777,7 +805,7 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     chat_service.chat_repo.save_message = AsyncMock(side_effect=BaseORMException("DB error"))  # type: ignore[method-assign]
 
     with pytest.raises(BaseORMException, match="DB error"):
-        await chat_service._persist_and_broadcast_agent_response(
+        await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
@@ -793,7 +821,9 @@ async def test_run_room_chat_ws_no_agents(chat_service: ChatService) -> None:
 
     with (
         patch.object(
-            chat_service, "_handle_message_persistence_and_broadcast", new_callable=AsyncMock
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
         ),
         patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
     ):
@@ -814,13 +844,24 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
 
     with (
         patch.object(
-            chat_service, "_handle_message_persistence_and_broadcast", new_callable=AsyncMock
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
         ) as m_persist,
-        patch.object(chat_service, "_broadcast_thinking_status", new_callable=AsyncMock) as m_think,
-        patch.object(chat_service, "_create_step_callback", return_value=MagicMock()) as m_cb,
-        patch.object(chat_service, "_execute_crew_task", new_callable=AsyncMock) as m_exec,
         patch.object(
-            chat_service, "_persist_and_broadcast_agent_response", new_callable=AsyncMock
+            chat_service.ws_broadcaster, "broadcast_thinking_status", new_callable=AsyncMock
+        ) as m_think,
+        patch.object(
+            chat_service.ws_broadcaster, "create_step_callback", return_value=MagicMock()
+        ) as m_cb,
+        patch(
+            "app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task",
+            new_callable=AsyncMock,
+        ) as m_exec,
+        patch.object(
+            chat_service.ws_broadcaster,
+            "persist_and_broadcast_agent_response",
+            new_callable=AsyncMock,
         ) as m_agent_resp,
         patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
     ):
