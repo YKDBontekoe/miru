@@ -1,78 +1,106 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   FlatList,
-  TouchableOpacity,
   RefreshControl,
   ScrollView,
   Modal,
   TextInput,
   Alert,
   ActivityIndicator,
+  StyleSheet,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { AppText } from '../../src/components/AppText';
+import { Skeleton } from '../../src/components/Skeleton';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { ChatRoom, Agent } from '../../src/core/models';
+import { theme, activeColors, getAgentColor } from '../../src/core/theme';
 
-// ─── Light mode palette ───────────────────────────────────────────────────────
-const C = {
-  bg: '#F8F8FC',
-  surface: '#FFFFFF',
-  surfaceHigh: '#F0F0F6',
-  border: '#E0E0EC',
-  borderLight: '#EBEBF5',
-  text: '#12121A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
-  primary: '#2563EB',
-  primarySurface: '#EFF6FF',
-};
+// ─── Shared Animated Pressable ───────────────────────────────────────────────
+function AnimatedPressable({
+  onPress,
+  children,
+  style,
+  disabled = false,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  style?: any;
+  disabled?: boolean;
+}) {
+  const scale = useSharedValue(1);
 
-function getAgentColor(name: string) {
-  const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return palette[Math.abs(hash) % palette.length];
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+    >
+      <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>
+    </Pressable>
+  );
 }
+
+// ─── Components ───────────────────────────────────────────────────────────────
 
 function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   const color = getAgentColor(agent.name);
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ width: 72, alignItems: 'center', marginEnd: 12 }}
-    >
+    <AnimatedPressable onPress={onPress} style={styles.agentPillContainer}>
       <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          backgroundColor: `${color}18`,
-          borderWidth: 1.5,
-          borderColor: `${color}40`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 6,
-        }}
+        style={[
+          styles.agentPillAvatar,
+          {
+            backgroundColor: `${color}18`,
+            borderColor: `${color}40`,
+          },
+        ]}
       >
-        <AppText style={{ color, fontSize: 20, fontWeight: '700' }}>
-          {agent.name[0].toUpperCase()}
-        </AppText>
+        <AppText style={[styles.agentPillText, { color }]}>{agent.name[0].toUpperCase()}</AppText>
       </View>
-      <AppText
-        variant="caption"
-        numberOfLines={1}
-        style={{ textAlign: 'center', fontSize: 11, color: C.muted }}
-      >
+      <AppText variant="caption" numberOfLines={1} style={styles.agentPillLabel}>
         {agent.name}
       </AppText>
-    </TouchableOpacity>
+    </AnimatedPressable>
+  );
+}
+
+function AgentPillSkeleton() {
+  return (
+    <View style={styles.agentPillContainer}>
+      <Skeleton
+        width={52}
+        height={52}
+        borderRadius={26}
+        style={{ marginBottom: theme.spacing.xs }}
+      />
+      <Skeleton width={48} height={12} />
+    </View>
   );
 }
 
@@ -95,46 +123,44 @@ function RoomCard({
   };
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.surface,
-        borderRadius: 16,
-        padding: 14,
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: C.border,
-      }}
-    >
-      <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 14,
-          backgroundColor: C.primarySurface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 14,
-        }}
-      >
-        <AppText style={{ color: C.primary, fontSize: 20, fontWeight: '700' }}>{initial}</AppText>
+    <AnimatedPressable onPress={onPress} style={styles.roomCardContainer}>
+      <View style={styles.roomCardAvatar}>
+        <AppText style={styles.roomCardInitial}>{initial}</AppText>
       </View>
-      <View style={{ flex: 1 }}>
-        <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 }}>
-          {room.name}
-        </AppText>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="people-outline" size={12} color={C.muted} style={{ marginEnd: 4 }} />
-          <AppText variant="caption" style={{ fontSize: 12, color: C.muted }}>
+      <View style={styles.roomCardContent}>
+        <AppText style={styles.roomCardTitle}>{room.name}</AppText>
+        <View style={styles.roomCardMeta}>
+          <Ionicons
+            name="people-outline"
+            size={12}
+            color={activeColors.muted}
+            style={styles.roomCardMetaIcon}
+          />
+          <AppText variant="caption" style={styles.roomCardMetaText}>
             {memberLabel()}
           </AppText>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={C.faint} />
-    </TouchableOpacity>
+      <Ionicons name="chevron-forward" size={18} color={activeColors.faint} />
+    </AnimatedPressable>
+  );
+}
+
+function RoomCardSkeleton() {
+  return (
+    <View style={styles.roomCardContainer}>
+      <Skeleton
+        width={48}
+        height={48}
+        borderRadius={theme.borderRadius.md}
+        style={{ marginEnd: theme.spacing.md }}
+      />
+      <View style={styles.roomCardContent}>
+        <Skeleton width="60%" height={16} style={{ marginBottom: theme.spacing.xs }} />
+        <Skeleton width="40%" height={12} />
+      </View>
+      <Skeleton width={18} height={18} borderRadius={theme.borderRadius.full} />
+    </View>
   );
 }
 
@@ -155,10 +181,11 @@ function CreateRoomModal({
   const { createRoom, addAgentToRoom } = useChatStore();
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
-  const toggleAgent = (id: string) =>
+  const toggleAgent = useCallback((id: string) => {
     setSelectedAgentIds((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
     );
+  }, []);
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -188,155 +215,102 @@ function CreateRoomModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            maxHeight: '82%',
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 24,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <AppText variant="h2" style={{ color: activeColors.text }}>
               New Chat
             </AppText>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close-circle" size={26} color={C.faint} />
-            </TouchableOpacity>
+            <Pressable onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="close-circle" size={26} color={activeColors.faint} />
+            </Pressable>
           </View>
 
-          <AppText
-            variant="caption"
-            style={{
-              color: C.muted,
-              marginBottom: 8,
-              textTransform: 'uppercase',
-              letterSpacing: 1,
-            }}
-          >
+          <AppText variant="label" style={styles.modalSectionTitle}>
             Chat Name
           </AppText>
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder="e.g. Gaming Session"
-            placeholderTextColor={C.faint}
-            style={{
-              backgroundColor: C.surfaceHigh,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: C.border,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
-              color: C.text,
-              fontSize: 16,
-              marginBottom: 20,
-            }}
+            placeholderTextColor={activeColors.faint}
+            style={styles.modalInput}
           />
 
           {agents.length > 0 && (
             <>
               <AppText
-                variant="caption"
-                style={{
-                  color: C.muted,
-                  marginBottom: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: 1,
-                }}
+                variant="label"
+                style={[styles.modalSectionTitle, { marginTop: theme.spacing.sm }]}
               >
                 Add Agents
               </AppText>
-              <ScrollView style={{ maxHeight: 180 }} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.modalAgentList} showsVerticalScrollIndicator={false}>
                 {agents.map((agent) => {
                   const color = getAgentColor(agent.name);
                   const selected = selectedAgentIds.includes(agent.id);
                   return (
-                    <TouchableOpacity
+                    <AnimatedPressable
                       key={agent.id}
                       onPress={() => toggleAgent(agent.id)}
-                      activeOpacity={0.8}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: selected ? `${color}10` : C.surfaceHigh,
-                        borderRadius: 12,
-                        padding: 12,
-                        marginBottom: 8,
-                        borderWidth: 1,
-                        borderColor: selected ? `${color}40` : C.border,
-                      }}
+                      style={[
+                        styles.modalAgentRow,
+                        {
+                          backgroundColor: selected ? `${color}10` : activeColors.surfaceHigh,
+                          borderColor: selected ? `${color}40` : activeColors.border,
+                        },
+                      ]}
                     >
-                      <View
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 18,
-                          backgroundColor: `${color}18`,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginEnd: 12,
-                        }}
-                      >
+                      <View style={[styles.modalAgentAvatar, { backgroundColor: `${color}18` }]}>
                         <AppText style={{ color, fontWeight: '700' }}>
                           {agent.name[0].toUpperCase()}
                         </AppText>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
-                          {agent.name}
-                        </AppText>
-                        <AppText variant="caption" style={{ color: C.muted }} numberOfLines={1}>
+                      <View style={styles.modalAgentInfo}>
+                        <AppText style={styles.modalAgentName}>{agent.name}</AppText>
+                        <AppText
+                          variant="caption"
+                          style={styles.modalAgentPersonality}
+                          numberOfLines={1}
+                        >
                           {agent.personality}
                         </AppText>
                       </View>
                       {selected && <Ionicons name="checkmark-circle" size={20} color={color} />}
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   );
                 })}
               </ScrollView>
             </>
           )}
 
-          <TouchableOpacity
+          <AnimatedPressable
             onPress={handleCreate}
             disabled={isSaving}
-            style={{
-              backgroundColor: isSaving ? `${C.primary}80` : C.primary,
-              borderRadius: 14,
-              paddingVertical: 14,
-              alignItems: 'center',
-              marginTop: 20,
-            }}
+            style={[
+              styles.modalButton,
+              { backgroundColor: isSaving ? `${activeColors.primary}80` : activeColors.primary },
+            ]}
           >
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-                Create Chat
-              </AppText>
+              <AppText style={styles.modalButtonText}>Create Chat</AppText>
             )}
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </View>
     </Modal>
   );
 }
 
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function ChatListScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
-  const { agents, fetchAgents } = useAgentStore();
+  const { agents, fetchAgents, isLoading: isLoadingAgents } = useAgentStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [roomAgents] = useState<Record<string, Agent[]>>({});
 
@@ -345,35 +319,17 @@ export default function ChatListScreen() {
     fetchAgents();
   }, [fetchRooms, fetchAgents]);
 
+  const showSkeletons = isLoadingRooms || isLoadingAgents;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingHorizontal: 20,
-          paddingTop: 8,
-          paddingBottom: 16,
-        }}
-      >
-        <AppText variant="h1" style={{ fontSize: 28, fontWeight: '700', color: C.text }}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <AppText variant="h1" style={styles.headerTitle}>
           {t('chat.title', 'Miru')}
         </AppText>
-        <TouchableOpacity
-          onPress={() => setShowCreateModal(true)}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: C.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <AnimatedPressable onPress={() => setShowCreateModal(true)} style={styles.headerAddButton}>
           <Ionicons name="add" size={22} color="white" />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       <ScrollView
@@ -385,114 +341,73 @@ export default function ChatListScreen() {
               fetchRooms();
               fetchAgents();
             }}
-            tintColor={C.primary}
+            tintColor={activeColors.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={styles.scrollContent}
       >
-        {/* Agents row */}
-        {agents.length > 0 && (
-          <View style={{ marginBottom: 8 }}>
-            <AppText
-              variant="caption"
-              style={{
-                textTransform: 'uppercase',
-                letterSpacing: 1.2,
-                fontSize: 11,
-                fontWeight: '700',
-                color: C.muted,
-                paddingHorizontal: 20,
-                marginBottom: 14,
-              }}
-            >
+        {/* Agents Row */}
+        {(agents.length > 0 || showSkeletons) && (
+          <View style={styles.agentsSection}>
+            <AppText variant="label" style={styles.sectionTitle}>
               {t('chat.personas', 'Personas')}
             </AppText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4 }}
+              contentContainerStyle={styles.agentsScrollContent}
             >
-              {agents.map((agent) => (
-                <AgentPill
-                  key={agent.id}
-                  agent={agent}
-                  onPress={() => router.push('/(main)/agents')}
-                />
-              ))}
+              {showSkeletons
+                ? Array.from({ length: 4 }).map((_, i) => <AgentPillSkeleton key={i} />)
+                : agents.map((agent) => (
+                    <AgentPill
+                      key={agent.id}
+                      agent={agent}
+                      onPress={() => router.push('/(main)/agents')}
+                    />
+                  ))}
             </ScrollView>
           </View>
         )}
 
-        {agents.length > 0 && (
-          <View
-            style={{
-              height: 1,
-              backgroundColor: C.borderLight,
-              marginHorizontal: 20,
-              marginBottom: 20,
-            }}
-          />
-        )}
+        {(agents.length > 0 || showSkeletons) && <View style={styles.divider} />}
 
-        {/* Chats */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <AppText
-            variant="caption"
-            color="muted"
-            className="uppercase tracking-widest font-bold mb-3.5"
-          >
+        {/* Chats Row */}
+        <View style={styles.chatsSection}>
+          <AppText variant="label" style={styles.sectionTitle}>
             {t('chat.chats', 'Chats')}
           </AppText>
 
-          {rooms.length === 0 && !isLoadingRooms ? (
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-              <View
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  backgroundColor: C.surfaceHigh,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                }}
-              >
-                <Ionicons name="chatbubbles-outline" size={32} color={C.faint} />
+          {showSkeletons ? (
+            Array.from({ length: 3 }).map((_, i) => <RoomCardSkeleton key={i} />)
+          ) : rooms.length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <View style={styles.emptyStateIconContainer}>
+                <Ionicons name="chatbubbles-outline" size={32} color={activeColors.faint} />
               </View>
-              <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
+              <AppText variant="h3" style={styles.emptyStateTitle}>
                 {t('chat.no_conversations_title', 'No conversations yet')}
               </AppText>
-              <AppText
-                style={{
-                  textAlign: 'center',
-                  marginBottom: 24,
-                  paddingHorizontal: 24,
-                  color: C.muted,
-                }}
-              >
+              <AppText style={styles.emptyStateDesc}>
                 {t(
                   'chat.no_conversations_desc',
                   'Create a chat and start collaborating with your AI personas.'
                 )}
               </AppText>
-              <TouchableOpacity
+              <AnimatedPressable
                 onPress={() => setShowCreateModal(true)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: C.primary,
-                  borderRadius: 14,
-                  paddingVertical: 12,
-                  paddingHorizontal: 24,
-                }}
+                style={styles.emptyStateButton}
               >
-                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>
+                <Ionicons
+                  name="add"
+                  size={18}
+                  color="white"
+                  style={{ marginEnd: theme.spacing.xs }}
+                />
+                <AppText style={styles.emptyStateButtonText}>
                   {t('chat.new_chat', 'New Chat')}
                 </AppText>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           ) : (
             rooms.map((room) => (
@@ -516,3 +431,238 @@ export default function ChatListScreen() {
     </SafeAreaView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: activeColors.bg,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.lg,
+  },
+  headerTitle: {
+    color: activeColors.text,
+  },
+  headerAddButton: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: activeColors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.elevation.sm,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xxl,
+  },
+  sectionTitle: {
+    color: activeColors.muted,
+    paddingHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
+  },
+  agentsSection: {
+    marginBottom: theme.spacing.sm,
+  },
+  agentsScrollContent: {
+    paddingHorizontal: theme.spacing.xl,
+    paddingBottom: theme.spacing.xs,
+  },
+  agentPillContainer: {
+    width: 72,
+    alignItems: 'center',
+    marginEnd: theme.spacing.md,
+  },
+  agentPillAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  agentPillText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  agentPillLabel: {
+    textAlign: 'center',
+    fontSize: theme.typography.label.fontSize,
+    color: activeColors.muted,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: activeColors.borderLight,
+    marginHorizontal: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+  },
+  chatsSection: {
+    paddingHorizontal: theme.spacing.xl,
+  },
+  roomCardContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: activeColors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: 14,
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: activeColors.border,
+    ...theme.elevation.sm,
+  },
+  roomCardAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: activeColors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: 14,
+  },
+  roomCardInitial: {
+    color: activeColors.primary,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  roomCardContent: {
+    flex: 1,
+  },
+  roomCardTitle: {
+    fontSize: theme.typography.body.fontSize,
+    fontWeight: '600',
+    color: activeColors.text,
+    marginBottom: theme.spacing.xxs,
+  },
+  roomCardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  roomCardMetaIcon: {
+    marginEnd: theme.spacing.xs,
+  },
+  roomCardMetaText: {
+    color: activeColors.muted,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.massive,
+  },
+  emptyStateIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: activeColors.surfaceHigh,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: activeColors.border,
+  },
+  emptyStateTitle: {
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+    color: activeColors.text,
+  },
+  emptyStateDesc: {
+    textAlign: 'center',
+    marginBottom: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.xxl,
+    color: activeColors.muted,
+    lineHeight: theme.typography.body.lineHeight,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: activeColors.primary,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xxl,
+    ...theme.elevation.md,
+  },
+  emptyStateButtonText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalContent: {
+    backgroundColor: activeColors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: theme.spacing.xxl,
+    maxHeight: '82%',
+    ...theme.elevation.modal,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
+  modalSectionTitle: {
+    color: activeColors.muted,
+    marginBottom: theme.spacing.sm,
+  },
+  modalInput: {
+    backgroundColor: activeColors.surfaceHigh,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: activeColors.border,
+    paddingHorizontal: 14,
+    paddingVertical: theme.spacing.md,
+    color: activeColors.text,
+    fontSize: theme.typography.body.fontSize,
+    marginBottom: theme.spacing.xl,
+  },
+  modalAgentList: {
+    maxHeight: 180,
+  },
+  modalAgentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+  },
+  modalAgentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: theme.spacing.md,
+  },
+  modalAgentInfo: {
+    flex: 1,
+  },
+  modalAgentName: {
+    fontSize: theme.typography.bodySm.fontSize,
+    fontWeight: '600',
+    color: activeColors.text,
+  },
+  modalAgentPersonality: {
+    color: activeColors.muted,
+  },
+  modalButton: {
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: theme.spacing.xl,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: theme.typography.body.fontSize,
+  },
+});
