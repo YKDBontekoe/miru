@@ -71,3 +71,10 @@ class AuthService:
     async def delete_passkey(self, passkey_id: str | UUID, user_id: str | UUID) -> bool:
         """Delete a passkey belonging to a user."""
         return await self.repo.delete_passkey(passkey_id, user_id)
+
+    async def delete_account(self, user_id: UUID) -> None:
+        """Delete a user account entirely."""
+        from app.infrastructure.database.supabase import get_supabase
+
+        supabase = get_supabase()
+        supabase.auth.admin.delete_user(str(user_id))

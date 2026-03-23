@@ -13,6 +13,7 @@ import { AppText } from '../../src/components/AppText';
 import { AppButton } from '../../src/components/AppButton';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { ApiService } from '../../src/core/api/ApiService';
+import { SecureLocalStorage } from '../../src/core/services/storage';
 import { Switch } from 'react-native';
 
 type AuthMode = 'magic-link' | 'password' | 'passkey';
@@ -85,16 +86,11 @@ export default function LoginScreen() {
     setError(null);
     try {
       // Store preferences locally before redirect so they can be synced after authentication
-      import('../../src/core/services/storage').then(({ SecureLocalStorage }) => {
-        SecureLocalStorage.setItem(
-          'pending_marketing_consent',
-          marketingConsent ? 'true' : 'false'
-        );
-        SecureLocalStorage.setItem(
-          'pending_data_processing_consent',
-          dataProcessingConsent ? 'true' : 'false'
-        );
-      });
+      SecureLocalStorage.setItem('pending_marketing_consent', marketingConsent ? 'true' : 'false');
+      SecureLocalStorage.setItem(
+        'pending_data_processing_consent',
+        dataProcessingConsent ? 'true' : 'false'
+      );
       await signInWithMagicLink(email.trim());
       setMagicLinkSent(true);
     } catch (e: any) {
