@@ -13,6 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 class AuditMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, *args, **kwargs):
+        super().__init__(app, *args, **kwargs)
+        from app.domain.auth.service import AuthService
+        from app.infrastructure.database.supabase import get_supabase
+        from app.infrastructure.repositories.auth_repo import AuthRepository
+
+        # Manually instantiate the service once for middleware
+        db = get_supabase()
+        repo = AuthRepository(db)
+        self.auth_service = AuthService(repo)
+
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
@@ -22,17 +33,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             try:
-                from app.domain.auth.service import AuthService
-                from app.infrastructure.database.supabase import get_supabase
-                from app.infrastructure.repositories.auth_repo import AuthRepository
-
-                # Manually instantiate the service for middleware
-                db = get_supabase()
-                repo = AuthRepository(db)
-                service = AuthService(repo)
-
                 # Decode JWT using AuthService to guarantee full signature verification
-                payload = await service.decode_jwt(token)
+                payload = await self.auth_service.decode_jwt(token)
 
                 user_id_str = str(payload.sub)
                 if user_id_str:

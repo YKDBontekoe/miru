@@ -8,6 +8,122 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # ---------------------------------------------------------------------------
+# Middleware tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_audit_middleware_logs_access() -> None:
+    """The AuditMiddleware logs valid authenticated requests."""
+    from uuid import uuid4
+
+    from fastapi import Request
+
+    from app.api.middleware import AuditMiddleware
+
+    mock_app = MagicMock()
+    middleware = AuditMiddleware(mock_app)
+
+    mock_auth_service_instance = MagicMock()
+    mock_auth_service_instance.decode_jwt = AsyncMock()
+    mock_payload = MagicMock()
+    test_user_id = uuid4()
+    mock_payload.sub = test_user_id
+    mock_auth_service_instance.decode_jwt.return_value = mock_payload
+
+    # Override the __init__ instantiated service
+    middleware.auth_service = mock_auth_service_instance
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/v1/test",
+        "headers": [(b"authorization", b"Bearer fake-token")],
+    }
+    mock_request = Request(scope)
+
+    async def mock_call_next(req: Request) -> Any:
+        return MagicMock(status_code=200)
+
+    with patch("app.domain.auth.models.AuditLog.create", new_callable=AsyncMock) as mock_create:
+        response = await middleware.dispatch(mock_request, mock_call_next)
+
+        assert response.status_code == 200
+        middleware.auth_service.decode_jwt.assert_awaited_once_with("fake-token")
+        mock_create.assert_awaited_once_with(
+            user_id=test_user_id, action="GET", resource="/api/v1/test"
+        )
+
+
+@pytest.mark.asyncio
+async def test_audit_middleware_ignores_invalid_token() -> None:
+    """The AuditMiddleware silently ignores invalid tokens without crashing."""
+    from fastapi import Request
+
+    from app.api.middleware import AuditMiddleware
+
+    mock_app = MagicMock()
+    middleware = AuditMiddleware(mock_app)
+
+    mock_auth_service_instance = MagicMock()
+    mock_auth_service_instance.decode_jwt = AsyncMock(side_effect=Exception("Invalid token"))
+
+    middleware.auth_service = mock_auth_service_instance
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/v1/test",
+        "headers": [(b"authorization", b"Bearer bad-token")],
+    }
+    mock_request = Request(scope)
+
+    async def mock_call_next(req: Request) -> Any:
+        return MagicMock(status_code=401)
+
+    with patch("app.domain.auth.models.AuditLog.create", new_callable=AsyncMock) as mock_create:
+        response = await middleware.dispatch(mock_request, mock_call_next)
+
+        assert response.status_code == 401
+        middleware.auth_service.decode_jwt.assert_awaited_once_with("bad-token")
+        mock_create.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_audit_middleware_ignores_no_token() -> None:
+    """The AuditMiddleware ignores requests without a token."""
+    from fastapi import Request
+
+    from app.api.middleware import AuditMiddleware
+
+    mock_app = MagicMock()
+    middleware = AuditMiddleware(mock_app)
+
+    mock_auth_service_instance = MagicMock()
+    mock_auth_service_instance.decode_jwt = AsyncMock()
+
+    middleware.auth_service = mock_auth_service_instance
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/api/v1/test",
+        "headers": [],
+    }
+    mock_request = Request(scope)
+
+    async def mock_call_next(req: Request) -> Any:
+        return MagicMock(status_code=200)
+
+    with patch("app.domain.auth.models.AuditLog.create", new_callable=AsyncMock) as mock_create:
+        response = await middleware.dispatch(mock_request, mock_call_next)
+
+        assert response.status_code == 200
+        middleware.auth_service.decode_jwt.assert_not_called()
+        mock_create.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # OpenRouter module-level functions
 # ---------------------------------------------------------------------------
 

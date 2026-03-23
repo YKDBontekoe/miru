@@ -315,3 +315,33 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+
+def test_scrub_pii() -> None:
+    """The _scrub_pii function should redact emails and phone numbers."""
+    from app.infrastructure.external.openrouter import _scrub_pii
+
+    messages: list = [
+        {"role": "user", "content": "My email is user@example.com and phone is 123-456-7890."},
+        {"role": "assistant", "content": "I'll remember that."},
+        {"role": "user", "content": "Another email: test.user+123@domain.co.uk!"},
+        {"role": "user", "content": [{"type": "text", "text": "This is non-string content"}]},
+    ]
+
+    scrubbed = _scrub_pii(messages)
+
+    # Check first message
+    assert "user@example.com" not in scrubbed[0]["content"]
+    assert "123-456-7890" not in scrubbed[0]["content"]
+    assert "[EMAIL_REDACTED]" in scrubbed[0]["content"]
+    assert "[PHONE_REDACTED]" in scrubbed[0]["content"]
+
+    # Check second message
+    assert scrubbed[1]["content"] == "I'll remember that."
+
+    # Check third message
+    assert "test.user+123@domain.co.uk" not in scrubbed[2]["content"]
+    assert "[EMAIL_REDACTED]" in scrubbed[2]["content"]
+
+    # Check fourth message remains untouched
+    assert isinstance(scrubbed[3]["content"], list)

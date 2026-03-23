@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import TYPE_CHECKING, TypeVar
 
 import openai
@@ -18,6 +19,26 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def _scrub_pii(messages: list[ChatCompletionMessageParam]) -> list[ChatCompletionMessageParam]:
+    """Scrub PII (email, phone, address) from messages before sending to OpenAI."""
+    scrubbed = []
+
+    email_pattern = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")
+    phone_pattern = re.compile(r"\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b")
+    # Let's avoid too complex or false-positive prone addresses and focus on email and phone
+
+    for msg in messages:
+        msg_dict = dict(msg)  # copy
+        if "content" in msg_dict and isinstance(msg_dict["content"], str):
+            content = msg_dict["content"]
+            content = email_pattern.sub("[EMAIL_REDACTED]", content)
+            content = phone_pattern.sub("[PHONE_REDACTED]", content)
+            msg_dict["content"] = content
+        scrubbed.append(msg_dict)
+
+    return scrubbed  # type: ignore[return-value]
 
 
 class OpenRouterClient:
@@ -74,9 +95,10 @@ class OpenRouterClient:
         reraise=True,
     )
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
+        scrubbed_messages = _scrub_pii(messages)
         response = await self.openai_client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=scrubbed_messages,
             stream=False,
         )
         if not hasattr(response, "choices"):
@@ -103,9 +125,10 @@ class OpenRouterClient:
         model: str,
         response_model: type[T],
     ) -> T:
+        scrubbed_messages = _scrub_pii(messages)
         return await self.instructor_client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=scrubbed_messages,
             response_model=response_model,
         )
 
