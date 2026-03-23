@@ -12,7 +12,16 @@ def seed_user() -> None:
     password = os.environ.get("SUPABASE_TEST_PASSWORD")
 
     if not supabase_url or not service_key or not email or not password:
-        print("Missing required Supabase environment variables.")
+        missing = []
+        if not supabase_url:
+            missing.append("SUPABASE_URL")
+        if not service_key:
+            missing.append("SUPABASE_SERVICE_ROLE_KEY")
+        if not email:
+            missing.append("SUPABASE_TEST_EMAIL")
+        if not password:
+            missing.append("SUPABASE_TEST_PASSWORD")
+        print(f"Missing required Supabase environment variables: {', '.join(missing)}")
         sys.exit(1)
 
     headers: dict[str, str] = {
