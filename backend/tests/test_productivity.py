@@ -80,7 +80,10 @@ async def test_list_tasks(
     override_get_current_user: None,
 ) -> None:
     """Test listing tasks, ensuring isolation."""
-    await Task.create(user_id=mock_user_id, title="Task 1")
+    import datetime
+
+    due_date = datetime.datetime(2026, 12, 31, tzinfo=datetime.UTC)
+    await Task.create(user_id=mock_user_id, title="Task 1", due_date=due_date)
     await Task.create(user_id=mock_user_id, title="Task 2")
     await Task.create(user_id=another_user_id, title="Other User Task")
 
@@ -88,6 +91,15 @@ async def test_list_tasks(
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
+
+    # Check that due_date is correctly returned
+    task1 = next(t for t in data if t["title"] == "Task 1")
+    assert task1["due_date"] is not None
+    assert task1["due_date"].startswith("2026-12-31")
+
+    task2 = next(t for t in data if t["title"] == "Task 2")
+    assert task2["due_date"] is None
+
     titles = [t["title"] for t in data]
     assert "Task 1" in titles
     assert "Task 2" in titles

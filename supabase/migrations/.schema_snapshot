@@ -271,6 +271,7 @@ CREATE TABLE IF NOT EXISTS "tasks" (
     "title" VARCHAR(255) NOT NULL,
     "description" TEXT,
     "is_completed" BOOL NOT NULL DEFAULT False,
+    "due_date" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ
