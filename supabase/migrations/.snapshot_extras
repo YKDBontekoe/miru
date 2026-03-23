@@ -39,6 +39,8 @@
     "CREATE POLICY memory_graph_nodes_owner ON public.memory_graph_nodes FOR ALL USING (auth.uid() = user_id);",
     "ALTER TABLE public.memory_graph_edges ENABLE ROW LEVEL SECURITY;",
     "CREATE POLICY memory_graph_edges_owner ON public.memory_graph_edges FOR ALL USING (EXISTS (SELECT 1 FROM memory_graph_nodes WHERE id = source_node_id AND user_id = auth.uid()));",
+    "ALTER TABLE public.device_tokens ENABLE ROW LEVEL SECURITY;",
+    "CREATE POLICY device_tokens_owner_all ON public.device_tokens FOR ALL USING (auth.uid() = user_id);",
     "ALTER TABLE public.agent_tools ENABLE ROW LEVEL SECURITY;",
     "CREATE POLICY agent_tools_select ON public.agent_tools FOR SELECT USING (is_public = true OR auth.uid() = user_id OR user_id IS NULL);",
     "CREATE POLICY agent_tools_insert ON public.agent_tools FOR INSERT WITH CHECK (auth.uid() = user_id);",

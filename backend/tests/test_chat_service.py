@@ -780,6 +780,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
         ).return_value = None
 
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
+            uuid4(),
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
@@ -801,6 +802,7 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
 
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
+            uuid4(),
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
