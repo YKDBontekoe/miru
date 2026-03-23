@@ -5,8 +5,10 @@ import { SecureLocalStorage } from '../core/services/storage';
 interface AppState {
   isOnboardingComplete: boolean;
   baseUrl: string;
+  language: string | null;
   setOnboardingComplete: (complete: boolean) => void;
   setBaseUrl: (url: string) => void;
+  setLanguage: (lang: string) => void;
 }
 
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
@@ -17,8 +19,10 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       isOnboardingComplete: false,
       baseUrl: DEFAULT_URL,
+      language: null,
       setOnboardingComplete: (complete) => set({ isOnboardingComplete: complete }),
       setBaseUrl: (url) => set({ baseUrl: url }),
+      setLanguage: (lang) => set({ language: lang }),
     }),
     {
       name: 'miru-app-storage',

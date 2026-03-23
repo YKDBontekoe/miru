@@ -15,6 +15,7 @@
     },
     "items": {
       "signed_in": "Signed in",
+      "signed_in_with_magic_link": "Signed in with magic link",
       "personal_memories": "Personal Memories",
       "memories_desc": "Manage facts Miru learned about you",
       "no_memories": "No memories yet. As you talk to Miru, she will learn more about you.",
@@ -22,6 +23,8 @@
       "notifications_desc": "Get alerts for long-running tasks",
       "privacy_mode": "Privacy Mode",
       "privacy_desc": "Minimize data logging for sessions",
+      "language": "Language",
+      "language_desc": "Choose your preferred language",
       "version": "Version",
       "version_value": "1.0.0 (Beta)",
       "tech_stack": "Built with React Native",
@@ -36,6 +39,7 @@
       "refresh": "Refresh",
       "forget": "Forget",
       "forget_memory_title": "Forget memory?",
+      "forget_memory_confirm": "Should Miru forget this?",
       "forget_memory_desc": "Are you sure you want to forget \"{{content}}\"?",
       "error": "Error",
       "delete_memory_failed": "Failed to delete memory."
