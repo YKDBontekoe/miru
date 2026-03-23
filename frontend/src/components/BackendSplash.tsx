@@ -88,7 +88,7 @@ export function BackendSplash() {
       >
         <View className="w-40 h-40 items-center justify-center mb-10">
           <Animated.View
-            className="absolute w-30 h-30 rounded-full bg-blue-50 border-2 border-blue-600/30"
+            className="absolute w-32 h-32 rounded-full bg-blue-50 border-2 border-blue-600/30"
             style={ringStyle}
           />
           <Animated.View style={iconStyle}>

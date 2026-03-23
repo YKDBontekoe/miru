@@ -1,7 +1,7 @@
 import '../global.css';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { useAppStore } from '../src/store/useAppStore';
 import { waitForBackend } from '../src/core/api/client';
@@ -20,33 +20,32 @@ export default function RootLayout() {
   const [backendError, setBackendError] = useState<Error | null>(null);
   const [isCheckingBackend, setIsCheckingBackend] = useState(true);
 
+  const mountedRef = useRef(true);
+
   const checkBackend = useCallback(async () => {
-    let mounted = true;
     setIsCheckingBackend(true);
     setBackendError(null);
     try {
       await waitForBackend();
-      if (mounted) {
+      if (mountedRef.current) {
         setIsBackendReady(true);
         setIsCheckingBackend(false);
       }
     } catch (error) {
       console.error('Backend failed to wake up:', error);
-      if (mounted) {
+      if (mountedRef.current) {
         setBackendError(error instanceof Error ? error : new Error('Unknown error'));
         setIsBackendReady(false);
         setIsCheckingBackend(false);
       }
     }
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   useEffect(() => {
-    const cleanup = checkBackend();
+    mountedRef.current = true;
+    checkBackend();
     return () => {
-      cleanup.then((fn) => fn());
+      mountedRef.current = false;
     };
   }, [checkBackend]);
 
@@ -74,50 +73,24 @@ export default function RootLayout() {
 
   if (backendError && !isCheckingBackend) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#FFFFFF',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-        }}
-      >
+      <View className="flex-1 bg-white items-center justify-center p-6">
         <StatusBar style="dark" />
-        <View
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            backgroundColor: '#FEF2F2',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 24,
-          }}
-        >
+        <View className="w-20 h-20 rounded-full bg-red-50 items-center justify-center mb-6">
           <Ionicons name="cloud-offline" size={36} color="#DC2626" />
         </View>
-        <AppText variant="h2" style={{ textAlign: 'center', marginBottom: 12 }}>
+        <AppText variant="h2" className="text-center mb-3">
           Server Unavailable
         </AppText>
-        <AppText color="muted" style={{ textAlign: 'center', marginBottom: 32, lineHeight: 24 }}>
+        <AppText color="muted" className="text-center mb-8 leading-6">
           We're having trouble waking up the AI servers. They might be resting or temporarily
           unavailable.
         </AppText>
         <TouchableOpacity
           onPress={checkBackend}
-          style={{
-            backgroundColor: '#2563EB',
-            paddingHorizontal: 24,
-            paddingVertical: 14,
-            borderRadius: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-          }}
+          className="bg-blue-600 px-6 py-3.5 rounded-2xl flex-row items-center gap-2"
         >
           <Ionicons name="refresh" size={20} color="#FFFFFF" />
-          <AppText style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 16 }}>Try Again</AppText>
+          <AppText className="text-white font-semibold text-base">Try Again</AppText>
         </TouchableOpacity>
       </View>
     );
