@@ -271,11 +271,15 @@ jobs:
           uv python install 3.13
           uv sync --all-extras
 
-          # 1. Create the PR-specific schema on Staging
-          psql "$DATABASE_STAGING_URL" -c "CREATE SCHEMA IF NOT EXISTS pr_${PR_NUM};"
+          # Use Supabase IPv4 connection pooler (port 6543) instead of direct IPv6 port 5432
+          # to prevent "Network is unreachable" errors on GitHub Actions runner.
+          POOLER_URL="${DATABASE_STAGING_URL/5432/6543}"
 
-          # 2. Append the search_path to the connection string
-          PR_DB_URL="${DATABASE_STAGING_URL}?options=-c%20search_path=pr_${PR_NUM},public"
+          # 1. Create the PR-specific schema on Staging
+          psql "$POOLER_URL" -c "CREATE SCHEMA IF NOT EXISTS pr_${PR_NUM};"
+
+          # 2. Append the search_path to the connection string alongside pgbouncer config
+          PR_DB_URL="${POOLER_URL}?pgbouncer=true&options=-c%20search_path=pr_${PR_NUM},public"
 
           # 3. Mask the derived URL so GitHub Actions redacts it on failure logs
           echo "::add-mask::$PR_DB_URL"
