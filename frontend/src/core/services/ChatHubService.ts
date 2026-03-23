@@ -82,68 +82,82 @@ class ChatHubService {
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   private active = false;
   private reconnectDelay = 2000;
+  private connectionPromise: Promise<void> | null = null;
 
   // ------------------------------------------------------------------
   // Connection lifecycle
   // ------------------------------------------------------------------
 
   async connect(): Promise<void> {
-    if (this.ws?.readyState === WebSocket.OPEN) return;
+    if (this.ws?.readyState === WebSocket.OPEN) return Promise.resolve();
+    if (this.connectionPromise) return this.connectionPromise;
+
     this.active = true;
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) {
-      // No session yet — retry via the same reconnect path instead of silently aborting
-      if (this.active) {
-        this.reconnectTimer = setTimeout(() => {
-          this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
-          this.connect();
-        }, this.reconnectDelay);
-      }
-      return;
-    }
+    this.connectionPromise = new Promise((resolve, reject) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const token = session?.access_token;
 
-    const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-    const lang = i18next.language || 'en';
-    const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}&lang=${encodeURIComponent(lang)}`;
+        if (!token) {
+          if (this.active) {
+            this.reconnectTimer = setTimeout(() => {
+              this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
+              this.connect().catch(() => {});
+            }, this.reconnectDelay);
+          }
+          this.connectionPromise = null;
+          return reject(new Error('No auth session'));
+        }
 
-    const ws = new WebSocket(url);
-    this.ws = ws;
+        const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
+        const lang = i18next.language || 'en';
+        const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}&lang=${encodeURIComponent(lang)}`;
 
-    ws.onopen = () => {
-      this.reconnectDelay = 2000;
-      this._startPing();
-    };
+        const ws = new WebSocket(url);
+        this.ws = ws;
 
-    ws.onmessage = (event) => {
-      try {
-        const frame: HubFrame = JSON.parse(event.data as string);
-        this.listeners.forEach((l) => l(frame));
-      } catch {
-        // ignore malformed frames
-      }
-    };
+        ws.onopen = () => {
+          this.reconnectDelay = 2000;
+          this._startPing();
+          resolve();
+        };
 
-    ws.onclose = () => {
-      this._stopPing();
-      if (this.active) {
-        this.reconnectTimer = setTimeout(() => {
-          this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
-          this.connect();
-        }, this.reconnectDelay);
-      }
-    };
+        ws.onmessage = (event) => {
+          try {
+            const frame: HubFrame = JSON.parse(event.data as string);
+            this.listeners.forEach((l) => l(frame));
+          } catch {
+            // ignore malformed frames
+          }
+        };
 
-    ws.onerror = () => {
-      ws.close();
-    };
+        ws.onclose = () => {
+          this._stopPing();
+          this.connectionPromise = null;
+          if (this.active) {
+            this.reconnectTimer = setTimeout(() => {
+              this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
+              this.connect().catch(() => {});
+            }, this.reconnectDelay);
+          }
+          reject(new Error('WebSocket closed'));
+        };
+
+        ws.onerror = () => {
+          ws.close();
+        };
+      }).catch((err) => {
+        this.connectionPromise = null;
+        reject(err);
+      });
+    });
+
+    return this.connectionPromise;
   }
 
   disconnect(): void {
     this.active = false;
+    this.connectionPromise = null;
     this._stopPing();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);

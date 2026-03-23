@@ -60,6 +60,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     _hubUnsub?.();
 
     _hubUnsub = chatHub.addListener((frame) => {
+      // ---- Hub Connected / Reconnected ----
+      if (frame.type === 'connected') {
+        const roomsToJoin = Object.keys(get().joinedRooms);
+        roomsToJoin.forEach((roomId) => {
+          chatHub.joinRoom(roomId);
+        });
+      }
+
       // ---- Room join confirmed ----
       if (frame.type === 'joined_room' && frame.room_id) {
         set((state) => ({
