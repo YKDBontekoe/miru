@@ -74,12 +74,16 @@ def test_chat_routes_error_handling(client: TestClient) -> None:
     mock_service.update_room.return_value = None
     # Mock delete_room returning False
     mock_service.delete_room.return_value = False
+
+    async def mock_error(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        raise ValueError("Unauthorized")
+
     # Mock add_agent_to_room raising ValueError
-    mock_service.add_agent_to_room.side_effect = ValueError("Unauthorized")
+    mock_service.add_agent_to_room = mock_error
     # Mock list_room_agents raising ValueError
-    mock_service.list_room_agents.side_effect = ValueError("Unauthorized")
+    mock_service.list_room_agents = mock_error
     # Mock get_room_messages raising ValueError
-    mock_service.get_room_messages.side_effect = ValueError("Unauthorized")
+    mock_service.get_room_messages = mock_error
 
     app.dependency_overrides[get_chat_service] = lambda: mock_service
 

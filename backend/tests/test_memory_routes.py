@@ -219,6 +219,7 @@ def test_upload_document_exception(client: TestClient) -> None:
 
 def test_delete_memory_not_found(client: TestClient) -> None:
     from app.core.security.auth import get_current_user
+
     user_id = uuid4()
     mock_service = AsyncMock()
     mock_service.delete_memory.return_value = False
@@ -233,6 +234,7 @@ def test_delete_memory_not_found(client: TestClient) -> None:
 
 def test_delete_memory_success(client: TestClient) -> None:
     from app.core.security.auth import get_current_user
+
     user_id = uuid4()
     mock_service = AsyncMock()
     mock_service.delete_memory.return_value = True
