@@ -175,7 +175,7 @@ export function ChatBubble({
                 >
                   <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
                   <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
-                    Retry
+                    {t('chat.retry')}
                   </AppText>
                 </TouchableOpacity>
               )}

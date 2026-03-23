@@ -50,10 +50,10 @@ function getAgentColor(name: string) {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function getGreeting(hour: number): string {
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+function getGreeting(hour: number, t: any): string {
+  if (hour < 12) return t('greeting.morning');
+  if (hour < 17) return t('greeting.afternoon');
+  return t('greeting.evening');
 }
 
 function getFirstName(email?: string): string {
@@ -469,7 +469,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const hour = new Date().getHours();
-  const greeting = getGreeting(hour);
+  const greeting = getGreeting(hour, t);
   const firstName = getFirstName(user?.email);
 
   const recentRooms = [...rooms]

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -10,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -280,7 +280,7 @@ export default function ChatRoomScreen() {
                 <AppText
                   style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}
                 >
-                  Start a conversation
+                  {t('chat.start_conversation')}
                 </AppText>
                 <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
                   {roomAgents.length > 0
@@ -429,7 +429,7 @@ export default function ChatRoomScreen() {
                     style={{ marginBottom: 12 }}
                   />
                   <AppText style={{ textAlign: 'center', color: C.muted }}>
-                    No agents yet. Create one in the Agents tab.
+                    {t('chat.no_agents_create')}
                   </AppText>
                 </View>
               )}
