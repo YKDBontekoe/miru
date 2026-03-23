@@ -98,18 +98,19 @@ class ChatService:
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
-        system_message = agent.personality
+        messages: list[dict[str, str]] = [{"role": "system", "content": agent.personality}]
         if accept_language:
-            system_message += (
-                f"\n\nIMPORTANT: Please respond in the following language locale: {accept_language}"
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
+                }
             )
+        messages.append({"role": "user", "content": user_message})
 
         response = await llm.chat.completions.create(
             model=model_name,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message},
-            ],
+            messages=messages,  # type: ignore[arg-type]
             stream=True,
         )
 

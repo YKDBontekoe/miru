@@ -20,6 +20,12 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=BaseModel)
 
 
+class ChatResponse(BaseModel):
+    """Fallback generic Pydantic schema for non-structured chat outputs."""
+
+    message: str
+
+
 class OpenRouterClient:
     def __init__(self, api_key: str):
         # We defer imports to bypass Python 3.13 circular import bugs at startup
@@ -74,15 +80,9 @@ class OpenRouterClient:
         reraise=True,
     )
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
-        response = await self.openai_client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=False,
-        )
-        if not hasattr(response, "choices"):
-            return ""
-        content = response.choices[0].message.content
-        return str(content) if content else ""
+        # Internally enforce strict JSON structured output even for generic strings
+        structured_resp = await self.structured_completion(messages, model, ChatResponse)
+        return structured_resp.message
 
     @retry(
         stop=stop_after_attempt(3),

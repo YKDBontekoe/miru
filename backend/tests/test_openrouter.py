@@ -81,31 +81,12 @@ async def test_chat_completion_success() -> None:
     ):
         client = OpenRouterClient("test-key")
 
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock(message=MagicMock(content="hello"))]
-        client.openai_client.chat.completions.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
+        from app.infrastructure.external.openrouter import ChatResponse
+        mock_response = ChatResponse(message="hello")
+        client.instructor_client.chat.completions.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
 
         result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model")
         assert result == "hello"
-
-
-@pytest.mark.asyncio
-async def test_chat_completion_no_choices() -> None:
-    with (
-        patch("openai.AsyncOpenAI"),
-        patch("instructor.from_openai"),
-    ):
-        client = OpenRouterClient("test-key")
-
-        # An object without 'choices'
-        class BadResponse:
-            pass
-
-        mock_response = BadResponse()
-        client.openai_client.chat.completions.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
-
-        result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model")
-        assert result == ""
 
 
 class DummyModel(BaseModel):

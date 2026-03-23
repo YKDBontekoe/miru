@@ -90,35 +90,17 @@ async def test_structured_completion_delegates_to_client() -> None:
 
 
 @pytest.mark.asyncio
-async def test_client_chat_completion_empty_response() -> None:
-    from app.infrastructure.external.openrouter import OpenRouterClient
+async def test_client_chat_completion_delegates_to_structured() -> None:
+    from app.infrastructure.external.openrouter import OpenRouterClient, ChatResponse
 
     client = OpenRouterClient.__new__(OpenRouterClient)
-    mock_openai = AsyncMock()
-    mock_response = MagicMock()
-    del mock_response.choices  # Remove choices to test empty-response path
-    mock_openai.chat.completions.create = AsyncMock(return_value=mock_response)
-    client.openai_client = mock_openai
+    client.structured_completion = AsyncMock(return_value=ChatResponse(message="hello from structured"))  # type: ignore[method-assign]
 
     result = await client.chat_completion([{"role": "user", "content": "Hi"}], "model")
-    assert result == ""
-
-
-@pytest.mark.asyncio
-async def test_client_chat_completion_none_content() -> None:
-    from app.infrastructure.external.openrouter import OpenRouterClient
-
-    client = OpenRouterClient.__new__(OpenRouterClient)
-    mock_openai = AsyncMock()
-    choice = MagicMock()
-    choice.message.content = None
-    mock_response = MagicMock()
-    mock_response.choices = [choice]
-    mock_openai.chat.completions.create = AsyncMock(return_value=mock_response)
-    client.openai_client = mock_openai
-
-    result = await client.chat_completion([{"role": "user", "content": "Hi"}], "model")
-    assert result == ""
+    assert result == "hello from structured"
+    client.structured_completion.assert_called_once_with(
+        [{"role": "user", "content": "Hi"}], "model", ChatResponse
+    )
 
 
 @pytest.mark.asyncio

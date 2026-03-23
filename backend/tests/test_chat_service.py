@@ -437,7 +437,7 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
     mock_llm.chat.completions.create.assert_called_once()
     called_messages = mock_llm.chat.completions.create.call_args[1]["messages"]
-    assert "fr-FR" in called_messages[0]["content"]
+    assert any("fr-FR" in m["content"] for m in called_messages)
 
 
 @pytest.mark.asyncio
