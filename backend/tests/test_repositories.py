@@ -99,19 +99,19 @@ class TestChatRepository:
     @pytest.mark.asyncio
     async def test_get_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.get_room(uuid4())
+        result = await repo.get_room(uuid4(), uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_update_room_returns_none_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.update_room(uuid4(), "New Name")
+        result = await repo.update_room(uuid4(), uuid4(), "New Name")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_delete_room_returns_false_for_unknown(self) -> None:
         repo = ChatRepository()
-        result = await repo.delete_room(uuid4())
+        result = await repo.delete_room(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio
@@ -119,7 +119,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Delete Me", user_id)
-        result = await repo.delete_room(room.id)
+        result = await repo.delete_room(room.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
@@ -127,7 +127,7 @@ class TestChatRepository:
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Old Name", user_id)
-        updated = await repo.update_room(room.id, "New Name")
+        updated = await repo.update_room(room.id, user_id, "New Name")
         assert updated is not None
         assert updated.name == "New Name"
 
@@ -163,7 +163,7 @@ class TestChatRepository:
         room = await repo.create_room("Touch Room", user_id)
         original_updated_at = room.updated_at
         await repo.touch_room(room.id)
-        refreshed = await repo.get_room(room.id)
+        refreshed = await repo.get_room(room.id, user_id)
         assert refreshed is not None
         assert refreshed.updated_at >= original_updated_at
 
@@ -172,6 +172,17 @@ class TestChatRepository:
         repo = ChatRepository()
         # Should not raise even if the room doesn't exist
         await repo.touch_room(uuid4())
+
+    @pytest.mark.asyncio
+    async def test_room_belongs_to_user(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user = uuid4()
+        room = await repo.create_room("Test Room", user_id)
+
+        assert await repo.room_belongs_to_user(room.id, user_id) is True
+        assert await repo.room_belongs_to_user(room.id, other_user) is False
+        assert await repo.room_belongs_to_user(uuid4(), user_id) is False
 
 
 # ---------------------------------------------------------------------------
@@ -202,13 +213,13 @@ class TestMemoryRepository:
         user_id = uuid4()
         memory = Memory(content="To delete", user_id=user_id, embedding=[0.0])
         await repo.insert_memory(memory)
-        result = await repo.delete_memory(memory.id)
+        result = await repo.delete_memory(memory.id, user_id)
         assert result is True
 
     @pytest.mark.asyncio
     async def test_delete_memory_returns_false_for_unknown(self) -> None:
         repo = MemoryRepository()
-        result = await repo.delete_memory(uuid4())
+        result = await repo.delete_memory(uuid4(), uuid4())
         assert result is False
 
     @pytest.mark.asyncio
@@ -307,6 +318,35 @@ class TestMemoryRepository:
             result = await repo.search_fulltext("hello world")
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_agent_repo_get_by_id_with_user(self) -> None:
+        repo = AgentRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+
+        agent = await repo.create(
+            Agent(
+                user_id=user_id,
+                name="Test Agent",
+                personality="Helpful",
+                system_prompt="You are an assistant.",
+            )
+        )
+
+        # Valid user_id check
+        found = await repo.get_by_id(agent.id, user_id=user_id)
+        assert found is not None
+        assert found.id == agent.id
+
+        # Invalid user_id check
+        not_found = await repo.get_by_id(agent.id, user_id=other_user_id)
+        assert not_found is None
+
+        # Original usage without user_id
+        original = await repo.get_by_id(agent.id)
+        assert original is not None
+        assert original.id == agent.id
 
 
 # ---------------------------------------------------------------------------

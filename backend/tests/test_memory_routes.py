@@ -198,6 +198,55 @@ def test_upload_document(client: TestClient) -> None:
     mock_service.store_document_memory.assert_awaited_once()
 
 
+def test_upload_document_exception(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.store_document_memory.side_effect = Exception("Some internal error")
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.txt", b"Hello World", "text/plain")},
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to process document."}
+
+
+def test_delete_memory_not_found(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.delete_memory.return_value = False
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.delete(f"/api/v1/memory/{uuid4()}")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Memory not found"}
+
+
+def test_delete_memory_success(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.delete_memory.return_value = True
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.delete(f"/api/v1/memory/{uuid4()}")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 def test_upload_document_service_unavailable(client: TestClient) -> None:
     from httpx import Request
     from openai import APIConnectionError

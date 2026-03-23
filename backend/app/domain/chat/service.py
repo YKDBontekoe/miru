@@ -148,24 +148,31 @@ class ChatService:
             for r in rooms
         ]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, user_id, name)
         if room:
             return RoomResponse(
                 id=room.id, name=room.name, created_at=room.created_at, updated_at=room.updated_at
             )
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
-        await self.chat_repo.add_agent_to_room(room_id, agent_id)
+    async def add_agent_to_room(self, room_id: UUID, user_id: UUID, agent_id: UUID) -> None:
+        if await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            await self.chat_repo.add_agent_to_room(room_id, agent_id)
+        else:
+            raise ValueError("Room not found or unauthorized")
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            raise ValueError("Room not found or unauthorized")
         return await self.chat_repo.list_room_agents(room_id)
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageResponse]:
+    async def get_room_messages(self, room_id: UUID, user_id: UUID) -> list[ChatMessageResponse]:
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            raise ValueError("Room not found or unauthorized")
         msgs = await self.chat_repo.get_room_messages(room_id)
         return [
             ChatMessageResponse(
@@ -286,6 +293,10 @@ class ChatService:
         self, room_id: UUID, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            yield "Room not found or unauthorized"
+            return
+
         # 1. Save user message
         user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
         await self.chat_repo.save_message(user_msg)
@@ -606,6 +617,13 @@ class ChatService:
         connected client in the room via ``chat_hub``.
         """
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": "Room not found or unauthorized"}},
+            )
+            return
 
         user_msg = await self._handle_message_persistence_and_broadcast(
             room_id, user_message, user_id, client_temp_id

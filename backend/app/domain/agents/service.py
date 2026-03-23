@@ -143,7 +143,7 @@ class AgentService:
                     )
 
         # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
+        refetched = await self.repo.get_by_id(agent.pk, user_id=user_id)
         assert refetched is not None
         return _build_agent_response(refetched)
 
