@@ -108,10 +108,15 @@ class ChatService:
             )
         messages.append({"role": "user", "content": user_message})
 
-        response = await llm.chat.completions.create(
-            model=model_name,
-            messages=messages,  # type: ignore[arg-type]
-            stream=True,
+        import typing
+
+        response = typing.cast(
+            "typing.AsyncIterator[typing.Any]",
+            await llm.chat.completions.create(
+                model=model_name,
+                messages=messages,  # type: ignore[arg-type]
+                stream=True,
+            ),
         )
 
         async for chunk in response:
