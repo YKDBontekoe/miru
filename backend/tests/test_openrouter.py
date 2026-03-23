@@ -145,8 +145,6 @@ async def test_standalone_chat_completion_success() -> None:
         )
 
 
-
-
 @pytest.mark.asyncio
 async def test_standalone_structured_completion_success() -> None:
     with (
@@ -190,8 +188,6 @@ async def test_standalone_structured_completion_fallback() -> None:
         mock_client.structured_completion.assert_called_with(
             [{"role": "user", "content": "hi"}], "fallback-model", DummyModel
         )
-
-
 
 
 @pytest.mark.asyncio
