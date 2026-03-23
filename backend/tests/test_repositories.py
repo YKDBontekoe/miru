@@ -319,6 +319,35 @@ class TestMemoryRepository:
         assert result == []
         mock_conn.execute_query_dict.assert_awaited_once()
 
+    @pytest.mark.asyncio
+    async def test_agent_repo_get_by_id_with_user(self) -> None:
+        repo = AgentRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+
+        agent = await repo.create(
+            Agent(
+                user_id=user_id,
+                name="Test Agent",
+                personality="Helpful",
+                system_prompt="You are an assistant.",
+            )
+        )
+
+        # Valid user_id check
+        found = await repo.get_by_id(agent.id, user_id=user_id)
+        assert found is not None
+        assert found.id == agent.id
+
+        # Invalid user_id check
+        not_found = await repo.get_by_id(agent.id, user_id=other_user_id)
+        assert not_found is None
+
+        # Original usage without user_id
+        original = await repo.get_by_id(agent.id)
+        assert original is not None
+        assert original.id == agent.id
+
 
 # ---------------------------------------------------------------------------
 # AuthRepository

@@ -365,6 +365,54 @@ async def test_stream_room_responses_multiple_agents(
 
 
 @pytest.mark.asyncio
+async def test_add_agent_to_room_unauthorized(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    with pytest.raises(ValueError, match="Room not found or unauthorized"):
+        await chat_service.add_agent_to_room(room_id, user_id, agent_id)
+
+
+@pytest.mark.asyncio
+async def test_add_agent_to_room_authorized(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = True
+
+    await chat_service.add_agent_to_room(room_id, user_id, agent_id)
+    typing.cast("AsyncMock", chat_service.chat_repo.add_agent_to_room).assert_called_once_with(
+        room_id, agent_id
+    )
+
+
+@pytest.mark.asyncio
+async def test_list_room_agents_unauthorized(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    with pytest.raises(ValueError, match="Room not found or unauthorized"):
+        await chat_service.list_room_agents(room_id, user_id)
+
+
+@pytest.mark.asyncio
+async def test_get_room_messages_unauthorized(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    with pytest.raises(ValueError, match="Room not found or unauthorized"):
+        await chat_service.get_room_messages(room_id, user_id)
+
+
+@pytest.mark.asyncio
 async def test_stream_room_responses_unauthorized(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
