@@ -33,7 +33,13 @@ MULTI_AGENT_PROMPT = (
     "User said: {user_message}. You are managing a group chat. You MUST delegate tasks to EACH "
     "available agent so they can all contribute to the conversation. Ensure they respond to the "
     "user and to each other's points. Gather their responses and return a combined final transcript "
-    "of what each agent said."
+    "of what each agent said.{locale_instruction}"
+)
+
+SINGLE_AGENT_PROMPT = (
+    "User said: {user_message}. "
+    "Orchestrate a helpful conversation among available agents to assist the user."
+    "{locale_instruction}"
 )
 
 MULTI_AGENT_EXPECTED_OUTPUT = "A chat transcript where multiple agents speak, formatted as 'AgentName: ...\n\nOtherAgent: ...'"
@@ -163,8 +169,9 @@ class CrewOrchestrator:
 
         if len(crew_agents) > 1:
             task = Task(
-                description=MULTI_AGENT_PROMPT.format(user_message=user_message)
-                + locale_instruction,
+                description=MULTI_AGENT_PROMPT.format(
+                    user_message=user_message, locale_instruction=locale_instruction
+                ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
@@ -176,10 +183,8 @@ class CrewOrchestrator:
             )
         else:
             task = Task(
-                description=(
-                    f"User said: {user_message}. "
-                    "Orchestrate a helpful conversation among available agents to assist the user."
-                    f"{locale_instruction}"
+                description=SINGLE_AGENT_PROMPT.format(
+                    user_message=user_message, locale_instruction=locale_instruction
                 ),
                 expected_output="A collaborative response from the most relevant agents.",
                 agent=crew_agents[0],

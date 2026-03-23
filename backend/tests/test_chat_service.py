@@ -420,24 +420,19 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
         yield chunk3
         yield chunk2
 
-    mock_llm = MagicMock()
-    mock_llm.chat.completions.create = AsyncMock(return_value=mock_async_generator())
-
-    mock_client = MagicMock()
-    mock_client.openai_client = mock_llm
-
-    monkeypatch.setattr(
-        "app.domain.chat.service.get_openrouter_client", MagicMock(return_value=mock_client)
-    )
-
-    responses = []
-    async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
-        responses.append(r)
+    with patch(
+        "app.domain.chat.service.stream_chat",
+        new_callable=AsyncMock,
+    ) as mock_stream_chat:
+        mock_stream_chat.return_value = mock_async_generator()
+        responses = []
+        async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
+            responses.append(r)
 
     assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
-    mock_llm.chat.completions.create.assert_called_once()
-    called_messages = mock_llm.chat.completions.create.call_args[1]["messages"]
-    assert "fr-FR" in called_messages[0]["content"]
+    mock_stream_chat.assert_called_once()
+    called_messages = mock_stream_chat.call_args[1]["messages"]
+    assert any("fr-FR" in m["content"] and m["role"] == "system" for m in called_messages)
 
 
 @pytest.mark.asyncio
