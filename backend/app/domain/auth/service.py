@@ -74,7 +74,13 @@ class AuthService:
 
     async def delete_account(self, user_id: UUID) -> None:
         """Delete a user account entirely."""
+        import asyncio
         from app.infrastructure.database.supabase import get_supabase
 
-        supabase = get_supabase()
-        supabase.auth.admin.delete_user(str(user_id))
+        try:
+            supabase = get_supabase()
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, supabase.auth.admin.delete_user, str(user_id))
+        except Exception:
+            logger.exception(f"Failed to delete account for user_id={user_id}")
+            raise

@@ -86,11 +86,13 @@ export default function LoginScreen() {
     setError(null);
     try {
       // Store preferences locally before redirect so they can be synced after authentication
-      SecureLocalStorage.setItem('pending_marketing_consent', marketingConsent ? 'true' : 'false');
-      SecureLocalStorage.setItem(
-        'pending_data_processing_consent',
-        dataProcessingConsent ? 'true' : 'false'
-      );
+      if (hasTouchedConsents) {
+        const payload = JSON.stringify({
+          marketing_consent: marketingConsent,
+          data_processing_consent: dataProcessingConsent
+        });
+        await SecureLocalStorage.setItem(`pending_consents_${email.trim()}`, payload);
+      }
       await signInWithMagicLink(email.trim());
       setMagicLinkSent(true);
     } catch (e: any) {
@@ -108,6 +110,12 @@ export default function LoginScreen() {
       });
     } catch (e) {
       console.warn('Failed to sync preferences:', e);
+      // Enqueue retry
+      const payload = JSON.stringify({
+        marketing_consent: marketingConsent,
+        data_processing_consent: dataProcessingConsent
+      });
+      await SecureLocalStorage.setItem(`pending_consents_${email.trim()}`, payload);
     }
   };
 

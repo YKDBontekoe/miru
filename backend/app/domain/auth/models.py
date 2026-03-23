@@ -71,9 +71,10 @@ class AuditLog(SupabaseModel):
         table = "audit_logs"
         sql_policies = [
             "ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;",
-            "CREATE POLICY audit_logs_insert ON public.audit_logs FOR INSERT WITH CHECK (true);",
             "CREATE POLICY audit_logs_select ON public.audit_logs FOR SELECT USING (auth.uid() = user_id);",
         ]
+        sql_indexes = []  # type: ignore
+        sql_functions = []  # type: ignore
 
 
 class Passkey(SupabaseModel):

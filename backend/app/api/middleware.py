@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 """Middleware for audit logging."""
 
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from uuid import UUID
@@ -10,6 +13,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.domain.auth.models import AuditLog
 
 logger = logging.getLogger(__name__)
+
+async def _write_audit(user_id_str: str, action: str, resource: str) -> None:
+    try:
+        await AuditLog.create(
+            user_id=UUID(user_id_str), action=action, resource=resource
+        )
+    except Exception:
+        logger.exception("Failed to write audit log to database")
 
 
 class AuditMiddleware(BaseHTTPMiddleware):
@@ -27,6 +38,9 @@ class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # Process the request first so we don't hold up execution, or we can log before.
         # Let's log before.
         auth_header = request.headers.get("Authorization")
@@ -41,15 +55,11 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     action = request.method
                     resource = str(request.url.path)
 
-                    # Create audit log asynchronously.
-                    await AuditLog.create(
-                        user_id=UUID(user_id_str), action=action, resource=resource
-                    )
-            except Exception as e:
+                    # Create audit log asynchronously off the hot path
+                    asyncio.create_task(_write_audit(user_id_str, action, resource))
+            except (ValueError, TypeError, Exception) as e:
                 # If decoding fails or user_id is invalid, we just skip logging and let
                 # the actual auth dependency fail the request.
-                logger.debug(f"Audit log skip: {e}")
                 pass
 
-        response = await call_next(request)
-        return response
+        return await call_next(request)

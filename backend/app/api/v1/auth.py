@@ -106,7 +106,10 @@ async def update_preferences(
     """Update user consent preferences."""
     profile = await Profile.get_or_none(id=user_id)
     if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "profile_not_found", "message": "Profile not found"}
+        )
 
     if data.marketing_consent is not None:
         profile.marketing_consent = data.marketing_consent

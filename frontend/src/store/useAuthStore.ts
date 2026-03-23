@@ -30,17 +30,30 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (_event === 'SIGNED_IN' && session?.user) {
         try {
           const { SecureLocalStorage } = await import('../core/services/storage');
-          const pendingMarketing = await SecureLocalStorage.getItem('pending_marketing_consent');
-          const pendingData = await SecureLocalStorage.getItem('pending_data_processing_consent');
+          // Try to get preferences stored for this specific user email
+          const email = session.user.email;
+          if (!email) return;
 
-          if (pendingMarketing !== null || pendingData !== null) {
+          const key = `pending_consents_${email.trim()}`;
+          const pendingDataStr = await SecureLocalStorage.getItem(key);
+
+          if (pendingDataStr) {
+            const parsed = JSON.parse(pendingDataStr);
             const { ApiService } = await import('../core/api/ApiService');
-            await ApiService.updatePreferences({
-              marketing_consent: pendingMarketing === 'true',
-              data_processing_consent: pendingData === 'true',
-            });
-            await SecureLocalStorage.removeItem('pending_marketing_consent');
-            await SecureLocalStorage.removeItem('pending_data_processing_consent');
+
+            const payload: any = {};
+            if (parsed.marketing_consent !== undefined) {
+              payload.marketing_consent = parsed.marketing_consent;
+            }
+            if (parsed.data_processing_consent !== undefined) {
+              payload.data_processing_consent = parsed.data_processing_consent;
+            }
+
+            if (Object.keys(payload).length > 0) {
+              await ApiService.updatePreferences(payload);
+            }
+
+            await SecureLocalStorage.removeItem(key);
           }
         } catch (err) {
           console.warn('Failed to sync pending preferences on SIGNED_IN', err);
