@@ -91,10 +91,12 @@ async def test_structured_completion_delegates_to_client() -> None:
 
 @pytest.mark.asyncio
 async def test_client_chat_completion_delegates_to_structured() -> None:
-    from app.infrastructure.external.openrouter import OpenRouterClient, ChatResponse
+    from app.infrastructure.external.openrouter import ChatResponse, OpenRouterClient
 
     client = OpenRouterClient.__new__(OpenRouterClient)
-    client.structured_completion = AsyncMock(return_value=ChatResponse(message="hello from structured"))  # type: ignore[method-assign]
+    client.structured_completion = AsyncMock(
+        return_value=ChatResponse(message="hello from structured")
+    )  # type: ignore[method-assign]
 
     result = await client.chat_completion([{"role": "user", "content": "Hi"}], "model")
     assert result == "hello from structured"

@@ -82,6 +82,7 @@ async def test_chat_completion_success() -> None:
         client = OpenRouterClient("test-key")
 
         from app.infrastructure.external.openrouter import ChatResponse
+
         mock_response = ChatResponse(message="hello")
         client.instructor_client.chat.completions.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
 
