@@ -752,9 +752,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             return msg
 
         typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
-        typing.cast(
-            "AsyncMock", chat_service.agent_repo.increment_message_count
-        ).return_value = None
+        chat_service.agent_repo.bulk_increment_message_count = AsyncMock()  # type: ignore[method-assign]
 
         await chat_service._persist_and_broadcast_agent_response(
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
@@ -762,9 +760,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
 
         typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
         typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
-        typing.cast(
-            "AsyncMock", chat_service.agent_repo.increment_message_count
-        ).assert_called_once_with(room_agents[0].id)
+        chat_service.agent_repo.bulk_increment_message_count.assert_called_once_with([room_agents[0].id])  # type: ignore[attr-defined]
         assert mock_hub.broadcast_to_room.call_count == 1
 
 

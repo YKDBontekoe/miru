@@ -56,3 +56,11 @@ class AgentRepository:
         if agent:
             agent.message_count += 1
             await agent.save()
+
+    async def bulk_increment_message_count(self, agent_ids: list[UUID] | list[str] | list[UUID | str]) -> None:
+        """Increment message count for multiple agents in a single query."""
+        if not agent_ids:
+            return
+        from tortoise.expressions import F
+
+        await Agent.filter(id__in=agent_ids).update(message_count=F("message_count") + 1)

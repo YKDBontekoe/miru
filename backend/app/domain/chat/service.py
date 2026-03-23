@@ -368,13 +368,14 @@ class ChatService:
 
         # 7. Best-effort message_count increment for each participant.
         # All agents in the room contributed (they were all passed to the crew),
-        # so db_agents is the correct participant set. Each increment is wrapped
-        # individually so a single failure doesn't abort the stream.
-        for agent in db_agents:
-            try:
-                await self.agent_repo.increment_message_count(agent.id)
-            except Exception:
-                logger.warning("Failed to increment message_count for agent %s", agent.id)
+        # so db_agents is the correct participant set.
+        # Performance Log: Replaced individual per-agent updates with a single bulk increment
+        # using the database repository layer to prevent N+1 queries.
+        agent_ids = [a.id for a in db_agents]
+        try:
+            await self.agent_repo.bulk_increment_message_count(agent_ids)
+        except Exception:
+            logger.warning("Failed to bulk increment message_count for agents")
 
         yield str(result)
         yield "[[STATUS:done]]\n"
@@ -570,11 +571,14 @@ class ChatService:
             raise
 
         await self.chat_repo.touch_room(room_id)
-        for agent in room_agents:
-            try:
-                await self.agent_repo.increment_message_count(agent.id)
-            except BaseORMException:
-                logger.warning("Failed to increment message_count for agent %s", agent.id)
+
+        # Performance Log: Replaced individual per-agent updates with a single bulk increment
+        # using the database repository layer to prevent N+1 queries.
+        agent_ids = [a.id for a in room_agents]
+        try:
+            await self.agent_repo.bulk_increment_message_count(agent_ids)
+        except BaseORMException:
+            logger.warning("Failed to bulk increment message_count for agents")
 
         await chat_hub.broadcast_to_room(
             room_id,
