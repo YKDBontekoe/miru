@@ -410,7 +410,9 @@ export default function ChatRoomScreen() {
                     {alreadyAdded ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Ionicons name="checkmark-circle" size={16} color={C.primary} />
-                        <AppText style={{ fontSize: 12, color: C.muted }}>Added</AppText>
+                        <AppText style={{ fontSize: 12, color: C.muted }}>
+                          {t('chat.added')}
+                        </AppText>
                       </View>
                     ) : (
                       <Ionicons name="add-circle-outline" size={20} color={C.primary} />

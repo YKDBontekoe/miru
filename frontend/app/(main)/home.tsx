@@ -193,7 +193,9 @@ function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void 
       </View>
       <View style={{ flex: 1 }}>
         <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>{room.name}</AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>{t('home.actions.tap_to_continue')}</AppText>
+        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>
+          {t('home.actions.tap_to_continue')}
+        </AppText>
       </View>
       <AppText style={{ fontSize: 11, color: C.faint }}>{relativeTime()}</AppText>
       <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginStart: 6 }} />

@@ -528,7 +528,9 @@ export default function ProductivityScreen() {
                 }}
               >
                 <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>New Note</AppText>
+                <AppText style={{ color: 'white', fontWeight: '700' }}>
+                  {t('productivity.new_note')}
+                </AppText>
               </TouchableOpacity>
             </View>
           }
@@ -578,7 +580,9 @@ export default function ProductivityScreen() {
                 }}
               >
                 <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>New Task</AppText>
+                <AppText style={{ color: 'white', fontWeight: '700' }}>
+                  {t('productivity.new_task')}
+                </AppText>
               </TouchableOpacity>
             </View>
           }

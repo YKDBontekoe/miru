@@ -165,7 +165,9 @@ export function ChatBubble({
           {isFailed && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
               <Ionicons name="alert-circle-outline" size={13} color={C.errorText} />
-              <AppText style={{ color: C.errorText, fontSize: 12 }}>Failed to send</AppText>
+              <AppText style={{ color: C.errorText, fontSize: 12 }}>
+                {t('chat.failed_to_send')}
+              </AppText>
               {onRetry && (
                 <TouchableOpacity
                   onPress={onRetry}
