@@ -257,24 +257,51 @@ jobs:
       - name: Upgrade containerapp CLI extension
         run: az extension add --name containerapp --upgrade --yes
 
+      - name: Install uv for migrations
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Setup Staging Database Schema
+        env:
+          DATABASE_STAGING_URL: ${{ secrets.DATABASE_STAGING_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          cd backend
+          uv python install 3.13
+          uv sync --all-extras
+
+          # Force Supabase Transaction Pooler (port 6543) instead of direct (port 5432).
+          # The pooler natively accepts the `postgres.[project_ref]` username format
+          # provided in the secrets, bypassing 'password authentication failed' errors.
+          POOLER_URL="${DATABASE_STAGING_URL/5432/6543}"
+
+          # 1. Create the PR-specific schema on Staging
+          psql "$POOLER_URL" -c "CREATE SCHEMA IF NOT EXISTS pr_${PR_NUM};"
+
+          # 2. Append the search_path to the connection string alongside pgbouncer config
+          PR_DB_URL="${POOLER_URL}?pgbouncer=true&options=-c%20search_path=pr_${PR_NUM},public"
+
+          # 3. Mask the derived URL so GitHub Actions redacts it on failure logs
+          echo "::add-mask::$PR_DB_URL"
+          echo "PR_DATABASE_URL=$PR_DB_URL" >> "$GITHUB_ENV"
+
+          # 4. Run migrations strictly against this new schema
+          DATABASE_URL="$PR_DB_URL" uv run python manage.py migrate
+
       - name: Deploy image to PR container app
         run: |
           IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
           [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
 
-          # aca-miru-pr is permanently in 'Labels' revision mode. In this mode every
-          # write operation (secret set, revision set-mode) requires --target-label,
-          # which those commands do not support. All 17 secrets are pre-configured on
-          # the app and do not need to be re-set per deploy.
-          #
-          # az containerapp update is the only command that accepts --target-label, so
-          # it is the sole deploy command. Env vars wire up the already-configured
-          # secrets by name via secretref:.
+          # For the ephemeral staging container, we pass the fully constructed PR schema URL,
+          # ensuring backend ORM connects directly to the PR-specific schema.
           ENV_VARS=(
-            "DATABASE_URL=secretref:database-url"
-            "SUPABASE_URL=secretref:supabase-url"
-            "SUPABASE_KEY=secretref:supabase-key"
-            "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
+            "DATABASE_URL=${{ env.PR_DATABASE_URL }}"
+            "DB_SCHEMA=pr_${{ github.event.pull_request.number }}"
+            "SUPABASE_URL=${{ secrets.SUPABASE_STAGING_URL }}"
+            "SUPABASE_KEY=${{ secrets.SUPABASE_STAGING_KEY }}"
+            "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_STAGING_KEY }}"
             "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
             "OPENROUTER_API_KEY=secretref:openrouter-api-key"
             "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
@@ -383,12 +410,42 @@ jobs:
           echo "All smoke tests passed."
 
       - name: Run Postman integration tests
+        env:
+          SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
+          SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_STAGING_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_KEY }}
         run: |
           npm install -g newman
+
+          echo "Seeding Test User via Admin API..."
+          if ! python backend/scripts/seed_test_user.py; then
+            echo "::error::Failed to seed test user."
+            exit 1
+          fi
+
+          # 1. Run the setup collection to get the bearerToken, exporting the environment
+          echo "Starting Postman Setup Collection for Auth..."
+          if ! newman run backend/tests/postman/00_setup_auth.json \
+            --env-var baseUrl="${{ steps.app-url.outputs.url }}" \
+            --env-var supabaseUrl="$SUPABASE_URL" \
+            --env-var supabaseKey="$SUPABASE_KEY" \
+            --env-var testEmail="$SUPABASE_TEST_EMAIL" \
+            --env-var testPassword="$SUPABASE_TEST_PASSWORD" \
+            --export-environment backend/tests/postman/test_env.json; then
+            echo "::error::Failed to run setup auth collection."
+            exit 1
+          fi
+
           PIDS=()
+          # 2. Run the rest of the collections using the exported environment
           for collection in backend/tests/postman/*.json; do
+            if [[ "$collection" == *"00_setup_auth.json" ]] || [[ "$collection" == *"test_env.json" ]]; then
+              continue
+            fi
             echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            newman run "$collection" -e backend/tests/postman/test_env.json &
             PIDS+=($!)
           done
 
