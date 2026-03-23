@@ -74,6 +74,7 @@
 │  • Supabase — Auth, database, RLS                                │
 │  • Azure — Container Apps, Static Web Apps, Notification Hubs    │
 │  • Sentry — Error tracking                                       │
+│  • Tavily — Web search for agents                                │
 │  • Steam Web API — Gaming integration                            │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
@@ -136,6 +137,7 @@ See [`backend/.env.example`](backend/.env.example) for the full list. Key variab
 | `SUPABASE_JWT_SECRET` | Yes | JWT secret for token validation |
 | `DATABASE_URL` | Yes | Direct PostgreSQL connection string |
 | `WEBAUTHN_RP_ID` | Yes | Passkey relying party ID (`localhost` for dev) |
+| `TAVILY_API_KEY` | No | Tavily API key for agent web search |
 
 ## Project Structure
 
@@ -158,7 +160,7 @@ miru/
 │   │   ├── api/v1/              # Route handlers per domain
 │   │   └── infrastructure/      # Database, external services, repositories
 │   │       ├── database/        # Supabase client, Tortoise ORM config
-│   │       ├── external/        # OpenRouter, Steam, Steam Tool
+│   │       ├── external/        # OpenRouter, Steam, CrewAI, Tavily
 │   │       └── repositories/    # Data access layer
 │   ├── tests/                   # Pytest test suite
 │   ├── manage.py                # Migration CLI (makemigrations, check, migrate, status)
