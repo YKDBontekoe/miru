@@ -136,7 +136,21 @@ async def chat_completion(
 ) -> str:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
-    return await client.chat_completion(messages, chosen_model)
+    try:
+        return await client.chat_completion(messages, chosen_model)
+    except Exception as e:
+        if isinstance(e, asyncio.CancelledError):
+            raise
+        fallback = get_settings().fallback_chat_model
+        if fallback and fallback != chosen_model:
+            logger.warning(
+                "chat_completion failed with model %s, falling back to %s", chosen_model, fallback
+            )
+            try:
+                return await client.chat_completion(messages, fallback)
+            except Exception as fallback_e:
+                raise fallback_e from e
+        raise
 
 
 async def stream_chat(
