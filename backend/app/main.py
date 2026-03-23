@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.middleware import AuditMiddleware
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.chat import router as chat_router
@@ -19,7 +20,6 @@ from app.api.v1.websocket import router as websocket_router
 from app.core.config import get_settings
 from app.domain.notifications.api.router import router as notifications_router
 from app.infrastructure.database.tortoise import close_db, init_db
-from app.api.middleware import AuditMiddleware
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator

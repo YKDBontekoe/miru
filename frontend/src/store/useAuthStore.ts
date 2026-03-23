@@ -37,7 +37,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             const { ApiService } = await import('../core/api/ApiService');
             await ApiService.updatePreferences({
               marketing_consent: pendingMarketing === 'true',
-              data_processing_consent: pendingData === 'true'
+              data_processing_consent: pendingData === 'true',
             });
             await SecureLocalStorage.removeItem('pending_marketing_consent');
             await SecureLocalStorage.removeItem('pending_data_processing_consent');

@@ -86,8 +86,14 @@ export default function LoginScreen() {
     try {
       // Store preferences locally before redirect so they can be synced after authentication
       import('../../src/core/services/storage').then(({ SecureLocalStorage }) => {
-        SecureLocalStorage.setItem('pending_marketing_consent', marketingConsent ? 'true' : 'false');
-        SecureLocalStorage.setItem('pending_data_processing_consent', dataProcessingConsent ? 'true' : 'false');
+        SecureLocalStorage.setItem(
+          'pending_marketing_consent',
+          marketingConsent ? 'true' : 'false'
+        );
+        SecureLocalStorage.setItem(
+          'pending_data_processing_consent',
+          dataProcessingConsent ? 'true' : 'false'
+        );
       });
       await signInWithMagicLink(email.trim());
       setMagicLinkSent(true);
@@ -303,7 +309,10 @@ export default function LoginScreen() {
               {/* Consents */}
               <View className="mb-lg">
                 <View className="flex-row items-center justify-between mb-sm">
-                  <AppText variant="caption" className="flex-1 mr-xs text-onSurface-light dark:text-onSurface-dark">
+                  <AppText
+                    variant="caption"
+                    className="flex-1 mr-xs text-onSurface-light dark:text-onSurface-dark"
+                  >
                     I consent to marketing emails and notifications.
                   </AppText>
                   <Switch
@@ -314,7 +323,10 @@ export default function LoginScreen() {
                   />
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <AppText variant="caption" className="flex-1 mr-xs text-onSurface-light dark:text-onSurface-dark">
+                  <AppText
+                    variant="caption"
+                    className="flex-1 mr-xs text-onSurface-light dark:text-onSurface-dark"
+                  >
                     I consent to my data being processed for AI context.
                   </AppText>
                   <Switch
