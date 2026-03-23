@@ -155,6 +155,7 @@ function StatCard({
 
 // ─── Recent chat row ─────────────────────────────────────────────────────────
 function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void }) {
+  const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const relativeTime = () => {
     const diff = Date.now() - new Date(room.updated_at).getTime();
@@ -192,7 +193,7 @@ function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void 
       </View>
       <View style={{ flex: 1 }}>
         <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>{room.name}</AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>Tap to continue</AppText>
+        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>{t('home.actions.tap_to_continue')}</AppText>
       </View>
       <AppText style={{ fontSize: 11, color: C.faint }}>{relativeTime()}</AppText>
       <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginStart: 6 }} />

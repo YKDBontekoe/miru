@@ -394,6 +394,7 @@ function TaskCard({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function ProductivityScreen() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'notes' | 'tasks'>('notes');
   const { notes, tasks, fetchNotes, fetchTasks, isLoading, deleteNote, deleteTask, toggleTask } =
     useProductivityStore();

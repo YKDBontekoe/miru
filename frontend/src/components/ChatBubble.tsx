@@ -50,7 +50,7 @@ export function ChatBubble({
   timestamp,
   onRetry,
 }: ChatBubbleProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isFailed = status === MessageStatus.error;
   const isStreaming = status === MessageStatus.streaming;
   const accentColor = agentName ? getAgentColor(agentName) : '#2563EB';

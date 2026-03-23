@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -41,6 +42,7 @@ function getAgentColor(name: string) {
 }
 
 export default function ChatRoomScreen() {
+  const { t } = useTranslation();
   const { id: roomId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const {
