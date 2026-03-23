@@ -80,6 +80,7 @@ ALL_MODEL_MODULES = [
     "app.domain.auth.models",
     "app.domain.chat.models",
     "app.domain.memory.models",
+    "app.domain.notifications.models",
     "app.domain.agent_tools.models",
     "app.domain.productivity.models",
 ]

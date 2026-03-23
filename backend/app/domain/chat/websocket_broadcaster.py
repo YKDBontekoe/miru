@@ -133,6 +133,7 @@ class ChatWebSocketBroadcaster:
 
     async def persist_and_broadcast_agent_response(
         self,
+        user_id: UUID,
         room_id: UUID,
         room_agents: list[Agent],
         result_text: str,
@@ -141,6 +142,9 @@ class ChatWebSocketBroadcaster:
         """Save the agent response and broadcast to room."""
         from tortoise.exceptions import BaseORMException
 
+        from app.domain.notifications.services import NotificationService
+        from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
+        from app.infrastructure.repositories.notification_repo import NotificationRepository
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         agent_id_for_msg = None if len(room_agents) > 1 else room_agents[0].id
@@ -176,3 +180,39 @@ class ChatWebSocketBroadcaster:
                 },
             },
         )
+
+        # Trigger push notification if user is NOT connected to this room
+        connected_users_in_room = chat_hub._rooms.get(room_id, set())
+        if user_id not in connected_users_in_room:
+            logger.info(
+                "User %s is absent from room %s, queueing push notification.", user_id, room_id
+            )
+
+            async def send_push_bg() -> None:
+                try:
+                    notification_service = NotificationService(
+                        azure_hub_client=AzureNotificationHubClient(),
+                        notification_repo=NotificationRepository(),
+                    )
+                    agent_name = agent_names[0] if agent_names else "Agent"
+                    title = f"New message from {agent_name}"
+
+                    # Preview string (first 100 chars)
+                    preview = result_text[:100] + "..." if len(result_text) > 100 else result_text
+
+                    data_payload = {
+                        "roomId": str(room_id),
+                        "type": "room_message",
+                    }
+
+                    await notification_service.notify_user(
+                        user_id=user_id,
+                        title=title,
+                        message=preview,
+                        data=data_payload,
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send background push notification: {e}")
+
+            # Fire and forget background task
+            asyncio.create_task(send_push_bg())

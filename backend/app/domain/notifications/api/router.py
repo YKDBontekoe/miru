@@ -1,43 +1,63 @@
+"""API routes for notifications domain."""
+
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel
+import logging
+from typing import TYPE_CHECKING
 
-from app.core.security.auth import CurrentUser
-from app.domain.notifications.services import NotificationService
+from fastapi import APIRouter, Depends, HTTPException
 
-router = APIRouter(tags=["notifications"])
+from app.core.security.auth import get_current_user
+from app.domain.notifications.models import DeviceTokenCreate, DeviceTokenResponse
+from app.infrastructure.repositories.notification_repo import NotificationRepository
 
+if TYPE_CHECKING:
+    from app.domain.auth.models import JWTPayload
 
-class NotificationRequest(BaseModel):
-    """Request model for sending a notification.
+logger = logging.getLogger(__name__)
 
-    Attributes:
-        message (str): The body of the notification message.
-        title (str): The title of the notification. Defaults to 'New Notification'.
-    """
-
-    message: str
-    title: str = "New Notification"
+router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
-@router.post("/send", status_code=status.HTTP_202_ACCEPTED)
-async def send_notification(
-    request: NotificationRequest,
-    user_id: CurrentUser,
-    service: NotificationService = Depends(NotificationService),
-) -> dict[str, str]:
-    """
-    Test endpoint to send a notification to the current user.
-    The request is accepted for asynchronous processing.
+def get_notification_repo() -> NotificationRepository:
+    """Dependency provider for NotificationRepository."""
+    return NotificationRepository()
 
-    Args:
-        request (NotificationRequest): The HTTP request body containing message payload.
-        user_id (CurrentUser): String identifier of the current authenticated user.
-        service (NotificationService): The notification service dependency instance.
 
-    Returns:
-        dict[str, str]: A dictionary indicating the async job has successfully started.
-    """
-    await service.notify_user(str(user_id), request.message, request.title)
-    return {"status": "success"}
+@router.post("/device-tokens", response_model=DeviceTokenResponse)
+async def register_device_token(
+    payload: DeviceTokenCreate,
+    current_user: JWTPayload = Depends(get_current_user),
+    repo: NotificationRepository = Depends(get_notification_repo),
+) -> DeviceTokenResponse:
+    """Register or update a push notification device token for the current user."""
+    try:
+        # SEC(agent): Relying on current_user.sub implicitly prevents IDOR
+        token = await repo.add_or_update_device_token(
+            user_id=current_user.sub,
+            token=payload.token,
+            platform=payload.platform,
+        )
+        return DeviceTokenResponse.model_validate(token)
+    except Exception as exc:
+        logger.exception("Failed to register device token")
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
+
+
+@router.delete("/device-tokens/{token}", status_code=204)
+async def remove_device_token(
+    token: str,
+    current_user: JWTPayload = Depends(get_current_user),
+    repo: NotificationRepository = Depends(get_notification_repo),
+) -> None:
+    """Remove a push notification device token."""
+    try:
+        deleted = await repo.remove_device_token(user_id=current_user.sub, token=token)
+        if not deleted:
+            # Mask if token didn't exist or doesn't belong to the user
+            raise HTTPException(status_code=404, detail="Token not found")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to remove device token")
+        raise HTTPException(status_code=500, detail="Internal server error") from exc

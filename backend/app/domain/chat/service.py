@@ -241,7 +241,11 @@ class ChatService:
             )
 
             await self.ws_broadcaster.persist_and_broadcast_agent_response(
-                room_id, room_agents, result_text, agent_names
+                user_id=user_id,
+                room_id=room_id,
+                room_agents=room_agents,
+                result_text=result_text,
+                agent_names=agent_names,
             )
             await chat_hub.broadcast_to_room(
                 room_id,

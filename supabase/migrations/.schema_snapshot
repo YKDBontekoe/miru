@@ -202,6 +202,17 @@ CREATE TABLE IF NOT EXISTS "memory_relationships" (
     "target_id" UUID NOT NULL REFERENCES "memories" ("id") ON DELETE CASCADE
 );
 COMMENT ON TABLE "memory_relationships" IS 'Represents a relationship between two memories.';
+CREATE TABLE IF NOT EXISTS "device_tokens" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID NOT NULL,
+    "token" VARCHAR(512) NOT NULL UNIQUE,
+    "platform" VARCHAR(50) NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_device_toke_user_id_9331d6" ON "device_tokens" ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_device_toke_token_667234" ON "device_tokens" ("token");
+COMMENT ON TABLE "device_tokens" IS 'Stores push notification device tokens for users.';
 CREATE TABLE IF NOT EXISTS "agent_tools" (
     "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID,
@@ -271,6 +282,7 @@ CREATE TABLE IF NOT EXISTS "tasks" (
     "title" VARCHAR(255) NOT NULL,
     "description" TEXT,
     "is_completed" BOOL NOT NULL DEFAULT False,
+    "due_date" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ

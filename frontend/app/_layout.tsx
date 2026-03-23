@@ -1,3 +1,4 @@
+import { usePushNotifications } from '../src/core/notifications/usePushNotifications';
 import '../global.css';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,6 +11,7 @@ export default function RootLayout() {
   const { isOnboardingComplete } = useAppStore();
   const segments = useSegments() as string[];
   const router = useRouter();
+  usePushNotifications();
 
   useEffect(() => {
     initialize();
