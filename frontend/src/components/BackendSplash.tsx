@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -80,31 +80,37 @@ export function BackendSplash() {
   }));
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-white items-center justify-center">
       <Animated.View
         entering={FadeIn.duration(500)}
         exiting={FadeOut.duration(300)}
-        style={styles.content}
+        className="items-center justify-center"
       >
-        <View style={styles.iconContainer}>
-          <Animated.View style={[styles.ring, ringStyle]} />
+        <View className="w-40 h-40 items-center justify-center mb-10">
+          <Animated.View
+            className="absolute w-30 h-30 rounded-full bg-blue-50 border-2 border-blue-600/30"
+            style={ringStyle}
+          />
           <Animated.View style={iconStyle}>
             <Ionicons name="sparkles" size={64} color="#2563EB" />
           </Animated.View>
         </View>
 
-        <View style={styles.textContainer}>
-          <AppText variant="h2" style={styles.title}>
+        <View className="items-center h-25">
+          <AppText
+            variant="h2"
+            className="text-3xl font-extrabold text-[#1E1E28] mb-4 tracking-tight"
+          >
             Miru
           </AppText>
-          <View style={styles.messageContainer}>
-            <ActivityIndicator size="small" color="#2563EB" style={styles.loader} />
+          <View className="flex-row items-center justify-center">
+            <ActivityIndicator size="small" color="#2563EB" className="mr-2" />
             <Animated.View
               key={messageIndex}
               entering={FadeIn.duration(400)}
               exiting={FadeOut.duration(400)}
             >
-              <AppText color="muted" style={styles.message}>
+              <AppText color="muted" className="text-base font-medium">
                 {MESSAGES[messageIndex]}
               </AppText>
             </Animated.View>
@@ -114,55 +120,3 @@ export function BackendSplash() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconContainer: {
-    width: 160,
-    height: 160,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-  },
-  ring: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 2,
-    borderColor: '#2563EB30',
-  },
-  textContainer: {
-    alignItems: 'center',
-    height: 100,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#1E1E28',
-    marginBottom: 16,
-    letterSpacing: -0.5,
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loader: {
-    marginRight: 8,
-  },
-  message: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-});
