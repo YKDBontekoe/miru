@@ -117,7 +117,7 @@ async def upload_document(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
+        raise HTTPException(status_code=500, detail="Failed to process document.") from e
 
 
 @router.delete("/{memory_id}")

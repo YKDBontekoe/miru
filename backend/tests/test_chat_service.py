@@ -365,12 +365,28 @@ async def test_stream_room_responses_multiple_agents(
 
 
 @pytest.mark.asyncio
+async def test_stream_room_responses_unauthorized(
+    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    responses = []
+    async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
+        responses.append(r)
+
+    assert responses == ["Room not found or unauthorized"]
+
+@pytest.mark.asyncio
 async def test_stream_room_responses_no_agents(
     chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     user_id = uuid4()
     room_id = uuid4()
 
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = True
     typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
 
     responses = []
@@ -785,10 +801,26 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
 
 
 @pytest.mark.asyncio
+async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        mock_hub.broadcast_to_room.assert_called_once()
+        assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "error"
+        assert mock_hub.broadcast_to_room.call_args[0][1]["data"]["message"] == "Room not found or unauthorized"
+
+
+@pytest.mark.asyncio
 async def test_run_room_chat_ws_no_agents(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
 
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = True
     typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
 
     with (
@@ -808,6 +840,7 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
 
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = True
     typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
         MagicMock(id=uuid4(), name="Agent1")
     ]

@@ -173,6 +173,17 @@ class TestChatRepository:
         # Should not raise even if the room doesn't exist
         await repo.touch_room(uuid4())
 
+    @pytest.mark.asyncio
+    async def test_room_belongs_to_user(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user = uuid4()
+        room = await repo.create_room("Test Room", user_id)
+
+        assert await repo.room_belongs_to_user(room.id, user_id) is True
+        assert await repo.room_belongs_to_user(room.id, other_user) is False
+        assert await repo.room_belongs_to_user(uuid4(), user_id) is False
+
 
 # ---------------------------------------------------------------------------
 # MemoryRepository

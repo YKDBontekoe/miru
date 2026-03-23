@@ -65,6 +65,62 @@ def test_run_crew_route(client: TestClient) -> None:
         app.dependency_overrides.clear()
 
 
+def test_chat_routes_error_handling(client: TestClient) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    mock_service = AsyncMock(spec=ChatService)
+
+    # Mock update_room returning None
+    mock_service.update_room.return_value = None
+    # Mock delete_room returning False
+    mock_service.delete_room.return_value = False
+    # Mock add_agent_to_room raising ValueError
+    mock_service.add_agent_to_room.side_effect = ValueError("Unauthorized")
+    # Mock list_room_agents raising ValueError
+    mock_service.list_room_agents.side_effect = ValueError("Unauthorized")
+    # Mock get_room_messages raising ValueError
+    mock_service.get_room_messages.side_effect = ValueError("Unauthorized")
+
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    room_id = str(uuid4())
+
+    try:
+        response = client.patch(
+            f"/api/v1/rooms/{room_id}",
+            json={"name": "New Name"},
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}",
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+
+        response = client.post(
+            f"/api/v1/rooms/{room_id}/agents",
+            json={"agent_id": str(uuid4())},
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+
+        response = client.get(
+            f"/api/v1/rooms/{room_id}/agents",
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+
+        response = client.get(
+            f"/api/v1/rooms/{room_id}/messages",
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+    finally:
+        app.dependency_overrides.clear()
+
+
 def test_chat_in_room_route(client: TestClient) -> None:
     user_id = uuid4()
     app.dependency_overrides[get_current_user] = lambda: user_id
