@@ -95,61 +95,64 @@ class ChatHubService {
     this.active = true;
 
     this.connectionPromise = new Promise((resolve, reject) => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        const token = session?.access_token;
+      supabase.auth
+        .getSession()
+        .then(({ data: { session } }) => {
+          const token = session?.access_token;
 
-        if (!token) {
-          if (this.active) {
-            this.reconnectTimer = setTimeout(() => {
-              this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
-              this.connect().catch(() => {});
-            }, this.reconnectDelay);
+          if (!token) {
+            if (this.active) {
+              this.reconnectTimer = setTimeout(() => {
+                this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
+                this.connect().catch(() => {});
+              }, this.reconnectDelay);
+            }
+            this.connectionPromise = null;
+            return reject(new Error('No auth session'));
           }
+
+          const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
+          const lang = i18next.language || 'en';
+          const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}&lang=${encodeURIComponent(lang)}`;
+
+          const ws = new WebSocket(url);
+          this.ws = ws;
+
+          ws.onopen = () => {
+            this.reconnectDelay = 2000;
+            this._startPing();
+            resolve();
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const frame: HubFrame = JSON.parse(event.data as string);
+              this.listeners.forEach((l) => l(frame));
+            } catch {
+              // ignore malformed frames
+            }
+          };
+
+          ws.onclose = () => {
+            this._stopPing();
+            this.connectionPromise = null;
+            if (this.active) {
+              this.reconnectTimer = setTimeout(() => {
+                this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
+                this.connect().catch(() => {});
+              }, this.reconnectDelay);
+            }
+            reject(new Error('WebSocket closed'));
+          };
+
+          ws.onerror = () => {
+            ws.close();
+          };
+        })
+        .catch((err) => {
           this.connectionPromise = null;
-          return reject(new Error('No auth session'));
-        }
-
-        const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-        const lang = i18next.language || 'en';
-        const url = `${toWsUrl(baseUrl)}?token=${encodeURIComponent(token)}&lang=${encodeURIComponent(lang)}`;
-
-        const ws = new WebSocket(url);
-        this.ws = ws;
-
-        ws.onopen = () => {
-          this.reconnectDelay = 2000;
-          this._startPing();
-          resolve();
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const frame: HubFrame = JSON.parse(event.data as string);
-            this.listeners.forEach((l) => l(frame));
-          } catch {
-            // ignore malformed frames
-          }
-        };
-
-        ws.onclose = () => {
-          this._stopPing();
-          this.connectionPromise = null;
-          if (this.active) {
-            this.reconnectTimer = setTimeout(() => {
-              this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 15000);
-              this.connect().catch(() => {});
-            }, this.reconnectDelay);
-          }
-          reject(new Error('WebSocket closed'));
-        };
-
-        ws.onerror = () => {
-          ws.close();
-        };
-      }).catch((err) => {
-        this.connectionPromise = null;
-        reject(err);
-      });
+          reject(err);
+        });
     });
 
     return this.connectionPromise;
