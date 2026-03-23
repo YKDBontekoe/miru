@@ -14,6 +14,13 @@ interface AuthState {
   initialize: () => void;
 }
 
+/**
+ * Zustand store for managing user authentication state.
+ *
+ * Handles integrating with Supabase Auth for session tracking, magic link logins,
+ * password authentication, and WebAuthn (Passkeys) logic. Also tracks the loading state
+ * during app startup and auth changes.
+ */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,

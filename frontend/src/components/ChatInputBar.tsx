@@ -16,6 +16,16 @@ const C = {
   stopIcon: '#DC2626',
 };
 
+/**
+ * Props for the ChatInputBar component.
+ *
+ * @property {string} value - The current value of the text input.
+ * @property {(text: string) => void} onChangeText - Callback invoked when the text input changes.
+ * @property {() => void} onSend - Callback invoked when the send button is pressed.
+ * @property {boolean} isStreaming - True if a message is currently streaming, changing the send button to a stop button.
+ * @property {() => void} [onStop] - Callback invoked when the stop button is pressed.
+ * @property {string} [placeholder='Message...'] - Placeholder text for the input.
+ */
 interface ChatInputBarProps {
   value: string;
   onChangeText: (text: string) => void;
@@ -25,6 +35,11 @@ interface ChatInputBarProps {
   placeholder?: string;
 }
 
+/**
+ * A persistent input bar for chat interfaces.
+ * Features auto-expanding multiline input, send/stop button toggle based on streaming state,
+ * and handles keyboard interactions.
+ */
 export function ChatInputBar({
   value,
   onChangeText,

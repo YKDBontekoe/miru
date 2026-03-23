@@ -12,6 +12,12 @@ interface AppState {
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
 const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_URL;
 
+/**
+ * Zustand store for persisting application-wide settings.
+ *
+ * Manages onboarding status and the backend API base URL. Uses SecureLocalStorage
+ * to securely persist these settings across app restarts.
+ */
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({

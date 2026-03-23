@@ -15,6 +15,12 @@ interface ProductivityState {
   deleteTask: (id: string) => Promise<void>;
 }
 
+/**
+ * Zustand store for managing productivity tools: tasks and notes.
+ *
+ * Provides state and actions for fetching, creating, updating (toggling tasks),
+ * and deleting notes and tasks across the app.
+ */
 export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
   tasks: [],

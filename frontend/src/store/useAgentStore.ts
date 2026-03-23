@@ -10,6 +10,12 @@ interface AgentState {
   generateAgent: (keywords: string) => Promise<{ name: string; personality: string }>;
 }
 
+/**
+ * Zustand store for managing agents.
+ *
+ * Manages the state of available agents, loading status, and provides actions
+ * to fetch, create, and generate new agents.
+ */
 export const useAgentStore = create<AgentState>((set) => ({
   agents: [],
   isLoading: false,

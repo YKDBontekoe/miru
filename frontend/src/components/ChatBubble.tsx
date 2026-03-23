@@ -20,6 +20,16 @@ const C = {
   faint: '#B0B0C0',
 };
 
+/**
+ * Props for the ChatBubble component.
+ *
+ * @property {string} text - The message content. Markdown is supported for agent messages.
+ * @property {boolean} isUser - True if the message was sent by the user, false if sent by an agent.
+ * @property {MessageStatus} [status=MessageStatus.sent] - The delivery status of the message.
+ * @property {string} [agentName] - The name of the agent (if isUser is false).
+ * @property {string} [timestamp] - ISO 8601 timestamp of when the message was sent.
+ * @property {() => void} [onRetry] - Callback invoked when the user presses retry on a failed message.
+ */
 interface ChatBubbleProps {
   text: string;
   isUser: boolean;
@@ -42,6 +52,11 @@ function formatTime(iso?: string, language: string = 'en') {
   return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
+/**
+ * Renders a single chat message bubble.
+ * Differentiates visually between user and agent messages, supports markdown for agents,
+ * and handles streaming, error, and retry states.
+ */
 export function ChatBubble({
   text,
   isUser,
