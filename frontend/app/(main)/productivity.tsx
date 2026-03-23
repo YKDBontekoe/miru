@@ -106,7 +106,7 @@ function CreateNoteModal({
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Note title"
+            placeholder={t('productivity.note_title_placeholder')}
             placeholderTextColor={C.faint}
             style={{
               backgroundColor: C.surfaceHigh,
@@ -134,7 +134,7 @@ function CreateNoteModal({
           <TextInput
             value={content}
             onChangeText={setContent}
-            placeholder="Write your note here..."
+            placeholder={t('productivity.note_content_placeholder')}
             placeholderTextColor={C.faint}
             multiline
             numberOfLines={4}
@@ -250,7 +250,7 @@ function CreateTaskModal({
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="What needs to be done?"
+            placeholder={t('productivity.task_content_placeholder')}
             placeholderTextColor={C.faint}
             style={{
               backgroundColor: C.surfaceHigh,
@@ -344,7 +344,7 @@ function TaskCard({
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <View
       style={{
@@ -382,7 +382,9 @@ function TaskCard({
         </AppText>
         {task.due_date && (
           <AppText variant="caption" style={{ color: C.muted, marginTop: 3, fontSize: 11 }}>
-            Due {new Intl.DateTimeFormat(i18n.language).format(new Date(task.due_date))}
+            {t('productivity.due_date', {
+              date: new Intl.DateTimeFormat(i18n.language).format(new Date(task.due_date)),
+            })}
           </AppText>
         )}
       </View>
@@ -414,8 +416,8 @@ export default function ProductivityScreen() {
   };
   const confirmDelete = (action: () => Promise<void>) =>
     Alert.alert(t('productivity.delete'), t('productivity.are_you_sure'), [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => action() },
+      { text: t('settings.actions.cancel'), style: 'cancel' },
+      { text: t('settings.actions.delete'), style: 'destructive', onPress: () => action() },
     ]);
 
   return (

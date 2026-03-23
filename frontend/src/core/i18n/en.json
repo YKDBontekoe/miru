@@ -63,7 +63,8 @@
       "agents": "Agents",
       "done": "Done",
       "create": "Create",
-      "start_chat": "Start a Chat"
+      "start_chat": "Start a Chat",
+      "tap_to_continue": "Tap to continue"
     },
     "chat_modal": {
       "title": "New Chat",
@@ -81,6 +82,14 @@
     "empty": {
       "title": "Welcome to Miru",
       "desc": "Create an agent and start a chat to get going."
+    },
+    "time": {
+      "minutes_ago_one": "{{count}}m ago",
+      "minutes_ago_other": "{{count}}m ago",
+      "hours_ago_one": "{{count}}h ago",
+      "hours_ago_other": "{{count}}h ago",
+      "days_ago_one": "{{count}}d ago",
+      "days_ago_other": "{{count}}d ago"
     }
   },
   "chat": {
@@ -167,6 +176,10 @@
     "no_notes": "No notes yet",
     "no_notes_desc": "Write something down to remember it later.",
     "no_tasks": "No tasks yet",
-    "no_tasks_desc": "Add a task to keep track of what needs to be done."
+    "no_tasks_desc": "Add a task to keep track of what needs to be done.",
+    "due_date": "Due {{date}}",
+    "note_title_placeholder": "Note title",
+    "note_content_placeholder": "Write your note here...",
+    "task_content_placeholder": "What needs to be done?"
   }
 }

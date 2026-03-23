@@ -543,21 +543,21 @@ export default function HomeScreen() {
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
           <StatCard
             value={rooms.length}
-            label="Chats"
+            label={t('home.actions.chats')}
             icon="chatbubbles"
             color={C.primary}
             bg={C.primarySurface}
           />
           <StatCard
             value={agents.length}
-            label="Agents"
+            label={t('home.actions.agents')}
             icon="people"
             color={C.purple}
             bg={C.purpleSurface}
           />
           <StatCard
             value={completedCount}
-            label="Done"
+            label={t('home.actions.done')}
             icon="checkmark-circle"
             color={C.success}
             bg={C.successSurface}
@@ -575,32 +575,32 @@ export default function HomeScreen() {
             marginBottom: 20,
           }}
         >
-          <SectionHeader title="Quick Actions" />
+          <SectionHeader title={t('home.sections.quick_actions')} />
           <View style={{ flexDirection: 'row' }}>
             <QuickAction
               icon="chatbubble-ellipses"
-              label="New Chat"
+              label={t('home.actions.new_chat')}
               color={C.primary}
               bg={C.primarySurface}
               onPress={() => setShowNewChat(true)}
             />
             <QuickAction
               icon="person-add"
-              label="New Agent"
+              label={t('home.actions.new_agent')}
               color={C.purple}
               bg={C.purpleSurface}
               onPress={() => router.push('/(main)/agents')}
             />
             <QuickAction
               icon="document-text"
-              label="New Note"
+              label={t('home.actions.new_note')}
               color={C.teal}
               bg={C.tealSurface}
               onPress={() => router.push('/(main)/productivity')}
             />
             <QuickAction
               icon="checkbox"
-              label="New Task"
+              label={t('home.actions.new_task')}
               color={C.warning}
               bg={C.warningSurface}
               onPress={() => router.push('/(main)/productivity')}
