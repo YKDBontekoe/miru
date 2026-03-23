@@ -257,32 +257,43 @@ jobs:
       - name: Upgrade containerapp CLI extension
         run: az extension add --name containerapp --upgrade --yes
 
+      - name: Install uv for migrations
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
       - name: Setup Staging Database Schema
         env:
           DATABASE_STAGING_URL: ${{ secrets.DATABASE_STAGING_URL }}
           PR_NUM: ${{ github.event.pull_request.number }}
         run: |
+          cd backend
+          uv python install 3.13
+          uv sync --all-extras
+
           # 1. Create the PR-specific schema on Staging
           psql "$DATABASE_STAGING_URL" -c "CREATE SCHEMA IF NOT EXISTS pr_${PR_NUM};"
 
           # 2. Append the search_path to the connection string
           PR_DB_URL="${DATABASE_STAGING_URL}?options=-c%20search_path=pr_${PR_NUM},public"
 
-          # 3. Export for subsequent steps
+          # 3. Mask the derived URL so GitHub Actions redacts it on failure logs
+          echo "::add-mask::$PR_DB_URL"
           echo "PR_DATABASE_URL=$PR_DB_URL" >> "$GITHUB_ENV"
 
           # 4. Run migrations strictly against this new schema
-          DATABASE_URL="$PR_DB_URL" python backend/manage.py migrate
+          DATABASE_URL="$PR_DB_URL" uv run python manage.py migrate
 
       - name: Deploy image to PR container app
         run: |
           IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
           [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
 
-          # For the ephemeral staging container, override the pre-configured
-          # production secrets with the Staging credentials and isolated schema DB.
+          # For the ephemeral staging container, we pass the fully constructed PR schema URL,
+          # ensuring backend ORM connects directly to the PR-specific schema.
           ENV_VARS=(
-            "DATABASE_URL=$PR_DATABASE_URL"
+            "DATABASE_URL=${{ env.PR_DATABASE_URL }}"
+            "DB_SCHEMA=pr_${{ github.event.pull_request.number }}"
             "SUPABASE_URL=${{ secrets.SUPABASE_STAGING_URL }}"
             "SUPABASE_KEY=${{ secrets.SUPABASE_STAGING_KEY }}"
             "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_STAGING_KEY }}"
