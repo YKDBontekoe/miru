@@ -15,7 +15,7 @@ from app.domain.chat.models import (
     RoomResponse,
 )
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
-from app.infrastructure.external.openrouter import get_openrouter_client
+from app.infrastructure.external.openrouter import stream_chat
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -94,23 +94,22 @@ class ChatService:
             yield "No agents available. Please create one first."
             return
 
-        llm = get_openrouter_client().openai_client
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
-        system_message = agent.personality
+        messages: list[dict[str, str]] = [{"role": "system", "content": agent.personality}]
         if accept_language:
-            system_message += (
-                f"\n\nIMPORTANT: Please respond in the following language locale: {accept_language}"
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
+                }
             )
+        messages.append({"role": "user", "content": user_message})
 
-        response = await llm.chat.completions.create(
+        response = await stream_chat(
             model=model_name,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message},
-            ],
-            stream=True,
+            messages=messages,  # type: ignore[arg-type]
         )
 
         async for chunk in response:

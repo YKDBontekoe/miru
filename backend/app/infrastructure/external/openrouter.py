@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import typing
 from typing import TYPE_CHECKING, TypeVar
 
 import openai
@@ -18,6 +19,12 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
 T = TypeVar("T", bound=BaseModel)
+
+
+class ChatResponse(BaseModel):
+    """Fallback generic Pydantic schema for non-structured chat outputs."""
+
+    message: str
 
 
 class OpenRouterClient:
@@ -38,6 +45,11 @@ class OpenRouterClient:
             self.openai_client,
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
+
+    async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
+        # Internally enforce strict JSON structured output even for generic strings
+        structured_resp = await self.structured_completion(messages, model, ChatResponse)
+        return structured_resp.message
 
     @retry(
         stop=stop_after_attempt(3),
@@ -73,16 +85,14 @@ class OpenRouterClient:
         ),
         reraise=True,
     )
-    async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
-        response = await self.openai_client.chat.completions.create(
+    async def stream_chat(
+        self, messages: list[ChatCompletionMessageParam], model: str
+    ) -> typing.AsyncIterator[typing.Any]:
+        return await self.openai_client.chat.completions.create(
             model=model,
             messages=messages,
-            stream=False,
+            stream=True,
         )
-        if not hasattr(response, "choices"):
-            return ""
-        content = response.choices[0].message.content
-        return str(content) if content else ""
 
     @retry(
         stop=stop_after_attempt(3),
@@ -141,6 +151,14 @@ async def chat_completion(
             except Exception as fallback_e:
                 raise fallback_e from e
         raise
+
+
+async def stream_chat(
+    messages: list[ChatCompletionMessageParam], model: str | None = None
+) -> typing.AsyncIterator[typing.Any]:
+    client = get_openrouter_client()
+    chosen_model = model or get_settings().default_chat_model
+    return await client.stream_chat(messages, chosen_model)
 
 
 async def structured_completion(

@@ -46,7 +46,9 @@ async def chat(
     request: ChatRequest,
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
-    accept_language: Annotated[str | None, Header()] = None,
+    accept_language: Annotated[
+        str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
+    ] = None,
 ) -> StreamingResponse:
     """General chat stream without a specified room."""
     message = request.message or request.content
@@ -63,7 +65,9 @@ async def run_crew(
     request: ChatRequest,
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
-    accept_language: Annotated[str | None, Header()] = None,
+    accept_language: Annotated[
+        str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
+    ] = None,
 ) -> dict[str, Any]:
     """Run a full CrewAI orchestration for a single task and return structured output."""
     message = request.message or request.content
@@ -133,7 +137,9 @@ async def chat_in_room(
     request: ChatRequest,
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
-    accept_language: Annotated[str | None, Header()] = None,
+    accept_language: Annotated[
+        str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
+    ] = None,
 ) -> StreamingResponse:
     """Stream responses from agents in the room."""
     message = request.message or request.content
