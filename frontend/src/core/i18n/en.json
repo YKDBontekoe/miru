@@ -63,23 +63,33 @@
       "agents": "Agents",
       "done": "Done",
       "create": "Create",
-      "start_chat": "Start a Chat"
+      "start_chat": "Start a Chat",
+      "tap_to_continue": "Tap to continue"
     },
     "chat_modal": {
       "title": "New Chat",
-      "placeholder": "Chat name…",
+      "placeholder": "Chat name\u2026",
       "name_required": "Name required",
       "please_enter_name": "Please enter a name for this chat.",
       "error": "Error",
       "failed_to_create": "Failed to create chat. Please try again."
     },
     "tasks": {
-      "all_done": "Tasks · All done!",
-      "caught_up": "You're all caught up!"
+      "all_done": "Tasks \u00b7 All done!",
+      "caught_up": "You're all caught up!",
+      "open_count": "Tasks \u00b7 {{count}} open"
     },
     "empty": {
       "title": "Welcome to Miru",
       "desc": "Create an agent and start a chat to get going."
+    },
+    "time": {
+      "minutes_ago_one": "{{count}}m ago",
+      "minutes_ago_other": "{{count}}m ago",
+      "hours_ago_one": "{{count}}h ago",
+      "hours_ago_other": "{{count}}h ago",
+      "days_ago_one": "{{count}}d ago",
+      "days_ago_other": "{{count}}d ago"
     }
   },
   "chat": {
@@ -97,7 +107,15 @@
     "error": "Error",
     "failed_to_create": "Failed to create chat. Please try again.",
     "name_required": "Name required",
-    "please_enter_name": "Please enter a name for this chat."
+    "please_enter_name": "Please enter a name for this chat.",
+    "retry": "Retry",
+    "start_conversation": "Start a conversation",
+    "add_agent_to_start": "Add an agent to get started.",
+    "add_an_agent": "Add an Agent",
+    "no_agents_create": "No agents yet. Create one in the Agents tab.",
+    "message_placeholder": "Message {{name}}...",
+    "room_agents_status_one": "{{names}} is in this room.",
+    "room_agents_status_other": "{{names}} are in this room."
   },
   "agents": {
     "title": "Agents",
@@ -136,5 +154,32 @@
       "create_failed": "Failed to create agent. Please try again.",
       "name_required": "Name and personality are required."
     }
+  },
+  "productivity": {
+    "title_required": "Title required",
+    "enter_title": "Please enter a title for your note.",
+    "error": "Error",
+    "failed_create_note": "Failed to create note. Please try again.",
+    "enter_task_title": "Please enter a task title.",
+    "failed_create_task": "Failed to create task. Please try again.",
+    "delete": "Delete",
+    "are_you_sure": "Are you sure?",
+    "save_note": "Save Note",
+    "add_task": "Add Task",
+    "title": "Title",
+    "content": "Content",
+    "note_placeholder": "e.g. Discussed AI agents...",
+    "task_placeholder": "e.g. Review PR...",
+    "task": "Task",
+    "notes": "Notes",
+    "tasks": "Tasks",
+    "no_notes": "No notes yet",
+    "no_notes_desc": "Write something down to remember it later.",
+    "no_tasks": "No tasks yet",
+    "no_tasks_desc": "Add a task to keep track of what needs to be done.",
+    "due_date": "Due {{date}}",
+    "note_title_placeholder": "Note title",
+    "note_content_placeholder": "Write your note here...",
+    "task_content_placeholder": "What needs to be done?"
   }
 }

@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,7 @@ function getAgentColor(name: string) {
 }
 
 export default function ChatRoomScreen() {
+  const { t } = useTranslation();
   const { id: roomId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const {
@@ -278,7 +280,7 @@ export default function ChatRoomScreen() {
                 <AppText
                   style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}
                 >
-                  Start a conversation
+                  {t('chat.start_conversation')}
                 </AppText>
                 <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
                   {roomAgents.length > 0
@@ -408,7 +410,9 @@ export default function ChatRoomScreen() {
                     {alreadyAdded ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                         <Ionicons name="checkmark-circle" size={16} color={C.primary} />
-                        <AppText style={{ fontSize: 12, color: C.muted }}>Added</AppText>
+                        <AppText style={{ fontSize: 12, color: C.muted }}>
+                          {t('chat.added')}
+                        </AppText>
                       </View>
                     ) : (
                       <Ionicons name="add-circle-outline" size={20} color={C.primary} />
@@ -425,7 +429,7 @@ export default function ChatRoomScreen() {
                     style={{ marginBottom: 12 }}
                   />
                   <AppText style={{ textAlign: 'center', color: C.muted }}>
-                    No agents yet. Create one in the Agents tab.
+                    {t('chat.no_agents_create')}
                   </AppText>
                 </View>
               )}

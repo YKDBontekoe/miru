@@ -41,6 +41,7 @@ function CreateNoteModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation();
   const { createNote } = useProductivityStore();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -48,7 +49,7 @@ function CreateNoteModal({
 
   const handleSave = async () => {
     if (!title.trim()) {
-      Alert.alert('Title required', 'Please enter a title for your note.');
+      Alert.alert(t('productivity.title_required'), t('productivity.enter_title'));
       return;
     }
     setIsSaving(true);
@@ -59,7 +60,7 @@ function CreateNoteModal({
       onCreated();
       onClose();
     } catch {
-      Alert.alert('Error', 'Failed to create note. Please try again.');
+      Alert.alert(t('productivity.error'), t('productivity.failed_create_note'));
     } finally {
       setIsSaving(false);
     }
@@ -105,7 +106,7 @@ function CreateNoteModal({
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Note title"
+            placeholder={t('productivity.note_title_placeholder')}
             placeholderTextColor={C.faint}
             style={{
               backgroundColor: C.surfaceHigh,
@@ -133,7 +134,7 @@ function CreateNoteModal({
           <TextInput
             value={content}
             onChangeText={setContent}
-            placeholder="Write your note here..."
+            placeholder={t('productivity.note_content_placeholder')}
             placeholderTextColor={C.faint}
             multiline
             numberOfLines={4}
@@ -186,13 +187,14 @@ function CreateTaskModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation();
   const { createTask } = useProductivityStore();
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!title.trim()) {
-      Alert.alert('Title required', 'Please enter a task title.');
+      Alert.alert(t('productivity.title_required'), t('productivity.enter_task_title'));
       return;
     }
     setIsSaving(true);
@@ -202,7 +204,7 @@ function CreateTaskModal({
       onCreated();
       onClose();
     } catch {
-      Alert.alert('Error', 'Failed to create task. Please try again.');
+      Alert.alert(t('productivity.error'), t('productivity.failed_create_task'));
     } finally {
       setIsSaving(false);
     }
@@ -248,7 +250,7 @@ function CreateTaskModal({
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="What needs to be done?"
+            placeholder={t('productivity.task_content_placeholder')}
             placeholderTextColor={C.faint}
             style={{
               backgroundColor: C.surfaceHigh,
@@ -342,7 +344,7 @@ function TaskCard({
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <View
       style={{
@@ -380,7 +382,9 @@ function TaskCard({
         </AppText>
         {task.due_date && (
           <AppText variant="caption" style={{ color: C.muted, marginTop: 3, fontSize: 11 }}>
-            Due {new Intl.DateTimeFormat(i18n.language).format(new Date(task.due_date))}
+            {t('productivity.due_date', {
+              date: new Intl.DateTimeFormat(i18n.language).format(new Date(task.due_date)),
+            })}
           </AppText>
         )}
       </View>
@@ -394,6 +398,7 @@ function TaskCard({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function ProductivityScreen() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'notes' | 'tasks'>('notes');
   const { notes, tasks, fetchNotes, fetchTasks, isLoading, deleteNote, deleteTask, toggleTask } =
     useProductivityStore();
@@ -410,9 +415,9 @@ export default function ProductivityScreen() {
     else fetchTasks();
   };
   const confirmDelete = (action: () => Promise<void>) =>
-    Alert.alert('Delete', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => action() },
+    Alert.alert(t('productivity.delete'), t('productivity.are_you_sure'), [
+      { text: t('settings.actions.cancel'), style: 'cancel' },
+      { text: t('settings.actions.delete'), style: 'destructive', onPress: () => action() },
     ]);
 
   return (
@@ -480,7 +485,7 @@ export default function ProductivityScreen() {
                 color: activeTab === tab ? C.text : C.muted,
               }}
             >
-              {tab === 'notes' ? 'Notes' : 'Tasks'}
+              {tab === 'notes' ? t('productivity.notes') : t('productivity.tasks')}
             </AppText>
           </TouchableOpacity>
         ))}
@@ -510,7 +515,7 @@ export default function ProductivityScreen() {
                 style={{ marginBottom: 16 }}
               />
               <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-                No notes yet
+                {t('productivity.no_notes')}
               </AppText>
               <AppText style={{ textAlign: 'center', marginBottom: 24, color: C.muted }}>
                 Capture your thoughts and ideas.
@@ -527,7 +532,9 @@ export default function ProductivityScreen() {
                 }}
               >
                 <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>New Note</AppText>
+                <AppText style={{ color: 'white', fontWeight: '700' }}>
+                  {t('productivity.new_note')}
+                </AppText>
               </TouchableOpacity>
             </View>
           }
@@ -560,7 +567,7 @@ export default function ProductivityScreen() {
                 style={{ marginBottom: 16 }}
               />
               <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-                No tasks yet
+                {t('productivity.no_tasks')}
               </AppText>
               <AppText style={{ textAlign: 'center', marginBottom: 24, color: C.muted }}>
                 Track what needs to get done.
@@ -577,7 +584,9 @@ export default function ProductivityScreen() {
                 }}
               >
                 <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-                <AppText style={{ color: 'white', fontWeight: '700' }}>New Task</AppText>
+                <AppText style={{ color: 'white', fontWeight: '700' }}>
+                  {t('productivity.new_task')}
+                </AppText>
               </TouchableOpacity>
             </View>
           }

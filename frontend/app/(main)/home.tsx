@@ -50,10 +50,10 @@ function getAgentColor(name: string) {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function getGreeting(hour: number): string {
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+function getGreeting(hour: number, t: any): string {
+  if (hour < 12) return t('greeting.morning');
+  if (hour < 17) return t('greeting.afternoon');
+  return t('greeting.evening');
 }
 
 function getFirstName(email?: string): string {
@@ -155,6 +155,7 @@ function StatCard({
 
 // ─── Recent chat row ─────────────────────────────────────────────────────────
 function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void }) {
+  const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const relativeTime = () => {
     const diff = Date.now() - new Date(room.updated_at).getTime();
@@ -192,7 +193,9 @@ function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void 
       </View>
       <View style={{ flex: 1 }}>
         <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>{room.name}</AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>Tap to continue</AppText>
+        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>
+          {t('home.actions.tap_to_continue')}
+        </AppText>
       </View>
       <AppText style={{ fontSize: 11, color: C.faint }}>{relativeTime()}</AppText>
       <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginStart: 6 }} />
@@ -466,7 +469,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const hour = new Date().getHours();
-  const greeting = getGreeting(hour);
+  const greeting = getGreeting(hour, t);
   const firstName = getFirstName(user?.email);
 
   const recentRooms = [...rooms]
@@ -540,21 +543,21 @@ export default function HomeScreen() {
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
           <StatCard
             value={rooms.length}
-            label="Chats"
+            label={t('home.actions.chats')}
             icon="chatbubbles"
             color={C.primary}
             bg={C.primarySurface}
           />
           <StatCard
             value={agents.length}
-            label="Agents"
+            label={t('home.actions.agents')}
             icon="people"
             color={C.purple}
             bg={C.purpleSurface}
           />
           <StatCard
             value={completedCount}
-            label="Done"
+            label={t('home.actions.done')}
             icon="checkmark-circle"
             color={C.success}
             bg={C.successSurface}
@@ -572,32 +575,32 @@ export default function HomeScreen() {
             marginBottom: 20,
           }}
         >
-          <SectionHeader title="Quick Actions" />
+          <SectionHeader title={t('home.sections.quick_actions')} />
           <View style={{ flexDirection: 'row' }}>
             <QuickAction
               icon="chatbubble-ellipses"
-              label="New Chat"
+              label={t('home.actions.new_chat')}
               color={C.primary}
               bg={C.primarySurface}
               onPress={() => setShowNewChat(true)}
             />
             <QuickAction
               icon="person-add"
-              label="New Agent"
+              label={t('home.actions.new_agent')}
               color={C.purple}
               bg={C.purpleSurface}
               onPress={() => router.push('/(main)/agents')}
             />
             <QuickAction
               icon="document-text"
-              label="New Note"
+              label={t('home.actions.new_note')}
               color={C.teal}
               bg={C.tealSurface}
               onPress={() => router.push('/(main)/productivity')}
             />
             <QuickAction
               icon="checkbox"
-              label="New Task"
+              label={t('home.actions.new_task')}
               color={C.warning}
               bg={C.warningSurface}
               onPress={() => router.push('/(main)/productivity')}

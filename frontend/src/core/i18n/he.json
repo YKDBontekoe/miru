@@ -1,24 +1,73 @@
 {
   "navigation": {
-    "home": "בית",
-    "chat": "צ'אט",
-    "agents": "סוכנים",
-    "productivity": "פרודוקטיביות",
-    "settings": "הגדרות"
+    "home": "\u05d1\u05d9\u05ea",
+    "chat": "\u05e6'\u05d0\u05d8",
+    "agents": "\u05e1\u05d5\u05db\u05e0\u05d9\u05dd",
+    "productivity": "\u05e4\u05e8\u05d5\u05d3\u05d5\u05e7\u05d8\u05d9\u05d1\u05d9\u05d5\u05ea",
+    "settings": "\u05d4\u05d2\u05d3\u05e8\u05d5\u05ea"
   },
   "settings": {
-    "title": "הגדרות",
+    "title": "\u05d4\u05d2\u05d3\u05e8\u05d5\u05ea",
     "sections": {
-      "account": "חשבון",
-      "preferences": "העדפות",
-      "about": "אודות"
+      "account": "\u05d7\u05e9\u05d1\u05d5\u05df",
+      "preferences": "\u05d4\u05e2\u05d3\u05e4\u05d5\u05ea",
+      "about": "\u05d0\u05d5\u05d3\u05d5\u05ea"
     }
   },
   "home": {
     "greeting": {
-      "morning": "בוקר טוב",
-      "afternoon": "צהריים טובים",
-      "evening": "ערב טוב"
+      "morning": "\u05d1\u05d5\u05e7\u05e8 \u05d8\u05d5\u05d1",
+      "afternoon": "\u05e6\u05d4\u05e8\u05d9\u05d9\u05dd \u05d8\u05d5\u05d1\u05d9\u05dd",
+      "evening": "\u05e2\u05e8\u05d1 \u05d8\u05d5\u05d1"
+    },
+    "tasks": {
+      "open_count": "\u05de\u05e9\u05d9\u05de\u05d5\u05ea \u00b7 {{count}} \u05e4\u05ea\u05d5\u05d7\u05d5\u05ea",
+      "all_done": "\u05de\u05e9\u05d9\u05de\u05d5\u05ea \u00b7 \u05d4\u05d5\u05e9\u05dc\u05dd!",
+      "caught_up": "\u05d4\u05db\u05dc \u05de\u05e2\u05d5\u05d3\u05db\u05df!"
+    },
+    "sections": {
+      "quick_actions": "\u05e4\u05e2\u05d5\u05dc\u05d5\u05ea \u05de\u05d4\u05d9\u05e8\u05d5\u05ea",
+      "your_agents": "\u05d4\u05e1\u05d5\u05db\u05e0\u05d9\u05dd \u05e9\u05dc\u05da",
+      "recent_chats": "\u05e6'\u05d0\u05d8\u05d9\u05dd \u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd"
+    },
+    "actions": {
+      "chats": "\u05e6'\u05d0\u05d8\u05d9\u05dd",
+      "agents": "\u05e1\u05d5\u05db\u05e0\u05d9\u05dd",
+      "done": "\u05d4\u05d5\u05e9\u05dc\u05dd",
+      "new_chat": "\u05e6'\u05d0\u05d8 \u05d7\u05d3\u05e9",
+      "new_agent": "\u05e1\u05d5\u05db\u05df \u05d7\u05d3\u05e9",
+      "new_note": "\u05e4\u05ea\u05e7 \u05d7\u05d3\u05e9",
+      "new_task": "\u05de\u05e9\u05d9\u05de\u05d4 \u05d7\u05d3\u05e9\u05d4",
+      "tap_to_continue": "\u05d4\u05e7\u05e9 \u05dc\u05d4\u05de\u05e9\u05da"
+    },
+    "time": {
+      "minutes_ago_one": "\u05dc\u05e4\u05e0\u05d9 \u05d3\u05e7\u05d4",
+      "minutes_ago_other": "\u05dc\u05e4\u05e0\u05d9 {{count}} \u05d3\u05e7\u05d5\u05ea",
+      "hours_ago_one": "\u05dc\u05e4\u05e0\u05d9 \u05e9\u05e2\u05d4",
+      "hours_ago_other": "\u05dc\u05e4\u05e0\u05d9 {{count}} \u05e9\u05e2\u05d5\u05ea",
+      "days_ago_one": "\u05d0\u05ea\u05de\u05d5\u05dc",
+      "days_ago_other": "\u05dc\u05e4\u05e0\u05d9 {{count}} \u05d9\u05de\u05d9\u05dd"
     }
+  },
+  "chat": {
+    "retry": "\u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1",
+    "start_conversation": "\u05d4\u05ea\u05d7\u05dc \u05e9\u05d9\u05d7\u05d4",
+    "add_agent_to_start": "\u05d4\u05d5\u05e1\u05e3 \u05e1\u05d5\u05db\u05df \u05db\u05d3\u05d9 \u05dc\u05d4\u05ea\u05d7\u05d9\u05dc.",
+    "add_an_agent": "\u05d4\u05d5\u05e1\u05e3 \u05e1\u05d5\u05db\u05df",
+    "no_agents_create": "\u05d0\u05d9\u05df \u05e1\u05d5\u05db\u05e0\u05d9\u05dd \u05e2\u05d3\u05d9\u05d9\u05df. \u05e6\u05d5\u05e8 \u05d0\u05d7\u05d3 \u05d1\u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05d9\u05ea \u05d4\u05e1\u05d5\u05db\u05e0\u05d9\u05dd.",
+    "message_placeholder": "\u05d4\u05d5\u05d3\u05e2\u05d4 \u05dc-{{name}}...",
+    "room_agents_status_one": "{{names}} \u05e0\u05de\u05e6\u05d0 \u05d1\u05d7\u05d3\u05e8 \u05d6\u05d4.",
+    "room_agents_status_other": "{{names}} \u05e0\u05de\u05e6\u05d0\u05d9\u05dd \u05d1\u05d7\u05d3\u05e8 \u05d6\u05d4."
+  },
+  "productivity": {
+    "title_required": "\u05e0\u05d3\u05e8\u05e9\u05ea \u05db\u05d5\u05ea\u05e8\u05ea",
+    "enter_title": "\u05d0\u05e0\u05d0 \u05d4\u05d6\u05df \u05db\u05d5\u05ea\u05e8\u05ea \u05dc\u05e4\u05ea\u05e7.",
+    "enter_task_title": "\u05d0\u05e0\u05d0 \u05d4\u05d6\u05df \u05db\u05d5\u05ea\u05e8\u05ea \u05dc\u05de\u05e9\u05d9\u05de\u05d4.",
+    "failed_create_note": "\u05e0\u05db\u05e9\u05dc \u05d1\u05d9\u05e6\u05d9\u05e8\u05ea \u05e4\u05ea\u05e7. \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1.",
+    "failed_create_task": "\u05e0\u05db\u05e9\u05dc \u05d1\u05d9\u05e6\u05d9\u05e8\u05ea \u05de\u05e9\u05d9\u05de\u05d4. \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1.",
+    "due_date": "\u05ea\u05d0\u05e8\u05d9\u05da \u05d9\u05e2\u05d3 {{date}}",
+    "note_title_placeholder": "\u05db\u05d5\u05ea\u05e8\u05ea \u05d4\u05e4\u05ea\u05e7",
+    "note_content_placeholder": "\u05db\u05ea\u05d5\u05d1 \u05d0\u05ea \u05d4\u05e4\u05ea\u05e7 \u05e9\u05dc\u05da \u05db\u05d0\u05df...",
+    "task_content_placeholder": "\u05de\u05d4 \u05e6\u05e8\u05d9\u05da \u05dc\u05e2\u05e9\u05d5\u05ea?"
   }
 }

@@ -50,7 +50,7 @@ export function ChatBubble({
   timestamp,
   onRetry,
 }: ChatBubbleProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isFailed = status === MessageStatus.error;
   const isStreaming = status === MessageStatus.streaming;
   const accentColor = agentName ? getAgentColor(agentName) : '#2563EB';
@@ -165,7 +165,9 @@ export function ChatBubble({
           {isFailed && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
               <Ionicons name="alert-circle-outline" size={13} color={C.errorText} />
-              <AppText style={{ color: C.errorText, fontSize: 12 }}>Failed to send</AppText>
+              <AppText style={{ color: C.errorText, fontSize: 12 }}>
+                {t('chat.failed_to_send')}
+              </AppText>
               {onRetry && (
                 <TouchableOpacity
                   onPress={onRetry}
@@ -173,7 +175,7 @@ export function ChatBubble({
                 >
                   <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
                   <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
-                    Retry
+                    {t('chat.retry')}
                   </AppText>
                 </TouchableOpacity>
               )}
