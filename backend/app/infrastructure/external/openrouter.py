@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import typing
 from typing import TYPE_CHECKING, TypeVar
 
 import openai
@@ -45,6 +46,11 @@ class OpenRouterClient:
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
 
+    async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
+        # Internally enforce strict JSON structured output even for generic strings
+        structured_resp = await self.structured_completion(messages, model, ChatResponse)
+        return structured_resp.message
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -79,10 +85,14 @@ class OpenRouterClient:
         ),
         reraise=True,
     )
-    async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
-        # Internally enforce strict JSON structured output even for generic strings
-        structured_resp = await self.structured_completion(messages, model, ChatResponse)
-        return structured_resp.message
+    async def stream_chat(
+        self, messages: list[ChatCompletionMessageParam], model: str
+    ) -> typing.AsyncIterator[typing.Any]:
+        return await self.openai_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True,
+        )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -126,21 +136,15 @@ async def chat_completion(
 ) -> str:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
-    try:
-        return await client.chat_completion(messages, chosen_model)
-    except Exception as e:
-        if isinstance(e, asyncio.CancelledError):
-            raise
-        fallback = get_settings().fallback_chat_model
-        if fallback and fallback != chosen_model:
-            logger.warning(
-                "chat_completion failed with model %s, falling back to %s", chosen_model, fallback
-            )
-            try:
-                return await client.chat_completion(messages, fallback)
-            except Exception as fallback_e:
-                raise fallback_e from e
-        raise
+    return await client.chat_completion(messages, chosen_model)
+
+
+async def stream_chat(
+    messages: list[ChatCompletionMessageParam], model: str | None = None
+) -> typing.AsyncIterator[typing.Any]:
+    client = get_openrouter_client()
+    chosen_model = model or get_settings().default_chat_model
+    return await client.stream_chat(messages, chosen_model)
 
 
 async def structured_completion(
