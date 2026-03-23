@@ -257,24 +257,35 @@ jobs:
       - name: Upgrade containerapp CLI extension
         run: az extension add --name containerapp --upgrade --yes
 
+      - name: Setup Staging Database Schema
+        env:
+          DATABASE_STAGING_URL: ${{ secrets.DATABASE_STAGING_URL }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          # 1. Create the PR-specific schema on Staging
+          psql "$DATABASE_STAGING_URL" -c "CREATE SCHEMA IF NOT EXISTS pr_${PR_NUM};"
+
+          # 2. Append the search_path to the connection string
+          PR_DB_URL="${DATABASE_STAGING_URL}?options=-c%20search_path=pr_${PR_NUM},public"
+
+          # 3. Export for subsequent steps
+          echo "PR_DATABASE_URL=$PR_DB_URL" >> "$GITHUB_ENV"
+
+          # 4. Run migrations strictly against this new schema
+          DATABASE_URL="$PR_DB_URL" python backend/manage.py migrate
+
       - name: Deploy image to PR container app
         run: |
           IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
           [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
 
-          # aca-miru-pr is permanently in 'Labels' revision mode. In this mode every
-          # write operation (secret set, revision set-mode) requires --target-label,
-          # which those commands do not support. All 17 secrets are pre-configured on
-          # the app and do not need to be re-set per deploy.
-          #
-          # az containerapp update is the only command that accepts --target-label, so
-          # it is the sole deploy command. Env vars wire up the already-configured
-          # secrets by name via secretref:.
+          # For the ephemeral staging container, override the pre-configured
+          # production secrets with the Staging credentials and isolated schema DB.
           ENV_VARS=(
-            "DATABASE_URL=secretref:database-url"
-            "SUPABASE_URL=secretref:supabase-url"
-            "SUPABASE_KEY=secretref:supabase-key"
-            "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
+            "DATABASE_URL=$PR_DATABASE_URL"
+            "SUPABASE_URL=${{ secrets.SUPABASE_STAGING_URL }}"
+            "SUPABASE_KEY=${{ secrets.SUPABASE_STAGING_KEY }}"
+            "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_STAGING_KEY }}"
             "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
             "OPENROUTER_API_KEY=secretref:openrouter-api-key"
             "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
@@ -386,9 +397,9 @@ jobs:
         env:
           SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
           SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_STAGING_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_KEY }}
         run: |
           npm install -g newman
 
