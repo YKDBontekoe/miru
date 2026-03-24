@@ -9,6 +9,7 @@ export interface AppCardProps extends ViewProps {
   style?: StyleProp<ViewStyle>;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AppCard({
   children,
   className = '',
@@ -20,6 +21,7 @@ export function AppCard({
   const baseClasses = 'bg-surface-light dark:bg-surface-dark rounded-md p-lg';
   const borderClasses = showBorder ? 'border border-border-light dark:border-border-dark' : '';
 
+  // DOCS(miru-agent): needs documentation
   const CardComponent = (
     <View className={`${baseClasses} ${borderClasses} ${className}`} style={style} {...props}>
       {children}

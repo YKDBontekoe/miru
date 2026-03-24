@@ -42,6 +42,7 @@ ProductivityUseCaseDep = Annotated[ManageProductivityUseCase, Depends(get_produc
 # ---------------------------------------------------------------------------
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/tasks", response_model=TaskResponse, status_code=201)
 async def create_task(
     task_data: TaskCreate,
@@ -55,6 +56,10 @@ async def create_task(
     return TaskResponse.model_validate(task)
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/tasks", response_model=list[TaskResponse])
 async def list_tasks(
     user_id: CurrentUser,
@@ -65,6 +70,11 @@ async def list_tasks(
     """List all tasks for the current user."""
     tasks = await use_case.list_tasks(user_id, limit=limit, offset=offset)
     return [TaskResponse.model_validate(t) for t in tasks]
+
+
+# DOCS(miru-agent): undocumented endpoint
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
@@ -79,8 +89,13 @@ async def get_task(
         return TaskResponse.model_validate(task)
     except TaskNotFoundError:
         raise HTTPException(
-            status_code=404, detail={"error": "task_not_found", "message": "Task not found"}
+            status_code=404,
+            detail={"error": "task_not_found", "message": "Task not found"},
+            # DOCS(miru-agent): undocumented endpoint
         ) from None
+
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskResponse)
@@ -96,7 +111,10 @@ async def update_task(
         return TaskResponse.model_validate(task)
     except TaskNotFoundError:
         raise HTTPException(
-            status_code=404, detail={"error": "task_not_found", "message": "Task not found"}
+            # DOCS(miru-agent): undocumented endpoint
+            status_code=404,
+            detail={"error": "task_not_found", "message": "Task not found"},
+            # DOCS(miru-agent): undocumented endpoint
         ) from None
 
 
@@ -115,7 +133,9 @@ async def delete_task(
         ) from None
 
 
+# DOCS(miru-agent): undocumented endpoint
 # ---------------------------------------------------------------------------
+# DOCS(miru-agent): undocumented endpoint
 # Notes
 # ---------------------------------------------------------------------------
 
@@ -125,7 +145,9 @@ async def create_note(
     note_data: NoteCreate,
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
+    # DOCS(miru-agent): undocumented endpoint
 ) -> NoteResponse:
+    # DOCS(miru-agent): undocumented endpoint
     """Create a new note."""
     note = await use_case.create_note(user_id, note_data)
     return NoteResponse.model_validate(note)
@@ -136,7 +158,9 @@ async def list_notes(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
     limit: int = Query(50, ge=1, le=100),
+    # DOCS(miru-agent): undocumented endpoint
     offset: int = Query(0, ge=0),
+    # DOCS(miru-agent): undocumented endpoint
 ) -> list[NoteResponse]:
     """List all notes for the current user."""
     notes = await use_case.list_notes(user_id, limit=limit, offset=offset)
@@ -151,7 +175,9 @@ async def get_note(
 ) -> NoteResponse:
     """Get a specific note."""
     try:
+        # DOCS(miru-agent): undocumented endpoint
         note = await use_case.get_note(user_id, note_id)
+        # DOCS(miru-agent): undocumented endpoint
         return NoteResponse.model_validate(note)
     except NoteNotFoundError:
         raise HTTPException(
@@ -167,7 +193,9 @@ async def update_note(
     use_case: ProductivityUseCaseDep,
 ) -> NoteResponse:
     """Update a specific note."""
+    # DOCS(miru-agent): undocumented endpoint
     try:
+        # DOCS(miru-agent): undocumented endpoint
         note = await use_case.update_note(user_id, note_id, note_data)
         return NoteResponse.model_validate(note)
     except NoteNotFoundError:
@@ -186,8 +214,11 @@ async def delete_note(
     try:
         await use_case.delete_note(user_id, note_id)
     except NoteNotFoundError:
+        # DOCS(miru-agent): undocumented endpoint
         raise HTTPException(
-            status_code=404, detail={"error": "note_not_found", "message": "Note not found"}
+            # DOCS(miru-agent): undocumented endpoint
+            status_code=404,
+            detail={"error": "note_not_found", "message": "Note not found"},
         ) from None
 
 
@@ -201,6 +232,7 @@ async def create_event(
     event_data: CalendarEventCreate,
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
+    # DOCS(miru-agent): undocumented endpoint
 ) -> CalendarEventResponse:
     """Create a new calendar event."""
     try:
@@ -212,8 +244,10 @@ async def create_event(
         ) from e
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/events", response_model=list[CalendarEventResponse])
 async def list_events(
+    # DOCS(miru-agent): undocumented endpoint
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
     limit: int = Query(50, ge=1, le=100),
@@ -228,8 +262,10 @@ async def list_events(
 async def get_event(
     event_id: UUID,
     user_id: CurrentUser,
+    # DOCS(miru-agent): undocumented endpoint
     use_case: ProductivityUseCaseDep,
 ) -> CalendarEventResponse:
+    # DOCS(miru-agent): undocumented endpoint
     """Get a specific calendar event."""
     try:
         event = await use_case.get_event(user_id, event_id)
@@ -249,8 +285,10 @@ async def update_event(
     use_case: ProductivityUseCaseDep,
 ) -> CalendarEventResponse:
     """Update a specific calendar event."""
+    # DOCS(miru-agent): undocumented endpoint
     try:
         event = await use_case.update_event(user_id, event_id, event_data)
+        # DOCS(miru-agent): undocumented endpoint
         return CalendarEventResponse.model_validate(event)
     except CalendarEventNotFoundError:
         raise HTTPException(

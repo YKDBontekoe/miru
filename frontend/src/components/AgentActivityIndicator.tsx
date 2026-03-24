@@ -26,6 +26,7 @@ import type { AgentActivityData } from '../core/services/ChatHubService';
 // Bouncing dot (reused from TypingIndicator pattern)
 // ---------------------------------------------------------------------------
 
+// DOCS(miru-agent): needs documentation
 const Dot = ({ delay, color }: { delay: number; color: string }) => {
   const ty = useSharedValue(0);
 
@@ -89,6 +90,7 @@ interface AgentActivityIndicatorProps {
   activity: AgentActivityData;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps) {
   const color = activityColor(activity.activity);
   const names = activity.agent_names.join(', ');

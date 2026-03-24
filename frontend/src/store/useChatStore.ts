@@ -39,6 +39,7 @@ interface ChatState {
 // Hub unsubscribe kept outside state so it doesn't trigger re-renders
 let _hubUnsub: (() => void) | null = null;
 
+// DOCS(miru-agent): needs documentation
 export const useChatStore = create<ChatState>((set, get) => ({
   rooms: [],
   messages: {},

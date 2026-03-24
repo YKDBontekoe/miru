@@ -15,7 +15,7 @@ reviews:
     You are reviewing code that may have been written by an AI agent (Jules).
     When generating the 'Prompt for all review comments with AI agents', be extremely precise.
     Include exact file paths, line numbers, and literal replacement strings or clear logical requirements.
-    Mention that the project is a FastAPI backend (Python 3.13) and Flutter frontend (Dart 3.x).
+    Mention that the project is a FastAPI backend (Python 3.13) and React Native frontend (TypeScript/Expo).
     Remind the AI agent to run `make lint` and `make test` to verify its changes before pushing.
 
   path_instructions:
@@ -29,7 +29,7 @@ reviews:
     - path: "frontend/lib/**/*.dart"
       instructions: >
         Ensure `const` constructors are used where possible to prevent unnecessary rebuilds.
-        State management uses flutter_riverpod (Riverpod) with riverpod_annotation for code generation.
+        State management uses Zustand.
         StatefulWidget + setState is also used in some screens — both patterns are acceptable.
         No BLoC or GetX. Use `final` for non-reassigned variables. Use `ListView.builder` for long lists.
         Dispose listeners, controllers, and streams in `dispose()`.

@@ -59,7 +59,7 @@ body:
       label: Affected component
       multiple: true
       options:
-        - Flutter frontend
+        - React Native frontend
         - FastAPI backend
         - Database (Supabase / PostgreSQL)
         - AI / memory (OpenRouter / Neo4j)

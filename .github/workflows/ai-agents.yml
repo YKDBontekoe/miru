@@ -104,10 +104,10 @@ jobs:
               '',
               '**Project context (follow these exactly):**',
               '- Backend: FastAPI/Python — `backend/app/domain/<domain>/` for business logic, `backend/app/api/v1/` for routes.',
-              '- Frontend: Flutter/Dart — flat `frontend/lib/` directory, plain `StatefulWidget` + `setState` only (no Riverpod/BLoC/Provider).',
+              '- Frontend: React Native/TypeScript — `frontend/src/` directory, Expo Router, and Zustand.',
               '- Python style: 100-char lines, double quotes, `from __future__ import annotations`, `str | None` not `Optional[str]`.',
-              '- Dart style: 80-char lines, single quotes, `const`/`final` everywhere possible.',
-              '- Lint: `make lint-backend` (ruff + black + mypy) or `make lint-frontend` (dart format + flutter analyze).',
+              '- TypeScript style: 100-char lines, single quotes, functional components with hooks.',
+              '- Lint: `make lint-backend` (ruff + black + mypy) or `make lint-frontend` (eslint + type-check).',
               '- Tests: `make test-backend` or `make test-frontend`. Mock all external services — never call real APIs.',
               '- Do not modify files unrelated to the CodeRabbit findings.',
             ].join('\n');
@@ -293,7 +293,7 @@ jobs:
             // after a "Stacktrace:" / "Stack Trace:" heading).
             const stacktraceMatch =
               body.match(/(?:stacktrace|stack trace)[:\s]*\n```[\w]*\n([\s\S]*?)```/i) ||
-              body.match(/```(?:python|dart|text)?\n([\s\S]*?Traceback[\s\S]*?)```/i);
+              body.match(/```(?:python|typescript|javascript|text)?\n([\s\S]*?Traceback[\s\S]*?)```/i);
             const stacktrace = stacktraceMatch ? stacktraceMatch[1].trim() : '';
 
             // Derive the most likely domain from the issue title / body so Jules
@@ -305,13 +305,13 @@ jobs:
               ? `backend/tests/test_${matchedDomain}.py`
               : 'backend/tests/ (pick the most relevant test file for the affected domain)';
 
-            // Detect whether this is a backend (Python) or frontend (Dart/Flutter) issue.
+            // Detect whether this is a backend (Python) or frontend (React Native/TypeScript) issue.
             const isFrontend =
               issue.labels.some(l => l.name === 'frontend') ||
-              /flutter|dart|widget|screen|page/i.test(combined);
-            const stack = isFrontend ? 'Flutter/Dart (frontend)' : 'FastAPI/Python (backend)';
+              /react|native|typescript|expo|screen|page/i.test(combined);
+            const stack = isFrontend ? 'React Native/TypeScript (frontend)' : 'FastAPI/Python (backend)';
             const lintCmd = isFrontend
-              ? 'make lint-frontend (dart format + flutter analyze)'
+              ? 'make lint-frontend (eslint + type-check)'
               : 'make lint-backend (ruff + black + mypy)';
             const testCmd = isFrontend ? 'make test-frontend' : 'make test-backend';
 
@@ -343,15 +343,15 @@ jobs:
 
             ## Code style & architecture (follow these exactly)
             - Language: ${{ steps.issue.outputs.stack }}
-            - Line length: 100 chars (Python) / 80 chars (Dart). Double quotes (Python), single quotes (Dart).
-            - All functions need type hints (Python) / explicit types (Dart).
+            - Line length: 100 chars (Python and TypeScript). Double quotes (Python), single quotes (TypeScript).
+            - All functions need type hints (Python) / explicit types (TypeScript).
             - Python import order: stdlib → third-party → first-party (`app.*`), managed by isort.
             - Use `str | None` not `Optional[str]`; `list[str]` not `List[str]` (Python).
-            - Use `const` constructors and `final` where possible (Dart).
+            - Use `const` for components and internal functions (TypeScript).
             - Always include `from __future__ import annotations` at the top of Python files.
             - Log errors with context; use `logger.exception()` for unexpected errors (Python).
             - Backend domain packages live under `backend/app/domain/<domain>/`; route handlers under `backend/app/api/v1/`.
-            - Frontend pages live flat under `frontend/lib/`; state management is plain `StatefulWidget` + `setState` — do NOT introduce Riverpod, Provider, BLoC, or GetX.
+            - Frontend pages live under `frontend/app/` (Expo Router); state management uses Zustand (`frontend/src/store/`).
             - Mock all external services (Supabase, OpenRouter, Neo4j) in tests — never call real APIs.
 
             ## Requirements

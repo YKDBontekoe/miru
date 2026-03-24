@@ -17,6 +17,7 @@ from app.domain.memory.service import MemoryService  # noqa: TCH001
 router = APIRouter(tags=["Memory"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("", response_model=dict[str, list[MemoryResponse]])
 async def list_memories(
     user_id: CurrentUser,
@@ -32,6 +33,10 @@ async def list_memories(
         ) from e
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/graph", response_model=dict[str, Any])
 async def get_memory_graph(
     user_id: CurrentUser,
@@ -46,6 +51,11 @@ async def get_memory_graph(
         ) from e
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+# DOCS(miru-agent): undocumented endpoint
+
+
 @router.post("", response_model=dict[str, Any])
 async def store_memory(
     data: MemoryRequest,
@@ -58,8 +68,13 @@ async def store_memory(
         return {"status": "ok", "id": str(memory_id)}
     except (APIConnectionError, OSError) as e:
         raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
+            status_code=503,
+            detail="Upstream AI service is currently unreachable",
+            # DOCS(miru-agent): undocumented endpoint
         ) from e
+
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.post("/upload", response_model=dict[str, Any])
@@ -116,7 +131,9 @@ async def upload_document(
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
+    # DOCS(miru-agent): undocumented endpoint
     except Exception as e:
+        # DOCS(miru-agent): undocumented endpoint
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
 
 

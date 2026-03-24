@@ -14,6 +14,7 @@ interface AuthState {
   initialize: () => void;
 }
 
+// DOCS(miru-agent): needs documentation
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,

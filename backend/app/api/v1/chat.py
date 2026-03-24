@@ -24,6 +24,7 @@ from app.domain.chat.service import ChatService  # noqa: TCH001
 router = APIRouter(tags=["Chat"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/rooms", response_model=list[RoomResponse])
 async def list_rooms(
     user_id: CurrentUser,
@@ -32,6 +33,10 @@ async def list_rooms(
     return await service.list_rooms(user_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/rooms", response_model=RoomResponse)
 async def create_room(
     data: RoomCreate,
@@ -39,6 +44,11 @@ async def create_room(
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
     return await service.create_room(data.name, user_id)
+
+
+# DOCS(miru-agent): undocumented endpoint
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.post("/chat")
@@ -57,7 +67,11 @@ async def chat(
     return StreamingResponse(
         service.stream_responses(message, user_id, accept_language),
         media_type="text/event-stream",
+        # DOCS(miru-agent): undocumented endpoint
     )
+
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.post("/crew")
@@ -72,7 +86,9 @@ async def run_crew(
     """Run a full CrewAI orchestration for a single task and return structured output."""
     message = request.message or request.content
     if not message:
+        # DOCS(miru-agent): undocumented endpoint
         raise HTTPException(status_code=400, detail="Message or content is required")
+    # DOCS(miru-agent): undocumented endpoint
     return await service.run_crew(message, user_id, accept_language=accept_language)
 
 
@@ -84,7 +100,9 @@ async def update_room(
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
     room = await service.update_room(room_id, data.name)
+    # DOCS(miru-agent): undocumented endpoint
     if not room:
+        # DOCS(miru-agent): undocumented endpoint
         raise HTTPException(status_code=404, detail="Room not found")
     return room
 
@@ -95,7 +113,9 @@ async def delete_room(
     _user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    # DOCS(miru-agent): undocumented endpoint
     success = await service.delete_room(room_id)
+    # DOCS(miru-agent): undocumented endpoint
     if not success:
         raise HTTPException(status_code=404, detail="Room not found")
     return {"status": "ok"}
@@ -105,7 +125,9 @@ async def delete_room(
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
+    # DOCS(miru-agent): undocumented endpoint
     _user_id: CurrentUser,
+    # DOCS(miru-agent): undocumented endpoint
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
     await service.add_agent_to_room(room_id, data.agent_id)
@@ -114,6 +136,7 @@ async def add_agent_to_room(
 
 @router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
 async def get_room_agents(
+    # DOCS(miru-agent): undocumented endpoint
     room_id: UUID,
     _user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
@@ -122,8 +145,10 @@ async def get_room_agents(
     return [AgentResponse.model_validate(a) for a in agents]
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
 async def get_room_messages(
+    # DOCS(miru-agent): undocumented endpoint
     room_id: UUID,
     _user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],

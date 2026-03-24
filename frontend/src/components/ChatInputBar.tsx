@@ -25,6 +25,7 @@ interface ChatInputBarProps {
   placeholder?: string;
 }
 
+// DOCS(miru-agent): needs documentation
 export function ChatInputBar({
   value,
   onChangeText,

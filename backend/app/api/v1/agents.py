@@ -23,6 +23,7 @@ from app.domain.agents.service import AgentService  # noqa: TCH001
 router = APIRouter(tags=["Agents"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("", response_model=AgentResponse)
 async def create_agent(
     agent_data: AgentCreate,
@@ -33,6 +34,10 @@ async def create_agent(
     return await service.create_agent(agent_data, user_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+
+# DOCS(miru-agent): undocumented endpoint
 @router.get("", response_model=list[AgentResponse])
 async def list_agents(
     user_id: CurrentUser,
@@ -42,13 +47,22 @@ async def list_agents(
     return await service.list_agents(user_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+# DOCS(miru-agent): undocumented endpoint
+
+
 @router.get("/capabilities", response_model=list[CapabilityResponse])
 async def list_capabilities(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> list[Capability]:
     """List all available capabilities."""
+    # DOCS(miru-agent): undocumented endpoint
     return await service.list_capabilities()
+
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.get("/integrations", response_model=list[IntegrationResponse])
@@ -56,7 +70,9 @@ async def list_integrations(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> list[Integration]:
+    # DOCS(miru-agent): undocumented endpoint
     """List all available integrations."""
+    # DOCS(miru-agent): undocumented endpoint
     return await service.list_integrations()
 
 

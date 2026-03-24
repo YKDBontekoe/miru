@@ -26,8 +26,7 @@ updates:
           - "minor"
           - "patch"
 
-  # Dart/Flutter dependencies
-  - package-ecosystem: "pub"
+  - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
@@ -36,15 +35,12 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "flutter"
-      # Route failing Dependabot PRs through Jules for automated fix attempts.
+      - "npm"
       - "jules-fix-pending"
     commit-message:
-      prefix: "pub"
+      prefix: "npm"
       include: "scope"
     ignore:
-      # Major version bumps for Flutter/Dart packages frequently contain breaking
-      # API changes that require intentional manual upgrades, not auto-PRs.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 

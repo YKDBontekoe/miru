@@ -1,13 +1,19 @@
 module.exports = {
   extends: ['expo', 'prettier'],
   plugins: ['prettier'],
+  rules: {
+    'prettier/prettier': 'error',
+  },
   env: {
     jest: true,
   },
-  rules: {
-    'prettier/prettier': 'error',
-    'no-unused-vars': 'warn',
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
-  },
+  ignorePatterns: [
+    'node_modules/',
+    'dist/',
+    '.expo/',
+    'web-build/',
+    'coverage/',
+    'android/',
+    'ios/',
+  ],
 };

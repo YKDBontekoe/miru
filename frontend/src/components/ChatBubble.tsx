@@ -42,6 +42,7 @@ function formatTime(iso?: string, language: string = 'en') {
   return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
+// DOCS(miru-agent): needs documentation
 export function ChatBubble({
   text,
   isUser,

@@ -20,6 +20,7 @@ from app.domain.auth.service import AuthService  # noqa: TCH001
 router = APIRouter(tags=["Auth"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/passkey/register/options")
 async def get_registration_options(
     _data: PasskeyRegisterOptionsRequest,
@@ -31,6 +32,10 @@ async def get_registration_options(
     return {"challenge": "dummy_challenge", "rp": {"name": "Miru", "id": "localhost"}}
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/passkey/register/verify")
 async def verify_registration(
     data: PasskeyRegisterVerifyRequest,
@@ -42,13 +47,22 @@ async def verify_registration(
     return {"status": "ok"}
 
 
+# DOCS(miru-agent): undocumented endpoint
+
+# DOCS(miru-agent): undocumented endpoint
+
+
 @router.post("/passkey/login/options")
 async def get_login_options(
     _data: PasskeyLoginOptionsRequest,
     _service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, Any]:
     """Get options for passkey login."""
+    # DOCS(miru-agent): undocumented endpoint
     return {"challenge": "dummy_challenge"}
+
+
+# DOCS(miru-agent): undocumented endpoint
 
 
 @router.post("/passkey/login/verify")
@@ -59,7 +73,9 @@ async def verify_login(
     """Verify passkey login and return tokens."""
     return {
         "access_token": "dummy_access_token",
+        # DOCS(miru-agent): undocumented endpoint
         "refresh_token": "dummy_refresh_token",
+        # DOCS(miru-agent): undocumented endpoint
     }
 
 
@@ -68,7 +84,9 @@ async def list_passkeys(
     user_id: CurrentUser,
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, list[PasskeyRecord]]:
+    # DOCS(miru-agent): undocumented endpoint
     """List all passkeys for the current user."""
+    # DOCS(miru-agent): undocumented endpoint
     passkeys = await service.repo.get_passkeys_by_user(user_id)
     return {"passkeys": passkeys}
 

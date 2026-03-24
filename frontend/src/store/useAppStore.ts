@@ -12,6 +12,7 @@ interface AppState {
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
 const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_URL;
 
+// DOCS(miru-agent): needs documentation
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({

@@ -9,6 +9,7 @@ export interface AppButtonProps extends TouchableOpacityProps {
   className?: string;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AppButton({
   label,
   variant = 'primary',
