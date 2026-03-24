@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Pressable, ViewProps, StyleProp, ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { View, TouchableOpacity, ViewProps, StyleProp, ViewStyle } from 'react-native';
 
 export interface AppCardProps extends ViewProps {
   children: React.ReactNode;
@@ -18,36 +17,20 @@ export function AppCard({
   style,
   ...props
 }: AppCardProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  };
-
-  const baseClasses = 'bg-surface-light dark:bg-surface-dark rounded-md p-lg shadow-sm';
+  const baseClasses = 'bg-surface-light dark:bg-surface-dark rounded-md p-lg';
   const borderClasses = showBorder ? 'border border-border-light dark:border-border-dark' : '';
 
   const CardComponent = (
-    <View {...props} className={`${baseClasses} ${borderClasses} ${className}`} style={style}>
+    <View className={`${baseClasses} ${borderClasses} ${className}`} style={style} {...props}>
       {children}
     </View>
   );
 
   if (onTap) {
     return (
-      <Animated.View style={animatedStyle}>
-        <Pressable onPress={onTap} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-          {CardComponent}
-        </Pressable>
-      </Animated.View>
+      <TouchableOpacity activeOpacity={0.8} onPress={onTap}>
+        {CardComponent}
+      </TouchableOpacity>
     );
   }
 
