@@ -103,20 +103,20 @@ async def websocket_chat_hub(
 ) -> None:
     """Main WebSocket endpoint — acts as a SignalR hub for chat rooms."""
     user_id = await _verify_token(token)
-    if user_id is None:
-        await websocket.close(code=4001, reason="Unauthorized")
-        return
-
-    await chat_hub.connect(websocket, user_id)
-    await chat_hub.send_to_user(user_id, {"type": "connected", "user_id": str(user_id)})
-
-    service = ChatService(
-        chat_repo=ChatRepository(),
-        agent_repo=AgentRepository(),
-        memory_repo=MemoryRepository(),
-    )
-
     try:
+        if user_id is None:
+            await websocket.close(code=4001, reason="Unauthorized")
+            return
+
+        await chat_hub.connect(websocket, user_id)
+        await chat_hub.send_to_user(user_id, {"type": "connected", "user_id": str(user_id)})
+
+        service = ChatService(
+            chat_repo=ChatRepository(),
+            agent_repo=AgentRepository(),
+            memory_repo=MemoryRepository(),
+        )
+
         while True:
             raw = await websocket.receive_text()
 
@@ -214,9 +214,11 @@ async def websocket_chat_hub(
                 )
 
     except WebSocketDisconnect:
-        chat_hub.disconnect(user_id)
+        if user_id is not None:
+            chat_hub.disconnect(user_id)
     except RuntimeError as e:
         if "WebSocket is not connected" in str(e):
-            chat_hub.disconnect(user_id)
+            if user_id is not None:
+                chat_hub.disconnect(user_id)
         else:
             raise

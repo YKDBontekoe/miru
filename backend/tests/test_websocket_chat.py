@@ -95,3 +95,52 @@ def test_websocket_endpoint_runtime_error_other(client: TestClient) -> None:
                 client.websocket_connect("/api/v1/ws/chat?token=valid"),
             ):
                 pass
+
+
+def test_websocket_endpoint_runtime_error_during_connect() -> None:
+    # Instead of using TestClient which hangs, let's test the endpoint directly
+    # since it's an async function taking a WebSocket.
+    import uuid
+    from unittest.mock import AsyncMock, patch
+
+    from fastapi import WebSocket
+
+    from app.api.v1.websocket import websocket_chat_hub
+
+    user_id = uuid.uuid4()
+    mock_ws = AsyncMock(spec=WebSocket)
+
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = user_id
+        with patch("app.api.v1.websocket.chat_hub.connect", new_callable=AsyncMock) as mock_connect:
+            mock_connect.side_effect = RuntimeError(
+                'WebSocket is not connected. Need to call "accept" first.'
+            )
+            with patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect:
+                import asyncio
+
+                asyncio.run(websocket_chat_hub(mock_ws, token="valid", lang="en-US"))
+
+                mock_disconnect.assert_called_once_with(user_id)
+
+
+def test_websocket_endpoint_runtime_error_during_close() -> None:
+    from unittest.mock import AsyncMock, patch
+
+    from fastapi import WebSocket
+
+    from app.api.v1.websocket import websocket_chat_hub
+
+    mock_ws = AsyncMock(spec=WebSocket)
+    mock_ws.close.side_effect = RuntimeError(
+        'WebSocket is not connected. Need to call "accept" first.'
+    )
+
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = None
+        with patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect:
+            import asyncio
+
+            asyncio.run(websocket_chat_hub(mock_ws, token="invalid", lang="en-US"))
+
+            mock_disconnect.assert_not_called()
