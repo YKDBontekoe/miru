@@ -142,6 +142,7 @@ class TestChatRepository:
     @pytest.mark.asyncio
     async def test_save_message(self) -> None:
         import uuid
+
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Save Msg", user_id)

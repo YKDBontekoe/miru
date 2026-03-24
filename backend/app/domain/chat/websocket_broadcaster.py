@@ -36,7 +36,10 @@ class ChatWebSocketBroadcaster:
         import uuid
 
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
-        user_msg = ChatMessageEntity(id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message)
+
+        user_msg = ChatMessageEntity(
+            id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
+        )
         user_msg = await self.chat_repo.save_message(user_msg)
 
         user_msg_data = {

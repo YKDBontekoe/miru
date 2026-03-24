@@ -144,7 +144,10 @@ class ChatService:
         """The core agentic chat loop using CrewAI."""
         # 1. Save user message
         import uuid
-        user_msg = ChatMessageEntity(id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message)
+
+        user_msg = ChatMessageEntity(
+            id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
+        )
         user_msg = await self.chat_repo.save_message(user_msg)
 
         # 2. Get agents in room
@@ -179,6 +182,7 @@ class ChatService:
         # 5. Save agent response
         agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
         import uuid
+
         agent_msg = ChatMessageEntity(
             id=uuid.uuid4(),
             room_id=room_id,

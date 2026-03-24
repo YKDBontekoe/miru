@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Any
 from uuid import UUID
 
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
-
-if TYPE_CHECKING:
-    from app.domain.agents.models import Agent
 
 
 class ChatRoom(SupabaseModel):
@@ -78,7 +75,7 @@ class ChatRoomAgent(SupabaseModel):
     room: fields.ForeignKeyRelation[ChatRoom] = fields.ForeignKeyField(
         "models.ChatRoom", related_name="room_agents", on_delete=fields.CASCADE
     )
-    agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
+    agent: fields.ForeignKeyRelation[Any] = fields.ForeignKeyField(
         "models.Agent", related_name="agent_rooms", on_delete=fields.CASCADE
     )
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
@@ -86,5 +83,3 @@ class ChatRoomAgent(SupabaseModel):
     class Meta:
         table = "chat_room_agents"
         unique_together = (("room", "agent"),)
-
-

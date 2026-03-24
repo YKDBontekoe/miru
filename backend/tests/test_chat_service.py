@@ -18,6 +18,7 @@ def chat_service() -> ChatService:
     chat_repo = AsyncMock()
 
     from typing import Any
+
     async def mock_save_message(msg: Any) -> Any:
         msg.id = msg.id or uuid4()
         return msg

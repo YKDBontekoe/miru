@@ -8,6 +8,7 @@ from uuid import UUID
 @dataclass
 class ChatRoomEntity:
     """Domain Entity representing a Chat Room."""
+
     id: UUID
     user_id: UUID
     name: str
@@ -15,9 +16,11 @@ class ChatRoomEntity:
     updated_at: datetime
     deleted_at: datetime | None = None
 
+
 @dataclass
 class ChatMessageEntity:
     """Domain Entity representing a Chat Message."""
+
     id: UUID
     room_id: UUID
     content: str
@@ -29,9 +32,11 @@ class ChatMessageEntity:
     updated_at: datetime = field(default_factory=datetime.utcnow)
     deleted_at: datetime | None = None
 
+
 @dataclass
 class ChatRoomAgentEntity:
     """Domain Entity representing the association between a Room and an Agent."""
+
     room_id: UUID
     agent_id: UUID
     created_at: datetime = field(default_factory=datetime.utcnow)
