@@ -1,0 +1,189 @@
+{
+  "navigation": {
+    "home": "Home",
+    "chat": "Chat",
+    "agents": "Agenten",
+    "productivity": "Productiviteit",
+    "settings": "Instellingen"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "sections": {
+      "account": "Account",
+      "preferences": "Voorkeuren",
+      "about": "Over"
+    },
+    "items": {
+      "signed_in": "Ingelogd",
+      "signed_in_with_magic_link": "Ingelogd met magic link",
+      "personal_memories": "Persoonlijke herinneringen",
+      "memories_desc": "Beheer wat Miru over jou heeft geleerd",
+      "no_memories": "Nog geen herinneringen. Naarmate je met Miru praat, leert ze meer over jou.",
+      "notifications": "Meldingen",
+      "notifications_desc": "Ontvang meldingen voor langlopende taken",
+      "privacy_mode": "Privacymodus",
+      "privacy_desc": "Minimaliseer gegevensregistratie voor sessies",
+      "language": "Taal",
+      "language_desc": "Kies je voorkeurstaal",
+      "version": "Versie",
+      "version_value": "1.0.0 (Beta)",
+      "tech_stack": "Gebouwd met React Native",
+      "tech_desc": "Aangedreven door Expo & NativeWind",
+      "sign_out": "Uitloggen",
+      "sign_out_desc": "Log uit van je Miru-account"
+    },
+    "actions": {
+      "sign_out_confirm_title": "Uitloggen",
+      "sign_out_confirm_desc": "Je moet opnieuw inloggen om Miru te gebruiken.",
+      "cancel": "Annuleren",
+      "refresh": "Vernieuwen",
+      "forget": "Vergeten",
+      "forget_memory_title": "Herinnering vergeten?",
+      "forget_memory_confirm": "Moet Miru dit vergeten?",
+      "forget_memory_desc": "Weet je zeker dat je \"{{content}}\" wil vergeten?",
+      "error": "Fout",
+      "delete_memory_failed": "Verwijderen van herinnering mislukt."
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Goedemorgen",
+      "afternoon": "Goedemiddag",
+      "evening": "Goedenavond"
+    },
+    "sections": {
+      "quick_actions": "Snelle acties",
+      "your_agents": "Jouw agenten",
+      "recent_chats": "Recente chats"
+    },
+    "actions": {
+      "new_chat": "Nieuwe chat",
+      "new_agent": "Nieuwe agent",
+      "new_task": "Nieuwe taak",
+      "new_note": "Nieuwe notitie",
+      "see_all": "Alles zien",
+      "manage": "Beheren",
+      "chats": "Chats",
+      "agents": "Agenten",
+      "done": "Klaar",
+      "create": "Aanmaken",
+      "start_chat": "Start een chat",
+      "tap_to_continue": "Tik om verder te gaan"
+    },
+    "chat_modal": {
+      "title": "Nieuwe chat",
+      "placeholder": "Chatnaam\u2026",
+      "name_required": "Naam vereist",
+      "please_enter_name": "Voer een naam in voor deze chat.",
+      "error": "Fout",
+      "failed_to_create": "Aanmaken van chat mislukt. Probeer opnieuw."
+    },
+    "tasks": {
+      "all_done": "Taken \u00b7 Alles klaar!",
+      "caught_up": "Je bent helemaal bijgewerkt!",
+      "open_count": "Taken \u00b7 {{count}} open"
+    },
+    "empty": {
+      "title": "Welkom bij Miru",
+      "desc": "Maak een agent aan en start een chat om te beginnen."
+    },
+    "time": {
+      "minutes_ago_one": "{{count}}m geleden",
+      "minutes_ago_other": "{{count}}m geleden",
+      "hours_ago_one": "{{count}}u geleden",
+      "hours_ago_other": "{{count}}u geleden",
+      "days_ago_one": "{{count}}d geleden",
+      "days_ago_other": "{{count}}d geleden"
+    }
+  },
+  "chat": {
+    "title": "Miru",
+    "personas": "Persona's",
+    "chats": "Chats",
+    "new_chat": "Nieuwe chat",
+    "chat_name_label": "Chatnaam",
+    "chat_name_placeholder": "bijv. Gamesessie",
+    "add_agents": "Agenten toevoegen",
+    "create_chat": "Chat aanmaken",
+    "no_agents_yet": "Nog geen agenten",
+    "no_conversations_title": "Nog geen gesprekken",
+    "no_conversations_desc": "Maak een chat en begin samen te werken met je AI-persona's.",
+    "error": "Fout",
+    "failed_to_create": "Aanmaken van chat mislukt. Probeer opnieuw.",
+    "name_required": "Naam vereist",
+    "please_enter_name": "Voer een naam in voor deze chat.",
+    "retry": "Opnieuw proberen",
+    "start_conversation": "Start een gesprek",
+    "add_agent_to_start": "Voeg een agent toe om te beginnen.",
+    "add_an_agent": "Agent toevoegen",
+    "no_agents_create": "Nog geen agenten. Maak er een aan in het tabblad Agenten.",
+    "message_placeholder": "Bericht aan {{name}}...",
+    "room_agents_status_one": "{{names}} is in deze kamer.",
+    "room_agents_status_other": "{{names}} zijn in deze kamer."
+  },
+  "agents": {
+    "title": "Agenten",
+    "subtitle": "Jouw AI-personacollectie",
+    "new": "Nieuw",
+    "create_agent": "Agent aanmaken",
+    "no_agents_title": "Nog geen agenten",
+    "no_agents_desc": "Maak je eerste AI-persona aan om te beginnen.",
+    "level": "Nv {{level}}",
+    "msgs": "{{count}} berichten",
+    "stats": {
+      "messages": "Berichten",
+      "level": "Niveau",
+      "integrations": "Integraties"
+    },
+    "labels": {
+      "personality": "Persoonlijkheid",
+      "about": "Over",
+      "goals": "Doelen",
+      "integrations": "Integraties",
+      "level": "Niveau {{level}}"
+    },
+    "create_modal": {
+      "title": "Nieuwe agent",
+      "subtitle": "Aangedreven door Miru AI",
+      "name_label": "Agentnaam",
+      "name_placeholder": "bijv. vriendelijke chef, sci-fi expert",
+      "keywords_label": "Trefwoorden & eigenschappen",
+      "keywords_placeholder": "Beschrijf hoe deze agent denkt en communiceert...",
+      "generate": "Persona genereren",
+      "required": "Vereist",
+      "keywords_required": "Trefwoorden vereist",
+      "enter_keywords": "Voer trefwoorden in om een persona te genereren.",
+      "error": "Fout",
+      "generate_failed": "Kon geen persona genereren. Probeer opnieuw.",
+      "create_failed": "Aanmaken van agent mislukt. Probeer opnieuw.",
+      "name_required": "Naam en persoonlijkheid zijn vereist."
+    }
+  },
+  "productivity": {
+    "title_required": "Titel vereist",
+    "enter_title": "Voer een titel in voor je notitie.",
+    "error": "Fout",
+    "failed_create_note": "Aanmaken van notitie mislukt. Probeer opnieuw.",
+    "enter_task_title": "Voer een taaknaam in.",
+    "failed_create_task": "Aanmaken van taak mislukt. Probeer opnieuw.",
+    "delete": "Verwijderen",
+    "are_you_sure": "Weet je het zeker?",
+    "save_note": "Notitie opslaan",
+    "add_task": "Taak toevoegen",
+    "title": "Titel",
+    "content": "Inhoud",
+    "note_placeholder": "bijv. Besproken AI-agenten...",
+    "task_placeholder": "bijv. PR reviewen...",
+    "task": "Taak",
+    "notes": "Notities",
+    "tasks": "Taken",
+    "no_notes": "Nog geen notities",
+    "no_notes_desc": "Schrijf iets op om het later te onthouden.",
+    "no_tasks": "Nog geen taken",
+    "no_tasks_desc": "Voeg een taak toe om bij te houden wat er gedaan moet worden.",
+    "due_date": "Uiterlijk {{date}}",
+    "note_title_placeholder": "Notitietitel",
+    "note_content_placeholder": "Schrijf hier je notitie...",
+    "task_content_placeholder": "Wat moet er gedaan worden?"
+  }
+}

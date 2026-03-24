@@ -100,7 +100,7 @@ export default function LoginScreen() {
     try {
       await signInWithPassword(email.trim(), password);
     } catch (e: any) {
-      setError(e.message || 'Incorrect email or password.');
+      setError(e?.message || 'Incorrect email or password.');
     } finally {
       setIsLoading(false);
     }
