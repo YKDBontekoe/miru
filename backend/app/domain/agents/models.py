@@ -216,12 +216,19 @@ class IntegrationResponse(BaseModel):
 class AgentBase(BaseModel):
     """Shared fields for Agent schemas."""
 
-    name: str = Field(max_length=100)
-    personality: str = Field(max_length=1000)
+    name: str = Field(min_length=1, max_length=100)
+    personality: str = Field(min_length=1, max_length=1000)
     description: str | None = Field(default=None, max_length=500)
     system_prompt: str | None = Field(default=None)
     status: str = Field(default="active")
     mood: str = Field(default="Neutral")
+
+    @field_validator("name", "personality", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.strip()
+        return v
 
 
 class AgentCreate(AgentBase):

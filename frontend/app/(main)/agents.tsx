@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,91 @@ function getAgentColor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return palette[Math.abs(hash) % palette.length];
+}
+
+// ─── Skeleton Loader ──────────────────────────────────────────────────────────
+
+function AgentSkeleton() {
+  const opacity = React.useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [opacity]);
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: C.surface,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: C.border,
+      }}
+    >
+      <Animated.View
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          backgroundColor: C.surfaceHigh,
+          opacity,
+          marginEnd: 14,
+        }}
+      />
+      <View style={{ flex: 1 }}>
+        <Animated.View
+          style={{
+            width: '60%',
+            height: 16,
+            borderRadius: 4,
+            backgroundColor: C.surfaceHigh,
+            opacity,
+            marginBottom: 8,
+          }}
+        />
+        <Animated.View
+          style={{
+            width: '80%',
+            height: 12,
+            borderRadius: 4,
+            backgroundColor: C.surfaceHigh,
+            opacity,
+          }}
+        />
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Animated.View
+          style={{
+            width: 40,
+            height: 16,
+            borderRadius: 4,
+            backgroundColor: C.surfaceHigh,
+            opacity,
+            marginBottom: 6,
+          }}
+        />
+        <Animated.View
+          style={{
+            width: 30,
+            height: 10,
+            borderRadius: 4,
+            backgroundColor: C.surfaceHigh,
+            opacity,
+          }}
+        />
+      </View>
+    </View>
+  );
 }
 
 // ─── Create Agent Sheet ───────────────────────────────────────────────────────
@@ -114,16 +200,8 @@ function CreateAgentSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            maxHeight: '92%',
-          }}
-        >
+      <View className="flex-1 justify-end bg-black/35">
+        <View className="bg-surface-light dark:bg-surface-dark rounded-t-[28px] p-6 max-h-[92%]">
           <View
             style={{
               flexDirection: 'row',
@@ -308,16 +386,8 @@ function AgentDetailSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            maxHeight: '82%',
-          }}
-        >
+      <View className="flex-1 justify-end bg-black/35">
+        <View className="bg-surface-light dark:bg-surface-dark rounded-t-[28px] p-6 max-h-[82%]">
           <View
             style={{
               flexDirection: 'row',
@@ -341,7 +411,7 @@ function AgentDetailSheet({
                 }}
               >
                 <AppText style={{ color, fontSize: 24, fontWeight: '700' }}>
-                  {agent.name[0].toUpperCase()}
+                  {agent.name && agent.name.length ? agent.name[0].toUpperCase() : '?'}
                 </AppText>
               </View>
               <View style={{ flex: 1 }}>
@@ -519,7 +589,7 @@ function AgentDetailSheet({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AgentsScreen() {
-  const { agents, fetchAgents, isLoading } = useAgentStore();
+  const { agents, fetchAgents, isLoading, error } = useAgentStore();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
@@ -560,7 +630,7 @@ export default function AgentsScreen() {
           }}
         >
           <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
-            {item.name[0].toUpperCase()}
+            {item.name && item.name.length ? item.name[0].toUpperCase() : '?'}
           </AppText>
         </View>
         <View style={{ flex: 1 }}>
@@ -630,54 +700,95 @@ export default function AgentsScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={agents}
-        renderItem={renderAgentItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={fetchAgents} tintColor={C.primary} />
-        }
-        ListEmptyComponent={
-          <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-            <View
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 36,
-                backgroundColor: C.surfaceHigh,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: C.border,
-              }}
-            >
-              <Ionicons name="people-outline" size={32} color={C.faint} />
+      {/* Error State */}
+      {error && !isLoading && agents.length === 0 && (
+        <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 20 }}>
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={C.primary}
+            style={{ marginBottom: 16 }}
+          />
+          <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
+            Failed to load agents
+          </AppText>
+          <AppText style={{ textAlign: 'center', marginBottom: 24, color: C.muted }}>
+            {error}
+          </AppText>
+          <TouchableOpacity
+            onPress={fetchAgents}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: C.primary,
+              borderRadius: 14,
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+            }}
+          >
+            <Ionicons name="refresh" size={18} color="white" style={{ marginEnd: 6 }} />
+            <AppText style={{ color: 'white', fontWeight: '700' }}>Retry</AppText>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Loading State / Skeletons */}
+      {isLoading && agents.length === 0 ? (
+        <View style={{ paddingHorizontal: 20 }}>
+          {[1, 2, 3].map((i) => (
+            <AgentSkeleton key={i} />
+          ))}
+        </View>
+      ) : (
+        <FlatList
+          data={agents}
+          renderItem={renderAgentItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={fetchAgents} tintColor={C.primary} />
+          }
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+              <View
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: 36,
+                  backgroundColor: C.surfaceHigh,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: C.border,
+                }}
+              >
+                <Ionicons name="people-outline" size={32} color={C.faint} />
+              </View>
+              <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
+                No agents yet
+              </AppText>
+              <AppText style={{ textAlign: 'center', marginBottom: 24, color: C.muted }}>
+                Create your first AI persona to get started.
+              </AppText>
+              <TouchableOpacity
+                onPress={() => setShowCreateSheet(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: C.primary,
+                  borderRadius: 14,
+                  paddingVertical: 12,
+                  paddingHorizontal: 24,
+                }}
+              >
+                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
+                <AppText style={{ color: 'white', fontWeight: '700' }}>Create Agent</AppText>
+              </TouchableOpacity>
             </View>
-            <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-              No agents yet
-            </AppText>
-            <AppText style={{ textAlign: 'center', marginBottom: 24, color: C.muted }}>
-              Create your first AI persona to get started.
-            </AppText>
-            <TouchableOpacity
-              onPress={() => setShowCreateSheet(true)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: C.primary,
-                borderRadius: 14,
-                paddingVertical: 12,
-                paddingHorizontal: 24,
-              }}
-            >
-              <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-              <AppText style={{ color: 'white', fontWeight: '700' }}>Create Agent</AppText>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+          }
+        />
+      )}
 
       <CreateAgentSheet
         visible={showCreateSheet}
