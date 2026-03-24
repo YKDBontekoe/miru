@@ -43,3 +43,62 @@ jest.mock('nativewind', () => ({
 
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
+
+
+
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+
+  class MockComponent extends React.Component {
+    render() {
+      const { testID, ...props } = this.props;
+      const View = require('react-native').View;
+      return <View testID={testID} {...props} />;
+    }
+  }
+
+  const mockSharedValue = (init) => ({ value: init });
+
+  return {
+    __esModule: true,
+    default: {
+      createAnimatedComponent: (comp) => {
+         if (comp.displayName === 'Pressable' || comp.render?.displayName === 'Pressable' || comp.name === 'Pressable') {
+             const Pressable = require('react-native').Pressable;
+             return Pressable;
+         }
+         return MockComponent;
+      },
+      View: MockComponent,
+      Text: MockComponent,
+      Image: MockComponent,
+      ScrollView: MockComponent,
+    },
+    useSharedValue: mockSharedValue,
+    useAnimatedStyle: (cb) => cb(),
+    withTiming: (toValue) => toValue,
+    withSpring: (toValue) => toValue,
+    withRepeat: (val) => val,
+    withSequence: (...vals) => vals[0],
+    withDelay: (delay, val) => val,
+    interpolateColor: () => '#000000',
+    FadeIn: { duration: () => ({}) },
+    FadeOut: { duration: () => ({}) },
+    Easing: {
+      bezier: () => {},
+      inOut: () => {},
+      ease: {},
+    },
+    createAnimatedComponent: (comp) => {
+         if (comp.displayName === 'Pressable' || comp.render?.displayName === 'Pressable' || comp.name === 'Pressable') {
+             const Pressable = require('react-native').Pressable;
+             return Pressable;
+         }
+         return MockComponent;
+    },
+    View: MockComponent,
+    Text: MockComponent,
+    Image: MockComponent,
+    ScrollView: MockComponent,
+  };
+});
