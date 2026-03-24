@@ -23,7 +23,7 @@ def _map_room_to_entity(room: ChatRoom) -> ChatRoomEntity:
 def _map_message_to_entity(message: ChatMessage) -> ChatMessageEntity:
     return ChatMessageEntity(
         id=message.id,
-        room_id=getattr(message, "room_id"),  # type: ignore[arg-type]
+        room_id=message.room_id,  # type: ignore[attr-defined]
         content=message.content,
         message_type=message.message_type,
         user_id=message.user_id,
@@ -75,8 +75,8 @@ class ChatRepository:
         """Associate an agent with a room."""
         assoc = await ChatRoomAgent.create(room_id=room_id, agent_id=agent_id)
         return ChatRoomAgentEntity(
-            room_id=getattr(assoc, "room_id"),  # type: ignore[arg-type]
-            agent_id=getattr(assoc, "agent_id"),  # type: ignore[arg-type]
+            room_id=assoc.room_id,  # type: ignore[attr-defined]
+            agent_id=assoc.agent_id,  # type: ignore[attr-defined]
             created_at=assoc.created_at,
         )
 
