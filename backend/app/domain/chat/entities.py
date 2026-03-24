@@ -1,8 +1,14 @@
 """Pure domain entities for Chat."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -28,8 +34,8 @@ class ChatMessageEntity:
     user_id: UUID | None = None
     agent_id: UUID | None = None
     attachments: list = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utcnow)
+    updated_at: datetime = field(default_factory=_utcnow)
     deleted_at: datetime | None = None
 
 
@@ -39,4 +45,4 @@ class ChatRoomAgentEntity:
 
     room_id: UUID
     agent_id: UUID
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utcnow)

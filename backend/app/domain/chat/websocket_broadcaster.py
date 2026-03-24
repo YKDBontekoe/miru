@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -33,8 +34,6 @@ class ChatWebSocketBroadcaster:
         client_temp_id: str | None = None,
     ) -> ChatMessageEntity:
         """Persist the user message and broadcast to room members."""
-        import uuid
-
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         user_msg = ChatMessageEntity(
@@ -143,8 +142,6 @@ class ChatWebSocketBroadcaster:
         agent_names: list[str],
     ) -> None:
         """Save the agent response and broadcast to room."""
-        import uuid
-
         from tortoise.exceptions import BaseORMException
 
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415

@@ -98,7 +98,7 @@ class ChatRepository:
 
     async def save_message(self, message: ChatMessageEntity) -> ChatMessageEntity:
         """Save a new message or update an existing one."""
-        if hasattr(message, "id") and message.id:
+        if message.id:
             # Check if it exists
             msg_model = await ChatMessage.get_or_none(id=message.id)
             if msg_model:
@@ -110,6 +110,7 @@ class ChatRepository:
 
         # Create new
         msg_model = await ChatMessage.create(
+            id=message.id,
             room_id=message.room_id,
             user_id=message.user_id,
             agent_id=message.agent_id,

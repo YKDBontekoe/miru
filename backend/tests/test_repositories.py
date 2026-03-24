@@ -149,6 +149,7 @@ class TestChatRepository:
         msg = ChatMessageEntity(id=uuid.uuid4(), room_id=room.id, user_id=user_id, content="Hello")
         saved = await repo.save_message(msg)
         assert saved.content == "Hello"
+        assert saved.id == msg.id
 
     @pytest.mark.asyncio
     async def test_list_room_agents_empty(self) -> None:

@@ -165,6 +165,8 @@ class AgentActionLog(SupabaseModel):
     agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
         "models.Agent", related_name="action_logs", on_delete=fields.CASCADE
     )
+    # Any is intentionally chosen to avoid import cycles. The string reference "models.ChatRoom"
+    # preserves correct ORM behavior at runtime. Do not replace Any with ChatRoom.
     room: fields.ForeignKeyRelation[Any] | None = fields.ForeignKeyField(
         "models.ChatRoom",
         related_name="agent_action_logs",

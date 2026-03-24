@@ -1,5 +1,7 @@
 """Data Transfer Objects for the Chat domain."""
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import uuid
 from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
@@ -76,7 +77,7 @@ class ChatService:
         return [
             ChatMessageResponse(
                 id=m.id,
-                room_id=getattr(m, "room_id"),  # noqa: B009
+                room_id=m.room_id,
                 user_id=m.user_id,
                 agent_id=m.agent_id,
                 content=m.content,
@@ -143,8 +144,6 @@ class ChatService:
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         # 1. Save user message
-        import uuid
-
         user_msg = ChatMessageEntity(
             id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
         )
@@ -181,8 +180,6 @@ class ChatService:
 
         # 5. Save agent response
         agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
-        import uuid
-
         agent_msg = ChatMessageEntity(
             id=uuid.uuid4(),
             room_id=room_id,
