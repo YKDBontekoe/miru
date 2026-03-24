@@ -75,9 +75,55 @@ class TestAgentRepository:
         await repo.update_mood(uuid4(), "happy")
 
     @pytest.mark.asyncio
+    async def test_update_mood_success(self) -> None:
+        repo = AgentRepository()
+        user_id = uuid4()
+        agent = Agent(name="Test", user_id=user_id, personality="Friendly", system_prompt="Hi")
+        await repo.create(agent)
+        await repo.update_mood(agent.id, "happy")
+        updated_agent = await repo.get_by_id(agent.id)
+        assert updated_agent is not None
+        assert updated_agent.mood == "happy"
+
+    @pytest.mark.asyncio
+    async def test_update_mood_success_str(self) -> None:
+        repo = AgentRepository()
+        user_id = uuid4()
+        agent = Agent(name="Test", user_id=user_id, personality="Friendly", system_prompt="Hi")
+        await repo.create(agent)
+        await repo.update_mood(str(agent.id), "happy")
+        updated_agent = await repo.get_by_id(agent.id)
+        assert updated_agent is not None
+        assert updated_agent.mood == "happy"
+
+    @pytest.mark.asyncio
     async def test_increment_message_count_noop_for_unknown(self) -> None:
         repo = AgentRepository()
         await repo.increment_message_count(uuid4())
+
+    @pytest.mark.asyncio
+    async def test_increment_message_count_success(self) -> None:
+        repo = AgentRepository()
+        user_id = uuid4()
+        agent = Agent(name="Test", user_id=user_id, personality="Friendly", system_prompt="Hi")
+        await repo.create(agent)
+        initial_count = agent.message_count
+        await repo.increment_message_count(agent.id)
+        updated_agent = await repo.get_by_id(agent.id)
+        assert updated_agent is not None
+        assert updated_agent.message_count == initial_count + 1
+
+    @pytest.mark.asyncio
+    async def test_increment_message_count_success_str(self) -> None:
+        repo = AgentRepository()
+        user_id = uuid4()
+        agent = Agent(name="Test", user_id=user_id, personality="Friendly", system_prompt="Hi")
+        await repo.create(agent)
+        initial_count = agent.message_count
+        await repo.increment_message_count(str(agent.id))
+        updated_agent = await repo.get_by_id(agent.id)
+        assert updated_agent is not None
+        assert updated_agent.message_count == initial_count + 1
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +153,24 @@ class TestChatRepository:
         repo = ChatRepository()
         result = await repo.update_room(uuid4(), "New Name")
         assert result is None
+
+    @pytest.mark.asyncio
+    async def test_add_agent_to_room(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        room = await repo.create_room("Agent Room", user_id)
+        agent_repo = AgentRepository()
+        agent = Agent(name="Test", user_id=user_id, personality="Friendly", system_prompt="Hi")
+        await agent_repo.create(agent)
+
+        assoc = await repo.add_agent_to_room(room.id, agent.id)
+        assert assoc is not None
+        assert getattr(assoc, "room_id") == room.id
+        assert getattr(assoc, "agent_id") == agent.id
+
+        agents = await repo.list_room_agents(room.id)
+        assert len(agents) == 1
+        assert agents[0].id == agent.id
 
     @pytest.mark.asyncio
     async def test_delete_room_returns_false_for_unknown(self) -> None:
@@ -172,6 +236,16 @@ class TestChatRepository:
         repo = ChatRepository()
         # Should not raise even if the room doesn't exist
         await repo.touch_room(uuid4())
+
+    @pytest.mark.asyncio
+    async def test_room_belongs_to_user(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        room = await repo.create_room("Agent Room", user_id)
+        res = await repo.room_belongs_to_user(room.id, user_id)
+        assert res is True
+        res2 = await repo.room_belongs_to_user(room.id, uuid4())
+        assert res2 is False
 
 
 # ---------------------------------------------------------------------------
