@@ -1,24 +1,13 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { AppText } from './AppText';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageStatus } from '../core/models';
-
-const C = {
-  userBubble: '#2563EB',
-  userText: '#FFFFFF',
-  agentBubble: '#F0F0F6',
-  agentBubbleBorder: '#E0E0EC',
-  agentText: '#12121A',
-  errorBubble: '#FEF2F2',
-  errorBubbleBorder: '#FECACA',
-  errorText: '#DC2626',
-  muted: '#6E6E80',
-  faint: '#B0B0C0',
-};
+import { theme } from '../core/theme';
 
 interface ChatBubbleProps {
   text: string;
@@ -30,7 +19,14 @@ interface ChatBubbleProps {
 }
 
 function getAgentColor(name: string) {
-  const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
+  const palette = [
+    theme.colors.primary.light,
+    theme.colors.status.success,
+    '#EC4899',
+    '#8B5CF6',
+    theme.colors.status.warning,
+    '#10B981',
+  ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return palette[Math.abs(hash) % palette.length];
@@ -53,25 +49,29 @@ export function ChatBubble({
   const { t, i18n } = useTranslation();
   const isFailed = status === MessageStatus.error;
   const isStreaming = status === MessageStatus.streaming;
-  const accentColor = agentName ? getAgentColor(agentName) : '#2563EB';
+  const accentColor = agentName ? getAgentColor(agentName) : theme.colors.primary.DEFAULT;
+  const retryScale = useSharedValue(1);
+
+  const retryAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: retryScale.value }],
+  }));
+
+  const handleRetryPressIn = () => {
+    retryScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+  };
+
+  const handleRetryPressOut = () => {
+    retryScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
 
   if (isUser) {
     return (
-      <View style={{ alignItems: 'flex-end', marginBottom: 12, marginStart: 56 }}>
-        <View
-          style={{
-            backgroundColor: C.userBubble,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            borderRadius: 18,
-            borderBottomRightRadius: 4,
-            maxWidth: '100%',
-          }}
-        >
-          <AppText style={{ color: C.userText, fontSize: 16, lineHeight: 22 }}>{text}</AppText>
+      <View style={styles.userContainer}>
+        <View style={styles.userBubble}>
+          <AppText style={styles.userText}>{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginEnd: 2 }}>
+          <AppText style={styles.timestampRight}>
             {formatTime(timestamp, i18n.language)}
           </AppText>
         )}
@@ -80,77 +80,83 @@ export function ChatBubble({
   }
 
   return (
-    <View style={{ alignItems: 'flex-start', marginBottom: 12, marginEnd: 56 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+    <View style={styles.agentContainer}>
+      <View style={styles.agentRow}>
         {/* Avatar */}
         <View
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: isFailed ? C.errorBubble : `${accentColor}18`,
-            borderWidth: 1,
-            borderColor: isFailed ? C.errorBubbleBorder : `${accentColor}35`,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginEnd: 8,
-            marginBottom: 2,
-            flexShrink: 0,
-          }}
+          style={[
+            styles.avatar,
+            {
+              backgroundColor: isFailed ? theme.colors.status.errorSurfaceLight : `${accentColor}18`,
+              borderColor: isFailed ? theme.colors.status.errorSurfaceDark : `${accentColor}35`,
+            },
+          ]}
         >
           <AppText
-            style={{ color: isFailed ? C.errorText : accentColor, fontSize: 10, fontWeight: '700' }}
+            style={{
+              color: isFailed ? theme.colors.status.error : accentColor,
+              fontSize: theme.typography.caption.fontSize - 2,
+              fontWeight: '700',
+            }}
           >
             {agentName ? agentName[0].toUpperCase() : 'A'}
           </AppText>
         </View>
 
-        <View style={{ flex: 1 }}>
+        <View style={styles.agentContentWrapper}>
           {agentName && (
             <AppText
-              style={{ color: accentColor, fontSize: 12, fontWeight: '600', marginBottom: 3 }}
+              style={{
+                color: accentColor,
+                fontSize: theme.typography.caption.fontSize,
+                fontWeight: '600',
+                marginBottom: theme.spacing.xxs,
+              }}
             >
               {agentName}
             </AppText>
           )}
 
           <View
-            style={{
-              backgroundColor: isFailed ? C.errorBubble : C.agentBubble,
-              borderWidth: 1,
-              borderColor: isFailed ? C.errorBubbleBorder : C.agentBubbleBorder,
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              borderRadius: 18,
-              borderBottomLeftRadius: 4,
-            }}
+            style={[
+              styles.agentBubble,
+              {
+                backgroundColor: isFailed ? theme.colors.status.errorSurfaceLight : theme.colors.surface.highLight,
+                borderColor: isFailed ? theme.colors.status.errorSurfaceDark : theme.colors.surface.highestLight,
+              },
+            ]}
           >
             {text === '' && isStreaming ? (
               <TypingIndicator dotColor={accentColor} />
             ) : (
               <Markdown
                 style={{
-                  body: { color: isFailed ? C.errorText : C.agentText, fontSize: 16, margin: 0 },
-                  paragraph: { marginTop: 0, marginBottom: 0 },
+                  body: {
+                    color: isFailed ? theme.colors.status.error : theme.colors.onSurface.light,
+                    fontSize: theme.typography.body.fontSize,
+                    margin: theme.spacing.none,
+                    lineHeight: theme.typography.body.lineHeight,
+                  },
+                  paragraph: { marginTop: theme.spacing.none, marginBottom: theme.spacing.none },
                   code_inline: {
-                    backgroundColor: '#E8E8F0',
-                    borderRadius: 4,
-                    paddingHorizontal: 4,
-                    color: '#12121A',
-                    fontSize: 14,
+                    backgroundColor: theme.colors.surface.highestLight,
+                    borderRadius: theme.borderRadius.xs,
+                    paddingHorizontal: theme.spacing.xs,
+                    color: theme.colors.onSurface.light,
+                    fontSize: theme.typography.bodySm.fontSize,
                   },
                   fence: {
-                    backgroundColor: '#F0F0F6',
-                    borderRadius: 8,
-                    padding: 12,
-                    marginVertical: 4,
+                    backgroundColor: theme.colors.surface.highLight,
+                    borderRadius: theme.borderRadius.sm,
+                    padding: theme.spacing.md,
+                    marginVertical: theme.spacing.xs,
                   },
                   code_block: {
-                    backgroundColor: '#F0F0F6',
-                    borderRadius: 8,
-                    padding: 12,
-                    color: '#12121A',
-                    fontSize: 13,
+                    backgroundColor: theme.colors.surface.highLight,
+                    borderRadius: theme.borderRadius.sm,
+                    padding: theme.spacing.md,
+                    color: theme.colors.onSurface.light,
+                    fontSize: theme.typography.bodySm.fontSize - 1,
                   },
                   strong: { fontWeight: '700' },
                   em: { fontStyle: 'italic' },
@@ -163,21 +169,25 @@ export function ChatBubble({
 
           {/* Error / retry row */}
           {isFailed && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
-              <Ionicons name="alert-circle-outline" size={13} color={C.errorText} />
-              <AppText style={{ color: C.errorText, fontSize: 12 }}>
+            <View style={styles.errorRow}>
+              <Ionicons name="alert-circle-outline" size={13} color={theme.colors.status.error} />
+              <AppText style={styles.errorText}>
                 {t('chat.failed_to_send')}
               </AppText>
               {onRetry && (
-                <TouchableOpacity
-                  onPress={onRetry}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
-                >
-                  <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
-                  <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
-                    {t('chat.retry')}
-                  </AppText>
-                </TouchableOpacity>
+                <Animated.View style={retryAnimatedStyle}>
+                  <Pressable
+                    onPress={onRetry}
+                    onPressIn={handleRetryPressIn}
+                    onPressOut={handleRetryPressOut}
+                    style={styles.retryButton}
+                  >
+                    <Ionicons name="refresh-outline" size={13} color={theme.colors.primary.DEFAULT} />
+                    <AppText style={styles.retryText}>
+                      {t('chat.retry')}
+                    </AppText>
+                  </Pressable>
+                </Animated.View>
               )}
             </View>
           )}
@@ -185,10 +195,93 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginStart: 36 }}>
+        <AppText style={styles.timestampLeft}>
           {formatTime(timestamp, i18n.language)}
         </AppText>
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  userContainer: {
+    alignItems: 'flex-end',
+    marginBottom: theme.spacing.md,
+    marginStart: 56,
+  },
+  userBubble: {
+    backgroundColor: theme.colors.primary.DEFAULT,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    borderBottomRightRadius: theme.borderRadius.xs,
+    maxWidth: '100%',
+  },
+  userText: {
+    color: theme.colors.surface.light,
+    fontSize: theme.typography.body.fontSize,
+    lineHeight: theme.typography.body.lineHeight,
+  },
+  timestampRight: {
+    color: theme.colors.onSurface.disabledLight,
+    fontSize: theme.typography.caption.fontSize - 2,
+    marginTop: 3,
+    marginEnd: 2,
+  },
+  agentContainer: {
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.md,
+    marginEnd: 56,
+  },
+  agentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: theme.spacing.sm,
+    marginBottom: 2,
+    flexShrink: 0,
+  },
+  agentContentWrapper: {
+    flex: 1,
+  },
+  agentBubble: {
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    borderBottomLeftRadius: theme.borderRadius.xs,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
+    gap: theme.spacing.sm,
+  },
+  errorText: {
+    color: theme.colors.status.error,
+    fontSize: theme.typography.caption.fontSize,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  retryText: {
+    color: theme.colors.primary.DEFAULT,
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: '600',
+  },
+  timestampLeft: {
+    color: theme.colors.onSurface.disabledLight,
+    fontSize: theme.typography.caption.fontSize - 2,
+    marginTop: 3,
+    marginStart: 36,
+  },
+});

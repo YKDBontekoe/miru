@@ -43,3 +43,34 @@ jest.mock('nativewind', () => ({
 
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
+
+// Mock react-native-reanimated
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const Component = class extends React.Component {
+    render() {
+      return this.props.children;
+    }
+  };
+
+  return {
+    __esModule: true,
+    default: {
+      View: Component,
+      Text: Component,
+      Image: Component,
+      ScrollView: Component,
+      createAnimatedComponent: (c) => c,
+    },
+    useSharedValue: jest.fn(() => ({ value: 0 })),
+    useAnimatedStyle: jest.fn(() => ({})),
+    withSpring: jest.fn((val) => val),
+    withTiming: jest.fn((val) => val),
+    withSequence: jest.fn((val) => val),
+    withRepeat: jest.fn((val) => val),
+    withDelay: jest.fn((val) => val),
+    Easing: {
+      bezier: jest.fn(),
+    },
+  };
+});

@@ -1,12 +1,14 @@
 import React from 'react';
-import { TouchableOpacity, ActivityIndicator, TouchableOpacityProps } from 'react-native';
+import { ActivityIndicator, Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { AppText } from './AppText';
 
-export interface AppButtonProps extends TouchableOpacityProps {
+export interface AppButtonProps extends Omit<PressableProps, 'style'> {
   label: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
   className?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function AppButton({
@@ -15,8 +17,24 @@ export function AppButton({
   isLoading = false,
   disabled,
   className = '',
+  style,
   ...props
 }: AppButtonProps) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = (e: any) => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+    props.onPressIn?.(e);
+  };
+
+  const handlePressOut = (e: any) => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    props.onPressOut?.(e);
+  };
   const isDisabled = disabled || isLoading;
 
   let bgClass = '';
@@ -44,18 +62,21 @@ export function AppButton({
   }
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      disabled={isDisabled}
-      testID="app-button"
-      className={`h-[44px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${className}`}
-      {...props}
-    >
-      {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
-      ) : (
-        <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={[animatedStyle, style]}>
+      <Pressable
+        {...props}
+        disabled={isDisabled}
+        testID="app-button"
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        className={`h-[44px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${className}`}
+      >
+        {isLoading ? (
+          <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
+        ) : (
+          <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }

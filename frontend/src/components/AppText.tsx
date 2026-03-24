@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, TextProps } from 'react-native';
+import { Text, TextProps, StyleSheet } from 'react-native';
+import { theme } from '../core/theme';
 
 export interface AppTextProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySm' | 'caption';
@@ -12,28 +13,29 @@ export function AppText({
   variant = 'body',
   color = 'primary',
   className = '',
+  style,
   ...props
 }: AppTextProps) {
-  let textClass = '';
+  let variantStyle: any = {};
 
   switch (variant) {
     case 'h1':
-      textClass = 'text-3xl font-bold';
+      variantStyle = styles.h1;
       break;
     case 'h2':
-      textClass = 'text-2xl font-semibold';
+      variantStyle = styles.h2;
       break;
     case 'h3':
-      textClass = 'text-xl font-medium';
+      variantStyle = styles.h3;
       break;
     case 'body':
-      textClass = 'text-base';
+      variantStyle = styles.body;
       break;
     case 'bodySm':
-      textClass = 'text-sm';
+      variantStyle = styles.bodySm;
       break;
     case 'caption':
-      textClass = 'text-xs';
+      variantStyle = styles.caption;
       break;
   }
 
@@ -54,8 +56,44 @@ export function AppText({
   }
 
   return (
-    <Text className={`${textClass} ${colorClass} ${className}`} {...props}>
+    <Text {...props} className={`${colorClass} ${className}`} style={[variantStyle, style]}>
       {children}
     </Text>
   );
 }
+
+const styles = StyleSheet.create({
+  h1: {
+    fontSize: theme.typography.h1.fontSize,
+    fontWeight: theme.typography.h1.fontWeight,
+    lineHeight: theme.typography.h1.lineHeight,
+    letterSpacing: theme.typography.h1.letterSpacing,
+  },
+  h2: {
+    fontSize: theme.typography.h2.fontSize,
+    fontWeight: theme.typography.h2.fontWeight,
+    lineHeight: theme.typography.h2.lineHeight,
+    letterSpacing: theme.typography.h2.letterSpacing,
+  },
+  h3: {
+    fontSize: theme.typography.h3.fontSize,
+    fontWeight: theme.typography.h3.fontWeight,
+    lineHeight: theme.typography.h3.lineHeight,
+    letterSpacing: theme.typography.h3.letterSpacing,
+  },
+  body: {
+    fontSize: theme.typography.body.fontSize,
+    lineHeight: theme.typography.body.lineHeight,
+    letterSpacing: theme.typography.body.letterSpacing,
+  },
+  bodySm: {
+    fontSize: theme.typography.bodySm.fontSize,
+    lineHeight: theme.typography.bodySm.lineHeight,
+    letterSpacing: theme.typography.bodySm.letterSpacing,
+  },
+  caption: {
+    fontSize: theme.typography.caption.fontSize,
+    lineHeight: theme.typography.caption.lineHeight,
+    letterSpacing: theme.typography.caption.letterSpacing,
+  },
+});
