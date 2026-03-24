@@ -34,7 +34,21 @@ export const useAgentStore = create<AgentState>((set) => ({
   createAgent: async (data: Partial<Agent>) => {
     // Optimistic Update Setup
     const tempId = `temp_${Date.now()}`;
-    const optimisticAgent = { ...data, id: tempId, message_count: 0 } as Agent;
+    const optimisticAgent: Agent = {
+      id: tempId,
+      name: data.name || '',
+      personality: data.personality || '',
+      description: data.description || '',
+      system_prompt: data.system_prompt || '',
+      status: 'idle',
+      mood: 'neutral',
+      goals: data.goals || [],
+      capabilities: data.capabilities || [],
+      integrations: data.integrations || [],
+      integration_configs: data.integration_configs || {},
+      message_count: 0,
+      created_at: new Date().toISOString(),
+    };
     set((state) => ({ agents: [optimisticAgent, ...state.agents] }));
 
     try {

@@ -1,11 +1,12 @@
-**Hardening Plan**
+# Hardening Plan
+
 - **Skeletons over Spinners**: Implemented `AgentSkeleton` in `agents.tsx` mimicking the layout of standard items to prevent UI jank. Removed raw activity indicators where possible.
 - **Optimistic State Updates**: When `createAgent` is called, a temporary agent is immediately added to the UI list and mapped. If the backend fails, the list is rolled back to prevent visual tearing.
 - **Robust Error Handling**: Added `error` states to the Zustand `useAgentStore` preventing unhandled exceptions. Network failures now trigger a Retry Empty State on the screen.
 - **Double-Post Prevention & Button Disabling**: Bound `isSaving` and `isGenerating` directly to the `<TouchableOpacity disabled={...}>` components preventing multi-clicks on save/generate tasks.
-- **User Feedback Mapping**: Replaced silent failures/generic errors with explicit Alert Toasts reporting specific `error.message` on agent generation or creation failure. Success messages are now explicitly displayed via Alert as well.
+- **User Feedback Mapping**: The UI relies on in-form population and modal close/list update for feedback to remove extra user clicks.
 - **Defensive State Guards**: Inputs are trimmed via `name.trim()`. Fallback placeholders for `description` and `.name || 'Unknown'` are present to prevent crashes if `null`/`undefined` are accidentally sent down the wire.
-- **Backend Sync**: Hardened Pydantic `AgentBase` schemas with `min_length=1` and `strip_whitespace` to match the frontend defensive rules.
+- **Backend Sync**: Hardened Pydantic `AgentBase` schemas with `@field_validator(mode="before")` to strip whitespace on name and personality inputs.
 
 **Refactored Code**
 See the updated files: `frontend/app/(main)/agents.tsx`, `frontend/src/store/useAgentStore.ts`, and `backend/app/domain/agents/models.py`.
