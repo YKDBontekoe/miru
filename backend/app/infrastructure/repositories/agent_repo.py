@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from tortoise.expressions import F
+
 from app.domain.agents.models import Agent, Capability, Integration
 
 
@@ -45,14 +47,12 @@ class AgentRepository:
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
-        agent = await self.get_by_id(agent_id)
-        if agent:
-            agent.mood = mood
-            await agent.save()
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        await Agent.filter(id=agent_id).update(mood=mood)
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""
-        agent = await self.get_by_id(agent_id)
-        if agent:
-            agent.message_count += 1
-            await agent.save()
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        await Agent.filter(id=agent_id).update(message_count=F("message_count") + 1)

@@ -1,15 +1,20 @@
 import React from 'react';
-import { TouchableOpacity, ActivityIndicator, TouchableOpacityProps } from 'react-native';
+import { Pressable, ActivityIndicator, PressableProps } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { AppText } from './AppText';
 
-export interface AppButtonProps extends TouchableOpacityProps {
+export interface AppButtonProps extends PressableProps {
   label: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
   className?: string;
 }
 
-export function AppButton({
+export const AppButton = React.memo(function AppButton({
   label,
   variant = 'primary',
   isLoading = false,
@@ -43,19 +48,42 @@ export function AppButton({
       break;
   }
 
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const handlePressIn = () => {
+    if (isDisabled) return;
+    scale.value = withTiming(0.98, { duration: 100 });
+    opacity.value = withTiming(0.8, { duration: 100 });
+  };
+
+  const handlePressOut = () => {
+    if (isDisabled) return;
+    scale.value = withTiming(1, { duration: 150 });
+    opacity.value = withTiming(1, { duration: 150 });
+  };
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
+    <Pressable
       disabled={isDisabled}
       testID="app-button"
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       className={`h-[44px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${className}`}
       {...props}
     >
-      {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
-      ) : (
-        <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
-      )}
-    </TouchableOpacity>
+      <Animated.View style={animatedStyle} className="flex-row items-center justify-center w-full h-full">
+        {isLoading ? (
+          <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
+        ) : (
+          <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
+        )}
+      </Animated.View>
+    </Pressable>
   );
-}
+});

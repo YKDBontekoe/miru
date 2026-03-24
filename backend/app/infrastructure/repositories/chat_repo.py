@@ -26,19 +26,13 @@ class ChatRepository:
 
     async def update_room(self, room_id: UUID, name: str) -> ChatRoom | None:
         """Update a room's name."""
-        room = await self.get_room(room_id)
-        if room:
-            room.name = name
-            await room.save()
-        return room
+        await ChatRoom.filter(id=room_id).update(name=name)
+        return await self.get_room(room_id)
 
     async def delete_room(self, room_id: UUID) -> bool:
         """Delete a room."""
-        room = await self.get_room(room_id)
-        if room:
-            await room.delete()
-            return True
-        return False
+        deleted_count = await ChatRoom.filter(id=room_id).delete()
+        return deleted_count > 0
 
     async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> ChatRoomAgent:
         """Associate an agent with a room."""
@@ -67,6 +61,5 @@ class ChatRepository:
 
     async def touch_room(self, room_id: UUID) -> None:
         """Bump updated_at on a room so recent-chat sorting reflects new messages."""
-        room = await self.get_room(room_id)
-        if room:
-            await room.save()  # auto_now=True on updated_at refreshes the timestamp
+        from tortoise.timezone import now
+        await ChatRoom.filter(id=room_id).update(updated_at=now())

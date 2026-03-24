@@ -1,6 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
@@ -42,7 +47,7 @@ function formatTime(iso?: string, language: string = 'en') {
   return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
-export function ChatBubble({
+export const ChatBubble = React.memo(function ChatBubble({
   text,
   isUser,
   status = MessageStatus.sent,
@@ -169,15 +174,7 @@ export function ChatBubble({
                 {t('chat.failed_to_send')}
               </AppText>
               {onRetry && (
-                <TouchableOpacity
-                  onPress={onRetry}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
-                >
-                  <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
-                  <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
-                    {t('chat.retry')}
-                  </AppText>
-                </TouchableOpacity>
+                <RetryButton onRetry={onRetry} t={t} />
               )}
             </View>
           )}
@@ -190,5 +187,32 @@ export function ChatBubble({
         </AppText>
       )}
     </View>
+  );
+});
+
+function RetryButton({ onRetry, t }: { onRetry: () => void; t: any }) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withTiming(0.9, { duration: 100 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { duration: 150 });
+  };
+
+  return (
+    <Pressable onPress={onRetry} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+      <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 3 }, animatedStyle]}>
+        <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
+        <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
+          {t('chat.retry')}
+        </AppText>
+      </Animated.View>
+    </Pressable>
   );
 }

@@ -1,6 +1,11 @@
 import React, { useRef } from 'react';
-import { View, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { View, TextInput, Pressable, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 const C = {
   bg: '#FFFFFF',
@@ -25,7 +30,7 @@ interface ChatInputBarProps {
   placeholder?: string;
 }
 
-export function ChatInputBar({
+export const ChatInputBar = React.memo(function ChatInputBar({
   value,
   onChangeText,
   onSend,
@@ -42,36 +47,24 @@ export function ChatInputBar({
     // Keep focus so keyboard stays open for follow-up messages
   };
 
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withTiming(0.9, { duration: 100 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { duration: 150 });
+  };
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        paddingBottom: Platform.OS === 'ios' ? 10 : 10,
-        backgroundColor: C.bg,
-        borderTopWidth: 1,
-        borderTopColor: C.border,
-        gap: 8,
-      }}
-    >
+    <View style={styles.container}>
       {/* Text input */}
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: C.inputBg,
-          borderRadius: 22,
-          borderWidth: 1,
-          borderColor: C.inputBorder,
-          paddingHorizontal: 16,
-          paddingTop: Platform.OS === 'ios' ? 10 : 8,
-          paddingBottom: Platform.OS === 'ios' ? 10 : 8,
-          minHeight: 44,
-          maxHeight: 130,
-          justifyContent: 'center',
-        }}
-      >
+      <View style={styles.inputContainer}>
         <TextInput
           ref={inputRef}
           value={value}
@@ -80,13 +73,7 @@ export function ChatInputBar({
           placeholderTextColor={C.placeholder}
           multiline
           textAlignVertical="center"
-          style={{
-            color: C.text,
-            fontSize: 16,
-            lineHeight: 22,
-            padding: 0,
-            margin: 0,
-          }}
+          style={styles.input}
           returnKeyType="default"
           blurOnSubmit={false}
         />
@@ -94,40 +81,90 @@ export function ChatInputBar({
 
       {/* Action button */}
       {isStreaming ? (
-        <TouchableOpacity
+        <Pressable
           onPress={onStop}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: C.stopBg,
-            borderWidth: 1,
-            borderColor: C.stopBorder,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          activeOpacity={0.75}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
         >
-          {/* Stop square */}
-          <View style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: C.stopIcon }} />
-        </TouchableOpacity>
+          <Animated.View style={[styles.stopButton, animatedStyle]}>
+            <View style={styles.stopIcon} />
+          </Animated.View>
+        </Pressable>
       ) : (
-        <TouchableOpacity
+        <Pressable
           onPress={handleSend}
           disabled={!canSend}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: canSend ? C.primary : C.sendDisabled,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          activeOpacity={0.8}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
         >
-          <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
-        </TouchableOpacity>
+          <Animated.View
+            style={[
+              styles.sendButton,
+              animatedStyle,
+              { backgroundColor: canSend ? C.primary : C.sendDisabled },
+            ]}
+          >
+            <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
+          </Animated.View>
+        </Pressable>
       )}
     </View>
   );
-}
+});
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 10,
+    backgroundColor: C.bg,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    gap: 8,
+  },
+  inputContainer: {
+    flex: 1,
+    backgroundColor: C.inputBg,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 10 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
+    minHeight: 44,
+    maxHeight: 130,
+    justifyContent: 'center',
+  },
+  input: {
+    color: C.text,
+    fontSize: 16,
+    lineHeight: 22,
+    padding: 0,
+    margin: 0,
+  },
+  stopButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.stopBg,
+    borderWidth: 1,
+    borderColor: C.stopBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopIcon: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: C.stopIcon,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
