@@ -27,7 +27,7 @@ import type { AgentActivityData } from '../core/services/ChatHubService';
 // ---------------------------------------------------------------------------
 
 // DOCS(miru-agent): needs documentation
-const Dot = ({ delay, color }: { delay: number; color: string }) => {
+const Dot = ({ delay, colorClass }: { delay: number; colorClass: string }) => {
   const ty = useSharedValue(0);
 
   useEffect(() => {
@@ -35,7 +35,10 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
       delay,
       withRepeat(
         withSequence(
-          withTiming(-5, { duration: 380, easing: Easing.bezier(0.4, 0, 0.6, 1) }),
+          withTiming(-5, {
+            duration: 380,
+            easing: Easing.bezier(0.4, 0, 0.6, 1),
+          }),
           withTiming(0, { duration: 380, easing: Easing.bezier(0.4, 0, 0.6, 1) })
         ),
         -1,
@@ -44,15 +47,12 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
     );
   }, [delay, ty]);
 
-  const style = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: ty.value }],
+  }));
 
   return (
-    <Animated.View
-      style={[
-        { width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, marginHorizontal: 2 },
-        style,
-      ]}
-    />
+    <Animated.View className={`w-1.5 h-1.5 rounded-full mx-0.5 ${colorClass}`} style={style} />
   );
 };
 
@@ -71,14 +71,29 @@ function activityLabel(activity: AgentActivityData['activity']): string {
   }
 }
 
-function activityColor(activity: AgentActivityData['activity']): string {
+function activityColorClasses(activity: AgentActivityData['activity']) {
   switch (activity) {
     case 'thinking':
-      return '#2563EB';
+      return {
+        bg: 'bg-primary/10',
+        border: 'border-primary/20',
+        text: 'text-primary',
+        dot: 'bg-primary',
+      };
     case 'using_tool':
-      return '#7C3AED';
+      return {
+        bg: 'bg-purple-500/10',
+        border: 'border-purple-500/20',
+        text: 'text-purple-600',
+        dot: 'bg-purple-600',
+      };
     case 'done':
-      return '#059669';
+      return {
+        bg: 'bg-status-success/10',
+        border: 'border-status-success/20',
+        text: 'text-status-success',
+        dot: 'bg-status-success',
+      };
   }
 }
 
@@ -92,7 +107,7 @@ interface AgentActivityIndicatorProps {
 
 // DOCS(miru-agent): needs documentation
 export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps) {
-  const color = activityColor(activity.activity);
+  const colors = activityColorClasses(activity.activity);
   const names = activity.agent_names.join(', ');
   const label = activityLabel(activity.activity);
 
@@ -100,41 +115,34 @@ export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        gap: 8,
-      }}
+      className="flex-row items-center px-lg py-md gap-sm"
     >
       {/* Agent avatar chip */}
-      <View
-        style={{
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          borderRadius: 10,
-          backgroundColor: `${color}15`,
-          borderWidth: 1,
-          borderColor: `${color}30`,
-        }}
-      >
-        <AppText style={{ fontSize: 11, fontWeight: '600', color }}>{names}</AppText>
+      <View className={`px-sm py-xs rounded-full border ${colors.bg} ${colors.border}`}>
+        <AppText variant="caption" className={`font-semibold ${colors.text}`}>
+          {names}
+        </AppText>
       </View>
 
       {/* Status label */}
-      <AppText style={{ fontSize: 12, color: '#6E6E80' }}>{label}</AppText>
+      <AppText variant="caption" color="muted">
+        {label}
+      </AppText>
 
       {/* Animated dots */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Dot delay={0} color={color} />
-        <Dot delay={140} color={color} />
-        <Dot delay={280} color={color} />
+      <View className="flex-row items-center">
+        <Dot delay={0} colorClass={colors.dot} />
+        <Dot delay={140} colorClass={colors.dot} />
+        <Dot delay={280} colorClass={colors.dot} />
       </View>
 
       {/* Optional tool/detail text */}
       {activity.activity === 'using_tool' && !!activity.detail && (
-        <AppText style={{ fontSize: 11, color: '#9E9EAF', flex: 1 }} numberOfLines={1}>
+        <AppText
+          variant="caption"
+          className="text-onSurface-mutedLight dark:text-onSurface-mutedDark flex-1"
+          numberOfLines={1}
+        >
           {activity.detail}
         </AppText>
       )}

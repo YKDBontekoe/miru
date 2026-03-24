@@ -3,7 +3,7 @@ import { Text, TextProps } from 'react-native';
 
 export interface AppTextProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySm' | 'caption';
-  color?: 'primary' | 'muted' | 'disabled' | 'brand';
+  color?: 'primary' | 'muted' | 'disabled' | 'brand' | 'white';
   className?: string;
 }
 
@@ -19,22 +19,22 @@ export function AppText({
 
   switch (variant) {
     case 'h1':
-      textClass = 'text-3xl font-bold';
+      textClass = 'text-[32px] font-bold leading-[40px] tracking-tight';
       break;
     case 'h2':
-      textClass = 'text-2xl font-semibold';
+      textClass = 'text-[24px] font-semibold leading-[32px] tracking-tight';
       break;
     case 'h3':
-      textClass = 'text-xl font-medium';
+      textClass = 'text-[20px] font-medium leading-[28px]';
       break;
     case 'body':
-      textClass = 'text-base';
+      textClass = 'text-[16px] leading-[24px] tracking-[0.15px]';
       break;
     case 'bodySm':
-      textClass = 'text-sm';
+      textClass = 'text-[14px] leading-[20px] tracking-[0.25px]';
       break;
     case 'caption':
-      textClass = 'text-xs';
+      textClass = 'text-[12px] leading-[16px] tracking-[0.4px]';
       break;
   }
 
@@ -51,6 +51,9 @@ export function AppText({
       break;
     case 'brand':
       colorClass = 'text-primary';
+      break;
+    case 'white':
+      colorClass = 'text-white';
       break;
   }
 

@@ -1,13 +1,16 @@
-import React from 'react';
-import { TouchableOpacity, ActivityIndicator, TouchableOpacityProps } from 'react-native';
+import React, { useCallback } from 'react';
+import { Pressable, ActivityIndicator, PressableProps, StyleProp, ViewStyle } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { AppText } from './AppText';
 
-export interface AppButtonProps extends TouchableOpacityProps {
+export interface AppButtonProps extends PressableProps {
   label: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
   className?: string;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // DOCS(miru-agent): needs documentation
 export function AppButton({
@@ -16,12 +19,30 @@ export function AppButton({
   isLoading = false,
   disabled,
   className = '',
+  style,
   ...props
 }: AppButtonProps) {
   const isDisabled = disabled || isLoading;
+  const pressed = useSharedValue(0);
+
+  const handlePressIn = useCallback(() => {
+    pressed.value = withSpring(1, { damping: 15, stiffness: 200 });
+  }, [pressed]);
+
+  const handlePressOut = useCallback(() => {
+    pressed.value = withSpring(0, { damping: 15, stiffness: 200 });
+  }, [pressed]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: 1 - pressed.value * 0.02 }],
+      opacity: isDisabled ? 0.6 : 1 - pressed.value * 0.1,
+    };
+  });
 
   let bgClass = '';
   let textClass = '';
+  let borderClass = '';
 
   switch (variant) {
     case 'primary':
@@ -35,7 +56,8 @@ export function AppButton({
       textClass = 'text-onSurface-light dark:text-onSurface-dark';
       break;
     case 'outline':
-      bgClass = 'border border-border-light dark:border-border-dark bg-transparent';
+      bgClass = 'bg-transparent';
+      borderClass = 'border-2 border-border-light dark:border-border-dark';
       textClass = 'text-onSurface-light dark:text-onSurface-dark';
       break;
     case 'ghost':
@@ -45,18 +67,22 @@ export function AppButton({
   }
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
+    <AnimatedPressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
       testID="app-button"
-      className={`h-[44px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${className}`}
+      className={`h-[48px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${borderClass} ${className}`}
+      style={[animatedStyle, style as StyleProp<ViewStyle>]}
       {...props}
     >
       {isLoading ? (
         <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
       ) : (
-        <AppText className={`font-semibold ${textClass}`}>{label}</AppText>
+        <AppText variant="body" className={`font-semibold ${textClass}`}>
+          {label}
+        </AppText>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
