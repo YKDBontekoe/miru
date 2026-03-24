@@ -16,7 +16,7 @@ A clear and concise description of what you want to happen.
 **Describe alternatives you've considered**
 A clear and concise description of any alternative solutions or features you've considered.
 
-**Frontend (Flutter) considerations**
+**Frontend (React Native) considerations**
 - UI/UX impact: [...]
 - Platform support: [iOS, Android, Web, Windows, macOS, Linux]
 - Performance considerations: [...]

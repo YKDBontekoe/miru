@@ -24,6 +24,7 @@ from app.domain.chat.service import ChatService  # noqa: TCH001
 router = APIRouter(tags=["Chat"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/rooms", response_model=list[RoomResponse])
 async def list_rooms(
     user_id: CurrentUser,
@@ -32,6 +33,7 @@ async def list_rooms(
     return await service.list_rooms(user_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/rooms", response_model=RoomResponse)
 async def create_room(
     data: RoomCreate,
@@ -41,6 +43,7 @@ async def create_room(
     return await service.create_room(data.name, user_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/chat")
 async def chat(
     request: ChatRequest,
@@ -60,6 +63,7 @@ async def chat(
     )
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/crew")
 async def run_crew(
     request: ChatRequest,
@@ -76,6 +80,7 @@ async def run_crew(
     return await service.run_crew(message, user_id, accept_language=accept_language)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.patch("/rooms/{room_id}", response_model=RoomResponse)
 async def update_room(
     room_id: UUID,
@@ -89,6 +94,7 @@ async def update_room(
     return room
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.delete("/rooms/{room_id}")
 async def delete_room(
     room_id: UUID,
@@ -101,6 +107,7 @@ async def delete_room(
     return {"status": "ok"}
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/rooms/{room_id}/agents")
 async def add_agent_to_room(
     room_id: UUID,
@@ -112,6 +119,7 @@ async def add_agent_to_room(
     return {"status": "ok"}
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
 async def get_room_agents(
     room_id: UUID,
@@ -122,6 +130,7 @@ async def get_room_agents(
     return [AgentResponse.model_validate(a) for a in agents]
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
 async def get_room_messages(
     room_id: UUID,
@@ -131,6 +140,7 @@ async def get_room_messages(
     return await service.get_room_messages(room_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/rooms/{room_id}/chat")
 async def chat_in_room(
     room_id: UUID,

@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows:
       - "Backend CI/CD - Deploy to Azure Container Apps"
-      - "Flutter CI/CD Pipeline"
+      - "Frontend CI/CD Pipeline"
       - "Database Migrations"
       - "Nightly Build and Dependency Check"
     types:

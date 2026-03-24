@@ -20,6 +20,7 @@ from app.domain.auth.service import AuthService  # noqa: TCH001
 router = APIRouter(tags=["Auth"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/passkey/register/options")
 async def get_registration_options(
     _data: PasskeyRegisterOptionsRequest,
@@ -31,6 +32,7 @@ async def get_registration_options(
     return {"challenge": "dummy_challenge", "rp": {"name": "Miru", "id": "localhost"}}
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/passkey/register/verify")
 async def verify_registration(
     data: PasskeyRegisterVerifyRequest,
@@ -42,6 +44,7 @@ async def verify_registration(
     return {"status": "ok"}
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/passkey/login/options")
 async def get_login_options(
     _data: PasskeyLoginOptionsRequest,
@@ -51,6 +54,7 @@ async def get_login_options(
     return {"challenge": "dummy_challenge"}
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/passkey/login/verify")
 async def verify_login(
     _data: PasskeyLoginVerifyRequest,
@@ -63,6 +67,7 @@ async def verify_login(
     }
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/passkey/list", response_model=dict[str, list[PasskeyRecord]])
 async def list_passkeys(
     user_id: CurrentUser,
@@ -73,6 +78,7 @@ async def list_passkeys(
     return {"passkeys": passkeys}
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.delete("/passkey/{passkey_id}")
 async def delete_passkey(
     passkey_id: str,

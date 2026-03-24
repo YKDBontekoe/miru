@@ -21,6 +21,7 @@ class NotificationRequest(BaseModel):
     title: str = "New Notification"
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/send", status_code=status.HTTP_202_ACCEPTED)
 async def send_notification(
     request: NotificationRequest,

@@ -71,9 +71,9 @@
   color: 5319e7
   description: Frontend related changes
 
-- name: flutter
+- name: react-native
   color: 025e8c
-  description: Flutter specific changes
+  description: React Native specific changes
 
 - name: python
   color: 2b67c6

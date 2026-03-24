@@ -42,6 +42,7 @@ function formatTime(iso?: string, language: string = 'en') {
   return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
+// DOCS(miru-agent): needs documentation
 export function ChatBubble({
   text,
   isUser,
@@ -57,21 +58,12 @@ export function ChatBubble({
 
   if (isUser) {
     return (
-      <View style={{ alignItems: 'flex-end', marginBottom: 12, marginStart: 56 }}>
-        <View
-          style={{
-            backgroundColor: C.userBubble,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
-            borderRadius: 18,
-            borderBottomRightRadius: 4,
-            maxWidth: '100%',
-          }}
-        >
-          <AppText style={{ color: C.userText, fontSize: 16, lineHeight: 22 }}>{text}</AppText>
+      <View className="items-end mb-3 ms-14">
+        <View className="bg-blue-600 px-3.5 py-2.5 rounded-2xl rounded-br-[4px] max-w-full">
+          <AppText className="text-white text-base leading-[22px]">{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginEnd: 2 }}>
+          <AppText className="text-[#B0B0C0] text-[10px] mt-[3px] me-0.5">
             {formatTime(timestamp, i18n.language)}
           </AppText>
         )}
@@ -80,50 +72,34 @@ export function ChatBubble({
   }
 
   return (
-    <View style={{ alignItems: 'flex-start', marginBottom: 12, marginEnd: 56 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+    <View className="items-start mb-3 me-14">
+      <View className="flex-row items-end">
         {/* Avatar */}
         <View
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: isFailed ? C.errorBubble : `${accentColor}18`,
-            borderWidth: 1,
-            borderColor: isFailed ? C.errorBubbleBorder : `${accentColor}35`,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginEnd: 8,
-            marginBottom: 2,
-            flexShrink: 0,
-          }}
+          className={`w-7 h-7 rounded-full border items-center justify-center me-2 mb-0.5 shrink-0 ${isFailed ? 'bg-red-50 border-red-200' : ''}`}
+          style={
+            !isFailed
+              ? { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}35` }
+              : {}
+          }
         >
           <AppText
-            style={{ color: isFailed ? C.errorText : accentColor, fontSize: 10, fontWeight: '700' }}
+            className={`text-[10px] font-bold ${isFailed ? 'text-red-600' : ''}`}
+            style={!isFailed ? { color: accentColor } : {}}
           >
             {agentName ? agentName[0].toUpperCase() : 'A'}
           </AppText>
         </View>
 
-        <View style={{ flex: 1 }}>
+        <View className="flex-1">
           {agentName && (
-            <AppText
-              style={{ color: accentColor, fontSize: 12, fontWeight: '600', marginBottom: 3 }}
-            >
+            <AppText className="text-xs font-semibold mb-[3px]" style={{ color: accentColor }}>
               {agentName}
             </AppText>
           )}
 
           <View
-            style={{
-              backgroundColor: isFailed ? C.errorBubble : C.agentBubble,
-              borderWidth: 1,
-              borderColor: isFailed ? C.errorBubbleBorder : C.agentBubbleBorder,
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              borderRadius: 18,
-              borderBottomLeftRadius: 4,
-            }}
+            className={`border px-3.5 py-2.5 rounded-2xl rounded-bl-[4px] ${isFailed ? 'bg-red-50 border-red-200' : 'bg-[#F0F0F6] border-[#E0E0EC]'}`}
           >
             {text === '' && isStreaming ? (
               <TypingIndicator dotColor={accentColor} />
@@ -163,18 +139,13 @@ export function ChatBubble({
 
           {/* Error / retry row */}
           {isFailed && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
+            <View className="flex-row items-center mt-1 gap-2">
               <Ionicons name="alert-circle-outline" size={13} color={C.errorText} />
-              <AppText style={{ color: C.errorText, fontSize: 12 }}>
-                {t('chat.failed_to_send')}
-              </AppText>
+              <AppText className="text-red-600 text-xs">{t('chat.failed_to_send')}</AppText>
               {onRetry && (
-                <TouchableOpacity
-                  onPress={onRetry}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
-                >
+                <TouchableOpacity onPress={onRetry} className="flex-row items-center gap-[3px]">
                   <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
-                  <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
+                  <AppText className="text-blue-600 text-xs font-semibold">
                     {t('chat.retry')}
                   </AppText>
                 </TouchableOpacity>
@@ -185,7 +156,7 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={{ color: C.faint, fontSize: 10, marginTop: 3, marginStart: 36 }}>
+        <AppText className="text-[#B0B0C0] text-[10px] mt-[3px] ms-9">
           {formatTime(timestamp, i18n.language)}
         </AppText>
       )}

@@ -7,6 +7,7 @@ export interface AppTextProps extends TextProps {
   className?: string;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AppText({
   children,
   variant = 'body',

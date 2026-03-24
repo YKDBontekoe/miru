@@ -1,7 +1,0 @@
-node_modules
-dist
-.expo
-.expo-shared
-web-build
-frontend-dist
-package-lock.json

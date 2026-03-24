@@ -46,8 +46,8 @@ jobs:
 
       - name: Set locale (required by Fastlane)
         run: |
-          echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
-          echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
+          echo "LANG=en_US.UTF-8" >> "$GITHUB_ENV"
+          echo "LC_ALL=en_US.UTF-8" >> "$GITHUB_ENV"
 
       - name: Install Fastlane
         run: brew install fastlane
@@ -69,7 +69,7 @@ jobs:
               PROFILE="development"
             fi
           fi
-          echo "value=$PROFILE" >> $GITHUB_OUTPUT
+          echo "value=$PROFILE" >> "$GITHUB_OUTPUT"
 
       - name: Build iOS locally
         env:
@@ -80,7 +80,7 @@ jobs:
         run: |
           eas build \
             --platform ios \
-            --profile ${{ steps.profile.outputs.value }} \
+            --profile "${{ steps.profile.outputs.value }}" \
             --local \
             --non-interactive \
             --output ./build/app.ipa

@@ -49,4 +49,4 @@ jobs:
         with:
           category: "/language:python"
 
-  # Note: Dart/Flutter is not supported by CodeQL.
+  # Note: React Native/TypeScript is not supported by CodeQL.

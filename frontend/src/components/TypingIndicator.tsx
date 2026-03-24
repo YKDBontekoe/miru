@@ -14,6 +14,7 @@ interface TypingIndicatorProps {
   dotColor?: string;
 }
 
+// DOCS(miru-agent): needs documentation
 const Dot = ({ delay, color }: { delay: number; color: string }) => {
   const translateY = useSharedValue(0);
 
@@ -43,6 +44,7 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
   );
 };
 
+// DOCS(miru-agent): needs documentation
 export function TypingIndicator({ dotColor = '#A0A0B0' }: TypingIndicatorProps) {
   return (
     <View className="flex-row items-center h-4 px-xs">

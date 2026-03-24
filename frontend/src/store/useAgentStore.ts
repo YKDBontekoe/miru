@@ -10,6 +10,7 @@ interface AgentState {
   generateAgent: (keywords: string) => Promise<{ name: string; personality: string }>;
 }
 
+// DOCS(miru-agent): needs documentation
 export const useAgentStore = create<AgentState>((set) => ({
   agents: [],
   isLoading: false,

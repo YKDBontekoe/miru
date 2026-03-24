@@ -9,6 +9,7 @@ export interface AppCardProps extends ViewProps {
   style?: StyleProp<ViewStyle>;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AppCard({
   children,
   className = '',

@@ -15,6 +15,7 @@ interface ProductivityState {
   deleteTask: (id: string) => Promise<void>;
 }
 
+// DOCS(miru-agent): needs documentation
 export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
   tasks: [],
