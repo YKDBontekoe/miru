@@ -1,10 +1,6 @@
 import React from 'react';
 import { Pressable, ActivityIndicator, PressableProps } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { AppText } from './AppText';
 
 export interface AppButtonProps extends PressableProps {
@@ -77,7 +73,10 @@ export const AppButton = React.memo(function AppButton({
       className={`h-[44px] flex-row items-center justify-center rounded-xl px-lg ${bgClass} ${className}`}
       {...props}
     >
-      <Animated.View style={animatedStyle} className="flex-row items-center justify-center w-full h-full">
+      <Animated.View
+        style={animatedStyle}
+        className="flex-row items-center justify-center w-full h-full"
+      >
         {isLoading ? (
           <ActivityIndicator color={variant === 'primary' && !isDisabled ? 'white' : '#60A5FA'} />
         ) : (

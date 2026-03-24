@@ -62,4 +62,5 @@ class ChatRepository:
     async def touch_room(self, room_id: UUID) -> None:
         """Bump updated_at on a room so recent-chat sorting reflects new messages."""
         from tortoise.timezone import now
+
         await ChatRoom.filter(id=room_id).update(updated_at=now())

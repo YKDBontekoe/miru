@@ -1,11 +1,7 @@
 import React, { useRef } from 'react';
 import { View, TextInput, Pressable, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 const C = {
   bg: '#FFFFFF',
@@ -81,11 +77,7 @@ export const ChatInputBar = React.memo(function ChatInputBar({
 
       {/* Action button */}
       {isStreaming ? (
-        <Pressable
-          onPress={onStop}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-        >
+        <Pressable onPress={onStop} onPressIn={handlePressIn} onPressOut={handlePressOut}>
           <Animated.View style={[styles.stopButton, animatedStyle]}>
             <View style={styles.stopIcon} />
           </Animated.View>

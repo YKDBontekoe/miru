@@ -1,10 +1,6 @@
 import React from 'react';
 import { View, Pressable, ViewProps, StyleProp, ViewStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 export interface AppCardProps extends ViewProps {
   children: React.ReactNode;
@@ -51,11 +47,7 @@ export const AppCard = React.memo(function AppCard({
 
   if (onTap) {
     return (
-      <Pressable
-        onPress={onTap}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-      >
+      <Pressable onPress={onTap} onPressIn={handlePressIn} onPressOut={handlePressOut}>
         <Animated.View style={animatedStyle}>{CardComponent}</Animated.View>
       </Pressable>
     );

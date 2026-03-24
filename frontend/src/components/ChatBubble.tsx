@@ -1,11 +1,7 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
@@ -173,9 +169,7 @@ export const ChatBubble = React.memo(function ChatBubble({
               <AppText style={{ color: C.errorText, fontSize: 12 }}>
                 {t('chat.failed_to_send')}
               </AppText>
-              {onRetry && (
-                <RetryButton onRetry={onRetry} t={t} />
-              )}
+              {onRetry && <RetryButton onRetry={onRetry} t={t} />}
             </View>
           )}
         </View>
@@ -207,7 +201,9 @@ function RetryButton({ onRetry, t }: { onRetry: () => void; t: any }) {
 
   return (
     <Pressable onPress={onRetry} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-      <Animated.View style={[{ flexDirection: 'row', alignItems: 'center', gap: 3 }, animatedStyle]}>
+      <Animated.View
+        style={[{ flexDirection: 'row', alignItems: 'center', gap: 3 }, animatedStyle]}
+      >
         <Ionicons name="refresh-outline" size={13} color={C.userBubble} />
         <AppText style={{ color: C.userBubble, fontSize: 12, fontWeight: '600' }}>
           {t('chat.retry')}
