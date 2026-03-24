@@ -165,8 +165,8 @@ class TestChatRepository:
 
         assoc = await repo.add_agent_to_room(room.id, agent.id)
         assert assoc is not None
-        assert assoc.room_id == room.id
-        assert assoc.agent_id == agent.id
+        assert getattr(assoc, "room_id") == room.id
+        assert getattr(assoc, "agent_id") == agent.id
 
         agents = await repo.list_room_agents(room.id)
         assert len(agents) == 1
