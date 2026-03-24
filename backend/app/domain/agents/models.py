@@ -269,6 +269,28 @@ class AgentResponse(AgentBase):
         return list(v) if v else []
 
 
+class AgentTemplateResponse(BaseModel):
+    """Schema for returning agent template data."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    description: str
+    personality: str
+    goals: list[str] = []
+    created_at: datetime
+
+
+class AgentUpdate(BaseModel):
+    """Schema for updating an existing agent."""
+
+    name: str | None = Field(default=None, max_length=100)
+    personality: str | None = Field(default=None, max_length=1000)
+    description: str | None = Field(default=None, max_length=500)
+    goals: list[str] | None = None
+
+
 class AgentGenerate(BaseModel):
     """Input for AI-powered agent generation."""
 

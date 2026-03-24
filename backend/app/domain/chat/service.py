@@ -69,6 +69,9 @@ class ChatService:
     async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
         await self.chat_repo.add_agent_to_room(room_id, agent_id)
 
+    async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
+        return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
+
     async def list_room_agents(self, room_id: UUID) -> list[Agent]:
         return await self.chat_repo.list_room_agents(room_id)
 

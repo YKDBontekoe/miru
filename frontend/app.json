@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.miru.app",
+      "bundleIdentifier": "com.ykdbonte.miru.dev",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

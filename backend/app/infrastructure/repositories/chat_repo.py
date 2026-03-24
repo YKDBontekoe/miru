@@ -80,6 +80,11 @@ class ChatRepository:
             created_at=assoc.created_at,
         )
 
+    async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
+        """Remove an agent from a room."""
+        deleted_count = await ChatRoomAgent.filter(room_id=room_id, agent_id=agent_id).delete()
+        return deleted_count > 0
+
     async def list_room_agents(self, room_id: UUID) -> list[Agent]:
         """Fetch all agents associated with a room, with integrations prefetched."""
         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(

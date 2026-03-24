@@ -4,11 +4,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Pressable,
   View,
   Modal,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  FadeIn,
+  FadeOut,
+  SlideInUp,
+  SlideOutDown,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -64,6 +74,7 @@ export default function ChatRoomScreen() {
   const [inputText, setInputText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [roomAgents, setRoomAgents] = useState<Agent[]>([]);
+  const [quickViewAgent, setQuickViewAgent] = useState<Agent | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
 
@@ -137,6 +148,12 @@ export default function ChatRoomScreen() {
     setIsModalVisible(false);
   };
 
+  const handleRemoveAgent = async (agentId: string) => {
+    if (!roomId) return;
+    await ApiService.removeAgentFromRoom(roomId, agentId);
+    setRoomAgents((prev) => prev.filter((a) => a.id !== agentId));
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       {/* Header */}
@@ -187,32 +204,55 @@ export default function ChatRoomScreen() {
           )}
         </View>
 
-        {/* Agent avatars row */}
+        {/* Tappable agent avatars row */}
         {roomAgents.length > 0 && (
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {roomAgents.slice(0, 3).map((agent, i) => {
               const color = getAgentColor(agent.name);
               return (
-                <View
+                <TouchableOpacity
                   key={agent.id}
+                  onPress={() => setQuickViewAgent(agent)}
                   style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: `${color}20`,
-                    borderWidth: 1.5,
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    backgroundColor: `${color}22`,
+                    borderWidth: 2,
                     borderColor: C.surface,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginStart: i === 0 ? 0 : -8,
+                    marginStart: i === 0 ? 0 : -9,
+                    zIndex: 3 - i,
                   }}
+                  activeOpacity={0.75}
                 >
                   <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
                     {agent.name[0].toUpperCase()}
                   </AppText>
-                </View>
+                </TouchableOpacity>
               );
             })}
+            {roomAgents.length > 3 && (
+              <View
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 15,
+                  backgroundColor: C.surfaceHigh,
+                  borderWidth: 2,
+                  borderColor: C.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginStart: -9,
+                  zIndex: 0,
+                }}
+              >
+                <AppText style={{ color: C.muted, fontSize: 10, fontWeight: '700' }}>
+                  +{roomAgents.length - 3}
+                </AppText>
+              </View>
+            )}
           </View>
         )}
 
@@ -335,93 +375,210 @@ export default function ChatRoomScreen() {
         />
       </KeyboardAvoidingView>
 
-      {/* Add Agent Modal */}
+      {/* Manage Agents Modal */}
       <Modal visible={isModalVisible} animationType="slide" transparent>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
-          <View
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <Animated.View
+            entering={SlideInUp.springify().damping(22)}
+            exiting={SlideOutDown.duration(200)}
             style={{
               backgroundColor: C.surface,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              padding: 24,
-              maxHeight: '70%',
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              maxHeight: '72%',
             }}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 20,
-              }}
-            >
-              <AppText variant="h2" style={{ color: C.text }}>
-                Add an Agent
-              </AppText>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close-circle" size={26} color={C.faint} />
-              </TouchableOpacity>
+            <View style={{ alignItems: 'center', paddingTop: 12, marginBottom: 2 }}>
+              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
+            </View>
+            <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <AppText style={{ fontSize: 18, fontWeight: '700', color: C.text }}>
+                  {t('chat.manage_agents', 'Manage Agents')}
+                </AppText>
+                <TouchableOpacity
+                  onPress={() => setIsModalVisible(false)}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    backgroundColor: C.surfaceHigh,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="close" size={16} color={C.muted} />
+                </TouchableOpacity>
+              </View>
+              {roomAgents.length > 0 && (
+                <AppText style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>
+                  {roomAgents.length} active · tap an avatar in the header to manage
+                </AppText>
+              )}
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {agents.map((agent) => {
-                const color = getAgentColor(agent.name);
-                const alreadyAdded = roomAgents.some((a) => a.id === agent.id);
-                return (
-                  <TouchableOpacity
-                    key={agent.id}
-                    onPress={() => !alreadyAdded && handleAddAgent(agent.id)}
-                    activeOpacity={alreadyAdded ? 1 : 0.75}
+            <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+              {/* In Room section */}
+              {roomAgents.length > 0 && (
+                <>
+                  <AppText
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: alreadyAdded ? C.surfaceHigh : C.surface,
-                      borderRadius: 14,
-                      padding: 14,
-                      marginBottom: 10,
-                      borderWidth: 1,
-                      borderColor: C.border,
-                      opacity: alreadyAdded ? 0.6 : 1,
+                      color: C.muted,
+                      fontSize: 11,
+                      fontWeight: '700',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.8,
+                      marginBottom: 8,
                     }}
                   >
-                    <View
+                    In this chat
+                  </AppText>
+                  {roomAgents.map((agent) => {
+                    const color = getAgentColor(agent.name);
+                    return (
+                      <View
+                        key={`in-${agent.id}`}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: `${color}08`,
+                          borderRadius: 14,
+                          padding: 12,
+                          marginBottom: 8,
+                          borderWidth: 1,
+                          borderColor: `${color}25`,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 19,
+                            backgroundColor: `${color}18`,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginEnd: 12,
+                          }}
+                        >
+                          <AppText style={{ color, fontWeight: '700', fontSize: 15 }}>
+                            {agent.name[0].toUpperCase()}
+                          </AppText>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
+                            {agent.name}
+                          </AppText>
+                          <AppText style={{ fontSize: 11, color: C.muted }} numberOfLines={1}>
+                            {agent.personality}
+                          </AppText>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => handleRemoveAgent(agent.id)}
+                          style={{
+                            backgroundColor: '#FEE2E2',
+                            borderRadius: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          <Ionicons name="remove" size={13} color="#EF4444" />
+                          <AppText style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
+                            Remove
+                          </AppText>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                  {agents.filter((a) => !roomAgents.some((r) => r.id === a.id)).length > 0 && (
+                    <AppText
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        backgroundColor: `${color}18`,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginEnd: 14,
+                        color: C.muted,
+                        fontSize: 11,
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.8,
+                        marginBottom: 8,
+                        marginTop: 8,
                       }}
                     >
-                      <AppText style={{ color, fontWeight: '700', fontSize: 17 }}>
-                        {agent.name[0].toUpperCase()}
-                      </AppText>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <AppText style={{ fontSize: 15, fontWeight: '500', color: C.text }}>
-                        {agent.name}
-                      </AppText>
-                      <AppText style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
-                        {agent.personality}
-                      </AppText>
-                    </View>
-                    {alreadyAdded ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Ionicons name="checkmark-circle" size={16} color={C.primary} />
-                        <AppText style={{ fontSize: 12, color: C.muted }}>
-                          {t('chat.added')}
+                      Add more
+                    </AppText>
+                  )}
+                </>
+              )}
+              {agents
+                .filter((a) => !roomAgents.some((r) => r.id === a.id))
+                .map((agent) => {
+                  const color = getAgentColor(agent.name);
+                  const alreadyAdded = false; // already filtered out above
+                  return (
+                    <View
+                      key={agent.id}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: C.surface,
+                        borderRadius: 14,
+                        padding: 12,
+                        marginBottom: 8,
+                        borderWidth: 1,
+                        borderColor: C.border,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 19,
+                          backgroundColor: `${color}18`,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginEnd: 12,
+                        }}
+                      >
+                        <AppText style={{ color, fontWeight: '700', fontSize: 15 }}>
+                          {agent.name[0].toUpperCase()}
                         </AppText>
                       </View>
-                    ) : (
-                      <Ionicons name="add-circle-outline" size={20} color={C.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+                      <View style={{ flex: 1 }}>
+                        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
+                          {agent.name}
+                        </AppText>
+                        <AppText style={{ fontSize: 11, color: C.muted }} numberOfLines={1}>
+                          {agent.personality}
+                        </AppText>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleAddAgent(agent.id)}
+                        style={{
+                          backgroundColor: C.primarySurface,
+                          borderRadius: 8,
+                          paddingHorizontal: 10,
+                          paddingVertical: 5,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <Ionicons name="add" size={13} color={C.primary} />
+                        <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
+                          Add
+                        </AppText>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
               {agents.length === 0 && (
-                <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+                <View style={{ alignItems: 'center', paddingVertical: 36 }}>
                   <Ionicons
                     name="people-outline"
                     size={36}
@@ -433,10 +590,154 @@ export default function ChatRoomScreen() {
                   </AppText>
                 </View>
               )}
+              <View style={{ height: 40 }} />
             </ScrollView>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
+
+      {/* Quick-view agent popover */}
+      {quickViewAgent &&
+        (() => {
+          const agent = quickViewAgent;
+          const color = getAgentColor(agent.name);
+          const level = Math.floor(agent.message_count / 10) + 1;
+          const isInRoom = roomAgents.some((a) => a.id === agent.id);
+          return (
+            <Modal visible animationType="none" transparent>
+              <Pressable
+                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}
+                onPress={() => setQuickViewAgent(null)}
+              >
+                <Animated.View
+                  entering={SlideInUp.springify().damping(22)}
+                  exiting={SlideOutDown.duration(180)}
+                  style={{
+                    backgroundColor: C.surface,
+                    borderTopLeftRadius: 28,
+                    borderTopRightRadius: 28,
+                    padding: 24,
+                  }}
+                  onStartShouldSetResponder={() => true}
+                >
+                  {/* Drag handle */}
+                  <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                    <View
+                      style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: C.faint }}
+                    />
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                    <View
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 26,
+                        backgroundColor: `${color}18`,
+                        borderWidth: 2,
+                        borderColor: `${color}40`,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginEnd: 14,
+                      }}
+                    >
+                      <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
+                        {agent.name[0].toUpperCase()}
+                      </AppText>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <AppText
+                        style={{ fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 2 }}
+                      >
+                        {agent.name}
+                      </AppText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View
+                          style={{
+                            backgroundColor: `${color}18`,
+                            borderRadius: 6,
+                            paddingHorizontal: 7,
+                            paddingVertical: 2,
+                          }}
+                        >
+                          <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
+                            Lv {level}
+                          </AppText>
+                        </View>
+                        <AppText style={{ color: C.muted, fontSize: 12 }}>
+                          {agent.message_count} messages
+                        </AppText>
+                      </View>
+                    </View>
+                  </View>
+
+                  <AppText
+                    style={{ color: C.muted, fontSize: 13, lineHeight: 19, marginBottom: 18 }}
+                    numberOfLines={3}
+                  >
+                    {agent.personality}
+                  </AppText>
+
+                  {isInRoom ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        handleRemoveAgent(agent.id);
+                        setQuickViewAgent(null);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#FEF2F2',
+                        borderRadius: 14,
+                        paddingVertical: 13,
+                        borderWidth: 1,
+                        borderColor: '#FECACA',
+                        marginBottom: 36,
+                      }}
+                    >
+                      <Ionicons
+                        name="person-remove-outline"
+                        size={16}
+                        color="#EF4444"
+                        style={{ marginEnd: 7 }}
+                      />
+                      <AppText style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>
+                        Remove from Chat
+                      </AppText>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => {
+                        handleAddAgent(agent.id);
+                        setQuickViewAgent(null);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: C.primary,
+                        borderRadius: 14,
+                        paddingVertical: 13,
+                        marginBottom: 36,
+                      }}
+                    >
+                      <Ionicons
+                        name="person-add-outline"
+                        size={16}
+                        color="white"
+                        style={{ marginEnd: 7 }}
+                      />
+                      <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+                        Add to Chat
+                      </AppText>
+                    </TouchableOpacity>
+                  )}
+                </Animated.View>
+              </Pressable>
+            </Modal>
+          );
+        })()}
     </SafeAreaView>
   );
 }

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
@@ -13,6 +14,8 @@ from app.domain.agents.models import (
     AgentGenerate,
     AgentGenerationResponse,
     AgentResponse,
+    AgentTemplateResponse,
+    AgentUpdate,
     Capability,
     CapabilityResponse,
     Integration,
@@ -65,6 +68,15 @@ async def list_integrations(
 
 
 # DOCS(miru-agent): undocumented endpoint
+@router.get("/templates", response_model=list[AgentTemplateResponse])
+async def list_templates(
+    _user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+) -> list[AgentTemplateResponse]:
+    """List all available persona templates."""
+    return await service.list_templates()
+
+
 @router.post("/generate", response_model=AgentGenerationResponse)
 async def generate_agent(
     data: AgentGenerate,
@@ -73,3 +85,30 @@ async def generate_agent(
 ) -> AgentGenerationResponse:
     """Use AI to generate an agent persona."""
     return await service.generate_agent_profile(data.keywords)
+
+
+@router.patch("/{agent_id}", response_model=AgentResponse)
+async def update_agent(
+    agent_id: UUID,
+    data: AgentUpdate,
+    user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+) -> AgentResponse:
+    """Update an existing agent."""
+    result = await service.update_agent(agent_id, user_id, data)
+    if not result:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return result
+
+
+@router.delete("/{agent_id}")
+async def delete_agent(
+    agent_id: UUID,
+    user_id: CurrentUser,
+    service: Annotated[AgentService, Depends(get_agent_service)],
+) -> dict[str, str]:
+    """Delete an agent."""
+    success = await service.delete_agent(agent_id, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {"status": "ok"}

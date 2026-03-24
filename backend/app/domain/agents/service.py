@@ -11,6 +11,8 @@ from app.domain.agents.models import (
     AgentGenerationResponse,
     AgentIntegration,
     AgentResponse,
+    AgentTemplateResponse,
+    AgentUpdate,
     Capability,
     Integration,
 )
@@ -169,6 +171,35 @@ class AgentService:
             messages=messages,
             response_model=AgentGenerationResponse,
         )
+
+    async def update_agent(
+        self, agent_id: UUID | str, user_id: UUID, data: AgentUpdate
+    ) -> AgentResponse | None:
+        """Update an agent's profile fields."""
+        fields = data.model_dump(exclude_none=True)
+        agent = await self.repo.update_agent(agent_id, user_id, **fields)
+        if not agent:
+            return None
+        # Rebuild system prompt with updated fields
+        updated_prompt = await self.build_system_prompt(
+            name=agent.name,
+            personality=agent.personality,
+            description=agent.description,
+            goals=agent.goals,
+        )
+        agent = await self.repo.update_agent(agent_id, user_id, system_prompt=updated_prompt)
+        if not agent:
+            return None
+        return _build_agent_response(agent)
+
+    async def delete_agent(self, agent_id: UUID | str, user_id: UUID) -> bool:
+        """Soft-delete an agent owned by user_id."""
+        return await self.repo.delete_agent(agent_id, user_id)
+
+    async def list_templates(self) -> list[AgentTemplateResponse]:
+        """Return all available agent persona templates."""
+        templates = await self.repo.list_templates()
+        return [AgentTemplateResponse.model_validate(t) for t in templates]
 
     async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
         """Analyze history and update agent mood via repository."""
