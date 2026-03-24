@@ -44,8 +44,6 @@ jest.mock('nativewind', () => ({
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
 
-
-
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
 
@@ -63,11 +61,15 @@ jest.mock('react-native-reanimated', () => {
     __esModule: true,
     default: {
       createAnimatedComponent: (comp) => {
-         if (comp.displayName === 'Pressable' || comp.render?.displayName === 'Pressable' || comp.name === 'Pressable') {
-             const Pressable = require('react-native').Pressable;
-             return Pressable;
-         }
-         return MockComponent;
+        if (
+          comp.displayName === 'Pressable' ||
+          comp.render?.displayName === 'Pressable' ||
+          comp.name === 'Pressable'
+        ) {
+          const Pressable = require('react-native').Pressable;
+          return Pressable;
+        }
+        return MockComponent;
       },
       View: MockComponent,
       Text: MockComponent,
@@ -90,11 +92,15 @@ jest.mock('react-native-reanimated', () => {
       ease: {},
     },
     createAnimatedComponent: (comp) => {
-         if (comp.displayName === 'Pressable' || comp.render?.displayName === 'Pressable' || comp.name === 'Pressable') {
-             const Pressable = require('react-native').Pressable;
-             return Pressable;
-         }
-         return MockComponent;
+      if (
+        comp.displayName === 'Pressable' ||
+        comp.render?.displayName === 'Pressable' ||
+        comp.name === 'Pressable'
+      ) {
+        const Pressable = require('react-native').Pressable;
+        return Pressable;
+      }
+      return MockComponent;
     },
     View: MockComponent,
     Text: MockComponent,
