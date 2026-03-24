@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -89,40 +88,3 @@ class ChatRoomAgent(SupabaseModel):
         unique_together = (("room", "agent"),)
 
 
-# ---------------------------------------------------------------------------
-# API Pydantic Schemas
-# ---------------------------------------------------------------------------
-
-
-class RoomCreate(BaseModel):
-    name: str
-
-
-class RoomUpdate(BaseModel):
-    name: str
-
-
-class AddAgentToRoom(BaseModel):
-    agent_id: UUID
-
-
-class RoomResponse(BaseModel):
-    id: UUID
-    name: str
-    created_at: datetime
-    updated_at: datetime
-
-
-class ChatMessageResponse(BaseModel):
-    id: UUID
-    room_id: UUID
-    user_id: UUID | None = None
-    agent_id: UUID | None = None
-    content: str
-    created_at: datetime
-
-
-class ChatRequest(BaseModel):
-    message: str | None = None
-    content: str | None = None
-    use_crew: bool = False

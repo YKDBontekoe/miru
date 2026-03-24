@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from app.domain.chat.models import ChatRoom
+    from app.infrastructure.database.models.chat_models import ChatRoom
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tortoise import fields
