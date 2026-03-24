@@ -34,9 +34,6 @@ async def list_memories(
 
 
 # DOCS(miru-agent): undocumented endpoint
-
-
-# DOCS(miru-agent): undocumented endpoint
 @router.get("/graph", response_model=dict[str, Any])
 async def get_memory_graph(
     user_id: CurrentUser,
@@ -52,10 +49,6 @@ async def get_memory_graph(
 
 
 # DOCS(miru-agent): undocumented endpoint
-
-# DOCS(miru-agent): undocumented endpoint
-
-
 @router.post("", response_model=dict[str, Any])
 async def store_memory(
     data: MemoryRequest,
@@ -70,13 +63,10 @@ async def store_memory(
         raise HTTPException(
             status_code=503,
             detail="Upstream AI service is currently unreachable",
-            # DOCS(miru-agent): undocumented endpoint
         ) from e
 
 
 # DOCS(miru-agent): undocumented endpoint
-
-
 @router.post("/upload", response_model=dict[str, Any])
 async def upload_document(
     user_id: CurrentUser,
@@ -131,12 +121,11 @@ async def upload_document(
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
-    # DOCS(miru-agent): undocumented endpoint
     except Exception as e:
-        # DOCS(miru-agent): undocumented endpoint
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.delete("/{memory_id}")
 async def delete_memory(
     memory_id: UUID,

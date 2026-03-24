@@ -35,9 +35,6 @@ async def create_agent(
 
 
 # DOCS(miru-agent): undocumented endpoint
-
-
-# DOCS(miru-agent): undocumented endpoint
 @router.get("", response_model=list[AgentResponse])
 async def list_agents(
     user_id: CurrentUser,
@@ -48,34 +45,26 @@ async def list_agents(
 
 
 # DOCS(miru-agent): undocumented endpoint
-
-# DOCS(miru-agent): undocumented endpoint
-
-
 @router.get("/capabilities", response_model=list[CapabilityResponse])
 async def list_capabilities(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> list[Capability]:
     """List all available capabilities."""
-    # DOCS(miru-agent): undocumented endpoint
     return await service.list_capabilities()
 
 
 # DOCS(miru-agent): undocumented endpoint
-
-
 @router.get("/integrations", response_model=list[IntegrationResponse])
 async def list_integrations(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> list[Integration]:
-    # DOCS(miru-agent): undocumented endpoint
     """List all available integrations."""
-    # DOCS(miru-agent): undocumented endpoint
     return await service.list_integrations()
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/generate", response_model=AgentGenerationResponse)
 async def generate_agent(
     data: AgentGenerate,

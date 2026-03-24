@@ -62,6 +62,7 @@ make fix-frontend    # Auto-fix frontend lint
 The following AI agents actively monitor and modify the Miru codebase. Their actions are automated via `.github/workflows/ai-agents.yml`.
 
 ### 1. Jules
+
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
@@ -71,6 +72,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Note on Prompt:** Jules is instructed to strictly follow project architecture (Domain logic in `backend/app/domain/`, routes in `backend/app/api/v1/`, frontend in `frontend/`) and test requirements (never mock the database or Redis, mock external services).
 
 ### 2. CodeRabbit
+
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
@@ -289,10 +291,10 @@ The CI pipeline (`database-migrations.yml`) validates and applies migrations aut
 
 ### Frontend
 - Use `const` widgets to prevent unnecessary rebuilds
-- Use `ListView.builder` for long lists — never `Column` with many children
-- Dispose listeners, controllers, and streams in `dispose()`
+- Use `FlatList` for long lists — never deeply nested View hierarchies
+- Use `useEffect` cleanup returns and proper hook cleanup
 - Debounce search inputs
-- Use `SharedPreferences` for chat history persistence — do not re-fetch on every render
+- Use `AsyncStorage` (from `@react-native-async-storage/async-storage`) or `react-native-mmkv` for chat history persistence — do not re-fetch on every render
 
 ---
 

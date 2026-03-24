@@ -26,13 +26,13 @@ reviews:
         Validate against Ruff, Black, and Mypy standards (line length 100, double quotes).
         Use `str | None` not `Optional[str]`; `list[str]` not `List[str]`.
 
-    - path: "frontend/lib/**/*.dart"
+    - path: "frontend/src/**/*.{ts,tsx,js,jsx}"
       instructions: >
-        Ensure `const` constructors are used where possible to prevent unnecessary rebuilds.
-        State management uses Zustand.
-        StatefulWidget + setState is also used in some screens — both patterns are acceptable.
-        No BLoC or GetX. Use `final` for non-reassigned variables. Use `ListView.builder` for long lists.
-        Dispose listeners, controllers, and streams in `dispose()`.
+        Ensure `const` and `let` are used appropriately.
+        State management uses Zustand (https://zustand-demo.pmnd.rs/).
+        Prefer `FlatList` for long lists instead of nested views.
+        Ensure hook cleanup in `useEffect` and cleanup of refs/listeners (useRef, add/remove listeners).
+        Remove Flutter-only mentions like StatefulWidget, setState, BLoC, GetX, and dispose().
 
   labels:
     auto_label: true

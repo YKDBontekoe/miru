@@ -80,7 +80,7 @@ jobs:
         run: |
           eas build \
             --platform ios \
-            --profile ${{ steps.profile.outputs.value }} \
+            --profile "${{ steps.profile.outputs.value }}" \
             --local \
             --non-interactive \
             --output ./build/app.ipa
