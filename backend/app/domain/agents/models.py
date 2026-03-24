@@ -217,7 +217,9 @@ class AgentBase(BaseModel):
     """Shared fields for Agent schemas."""
 
     name: str = Field(min_length=1, max_length=100, json_schema_extra={"strip_whitespace": True})
-    personality: str = Field(min_length=1, max_length=1000, json_schema_extra={"strip_whitespace": True})
+    personality: str = Field(
+        min_length=1, max_length=1000, json_schema_extra={"strip_whitespace": True}
+    )
     description: str | None = Field(default=None, max_length=500)
     system_prompt: str | None = Field(default=None)
     status: str = Field(default="active")
