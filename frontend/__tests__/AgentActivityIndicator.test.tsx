@@ -7,6 +7,7 @@ describe('AgentActivityIndicator', () => {
     const { getByText } = render(
       <AgentActivityIndicator
         activity={{
+          room_id: 'test-room',
           activity: 'thinking',
           agent_names: ['Agent 1', 'Agent 2'],
           detail: 'Processing request...',
@@ -21,6 +22,7 @@ describe('AgentActivityIndicator', () => {
     const { getByText } = render(
       <AgentActivityIndicator
         activity={{
+          room_id: 'test-room',
           activity: 'using_tool',
           agent_names: ['Tool Agent'],
           detail: 'Searching database',
@@ -36,8 +38,10 @@ describe('AgentActivityIndicator', () => {
     const { getByText } = render(
       <AgentActivityIndicator
         activity={{
+          room_id: 'test-room',
           activity: 'done',
           agent_names: ['Agent 3'],
+          detail: '',
         }}
       />
     );
