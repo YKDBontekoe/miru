@@ -1,30 +1,38 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { getLocales } from 'expo-localization';
-import { I18nManager } from 'react-native';
 
 import en from './en.json';
-import he from './he.json';
+import nl from './nl.json';
 
 const resources = {
   en: { translation: en },
-  he: { translation: he },
+  nl: { translation: nl },
 };
 
-const locales = getLocales();
-const languageTag = locales && locales.length > 0 ? locales[0].languageTag : 'en';
+// Detect device language without requiring the expo-localization native module.
+// Uses the standard Intl API (available on all JS engines) with a safe fallback.
+function getDeviceLanguage(): string {
+  try {
+    const locale =
+      // React Native exposes this on the global object
+      (typeof navigator !== 'undefined' && navigator.language) ||
+      new Intl.DateTimeFormat().resolvedOptions().locale ||
+      'en';
+    return locale.split('-')[0]; // e.g. "nl-NL" → "nl"
+  } catch {
+    return 'en';
+  }
+}
+
+const deviceLang = getDeviceLanguage();
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: languageTag,
+  lng: deviceLang,
   fallbackLng: 'en',
   interpolation: {
-    escapeValue: false, // react already safes from xss
+    escapeValue: false,
   },
 });
-
-const isRTL = i18n.dir() === 'rtl';
-I18nManager.allowRTL(isRTL);
-I18nManager.forceRTL(isRTL);
 
 export default i18n;

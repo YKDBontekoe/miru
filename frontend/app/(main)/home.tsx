@@ -20,296 +20,75 @@ import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { Agent, ChatRoom, Task } from '../../src/core/models';
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
+// ─── Palette — white + blue only ─────────────────────────────────────────────
 const C = {
-  bg: '#F8F8FC',
+  bg: '#F4F7FF', // very light blue-white page bg
   surface: '#FFFFFF',
-  surfaceHigh: '#F0F0F6',
-  border: '#E0E0EC',
-  borderLight: '#EBEBF5',
-  text: '#12121A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
+  surfaceHigh: '#EEF3FF', // light blue tint for inputs / secondary surfaces
+  border: '#DDE5FF', // soft blue border
+  text: '#0A0F2E', // near-black with blue undertone
+  muted: '#6370A0', // muted blue-grey
+  faint: '#B0BAD8', // very faint blue-grey
   primary: '#2563EB',
-  primaryLight: '#60A5FA',
-  primarySurface: '#EFF6FF',
-  success: '#34D399',
-  successSurface: '#ECFDF5',
-  warning: '#FBBF24',
-  warningSurface: '#FFFBEB',
-  purple: '#8B5CF6',
-  purpleSurface: '#F5F3FF',
-  teal: '#14B8A6',
-  tealSurface: '#F0FDFA',
+  primaryMid: '#3B82F6', // slightly lighter blue
+  primaryLight: '#DBEAFE', // very light blue surface
+  primaryFaint: '#EFF6FF', // near-white blue
 };
 
-function getAgentColor(name: string) {
-  const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return palette[Math.abs(hash) % palette.length];
-}
-
-function getGreeting(hour: number, t: any): string {
-  if (hour < 12) return t('greeting.morning');
-  if (hour < 17) return t('greeting.afternoon');
-  return t('greeting.evening');
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getGreeting(hour: number, t: (k: string) => string): string {
+  if (hour < 12) return t('home.greeting.morning');
+  if (hour < 17) return t('home.greeting.afternoon');
+  return t('home.greeting.evening');
 }
 
 function getFirstName(email?: string): string {
   if (!email) return 'there';
   const local = email.split('@')[0];
-  // Capitalize first letter, cut at dot/underscore/number
   const name = local.split(/[._0-9]/)[0];
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-// ─── Quick-action button ─────────────────────────────────────────────────────
-function QuickAction({
-  icon,
-  label,
-  color,
-  bg,
-  onPress,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  color: string;
-  bg: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ flex: 1, alignItems: 'center' }}
-    >
-      <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 16,
-          backgroundColor: bg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 6,
-          borderWidth: 1,
-          borderColor: `${color}20`,
-        }}
-      >
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <AppText style={{ fontSize: 12, fontWeight: '600', color: C.muted, textAlign: 'center' }}>
-        {label}
-      </AppText>
-    </TouchableOpacity>
-  );
+function getInitials(email?: string): string {
+  if (!email) return '?';
+  const local = email.split('@')[0];
+  const parts = local.split(/[._]/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return local.slice(0, 2).toUpperCase();
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({
-  value,
-  label,
-  icon,
-  color,
-  bg,
-}: {
-  value: number;
-  label: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  color: string;
-  bg: string;
-}) {
+function formatDate(): string {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
+}
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+function Card({ children }: { children: React.ReactNode }) {
   return (
     <View
       style={{
-        flex: 1,
         backgroundColor: C.surface,
-        borderRadius: 16,
-        padding: 14,
+        borderRadius: 20,
+        padding: 18,
         borderWidth: 1,
         borderColor: C.border,
-        alignItems: 'flex-start',
+        marginBottom: 12,
+        shadowColor: '#2563EB',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
       }}
     >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: bg,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 10,
-        }}
-      >
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-      <AppText style={{ fontSize: 24, fontWeight: '700', color: C.text, marginBottom: 2 }}>
-        {value}
-      </AppText>
-      <AppText style={{ fontSize: 12, color: C.muted }}>{label}</AppText>
+      {children}
     </View>
   );
 }
 
-// ─── Recent chat row ─────────────────────────────────────────────────────────
-function RecentChatRow({ room, onPress }: { room: ChatRoom; onPress: () => void }) {
-  const { t } = useTranslation();
-  const initial = room.name[0]?.toUpperCase() ?? '?';
-  const relativeTime = () => {
-    const diff = Date.now() - new Date(room.updated_at).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: C.borderLight,
-      }}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          backgroundColor: C.primarySurface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 12,
-        }}
-      >
-        <AppText style={{ color: C.primary, fontSize: 16, fontWeight: '700' }}>{initial}</AppText>
-      </View>
-      <View style={{ flex: 1 }}>
-        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>{room.name}</AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>
-          {t('home.actions.tap_to_continue')}
-        </AppText>
-      </View>
-      <AppText style={{ fontSize: 11, color: C.faint }}>{relativeTime()}</AppText>
-      <Ionicons name="chevron-forward" size={14} color={C.faint} style={{ marginStart: 6 }} />
-    </TouchableOpacity>
-  );
-}
-
-// ─── Task row ────────────────────────────────────────────────────────────────
-function TaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
-  const { i18n } = useTranslation();
-  return (
-    <TouchableOpacity
-      onPress={onToggle}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: C.borderLight,
-      }}
-    >
-      <View
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 11,
-          borderWidth: 2,
-          borderColor: task.completed ? C.success : C.faint,
-          backgroundColor: task.completed ? C.success : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 12,
-        }}
-      >
-        {task.completed && <Ionicons name="checkmark" size={12} color="white" />}
-      </View>
-      <AppText
-        style={{
-          flex: 1,
-          fontSize: 14,
-          color: task.completed ? C.faint : C.text,
-          textDecorationLine: task.completed ? 'line-through' : 'none',
-        }}
-      >
-        {task.title}
-      </AppText>
-      {task.due_date && (
-        <AppText style={{ fontSize: 11, color: C.warning }}>
-          {new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
-            new Date(task.due_date)
-          )}
-        </AppText>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-// ─── Agent chip ──────────────────────────────────────────────────────────────
-function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
-  const color = getAgentColor(agent.name);
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: `${color}10`,
-        borderRadius: 20,
-        paddingVertical: 7,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: `${color}25`,
-        marginEnd: 8,
-        marginBottom: 8,
-      }}
-    >
-      <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          backgroundColor: `${color}20`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 7,
-        }}
-      >
-        <AppText style={{ color, fontSize: 12, fontWeight: '700' }}>
-          {agent.name[0].toUpperCase()}
-        </AppText>
-      </View>
-      <AppText style={{ fontSize: 13, fontWeight: '600', color: C.text }}>{agent.name}</AppText>
-      {agent.message_count > 0 && (
-        <View
-          style={{
-            backgroundColor: color,
-            borderRadius: 8,
-            paddingHorizontal: 5,
-            paddingVertical: 1,
-            marginStart: 6,
-          }}
-        >
-          <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
-            {agent.message_count}
-          </AppText>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-// ─── Section header ──────────────────────────────────────────────────────────
+// ─── Section header ───────────────────────────────────────────────────────────
 function SectionHeader({
   title,
   actionLabel,
@@ -325,7 +104,7 @@ function SectionHeader({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 14,
       }}
     >
       <AppText
@@ -340,8 +119,18 @@ function SectionHeader({
         {title}
       </AppText>
       {actionLabel && onAction && (
-        <TouchableOpacity onPress={onAction}>
-          <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
+        <TouchableOpacity
+          onPress={onAction}
+          style={{
+            borderRadius: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            backgroundColor: C.primaryFaint,
+            borderWidth: 1,
+            borderColor: C.primaryLight,
+          }}
+        >
+          <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
             {actionLabel}
           </AppText>
         </TouchableOpacity>
@@ -350,7 +139,252 @@ function SectionHeader({
   );
 }
 
-// ─── New chat modal (inline, minimal) ────────────────────────────────────────
+// ─── Quick-action tile ────────────────────────────────────────────────────────
+function QuickAction({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={{ width: '48%', marginBottom: 10 }}
+    >
+      <View
+        style={{
+          backgroundColor: C.primaryFaint,
+          borderRadius: 18,
+          paddingVertical: 18,
+          paddingHorizontal: 12,
+          borderWidth: 1,
+          borderColor: C.primaryLight,
+          alignItems: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            backgroundColor: C.primaryLight,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 10,
+          }}
+        >
+          <Ionicons name={icon} size={21} color={C.primary} />
+        </View>
+        <AppText
+          style={{ fontSize: 13, fontWeight: '600', color: C.text, textAlign: 'center' }}
+          numberOfLines={1}
+        >
+          {label}
+        </AppText>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Recent chat row ──────────────────────────────────────────────────────────
+function RecentChatRow({
+  room,
+  onPress,
+  isLast,
+}: {
+  room: ChatRoom;
+  onPress: () => void;
+  isLast: boolean;
+}) {
+  const { t } = useTranslation();
+  const initial = room.name[0]?.toUpperCase() ?? '?';
+
+  const relativeTime = () => {
+    const diff = Date.now() - new Date(room.updated_at).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return t('home.time.minutes_ago_one', { count: mins });
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return t('home.time.hours_ago_one', { count: hrs });
+    return t('home.time.days_ago_one', { count: Math.floor(hrs / 24) });
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 11,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: C.border,
+      }}
+    >
+      <View
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 14,
+          backgroundColor: C.primaryLight,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12,
+        }}
+      >
+        <AppText style={{ color: C.primary, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
+      </View>
+      <View style={{ flex: 1, marginRight: 8 }}>
+        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
+          {room.name}
+        </AppText>
+        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 2 }} numberOfLines={1}>
+          {t('home.actions.tap_to_continue')}
+        </AppText>
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <AppText style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>
+          {relativeTime()}
+        </AppText>
+        <Ionicons name="chevron-forward" size={13} color={C.faint} />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Task row ─────────────────────────────────────────────────────────────────
+function TaskRow({
+  task,
+  onToggle,
+  isLast,
+}: {
+  task: Task;
+  onToggle: () => void;
+  isLast: boolean;
+}) {
+  const { i18n } = useTranslation();
+  return (
+    <TouchableOpacity
+      onPress={onToggle}
+      activeOpacity={0.7}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 11,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: C.border,
+      }}
+    >
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: task.completed ? C.primary : C.faint,
+          backgroundColor: task.completed ? C.primary : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12,
+        }}
+      >
+        {task.completed && <Ionicons name="checkmark" size={13} color="white" />}
+      </View>
+      <AppText
+        style={{
+          flex: 1,
+          fontSize: 14,
+          color: task.completed ? C.faint : C.text,
+          textDecorationLine: task.completed ? 'line-through' : 'none',
+        }}
+        numberOfLines={1}
+      >
+        {task.title}
+      </AppText>
+      {task.due_date && (
+        <View
+          style={{
+            backgroundColor: C.primaryFaint,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            marginLeft: 8,
+            borderWidth: 1,
+            borderColor: C.primaryLight,
+          }}
+        >
+          <AppText style={{ fontSize: 11, color: C.primary, fontWeight: '600' }}>
+            {new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
+              new Date(task.due_date)
+            )}
+          </AppText>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+// ─── Agent chip ───────────────────────────────────────────────────────────────
+function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: C.primaryFaint,
+        borderRadius: 22,
+        paddingVertical: 7,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: C.primaryLight,
+        marginRight: 8,
+        marginBottom: 8,
+      }}
+    >
+      <View
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          backgroundColor: C.primaryLight,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 7,
+        }}
+      >
+        <AppText style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>
+          {agent.name[0].toUpperCase()}
+        </AppText>
+      </View>
+      <AppText style={{ fontSize: 13, fontWeight: '600', color: C.text }}>{agent.name}</AppText>
+      {agent.message_count > 0 && (
+        <View
+          style={{
+            backgroundColor: C.primary,
+            borderRadius: 9,
+            minWidth: 18,
+            height: 18,
+            paddingHorizontal: 5,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: 7,
+          }}
+        >
+          <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
+            {agent.message_count}
+          </AppText>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+// ─── New-chat modal ───────────────────────────────────────────────────────────
 function NewChatModal({
   visible,
   onClose,
@@ -367,10 +401,7 @@ function NewChatModal({
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      Alert.alert(
-        t('home.chat_modal.name_required', 'Name required'),
-        t('home.chat_modal.please_enter_name', 'Please enter a name for this chat.')
-      );
+      Alert.alert(t('home.chat_modal.name_required'), t('home.chat_modal.please_enter_name'));
       return;
     }
     setIsSaving(true);
@@ -380,10 +411,7 @@ function NewChatModal({
       onCreated();
       onClose();
     } catch {
-      Alert.alert(
-        t('home.chat_modal.error', 'Error'),
-        t('home.chat_modal.failed_to_create', 'Failed to create chat. Please try again.')
-      );
+      Alert.alert(t('home.chat_modal.error'), t('home.chat_modal.failed_to_create'));
     } finally {
       setIsSaving(false);
     }
@@ -391,63 +419,89 @@ function NewChatModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(10,15,46,0.4)' }}>
         <View
           style={{
             backgroundColor: C.surface,
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
             padding: 24,
+            paddingBottom: 40,
           }}
         >
+          <View
+            style={{
+              width: 36,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: C.border,
+              alignSelf: 'center',
+              marginBottom: 20,
+            }}
+          />
           <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: 20,
+              marginBottom: 18,
             }}
           >
             <AppText variant="h2" style={{ color: C.text }}>
-              {t('home.chat_modal.title', 'New Chat')}
+              {t('home.chat_modal.title')}
             </AppText>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close-circle" size={26} color={C.faint} />
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: C.surfaceHigh,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="close" size={17} color={C.muted} />
             </TouchableOpacity>
           </View>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder={t('home.chat_modal.placeholder', 'Chat name…')}
+            placeholder={t('home.chat_modal.placeholder')}
             placeholderTextColor={C.faint}
             autoFocus
             style={{
               backgroundColor: C.surfaceHigh,
-              borderRadius: 12,
+              borderRadius: 14,
               borderWidth: 1,
               borderColor: C.border,
-              paddingHorizontal: 14,
-              paddingVertical: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
               color: C.text,
               fontSize: 16,
-              marginBottom: 16,
+              marginBottom: 14,
             }}
           />
           <TouchableOpacity
             onPress={handleCreate}
             disabled={isSaving}
             style={{
-              backgroundColor: isSaving ? `${C.primary}80` : C.primary,
+              backgroundColor: isSaving ? `${C.primary}70` : C.primary,
               borderRadius: 14,
-              paddingVertical: 14,
+              paddingVertical: 15,
               alignItems: 'center',
+              shadowColor: C.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.22,
+              shadowRadius: 8,
+              elevation: 4,
             }}
           >
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>
-                {t('home.actions.create', 'Create')}
+              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
+                {t('home.actions.create')}
               </AppText>
             )}
           </TouchableOpacity>
@@ -457,7 +511,7 @@ function NewChatModal({
   );
 }
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -471,14 +525,15 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting = getGreeting(hour, t);
   const firstName = getFirstName(user?.email);
+  const initials = getInitials(user?.email);
 
   const recentRooms = [...rooms]
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
     .slice(0, 3);
 
-  const pendingTasks = tasks.filter((t) => !t.completed).slice(0, 4);
-  const completedCount = tasks.filter((t) => t.completed).length;
-  const topAgents = agents.slice(0, 5);
+  const pendingTasks = tasks.filter((task) => !task.completed).slice(0, 4);
+  const completedCount = tasks.filter((task) => task.completed).length;
+  const topAgents = agents.slice(0, 6);
 
   useEffect(() => {
     Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
@@ -500,260 +555,315 @@ export default function HomeScreen() {
     );
   }
 
+  const stats = [
+    { value: rooms.length, label: t('home.actions.chats'), icon: 'chatbubbles' as const },
+    { value: agents.length, label: t('home.actions.agents'), icon: 'people' as const },
+    { value: completedCount, label: t('home.actions.done'), icon: 'checkmark-circle' as const },
+  ];
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 20,
-          paddingTop: 8,
-          paddingBottom: 4,
-        }}
-      >
-        <View>
-          <AppText style={{ fontSize: 13, color: C.muted, fontWeight: '500' }}>{greeting}</AppText>
-          <AppText style={{ fontSize: 26, fontWeight: '700', color: C.text }}>{firstName}</AppText>
-        </View>
-        <TouchableOpacity
-          onPress={() => setShowNewChat(true)}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: C.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name="add" size={22} color="white" />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
         }
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 48 }}
       >
-        {/* Stats row */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
-          <StatCard
-            value={rooms.length}
-            label={t('home.actions.chats')}
-            icon="chatbubbles"
-            color={C.primary}
-            bg={C.primarySurface}
-          />
-          <StatCard
-            value={agents.length}
-            label={t('home.actions.agents')}
-            icon="people"
-            color={C.purple}
-            bg={C.purpleSurface}
-          />
-          <StatCard
-            value={completedCount}
-            label={t('home.actions.done')}
-            icon="checkmark-circle"
-            color={C.success}
-            bg={C.successSurface}
-          />
-        </View>
-
-        {/* Quick actions */}
+        {/* ── Header ──────────────────────────────────────────────────── */}
         <View
           style={{
             backgroundColor: C.surface,
-            borderRadius: 20,
-            padding: 18,
-            borderWidth: 1,
-            borderColor: C.border,
-            marginBottom: 20,
+            paddingHorizontal: 20,
+            paddingTop: 20,
+            paddingBottom: 20,
+            borderBottomWidth: 1,
+            borderBottomColor: C.border,
+            marginBottom: 14,
           }}
         >
-          <SectionHeader title={t('home.sections.quick_actions')} />
-          <View style={{ flexDirection: 'row' }}>
-            <QuickAction
-              icon="chatbubble-ellipses"
-              label={t('home.actions.new_chat')}
-              color={C.primary}
-              bg={C.primarySurface}
-              onPress={() => setShowNewChat(true)}
-            />
-            <QuickAction
-              icon="person-add"
-              label={t('home.actions.new_agent')}
-              color={C.purple}
-              bg={C.purpleSurface}
-              onPress={() => router.push('/(main)/agents')}
-            />
-            <QuickAction
-              icon="document-text"
-              label={t('home.actions.new_note')}
-              color={C.teal}
-              bg={C.tealSurface}
-              onPress={() => router.push('/(main)/productivity')}
-            />
-            <QuickAction
-              icon="checkbox"
-              label={t('home.actions.new_task')}
-              color={C.warning}
-              bg={C.warningSurface}
-              onPress={() => router.push('/(main)/productivity')}
-            />
-          </View>
-        </View>
-
-        {/* Recent chats */}
-        {recentRooms.length > 0 && (
+          {/* Greeting row */}
           <View
             style={{
-              backgroundColor: C.surface,
-              borderRadius: 20,
-              padding: 18,
-              borderWidth: 1,
-              borderColor: C.border,
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
               marginBottom: 20,
             }}
           >
-            <SectionHeader
-              title={t('home.sections.recent_chats', 'Recent Chats')}
-              actionLabel={t('home.actions.see_all', 'See All')}
-              onAction={() => router.push('/(main)/chat')}
-            />
-            {recentRooms.map((room, i) => (
-              <RecentChatRow
-                key={room.id}
-                room={room}
-                onPress={() => router.push(`/(main)/chat/${room.id}`)}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* Today's tasks */}
-        {tasks.length > 0 && (
-          <View
-            style={{
-              backgroundColor: C.surface,
-              borderRadius: 20,
-              padding: 18,
-              borderWidth: 1,
-              borderColor: C.border,
-              marginBottom: 20,
-            }}
-          >
-            <SectionHeader
-              title={
-                pendingTasks.length > 0
-                  ? `Tasks · ${pendingTasks.length} open`
-                  : t('home.tasks.all_done', 'Tasks · All done!')
-              }
-              actionLabel={t('home.actions.see_all', 'See All')}
-              onAction={() => router.push('/(main)/productivity')}
-            />
-            {pendingTasks.length === 0 ? (
-              <View style={{ alignItems: 'center', paddingVertical: 12 }}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={32}
-                  color={C.success}
-                  style={{ marginBottom: 6 }}
-                />
-                <AppText style={{ color: C.muted, fontSize: 13 }}>
-                  {t('home.tasks.caught_up', "You're all caught up!")}
-                </AppText>
-              </View>
-            ) : (
-              pendingTasks.map((task) => (
-                <TaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />
-              ))
-            )}
-          </View>
-        )}
-
-        {/* Active agents */}
-        {topAgents.length > 0 && (
-          <View
-            style={{
-              backgroundColor: C.surface,
-              borderRadius: 20,
-              padding: 18,
-              borderWidth: 1,
-              borderColor: C.border,
-              marginBottom: 20,
-            }}
-          >
-            <SectionHeader
-              title={t('home.sections.your_agents', 'Your Agents')}
-              actionLabel={t('home.actions.manage', 'Manage')}
-              onAction={() => router.push('/(main)/agents')}
-            />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {topAgents.map((agent) => (
-                <AgentChip
-                  key={agent.id}
-                  agent={agent}
-                  onPress={() => router.push('/(main)/agents')}
-                />
-              ))}
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <AppText style={{ fontSize: 13, color: C.muted, fontWeight: '500', marginBottom: 4 }}>
+                {greeting}
+              </AppText>
+              <AppText
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+                numberOfLines={1}
+                style={{
+                  fontSize: 30,
+                  fontWeight: '800',
+                  color: C.text,
+                  letterSpacing: -1,
+                  lineHeight: 36,
+                }}
+              >
+                {firstName}
+              </AppText>
+              <AppText style={{ fontSize: 13, color: C.faint, marginTop: 5 }}>
+                {formatDate()}
+              </AppText>
             </View>
-          </View>
-        )}
 
-        {/* Empty state when nothing exists yet */}
-        {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms && (
-          <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-            <View
+            {/* Avatar — clean circle, initials only */}
+            <TouchableOpacity
+              onPress={() => router.push('/(main)/settings')}
+              activeOpacity={0.75}
               style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
-                backgroundColor: C.primarySurface,
+                width: 46,
+                height: 46,
+                borderRadius: 23,
+                backgroundColor: C.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: C.border,
+                shadowColor: C.primary,
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.25,
+                shadowRadius: 6,
+                elevation: 4,
               }}
             >
-              <Ionicons name="sparkles" size={36} color={C.primary} />
-            </View>
-            <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-              {t('home.empty.title', 'Welcome to Miru')}
-            </AppText>
-            <AppText
-              style={{
-                textAlign: 'center',
-                color: C.muted,
-                paddingHorizontal: 32,
-                marginBottom: 24,
-              }}
-            >
-              {t('home.empty.desc', 'Create an agent and start a chat to get going.')}
-            </AppText>
-            <TouchableOpacity
-              onPress={() => setShowNewChat(true)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: C.primary,
-                borderRadius: 14,
-                paddingVertical: 12,
-                paddingHorizontal: 24,
-              }}
-            >
-              <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-              <AppText style={{ color: 'white', fontWeight: '700' }}>
-                {t('home.actions.start_chat', 'Start a Chat')}
+              <AppText
+                style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, letterSpacing: 0.5 }}
+              >
+                {initials}
               </AppText>
             </TouchableOpacity>
           </View>
-        )}
+
+          {/* Stats bar */}
+          <View
+            style={{
+              flexDirection: 'row',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: C.border,
+              overflow: 'hidden',
+              backgroundColor: C.bg,
+            }}
+          >
+            {stats.map((stat, i) => (
+              <View
+                key={stat.label}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  paddingVertical: 14,
+                  borderRightWidth: i < stats.length - 1 ? 1 : 0,
+                  borderRightColor: C.border,
+                }}
+              >
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    backgroundColor: C.primaryLight,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 6,
+                  }}
+                >
+                  <Ionicons name={stat.icon} size={15} color={C.primary} />
+                </View>
+                <AppText
+                  style={{ fontSize: 20, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
+                >
+                  {stat.value}
+                </AppText>
+                <AppText
+                  style={{ fontSize: 11, color: C.muted, fontWeight: '500', marginTop: 2 }}
+                  numberOfLines={1}
+                >
+                  {stat.label}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Body ────────────────────────────────────────────────────── */}
+        <View style={{ paddingHorizontal: 14 }}>
+          {/* Quick actions */}
+          <Card>
+            <SectionHeader title={t('home.sections.quick_actions')} />
+            <View
+              style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}
+            >
+              <QuickAction
+                icon="chatbubble-ellipses"
+                label={t('home.actions.new_chat')}
+                onPress={() => setShowNewChat(true)}
+              />
+              <QuickAction
+                icon="person-add"
+                label={t('home.actions.new_agent')}
+                onPress={() => router.push('/(main)/agents')}
+              />
+              <QuickAction
+                icon="document-text"
+                label={t('home.actions.new_note')}
+                onPress={() => router.push('/(main)/productivity')}
+              />
+              <QuickAction
+                icon="checkbox"
+                label={t('home.actions.new_task')}
+                onPress={() => router.push('/(main)/productivity')}
+              />
+            </View>
+          </Card>
+
+          {/* Recent chats */}
+          {recentRooms.length > 0 && (
+            <Card>
+              <SectionHeader
+                title={t('home.sections.recent_chats')}
+                actionLabel={t('home.actions.see_all')}
+                onAction={() => router.push('/(main)/chat')}
+              />
+              {recentRooms.map((room, index) => (
+                <RecentChatRow
+                  key={room.id}
+                  room={room}
+                  isLast={index === recentRooms.length - 1}
+                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
+                />
+              ))}
+            </Card>
+          )}
+
+          {/* Tasks */}
+          {tasks.length > 0 && (
+            <Card>
+              <SectionHeader
+                title={
+                  pendingTasks.length > 0
+                    ? t('home.tasks.open_count', { count: pendingTasks.length })
+                    : t('home.tasks.all_done')
+                }
+                actionLabel={t('home.actions.see_all')}
+                onAction={() => router.push('/(main)/productivity')}
+              />
+              {pendingTasks.length === 0 ? (
+                <View style={{ alignItems: 'center', paddingVertical: 14 }}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={32}
+                    color={C.primary}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <AppText style={{ color: C.muted, fontSize: 14 }}>
+                    {t('home.tasks.caught_up')}
+                  </AppText>
+                </View>
+              ) : (
+                pendingTasks.map((task, index) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    isLast={index === pendingTasks.length - 1}
+                    onToggle={() => toggleTask(task.id)}
+                  />
+                ))
+              )}
+            </Card>
+          )}
+
+          {/* Agents */}
+          {topAgents.length > 0 && (
+            <Card>
+              <SectionHeader
+                title={t('home.sections.your_agents')}
+                actionLabel={t('home.actions.manage')}
+                onAction={() => router.push('/(main)/agents')}
+              />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {topAgents.map((agent) => (
+                  <AgentChip
+                    key={agent.id}
+                    agent={agent}
+                    onPress={() => router.push('/(main)/agents')}
+                  />
+                ))}
+              </View>
+            </Card>
+          )}
+
+          {/* Empty state */}
+          {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms && (
+            <View style={{ alignItems: 'center', paddingTop: 40, paddingBottom: 48 }}>
+              <View
+                style={{
+                  width: 88,
+                  height: 88,
+                  borderRadius: 44,
+                  backgroundColor: C.primaryLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 18,
+                  borderWidth: 1,
+                  borderColor: `${C.primary}20`,
+                }}
+              >
+                <Ionicons name="sparkles" size={38} color={C.primary} />
+              </View>
+              <AppText
+                style={{
+                  fontSize: 20,
+                  fontWeight: '800',
+                  color: C.text,
+                  marginBottom: 8,
+                  textAlign: 'center',
+                  letterSpacing: -0.3,
+                }}
+              >
+                {t('home.empty.title')}
+              </AppText>
+              <AppText
+                style={{
+                  textAlign: 'center',
+                  color: C.muted,
+                  paddingHorizontal: 32,
+                  marginBottom: 28,
+                  lineHeight: 22,
+                  fontSize: 14,
+                }}
+              >
+                {t('home.empty.desc')}
+              </AppText>
+              <TouchableOpacity
+                onPress={() => setShowNewChat(true)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: C.primary,
+                  borderRadius: 16,
+                  paddingVertical: 14,
+                  paddingHorizontal: 26,
+                  shadowColor: C.primary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 10,
+                  elevation: 5,
+                }}
+              >
+                <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
+                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+                  {t('home.actions.start_chat')}
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       <NewChatModal
