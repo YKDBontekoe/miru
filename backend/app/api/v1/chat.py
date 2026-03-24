@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from app.api.dependencies import get_chat_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import AgentResponse
-from app.domain.chat.models import (
+from app.domain.chat.dtos import (
     AddAgentToRoom,
     ChatMessageResponse,
     ChatRequest,

@@ -5,15 +5,16 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import uuid
 from typing import TYPE_CHECKING
 
 from app.core.config import get_settings
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
-from app.domain.chat.models import (
-    ChatMessage,
+from app.domain.chat.dtos import (
     ChatMessageResponse,
     RoomResponse,
 )
+from app.domain.chat.entities import ChatMessageEntity
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 from app.infrastructure.external.openrouter import stream_chat
 
@@ -76,7 +77,7 @@ class ChatService:
         return [
             ChatMessageResponse(
                 id=m.id,
-                room_id=getattr(m, "room_id"),  # noqa: B009
+                room_id=m.room_id,
                 user_id=m.user_id,
                 agent_id=m.agent_id,
                 content=m.content,
@@ -143,8 +144,10 @@ class ChatService:
     ) -> AsyncIterator[str]:
         """The core agentic chat loop using CrewAI."""
         # 1. Save user message
-        user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
-        await self.chat_repo.save_message(user_msg)
+        user_msg = ChatMessageEntity(
+            id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
+        )
+        user_msg = await self.chat_repo.save_message(user_msg)
 
         # 2. Get agents in room
         db_agents = await self.chat_repo.list_room_agents(room_id)
@@ -177,7 +180,8 @@ class ChatService:
 
         # 5. Save agent response
         agent_id_for_msg = None if len(db_agents) > 1 else db_agents[0].id
-        agent_msg = ChatMessage(
+        agent_msg = ChatMessageEntity(
+            id=uuid.uuid4(),
             room_id=room_id,
             agent_id=agent_id_for_msg,
             content=result,

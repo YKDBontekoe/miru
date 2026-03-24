@@ -16,6 +16,15 @@ from app.domain.chat.service import ChatService
 @pytest.fixture
 def chat_service() -> ChatService:
     chat_repo = AsyncMock()
+
+    from typing import Any
+
+    async def mock_save_message(msg: Any) -> Any:
+        msg.id = msg.id or uuid4()
+        return msg
+
+    chat_repo.save_message = AsyncMock(side_effect=mock_save_message)
+
     agent_repo = AsyncMock()
     memory_repo = AsyncMock()
     return ChatService(chat_repo, agent_repo, memory_repo)

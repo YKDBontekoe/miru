@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from app.domain.chat.models import ChatMessage
+from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
     from app.domain.agents.models import Agent
@@ -31,12 +32,14 @@ class ChatWebSocketBroadcaster:
         user_message: str,
         user_id: UUID,
         client_temp_id: str | None = None,
-    ) -> ChatMessage:
+    ) -> ChatMessageEntity:
         """Persist the user message and broadcast to room members."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
-        user_msg = ChatMessage(room_id=room_id, user_id=user_id, content=user_message)
-        await self.chat_repo.save_message(user_msg)
+        user_msg = ChatMessageEntity(
+            id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
+        )
+        user_msg = await self.chat_repo.save_message(user_msg)
 
         user_msg_data = {
             "id": str(user_msg.id),
@@ -144,13 +147,14 @@ class ChatWebSocketBroadcaster:
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         agent_id_for_msg = None if len(room_agents) > 1 else room_agents[0].id
-        agent_msg = ChatMessage(
+        agent_msg = ChatMessageEntity(
+            id=uuid.uuid4(),
             room_id=room_id,
             agent_id=agent_id_for_msg,
             content=result_text,
         )
         try:
-            await self.chat_repo.save_message(agent_msg)
+            agent_msg = await self.chat_repo.save_message(agent_msg)
         except BaseORMException:
             logger.exception("Failed to persist agent message  room=%s", room_id)
             raise

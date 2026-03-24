@@ -9,7 +9,7 @@ import pytest
 
 from app.domain.agents.models import Agent
 from app.domain.auth.models import PasskeyRecord
-from app.domain.chat.models import ChatMessage
+from app.domain.chat.entities import ChatMessageEntity
 from app.domain.memory.models import Memory
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
@@ -141,12 +141,15 @@ class TestChatRepository:
 
     @pytest.mark.asyncio
     async def test_save_message(self) -> None:
+        import uuid
+
         repo = ChatRepository()
         user_id = uuid4()
         room = await repo.create_room("Save Msg", user_id)
-        msg = ChatMessage(room_id=room.id, role="user", content="Hello")
+        msg = ChatMessageEntity(id=uuid.uuid4(), room_id=room.id, user_id=user_id, content="Hello")
         saved = await repo.save_message(msg)
         assert saved.content == "Hello"
+        assert saved.id == msg.id
 
     @pytest.mark.asyncio
     async def test_list_room_agents_empty(self) -> None:

@@ -13,7 +13,7 @@ from app.infrastructure.database.base import SupabaseModel
 
 if TYPE_CHECKING:
     from app.domain.agents.models import Agent
-    from app.domain.chat.models import ChatMessage
+    from app.infrastructure.database.models.chat_models import ChatMessage
 
 
 class Task(SupabaseModel):

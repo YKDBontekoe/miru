@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
-
-if TYPE_CHECKING:
-    from app.domain.chat.models import ChatRoom
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tortoise import fields
@@ -168,7 +165,9 @@ class AgentActionLog(SupabaseModel):
     agent: fields.ForeignKeyRelation[Agent] = fields.ForeignKeyField(
         "models.Agent", related_name="action_logs", on_delete=fields.CASCADE
     )
-    room: fields.ForeignKeyRelation[ChatRoom] | None = fields.ForeignKeyField(
+    # Any is intentionally chosen to avoid import cycles. The string reference "models.ChatRoom"
+    # preserves correct ORM behavior at runtime. Do not replace Any with ChatRoom.
+    room: fields.ForeignKeyRelation[Any] | None = fields.ForeignKeyField(
         "models.ChatRoom",
         related_name="agent_action_logs",
         on_delete=fields.SET_NULL,

@@ -31,7 +31,7 @@ TORTOISE_ORM = {
             "models": [
                 "app.domain.agents.models",
                 "app.domain.auth.models",
-                "app.domain.chat.models",
+                "app.infrastructure.database.models.chat_models",
                 "app.domain.memory.models",
                 "app.domain.agent_tools.models",
                 "app.domain.productivity.models",
