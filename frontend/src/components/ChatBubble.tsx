@@ -71,9 +71,7 @@ export function ChatBubble({
           <AppText style={styles.userText}>{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={styles.timestampRight}>
-            {formatTime(timestamp, i18n.language)}
-          </AppText>
+          <AppText style={styles.timestampRight}>{formatTime(timestamp, i18n.language)}</AppText>
         )}
       </View>
     );
@@ -87,7 +85,9 @@ export function ChatBubble({
           style={[
             styles.avatar,
             {
-              backgroundColor: isFailed ? theme.colors.status.errorSurfaceLight : `${accentColor}18`,
+              backgroundColor: isFailed
+                ? theme.colors.status.errorSurfaceLight
+                : `${accentColor}18`,
               borderColor: isFailed ? theme.colors.status.errorSurfaceDark : `${accentColor}35`,
             },
           ]}
@@ -121,8 +121,12 @@ export function ChatBubble({
             style={[
               styles.agentBubble,
               {
-                backgroundColor: isFailed ? theme.colors.status.errorSurfaceLight : theme.colors.surface.highLight,
-                borderColor: isFailed ? theme.colors.status.errorSurfaceDark : theme.colors.surface.highestLight,
+                backgroundColor: isFailed
+                  ? theme.colors.status.errorSurfaceLight
+                  : theme.colors.surface.highLight,
+                borderColor: isFailed
+                  ? theme.colors.status.errorSurfaceDark
+                  : theme.colors.surface.highestLight,
               },
             ]}
           >
@@ -171,9 +175,7 @@ export function ChatBubble({
           {isFailed && (
             <View style={styles.errorRow}>
               <Ionicons name="alert-circle-outline" size={13} color={theme.colors.status.error} />
-              <AppText style={styles.errorText}>
-                {t('chat.failed_to_send')}
-              </AppText>
+              <AppText style={styles.errorText}>{t('chat.failed_to_send')}</AppText>
               {onRetry && (
                 <Animated.View style={retryAnimatedStyle}>
                   <Pressable
@@ -182,10 +184,12 @@ export function ChatBubble({
                     onPressOut={handleRetryPressOut}
                     style={styles.retryButton}
                   >
-                    <Ionicons name="refresh-outline" size={13} color={theme.colors.primary.DEFAULT} />
-                    <AppText style={styles.retryText}>
-                      {t('chat.retry')}
-                    </AppText>
+                    <Ionicons
+                      name="refresh-outline"
+                      size={13}
+                      color={theme.colors.primary.DEFAULT}
+                    />
+                    <AppText style={styles.retryText}>{t('chat.retry')}</AppText>
                   </Pressable>
                 </Animated.View>
               )}
@@ -195,9 +199,7 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={styles.timestampLeft}>
-          {formatTime(timestamp, i18n.language)}
-        </AppText>
+        <AppText style={styles.timestampLeft}>{formatTime(timestamp, i18n.language)}</AppText>
       )}
     </View>
   );

@@ -52,6 +52,7 @@ jest.mock('react-native-reanimated', () => {
       return this.props.children;
     }
   };
+  Component.displayName = 'MockedAnimatedComponent';
 
   return {
     __esModule: true,

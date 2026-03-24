@@ -83,7 +83,11 @@ export function ChatInputBar({
             onPressOut={handlePressOut}
             style={[
               styles.sendButton,
-              { backgroundColor: canSend ? theme.colors.primary.DEFAULT : theme.colors.onSurface.disabledLight },
+              {
+                backgroundColor: canSend
+                  ? theme.colors.primary.DEFAULT
+                  : theme.colors.onSurface.disabledLight,
+              },
             ]}
           >
             <Ionicons name="arrow-up" size={22} color={theme.colors.surface.light} />
