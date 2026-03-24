@@ -63,3 +63,35 @@ def test_websocket_endpoint_authorized(client: TestClient) -> None:
             mock_service.run_room_chat_ws.assert_called_once()
             _, kwargs = mock_service.run_room_chat_ws.call_args
             assert kwargs.get("accept_language") == "fr-FR"
+
+
+def test_websocket_endpoint_runtime_error(client: TestClient) -> None:
+    user_id = uuid.uuid4()
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = user_id
+        # TestClient creates a Starlette WebSocket. We can mock it.
+        with patch("starlette.websockets.WebSocket.receive_text") as mock_receive:
+            mock_receive.side_effect = RuntimeError(
+                'WebSocket is not connected. Need to call "accept" first.'
+            )
+            with (
+                patch("app.api.v1.websocket.ChatService"),
+                patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect,
+            ):
+                with client.websocket_connect("/api/v1/ws/chat?token=valid"):
+                    pass
+                mock_disconnect.assert_called_once_with(user_id)
+
+
+def test_websocket_endpoint_runtime_error_other(client: TestClient) -> None:
+    user_id = uuid.uuid4()
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = user_id
+        with patch("starlette.websockets.WebSocket.receive_text") as mock_receive:
+            mock_receive.side_effect = RuntimeError("Some other random error")
+            with (
+                patch("app.api.v1.websocket.ChatService"),
+                pytest.raises(RuntimeError, match="Some other random error"),
+                client.websocket_connect("/api/v1/ws/chat?token=valid"),
+            ):
+                pass

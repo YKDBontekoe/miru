@@ -215,3 +215,8 @@ async def websocket_chat_hub(
 
     except WebSocketDisconnect:
         chat_hub.disconnect(user_id)
+    except RuntimeError as e:
+        if "WebSocket is not connected" in str(e):
+            chat_hub.disconnect(user_id)
+        else:
+            raise
