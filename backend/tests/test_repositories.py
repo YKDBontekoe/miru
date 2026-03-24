@@ -247,6 +247,7 @@ class TestChatRepository:
         res2 = await repo.room_belongs_to_user(room.id, uuid4())
         assert res2 is False
 
+
 # ---------------------------------------------------------------------------
 # MemoryRepository
 # ---------------------------------------------------------------------------
