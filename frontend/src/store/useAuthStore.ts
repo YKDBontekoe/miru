@@ -32,14 +32,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithMagicLink: async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: 'miru://login-callback',
+      },
     });
     if (error) throw error;
   },
 
   signInWithPassword: async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // Explicitly update store — onAuthStateChange may fire after the routing
+    // effect checks, so we set session/user immediately here too.
+    if (data.session) {
+      set({ session: data.session, user: data.session.user });
+    }
   },
 
   signInWithPasskey: async (email: string) => {
