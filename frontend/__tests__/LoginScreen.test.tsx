@@ -6,6 +6,30 @@ import { useAuthStore } from '../src/store/useAuthStore';
 // Mock useAuthStore
 jest.mock('../src/store/useAuthStore');
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const keys: Record<string, string> = {
+        'auth.errors.email_required': 'Please enter your email address',
+        'auth.errors.email_invalid': 'Please enter a valid email address',
+        'auth.btn_magic_link': 'Send magic link',
+        'auth.email_placeholder': 'you@example.com',
+        'auth.errors.magic_link_failed': 'Failed to send magic link. Please try again.',
+        'auth.desc_magic_link': 'Sign in with a one-time link sent to your email.',
+        'auth.desc_password': 'Sign in with your email and password.',
+        'auth.desc_passkey': 'Sign in with your biometrics or security key.',
+        'auth.email_label': 'Email address',
+        'auth.password_label': 'Password',
+        'auth.passkey_hint': 'Your device will prompt you to authenticate with Face ID, Touch ID, or a security key.',
+        'auth.footer_note': 'By signing in you agree to keep your account secure.\nMagic links expire after 1 hour.'
+      };
+      return keys[key] || key;
+    },
+    i18n: { language: 'en' },
+  }),
+}));
+
+
 describe('LoginScreen', () => {
   const mockSignInWithMagicLink = jest.fn();
   const mockSignInWithPassword = jest.fn();

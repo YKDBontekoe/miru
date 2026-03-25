@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../src/components/AppText';
 import { AppButton } from '../../src/components/AppButton';
 import { useAuthStore } from '../../src/store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 type AuthMode = 'magic-link' | 'password' | 'passkey';
 
@@ -19,7 +20,7 @@ function ErrorBanner({ message }: { message: string }) {
   return (
     <View className="flex-row items-start bg-red-500/10 border border-red-500/30 rounded-lg p-md mb-md">
       <Ionicons name="alert-circle-outline" size={16} color="#EF4444" style={{ marginTop: 1 }} />
-      <AppText variant="caption" className="flex-1 ml-xs text-red-400">
+      <AppText variant="caption" className="flex-1 ms-xs text-red-400">
         {message}
       </AppText>
     </View>
@@ -62,14 +63,15 @@ export default function LoginScreen() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   const { signInWithMagicLink, signInWithPassword, signInWithPasskey } = useAuthStore();
+  const { t } = useTranslation();
 
   const validateEmail = () => {
     if (!email.trim()) {
-      setError('Please enter your email address');
+      setError(t('auth.errors.email_required'));
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Please enter a valid email address');
+      setError(t('auth.errors.email_invalid'));
       return false;
     }
     return true;
@@ -83,7 +85,7 @@ export default function LoginScreen() {
       await signInWithMagicLink(email.trim());
       setMagicLinkSent(true);
     } catch (e: any) {
-      setError(e.message || 'Failed to send magic link. Please try again.');
+      setError(e.message || t('auth.errors.magic_link_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +94,7 @@ export default function LoginScreen() {
   const handlePassword = async () => {
     if (!validateEmail()) return;
     if (!password) {
-      setError('Please enter your password');
+      setError(t('auth.errors.password_required'));
       return;
     }
     setIsLoading(true);
@@ -100,7 +102,7 @@ export default function LoginScreen() {
     try {
       await signInWithPassword(email.trim(), password);
     } catch (e: any) {
-      setError(e?.message || 'Incorrect email or password.');
+      setError(e?.message || t('auth.errors.incorrect_credentials'));
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +115,7 @@ export default function LoginScreen() {
     try {
       await signInWithPasskey(email.trim());
     } catch (e: any) {
-      setError(e.message || 'Passkey authentication failed. Please try another method.');
+      setError(e.message || t('auth.errors.passkey_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -136,12 +138,12 @@ export default function LoginScreen() {
             Check your email
           </AppText>
           <AppText variant="body" color="muted" className="text-center mb-xxxl">
-            We sent a magic link to{'\n'}
+            {t('auth.magic_link_sent')}{'\n'}
             <AppText variant="body" className="font-semibold">
               {email.trim()}
             </AppText>
             {'\n\n'}
-            Tap the link in the email to sign in. It will expire in 1 hour.
+            {t('auth.magic_link_instruction')}
           </AppText>
           <AppButton
             label="Use a different email"
@@ -176,9 +178,9 @@ export default function LoginScreen() {
                 Miru
               </AppText>
               <AppText variant="body" color="muted" className="text-center">
-                {mode === 'magic-link' && 'Sign in with a one-time link sent to your email.'}
-                {mode === 'password' && 'Sign in with your email and password.'}
-                {mode === 'passkey' && 'Sign in with your biometrics or security key.'}
+                {mode === 'magic-link' && t('auth.desc_magic_link')}
+                {mode === 'password' && t('auth.desc_password')}
+                {mode === 'passkey' && t('auth.desc_passkey')}
               </AppText>
             </View>
 
@@ -207,13 +209,13 @@ export default function LoginScreen() {
             {/* Form card */}
             <View className="bg-surface-highLight dark:bg-surface-highDark rounded-xl border border-border-light dark:border-border-dark p-lg mb-lg">
               {/* Email */}
-              <AppText variant="caption" color="muted" className="mb-xs ml-xs">
-                Email address
+              <AppText variant="caption" color="muted" className="mb-xs ms-xs">
+                {t('auth.email_label')}
               </AppText>
               <View className="flex-row items-center h-[48px] bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark px-md mb-lg">
                 <Ionicons name="mail-outline" size={18} color="#606070" />
                 <TextInput
-                  className="flex-1 ml-sm text-onSurface-light dark:text-onSurface-dark text-[15px]"
+                  className="flex-1 ms-sm text-onSurface-light dark:text-onSurface-dark text-[15px]"
                   placeholder="you@example.com"
                   placeholderTextColor="#606070"
                   value={email}
@@ -232,13 +234,13 @@ export default function LoginScreen() {
               {/* Password field (password mode only) */}
               {mode === 'password' && (
                 <>
-                  <AppText variant="caption" color="muted" className="mb-xs ml-xs">
-                    Password
+                  <AppText variant="caption" color="muted" className="mb-xs ms-xs">
+                    {t('auth.password_label')}
                   </AppText>
                   <View className="flex-row items-center h-[48px] bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark px-md mb-lg">
                     <Ionicons name="lock-closed-outline" size={18} color="#606070" />
                     <TextInput
-                      className="flex-1 ml-sm text-onSurface-light dark:text-onSurface-dark text-[15px]"
+                      className="flex-1 ms-sm text-onSurface-light dark:text-onSurface-dark text-[15px]"
                       placeholder="Enter your password"
                       placeholderTextColor="#606070"
                       value={password}
@@ -271,9 +273,8 @@ export default function LoginScreen() {
                     color="#2563EB"
                     style={{ marginTop: 1 }}
                   />
-                  <AppText variant="caption" className="flex-1 ml-xs text-primary">
-                    Your device will prompt you to authenticate with Face ID, Touch ID, or a
-                    security key.
+                  <AppText variant="caption" className="flex-1 ms-xs text-primary">
+                    {t('auth.passkey_hint')}
                   </AppText>
                 </View>
               )}
@@ -303,8 +304,7 @@ export default function LoginScreen() {
 
             {/* Footer note */}
             <AppText variant="caption" color="muted" className="text-center">
-              By signing in you agree to keep your account secure.{'\n'}
-              Magic links expire after 1 hour.
+              {t('auth.footer_note')}
             </AppText>
           </View>
         </ScrollView>

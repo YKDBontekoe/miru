@@ -57,8 +57,8 @@ function getInitials(email?: string): string {
   return local.slice(0, 2).toUpperCase();
 }
 
-function formatDate(): string {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDate(locale: string = 'en'): string {
+  return new Intl.DateTimeFormat(locale, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -200,7 +200,7 @@ function RecentChatRow({
   onPress: () => void;
   isLast: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
   const relativeTime = () => {
@@ -513,7 +513,7 @@ function NewChatModal({
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -610,7 +610,7 @@ export default function HomeScreen() {
                 {firstName}
               </AppText>
               <AppText style={{ fontSize: 13, color: C.faint, marginTop: 5 }}>
-                {formatDate()}
+                {formatDate(i18n.language)}
               </AppText>
             </View>
 

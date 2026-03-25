@@ -720,11 +720,11 @@ export function AgentDetailSheet({
                   }}
                 >
                   Created{' '}
-                  {new Date(agent.created_at).toLocaleDateString(undefined, {
+                  {new Intl.DateTimeFormat(i18n.language, {
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric',
-                  })}
+                  }).format(new Date(agent.created_at))}
                 </AppText>
               </Animated.View>
             )}

@@ -440,8 +440,7 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
 
     assert responses == ["Hel", "lo!", "[[STATUS:done]]\n"]
     mock_stream_chat.assert_called_once()
-    called_messages = mock_stream_chat.call_args[1]["messages"]
-    assert any("fr-FR" in m["content"] and m["role"] == "system" for m in called_messages)
+    assert mock_stream_chat.call_args[1]["accept_language"] == "fr-FR"
 
 
 @pytest.mark.asyncio
