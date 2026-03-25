@@ -20,13 +20,17 @@ from app.main import app
 @pytest_asyncio.fixture(autouse=True)
 async def clear_productivity_db() -> AsyncGenerator[None]:
     """Clear tasks and notes tables before each test."""
+    from app.domain.agents.models import Agent
+
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
+    await Agent.all().delete()
     yield
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
+    await Agent.all().delete()
 
 
 @pytest.fixture
