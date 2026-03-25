@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeInDown } from 'react-native-reanimated';
@@ -20,10 +20,14 @@ interface TemplateGallerySheetProps {
 export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGallerySheetProps) {
   const { C } = useTheme();
   const { templates, isLoadingTemplates, fetchTemplates } = useAgentStore();
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    if (visible && templates.length === 0) fetchTemplates();
-  }, [visible]);
+    if (visible && templates.length === 0) {
+      setHasError(false);
+      fetchTemplates().catch(() => setHasError(true));
+    }
+  }, [visible, templates.length, fetchTemplates]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -77,7 +81,37 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
             showsVerticalScrollIndicator={false}
           >
-            {isLoadingTemplates ? (
+            {hasError ? (
+              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+                <AppText style={{ fontSize: 40, marginBottom: 12 }}>⚠️</AppText>
+                <AppText
+                  style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}
+                >
+                  Failed to load templates
+                </AppText>
+                <AppText
+                  style={{ color: C.muted, textAlign: 'center', fontSize: 14, marginBottom: 16 }}
+                >
+                  Check your connection and try again.
+                </AppText>
+                <TouchableOpacity
+                  onPress={() => {
+                    setHasError(false);
+                    fetchTemplates().catch(() => setHasError(true));
+                  }}
+                  style={{
+                    backgroundColor: C.primary,
+                    borderRadius: 10,
+                    paddingHorizontal: 20,
+                    paddingVertical: 9,
+                  }}
+                >
+                  <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>
+                    Retry
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            ) : isLoadingTemplates ? (
               [0, 1, 2].map((i) => <SkeletonAgentCard key={i} index={i} />)
             ) : templates.length === 0 ? (
               <View style={{ alignItems: 'center', paddingVertical: 48 }}>

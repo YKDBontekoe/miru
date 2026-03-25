@@ -35,7 +35,7 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
         }}
       >
         <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
-          {agent.name[0].toUpperCase()}
+          {agent.name?.[0]?.toUpperCase() ?? ''}
         </AppText>
         <View
           style={{

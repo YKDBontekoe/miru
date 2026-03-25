@@ -110,6 +110,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
     if (!name.trim() || !personality.trim()) {
       Alert.alert('Required', 'Name and personality are required.');
       return;

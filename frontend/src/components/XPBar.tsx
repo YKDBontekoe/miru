@@ -14,7 +14,7 @@ interface XPBarProps {
 
 export function XPBar({ progress, color }: XPBarProps) {
   const width = useSharedValue(0);
-  const animStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as any }));
+  const animStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as `${number}%` }));
 
   useEffect(() => {
     width.value = withDelay(

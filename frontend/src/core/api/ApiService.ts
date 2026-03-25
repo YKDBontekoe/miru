@@ -1,6 +1,14 @@
 import { apiClient, streamChat } from './client';
 import { Agent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
 
+type AgentTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  personality: string;
+  goals: string[];
+};
+
 // The backend Task schema uses is_completed; normalise to the frontend shape.
 function normalizeTask(raw: Record<string, unknown>): Task {
   const { is_completed, ...rest } = raw as Record<string, unknown> & { is_completed?: boolean };
@@ -89,13 +97,8 @@ export const ApiService = {
     await apiClient.delete(`agents/${id}`);
   },
 
-  async getTemplates(): Promise<
-    { id: string; name: string; description: string; personality: string; goals: string[] }[]
-  > {
-    const response =
-      await apiClient.get<
-        { id: string; name: string; description: string; personality: string; goals: string[] }[]
-      >('agents/templates');
+  async getTemplates(): Promise<AgentTemplate[]> {
+    const response = await apiClient.get<AgentTemplate[]>('agents/templates');
     return response.data;
   },
 

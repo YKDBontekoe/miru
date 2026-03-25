@@ -1,24 +1,16 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  Pressable,
   View,
   Modal,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  FadeIn,
-  FadeOut,
-  SlideInUp,
-  SlideOutDown,
-} from 'react-native-reanimated';
+import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -31,6 +23,7 @@ import { useChatStore } from '../../../src/store/useChatStore';
 import { useAgentStore } from '../../../src/store/useAgentStore';
 import { ApiService } from '../../../src/core/api/ApiService';
 import { Agent } from '../../../src/core/models';
+import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
 
 const C = {
   bg: '#F8F8FC',
@@ -150,8 +143,12 @@ export default function ChatRoomScreen() {
 
   const handleRemoveAgent = async (agentId: string) => {
     if (!roomId) return;
-    await ApiService.removeAgentFromRoom(roomId, agentId);
-    setRoomAgents((prev) => prev.filter((a) => a.id !== agentId));
+    try {
+      await ApiService.removeAgentFromRoom(roomId, agentId);
+      setRoomAgents((prev) => prev.filter((a) => a.id !== agentId));
+    } catch {
+      Alert.alert('Error', 'Could not remove agent from chat. Please try again.');
+    }
   };
 
   return (
@@ -597,147 +594,16 @@ export default function ChatRoomScreen() {
       </Modal>
 
       {/* Quick-view agent popover */}
-      {quickViewAgent &&
-        (() => {
-          const agent = quickViewAgent;
-          const color = getAgentColor(agent.name);
-          const level = Math.floor(agent.message_count / 10) + 1;
-          const isInRoom = roomAgents.some((a) => a.id === agent.id);
-          return (
-            <Modal visible animationType="none" transparent>
-              <Pressable
-                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}
-                onPress={() => setQuickViewAgent(null)}
-              >
-                <Animated.View
-                  entering={SlideInUp.springify().damping(22)}
-                  exiting={SlideOutDown.duration(180)}
-                  style={{
-                    backgroundColor: C.surface,
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-                    padding: 24,
-                  }}
-                  onStartShouldSetResponder={() => true}
-                >
-                  {/* Drag handle */}
-                  <View style={{ alignItems: 'center', marginBottom: 16 }}>
-                    <View
-                      style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: C.faint }}
-                    />
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                    <View
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: 26,
-                        backgroundColor: `${color}18`,
-                        borderWidth: 2,
-                        borderColor: `${color}40`,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginEnd: 14,
-                      }}
-                    >
-                      <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
-                        {agent.name[0].toUpperCase()}
-                      </AppText>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <AppText
-                        style={{ fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 2 }}
-                      >
-                        {agent.name}
-                      </AppText>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View
-                          style={{
-                            backgroundColor: `${color}18`,
-                            borderRadius: 6,
-                            paddingHorizontal: 7,
-                            paddingVertical: 2,
-                          }}
-                        >
-                          <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
-                            Lv {level}
-                          </AppText>
-                        </View>
-                        <AppText style={{ color: C.muted, fontSize: 12 }}>
-                          {agent.message_count} messages
-                        </AppText>
-                      </View>
-                    </View>
-                  </View>
-
-                  <AppText
-                    style={{ color: C.muted, fontSize: 13, lineHeight: 19, marginBottom: 18 }}
-                    numberOfLines={3}
-                  >
-                    {agent.personality}
-                  </AppText>
-
-                  {isInRoom ? (
-                    <TouchableOpacity
-                      onPress={() => {
-                        handleRemoveAgent(agent.id);
-                        setQuickViewAgent(null);
-                      }}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#FEF2F2',
-                        borderRadius: 14,
-                        paddingVertical: 13,
-                        borderWidth: 1,
-                        borderColor: '#FECACA',
-                        marginBottom: 36,
-                      }}
-                    >
-                      <Ionicons
-                        name="person-remove-outline"
-                        size={16}
-                        color="#EF4444"
-                        style={{ marginEnd: 7 }}
-                      />
-                      <AppText style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>
-                        Remove from Chat
-                      </AppText>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={() => {
-                        handleAddAgent(agent.id);
-                        setQuickViewAgent(null);
-                      }}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: C.primary,
-                        borderRadius: 14,
-                        paddingVertical: 13,
-                        marginBottom: 36,
-                      }}
-                    >
-                      <Ionicons
-                        name="person-add-outline"
-                        size={16}
-                        color="white"
-                        style={{ marginEnd: 7 }}
-                      />
-                      <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
-                        Add to Chat
-                      </AppText>
-                    </TouchableOpacity>
-                  )}
-                </Animated.View>
-              </Pressable>
-            </Modal>
-          );
-        })()}
+      {quickViewAgent && (
+        <QuickViewAgentSheet
+          agent={quickViewAgent}
+          onClose={() => setQuickViewAgent(null)}
+          onAdd={handleAddAgent}
+          onRemove={handleRemoveAgent}
+          roomAgents={roomAgents}
+          getAgentColor={getAgentColor}
+        />
+      )}
     </SafeAreaView>
   );
 }

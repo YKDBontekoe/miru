@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Alert,
   ActionSheetIOS,
   Platform,
 } from 'react-native';
@@ -24,6 +25,7 @@ import { AgentDetailSheet } from '../../src/components/agents/AgentDetailSheet';
 import { AgentCard, AgentGridCard } from '../../src/components/agents/AgentCard';
 import { EmptyState } from '../../src/components/agents/EmptyState';
 import { useAgentStore, AgentTemplate } from '../../src/store/useAgentStore';
+import { ApiService } from '../../src/core/api/ApiService';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { haptic } from '../../src/utils/haptics';
@@ -41,6 +43,7 @@ export default function AgentsScreen() {
     viewMode,
     setViewMode,
     deleteAgent,
+    confirmDelete,
     restoreAgent,
     duplicateAgent,
   } = useAgentStore();
@@ -51,6 +54,7 @@ export default function AgentsScreen() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [createPrefill, setCreatePrefill] = useState<AgentTemplate | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // Undo-delete state
   const [snackbar, setSnackbar] = useState<{ visible: boolean; agent: Agent | null }>({
@@ -63,8 +67,14 @@ export default function AgentsScreen() {
     fetchAgents();
   }, [fetchAgents]);
 
+  // Debounce search to avoid filtering on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
   const filteredAgents = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = debouncedQuery.toLowerCase().trim();
     if (!q) return agents;
     return agents.filter(
       (a) =>
@@ -72,7 +82,7 @@ export default function AgentsScreen() {
         a.personality.toLowerCase().includes(q) ||
         (a.description ?? '').toLowerCase().includes(q)
     );
-  }, [agents, searchQuery]);
+  }, [agents, debouncedQuery]);
 
   const pinnedAgents = useMemo(
     () => agents.filter((a) => pinnedIds.includes(a.id)),
@@ -86,17 +96,29 @@ export default function AgentsScreen() {
     [selectedAgent?.id]
   );
 
+  const SNACKBAR_DURATION = 4500;
+
   const handleArchive = useCallback(
     (agent: Agent) => {
       haptic.medium();
-      deleteAgent(agent.id).catch(() => restoreAgent(agent));
+      // Optimistic removal — no server call yet
+      deleteAgent(agent.id);
+      // Cancel any previous pending delete
       if (pendingDelete.current) clearTimeout(pendingDelete.current);
       setSnackbar({ visible: true, agent });
+      // Commit server delete after undo window expires
+      pendingDelete.current = setTimeout(() => {
+        confirmDelete(agent.id).catch(() => {
+          restoreAgent(agent);
+          Alert.alert('Archive failed', 'Could not archive this persona. Please try again.');
+        });
+      }, SNACKBAR_DURATION);
     },
-    [deleteAgent, restoreAgent]
+    [deleteAgent, confirmDelete, restoreAgent]
   );
 
   const handleUndo = useCallback(() => {
+    if (pendingDelete.current) clearTimeout(pendingDelete.current);
     if (snackbar.agent) {
       restoreAgent(snackbar.agent);
       haptic.success();
@@ -131,14 +153,16 @@ export default function AgentsScreen() {
                 await addAgentToRoom(room.id, agent.id);
                 router.push(`/(main)/chat/${room.id}`);
               } catch {
-                /* no-op */
+                Alert.alert('Error', 'Could not start a chat. Please try again.');
               }
             } else if (i === 2) {
               haptic.selection();
               togglePin(agent.id);
             } else if (i === 3) {
               haptic.light();
-              duplicateAgent(agent.id).catch(() => {});
+              duplicateAgent(agent.id).catch(() => {
+                Alert.alert('Error', 'Could not duplicate this persona. Please try again.');
+              });
             } else if (i === 4) {
               setSelectedAgent(agent);
             } else if (i === 5) {
@@ -330,7 +354,7 @@ export default function AgentsScreen() {
       </View>
 
       {/* ── Pinned strip ── */}
-      {pinnedAgents.length > 0 && !searchQuery && (
+      {pinnedAgents.length > 0 && !debouncedQuery && (
         <Animated.View entering={FadeIn.duration(300)} style={{ marginBottom: 6 }}>
           <View style={{ paddingHorizontal: 20, marginBottom: 6 }}>
             <AppText
@@ -386,7 +410,7 @@ export default function AgentsScreen() {
           renderItem={renderGridItem}
           ListEmptyComponent={
             <EmptyState
-              searchQuery={searchQuery}
+              searchQuery={debouncedQuery}
               onCreate={() => setShowCreateSheet(true)}
               onBrowse={() => setShowTemplates(true)}
             />
@@ -403,7 +427,7 @@ export default function AgentsScreen() {
           renderItem={renderListItem}
           ListEmptyComponent={
             <EmptyState
-              searchQuery={searchQuery}
+              searchQuery={debouncedQuery}
               onCreate={() => setShowCreateSheet(true)}
               onBrowse={() => setShowTemplates(true)}
             />

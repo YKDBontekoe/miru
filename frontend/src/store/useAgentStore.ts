@@ -49,8 +49,10 @@ interface AgentState {
     id: string,
     data: Partial<Pick<Agent, 'name' | 'personality' | 'description' | 'goals'>>
   ) => Promise<Agent>;
-  /** Soft-deletes on the server and removes from local state immediately. */
-  deleteAgent: (id: string) => Promise<void>;
+  /** Removes from local state immediately (optimistic). Call confirmDelete after undo window. */
+  deleteAgent: (id: string) => void;
+  /** Calls the server to permanently delete. Call only after undo window expires. */
+  confirmDelete: (id: string) => Promise<void>;
   /** Restores an agent that was optimistically removed (for undo). */
   restoreAgent: (agent: Agent) => void;
   /** Creates a copy of an existing agent with "(copy)" appended to the name. */
@@ -100,9 +102,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     return updated;
   },
 
-  deleteAgent: async (id) => {
-    // Optimistically remove from state first, then call API
+  deleteAgent: (id) => {
+    // Optimistically remove — server delete is deferred via confirmDelete
     set((state) => ({ agents: state.agents.filter((a) => a.id !== id) }));
+  },
+
+  confirmDelete: async (id) => {
     await ApiService.deleteAgent(id);
   },
 

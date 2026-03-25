@@ -60,7 +60,7 @@ export function AgentDetailSheet({
       setIsEditing(false);
       setGoalInput('');
     }
-  }, [agent?.id]);
+  }, [agent]);
 
   if (!agent) return null;
 

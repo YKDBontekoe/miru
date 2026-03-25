@@ -140,7 +140,10 @@ async def remove_agent_from_room(
 ) -> dict[str, str]:
     success = await service.remove_agent_from_room(room_id, agent_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Agent not found in room")
+        raise HTTPException(
+            status_code=404,
+            detail={"message": "Agent not found in room", "error": "AGENT_NOT_IN_ROOM"},
+        )
     return {"status": "ok"}
 
 

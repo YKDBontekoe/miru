@@ -55,8 +55,13 @@ export function Snackbar({
 
   const handleAction = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    dismiss();
-    onAction?.();
+    translateY.value = withSpring(80, { damping: 18, stiffness: 220 });
+    opacity.value = withTiming(0, { duration: 180 }, (done) => {
+      if (done) {
+        if (onDismiss) runOnJS(onDismiss)();
+        if (onAction) runOnJS(onAction)();
+      }
+    });
   };
 
   const animStyle = useAnimatedStyle(() => ({

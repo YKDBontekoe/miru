@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
@@ -72,9 +72,11 @@ async def list_integrations(
 async def list_templates(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
 ) -> list[AgentTemplateResponse]:
-    """List all available persona templates."""
-    return await service.list_templates()
+    """List available persona templates (paginated)."""
+    return await service.list_templates(skip=skip, limit=limit)
 
 
 @router.post("/generate", response_model=AgentGenerationResponse)
@@ -97,7 +99,10 @@ async def update_agent(
     """Update an existing agent."""
     result = await service.update_agent(agent_id, user_id, data)
     if not result:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"message": "Agent not found", "error": "AGENT_NOT_FOUND"},
+        )
     return result
 
 
@@ -110,5 +115,8 @@ async def delete_agent(
     """Delete an agent."""
     success = await service.delete_agent(agent_id, user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"message": "Agent not found", "error": "AGENT_NOT_FOUND"},
+        )
     return {"status": "ok"}

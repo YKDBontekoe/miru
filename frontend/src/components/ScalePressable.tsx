@@ -1,12 +1,12 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleProp, ViewStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 interface ScalePressableProps {
   onPress?: () => void;
   onLongPress?: () => void;
   children: React.ReactNode;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function ScalePressable({ onPress, onLongPress, children, style }: ScalePressableProps) {

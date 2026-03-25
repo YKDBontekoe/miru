@@ -39,9 +39,9 @@ class AgentRepository:
             .all()
         )
 
-    async def list_templates(self) -> list[AgentTemplate]:
-        """List all agent templates."""
-        return await AgentTemplate.all()
+    async def list_templates(self, skip: int = 0, limit: int = 100) -> list[AgentTemplate]:
+        """List agent templates (paginated)."""
+        return await AgentTemplate.all().offset(skip).limit(limit)
 
     async def create(self, agent: Agent) -> Agent:
         """Create a new agent."""
@@ -55,10 +55,17 @@ class AgentRepository:
             agent.mood = mood
             await agent.save()
 
+    _ALLOWED_AGENT_FIELDS: frozenset[str] = frozenset(
+        {"name", "personality", "description", "goals", "system_prompt", "mood"}
+    )
+
     async def update_agent(
         self, agent_id: UUID | str, user_id: UUID | str, **fields: object
     ) -> Agent | None:
         """Update an agent's fields. Only updates the owner's agent."""
+        unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
+        if unknown:
+            raise ValueError(f"update_agent received unknown fields: {unknown}")
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
         if isinstance(user_id, str):
