@@ -58,7 +58,7 @@ class AuthService:
                 )
             return JWTPayload(**payload)
         except Exception as exc:
-            logger.error("JWT validation failed: %s", exc)
+            logger.warning("JWT validation failed: %s", exc)
             raise
 
     # --- WebAuthn / Passkey Logic (Authlib Integration) ---
