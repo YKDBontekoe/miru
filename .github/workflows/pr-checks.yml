@@ -406,45 +406,83 @@ jobs:
           import json
           import os
           import sys
+          import time
           import urllib.error
           import urllib.request
 
-          url = os.environ["SUPABASE_URL"].rstrip("/") + "/auth/v1/token?grant_type=password"
+          base_url = os.environ["SUPABASE_URL"].rstrip("/")
+          login_url = base_url + "/auth/v1/token?grant_type=password"
+          signup_url = base_url + "/auth/v1/signup"
+          api_key = os.environ["SUPABASE_KEY"]
           payload = {
               "email": os.environ["SUPABASE_TEST_EMAIL"],
               "password": os.environ["SUPABASE_TEST_PASSWORD"],
           }
 
-          request = urllib.request.Request(
-              url,
-              data=json.dumps(payload).encode("utf-8"),
-              headers={
-                  "apikey": os.environ["SUPABASE_KEY"],
-                  "Content-Type": "application/json",
-              },
-              method="POST",
-          )
+          headers = {
+              "apikey": api_key,
+              "Authorization": f"Bearer {api_key}",
+              "Content-Type": "application/json",
+          }
+
+          def post_json(url: str, data: dict[str, str]) -> dict:
+              request = urllib.request.Request(
+                  url,
+                  data=json.dumps(data).encode("utf-8"),
+                  headers=headers,
+                  method="POST",
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.loads(response.read().decode("utf-8"))
+
+          def try_login() -> str:
+              body = post_json(login_url, payload)
+              token = body.get("access_token")
+              if not token:
+                  raise RuntimeError("Supabase auth response did not include access_token")
+              return token
 
           try:
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  body = json.loads(response.read().decode("utf-8"))
+              print(try_login())
+              raise SystemExit(0)
           except urllib.error.HTTPError as exc:
               detail = exc.read().decode("utf-8", errors="replace")
-              print(
-                  f"::warning::Failed to obtain Supabase test token (HTTP {exc.code}): {detail}",
-                  file=sys.stderr,
-              )
-              raise
+              if exc.code == 400 and "invalid_credentials" in detail:
+                  print(
+                      "::warning::Supabase test user credentials invalid; attempting to seed user via signup",
+                      file=sys.stderr,
+                  )
+              else:
+                  print(
+                      f"::warning::Failed to obtain Supabase test token (HTTP {exc.code}): {detail}",
+                      file=sys.stderr,
+                  )
+                  raise
           except Exception as exc:
               print(f"::warning::Failed to obtain Supabase test token: {exc}", file=sys.stderr)
               raise
 
-          token = body.get("access_token")
-          if not token:
-              print("::warning::Supabase auth response did not include access_token", file=sys.stderr)
-              raise RuntimeError("Missing access_token")
+          try:
+              _ = post_json(signup_url, payload)
+              time.sleep(1)
+          except urllib.error.HTTPError as exc:
+              detail = exc.read().decode("utf-8", errors="replace")
+              print(
+                  f"::warning::Supabase signup attempt did not succeed (HTTP {exc.code}): {detail}",
+                  file=sys.stderr,
+              )
+          except Exception as exc:
+              print(f"::warning::Supabase signup attempt failed: {exc}", file=sys.stderr)
 
-          print(token)
+          try:
+              print(try_login())
+          except Exception as exc:
+              print(
+                  "::warning::Unable to obtain Supabase auth token after seed attempt; "
+                  "falling back to jwtSecret token",
+                  file=sys.stderr,
+              )
+              raise
           PY
             ); then
               echo "::warning::Falling back to locally signed jwtSecret token for Postman auth"
