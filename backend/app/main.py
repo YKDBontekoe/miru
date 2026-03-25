@@ -6,7 +6,6 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-import jwt
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -98,8 +97,12 @@ async def audit_log_middleware(request: Request, call_next):
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             try:
-                from app.api.dependencies import get_auth_service
-                auth_service = get_auth_service()
+                from app.domain.auth.service import AuthService
+                from app.infrastructure.database.supabase import get_supabase
+                from app.infrastructure.repositories.auth_repo import AuthRepository
+
+                # In order to decode securely, we can instantiate the service
+                auth_service = AuthService(AuthRepository(get_supabase()))
                 # Verify token securely
                 payload = await auth_service.decode_jwt(token)
                 user_id = payload.sub
