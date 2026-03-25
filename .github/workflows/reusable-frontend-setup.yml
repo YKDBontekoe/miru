@@ -116,7 +116,9 @@ jobs:
         if: inputs.run-tests && always()
         run: |
           if [ -f coverage/lcov-report/index.html ]; then
-            echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Coverage report generated. View details on Codecov." >> $GITHUB_STEP_SUMMARY
+            {
+              echo "## Test Coverage Summary"
+              echo ""
+              echo "Coverage report generated. View details on Codecov."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi

@@ -90,12 +90,14 @@ jobs:
         working-directory: ./frontend
         continue-on-error: true
         run: |
-          echo "## NPM Audit Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          npm audit --audit-level=moderate --production 2>&1 | tee audit-output.txt || true
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat audit-output.txt >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## NPM Audit Results"
+            echo ""
+            npm audit --audit-level=moderate --production 2>&1 | tee audit-output.txt || true
+            echo "\`\`\`"
+            cat audit-output.txt
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Backend Checks
@@ -185,13 +187,15 @@ jobs:
 
       - name: Analyze bundle size
         run: |
-          echo "## Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          TOTAL_SIZE=$(du -sb ./dist | cut -f1)
-          TOTAL_SIZE_MB=$(echo "scale=2; $TOTAL_SIZE / 1024 / 1024" | bc)
-          echo "**Total Bundle Size:** ${TOTAL_SIZE_MB} MB" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Bundle Size Analysis"
+            echo ""
+            TOTAL_SIZE=$(du -sb ./dist | cut -f1)
+            TOTAL_SIZE_MB=$(echo "scale=2; ${TOTAL_SIZE} / 1024 / 1024" | bc)
+            echo "**Total Bundle Size:** ${TOTAL_SIZE_MB} MB"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          if (( $(echo "$TOTAL_SIZE_MB > 10" | bc -l) )); then
+          if (( $(echo "${TOTAL_SIZE_MB} > 10" | bc -l) )); then
             echo "::warning::Bundle size (${TOTAL_SIZE_MB} MB) exceeds 10 MB threshold."
           fi
 

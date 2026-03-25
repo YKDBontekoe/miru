@@ -100,8 +100,8 @@ jobs:
         working-directory: ./frontend
         run: |
           # npm dedupe --dry-run doesn't exist, so we check manually
-          npm ls --all --json 2>/dev/null | jq -r '.dependencies | to_entries[] | select(.value.duplicate == true) | .key' | while read pkg; do
-            echo "::warning::Duplicate dependency found: $pkg"
+          npm ls --all --json 2>/dev/null | jq -r '.dependencies | to_entries[] | select(.value.duplicate == true) | .key' | while read -r pkg; do
+            echo "::warning::Duplicate dependency found: ${pkg}"
           done
           echo "Dependency deduplication check complete."
 
@@ -218,32 +218,34 @@ jobs:
 
       - name: Calculate bundle metrics
         run: |
-          echo "## Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Bundle Size Analysis"
+            echo ""
 
-          TOTAL_SIZE=$(du -sb ./web-dist | cut -f1)
-          TOTAL_SIZE_MB=$(echo "scale=2; $TOTAL_SIZE / 1024 / 1024" | bc)
+            TOTAL_SIZE=$(du -sb ./web-dist | cut -f1)
+            TOTAL_SIZE_MB=$(echo "scale=2; ${TOTAL_SIZE} / 1024 / 1024" | bc)
 
-          echo "**Total Bundle Size:** ${TOTAL_SIZE_MB} MB (${TOTAL_SIZE} bytes)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Total Bundle Size:** ${TOTAL_SIZE_MB} MB (${TOTAL_SIZE} bytes)"
+            echo ""
 
-          JS_SIZE=$(find ./web-dist -name "*.js" -exec stat -c%s {} + | awk '{sum+=$1} END {print sum}')
-          JS_SIZE_MB=$(echo "scale=2; ${JS_SIZE:-0} / 1024 / 1024" | bc)
+            JS_SIZE=$(find ./web-dist -name "*.js" -exec stat -c%s {} + | awk '{sum+=$1} END {print sum}')
+            JS_SIZE_MB=$(echo "scale=2; ${JS_SIZE:-0} / 1024 / 1024" | bc)
 
-          CSS_SIZE=$(find ./web-dist -name "*.css" -exec stat -c%s {} + | awk '{sum+=$1} END {print sum}')
-          CSS_SIZE_MB=$(echo "scale=2; ${CSS_SIZE:-0} / 1024 / 1024" | bc)
+            CSS_SIZE=$(find ./web-dist -name "*.css" -exec stat -c%s {} + | awk '{sum+=$1} END {print sum}')
+            CSS_SIZE_MB=$(echo "scale=2; ${CSS_SIZE:-0} / 1024 / 1024" | bc)
 
-          echo "**JavaScript:** ${JS_SIZE_MB} MB" >> $GITHUB_STEP_SUMMARY
-          echo "**CSS:** ${CSS_SIZE_MB} MB" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**JavaScript:** ${JS_SIZE_MB} MB"
+            echo "**CSS:** ${CSS_SIZE_MB} MB"
+            echo ""
 
-          echo "### Largest Files" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
-          find ./web-dist -type f -exec ls -lh {} \; 2>/dev/null | sort -k5 -rh | head -10 | awk '{print "| " $9 " | " $5 " |"}' >> $GITHUB_STEP_SUMMARY
+            echo "### Largest Files"
+            echo "| File | Size |"
+            echo "|------|------|"
+            find ./web-dist -type f -exec ls -lh {} \; 2>/dev/null | sort -k5 -rh | head -10 | awk '{print "| " $9 " | " $5 " |"}'
+          } >> "$GITHUB_STEP_SUMMARY"
 
           # Warning if bundle is too large
-          if (( $(echo "$TOTAL_SIZE_MB > 10" | bc -l) )); then
+          if (( $(echo "${TOTAL_SIZE_MB} > 10" | bc -l) )); then
             echo "::warning::Bundle size (${TOTAL_SIZE_MB} MB) exceeds 10 MB threshold. Consider code splitting or lazy loading."
           fi
 
