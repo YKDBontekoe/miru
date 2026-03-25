@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 from uuid import UUID
 
@@ -33,21 +34,25 @@ def _map_task(task: Task) -> TaskEntity:
 
 
 def _map_note(note: Note) -> NoteEntity:
-    agent_id = (
-        _extract_uuid(note.agent_id)
-        if hasattr(note, "agent_id")
-        else getattr(note, "agent_id", None)
-    )
-    if not agent_id and getattr(note, "agent", None):
-        agent_id = getattr(note.agent, "id", None)
+    agent_id = None
+    with contextlib.suppress(Exception):
+        agent_id = _extract_uuid(note.agent_id)
+    if not agent_id:
+        try:
+            if getattr(note, "agent", None):
+                agent_id = getattr(note.agent, "id", None)
+        except Exception:
+            pass
 
-    origin_message_id = (
-        _extract_uuid(note.origin_message_id)
-        if hasattr(note, "origin_message_id")
-        else getattr(note, "origin_message_id", None)
-    )
-    if not origin_message_id and getattr(note, "origin_message", None):
-        origin_message_id = getattr(note.origin_message, "id", None)
+    origin_message_id = None
+    with contextlib.suppress(Exception):
+        origin_message_id = _extract_uuid(note.origin_message_id)
+    if not origin_message_id:
+        try:
+            if getattr(note, "origin_message", None):
+                origin_message_id = getattr(note.origin_message, "id", None)
+        except Exception:
+            pass
 
     return NoteEntity(
         id=note.id,
@@ -65,21 +70,25 @@ def _map_note(note: Note) -> NoteEntity:
 
 
 def _map_event(event: CalendarEvent) -> CalendarEventEntity:
-    agent_id = (
-        _extract_uuid(event.agent_id)
-        if hasattr(event, "agent_id")
-        else getattr(event, "agent_id", None)
-    )
-    if not agent_id and getattr(event, "agent", None):
-        agent_id = getattr(event.agent, "id", None)
+    agent_id = None
+    with contextlib.suppress(Exception):
+        agent_id = _extract_uuid(event.agent_id)
+    if not agent_id:
+        try:
+            if getattr(event, "agent", None):
+                agent_id = getattr(event.agent, "id", None)
+        except Exception:
+            pass
 
-    origin_message_id = (
-        _extract_uuid(event.origin_message_id)
-        if hasattr(event, "origin_message_id")
-        else getattr(event, "origin_message_id", None)
-    )
-    if not origin_message_id and getattr(event, "origin_message", None):
-        origin_message_id = getattr(event.origin_message, "id", None)
+    origin_message_id = None
+    with contextlib.suppress(Exception):
+        origin_message_id = _extract_uuid(event.origin_message_id)
+    if not origin_message_id:
+        try:
+            if getattr(event, "origin_message", None):
+                origin_message_id = getattr(event.origin_message, "id", None)
+        except Exception:
+            pass
 
     return CalendarEventEntity(
         id=event.id,

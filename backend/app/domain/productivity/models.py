@@ -203,7 +203,7 @@ class NoteResponse(BaseModel):
         updated_at: The timestamp when the note was last updated.
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
     user_id: UUID
@@ -296,7 +296,7 @@ class CalendarEventUpdate(BaseModel):
 class CalendarEventResponse(BaseModel):
     """Schema for a Calendar Event response."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
     user_id: UUID

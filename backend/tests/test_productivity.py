@@ -255,7 +255,17 @@ async def test_list_notes(
     override_get_current_user: None,
 ) -> None:
     """Test listing notes, checking isolation and pin ordering."""
-    await Note.create(user_id=mock_user_id, title="Note 1", content="C1")
+    from app.domain.agents.models import Agent
+
+    agent = await Agent.create(
+        user_id=mock_user_id,
+        name="Test Agent",
+        system_prompt="Test",
+        personality="Friendly",
+        description="A test agent",
+    )
+
+    await Note.create(user_id=mock_user_id, title="Note 1", content="C1", agent_id=agent.id)
     await Note.create(user_id=mock_user_id, title="Note 2", content="C2", is_pinned=True)
     await Note.create(user_id=another_user_id, title="Other User Note", content="O1")
 
@@ -265,6 +275,8 @@ async def test_list_notes(
     assert len(data) == 2
     # Pinned should be first
     assert data[0]["title"] == "Note 2"
+    assert data[1]["title"] == "Note 1"
+    assert data[1].get("agent_id") == str(agent.id) or data[1].get("agent") == str(agent.id)
     titles = [n["title"] for n in data]
     assert "Other User Note" not in titles
 
