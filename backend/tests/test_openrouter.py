@@ -458,3 +458,52 @@ async def test_standalone_structured_completion_fallback_fails_language() -> Non
 
         with pytest.raises(Exception, match="FallbackError"):
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+
+@pytest.mark.asyncio
+async def test_standalone_chat_completion_cancellation() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(asyncio.CancelledError):
+            await chat_completion([{"role": "user", "content": "hi"}])
+
+@pytest.mark.asyncio
+async def test_standalone_chat_completion_fallback_fail() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model", fallback_chat_model="fallback-model")
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=[Exception("Error"), Exception("FallbackError")])
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(Exception, match="FallbackError"):
+            await chat_completion([{"role": "user", "content": "hi"}])
+
+@pytest.mark.asyncio
+async def test_client_chat_completion_cancellation() -> None:
+    client = OpenRouterClient("test")
+    client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())
+    with pytest.raises(asyncio.CancelledError):
+        await client.chat_completion([{"role": "user", "content": "hi"}], "model")
+
+@pytest.mark.asyncio
+async def test_embed_cancellation() -> None:
+    client = OpenRouterClient("test")
+    client.openai_client.embeddings.create = AsyncMock(side_effect=asyncio.CancelledError())
+    with pytest.raises(asyncio.CancelledError):
+        await client.embed("text", "model")
+
+@pytest.mark.asyncio
+async def test_embed_exception() -> None:
+    client = OpenRouterClient("test")
+    client.openai_client.embeddings.create = AsyncMock(side_effect=Exception("Failed to embed"))
+    with pytest.raises(Exception, match="Failed to embed"):
+        await client.embed("text", "model")
