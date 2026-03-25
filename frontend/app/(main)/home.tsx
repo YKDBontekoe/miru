@@ -334,121 +334,121 @@ function formatDate(): string {
 }
 
 // ─── Shared Components ───────────────────────────────────────────────────────
-const SectionHeader = React.memo(({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) => (
-  <View style={styles.sectionHeaderRow}>
-    <AppText style={styles.sectionHeaderTitle}>{title}</AppText>
-    {actionLabel && onAction && (
-      <TouchableOpacity onPress={onAction} style={styles.sectionHeaderAction}>
-        <AppText style={styles.sectionHeaderActionText}>{actionLabel}</AppText>
-      </TouchableOpacity>
-    )}
-  </View>
-));
-
-const QuickAction = React.memo(({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: IoniconsName;
-  label: string;
-  onPress: () => void;
-}) => (
-  <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.quickActionBtn}>
-    <View style={styles.quickActionInner}>
-      <View style={styles.quickActionIconBox}>
-        <Ionicons name={icon} size={21} color={C.primary} />
-      </View>
-      <AppText style={styles.quickActionLabel} numberOfLines={1}>
-        {label}
-      </AppText>
+const SectionHeader = React.memo(
+  ({
+    title,
+    actionLabel,
+    onAction,
+  }: {
+    title: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  }) => (
+    <View style={styles.sectionHeaderRow}>
+      <AppText style={styles.sectionHeaderTitle}>{title}</AppText>
+      {actionLabel && onAction && (
+        <TouchableOpacity onPress={onAction} style={styles.sectionHeaderAction}>
+          <AppText style={styles.sectionHeaderActionText}>{actionLabel}</AppText>
+        </TouchableOpacity>
+      )}
     </View>
-  </TouchableOpacity>
-));
+  )
+);
 
-const RecentChatRow = React.memo(({
-  room,
-  onPress,
-  isLast,
-}: {
-  room: ChatRoom;
-  onPress: () => void;
-  isLast: boolean;
-}) => {
-  const { t } = useTranslation();
-  const initial = room.name[0]?.toUpperCase() ?? '?';
-
-  const relativeTime = useMemo(() => {
-    const diff = Date.now() - new Date(room.updated_at).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return t('home.time.minutes_ago_one', { count: mins, defaultValue: `${mins}m` });
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return t('home.time.hours_ago_one', { count: hrs, defaultValue: `${hrs}h` });
-    return t('home.time.days_ago_one', { count: Math.floor(hrs / 24), defaultValue: `${Math.floor(hrs / 24)}d` });
-  }, [room.updated_at, t]);
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={[styles.recentChatRow, { borderBottomWidth: isLast ? 0 : 1, borderBottomColor: C.border }]}
-    >
-      <View style={styles.recentChatAvatar}>
-        <AppText style={styles.recentChatInitial}>{initial}</AppText>
-      </View>
-      <View style={styles.recentChatContent}>
-        <AppText style={styles.recentChatName} numberOfLines={1}>
-          {room.name}
-        </AppText>
-        <AppText style={styles.recentChatDesc} numberOfLines={1}>
-          {t('home.actions.tap_to_continue', 'Tap to continue')}
+const QuickAction = React.memo(
+  ({ icon, label, onPress }: { icon: IoniconsName; label: string; onPress: () => void }) => (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.quickActionBtn}>
+      <View style={styles.quickActionInner}>
+        <View style={styles.quickActionIconBox}>
+          <Ionicons name={icon} size={21} color={C.primary} />
+        </View>
+        <AppText style={styles.quickActionLabel} numberOfLines={1}>
+          {label}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText style={styles.recentChatTime}>{relativeTime}</AppText>
-        <Ionicons name="chevron-forward" size={16} color={C.primaryLight} />
-      </View>
     </TouchableOpacity>
-  );
-});
+  )
+);
 
-const TaskRow = React.memo(({
-  task,
-  onToggle,
-  isLast,
-}: {
-  task: Task;
-  onToggle: () => void;
-  isLast: boolean;
-}) => (
-  <View style={[styles.taskRow, { borderBottomWidth: isLast ? 0 : 1, borderBottomColor: C.border }]}>
-    <TouchableOpacity onPress={onToggle} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.taskIconContainer}>
-      <Ionicons
-        name={task.completed ? 'checkmark-circle' : 'ellipse-outline'}
-        size={22}
-        color={task.completed ? C.primary : C.faint}
-      />
-    </TouchableOpacity>
-    <View style={styles.taskContent}>
-      <AppText
+const RecentChatRow = React.memo(
+  ({ room, onPress, isLast }: { room: ChatRoom; onPress: () => void; isLast: boolean }) => {
+    const { t } = useTranslation();
+    const initial = room.name[0]?.toUpperCase() ?? '?';
+
+    const relativeTime = useMemo(() => {
+      const diff = Date.now() - new Date(room.updated_at).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60)
+        return t('home.time.minutes_ago_one', { count: mins, defaultValue: `${mins}m` });
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return t('home.time.hours_ago_one', { count: hrs, defaultValue: `${hrs}h` });
+      return t('home.time.days_ago_one', {
+        count: Math.floor(hrs / 24),
+        defaultValue: `${Math.floor(hrs / 24)}d`,
+      });
+    }, [room.updated_at, t]);
+
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
         style={[
-          styles.taskTitle,
-          { textDecorationLine: task.completed ? 'line-through' : 'none', color: task.completed ? C.muted : C.text },
+          styles.recentChatRow,
+          { borderBottomWidth: isLast ? 0 : 1, borderBottomColor: C.border },
         ]}
       >
-        {task.title}
-      </AppText>
+        <View style={styles.recentChatAvatar}>
+          <AppText style={styles.recentChatInitial}>{initial}</AppText>
+        </View>
+        <View style={styles.recentChatContent}>
+          <AppText style={styles.recentChatName} numberOfLines={1}>
+            {room.name}
+          </AppText>
+          <AppText style={styles.recentChatDesc} numberOfLines={1}>
+            {t('home.actions.tap_to_continue', 'Tap to continue')}
+          </AppText>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <AppText style={styles.recentChatTime}>{relativeTime}</AppText>
+          <Ionicons name="chevron-forward" size={16} color={C.primaryLight} />
+        </View>
+      </TouchableOpacity>
+    );
+  }
+);
+
+const TaskRow = React.memo(
+  ({ task, onToggle, isLast }: { task: Task; onToggle: () => void; isLast: boolean }) => (
+    <View
+      style={[styles.taskRow, { borderBottomWidth: isLast ? 0 : 1, borderBottomColor: C.border }]}
+    >
+      <TouchableOpacity
+        onPress={onToggle}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={styles.taskIconContainer}
+      >
+        <Ionicons
+          name={task.completed ? 'checkmark-circle' : 'ellipse-outline'}
+          size={22}
+          color={task.completed ? C.primary : C.faint}
+        />
+      </TouchableOpacity>
+      <View style={styles.taskContent}>
+        <AppText
+          style={[
+            styles.taskTitle,
+            {
+              textDecorationLine: task.completed ? 'line-through' : 'none',
+              color: task.completed ? C.muted : C.text,
+            },
+          ]}
+        >
+          {task.title}
+        </AppText>
+      </View>
     </View>
-  </View>
-));
+  )
+);
 
 const AgentChip = React.memo(({ agent, onPress }: { agent: Agent; onPress: () => void }) => {
   const initial = agent.name[0]?.toUpperCase() ?? '?';
@@ -561,17 +561,44 @@ export default function HomeScreen() {
   }, [fetchRooms, fetchAgents, fetchTasks]);
 
   const pendingTasks = useMemo(() => tasks.filter((t) => !t.completed).slice(0, 3), [tasks]);
-  const recentRooms = useMemo(() => [...rooms].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 3), [rooms]);
-  const topAgents = useMemo(() => [...agents].sort((a, b) => b.message_count - a.message_count).slice(0, 4), [agents]);
+  const recentRooms = useMemo(
+    () =>
+      [...rooms]
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .slice(0, 3),
+    [rooms]
+  );
+  const topAgents = useMemo(
+    () => [...agents].sort((a, b) => b.message_count - a.message_count).slice(0, 4),
+    [agents]
+  );
 
-  const stats = useMemo(() => [
-    { label: t('home.stats.chats', 'Chats'), value: rooms.length, icon: 'chatbubbles' as IoniconsName },
-    { label: t('home.stats.agents', 'Agents'), value: agents.length, icon: 'people' as IoniconsName },
-    { label: t('home.stats.tasks', 'Tasks'), value: tasks.filter(t => !t.completed).length, icon: 'checkbox' as IoniconsName },
-  ], [rooms.length, agents.length, tasks, t]);
+  const stats = useMemo(
+    () => [
+      {
+        label: t('home.stats.chats', 'Chats'),
+        value: rooms.length,
+        icon: 'chatbubbles' as IoniconsName,
+      },
+      {
+        label: t('home.stats.agents', 'Agents'),
+        value: agents.length,
+        icon: 'people' as IoniconsName,
+      },
+      {
+        label: t('home.stats.tasks', 'Tasks'),
+        value: tasks.filter((t) => !t.completed).length,
+        icon: 'checkbox' as IoniconsName,
+      },
+    ],
+    [rooms.length, agents.length, tasks, t]
+  );
 
   const sections: { type: HomeSection; key: string }[] = useMemo(() => {
-    const list: { type: HomeSection; key: string }[] = [{ type: 'header', key: 'header' }, { type: 'quickActions', key: 'quickActions' }];
+    const list: { type: HomeSection; key: string }[] = [
+      { type: 'header', key: 'header' },
+      { type: 'quickActions', key: 'quickActions' },
+    ];
     if (recentRooms.length > 0) list.push({ type: 'recentChats', key: 'recentChats' });
     if (tasks.length > 0) list.push({ type: 'tasks', key: 'tasks' });
     if (topAgents.length > 0) list.push({ type: 'agents', key: 'agents' });
@@ -579,143 +606,207 @@ export default function HomeScreen() {
       list.push({ type: 'empty', key: 'empty' });
     }
     return list;
-  }, [recentRooms.length, tasks.length, topAgents.length, rooms.length, agents.length, isLoadingRooms]);
+  }, [
+    recentRooms.length,
+    tasks.length,
+    topAgents.length,
+    rooms.length,
+    agents.length,
+    isLoadingRooms,
+  ]);
 
-  const renderSection = useCallback(({ item }: { item: { type: HomeSection; key: string } }) => {
-    switch (item.type) {
-      case 'header':
-        return (
-          <View style={styles.headerContainer}>
-            <View style={styles.headerRow}>
-              <View style={styles.greetingContainer}>
-                <AppText style={styles.greetingText}>{getGreeting(new Date().getHours(), t)}</AppText>
-                <AppText adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={styles.firstNameText}>
-                  {getFirstName(user?.email)}
-                </AppText>
-                <AppText style={styles.dateText}>{formatDate()}</AppText>
+  const renderSection = useCallback(
+    ({ item }: { item: { type: HomeSection; key: string } }) => {
+      switch (item.type) {
+        case 'header':
+          return (
+            <View style={styles.headerContainer}>
+              <View style={styles.headerRow}>
+                <View style={styles.greetingContainer}>
+                  <AppText style={styles.greetingText}>
+                    {getGreeting(new Date().getHours(), t)}
+                  </AppText>
+                  <AppText
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                    numberOfLines={1}
+                    style={styles.firstNameText}
+                  >
+                    {getFirstName(user?.email)}
+                  </AppText>
+                  <AppText style={styles.dateText}>{formatDate()}</AppText>
+                </View>
+                <TouchableOpacity
+                  onPress={() => router.push('/(main)/settings')}
+                  activeOpacity={0.75}
+                  style={styles.avatarButton}
+                >
+                  <AppText style={styles.avatarText}>{getInitials(user?.email)}</AppText>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => router.push('/(main)/settings')} activeOpacity={0.75} style={styles.avatarButton}>
-                <AppText style={styles.avatarText}>{getInitials(user?.email)}</AppText>
+              <View style={styles.statsBar}>
+                {stats.map((stat, i) => (
+                  <View
+                    key={stat.label}
+                    style={[
+                      styles.statItem,
+                      {
+                        borderRightWidth: i < stats.length - 1 ? 1 : 0,
+                        borderRightColor: C.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.statIconContainer}>
+                      <Ionicons name={stat.icon} size={15} color={C.primary} />
+                    </View>
+                    <AppText style={styles.statValue}>{stat.value}</AppText>
+                    <AppText style={styles.statLabel} numberOfLines={1}>
+                      {stat.label}
+                    </AppText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+
+        case 'quickActions':
+          return (
+            <View style={styles.card}>
+              <SectionHeader title={t('home.sections.quick_actions', 'Quick Actions')} />
+              <View style={styles.quickActionRow}>
+                <QuickAction
+                  icon="chatbubble-ellipses"
+                  label={t('home.actions.new_chat', 'New Chat')}
+                  onPress={() => setShowNewChat(true)}
+                />
+                <QuickAction
+                  icon="person-add"
+                  label={t('home.actions.new_agent', 'New Agent')}
+                  onPress={() => router.push('/(main)/agents')}
+                />
+                <QuickAction
+                  icon="document-text"
+                  label={t('home.actions.new_note', 'New Note')}
+                  onPress={() => router.push('/(main)/productivity')}
+                />
+                <QuickAction
+                  icon="checkbox"
+                  label={t('home.actions.new_task', 'New Task')}
+                  onPress={() => router.push('/(main)/productivity')}
+                />
+              </View>
+            </View>
+          );
+
+        case 'recentChats':
+          return (
+            <View style={styles.card}>
+              <SectionHeader
+                title={t('home.sections.recent_chats', 'Recent Chats')}
+                actionLabel={t('home.actions.see_all', 'See All')}
+                onAction={() => router.push('/(main)/chat')}
+              />
+              {recentRooms.map((room, index) => (
+                <RecentChatRow
+                  key={room.id}
+                  room={room}
+                  isLast={index === recentRooms.length - 1}
+                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
+                />
+              ))}
+            </View>
+          );
+
+        case 'tasks':
+          return (
+            <View style={styles.card}>
+              <SectionHeader
+                title={
+                  pendingTasks.length > 0
+                    ? t('home.tasks.open_count', {
+                        count: pendingTasks.length,
+                        defaultValue: `${pendingTasks.length} open tasks`,
+                      })
+                    : t('home.tasks.all_done', 'All tasks done')
+                }
+                actionLabel={t('home.actions.see_all', 'See All')}
+                onAction={() => router.push('/(main)/productivity')}
+              />
+              {pendingTasks.length === 0 ? (
+                <View style={styles.emptyTasksContainer}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={32}
+                    color={C.primary}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <AppText style={styles.emptyTasksText}>
+                    {t('home.tasks.caught_up', "You're all caught up!")}
+                  </AppText>
+                </View>
+              ) : (
+                pendingTasks.map((task, index) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    isLast={index === pendingTasks.length - 1}
+                    onToggle={() => useProductivityStore.getState().toggleTask(task.id)}
+                  />
+                ))
+              )}
+            </View>
+          );
+
+        case 'agents':
+          return (
+            <View style={styles.card}>
+              <SectionHeader
+                title={t('home.sections.your_agents', 'Your Agents')}
+                actionLabel={t('home.actions.manage', 'Manage')}
+                onAction={() => router.push('/(main)/agents')}
+              />
+              <View style={styles.agentsWrap}>
+                {topAgents.map((agent) => (
+                  <AgentChip
+                    key={agent.id}
+                    agent={agent}
+                    onPress={() => router.push('/(main)/agents')}
+                  />
+                ))}
+              </View>
+            </View>
+          );
+
+        case 'empty':
+          return (
+            <View style={styles.emptyHomeContainer}>
+              <View style={styles.emptyHomeIconBox}>
+                <Ionicons name="sparkles" size={38} color={C.primary} />
+              </View>
+              <AppText style={styles.emptyHomeTitle}>
+                {t('home.empty.title', 'Welcome to Miru')}
+              </AppText>
+              <AppText style={styles.emptyHomeDesc}>
+                {t(
+                  'home.empty.desc',
+                  'Start a chat, create tasks, or build your first AI persona to get started.'
+                )}
+              </AppText>
+              <TouchableOpacity onPress={() => setShowNewChat(true)} style={styles.startChatBtn}>
+                <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
+                <AppText style={styles.startChatBtnText}>
+                  {t('home.actions.start_chat', 'Start Chat')}
+                </AppText>
               </TouchableOpacity>
             </View>
-            <View style={styles.statsBar}>
-              {stats.map((stat, i) => (
-                <View
-                  key={stat.label}
-                  style={[styles.statItem, { borderRightWidth: i < stats.length - 1 ? 1 : 0, borderRightColor: C.border }]}
-                >
-                  <View style={styles.statIconContainer}>
-                    <Ionicons name={stat.icon} size={15} color={C.primary} />
-                  </View>
-                  <AppText style={styles.statValue}>{stat.value}</AppText>
-                  <AppText style={styles.statLabel} numberOfLines={1}>{stat.label}</AppText>
-                </View>
-              ))}
-            </View>
-          </View>
-        );
+          );
 
-      case 'quickActions':
-        return (
-          <View style={styles.card}>
-            <SectionHeader title={t('home.sections.quick_actions', 'Quick Actions')} />
-            <View style={styles.quickActionRow}>
-              <QuickAction icon="chatbubble-ellipses" label={t('home.actions.new_chat', 'New Chat')} onPress={() => setShowNewChat(true)} />
-              <QuickAction icon="person-add" label={t('home.actions.new_agent', 'New Agent')} onPress={() => router.push('/(main)/agents')} />
-              <QuickAction icon="document-text" label={t('home.actions.new_note', 'New Note')} onPress={() => router.push('/(main)/productivity')} />
-              <QuickAction icon="checkbox" label={t('home.actions.new_task', 'New Task')} onPress={() => router.push('/(main)/productivity')} />
-            </View>
-          </View>
-        );
-
-      case 'recentChats':
-        return (
-          <View style={styles.card}>
-            <SectionHeader
-              title={t('home.sections.recent_chats', 'Recent Chats')}
-              actionLabel={t('home.actions.see_all', 'See All')}
-              onAction={() => router.push('/(main)/chat')}
-            />
-            {recentRooms.map((room, index) => (
-              <RecentChatRow
-                key={room.id}
-                room={room}
-                isLast={index === recentRooms.length - 1}
-                onPress={() => router.push(`/(main)/chat/${room.id}`)}
-              />
-            ))}
-          </View>
-        );
-
-      case 'tasks':
-        return (
-          <View style={styles.card}>
-            <SectionHeader
-              title={
-                pendingTasks.length > 0
-                  ? t('home.tasks.open_count', { count: pendingTasks.length, defaultValue: `${pendingTasks.length} open tasks` })
-                  : t('home.tasks.all_done', 'All tasks done')
-              }
-              actionLabel={t('home.actions.see_all', 'See All')}
-              onAction={() => router.push('/(main)/productivity')}
-            />
-            {pendingTasks.length === 0 ? (
-              <View style={styles.emptyTasksContainer}>
-                <Ionicons name="checkmark-circle" size={32} color={C.primary} style={{ marginBottom: 8 }} />
-                <AppText style={styles.emptyTasksText}>{t('home.tasks.caught_up', "You're all caught up!")}</AppText>
-              </View>
-            ) : (
-              pendingTasks.map((task, index) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  isLast={index === pendingTasks.length - 1}
-                  onToggle={() => useProductivityStore.getState().toggleTask(task.id)}
-                />
-              ))
-            )}
-          </View>
-        );
-
-      case 'agents':
-        return (
-          <View style={styles.card}>
-            <SectionHeader
-              title={t('home.sections.your_agents', 'Your Agents')}
-              actionLabel={t('home.actions.manage', 'Manage')}
-              onAction={() => router.push('/(main)/agents')}
-            />
-            <View style={styles.agentsWrap}>
-              {topAgents.map((agent) => (
-                <AgentChip key={agent.id} agent={agent} onPress={() => router.push('/(main)/agents')} />
-              ))}
-            </View>
-          </View>
-        );
-
-      case 'empty':
-        return (
-          <View style={styles.emptyHomeContainer}>
-            <View style={styles.emptyHomeIconBox}>
-              <Ionicons name="sparkles" size={38} color={C.primary} />
-            </View>
-            <AppText style={styles.emptyHomeTitle}>{t('home.empty.title', 'Welcome to Miru')}</AppText>
-            <AppText style={styles.emptyHomeDesc}>
-              {t('home.empty.desc', 'Start a chat, create tasks, or build your first AI persona to get started.')}
-            </AppText>
-            <TouchableOpacity onPress={() => setShowNewChat(true)} style={styles.startChatBtn}>
-              <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
-              <AppText style={styles.startChatBtnText}>{t('home.actions.start_chat', 'Start Chat')}</AppText>
-            </TouchableOpacity>
-          </View>
-        );
-
-      default:
-        return null;
-    }
-  }, [
-    user?.email, t, stats, router, pendingTasks, recentRooms, topAgents,
-  ]);
+        default:
+          return null;
+      }
+    },
+    [user?.email, t, stats, router, pendingTasks, recentRooms, topAgents]
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -725,10 +816,27 @@ export default function HomeScreen() {
         renderItem={renderSection}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing || isLoadingRooms} onRefresh={onRefresh} tintColor={C.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || isLoadingRooms}
+            onRefresh={onRefresh}
+            tintColor={C.primary}
+          />
+        }
       />
 
-      <NewChatModal visible={showNewChat} onClose={() => setShowNewChat(false)} onCreated={fetchRooms} />
+      <NewChatModal
+        visible={showNewChat}
+        onClose={() => setShowNewChat(false)}
+        onCreated={fetchRooms}
+      />
     </SafeAreaView>
   );
 }
+
+// --- Auto-added display names ---
+SectionHeader.displayName = 'SectionHeader';
+QuickAction.displayName = 'QuickAction';
+RecentChatRow.displayName = 'RecentChatRow';
+TaskRow.displayName = 'TaskRow';
+AgentChip.displayName = 'AgentChip';

@@ -154,54 +154,59 @@ const styles = StyleSheet.create({
   modalEmptyText: { textAlign: 'center', color: C.muted },
 });
 
-const AgentItem = React.memo(({
-  agent,
-  alreadyAdded,
-  onAdd,
-}: {
-  agent: Agent;
-  alreadyAdded: boolean;
-  onAdd: (id: string) => void;
-}) => {
-  const { t } = useTranslation();
-  const color = getAgentColor(agent.name);
-  const handleAdd = useCallback(() => !alreadyAdded && onAdd(agent.id), [alreadyAdded, agent.id, onAdd]);
+const AgentItem = React.memo(
+  ({
+    agent,
+    alreadyAdded,
+    onAdd,
+  }: {
+    agent: Agent;
+    alreadyAdded: boolean;
+    onAdd: (id: string) => void;
+  }) => {
+    const { t } = useTranslation();
+    const color = getAgentColor(agent.name);
+    const handleAdd = useCallback(
+      () => !alreadyAdded && onAdd(agent.id),
+      [alreadyAdded, agent.id, onAdd]
+    );
 
-  return (
-    <TouchableOpacity
-      onPress={handleAdd}
-      activeOpacity={alreadyAdded ? 1 : 0.75}
-      style={[
-        styles.modalAgentItem,
-        {
-          backgroundColor: alreadyAdded ? C.surfaceHigh : C.surface,
-          borderColor: C.border,
-          opacity: alreadyAdded ? 0.6 : 1,
-        },
-      ]}
-    >
-      <View style={[styles.modalAgentAvatar, { backgroundColor: `${color}18` }]}>
-        <AppText style={[styles.modalAgentInitials, { color }]}>
-          {agent.name[0].toUpperCase()}
-        </AppText>
-      </View>
-      <View style={styles.modalAgentContent}>
-        <AppText style={styles.modalAgentName}>{agent.name}</AppText>
-        <AppText style={styles.modalAgentPersonality} numberOfLines={1}>
-          {agent.personality}
-        </AppText>
-      </View>
-      {alreadyAdded ? (
-        <View style={styles.modalAddedContainer}>
-          <Ionicons name="checkmark-circle" size={16} color={C.primary} />
-          <AppText style={styles.modalAddedText}>{t('chat.added')}</AppText>
+    return (
+      <TouchableOpacity
+        onPress={handleAdd}
+        activeOpacity={alreadyAdded ? 1 : 0.75}
+        style={[
+          styles.modalAgentItem,
+          {
+            backgroundColor: alreadyAdded ? C.surfaceHigh : C.surface,
+            borderColor: C.border,
+            opacity: alreadyAdded ? 0.6 : 1,
+          },
+        ]}
+      >
+        <View style={[styles.modalAgentAvatar, { backgroundColor: `${color}18` }]}>
+          <AppText style={[styles.modalAgentInitials, { color }]}>
+            {agent.name[0].toUpperCase()}
+          </AppText>
         </View>
-      ) : (
-        <Ionicons name="add-circle-outline" size={20} color={C.primary} />
-      )}
-    </TouchableOpacity>
-  );
-});
+        <View style={styles.modalAgentContent}>
+          <AppText style={styles.modalAgentName}>{agent.name}</AppText>
+          <AppText style={styles.modalAgentPersonality} numberOfLines={1}>
+            {agent.personality}
+          </AppText>
+        </View>
+        {alreadyAdded ? (
+          <View style={styles.modalAddedContainer}>
+            <Ionicons name="checkmark-circle" size={16} color={C.primary} />
+            <AppText style={styles.modalAddedText}>{t('chat.added')}</AppText>
+          </View>
+        ) : (
+          <Ionicons name="add-circle-outline" size={20} color={C.primary} />
+        )}
+      </TouchableOpacity>
+    );
+  }
+);
 
 export default function ChatRoomScreen() {
   const { t } = useTranslation();
@@ -231,8 +236,14 @@ export default function ChatRoomScreen() {
 
   const room = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
   const roomMessages = useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
-  const currentActivity = useMemo(() => (roomId ? agentActivity[roomId] : null), [agentActivity, roomId]);
-  const agentMap = useMemo(() => Object.fromEntries(roomAgents.map((a) => [a.id, a])), [roomAgents]);
+  const currentActivity = useMemo(
+    () => (roomId ? agentActivity[roomId] : null),
+    [agentActivity, roomId]
+  );
+  const agentMap = useMemo(
+    () => Object.fromEntries(roomAgents.map((a) => [a.id, a])),
+    [roomAgents]
+  );
 
   useEffect(() => {
     if (!roomId) return;
@@ -288,13 +299,16 @@ export default function ChatRoomScreen() {
     [roomId, sendMessage]
   );
 
-  const handleAddAgent = useCallback(async (agentId: string) => {
-    if (!roomId) return;
-    await addAgentToRoom(roomId, agentId);
-    const updated = await ApiService.getRoomAgents(roomId);
-    setRoomAgents(updated);
-    setIsModalVisible(false);
-  }, [roomId, addAgentToRoom]);
+  const handleAddAgent = useCallback(
+    async (agentId: string) => {
+      if (!roomId) return;
+      await addAgentToRoom(roomId, agentId);
+      const updated = await ApiService.getRoomAgents(roomId);
+      setRoomAgents(updated);
+      setIsModalVisible(false);
+    },
+    [roomId, addAgentToRoom]
+  );
 
   const renderMessageItem = useCallback(
     ({ item }: { item: ChatMessage }) => {
@@ -305,7 +319,10 @@ export default function ChatRoomScreen() {
         roomMessages.findIndex((m) => m.id === item.id) > 0;
       const prevUserMsg = isLastUserMsg
         ? roomMessages
-            .slice(0, roomMessages.findIndex((m) => m.id === item.id))
+            .slice(
+              0,
+              roomMessages.findIndex((m) => m.id === item.id)
+            )
             .reverse()
             .find((m) => !!m.user_id)
         : undefined;
@@ -373,14 +390,15 @@ export default function ChatRoomScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons name="chevron-back" size={26} color={C.text} />
         </TouchableOpacity>
 
         <View style={styles.headerIcon}>
-          <AppText style={styles.headerInitial}>
-            {room?.name[0]?.toUpperCase() ?? '?'}
-          </AppText>
+          <AppText style={styles.headerInitial}>{room?.name[0]?.toUpperCase() ?? '?'}</AppText>
         </View>
 
         <View style={styles.headerContent}>
@@ -420,7 +438,11 @@ export default function ChatRoomScreen() {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+        style={{ flex: 1 }}
+      >
         {isLoadingMessages && roomMessages.length === 0 ? (
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color={C.primary} />
@@ -473,3 +495,6 @@ export default function ChatRoomScreen() {
     </SafeAreaView>
   );
 }
+
+// --- Auto-added display names ---
+AgentItem.displayName = 'AgentItem';

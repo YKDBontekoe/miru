@@ -176,144 +176,140 @@ const SectionHeader = React.memo(({ title }: { title: string }) => (
   <AppText style={styles.sectionHeader}>{title}</AppText>
 ));
 
-const SettingRow = React.memo(({
-  icon,
-  iconColor,
-  title,
-  subtitle,
-  onPress,
-  rightElement,
-  destructive,
-}: {
-  icon: IoniconsName;
-  iconColor?: string;
-  title: string;
-  subtitle?: string;
-  onPress?: () => void;
-  rightElement?: React.ReactNode;
-  destructive?: boolean;
-}) => {
-  const Wrapper = onPress ? TouchableOpacity : View;
-  const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
+const SettingRow = React.memo(
+  ({
+    icon,
+    iconColor,
+    title,
+    subtitle,
+    onPress,
+    rightElement,
+    destructive,
+  }: {
+    icon: IoniconsName;
+    iconColor?: string;
+    title: string;
+    subtitle?: string;
+    onPress?: () => void;
+    rightElement?: React.ReactNode;
+    destructive?: boolean;
+  }) => {
+    const Wrapper = onPress ? TouchableOpacity : View;
+    const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
 
-  return (
-    <Wrapper
-      {...(wrapperProps as any)}
-      style={[
-        styles.settingRow,
-        {
-          backgroundColor: destructive ? C.destructiveSurface : C.surface,
-          borderColor: destructive ? C.destructiveBorder : C.border,
-        },
-      ]}
-    >
-      <View
+    return (
+      <Wrapper
+        {...(wrapperProps as any)}
         style={[
-          styles.settingRowIconContainer,
+          styles.settingRow,
           {
-            backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
+            backgroundColor: destructive ? C.destructiveSurface : C.surface,
             borderColor: destructive ? C.destructiveBorder : C.border,
           },
         ]}
       >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={destructive ? C.destructive : (iconColor ?? C.muted)}
-        />
-      </View>
-      <View style={styles.settingRowContent}>
-        <AppText
+        <View
           style={[
-            styles.settingRowTitle,
-            { color: destructive ? C.destructive : C.text },
+            styles.settingRowIconContainer,
+            {
+              backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
+              borderColor: destructive ? C.destructiveBorder : C.border,
+            },
           ]}
         >
-          {title}
-        </AppText>
-        {subtitle && (
-          <AppText variant="caption" style={styles.settingRowSubtitle}>
-            {subtitle}
+          <Ionicons
+            name={icon}
+            size={18}
+            color={destructive ? C.destructive : (iconColor ?? C.muted)}
+          />
+        </View>
+        <View style={styles.settingRowContent}>
+          <AppText
+            style={[styles.settingRowTitle, { color: destructive ? C.destructive : C.text }]}
+          >
+            {title}
           </AppText>
-        )}
-      </View>
-      {rightElement ??
-        (onPress && !destructive ? (
-          <Ionicons name="chevron-forward" size={16} color={C.faint} />
-        ) : null)}
-    </Wrapper>
-  );
-});
+          {subtitle && (
+            <AppText variant="caption" style={styles.settingRowSubtitle}>
+              {subtitle}
+            </AppText>
+          )}
+        </View>
+        {rightElement ??
+          (onPress && !destructive ? (
+            <Ionicons name="chevron-forward" size={16} color={C.faint} />
+          ) : null)}
+      </Wrapper>
+    );
+  }
+);
 
-const MemoryItem = React.memo(({ memory, onDelete }: { memory: Memory; onDelete: (memory: Memory) => void }) => {
-  const { i18n } = useTranslation();
-  const date = new Intl.DateTimeFormat(i18n.language, {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(memory.created_at));
+const MemoryItem = React.memo(
+  ({ memory, onDelete }: { memory: Memory; onDelete: (memory: Memory) => void }) => {
+    const { i18n } = useTranslation();
+    const date = new Intl.DateTimeFormat(i18n.language, {
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(memory.created_at));
 
-  const handleDelete = useCallback(() => onDelete(memory), [memory, onDelete]);
+    const handleDelete = useCallback(() => onDelete(memory), [memory, onDelete]);
 
-  return (
-    <View style={styles.memoryItemContainer}>
-      <View style={styles.memoryItemDot} />
-      <View style={styles.memoryItemContent}>
-        <AppText style={styles.memoryItemText}>{memory.content}</AppText>
-        <AppText variant="caption" style={styles.memoryItemDate}>
-          {date}
-        </AppText>
-      </View>
-      <TouchableOpacity
-        onPress={handleDelete}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={styles.memoryItemClose}
-      >
-        <Ionicons name="close" size={16} color={C.faint} />
-      </TouchableOpacity>
-    </View>
-  );
-});
-
-const LangRow = React.memo(({
-  lang,
-  isSelected,
-  onSelect,
-}: {
-  lang: typeof SUPPORTED_LANGUAGES[0];
-  isSelected: boolean;
-  onSelect: (code: string) => void;
-}) => {
-  const handleSelect = useCallback(() => onSelect(lang.code), [lang.code, onSelect]);
-
-  return (
-    <TouchableOpacity
-      onPress={handleSelect}
-      activeOpacity={0.75}
-      style={[
-        styles.langRow,
-        {
-          backgroundColor: isSelected ? C.primarySurface : C.surfaceHigh,
-          borderColor: isSelected ? `${C.primary}40` : C.border,
-        },
-      ]}
-    >
-      <View style={styles.langRowContent}>
-        <AppText
-          style={[
-            styles.langRowNativeLabel,
-            { color: isSelected ? C.primary : C.text },
-          ]}
+    return (
+      <View style={styles.memoryItemContainer}>
+        <View style={styles.memoryItemDot} />
+        <View style={styles.memoryItemContent}>
+          <AppText style={styles.memoryItemText}>{memory.content}</AppText>
+          <AppText variant="caption" style={styles.memoryItemDate}>
+            {date}
+          </AppText>
+        </View>
+        <TouchableOpacity
+          onPress={handleDelete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.memoryItemClose}
         >
-          {lang.nativeLabel}
-        </AppText>
-        <AppText style={styles.langRowLabel}>
-          {lang.label}
-        </AppText>
+          <Ionicons name="close" size={16} color={C.faint} />
+        </TouchableOpacity>
       </View>
-      {isSelected && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
-    </TouchableOpacity>
-  );
-});
+    );
+  }
+);
+
+const LangRow = React.memo(
+  ({
+    lang,
+    isSelected,
+    onSelect,
+  }: {
+    lang: (typeof SUPPORTED_LANGUAGES)[0];
+    isSelected: boolean;
+    onSelect: (code: string) => void;
+  }) => {
+    const handleSelect = useCallback(() => onSelect(lang.code), [lang.code, onSelect]);
+
+    return (
+      <TouchableOpacity
+        onPress={handleSelect}
+        activeOpacity={0.75}
+        style={[
+          styles.langRow,
+          {
+            backgroundColor: isSelected ? C.primarySurface : C.surfaceHigh,
+            borderColor: isSelected ? `${C.primary}40` : C.border,
+          },
+        ]}
+      >
+        <View style={styles.langRowContent}>
+          <AppText style={[styles.langRowNativeLabel, { color: isSelected ? C.primary : C.text }]}>
+            {lang.nativeLabel}
+          </AppText>
+          <AppText style={styles.langRowLabel}>{lang.label}</AppText>
+        </View>
+        {isSelected && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
+      </TouchableOpacity>
+    );
+  }
+);
 
 // ─── Language picker modal ────────────────────────────────────────────────────
 function LanguagePickerModal({
@@ -330,12 +326,8 @@ function LanguagePickerModal({
   const { t } = useTranslation();
 
   const renderItem = useCallback(
-    ({ item }: { item: typeof SUPPORTED_LANGUAGES[0] }) => (
-      <LangRow
-        lang={item}
-        isSelected={currentLang.startsWith(item.code)}
-        onSelect={onSelect}
-      />
+    ({ item }: { item: (typeof SUPPORTED_LANGUAGES)[0] }) => (
+      <LangRow lang={item} isSelected={currentLang.startsWith(item.code)} onSelect={onSelect} />
     ),
     [currentLang, onSelect]
   );
@@ -380,9 +372,7 @@ export default function SettingsScreen() {
     [currentLang]
   );
 
-  useEffect(() => {
-    loadMemories();
-  }, []);
+
 
   const loadMemories = useCallback(async () => {
     setIsLoadingMemories(true);
@@ -396,27 +386,37 @@ export default function SettingsScreen() {
     }
   }, []);
 
-  const handleDeleteMemory = useCallback((memory: Memory) => {
-    Alert.alert(
-      t('settings.actions.forget_memory_title'),
-      `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
-      [
-        { text: t('settings.actions.cancel'), style: 'cancel' },
-        {
-          text: t('settings.actions.forget'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await ApiService.deleteMemory(memory.id);
-              setMemories((prev) => prev.filter((m) => m.id !== memory.id));
-            } catch {
-              Alert.alert(t('settings.actions.error'), t('settings.actions.delete_memory_failed'));
-            }
+  useEffect(() => {
+    loadMemories();
+  }, [loadMemories]);
+
+  const handleDeleteMemory = useCallback(
+    (memory: Memory) => {
+      Alert.alert(
+        t('settings.actions.forget_memory_title'),
+        `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
+        [
+          { text: t('settings.actions.cancel'), style: 'cancel' },
+          {
+            text: t('settings.actions.forget'),
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await ApiService.deleteMemory(memory.id);
+                setMemories((prev) => prev.filter((m) => m.id !== memory.id));
+              } catch {
+                Alert.alert(
+                  t('settings.actions.error'),
+                  t('settings.actions.delete_memory_failed')
+                );
+              }
+            },
           },
-        },
-      ]
-    );
-  }, [t]);
+        ]
+      );
+    },
+    [t]
+  );
 
   const handleSignOut = useCallback(() => {
     Alert.alert(
@@ -429,144 +429,147 @@ export default function SettingsScreen() {
     );
   }, [t, signOut]);
 
-  const handleSelectLanguage = useCallback((code: string) => {
-    setLanguage(code);
-    i18n.changeLanguage(code);
-    setShowLanguagePicker(false);
-  }, [setLanguage]);
+  const handleSelectLanguage = useCallback(
+    (code: string) => {
+      setLanguage(code);
+      i18n.changeLanguage(code);
+      setShowLanguagePicker(false);
+    },
+    [setLanguage]
+  );
 
   const renderMemoryItem = useCallback(
-    ({ item }: { item: Memory }) => (
-      <MemoryItem memory={item} onDelete={handleDeleteMemory} />
-    ),
+    ({ item }: { item: Memory }) => <MemoryItem memory={item} onDelete={handleDeleteMemory} />,
     [handleDeleteMemory]
   );
 
-  const ListHeaderComponent = useMemo(() => (
-    <>
-      <SectionHeader title={t('settings.sections.account')} />
-      <View style={styles.accountContainer}>
-        <View style={styles.accountAvatar}>
-          <Ionicons name="person" size={22} color={C.primary} />
-        </View>
-        <View style={styles.accountContent}>
-          <AppText style={styles.accountEmail} numberOfLines={1}>
-            {user?.email ?? t('settings.items.signed_in')}
-          </AppText>
-          <AppText variant="caption" style={styles.accountSubtitle}>
-            {t('settings.items.signed_in_with_magic_link')}
-          </AppText>
-        </View>
-      </View>
-
-      <SettingRow
-        icon="log-out-outline"
-        title={t('settings.items.sign_out')}
-        subtitle={t('settings.items.sign_out_desc')}
-        onPress={handleSignOut}
-        destructive
-      />
-
-      <View style={styles.sectionContainer}>
-        <SectionHeader title={t('settings.items.personal_memories')} />
-        {isLoadingMemories && (
-          <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-            <ActivityIndicator color={C.primary} />
+  const ListHeaderComponent = useMemo(
+    () => (
+      <>
+        <SectionHeader title={t('settings.sections.account')} />
+        <View style={styles.accountContainer}>
+          <View style={styles.accountAvatar}>
+            <Ionicons name="person" size={22} color={C.primary} />
           </View>
-        )}
-      </View>
-    </>
-  ), [t, user?.email, handleSignOut, isLoadingMemories]);
+          <View style={styles.accountContent}>
+            <AppText style={styles.accountEmail} numberOfLines={1}>
+              {user?.email ?? t('settings.items.signed_in')}
+            </AppText>
+            <AppText variant="caption" style={styles.accountSubtitle}>
+              {t('settings.items.signed_in_with_magic_link')}
+            </AppText>
+          </View>
+        </View>
+
+        <SettingRow
+          icon="log-out-outline"
+          title={t('settings.items.sign_out')}
+          subtitle={t('settings.items.sign_out_desc')}
+          onPress={handleSignOut}
+          destructive
+        />
+
+        <View style={styles.sectionContainer}>
+          <SectionHeader title={t('settings.items.personal_memories')} />
+          {isLoadingMemories && (
+            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+              <ActivityIndicator color={C.primary} />
+            </View>
+          )}
+        </View>
+      </>
+    ),
+    [t, user?.email, handleSignOut, isLoadingMemories]
+  );
 
   const ListEmptyComponent = useMemo(() => {
     if (isLoadingMemories) return null;
     return (
       <View style={styles.noMemoriesContainer}>
         <Ionicons name="sparkles-outline" size={28} color={C.faint} style={styles.noMemoriesIcon} />
-        <AppText style={styles.noMemoriesText}>
-          {t('settings.items.no_memories')}
-        </AppText>
+        <AppText style={styles.noMemoriesText}>{t('settings.items.no_memories')}</AppText>
       </View>
     );
   }, [isLoadingMemories, t]);
 
-  const ListFooterComponent = useMemo(() => (
-    <>
-      {!isLoadingMemories && memories.length > 0 && (
-        <TouchableOpacity onPress={loadMemories} style={styles.refreshButton}>
-          <AppText style={styles.refreshButtonText}>
-            {t('settings.actions.refresh')}
-          </AppText>
-        </TouchableOpacity>
-      )}
+  const ListFooterComponent = useMemo(
+    () => (
+      <>
+        {!isLoadingMemories && memories.length > 0 && (
+          <TouchableOpacity onPress={loadMemories} style={styles.refreshButton}>
+            <AppText style={styles.refreshButtonText}>{t('settings.actions.refresh')}</AppText>
+          </TouchableOpacity>
+        )}
 
-      {/* ── Preferences ─────────────────────────── */}
-      <View style={styles.sectionContainer}>
-        <SectionHeader title={t('settings.sections.preferences')} />
+        {/* ── Preferences ─────────────────────────── */}
+        <View style={styles.sectionContainer}>
+          <SectionHeader title={t('settings.sections.preferences')} />
 
-        <SettingRow
-          icon="language-outline"
-          iconColor={C.primary}
-          title={t('settings.items.language')}
-          subtitle={currentLangLabel}
-          onPress={() => setShowLanguagePicker(true)}
-        />
-        <SettingRow
-          icon="shield-checkmark-outline"
-          iconColor="#8B5CF6"
-          title={t('settings.items.privacy_mode')}
-          subtitle={t('settings.items.privacy_desc')}
-          rightElement={
-            <Switch
-              value={privacyMode}
-              onValueChange={setPrivacyMode}
-              trackColor={{ false: C.border, true: `${C.primary}40` }}
-              thumbColor={privacyMode ? C.primary : C.faint}
-            />
-          }
-        />
-        <SettingRow
-          icon="notifications-outline"
-          iconColor="#F59E0B"
-          title={t('settings.items.notifications')}
-          subtitle={t('settings.items.notifications_desc')}
-          rightElement={
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: C.border, true: `${C.primary}40` }}
-              thumbColor={notificationsEnabled ? C.primary : C.faint}
-            />
-          }
-        />
-      </View>
+          <SettingRow
+            icon="language-outline"
+            iconColor={C.primary}
+            title={t('settings.items.language')}
+            subtitle={currentLangLabel}
+            onPress={() => setShowLanguagePicker(true)}
+          />
+          <SettingRow
+            icon="shield-checkmark-outline"
+            iconColor="#8B5CF6"
+            title={t('settings.items.privacy_mode')}
+            subtitle={t('settings.items.privacy_desc')}
+            rightElement={
+              <Switch
+                value={privacyMode}
+                onValueChange={setPrivacyMode}
+                trackColor={{ false: C.border, true: `${C.primary}40` }}
+                thumbColor={privacyMode ? C.primary : C.faint}
+              />
+            }
+          />
+          <SettingRow
+            icon="notifications-outline"
+            iconColor="#F59E0B"
+            title={t('settings.items.notifications')}
+            subtitle={t('settings.items.notifications_desc')}
+            rightElement={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                trackColor={{ false: C.border, true: `${C.primary}40` }}
+                thumbColor={notificationsEnabled ? C.primary : C.faint}
+              />
+            }
+          />
+        </View>
 
-      {/* ── About ───────────────────────────────── */}
-      <View style={styles.sectionContainer}>
-        <SectionHeader title={t('settings.sections.about')} />
-        <SettingRow
-          icon="information-circle-outline"
-          iconColor={C.primary}
-          title={t('settings.items.version')}
-          subtitle={t('settings.items.version_value')}
-        />
-        <SettingRow
-          icon="code-slash-outline"
-          iconColor="#10B981"
-          title={t('settings.items.tech_stack')}
-          subtitle={t('settings.items.tech_desc')}
-        />
-      </View>
-    </>
-  ), [
-    isLoadingMemories,
-    memories.length,
-    loadMemories,
-    t,
-    currentLangLabel,
-    privacyMode,
-    notificationsEnabled,
-  ]);
+        {/* ── About ───────────────────────────────── */}
+        <View style={styles.sectionContainer}>
+          <SectionHeader title={t('settings.sections.about')} />
+          <SettingRow
+            icon="information-circle-outline"
+            iconColor={C.primary}
+            title={t('settings.items.version')}
+            subtitle={t('settings.items.version_value')}
+          />
+          <SettingRow
+            icon="code-slash-outline"
+            iconColor="#10B981"
+            title={t('settings.items.tech_stack')}
+            subtitle={t('settings.items.tech_desc')}
+          />
+        </View>
+      </>
+    ),
+    [
+      isLoadingMemories,
+      memories.length,
+      loadMemories,
+      t,
+      currentLangLabel,
+      privacyMode,
+      notificationsEnabled,
+    ]
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -596,3 +599,9 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
+
+// --- Auto-added display names ---
+SectionHeader.displayName = 'SectionHeader';
+SettingRow.displayName = 'SettingRow';
+MemoryItem.displayName = 'MemoryItem';
+LangRow.displayName = 'LangRow';

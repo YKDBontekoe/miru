@@ -210,129 +210,121 @@ function getAgentColor(name: string) {
   return palette[Math.abs(hash) % palette.length];
 }
 
-const AgentPill = React.memo(({ agent, onPress }: { agent: Agent; onPress: (id: string) => void }) => {
-  const color = getAgentColor(agent.name);
-  const handlePress = useCallback(() => onPress(agent.id), [agent.id, onPress]);
+const AgentPill = React.memo(
+  ({ agent, onPress }: { agent: Agent; onPress: (id: string) => void }) => {
+    const color = getAgentColor(agent.name);
+    const handlePress = useCallback(() => onPress(agent.id), [agent.id, onPress]);
 
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.75}
-      style={styles.agentPillContainer}
-    >
-      <View
-        style={[
-          styles.agentPillAvatar,
-          { backgroundColor: `${color}18`, borderColor: `${color}40` },
-        ]}
+    return (
+      <TouchableOpacity
+        onPress={handlePress}
+        activeOpacity={0.75}
+        style={styles.agentPillContainer}
       >
-        <AppText style={[styles.agentPillText, { color }]}>
-          {agent.name[0].toUpperCase()}
-        </AppText>
-      </View>
-      <AppText
-        variant="caption"
-        numberOfLines={1}
-        style={styles.agentPillName}
-      >
-        {agent.name}
-      </AppText>
-    </TouchableOpacity>
-  );
-});
-
-const RoomCard = React.memo(({
-  room,
-  agents,
-  onPress,
-}: {
-  room: ChatRoom;
-  agents: Agent[];
-  onPress: (id: string) => void;
-}) => {
-  const { t } = useTranslation();
-  const initial = room.name[0]?.toUpperCase() ?? '?';
-
-  const memberLabel = useMemo(() => {
-    if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
-    if (agents.length === 1) return `You + ${agents[0].name}`;
-    if (agents.length === 2) return `You, ${agents[0].name} & ${agents[1].name}`;
-    return `You + ${agents.length} agents`;
-  }, [agents, t]);
-
-  const handlePress = useCallback(() => onPress(room.id), [room.id, onPress]);
-
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.75}
-      style={styles.roomCardContainer}
-    >
-      <View style={styles.roomCardAvatar}>
-        <AppText style={styles.roomCardInitial}>{initial}</AppText>
-      </View>
-      <View style={styles.roomCardContent}>
-        <AppText style={styles.roomCardName}>
-          {room.name}
-        </AppText>
-        <View style={styles.roomCardMembers}>
-          <Ionicons name="people-outline" size={12} color={C.muted} style={styles.roomCardMembersIcon} />
-          <AppText variant="caption" style={styles.roomCardMembersText}>
-            {memberLabel}
-          </AppText>
+        <View
+          style={[
+            styles.agentPillAvatar,
+            { backgroundColor: `${color}18`, borderColor: `${color}40` },
+          ]}
+        >
+          <AppText style={[styles.agentPillText, { color }]}>{agent.name[0].toUpperCase()}</AppText>
         </View>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={C.faint} />
-    </TouchableOpacity>
-  );
-});
-
-const ModalAgentItem = React.memo(({
-  agent,
-  selected,
-  onToggle,
-}: {
-  agent: Agent;
-  selected: boolean;
-  onToggle: (id: string) => void;
-}) => {
-  const color = getAgentColor(agent.name);
-  const handleToggle = useCallback(() => onToggle(agent.id), [agent.id, onToggle]);
-
-  return (
-    <TouchableOpacity
-      onPress={handleToggle}
-      activeOpacity={0.8}
-      style={[
-        styles.modalAgentItem,
-        {
-          backgroundColor: selected ? `${color}10` : C.surfaceHigh,
-          borderColor: selected ? `${color}40` : C.border,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.modalAgentAvatar,
-          { backgroundColor: `${color}18` },
-        ]}
-      >
-        <AppText style={[styles.modalAgentInitials, { color }]}>
-          {agent.name[0].toUpperCase()}
-        </AppText>
-      </View>
-      <View style={styles.modalAgentContent}>
-        <AppText style={styles.modalAgentName}>
+        <AppText variant="caption" numberOfLines={1} style={styles.agentPillName}>
           {agent.name}
         </AppText>
-        <AppText variant="caption" style={{ color: C.muted }} numberOfLines={1}>
-          {agent.personality}
-        </AppText>
-      </View>
-      {selected && <Ionicons name="checkmark-circle" size={20} color={color} />}
-    </TouchableOpacity>
-  );
-});
+      </TouchableOpacity>
+    );
+  }
+);
+
+const RoomCard = React.memo(
+  ({
+    room,
+    agents,
+    onPress,
+  }: {
+    room: ChatRoom;
+    agents: Agent[];
+    onPress: (id: string) => void;
+  }) => {
+    const { t } = useTranslation();
+    const initial = room.name[0]?.toUpperCase() ?? '?';
+
+    const memberLabel = useMemo(() => {
+      if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
+      if (agents.length === 1) return `You + ${agents[0].name}`;
+      if (agents.length === 2) return `You, ${agents[0].name} & ${agents[1].name}`;
+      return `You + ${agents.length} agents`;
+    }, [agents, t]);
+
+    const handlePress = useCallback(() => onPress(room.id), [room.id, onPress]);
+
+    return (
+      <TouchableOpacity onPress={handlePress} activeOpacity={0.75} style={styles.roomCardContainer}>
+        <View style={styles.roomCardAvatar}>
+          <AppText style={styles.roomCardInitial}>{initial}</AppText>
+        </View>
+        <View style={styles.roomCardContent}>
+          <AppText style={styles.roomCardName}>{room.name}</AppText>
+          <View style={styles.roomCardMembers}>
+            <Ionicons
+              name="people-outline"
+              size={12}
+              color={C.muted}
+              style={styles.roomCardMembersIcon}
+            />
+            <AppText variant="caption" style={styles.roomCardMembersText}>
+              {memberLabel}
+            </AppText>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.faint} />
+      </TouchableOpacity>
+    );
+  }
+);
+
+const ModalAgentItem = React.memo(
+  ({
+    agent,
+    selected,
+    onToggle,
+  }: {
+    agent: Agent;
+    selected: boolean;
+    onToggle: (id: string) => void;
+  }) => {
+    const color = getAgentColor(agent.name);
+    const handleToggle = useCallback(() => onToggle(agent.id), [agent.id, onToggle]);
+
+    return (
+      <TouchableOpacity
+        onPress={handleToggle}
+        activeOpacity={0.8}
+        style={[
+          styles.modalAgentItem,
+          {
+            backgroundColor: selected ? `${color}10` : C.surfaceHigh,
+            borderColor: selected ? `${color}40` : C.border,
+          },
+        ]}
+      >
+        <View style={[styles.modalAgentAvatar, { backgroundColor: `${color}18` }]}>
+          <AppText style={[styles.modalAgentInitials, { color }]}>
+            {agent.name[0].toUpperCase()}
+          </AppText>
+        </View>
+        <View style={styles.modalAgentContent}>
+          <AppText style={styles.modalAgentName}>{agent.name}</AppText>
+          <AppText variant="caption" style={{ color: C.muted }} numberOfLines={1}>
+            {agent.personality}
+          </AppText>
+        </View>
+        {selected && <Ionicons name="checkmark-circle" size={20} color={color} />}
+      </TouchableOpacity>
+    );
+  }
+);
 
 function CreateRoomModal({
   visible,
@@ -445,9 +437,7 @@ function CreateRoomModal({
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={styles.modalCreateButtonText}>
-                Create Chat
-              </AppText>
+              <AppText style={styles.modalCreateButtonText}>Create Chat</AppText>
             )}
           </TouchableOpacity>
         </View>
@@ -483,46 +473,48 @@ export default function ChatListScreen() {
     [handleAgentPress]
   );
 
-  const handleRoomPress = useCallback((roomId: string) => {
-    router.push(`/(main)/chat/${roomId}`);
-  }, [router]);
+  const handleRoomPress = useCallback(
+    (roomId: string) => {
+      router.push(`/(main)/chat/${roomId}`);
+    },
+    [router]
+  );
 
   const renderRoomItem = useCallback(
     ({ item }: { item: ChatRoom }) => (
-      <RoomCard
-        room={item}
-        agents={roomAgents[item.id] ?? []}
-        onPress={handleRoomPress}
-      />
+      <RoomCard room={item} agents={roomAgents[item.id] ?? []} onPress={handleRoomPress} />
     ),
     [roomAgents, handleRoomPress]
   );
 
-  const ListHeaderComponent = useMemo(() => (
-    <>
-      {agents.length > 0 && (
-        <View style={{ marginBottom: 8 }}>
-          <AppText variant="caption" style={styles.agentsTitle}>
-            {t('chat.personas', 'Personas')}
-          </AppText>
-          <FlatList
-            data={agents}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.agentsListContent}
-            keyExtractor={(item) => item.id}
-            renderItem={renderAgentPill}
-          />
-        </View>
-      )}
+  const ListHeaderComponent = useMemo(
+    () => (
+      <>
+        {agents.length > 0 && (
+          <View style={{ marginBottom: 8 }}>
+            <AppText variant="caption" style={styles.agentsTitle}>
+              {t('chat.personas', 'Personas')}
+            </AppText>
+            <FlatList
+              data={agents}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.agentsListContent}
+              keyExtractor={(item) => item.id}
+              renderItem={renderAgentPill}
+            />
+          </View>
+        )}
 
-      {agents.length > 0 && <View style={styles.separator} />}
+        {agents.length > 0 && <View style={styles.separator} />}
 
-      <AppText variant="caption" style={styles.chatsTitle}>
-        {t('chat.chats', 'Chats')}
-      </AppText>
-    </>
-  ), [agents, t, renderAgentPill]);
+        <AppText variant="caption" style={styles.chatsTitle}>
+          {t('chat.chats', 'Chats')}
+        </AppText>
+      </>
+    ),
+    [agents, t, renderAgentPill]
+  );
 
   const ListEmptyComponent = useMemo(() => {
     if (isLoadingRooms) return null;
@@ -540,14 +532,9 @@ export default function ChatListScreen() {
             'Create a chat and start collaborating with your AI personas.'
           )}
         </AppText>
-        <TouchableOpacity
-          onPress={() => setShowCreateModal(true)}
-          style={styles.newChatButton}
-        >
+        <TouchableOpacity onPress={() => setShowCreateModal(true)} style={styles.newChatButton}>
           <Ionicons name="add" size={18} color="white" style={{ marginEnd: 6 }} />
-          <AppText style={styles.newChatButtonText}>
-            {t('chat.new_chat', 'New Chat')}
-          </AppText>
+          <AppText style={styles.newChatButtonText}>{t('chat.new_chat', 'New Chat')}</AppText>
         </TouchableOpacity>
       </View>
     );
@@ -560,10 +547,7 @@ export default function ChatListScreen() {
         <AppText variant="h1" style={styles.headerTitle}>
           {t('chat.title', 'Miru')}
         </AppText>
-        <TouchableOpacity
-          onPress={() => setShowCreateModal(true)}
-          style={styles.addButton}
-        >
+        <TouchableOpacity onPress={() => setShowCreateModal(true)} style={styles.addButton}>
           <Ionicons name="add" size={22} color="white" />
         </TouchableOpacity>
       </View>
@@ -577,11 +561,7 @@ export default function ChatListScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
         refreshControl={
-          <RefreshControl
-            refreshing={isLoadingRooms}
-            onRefresh={onRefresh}
-            tintColor={C.primary}
-          />
+          <RefreshControl refreshing={isLoadingRooms} onRefresh={onRefresh} tintColor={C.primary} />
         }
       />
 
@@ -594,3 +574,8 @@ export default function ChatListScreen() {
     </SafeAreaView>
   );
 }
+
+// --- Auto-added display names ---
+AgentPill.displayName = 'AgentPill';
+RoomCard.displayName = 'RoomCard';
+ModalAgentItem.displayName = 'ModalAgentItem';
