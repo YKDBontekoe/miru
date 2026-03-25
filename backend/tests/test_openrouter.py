@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import typing
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -11,6 +12,7 @@ from app.infrastructure.external.openrouter import (
     chat_completion,
     embed,
     get_openrouter_client,
+    stream_chat,
     structured_completion,
 )
 
@@ -297,3 +299,128 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+
+
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_success() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+
+        async def mock_stream(
+            *args: typing.Any, **kwargs: typing.Any
+        ) -> typing.AsyncGenerator[str, None]:
+            yield "chunk1"
+            yield "chunk2"
+
+        async def _wrapper(*args, **kwargs):
+            return mock_stream(*args, **kwargs)
+
+        mock_client.stream_chat = AsyncMock(side_effect=_wrapper)
+        mock_get_client.return_value = mock_client
+
+        stream = stream_chat([{"role": "user", "content": "hi"}])
+        chunks = [chunk async for chunk in stream]
+
+        assert chunks == ["chunk1", "chunk2"]
+
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_fallback() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="default-model", fallback_chat_model="fallback-model"
+        )
+        mock_client = MagicMock()
+
+        async def mock_failing_stream(
+            *args: typing.Any, **kwargs: typing.Any
+        ) -> typing.AsyncGenerator[str, None]:
+            if (
+                kwargs.get("model") == "default-model"
+                or len(args) > 1
+                and args[1] == "default-model"
+            ):
+                raise Exception("First error")
+            yield "fallback-chunk"
+
+        async def _wrapper(*args, **kwargs):
+            return mock_failing_stream(*args, **kwargs)
+
+        mock_client.stream_chat = AsyncMock(side_effect=_wrapper)
+        mock_get_client.return_value = mock_client
+
+        stream = stream_chat([{"role": "user", "content": "hi"}])
+        chunks = [chunk async for chunk in stream]
+
+        assert chunks == ["fallback-chunk"]
+
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_fallback_fails() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="default-model", fallback_chat_model="fallback-model"
+        )
+        mock_client = MagicMock()
+
+        async def mock_failing_stream(
+            *args: typing.Any, **kwargs: typing.Any
+        ) -> typing.AsyncGenerator[str, None]:
+            if kwargs.get("model") == "default-model" or (
+                len(args) > 1 and args[1] == "default-model"
+            ):
+                raise Exception("First error")
+
+            # Since mypy complains about unreachable code after an unconditional raise,
+            # we structure it so it yields technically but raises beforehand
+            # to simulate failing on the fallback request.
+            raise Exception("Fallback error")
+
+        mock_client.stream_chat = mock_failing_stream
+        mock_get_client.return_value = mock_client
+
+        stream = stream_chat([{"role": "user", "content": "hi"}])
+        with pytest.raises(Exception, match="Fallback error"):
+            async for _ in stream:
+                pass
+
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_cancelled() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="default-model", fallback_chat_model="fallback-model"
+        )
+        mock_client = MagicMock()
+
+        async def mock_cancelled_stream(
+            *args: typing.Any, **kwargs: typing.Any
+        ) -> typing.AsyncGenerator[str, None]:
+            raise asyncio.CancelledError()
+            yield "never reached"  # type: ignore
+
+        async def _wrapper(*args, **kwargs):
+            return mock_cancelled_stream(*args, **kwargs)
+
+        mock_client.stream_chat = AsyncMock(side_effect=_wrapper)
+        mock_get_client.return_value = mock_client
+
+        stream = stream_chat([{"role": "user", "content": "hi"}])
+        with pytest.raises(asyncio.CancelledError):
+            async for _ in stream:
+                pass
