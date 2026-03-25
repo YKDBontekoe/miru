@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import logging
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -143,3 +144,100 @@ class MemoryService:
         r_id = UUID(str(room_id)) if room_id else None
 
         return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
+
+    async def search_memories(
+        self,
+        user_id: UUID,
+        query: str,
+        start_date: date,
+        end_date: date,
+        limit: int = 100,
+    ) -> list[Memory]:
+        """Search memories by query and date range.
+
+        If query is empty or whitespace, returns memories within the date range.
+        """
+        # If query is empty/whitespace, use date range fallback
+        if not query or not query.strip():
+            start_dt = datetime.combine(start_date, datetime.min.time())
+            end_dt = datetime.combine(end_date, datetime.max.time())
+            return await self.repo.list_memories_between(user_id, start_dt, end_dt, limit)
+
+        # Otherwise, use vector search
+        vector = await embed(query)
+        return await self.repo.match_memories(vector, 0.0, limit, user_id, None, None)
+
+    async def merge_memories(
+        self,
+        user_id: UUID,
+        memory_ids: list[UUID],
+    ) -> Memory | None:
+        """Merge multiple memories into one, deleting duplicates.
+
+        Combines content from all memories and creates a new merged memory.
+        The oldest memory is updated with merged content, others are deleted.
+        """
+        if len(memory_ids) < 2:
+            return None
+
+        memories = await self.repo.get_memories_by_ids(memory_ids)
+
+        # Filter to only user's memories and sort by creation date (oldest first)
+        user_memories = [m for m in memories if m.user_id == user_id]
+        if len(user_memories) < 2:
+            return None
+
+        user_memories.sort(key=lambda m: m.created_at)
+
+        # Oldest memory becomes the merged one
+        oldest = user_memories[0]
+        to_merge = user_memories[1:]
+
+        # Combine content
+        contents = [oldest.content] + [m.content for m in to_merge]
+        merged_content = "\n\n".join(contents)
+
+        # Update oldest memory with merged content
+        oldest.content = merged_content
+        oldest.meta = oldest.meta or {}
+        oldest.meta["merged_from"] = [str(m.id) for m in to_merge]
+        oldest.updated_at = datetime.now()
+
+        # Generate new embedding for merged content
+        oldest.embedding = await embed(merged_content)
+
+        await self.repo.update_memory(oldest)
+
+        # Delete the merged memories
+        for memory in to_merge:
+            await self.repo.delete_memory(memory.id)
+
+        return oldest
+
+    async def get_on_this_day(
+        self,
+        user_id: UUID,
+        reference_date: date | None = None,
+        limit: int = 100,
+    ) -> list[Memory]:
+        """Get memories from the same day in previous years ("on this day" feature).
+
+        Filters memories by month and day, excluding the current year.
+        """
+        ref_date = reference_date or date.today()
+
+        # Get all memories for the user
+        all_memories = await self.repo.list_all_memories(user_id, limit)
+
+        # Filter by month and day, excluding current year
+        result = []
+        for memory in all_memories:
+            mem_date = memory.created_at
+            if (
+                mem_date.month == ref_date.month
+                and mem_date.day == ref_date.day
+                and mem_date.year != ref_date.year
+            ):
+                result.append(memory)
+
+        return result

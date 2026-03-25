@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from tortoise import Tortoise
@@ -114,3 +115,32 @@ class MemoryRepository:
         return await MemoryRelationship.filter(
             source_id__in=memory_ids, target_id__in=memory_ids
         ).all()
+
+    async def list_memories_between(
+        self,
+        user_id: UUID,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int = 100,
+    ) -> list[Memory]:
+        """Fetch memories created between two dates."""
+        return (
+            await Memory.filter(
+                user_id=user_id,
+                created_at__gte=start_date,
+                created_at__lte=end_date,
+            )
+            .limit(limit)
+            .all()
+        )
+
+    async def get_memories_by_ids(self, memory_ids: list[UUID]) -> list[Memory]:
+        """Fetch memories by their IDs."""
+        if not memory_ids:
+            return []
+        return await Memory.filter(id__in=memory_ids).all()
+
+    async def update_memory(self, memory: Memory) -> Memory:
+        """Update a memory record."""
+        await memory.save()
+        return memory
