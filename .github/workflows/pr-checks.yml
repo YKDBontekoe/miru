@@ -445,6 +445,10 @@ jobs:
               "email": email,
               "password": password,
           }
+          fallback_payload = {
+              "email": "ci-postman-pr-preview@miru.dev",
+              "password": "PostmanCi!23456",
+          }
 
           headers = {
               "apikey": api_key,
@@ -498,6 +502,20 @@ jobs:
                   f"::warning::Supabase signup attempt did not succeed (HTTP {exc.code}): {detail}",
                   file=sys.stderr,
               )
+              if "email_address_invalid" in detail:
+                  payload = fallback_payload
+                  print(
+                      "::warning::Retrying Supabase signup/login with fallback CI credentials",
+                      file=sys.stderr,
+                  )
+                  try:
+                      _ = post_json(signup_url, payload)
+                      time.sleep(1)
+                  except Exception as second_exc:
+                      print(
+                          f"::warning::Fallback Supabase signup attempt failed: {second_exc}",
+                          file=sys.stderr,
+                      )
           except Exception as exc:
               print(f"::warning::Supabase signup attempt failed: {exc}", file=sys.stderr)
 
