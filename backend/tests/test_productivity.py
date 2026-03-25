@@ -539,3 +539,46 @@ async def test_handle_db_errors_action_mapping() -> None:
         async with handle_db_errors("create task"):
             raise Exception("unexpected create test")
     assert exc_info.value.status_code == 500  # type: ignore[unreachable]
+
+
+@pytest.mark.asyncio
+async def test_list_events_with_relations(
+    async_client: AsyncClient,
+    mock_user_id: uuid.UUID,
+    override_get_current_user: None,
+) -> None:
+    """Test that listing calendar events correctly exposes related models like agent and origin_message."""
+    from datetime import UTC, datetime, timedelta
+
+    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
+
+    now = datetime.now(UTC)
+
+    agent = await Agent.create(
+        id=uuid.uuid4(),
+        user_id=mock_user_id,
+        name="Test Agent",
+        personality="Helpful",
+        description="A helpful test agent",
+    )
+    room = await ChatRoom.create(id=uuid.uuid4(), user_id=mock_user_id, name="Test Room")
+    msg = await ChatMessage.create(
+        id=uuid.uuid4(), room_id=room.id, user_id=mock_user_id, content="Test Message", role="user"
+    )
+
+    await CalendarEvent.create(
+        user_id=mock_user_id,
+        title="Event with relations",
+        start_time=now,
+        end_time=now + timedelta(hours=1),
+        agent_id=agent.id,
+        origin_message_id=msg.id,
+    )
+
+    response = await async_client.get("/api/v1/productivity/events")
+    assert response.status_code == 200
+    events = response.json()
+    assert len(events) == 1
+    assert events[0]["agent_id"] == str(agent.id)
+    assert events[0]["origin_message_id"] == str(msg.id)
