@@ -384,7 +384,7 @@ jobs:
 
       - name: Run Postman integration tests
         env:
-          SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET || secrets.STAGING_SUPABASE_JWT_SECRET || secrets.PRODUCTION_SUPABASE_JWT_SECRET }}
+          SUPABASE_JWT_SECRET: ${{ secrets.STAGING_SUPABASE_JWT_SECRET }}
         run: |
           npm install -g newman
           PIDS=()
