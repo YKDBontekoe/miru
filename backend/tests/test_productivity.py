@@ -589,6 +589,8 @@ async def test_map_note_and_event_no_values_fetched() -> None:
 
     mock_user_id = uuid.uuid4()
 
+    from typing import Any
+
     class MockNote:
         def __init__(self) -> None:
             self.id = uuid.uuid4()
@@ -604,13 +606,13 @@ async def test_map_note_and_event_no_values_fetched() -> None:
             self.origin_context = None
 
         @property
-        def agent(self) -> None:
+        def agent(self) -> Any:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("agent not fetched")
 
         @property
-        def origin_message(self) -> None:
+        def origin_message(self) -> Any:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("origin_message not fetched")
@@ -633,13 +635,13 @@ async def test_map_note_and_event_no_values_fetched() -> None:
             self.origin_context = None
 
         @property
-        def agent(self) -> None:
+        def agent(self) -> Any:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("agent not fetched")
 
         @property
-        def origin_message(self) -> None:
+        def origin_message(self) -> Any:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("origin_message not fetched")
