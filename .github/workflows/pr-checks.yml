@@ -398,143 +398,19 @@ jobs:
           npm install -g newman
 
           AUTH_TOKEN=""
-          RESOLVED_SUPABASE_URL="${SUPABASE_URL:-${FALLBACK_SUPABASE_URL}}"
-          RESOLVED_SUPABASE_KEY="${SUPABASE_KEY:-${FALLBACK_SUPABASE_KEY}}"
+          RESOLVED_JWT_SECRET="${SUPABASE_JWT_SECRET}"
 
-          if [ -n "$RESOLVED_SUPABASE_URL" ] && [ -n "$RESOLVED_SUPABASE_KEY" ] && [ -n "$SUPABASE_TEST_EMAIL" ] && [ -n "$SUPABASE_TEST_PASSWORD" ]; then
-            if ! AUTH_TOKEN=$(SUPABASE_URL="$RESOLVED_SUPABASE_URL" SUPABASE_KEY="$RESOLVED_SUPABASE_KEY" SUPABASE_TEST_EMAIL="$SUPABASE_TEST_EMAIL" SUPABASE_TEST_PASSWORD="$SUPABASE_TEST_PASSWORD" python3 - <<'PY'
-          import json
-          import os
-          import re
-          import sys
-          import time
-          import urllib.error
-          import urllib.request
+          LIVE_JWT_SECRET=$(az containerapp secret show \
+            --name "$PR_APP" \
+            --resource-group "$PR_RG" \
+            --secret-name "supabase-jwt-secret" \
+            --query value \
+            --output tsv 2>/dev/null || true)
 
-          base_url = os.environ["SUPABASE_URL"].rstrip("/")
-          login_url = base_url + "/auth/v1/token?grant_type=password"
-          signup_url = base_url + "/auth/v1/signup"
-          api_key = os.environ["SUPABASE_KEY"]
-          def clean_secret(value: str) -> str:
-              cleaned = value.strip()
-              if (cleaned.startswith('"') and cleaned.endswith('"')) or (
-                  cleaned.startswith("'") and cleaned.endswith("'")
-              ):
-                  cleaned = cleaned[1:-1].strip()
-              return cleaned
-
-          raw_email = clean_secret(os.environ["SUPABASE_TEST_EMAIL"])
-          raw_password = clean_secret(os.environ["SUPABASE_TEST_PASSWORD"])
-
-          email = raw_email
-          if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-              email = "ci-postman-pr317@example.com"
-              print(
-                  f"::warning::SUPABASE_TEST_EMAIL is invalid after normalization; using {email}",
-                  file=sys.stderr,
-              )
-
-          password = raw_password if len(raw_password) >= 8 else "PostmanCi!23456"
-          if password != raw_password:
-              print(
-                  "::warning::SUPABASE_TEST_PASSWORD is too short/invalid; using CI fallback password",
-                  file=sys.stderr,
-              )
-
-          payload = {
-              "email": email,
-              "password": password,
-          }
-          fallback_payload = {
-              "email": "ci-postman-pr-preview@miru.dev",
-              "password": "PostmanCi!23456",
-          }
-
-          headers = {
-              "apikey": api_key,
-              "Authorization": f"Bearer {api_key}",
-              "Content-Type": "application/json",
-          }
-
-          def post_json(url: str, data: dict[str, str]) -> dict:
-              request = urllib.request.Request(
-                  url,
-                  data=json.dumps(data).encode("utf-8"),
-                  headers=headers,
-                  method="POST",
-              )
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  return json.loads(response.read().decode("utf-8"))
-
-          def try_login() -> str:
-              body = post_json(login_url, payload)
-              token = body.get("access_token")
-              if not token:
-                  raise RuntimeError("Supabase auth response did not include access_token")
-              return token
-
-          try:
-              print(try_login())
-              raise SystemExit(0)
-          except urllib.error.HTTPError as exc:
-              detail = exc.read().decode("utf-8", errors="replace")
-              if exc.code == 400 and "invalid_credentials" in detail:
-                  print(
-                      "::warning::Supabase test user credentials invalid; attempting to seed user via signup",
-                      file=sys.stderr,
-                  )
-              else:
-                  print(
-                      f"::warning::Failed to obtain Supabase test token (HTTP {exc.code}): {detail}",
-                      file=sys.stderr,
-                  )
-                  raise
-          except Exception as exc:
-              print(f"::warning::Failed to obtain Supabase test token: {exc}", file=sys.stderr)
-              raise
-
-          try:
-              _ = post_json(signup_url, payload)
-              time.sleep(1)
-          except urllib.error.HTTPError as exc:
-              detail = exc.read().decode("utf-8", errors="replace")
-              print(
-                  f"::warning::Supabase signup attempt did not succeed (HTTP {exc.code}): {detail}",
-                  file=sys.stderr,
-              )
-              if "email_address_invalid" in detail:
-                  payload = fallback_payload
-                  print(
-                      "::warning::Retrying Supabase signup/login with fallback CI credentials",
-                      file=sys.stderr,
-                  )
-                  try:
-                      _ = post_json(signup_url, payload)
-                      time.sleep(1)
-                  except Exception as second_exc:
-                      print(
-                          f"::warning::Fallback Supabase signup attempt failed: {second_exc}",
-                          file=sys.stderr,
-                      )
-          except Exception as exc:
-              print(f"::warning::Supabase signup attempt failed: {exc}", file=sys.stderr)
-
-          try:
-              print(try_login())
-          except Exception as exc:
-              print(
-                  "::warning::Unable to obtain Supabase auth token after seed attempt; "
-                  "falling back to jwtSecret token",
-                  file=sys.stderr,
-              )
-              raise
-          PY
-            ); then
-              echo "::warning::Falling back to locally signed jwtSecret token for Postman auth"
-              AUTH_TOKEN=""
-            fi
+          if [ -n "$LIVE_JWT_SECRET" ]; then
+            RESOLVED_JWT_SECRET="$LIVE_JWT_SECRET"
           else
-            echo "::warning::Supabase auth inputs missing; falling back to jwtSecret token for Postman auth"
+            echo "::warning::Could not read live supabase-jwt-secret from Container App; using workflow secret"
           fi
 
           PIDS=()
@@ -546,7 +422,7 @@ jobs:
               --environment backend/tests/postman/environment.json \
               --env-var baseUrl=${{ steps.app-url.outputs.url }} \
               --env-var authToken="${AUTH_TOKEN}" \
-              --env-var jwtSecret="${SUPABASE_JWT_SECRET}" \
+              --env-var jwtSecret="${RESOLVED_JWT_SECRET}" \
               --reporters cli \
               --reporter-cli-no-banner &
             PIDS+=($!)
