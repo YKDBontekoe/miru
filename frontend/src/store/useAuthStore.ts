@@ -14,7 +14,9 @@ interface AuthState {
   initialize: () => void;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing authentication state, including the current user profile, passkeys, and token management.
+ */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,

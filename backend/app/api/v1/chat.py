@@ -24,8 +24,13 @@ from app.domain.chat.service import ChatService  # noqa: TCH001
 router = APIRouter(tags=["Chat"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/rooms", response_model=list[RoomResponse])
+@router.get(
+    "/rooms",
+    response_model=list[RoomResponse],
+    responses={
+        200: {"description": "Successfully retrieved list of rooms"},
+    },
+)
 async def list_rooms(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
@@ -33,8 +38,13 @@ async def list_rooms(
     return await service.list_rooms(user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/rooms", response_model=RoomResponse)
+@router.post(
+    "/rooms",
+    response_model=RoomResponse,
+    responses={
+        200: {"description": "Successfully created a room"},
+    },
+)
 async def create_room(
     data: RoomCreate,
     user_id: CurrentUser,
@@ -43,8 +53,13 @@ async def create_room(
     return await service.create_room(data.name, user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/chat")
+@router.post(
+    "/chat",
+    responses={
+        200: {"description": "Successfully streamed chat response"},
+        400: {"description": "Message or content is required"},
+    },
+)
 async def chat(
     request: ChatRequest,
     user_id: CurrentUser,
@@ -63,8 +78,13 @@ async def chat(
     )
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/crew")
+@router.post(
+    "/crew",
+    responses={
+        200: {"description": "Successfully executed crew orchestration"},
+        400: {"description": "Message or content is required"},
+    },
+)
 async def run_crew(
     request: ChatRequest,
     user_id: CurrentUser,
@@ -80,8 +100,14 @@ async def run_crew(
     return await service.run_crew(message, user_id, accept_language=accept_language)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/rooms/{room_id}", response_model=RoomResponse)
+@router.patch(
+    "/rooms/{room_id}",
+    response_model=RoomResponse,
+    responses={
+        200: {"description": "Successfully updated room"},
+        404: {"description": "Room not found"},
+    },
+)
 async def update_room(
     room_id: UUID,
     data: RoomUpdate,
@@ -94,8 +120,14 @@ async def update_room(
     return room
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/rooms/{room_id}")
+@router.delete(
+    "/rooms/{room_id}",
+    response_model=dict[str, str],
+    responses={
+        200: {"description": "Successfully deleted room"},
+        404: {"description": "Room not found"},
+    },
+)
 async def delete_room(
     room_id: UUID,
     _user_id: CurrentUser,
@@ -107,8 +139,13 @@ async def delete_room(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/rooms/{room_id}/agents")
+@router.post(
+    "/rooms/{room_id}/agents",
+    response_model=dict[str, str],
+    responses={
+        200: {"description": "Successfully added agent to room"},
+    },
+)
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
@@ -119,8 +156,13 @@ async def add_agent_to_room(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
+@router.get(
+    "/rooms/{room_id}/agents",
+    response_model=list[AgentResponse],
+    responses={
+        200: {"description": "Successfully retrieved agents in room"},
+    },
+)
 async def get_room_agents(
     room_id: UUID,
     _user_id: CurrentUser,
@@ -130,8 +172,14 @@ async def get_room_agents(
     return [AgentResponse.model_validate(a) for a in agents]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/rooms/{room_id}/agents/{agent_id}")
+@router.delete(
+    "/rooms/{room_id}/agents/{agent_id}",
+    response_model=dict[str, str],
+    responses={
+        200: {"description": "Successfully removed agent from room"},
+        404: {"description": "Agent not found in room"},
+    },
+)
 async def remove_agent_from_room(
     room_id: UUID,
     agent_id: UUID,
@@ -147,8 +195,13 @@ async def remove_agent_from_room(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
+@router.get(
+    "/rooms/{room_id}/messages",
+    response_model=list[ChatMessageResponse],
+    responses={
+        200: {"description": "Successfully retrieved messages in room"},
+    },
+)
 async def get_room_messages(
     room_id: UUID,
     _user_id: CurrentUser,
@@ -157,8 +210,13 @@ async def get_room_messages(
     return await service.get_room_messages(room_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/rooms/{room_id}/chat")
+@router.post(
+    "/rooms/{room_id}/chat",
+    responses={
+        200: {"description": "Successfully streamed chat response from room"},
+        400: {"description": "Message or content is required"},
+    },
+)
 async def chat_in_room(
     room_id: UUID,
     request: ChatRequest,

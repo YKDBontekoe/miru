@@ -37,8 +37,13 @@ async def create_agent(
     return await service.create_agent(agent_data, user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("", response_model=list[AgentResponse])
+@router.get(
+    "",
+    response_model=list[AgentResponse],
+    responses={
+        200: {"description": "Successfully retrieved list of agents"},
+    },
+)
 async def list_agents(
     user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
@@ -47,8 +52,13 @@ async def list_agents(
     return await service.list_agents(user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/capabilities", response_model=list[CapabilityResponse])
+@router.get(
+    "/capabilities",
+    response_model=list[CapabilityResponse],
+    responses={
+        200: {"description": "Successfully retrieved capabilities"},
+    },
+)
 async def list_capabilities(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
@@ -57,8 +67,13 @@ async def list_capabilities(
     return await service.list_capabilities()
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/integrations", response_model=list[IntegrationResponse])
+@router.get(
+    "/integrations",
+    response_model=list[IntegrationResponse],
+    responses={
+        200: {"description": "Successfully retrieved integrations"},
+    },
+)
 async def list_integrations(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
@@ -67,8 +82,13 @@ async def list_integrations(
     return await service.list_integrations()
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/templates", response_model=list[AgentTemplateResponse])
+@router.get(
+    "/templates",
+    response_model=list[AgentTemplateResponse],
+    responses={
+        200: {"description": "Successfully retrieved paginated templates"},
+    },
+)
 async def list_templates(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
@@ -79,7 +99,13 @@ async def list_templates(
     return await service.list_templates(skip=skip, limit=limit)
 
 
-@router.post("/generate", response_model=AgentGenerationResponse)
+@router.post(
+    "/generate",
+    response_model=AgentGenerationResponse,
+    responses={
+        200: {"description": "Successfully generated agent persona"},
+    },
+)
 async def generate_agent(
     data: AgentGenerate,
     _user_id: CurrentUser,
@@ -89,7 +115,14 @@ async def generate_agent(
     return await service.generate_agent_profile(data.keywords)
 
 
-@router.patch("/{agent_id}", response_model=AgentResponse)
+@router.patch(
+    "/{agent_id}",
+    response_model=AgentResponse,
+    responses={
+        200: {"description": "Successfully updated agent"},
+        404: {"description": "Agent not found"},
+    },
+)
 async def update_agent(
     agent_id: UUID,
     data: AgentUpdate,

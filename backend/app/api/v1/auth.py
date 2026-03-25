@@ -20,8 +20,13 @@ from app.domain.auth.service import AuthService  # noqa: TCH001
 router = APIRouter(tags=["Auth"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/passkey/register/options")
+@router.post(
+    "/passkey/register/options",
+    response_model=dict[str, Any],
+    responses={
+        200: {"description": "Successfully generated passkey registration options"},
+    },
+)
 async def get_registration_options(
     _data: PasskeyRegisterOptionsRequest,
     _user_id: CurrentUser,
@@ -32,8 +37,13 @@ async def get_registration_options(
     return {"challenge": "dummy_challenge", "rp": {"name": "Miru", "id": "localhost"}}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/passkey/register/verify")
+@router.post(
+    "/passkey/register/verify",
+    response_model=dict[str, Any],
+    responses={
+        200: {"description": "Successfully verified passkey registration"},
+    },
+)
 async def verify_registration(
     data: PasskeyRegisterVerifyRequest,
     _user_id: CurrentUser,
@@ -44,8 +54,13 @@ async def verify_registration(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/passkey/login/options")
+@router.post(
+    "/passkey/login/options",
+    response_model=dict[str, Any],
+    responses={
+        200: {"description": "Successfully generated passkey login options"},
+    },
+)
 async def get_login_options(
     _data: PasskeyLoginOptionsRequest,
     _service: Annotated[AuthService, Depends(get_auth_service)],
@@ -54,8 +69,13 @@ async def get_login_options(
     return {"challenge": "dummy_challenge"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/passkey/login/verify")
+@router.post(
+    "/passkey/login/verify",
+    response_model=dict[str, Any],
+    responses={
+        200: {"description": "Successfully verified passkey login"},
+    },
+)
 async def verify_login(
     _data: PasskeyLoginVerifyRequest,
     _service: Annotated[AuthService, Depends(get_auth_service)],
@@ -67,8 +87,13 @@ async def verify_login(
     }
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/passkey/list", response_model=dict[str, list[PasskeyRecord]])
+@router.get(
+    "/passkey/list",
+    response_model=dict[str, list[PasskeyRecord]],
+    responses={
+        200: {"description": "Successfully retrieved list of passkeys"},
+    },
+)
 async def list_passkeys(
     user_id: CurrentUser,
     service: Annotated[AuthService, Depends(get_auth_service)],
@@ -78,8 +103,14 @@ async def list_passkeys(
     return {"passkeys": passkeys}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/passkey/{passkey_id}")
+@router.delete(
+    "/passkey/{passkey_id}",
+    response_model=dict[str, Any],
+    responses={
+        200: {"description": "Successfully deleted passkey"},
+        404: {"description": "Passkey not found"},
+    },
+)
 async def delete_passkey(
     passkey_id: str,
     user_id: CurrentUser,

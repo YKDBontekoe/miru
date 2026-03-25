@@ -15,7 +15,9 @@ interface ProductivityState {
   deleteTask: (id: string) => Promise<void>;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing productivity state, including tasks and notes.
+ */
 export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
   tasks: [],

@@ -14,7 +14,9 @@ interface AppState {
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
 const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_URL;
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing global application state, such as themes, initialization status, and settings.
+ */
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({

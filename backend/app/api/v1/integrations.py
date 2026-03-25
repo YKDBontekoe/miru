@@ -10,8 +10,14 @@ from app.infrastructure.external.steam import get_player_summaries, resolve_vani
 router = APIRouter(tags=["Integrations"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/steam/resolve-user")
+@router.get(
+    "/steam/resolve-user",
+    response_model=dict[str, str],
+    responses={
+        200: {"description": "Successfully resolved Steam user"},
+        404: {"description": "Steam user not found"},
+    },
+)
 async def resolve_steam_user(
     username: str,
     user_id: CurrentUser,

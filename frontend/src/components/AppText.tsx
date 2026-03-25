@@ -7,7 +7,16 @@ export interface AppTextProps extends TextProps {
   className?: string;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A core text component for rendering typographic elements across the app.
+ *
+ * @param props - Component props extending standard Text props.
+ * @param props.variant - The typography style variant (e.g., h1, h2, h3, h4, body, footnote, caption, overline).
+ * @param props.weight - The font weight to apply (e.g., regular, medium, semibold, bold).
+ * @param props.color - The text color token to apply.
+ * @param props.align - The text alignment.
+ * @param props.className - Additional custom class names.
+ */
 export function AppText({
   children,
   variant = 'body',

@@ -14,7 +14,13 @@ interface TypingIndicatorProps {
   dotColor?: string;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A sub-component that renders an animated dot for the typing indicator.
+ *
+ * @param props - Component props
+ * @param props.delay - The animation delay in milliseconds.
+ * @param props.color - The dot color.
+ */
 const Dot = ({ delay, color }: { delay: number; color: string }) => {
   const translateY = useSharedValue(0);
 
@@ -44,7 +50,12 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
   );
 };
 
-// DOCS(miru-agent): needs documentation
+/**
+ * An animated indicator showing that someone is currently typing.
+ *
+ * @param props - Component props
+ * @param props.dotColor - Optional color to apply to the dots.
+ */
 export function TypingIndicator({ dotColor = '#A0A0B0' }: TypingIndicatorProps) {
   return (
     <View className="flex-row items-center h-4 px-xs">

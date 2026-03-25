@@ -25,7 +25,14 @@ interface ChatInputBarProps {
   placeholder?: string;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A text input bar used for sending messages in a chat interface.
+ *
+ * @param props - Component props
+ * @param props.onSend - Callback invoked when the user submits a message.
+ * @param props.disabled - Boolean indicating if the input should be disabled.
+ * @param props.placeholder - Optional placeholder text for the input.
+ */
 export function ChatInputBar({
   value,
   onChangeText,

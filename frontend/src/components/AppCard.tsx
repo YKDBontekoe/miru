@@ -9,7 +9,15 @@ export interface AppCardProps extends ViewProps {
   style?: StyleProp<ViewStyle>;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A reusable card container component styled with NativeWind.
+ *
+ * @param props - Component props extending standard View props.
+ * @param props.children - The content to render inside the card.
+ * @param props.variant - The visual style variant of the card (e.g., elevated, outline, filled).
+ * @param props.padding - The padding size for the card (e.g., none, sm, md, lg).
+ * @param props.className - Additional class names to apply to the card container.
+ */
 export function AppCard({
   children,
   className = '',

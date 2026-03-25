@@ -9,7 +9,20 @@ export interface AppButtonProps extends TouchableOpacityProps {
   className?: string;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A reusable button component styled with NativeWind.
+ *
+ * @param props - Component props extending standard Pressable props.
+ * @param props.variant - The visual style variant of the button (e.g., primary, secondary, outline, text, ghost, danger).
+ * @param props.size - The size of the button (e.g., sm, md, lg).
+ * @param props.label - The text to display inside the button.
+ * @param props.loading - Boolean indicating whether to show a loading spinner.
+ * @param props.leftIcon - Optional React node to display before the text.
+ * @param props.rightIcon - Optional React node to display after the text.
+ * @param props.fullWidth - Boolean indicating if the button should span the full width of its container.
+ * @param props.className - Additional class names to apply to the button container.
+ * @param props.textClassName - Additional class names to apply to the text.
+ */
 export function AppButton({
   label,
   variant = 'primary',

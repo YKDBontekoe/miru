@@ -40,8 +40,14 @@ ProductivityUseCaseDep = Annotated[ManageProductivityUseCase, Depends(get_produc
 # ---------------------------------------------------------------------------
 # Tasks
 # ---------------------------------------------------------------------------
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/tasks", response_model=TaskResponse, status_code=201)
+@router.post(
+    "/tasks",
+    response_model=TaskResponse,
+    status_code=201,
+    responses={
+        201: {"description": "Successfully created task"},
+    },
+)
 async def create_task(
     task_data: TaskCreate,
     user_id: CurrentUser,
@@ -54,8 +60,13 @@ async def create_task(
     return TaskResponse.model_validate(task)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/tasks", response_model=list[TaskResponse])
+@router.get(
+    "/tasks",
+    response_model=list[TaskResponse],
+    responses={
+        200: {"description": "Successfully retrieved list of tasks"},
+    },
+)
 async def list_tasks(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
@@ -67,8 +78,14 @@ async def list_tasks(
     return [TaskResponse.model_validate(t) for t in tasks]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/tasks/{task_id}", response_model=TaskResponse)
+@router.get(
+    "/tasks/{task_id}",
+    response_model=TaskResponse,
+    responses={
+        200: {"description": "Successfully retrieved task"},
+        404: {"description": "Task not found"},
+    },
+)
 async def get_task(
     task_id: UUID,
     user_id: CurrentUser,
@@ -85,8 +102,14 @@ async def get_task(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/tasks/{task_id}", response_model=TaskResponse)
+@router.patch(
+    "/tasks/{task_id}",
+    response_model=TaskResponse,
+    responses={
+        200: {"description": "Successfully updated task"},
+        404: {"description": "Task not found"},
+    },
+)
 async def update_task(
     task_id: UUID,
     task_data: TaskUpdate,
@@ -104,8 +127,14 @@ async def update_task(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/tasks/{task_id}", status_code=204)
+@router.delete(
+    "/tasks/{task_id}",
+    status_code=204,
+    responses={
+        204: {"description": "Successfully deleted task"},
+        404: {"description": "Task not found"},
+    },
+)
 async def delete_task(
     task_id: UUID,
     user_id: CurrentUser,
@@ -125,8 +154,14 @@ async def delete_task(
 # ---------------------------------------------------------------------------
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/notes", response_model=NoteResponse, status_code=201)
+@router.post(
+    "/notes",
+    response_model=NoteResponse,
+    status_code=201,
+    responses={
+        201: {"description": "Successfully created note"},
+    },
+)
 async def create_note(
     note_data: NoteCreate,
     user_id: CurrentUser,
@@ -137,8 +172,13 @@ async def create_note(
     return NoteResponse.model_validate(note)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/notes", response_model=list[NoteResponse])
+@router.get(
+    "/notes",
+    response_model=list[NoteResponse],
+    responses={
+        200: {"description": "Successfully retrieved list of notes"},
+    },
+)
 async def list_notes(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
@@ -150,8 +190,14 @@ async def list_notes(
     return [NoteResponse.model_validate(n) for n in notes]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/notes/{note_id}", response_model=NoteResponse)
+@router.get(
+    "/notes/{note_id}",
+    response_model=NoteResponse,
+    responses={
+        200: {"description": "Successfully retrieved note"},
+        404: {"description": "Note not found"},
+    },
+)
 async def get_note(
     note_id: UUID,
     user_id: CurrentUser,
@@ -167,8 +213,14 @@ async def get_note(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/notes/{note_id}", response_model=NoteResponse)
+@router.patch(
+    "/notes/{note_id}",
+    response_model=NoteResponse,
+    responses={
+        200: {"description": "Successfully updated note"},
+        404: {"description": "Note not found"},
+    },
+)
 async def update_note(
     note_id: UUID,
     note_data: NoteUpdate,
@@ -185,8 +237,14 @@ async def update_note(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/notes/{note_id}", status_code=204)
+@router.delete(
+    "/notes/{note_id}",
+    status_code=204,
+    responses={
+        204: {"description": "Successfully deleted note"},
+        404: {"description": "Note not found"},
+    },
+)
 async def delete_note(
     note_id: UUID,
     user_id: CurrentUser,
@@ -207,8 +265,15 @@ async def delete_note(
 # ---------------------------------------------------------------------------
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/events", response_model=CalendarEventResponse, status_code=201)
+@router.post(
+    "/events",
+    response_model=CalendarEventResponse,
+    status_code=201,
+    responses={
+        201: {"description": "Successfully created event"},
+        400: {"description": "Invalid time range"},
+    },
+)
 async def create_event(
     event_data: CalendarEventCreate,
     user_id: CurrentUser,
@@ -224,8 +289,13 @@ async def create_event(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/events", response_model=list[CalendarEventResponse])
+@router.get(
+    "/events",
+    response_model=list[CalendarEventResponse],
+    responses={
+        200: {"description": "Successfully retrieved list of events"},
+    },
+)
 async def list_events(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
@@ -237,8 +307,14 @@ async def list_events(
     return [CalendarEventResponse.model_validate(e) for e in events]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/events/{event_id}", response_model=CalendarEventResponse)
+@router.get(
+    "/events/{event_id}",
+    response_model=CalendarEventResponse,
+    responses={
+        200: {"description": "Successfully retrieved event"},
+        404: {"description": "Event not found"},
+    },
+)
 async def get_event(
     event_id: UUID,
     user_id: CurrentUser,
@@ -255,8 +331,15 @@ async def get_event(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/events/{event_id}", response_model=CalendarEventResponse)
+@router.patch(
+    "/events/{event_id}",
+    response_model=CalendarEventResponse,
+    responses={
+        200: {"description": "Successfully updated event"},
+        400: {"description": "Invalid time range"},
+        404: {"description": "Event not found"},
+    },
+)
 async def update_event(
     event_id: UUID,
     event_data: CalendarEventUpdate,
@@ -278,8 +361,14 @@ async def update_event(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/events/{event_id}", status_code=204)
+@router.delete(
+    "/events/{event_id}",
+    status_code=204,
+    responses={
+        204: {"description": "Successfully deleted event"},
+        404: {"description": "Event not found"},
+    },
+)
 async def delete_event(
     event_id: UUID,
     user_id: CurrentUser,

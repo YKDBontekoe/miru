@@ -68,6 +68,8 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
 - Scheduled every 6 hours to pull open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
+- Weekly schedule (Mondays 9 AM UTC) to generate and post a performance report based on issue labels.
+- Triggered by nightly and maintenance workflow runs that assign the `jules-fix-pending` label to newly found issues.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
 **Note on Prompt:** Jules is instructed to strictly follow project architecture (Domain logic in `backend/app/domain/`, routes in `backend/app/api/v1/`, frontend in `frontend/`) and test requirements (never mock the database or Redis, mock external services).
 
@@ -76,7 +78,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
-- Retries automatically every 30 minutes if rate-limited (label `coderabbit:queued`).
+- Retries automatically every 30 minutes if rate-limited (label `coderabbit:queued`) via a scheduled queue processor.
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 
 ## Project Structure
@@ -90,6 +92,8 @@ backend/
       security/
         auth.py      # Supabase JWT validation, get_current_user() dependency
     domain/          # One package per bounded context
+      agent_tools/
+        models.py    # AgentTool, AgentToolLink models + schemas
       agents/
         models.py    # Tortoise ORM models + Pydantic schemas for agents, capabilities, etc.
         service.py
@@ -99,11 +103,23 @@ backend/
       chat/
         models.py    # ChatRoom, ChatMessage models + schemas
         service.py
+      integrations/
+        models.py    # external integration models
+        service.py
       memory/
         models.py    # Memory, MemoryGraphNode/Edge models + schemas
         service.py
-      agent_tools/
-        models.py    # AgentTool, AgentToolLink models + schemas
+      notifications/
+        api/
+          router.py  # Notification routes
+        models.py    # Notification models
+        service.py
+      productivity/
+        models.py    # Tasks, Notes models + schemas
+        service.py
+      websocket/
+        models.py    # Websocket connection tracking
+        service.py
     infrastructure/
       database/
         base.py      # SupabaseModel — abstract Tortoise base with sql_policies/indexes/functions
@@ -166,7 +182,7 @@ Makefile
 Application code is organised into bounded-context packages under `app/domain/`. The key modules are:
 
 - **`app/api/v1/`** — Route handlers, one file per domain area, all mounted under `/api/v1` in `main.py`.
-- **`app/domain/**/models.py`** — Tortoise ORM models and co-located Pydantic schemas for each domain (agents, auth, chat, memory, agent_tools).
+- **`app/domain/**/models.py`** — Tortoise ORM models and co-located Pydantic schemas for each domain (agents, auth, chat, memory, agent_tools, integrations, notifications, productivity, websocket).
 - **`app/domain/**/service.py`** — Business logic and database operations for each domain.
 - **`app/infrastructure/external/openrouter.py`** — All LLM and embedding calls go through here. Models are configurable via env vars (`EMBEDDING_MODEL`, `DEFAULT_CHAT_MODEL`).
 - **`app/core/security/auth.py`** — JWT validation (supports HS256 and ES256/RS256 via JWKS). The `get_current_user()` FastAPI dependency is defined here.

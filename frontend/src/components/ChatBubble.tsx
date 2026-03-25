@@ -42,7 +42,17 @@ function formatTime(iso?: string, language: string = 'en') {
   return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(d);
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A component to render individual chat messages in a conversation.
+ *
+ * @param props - Component props
+ * @param props.text - The actual text content of the message.
+ * @param props.isUser - Boolean indicating if the message was sent by the current user.
+ * @param props.status - The delivery/processing status of the message.
+ * @param props.agentName - Optional name of the agent if the message is from an AI.
+ * @param props.timestamp - Optional timestamp string.
+ * @param props.onRetry - Callback to retry sending a failed message.
+ */
 export function ChatBubble({
   text,
   isUser,

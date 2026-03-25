@@ -39,7 +39,9 @@ interface ChatState {
 // Hub unsubscribe kept outside state so it doesn't trigger re-renders
 let _hubUnsub: (() => void) | null = null;
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing chat state, including rooms, messages, active agents, and WebSocket connections.
+ */
 export const useChatStore = create<ChatState>((set, get) => ({
   rooms: [],
   messages: {},
