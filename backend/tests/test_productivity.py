@@ -12,7 +12,7 @@ from httpx import ASGITransport, AsyncClient
 from tortoise.exceptions import IntegrityError
 
 from app.core.security.auth import get_current_user
-from app.domain.productivity.models import CalendarEvent, Note, Task
+from app.infrastructure.database.models.productivity_models import CalendarEvent, Note, Task
 from app.infrastructure.database.utils import handle_db_errors
 from app.main import app
 

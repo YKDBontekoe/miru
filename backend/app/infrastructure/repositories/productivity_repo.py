@@ -8,13 +8,11 @@ from uuid import UUID
 from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
 from app.domain.productivity.interfaces.repository import IProductivityRepository
 from app.domain.productivity.models import (
-    CalendarEvent,
     CalendarEventCreate,
-    Note,
     NoteCreate,
-    Task,
     TaskCreate,
 )
+from app.infrastructure.database.models.productivity_models import CalendarEvent, Note, Task
 from app.infrastructure.database.utils import handle_db_errors
 
 

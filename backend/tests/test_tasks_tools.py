@@ -11,7 +11,7 @@ from app.domain.agent_tools.productivity.tasks_tools import (
     ListTasksTool,
     UpdateTaskTool,
 )
-from app.domain.productivity.models import Task
+from app.infrastructure.database.models.productivity_models import Task
 
 
 @pytest.fixture
