@@ -19,6 +19,10 @@ on:
         description: 'Whether to run lint'
         type: boolean
         default: true
+      run-format-check:
+        description: 'Whether to check code formatting with Prettier'
+        type: boolean
+        default: true
       upload-coverage:
         description: 'Whether to upload coverage to Codecov'
         type: boolean
@@ -56,8 +60,27 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
 
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        id: node-modules-cache
+        with:
+          path: ${{ inputs.working-directory }}/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles(format('{0}/package-lock.json', inputs.working-directory)) }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
+
+      - name: Restore ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.working-directory }}/.eslintcache
+          key: ${{ runner.os }}-eslint-${{ hashFiles(format('{0}/package-lock.json', inputs.working-directory)) }}-${{ hashFiles(format('{0}/.eslintrc.js', inputs.working-directory)) }}
+          restore-keys: |
+            ${{ runner.os }}-eslint-${{ hashFiles(format('{0}/package-lock.json', inputs.working-directory)) }}-
+            ${{ runner.os }}-eslint-
 
       - name: Verify types
         if: inputs.run-lint
@@ -65,11 +88,20 @@ jobs:
 
       - name: Run lint
         if: inputs.run-lint
-        run: npm run lint
+        run: npm run lint -- --cache
+
+      - name: Check code formatting
+        if: inputs.run-format-check
+        run: |
+          echo "Checking code formatting with Prettier..."
+          npx prettier --check "**/*.{js,jsx,ts,tsx,json,css,md}" || {
+            echo "::error::Code formatting issues found. Run 'npm run format' locally to fix."
+            exit 1
+          }
 
       - name: Run tests with coverage
         if: inputs.run-tests
-        run: npm test -- --coverage
+        run: npm test -- --coverage --coverageThreshold='{"global":{"branches":70,"functions":70,"lines":70,"statements":70}}'
 
       - name: Upload coverage to Codecov
         if: inputs.upload-coverage
@@ -79,3 +111,12 @@ jobs:
           flags: frontend
           name: frontend-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Generate test summary
+        if: inputs.run-tests && always()
+        run: |
+          if [ -f coverage/lcov-report/index.html ]; then
+            echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Coverage report generated. View details on Codecov." >> $GITHUB_STEP_SUMMARY
+          fi

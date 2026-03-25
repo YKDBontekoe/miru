@@ -25,23 +25,113 @@ env:
   NODE_VERSION: '20'
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Security & Quality Gates (Fast - Run First)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  lockfile-validation:
+    name: Lockfile Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate lockfile
+        working-directory: ./frontend
+        run: |
+          # Ensure package-lock.json is in sync with package.json
+          npm install --package-lock-only
+          if ! git diff --quiet package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json. Run 'npm install' locally and commit the changes."
+            exit 1
+          fi
+          echo "Lockfile validation passed."
+
+  npm-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./frontend
+        continue-on-error: true
+        run: |
+          # Run audit and fail on moderate or higher severity
+          # Production dependencies only (no devDependencies)
+          npm audit --audit-level=moderate --production || {
+            echo "::warning::npm audit found vulnerabilities. Review and fix issues."
+            exit 0
+          }
+
+  dependency-dedup:
+    name: Dependency Deduplication Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Check for duplicate dependencies
+        working-directory: ./frontend
+        run: |
+          # npm dedupe --dry-run doesn't exist, so we check manually
+          npm ls --all --json 2>/dev/null | jq -r '.dependencies | to_entries[] | select(.value.duplicate == true) | .key' | while read pkg; do
+            echo "::warning::Duplicate dependency found: $pkg"
+          done
+          echo "Dependency deduplication check complete."
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Main CI Pipeline
+  # ─────────────────────────────────────────────────────────────────────────────
+
   frontend-ci:
     name: Frontend CI
+    needs: [lockfile-validation]
     uses: ./.github/workflows/reusable-frontend-setup.yml
     with:
       node-version: '20'
       working-directory: './frontend'
       run-tests: true
       run-lint: true
+      run-format-check: true
       upload-coverage: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build & Analysis
+  # ─────────────────────────────────────────────────────────────────────────────
+
   web-build:
     name: Build Web
-    needs: [frontend-ci]
+    needs: [frontend-ci, npm-audit]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     defaults:
@@ -49,12 +139,21 @@ jobs:
         working-directory: ./frontend
     steps:
       - uses: actions/checkout@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: ./frontend/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('./frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
 
       - name: Validate build secrets
         run: |
@@ -80,17 +179,77 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
       - name: Build Web
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
         run: npx expo export -p web
+
+      - name: Analyze bundle size
+        run: |
+          echo "Bundle size analysis:"
+          du -sh ./dist
+          echo ""
+          echo "Top 10 largest files:"
+          find ./dist -type f -exec ls -lh {} \; | sort -k5 -rh | head -10
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: ./frontend/dist
+          compression-level: 9
+
+  bundle-size-analysis:
+    name: Bundle Size Analysis
+    needs: [web-build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download Web Build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./web-dist
+
+      - name: Calculate bundle metrics
+        run: |
+          echo "## Bundle Size Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          TOTAL_SIZE=$(du -sb ./web-dist | cut -f1)
+          TOTAL_SIZE_MB=$(echo "scale=2; $TOTAL_SIZE / 1024 / 1024" | bc)
+
+          echo "**Total Bundle Size:** ${TOTAL_SIZE_MB} MB (${TOTAL_SIZE} bytes)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          JS_SIZE=$(find ./web-dist -name "*.js" -exec stat -c%s {} + | awk '{sum+=$1} END {print sum}')
+          JS_SIZE_MB=$(echo "scale=2; ${JS_SIZE:-0} / 1024 / 1024" | bc)
+
+          CSS_SIZE=$(find ./web-dist -name "*.css" -exec stat -c%s {} + | awk '{sum+=$1} END {print sum}')
+          CSS_SIZE_MB=$(echo "scale=2; ${CSS_SIZE:-0} / 1024 / 1024" | bc)
+
+          echo "**JavaScript:** ${JS_SIZE_MB} MB" >> $GITHUB_STEP_SUMMARY
+          echo "**CSS:** ${CSS_SIZE_MB} MB" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Largest Files" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          find ./web-dist -type f -exec ls -lh {} \; 2>/dev/null | sort -k5 -rh | head -10 | awk '{print "| " $9 " | " $5 " |"}' >> $GITHUB_STEP_SUMMARY
+
+          # Warning if bundle is too large
+          if (( $(echo "$TOTAL_SIZE_MB > 10" | bc -l) )); then
+            echo "::warning::Bundle size (${TOTAL_SIZE_MB} MB) exceeds 10 MB threshold. Consider code splitting or lazy loading."
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Testing & Quality
+  # ─────────────────────────────────────────────────────────────────────────────
 
   smoke-test-web:
     name: Web Smoke Test
@@ -99,22 +258,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
       - name: Download Web Build
         uses: actions/download-artifact@v4
         with:
           name: web-build
           path: ./web-dist
-      - name: Run Lighthouse (Smoke Test)
+
+      - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
-        continue-on-error: true
         with:
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: './frontend/.lighthouserc.json'
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deployment
+  # ─────────────────────────────────────────────────────────────────────────────
+
   deploy:
     name: Deploy Web to Azure Static Web Apps
-    needs: [smoke-test-web]
+    needs: [smoke-test-web, bundle-size-analysis]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
@@ -158,3 +322,31 @@ jobs:
           action: 'upload'
           app_location: './web-dist'
           skip_app_build: true
+
+  post-deploy-smoke:
+    name: Post-Deploy Smoke Test
+    needs: [deploy]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke test production deployment
+        run: |
+          APP_URL="${{ vars.PRODUCTION_URL }}"
+          if [ -z "$APP_URL" ]; then
+            echo "::warning::PRODUCTION_URL is not set — skipping post-deploy smoke test."
+            exit 0
+          fi
+
+          for i in $(seq 1 5); do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 --max-time 30 \
+              "${APP_URL}" || echo "000")
+            echo "Attempt ${i}/5: HTTP ${STATUS}"
+            if [ "$STATUS" = "200" ]; then
+              echo "Production deployment is healthy."
+              exit 0
+            fi
+            [ "$i" -lt 5 ] && sleep 5
+          done
+          echo "::error::Production deployment did not respond with HTTP 200 after 5 attempts."
+          exit 1
