@@ -6,6 +6,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from openai import APIConnectionError
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
@@ -86,7 +87,12 @@ async def generate_agent(
     service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> AgentGenerationResponse:
     """Use AI to generate an agent persona."""
-    return await service.generate_agent_profile(data.keywords)
+    try:
+        return await service.generate_agent_profile(data.keywords)
+    except (APIConnectionError, OSError) as e:
+        raise HTTPException(
+            status_code=503, detail="Upstream AI service is currently unreachable"
+        ) from e
 
 
 @router.patch("/{agent_id}", response_model=AgentResponse)
