@@ -4,8 +4,11 @@ import typing
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import pytest
+
 from app.api.dependencies import get_chat_service
 from app.core.security.auth import get_current_user
+from app.domain.chat.dtos import MessageUpdate
 from app.domain.chat.service import ChatService
 from app.main import app
 
@@ -63,3 +66,57 @@ def test_run_crew_route(client: TestClient) -> None:
         assert kwargs.get("accept_language") == "de-DE"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_update_message_route_not_found(client: TestClient) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.update_message.return_value = None
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        room_id = uuid4()
+        message_id = uuid4()
+        response = client.patch(
+            f"/api/v1/rooms/{room_id}/messages/{message_id}",
+            json={"content": "Updated content"},
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+        body = response.json()
+        assert body["detail"]["error"] == "MESSAGE_NOT_FOUND"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_delete_message_route_not_found(client: TestClient) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.delete_message.return_value = False
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        room_id = uuid4()
+        message_id = uuid4()
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}/messages/{message_id}",
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 404
+        body = response.json()
+        assert body["detail"]["error"] == "MESSAGE_NOT_FOUND"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize("bad_content", ["", "   ", "\t\n"])
+def test_message_update_blank_content_rejected(bad_content: str) -> None:
+    """MessageUpdate must reject blank or whitespace-only content."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        MessageUpdate(content=bad_content)

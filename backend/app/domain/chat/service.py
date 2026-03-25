@@ -22,11 +22,14 @@ if TYPE_CHECKING:
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
+    from app.domain.chat.entities import ChatMessageEntity
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 logger = logging.getLogger(__name__)
+
+CONVERSATION_HISTORY_LIMIT = 30
 
 
 class ChatService:
@@ -92,8 +95,10 @@ class ChatService:
             for m in msgs
         ]
 
-    async def update_message(self, message_id: UUID, content: str) -> ChatMessageResponse | None:
-        msg = await self.chat_repo.update_message(message_id, content)
+    async def update_message(
+        self, message_id: UUID, content: str, user_id: UUID | None = None
+    ) -> ChatMessageResponse | None:
+        msg = await self.chat_repo.update_message(message_id, content, user_id=user_id)
         if not msg:
             return None
         return ChatMessageResponse(
@@ -105,8 +110,8 @@ class ChatService:
             created_at=msg.created_at,
         )
 
-    async def delete_message(self, message_id: UUID) -> bool:
-        return await self.chat_repo.soft_delete_message(message_id)
+    async def delete_message(self, message_id: UUID, user_id: UUID | None = None) -> bool:
+        return await self.chat_repo.soft_delete_message(message_id, user_id=user_id)
 
     async def stream_responses(
         self, user_message: str, user_id: UUID, accept_language: str | None = None
@@ -161,7 +166,9 @@ class ChatService:
         return {"task_type": "general", "result": result}
 
     @staticmethod
-    def _build_history(messages: list, agent_by_id: dict[UUID, str] | None = None) -> list[dict]:
+    def _build_history(
+        messages: list[ChatMessageEntity], agent_by_id: dict[UUID, str] | None = None
+    ) -> list[dict]:
         """Convert stored ChatMessageEntity list to history dicts for the orchestrator.
 
         ``agent_by_id`` maps agent UUID → agent name so history entries carry
@@ -189,7 +196,7 @@ class ChatService:
         try:
             await self.agent_service.update_mood(agent_id, recent_context)
         except Exception:
-            logger.warning("Background mood update failed for agent %s", agent_id)
+            logger.warning("Background mood update failed for agent %s", agent_id, exc_info=True)
 
     async def _update_affinity_background(self, user_id: UUID, agent_id: UUID) -> None:
         """Increment the user ↔ agent affinity score after a conversation turn."""
@@ -197,7 +204,10 @@ class ChatService:
             await self.agent_repo.upsert_affinity(user_id, agent_id)
         except Exception:
             logger.warning(
-                "Background affinity update failed for user=%s agent=%s", user_id, agent_id
+                "Background affinity update failed for user=%s agent=%s",
+                user_id,
+                agent_id,
+                exc_info=True,
             )
 
     async def _store_memories_background(
@@ -229,7 +239,7 @@ class ChatService:
 
             # Store each agent response segment individually
             agent_by_name = {a.name.lower(): a for a in responded_agents}
-            segments = ChatWebSocketBroadcaster._parse_transcript(result_text, agent_names)
+            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
             for agent_name, content in segments:
                 matched = (
                     agent_by_name.get(agent_name.lower())
@@ -249,7 +259,7 @@ class ChatService:
                     )
                 )
         except Exception:
-            logger.warning("Background memory storage failed for room=%s", room_id)
+            logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
 
     async def run_room_chat_ws(
         self,
@@ -266,7 +276,9 @@ class ChatService:
         room_agents = await self.chat_repo.list_room_agents(room_id)
 
         # 2. Build conversation history with real agent names before saving the new message.
-        prior_messages = await self.chat_repo.get_room_messages(room_id, limit=30)
+        prior_messages = await self.chat_repo.get_room_messages(
+            room_id, limit=CONVERSATION_HISTORY_LIMIT
+        )
         agent_by_id: dict[UUID, str] = {a.id: a.name for a in room_agents}
         conversation_history = self._build_history(prior_messages, agent_by_id)
 
@@ -336,7 +348,7 @@ class ChatService:
             )
 
             # 7. Fire background tasks: mood update, affinity, and memory storage.
-            history_text = CrewOrchestrator._format_history(conversation_history)
+            history_text = CrewOrchestrator.format_history(conversation_history)
             recent_context = f"{history_text}\nUser: {user_message}\n{result_text}".strip()
 
             for agent in responded_agents:

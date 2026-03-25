@@ -166,12 +166,15 @@ async def update_message(
     room_id: UUID,
     message_id: UUID,
     data: MessageUpdate,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> ChatMessageResponse:
-    msg = await service.update_message(message_id, data.content)
+    msg = await service.update_message(message_id, data.content, user_id=user_id)
     if not msg:
-        raise HTTPException(status_code=404, detail="Message not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"message": "Message not found", "error": "MESSAGE_NOT_FOUND"},
+        )
     return msg
 
 
@@ -180,10 +183,13 @@ async def update_message(
 async def delete_message(
     room_id: UUID,
     message_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    success = await service.delete_message(message_id)
+    success = await service.delete_message(message_id, user_id=user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Message not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"message": "Message not found", "error": "MESSAGE_NOT_FOUND"},
+        )
     return {"status": "ok"}

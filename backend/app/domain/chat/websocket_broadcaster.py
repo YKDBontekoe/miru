@@ -135,7 +135,7 @@ class ChatWebSocketBroadcaster:
         return _step_callback
 
     @staticmethod
-    def _parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
+    def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
         """Parse a multi-agent transcript into (agent_name, message) pairs.
 
         Expected format: 'AgentName: message\\n\\nOtherAgent: message'
@@ -169,7 +169,11 @@ class ChatWebSocketBroadcaster:
 
         # Drop empty segments
         segments = [(n, m) for n, m in segments if m]
-        return segments if segments else [("", result_text.strip())]
+        return (
+            segments
+            if segments
+            else ([] if not result_text.strip() else [("", result_text.strip())])
+        )
 
     async def persist_and_broadcast_agent_response(
         self,
@@ -191,7 +195,7 @@ class ChatWebSocketBroadcaster:
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         agent_by_name = {a.name.lower(): a for a in room_agents}
-        segments = self._parse_transcript(result_text, agent_names)
+        segments = self.parse_transcript(result_text, agent_names)
 
         responded: list[Agent] = []
 

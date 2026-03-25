@@ -257,7 +257,7 @@ class CrewOrchestrator:
         ]
 
     @staticmethod
-    def _format_history(history: list[dict] | None) -> str:
+    def format_history(history: list[dict] | None) -> str:
         """Format conversation history into a compact context string."""
         if not history:
             return ""
@@ -312,7 +312,7 @@ class CrewOrchestrator:
             else ""
         )
 
-        history_text = CrewOrchestrator._format_history(conversation_history)
+        history_text = CrewOrchestrator.format_history(conversation_history)
         history_section = _HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = _MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
 
