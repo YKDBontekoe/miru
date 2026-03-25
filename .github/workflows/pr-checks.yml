@@ -383,12 +383,21 @@ jobs:
           echo "All smoke tests passed."
 
       - name: Run Postman integration tests
+        env:
+          SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
         run: |
           npm install -g newman
           PIDS=()
           for collection in backend/tests/postman/*.json; do
+            # Skip the environment file itself
+            [[ "$collection" == *"environment.json" ]] && continue
             echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            newman run "$collection" \
+              --environment backend/tests/postman/environment.json \
+              --env-var baseUrl=${{ steps.app-url.outputs.url }} \
+              --env-var jwtSecret="${SUPABASE_JWT_SECRET}" \
+              --reporters cli \
+              --reporter-cli-no-banner &
             PIDS+=($!)
           done
 

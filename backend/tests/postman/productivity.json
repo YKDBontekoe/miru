@@ -2,234 +2,809 @@
   "info": {
     "_postman_id": "11111111-1111-1111-1111-000000000005",
     "name": "Productivity Endpoints",
-    "description": "Integration tests for productivity endpoints.",
+    "description": "Integration tests for productivity endpoints. Tests unauthenticated (401) and authenticated CRUD scenarios for tasks, notes, and calendar events.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Generate a Supabase-compatible HS256 JWT for authenticated tests.",
+          "// Requires the `jwtSecret` environment variable to be set via --env-var jwtSecret=<SUPABASE_JWT_SECRET>.",
+          "var secret = pm.environment.get('jwtSecret') || pm.variables.get('jwtSecret');",
+          "if (!secret) { return; }",
+          "",
+          "var userId = pm.environment.get('testUserId') || '11111111-1111-1111-1111-111111111111';",
+          "var now = Math.floor(Date.now() / 1000);",
+          "",
+          "function base64UrlEncode(str) {",
+          "    return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(str))",
+          "        .replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+          "}",
+          "",
+          "var header  = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));",
+          "var payload = base64UrlEncode(JSON.stringify({",
+          "    sub: userId,",
+          "    role: 'authenticated',",
+          "    iss: 'supabase',",
+          "    aud: 'authenticated',",
+          "    iat: now,",
+          "    exp: now + 3600",
+          "}));",
+          "",
+          "var signingInput = header + '.' + payload;",
+          "var signature = CryptoJS.HmacSHA256(signingInput, secret);",
+          "var signatureB64 = CryptoJS.enc.Base64.stringify(signature)",
+          "    .replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+          "",
+          "pm.environment.set('authToken', signingInput + '.' + signatureB64);"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
-      "name": "Create Task",
-      "event": [
+      "name": "Unauthenticated",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
+          "name": "Create Task — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Task by ID — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks/test-task-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks", "test-task-id"]
+            }
+          }
+        },
+        {
+          "name": "Create Note — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Notes — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Note by ID — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes/test-note-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes", "test-note-id"]
+            }
+          }
+        },
+        {
+          "name": "Create Event — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Events — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Event by ID — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events/test-event-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events", "test-event-id"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/tasks",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks"]
-        }
-      }
+      ]
     },
     {
-      "name": "Get Tasks",
-      "event": [
+      "name": "Authenticated — Tasks",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
+          "name": "Get Tasks — empty list returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 with valid auth\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
             ],
-            "type": "text/javascript"
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Create Task — returns 201 with id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has task id\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.environment.set('taskId', json.id);",
+                  "});",
+                  "",
+                  "pm.test(\"Task title matches request\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.title).to.eql('Test Task');",
+                  "});",
+                  "",
+                  "pm.test(\"Task is not completed by default\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.is_completed).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Task\",\n  \"description\": \"A task created by Postman integration test.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Task by ID — returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response id matches created task\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.environment.get('taskId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Task — returns 200 as completed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Task is now completed\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.is_completed).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"is_completed\": true}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Task — returns 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "tasks", "{{taskId}}"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/tasks",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks"]
-        }
-      }
+      ]
     },
     {
-      "name": "Get Task by ID",
-      "event": [
+      "name": "Authenticated — Notes",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
+          "name": "Get Notes — empty list returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 with valid auth\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
             ],
-            "type": "text/javascript"
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Create Note — returns 201 with id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has note id\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.environment.set('noteId', json.id);",
+                  "});",
+                  "",
+                  "pm.test(\"Note title and content match request\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.title).to.eql('Test Note');",
+                  "    pm.expect(json.content).to.eql('Created by Postman integration test.');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Note\",\n  \"content\": \"Created by Postman integration test.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Note by ID — returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response id matches created note\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.environment.get('noteId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes/{{noteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes", "{{noteId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Note — returns 200 as pinned",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Note is now pinned\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.is_pinned).to.eql(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"is_pinned\": true}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes/{{noteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes", "{{noteId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Note — returns 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/notes/{{noteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "notes", "{{noteId}}"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/tasks/test-task-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks", "test-task-id"]
-        }
-      }
+      ]
     },
     {
-      "name": "Create Note",
-      "event": [
+      "name": "Authenticated — Calendar Events",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
+          "name": "Get Events — empty list returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 with valid auth\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is an array\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
             ],
-            "type": "text/javascript"
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events"]
+            }
+          }
+        },
+        {
+          "name": "Create Event — returns 201 with id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has event id\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('id');",
+                  "    pm.environment.set('eventId', json.id);",
+                  "});",
+                  "",
+                  "pm.test(\"Event title matches request\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.title).to.eql('Test Event');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Event\",\n  \"start_time\": \"2026-12-01T09:00:00Z\",\n  \"end_time\": \"2026-12-01T10:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Event by ID — returns 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response id matches created event\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.eql(pm.environment.get('eventId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events", "{{eventId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Event — returns 200 with updated title",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Event title was updated\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.title).to.eql('Updated Test Event');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"Updated Test Event\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events", "{{eventId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Event — returns 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productivity/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "productivity", "events", "{{eventId}}"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/notes",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "notes"]
-        }
-      }
-    },
-    {
-      "name": "Get Notes",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/notes",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "notes"]
-        }
-      }
-    },
-    {
-      "name": "Get Note by ID",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/notes/test-note-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "notes", "test-note-id"]
-        }
-      }
-    },
-    {
-      "name": "Create Event",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/events",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "events"]
-        }
-      }
-    },
-    {
-      "name": "Get Events",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/events",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "events"]
-        }
-      }
-    },
-    {
-      "name": "Get Event by ID",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/productivity/events/test-event-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "events", "test-event-id"]
-        }
-      }
+      ]
     }
   ]
 }

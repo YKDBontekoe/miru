@@ -2,34 +2,110 @@
   "info": {
     "_postman_id": "11111111-1111-1111-1111-000000000006",
     "name": "Integrations Endpoints",
-    "description": "Integration tests for third-party integrations.",
+    "description": "Integration tests for third-party integrations. Tests unauthenticated (401) and authenticated scenarios.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Generate a Supabase-compatible HS256 JWT for authenticated tests.",
+          "// Requires the `jwtSecret` environment variable to be set via --env-var jwtSecret=<SUPABASE_JWT_SECRET>.",
+          "var secret = pm.environment.get('jwtSecret') || pm.variables.get('jwtSecret');",
+          "if (!secret) { return; }",
+          "",
+          "var userId = pm.environment.get('testUserId') || '11111111-1111-1111-1111-111111111111';",
+          "var now = Math.floor(Date.now() / 1000);",
+          "",
+          "function base64UrlEncode(str) {",
+          "    return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(str))",
+          "        .replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+          "}",
+          "",
+          "var header  = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));",
+          "var payload = base64UrlEncode(JSON.stringify({",
+          "    sub: userId,",
+          "    role: 'authenticated',",
+          "    iss: 'supabase',",
+          "    aud: 'authenticated',",
+          "    iat: now,",
+          "    exp: now + 3600",
+          "}));",
+          "",
+          "var signingInput = header + '.' + payload;",
+          "var signature = CryptoJS.HmacSHA256(signingInput, secret);",
+          "var signatureB64 = CryptoJS.enc.Base64.stringify(signature)",
+          "    .replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+          "",
+          "pm.environment.set('authToken', signingInput + '.' + signatureB64);"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
   "item": [
     {
-      "name": "Steam Resolve User",
-      "event": [
+      "name": "Unauthenticated",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
+          "name": "Steam Resolve User — no auth returns 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 without auth\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/integrations/steam/resolve-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "integrations", "steam", "resolve-user"]
+            }
           }
         }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/integrations/steam/resolve-user",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "integrations", "steam", "resolve-user"]
+      ]
+    },
+    {
+      "name": "Authenticated",
+      "item": [
+        {
+          "name": "Steam Resolve User — missing username returns 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422 when username is missing\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/integrations/steam/resolve-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "integrations", "steam", "resolve-user"]
+            }
+          }
         }
-      }
+      ]
     }
   ]
 }

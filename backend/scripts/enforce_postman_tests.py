@@ -124,6 +124,9 @@ def main() -> None:
 
     postman_endpoints = set()
     for json_file in postman_dir.glob("*.json"):
+        # Skip the Postman environment file — it has no collection items.
+        if json_file.name == "environment.json":
+            continue
         postman_endpoints.update(get_postman_endpoints(str(json_file)))
 
     added_routes = extract_added_routes()
