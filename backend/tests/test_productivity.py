@@ -588,6 +588,75 @@ async def test_map_note_and_event_no_values_fetched() -> None:
     from app.infrastructure.repositories.productivity_repo import _map_event, _map_note
 
     mock_user_id = uuid.uuid4()
+
+    class MockNote:
+        def __init__(self) -> None:
+            self.id = uuid.uuid4()
+            self.user_id = mock_user_id
+            self.title = "T"
+            self.content = "C"
+            self.is_pinned = False
+            self.created_at = datetime.now(UTC)
+            self.updated_at = datetime.now(UTC)
+            self.deleted_at = None
+            self.agent_id = "invalid-uuid"  # Force extract_uuid to return None
+            self.origin_message_id = "invalid-uuid"
+            self.origin_context = None
+
+        @property
+        def agent(self):
+            from tortoise.exceptions import NoValuesFetched
+
+            raise NoValuesFetched("agent not fetched")
+
+        @property
+        def origin_message(self):
+            from tortoise.exceptions import NoValuesFetched
+
+            raise NoValuesFetched("origin_message not fetched")
+
+    class MockEvent:
+        def __init__(self) -> None:
+            self.id = uuid.uuid4()
+            self.user_id = mock_user_id
+            self.title = "T"
+            self.description = None
+            self.start_time = datetime.now(UTC)
+            self.end_time = datetime.now(UTC)
+            self.is_all_day = False
+            self.location = None
+            self.created_at = datetime.now(UTC)
+            self.updated_at = datetime.now(UTC)
+            self.deleted_at = None
+            self.agent_id = "invalid-uuid"
+            self.origin_message_id = "invalid-uuid"
+            self.origin_context = None
+
+        @property
+        def agent(self):
+            from tortoise.exceptions import NoValuesFetched
+
+            raise NoValuesFetched("agent not fetched")
+
+        @property
+        def origin_message(self):
+            from tortoise.exceptions import NoValuesFetched
+
+            raise NoValuesFetched("origin_message not fetched")
+
+    mn = MockNote()
+    en = _map_note(mn)  # type: ignore
+    assert en.agent_id is None
+    assert en.origin_message_id is None
+
+    me = MockEvent()
+    ee = _map_event(me)  # type: ignore
+    assert ee.agent_id is None
+    assert ee.origin_message_id is None
+
+    from app.infrastructure.repositories.productivity_repo import _map_event, _map_note
+
+    mock_user_id = uuid.uuid4()
     mock_id = uuid.uuid4()
 
     # Create an unsaved Note instance with string IDs (which extract_uuid rejects, returning None)
