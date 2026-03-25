@@ -131,6 +131,23 @@ async def get_room_agents(
 
 
 # DOCS(miru-agent): undocumented endpoint
+@router.delete("/rooms/{room_id}/agents/{agent_id}")
+async def remove_agent_from_room(
+    room_id: UUID,
+    agent_id: UUID,
+    _user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> dict[str, str]:
+    success = await service.remove_agent_from_room(room_id, agent_id)
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail={"message": "Agent not found in room", "error": "AGENT_NOT_IN_ROOM"},
+        )
+    return {"status": "ok"}
+
+
+# DOCS(miru-agent): undocumented endpoint
 @router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
 async def get_room_messages(
     room_id: UUID,

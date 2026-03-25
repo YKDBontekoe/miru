@@ -11,6 +11,8 @@ from app.domain.agents.models import (
     AgentGenerationResponse,
     AgentIntegration,
     AgentResponse,
+    AgentTemplateResponse,
+    AgentUpdate,
     Capability,
     Integration,
 )
@@ -169,6 +171,46 @@ class AgentService:
             messages=messages,
             response_model=AgentGenerationResponse,
         )
+
+    async def update_agent(
+        self, agent_id: UUID | str, user_id: UUID, data: AgentUpdate
+    ) -> AgentResponse | None:
+        """Update an agent's profile fields and rebuild system prompt in one write."""
+        # First fetch the agent to get current state (capability IDs, etc.)
+        agent = await self.repo.get_by_id(agent_id)
+        if not agent or str(agent.user_id) != str(user_id):
+            return None
+
+        fields = data.model_dump(exclude_none=True)
+        # Merge incoming fields with current values so build_system_prompt has full context
+        name = fields.get("name", agent.name)
+        personality = fields.get("personality", agent.personality)
+        description = fields.get("description", agent.description)
+        goals = fields.get("goals", agent.goals)
+        capability_ids = [str(c.id) for c in (await agent.capabilities.all())]
+
+        updated_prompt = await self.build_system_prompt(
+            name=name,
+            personality=personality,
+            description=description,
+            goals=goals,
+            capability_ids=capability_ids or None,
+        )
+        fields["system_prompt"] = updated_prompt
+
+        updated = await self.repo.update_agent(agent_id, user_id, **fields)
+        if not updated:
+            return None
+        return _build_agent_response(updated)
+
+    async def delete_agent(self, agent_id: UUID | str, user_id: UUID) -> bool:
+        """Soft-delete an agent owned by user_id."""
+        return await self.repo.delete_agent(agent_id, user_id)
+
+    async def list_templates(self, skip: int = 0, limit: int = 100) -> list[AgentTemplateResponse]:
+        """Return available agent persona templates (paginated)."""
+        templates = await self.repo.list_templates(skip=skip, limit=limit)
+        return [AgentTemplateResponse.model_validate(t) for t in templates]
 
     async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
         """Analyze history and update agent mood via repository."""

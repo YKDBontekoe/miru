@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
-from app.domain.agents.models import Agent, Capability, Integration
+from app.domain.agents.models import Agent, AgentTemplate, Capability, Integration
 
 
 class AgentRepository:
@@ -29,14 +30,18 @@ class AgentRepository:
         )
 
     async def list_by_user(self, user_id: UUID | str) -> list[Agent]:
-        """List all agents for a user, with capabilities and integrations prefetched."""
+        """List all agents for a user, excluding soft-deleted ones."""
         if isinstance(user_id, str):
             user_id = UUID(user_id)
         return (
-            await Agent.filter(user_id=user_id)
+            await Agent.filter(user_id=user_id, deleted_at__isnull=True)
             .prefetch_related("capabilities", "agent_integrations__integration")
             .all()
         )
+
+    async def list_templates(self, skip: int = 0, limit: int = 100) -> list[AgentTemplate]:
+        """List agent templates (paginated)."""
+        return await AgentTemplate.all().offset(skip).limit(limit)
 
     async def create(self, agent: Agent) -> Agent:
         """Create a new agent."""
@@ -49,6 +54,44 @@ class AgentRepository:
         if agent:
             agent.mood = mood
             await agent.save()
+
+    _ALLOWED_AGENT_FIELDS: frozenset[str] = frozenset(
+        {"name", "personality", "description", "goals", "system_prompt", "mood"}
+    )
+
+    async def update_agent(
+        self, agent_id: UUID | str, user_id: UUID | str, **fields: object
+    ) -> Agent | None:
+        """Update an agent's fields. Only updates the owner's agent."""
+        unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
+        if unknown:
+            raise ValueError(f"update_agent received unknown fields: {unknown}")
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
+            "capabilities", "agent_integrations__integration"
+        )
+        if agent:
+            for key, value in fields.items():
+                if value is not None:
+                    setattr(agent, key, value)
+            await agent.save()
+        return agent
+
+    async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:
+        """Soft-delete an agent by setting deleted_at. Only deletes the owner's agent."""
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        agent = await Agent.get_or_none(id=agent_id, user_id=user_id, deleted_at__isnull=True)
+        if agent:
+            agent.deleted_at = datetime.now(UTC)
+            await agent.save()
+            return True
+        return False
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""

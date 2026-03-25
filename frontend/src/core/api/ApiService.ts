@@ -1,6 +1,14 @@
 import { apiClient, streamChat } from './client';
 import { Agent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
 
+type AgentTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  personality: string;
+  goals: string[];
+};
+
 // The backend Task schema uses is_completed; normalise to the frontend shape.
 function normalizeTask(raw: Record<string, unknown>): Task {
   const { is_completed, ...rest } = raw as Record<string, unknown> & { is_completed?: boolean };
@@ -29,13 +37,22 @@ export const ApiService = {
     return response.data;
   },
 
-  async generateAgent(keywords: string): Promise<{ name: string; personality: string }> {
-    const response = await apiClient.post<{ name: string; personality: string }>(
-      'agents/generate',
-      {
-        keywords,
-      }
-    );
+  async generateAgent(keywords: string): Promise<{
+    name: string;
+    personality: string;
+    description: string;
+    goals: string[];
+    capabilities: string[];
+    suggested_integrations: string[];
+  }> {
+    const response = await apiClient.post<{
+      name: string;
+      personality: string;
+      description: string;
+      goals: string[];
+      capabilities: string[];
+      suggested_integrations: string[];
+    }>('agents/generate', { keywords });
     return response.data;
   },
 
@@ -62,6 +79,27 @@ export const ApiService = {
 
   async addAgentToRoom(roomId: string, agentId: string): Promise<void> {
     await apiClient.post(`rooms/${roomId}/agents`, { agent_id: agentId });
+  },
+
+  async removeAgentFromRoom(roomId: string, agentId: string): Promise<void> {
+    await apiClient.delete(`rooms/${roomId}/agents/${agentId}`);
+  },
+
+  async updateAgent(
+    id: string,
+    data: Partial<Pick<Agent, 'name' | 'personality' | 'description' | 'goals'>>
+  ): Promise<Agent> {
+    const response = await apiClient.patch<Agent>(`agents/${id}`, data);
+    return response.data;
+  },
+
+  async deleteAgent(id: string): Promise<void> {
+    await apiClient.delete(`agents/${id}`);
+  },
+
+  async getTemplates(): Promise<AgentTemplate[]> {
+    const response = await apiClient.get<AgentTemplate[]>('agents/templates');
+    return response.data;
   },
 
   // --- Productivity: Notes ---

@@ -29,10 +29,10 @@ if [ -d "$ROOT_DIR/backend" ]; then
         EXIT_CODE=1
     fi
     
-    # Run black check
-    echo "Running black check..."
-    if ! ${VENV_BIN}black --check .; then
-        echo "Black formatting issues found. Run 'black .' to fix."
+    # Run ruff format check (matches CI which uses ruff format, not black)
+    echo "Running ruff format check..."
+    if ! ${VENV_BIN}ruff format --check .; then
+        echo "Ruff formatting issues found. Run 'ruff format .' to fix."
         EXIT_CODE=1
     fi
     
