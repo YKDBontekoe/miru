@@ -56,6 +56,24 @@ class Profile(SupabaseModel):
         ]
 
 
+class AuditLog(SupabaseModel):
+    """Secure append-only log of user data access."""
+
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(null=True, db_index=True)
+    action = fields.CharField(max_length=50)
+    resource = fields.CharField(max_length=255)
+    ip_address = fields.CharField(max_length=45, null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+
+    class Meta:
+        table = "audit_logs"
+        sql_policies = [
+            "ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;",
+            "CREATE POLICY audit_logs_select_own ON public.audit_logs FOR SELECT USING (auth.uid() = user_id);",
+        ]
+
+
 class Passkey(SupabaseModel):
     """WebAuthn passkeys for passwordless login."""
 

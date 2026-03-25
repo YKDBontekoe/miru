@@ -69,6 +69,16 @@ CREATE TABLE IF NOT EXISTS "user_agent_affinity" (
     CONSTRAINT "uid_user_agent__user_id_2ad232" UNIQUE ("user_id", "agent_id")
 );
 COMMENT ON TABLE "user_agent_affinity" IS 'Tracks relationship strength between a user and an agent.';
+CREATE TABLE IF NOT EXISTS "audit_logs" (
+    "id" UUID NOT NULL PRIMARY KEY,
+    "user_id" UUID,
+    "action" VARCHAR(50) NOT NULL,
+    "resource" VARCHAR(255) NOT NULL,
+    "ip_address" VARCHAR(45),
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_audit_logs_user_id_f7db5c" ON "audit_logs" ("user_id");
+COMMENT ON TABLE "audit_logs" IS 'Secure append-only log of user data access.';
 CREATE TABLE IF NOT EXISTS "passkeys" (
     "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID NOT NULL,

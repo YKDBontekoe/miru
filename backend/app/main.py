@@ -6,7 +6,8 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
+import jwt
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.agents import router as agents_router
@@ -17,6 +18,7 @@ from app.api.v1.memory import router as memory_router
 from app.api.v1.productivity import router as productivity_router
 from app.api.v1.websocket import router as websocket_router
 from app.core.config import get_settings
+from app.domain.auth.models import AuditLog
 from app.domain.notifications.api.router import router as notifications_router
 from app.infrastructure.database.tortoise import close_db, init_db
 
@@ -80,6 +82,46 @@ app.include_router(productivity_router, prefix="/api/v1/productivity")
 app.include_router(integrations_router, prefix="/api/v1/integrations")
 app.include_router(notifications_router, prefix="/api/v1/notifications")
 app.include_router(websocket_router, prefix="/api/v1")
+
+
+@app.middleware("http")
+async def audit_log_middleware(request: Request, call_next):
+    # To log status code and handle unhandled exceptions safely
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        user_id = None
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            try:
+                from app.api.dependencies import get_auth_service
+                auth_service = get_auth_service()
+                # Verify token securely
+                payload = await auth_service.decode_jwt(token)
+                user_id = payload.sub
+            except Exception:
+                pass  # Invalid token, ignore
+
+        ip_address = request.client.host if request.client else None
+        action = request.method
+        resource = request.url.path
+
+        # Format action with status code
+        action_with_status = f"{action} {status_code}"
+
+        try:
+            await AuditLog.create(
+                user_id=user_id,
+                action=action_with_status,
+                resource=resource,
+                ip_address=ip_address,
+            )
+        except Exception:
+            logger.exception("Failed to write audit log")
 
 
 @app.get("/health")
