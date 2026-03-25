@@ -27,7 +27,8 @@ def chat_service() -> ChatService:
 
     agent_repo = AsyncMock()
     memory_repo = AsyncMock()
-    return ChatService(chat_repo, agent_repo, memory_repo)
+    agent_service = AsyncMock()
+    return ChatService(chat_repo, agent_repo, memory_repo, agent_service)
 
 
 def test_get_agent_tools(chat_service: typing.Any) -> None:
@@ -178,7 +179,8 @@ async def test_run_crew_task_has_single_agent(
         _, kwargs = mock_task_cls.call_args
         assert "agent" in kwargs
         assert kwargs["agent"] == mock_crew_agent
-        assert "es-ES" in kwargs["description"]
+        # Language code is resolved to name before being injected into the prompt
+        assert "Spanish" in kwargs["description"]
 
         # Verify Crew was instantiated with agents list
         mock_crew_cls.assert_called_once()
@@ -242,7 +244,8 @@ async def test_run_crew_task_has_multiple_agents(
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
         assert "agent" not in kwargs
-        assert "es-ES" in kwargs["description"]
+        # Language code is resolved to name before being injected into the prompt
+        assert "Spanish" in kwargs["description"]
 
         # Verify Crew was instantiated hierarchically with manager_llm
         mock_crew_cls.assert_called_once()
@@ -252,154 +255,6 @@ async def test_run_crew_task_has_multiple_agents(
         assert "manager_llm" in crew_kwargs
         assert crew_kwargs["manager_llm"] == mock_llm
         assert crew_kwargs["process"] == mock_process.hierarchical
-
-
-@pytest.mark.asyncio
-async def test_stream_room_responses_single_agent(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-
-    user_id = uuid4()
-    room_id = uuid4()
-
-    agent = MagicMock()
-    agent.id = uuid4()
-    agent.name = "Test Agent"
-    agent.personality = "Helpful"
-    agent.description = "A helpful agent"
-    agent.agent_integrations = []
-
-    chat_service.chat_repo.list_room_agents.return_value = [agent]
-
-    mock_llm = MagicMock()
-    mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(
-        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
-        MagicMock(return_value=mock_llm),
-    )
-
-    with (
-        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
-        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
-        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,
-    ):
-        mock_crew_agent = MagicMock()
-        mock_crew_agent.role = "Test Agent"
-        mock_agent_cls.return_value = mock_crew_agent
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
-        mock_crew_cls.return_value = mock_crew_instance
-
-        responses = []
-        async for r in chat_service.stream_room_responses(
-            room_id, "hello", user_id, accept_language="de-DE"
-        ):
-            responses.append(r)
-
-        assert "Crew output" in responses
-        assert "[[STATUS:done]]\n" in responses
-
-        mock_task_cls.assert_called_once()
-        _, kwargs = mock_task_cls.call_args
-        assert "de-DE" in kwargs["description"]
-        assert "agent" in kwargs
-        assert kwargs["agent"] == mock_crew_agent
-
-        # Verify Crew was instantiated with agents list
-        mock_crew_cls.assert_called_once()
-        _, crew_kwargs = mock_crew_cls.call_args
-        assert "agents" in crew_kwargs
-        assert crew_kwargs["agents"] == [mock_crew_agent]
-        assert crew_kwargs["process"] == mock_process.sequential
-
-
-@pytest.mark.asyncio
-async def test_stream_room_responses_multiple_agents(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-
-    user_id = uuid4()
-    room_id = uuid4()
-
-    agent1 = MagicMock()
-    agent1.id = uuid4()
-    agent1.name = "Test Agent 1"
-    agent1.personality = "Helpful"
-    agent1.description = "A helpful agent"
-    agent1.agent_integrations = []
-
-    agent2 = MagicMock()
-    agent2.id = uuid4()
-    agent2.name = "Test Agent 2"
-    agent2.personality = "Funny"
-    agent2.description = "A funny agent"
-    agent2.agent_integrations = []
-
-    chat_service.chat_repo.list_room_agents.return_value = [agent1, agent2]
-
-    mock_llm = MagicMock()
-    mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(
-        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
-        MagicMock(return_value=mock_llm),
-    )
-
-    with (
-        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,
-        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
-        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,
-    ):
-        mock_crew_agent1 = MagicMock()
-        mock_crew_agent1.role = "Test Agent 1"
-        mock_crew_agent2 = MagicMock()
-        mock_crew_agent2.role = "Test Agent 2"
-        mock_agent_cls.side_effect = [mock_crew_agent1, mock_crew_agent2]
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
-        mock_crew_cls.return_value = mock_crew_instance
-
-        responses = []
-        async for r in chat_service.stream_room_responses(
-            room_id, "hello", user_id, accept_language="pt-BR"
-        ):
-            responses.append(r)
-
-        assert "Crew output" in responses
-        assert "[[STATUS:done]]\n" in responses
-
-        mock_task_cls.assert_called_once()
-        _, kwargs = mock_task_cls.call_args
-        assert "pt-BR" in kwargs["description"]
-        assert "agent" not in kwargs
-
-        # Verify Crew was instantiated with multiple agents
-        mock_crew_cls.assert_called_once()
-        _, crew_kwargs = mock_crew_cls.call_args
-        assert "agents" in crew_kwargs
-        assert crew_kwargs["agents"] == [mock_crew_agent1, mock_crew_agent2]
-        assert crew_kwargs["process"] == mock_process.hierarchical
-        assert "manager_llm" in crew_kwargs
-        assert crew_kwargs["manager_llm"] == mock_llm
-
-
-@pytest.mark.asyncio
-async def test_stream_room_responses_no_agents(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    user_id = uuid4()
-    room_id = uuid4()
-
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
-
-    responses = []
-    async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
-        responses.append(r)
-
-    assert responses == ["No agents in this room. Please add some first."]
 
 
 @pytest.mark.asyncio
@@ -454,158 +309,6 @@ async def test_stream_responses_no_agents(chat_service: typing.Any) -> None:
         responses.append(r)
 
     assert responses == ["No agents available. Please create one first."]
-
-
-@pytest.mark.asyncio
-async def test_stream_room_responses_slow_kickoff(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import asyncio
-
-    user_id = uuid4()
-    room_id = uuid4()
-
-    agent = MagicMock()
-    agent.id = uuid4()
-    agent.name = "Slow Agent"
-    agent.personality = "Slow"
-    agent.description = "A slow agent"
-    agent.agent_integrations = []
-
-    chat_service.chat_repo.list_room_agents.return_value = [agent]
-
-    mock_llm = MagicMock()
-    mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(
-        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
-        MagicMock(return_value=mock_llm),
-    )
-
-    with (
-        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,  # noqa: F841
-        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
-        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,  # noqa: F841
-    ):
-        mock_crew_agent = MagicMock()
-        mock_crew_agent.role = "Slow Agent"
-        mock_agent_cls.return_value = mock_crew_agent
-
-        async def delayed_kickoff() -> str:
-            await asyncio.sleep(2.5)
-            return "Delayed Crew output"
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = delayed_kickoff
-        mock_crew_cls.return_value = mock_crew_instance
-
-        responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello slow", user_id):
-            responses.append(r)
-
-        assert "[[STATUS:thinking]]\n" in responses
-        assert "Delayed Crew output" in responses
-        assert "[[STATUS:done]]\n" in responses
-
-
-@pytest.mark.asyncio
-async def test_stream_room_responses_increment_failure(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """increment_message_count failure is swallowed; stream completes normally."""
-
-    user_id = uuid4()
-    room_id = uuid4()
-
-    agent = MagicMock()
-    agent.id = uuid4()
-    agent.name = "Test Agent"
-    agent.personality = "Helpful"
-    agent.description = "A helpful agent"
-    agent.agent_integrations = []
-
-    chat_service.chat_repo.list_room_agents.return_value = [agent]
-    chat_service.agent_repo.increment_message_count = AsyncMock(side_effect=Exception("DB down"))
-
-    mock_llm = MagicMock()
-    mock_llm.model = "openrouter/test-model"
-    monkeypatch.setattr(
-        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
-        MagicMock(return_value=mock_llm),
-    )
-
-    with (
-        patch("app.domain.chat.crew_orchestrator.Task"),
-        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
-        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.crew_orchestrator.Process"),
-    ):
-        mock_crew_agent = MagicMock()
-        mock_agent_cls.return_value = mock_crew_agent
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
-        mock_crew_cls.return_value = mock_crew_instance
-
-        responses = []
-        async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
-            responses.append(r)
-
-        # Despite increment failure, stream ends with result and done status
-        assert "Crew output" in responses
-        assert "[[STATUS:done]]\n" in responses
-
-
-@pytest.mark.asyncio
-async def test_stream_room_responses_cancel_task(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import asyncio
-
-    user_id = uuid4()
-    room_id = uuid4()
-
-    agent = MagicMock()
-    agent.id = uuid4()
-    agent.name = "Test Agent"
-    agent.personality = "Helpful"
-    agent.description = "A helpful agent"
-    agent.agent_integrations = []
-
-    chat_service.chat_repo.list_room_agents.return_value = [agent]
-
-    mock_llm = MagicMock()
-    monkeypatch.setattr(
-        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
-        MagicMock(return_value=mock_llm),
-    )
-
-    with (
-        patch("app.domain.chat.crew_orchestrator.Task") as mock_task_cls,  # noqa: F841
-        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
-        patch("app.domain.chat.crew_orchestrator.crewai.Agent") as mock_agent_cls,
-        patch("app.domain.chat.crew_orchestrator.Process") as mock_process,  # noqa: F841
-    ):
-        mock_crew_agent = MagicMock()
-        mock_agent_cls.return_value = mock_crew_agent
-
-        async def infinite_kickoff() -> str:
-            await asyncio.sleep(100)
-            return "Should not reach here"
-
-        mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = infinite_kickoff
-        mock_crew_cls.return_value = mock_crew_instance
-
-        iterator = chat_service.stream_room_responses(room_id, "hello", user_id)
-
-        response1 = await anext(iterator)
-        assert response1 == "[[STATUS:thinking]]\n"
-
-        # Simulate client disconnect by closing the generator early
-        await iterator.aclose()
-        # The background task should have been cancelled in the finally block
-        # We can't directly check the background_task status easily but this covers the finally block
 
 
 @pytest.mark.asyncio
@@ -720,7 +423,8 @@ async def test_execute_crew_task(
 
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
-        assert "ja-JP" in kwargs["description"]
+        # Language code is resolved to readable name in the prompt
+        assert "Japanese" in kwargs["description"]
 
 
 @pytest.mark.asyncio
@@ -765,7 +469,8 @@ async def test_execute_crew_task_multi(
 
         mock_task_cls.assert_called_once()
         _, kwargs = mock_task_cls.call_args
-        assert "hi-IN" in kwargs["description"]
+        # Language code is resolved to readable name in the prompt
+        assert "Hindi" in kwargs["description"]
 
 
 @pytest.mark.asyncio
@@ -788,7 +493,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
 
-        await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
+        responded = await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
@@ -798,6 +503,9 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).assert_called_once_with(room_agents[0].id)
         assert mock_hub.broadcast_to_room.call_count == 1
+        # Only the agent that actually responded is returned
+        assert len(responded) == 1
+        assert responded[0] == room_agents[0]
 
 
 @pytest.mark.asyncio
@@ -868,10 +576,14 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
             new_callable=AsyncMock,
         ) as m_agent_resp,
         patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
+        patch("app.domain.chat.service.asyncio.create_task") as m_create_task,
     ):
         mock_hub.broadcast_to_room = AsyncMock()
         m_persist.return_value = MagicMock(id=uuid4())
         m_exec.return_value = "Result"
+        # Return empty list so no mood/affinity tasks are scheduled
+        m_agent_resp.return_value = []
+        m_create_task.return_value = MagicMock()
 
         await chat_service.run_room_chat_ws(room_id, "Hello", user_id, accept_language="es-MX")
 
@@ -886,3 +598,5 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room.assert_called_once()
         assert mock_hub.broadcast_to_room.call_args[0][1]["type"] == "agent_activity"
         assert mock_hub.broadcast_to_room.call_args[0][1]["data"]["activity"] == "done"
+        # Background memory task should have been scheduled
+        m_create_task.assert_called_once()

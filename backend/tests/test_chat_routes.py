@@ -63,36 +63,3 @@ def test_run_crew_route(client: TestClient) -> None:
         assert kwargs.get("accept_language") == "de-DE"
     finally:
         app.dependency_overrides.clear()
-
-
-def test_chat_in_room_route(client: TestClient) -> None:
-    user_id = uuid4()
-    app.dependency_overrides[get_current_user] = lambda: user_id
-
-    mock_service = AsyncMock(spec=ChatService)
-
-    async def mock_stream(
-        room_id: typing.Any,
-        message: str,
-        user_id: typing.Any,
-        accept_language: str | None = None,
-        **kwargs: typing.Any,
-    ) -> typing.AsyncGenerator[str, None]:
-        assert accept_language == "es-ES"
-        yield "Room"
-        yield " Message"
-
-    mock_service.stream_room_responses = mock_stream
-    app.dependency_overrides[get_chat_service] = lambda: mock_service
-
-    room_id = str(uuid4())
-
-    try:
-        response = client.post(
-            f"/api/v1/rooms/{room_id}/chat",
-            json={"message": "Hi in room"},
-            headers={"Accept-Language": "es-ES", "Authorization": "Bearer test-token"},
-        )
-        assert response.status_code == 200
-    finally:
-        app.dependency_overrides.clear()
