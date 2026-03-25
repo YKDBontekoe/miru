@@ -68,3 +68,16 @@ jobs:
 
             echo "Successfully cleaned up PR environment for PR #${{ github.event.pull_request.number }}."
           fi
+
+      - name: Drop Ephemeral Database Schema
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          SCHEMA_NAME="pr_${{ github.event.pull_request.number }}"
+          echo "Dropping database schema: $SCHEMA_NAME"
+          
+          # Use psql to drop the schema. We use -v ON_ERROR_STOP=1 to ensure the script fails if the SQL fails.
+          # The connection string might need conversion from postgresql:// to postgres:// for some tools,
+          # but psql handles postgresql:// just fine.
+          psql "$DATABASE_URL" -c "DROP SCHEMA IF EXISTS $SCHEMA_NAME CASCADE;"
+

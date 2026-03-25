@@ -72,7 +72,13 @@ async def init_db() -> None:
         if settings.db_schema.startswith("pr_"):
             # Drop all tables in this schema and recreate them
             await Tortoise._drop_databases()
-            await Tortoise.generate_schemas()
+
+            # Use Aerich to run migrations
+            from aerich import Command
+
+            command = Command(tortoise_config=TORTOISE_ORM, app="models")
+            await command.init()
+            await command.upgrade(run_in_transaction=True)
 
             # Seed the test user for integration tests
             if settings.test_user_id:
