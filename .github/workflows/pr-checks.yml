@@ -388,8 +388,59 @@ jobs:
       - name: Run Postman integration tests
         env:
           SUPABASE_JWT_SECRET: ${{ secrets.STAGING_SUPABASE_JWT_SECRET }}
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.STAGING_SUPABASE_KEY }}
+          SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
+          SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
         run: |
           npm install -g newman
+
+          AUTH_TOKEN=$(python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          url = os.environ["SUPABASE_URL"].rstrip("/") + "/auth/v1/token?grant_type=password"
+          payload = {
+              "email": os.environ["SUPABASE_TEST_EMAIL"],
+              "password": os.environ["SUPABASE_TEST_PASSWORD"],
+          }
+
+          request = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "apikey": os.environ["SUPABASE_KEY"],
+                  "Content-Type": "application/json",
+              },
+              method="POST",
+          )
+
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              detail = exc.read().decode("utf-8", errors="replace")
+              print(
+                  f"::error::Failed to obtain Supabase test token (HTTP {exc.code}): {detail}",
+                  file=sys.stderr,
+              )
+              raise
+          except Exception as exc:
+              print(f"::error::Failed to obtain Supabase test token: {exc}", file=sys.stderr)
+              raise
+
+          token = body.get("access_token")
+          if not token:
+              print("::error::Supabase auth response did not include access_token", file=sys.stderr)
+              raise RuntimeError("Missing access_token")
+
+          print(token)
+          PY
+          )
+
           PIDS=()
           for collection in backend/tests/postman/*.json; do
             # Skip the environment file itself
@@ -398,6 +449,7 @@ jobs:
             newman run "$collection" \
               --environment backend/tests/postman/environment.json \
               --env-var baseUrl=${{ steps.app-url.outputs.url }} \
+              --env-var authToken="${AUTH_TOKEN}" \
               --env-var jwtSecret="${SUPABASE_JWT_SECRET}" \
               --reporters cli \
               --reporter-cli-no-banner &
