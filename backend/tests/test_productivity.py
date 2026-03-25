@@ -20,13 +20,17 @@ from app.main import app
 @pytest_asyncio.fixture(autouse=True)
 async def clear_productivity_db() -> AsyncGenerator[None]:
     """Clear tasks and notes tables before each test."""
+    from app.domain.agents.models import Agent
+
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
+    await Agent.all().delete()
     yield
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
+    await Agent.all().delete()
 
 
 @pytest.fixture
@@ -255,7 +259,11 @@ async def test_list_notes(
     override_get_current_user: None,
 ) -> None:
     """Test listing notes, checking isolation and pin ordering."""
-    await Note.create(user_id=mock_user_id, title="Note 1", content="C1")
+    from app.domain.agents.models import Agent
+
+    agent = await Agent.create(user_id=mock_user_id, name="Test Agent", personality="Friendly")
+
+    await Note.create(user_id=mock_user_id, title="Note 1", content="C1", agent_id=agent.id)
     await Note.create(user_id=mock_user_id, title="Note 2", content="C2", is_pinned=True)
     await Note.create(user_id=another_user_id, title="Other User Note", content="O1")
 
@@ -267,6 +275,10 @@ async def test_list_notes(
     assert data[0]["title"] == "Note 2"
     titles = [n["title"] for n in data]
     assert "Other User Note" not in titles
+
+    # Check that agent_id is correctly mapped and not discarded
+    note1 = next(n for n in data if n["title"] == "Note 1")
+    assert note1["agent_id"] == str(agent.id)
 
 
 @pytest.mark.asyncio
@@ -399,14 +411,23 @@ async def test_list_events(
     """Test listing calendar events."""
     from datetime import datetime, timedelta
 
+    from app.domain.agents.models import Agent
+
     now = datetime.now(UTC)
+    agent = await Agent.create(user_id=mock_user_id, name="Test Agent", personality="Friendly")
     await CalendarEvent.create(
-        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+        user_id=mock_user_id,
+        title="Event 1",
+        start_time=now,
+        end_time=now + timedelta(hours=1),
+        agent_id=agent.id,
     )
 
     response = await async_client.get("/api/v1/productivity/events")
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["agent_id"] == str(agent.id)
 
 
 @pytest.mark.asyncio
