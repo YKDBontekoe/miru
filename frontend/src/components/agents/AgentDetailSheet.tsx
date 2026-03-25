@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   TouchableOpacity,
@@ -37,6 +38,7 @@ export function AgentDetailSheet({
   onDeleted,
   onUpdated,
 }: AgentDetailSheetProps) {
+  const { i18n } = useTranslation();
   const { C } = useTheme();
   const router = useRouter();
   const { updateAgent } = useAgentStore();
@@ -720,11 +722,11 @@ export function AgentDetailSheet({
                   }}
                 >
                   Created{' '}
-                  {new Date(agent.created_at).toLocaleDateString(undefined, {
+                  {new Intl.DateTimeFormat(i18n.language, {
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric',
-                  })}
+                  }).format(new Date(agent.created_at))}
                 </AppText>
               </Animated.View>
             )}

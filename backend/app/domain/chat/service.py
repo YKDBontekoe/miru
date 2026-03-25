@@ -102,18 +102,12 @@ class ChatService:
         model_name = get_settings().default_chat_model
 
         messages: list[dict[str, str]] = [{"role": "system", "content": agent.personality}]
-        if accept_language:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
-                }
-            )
         messages.append({"role": "user", "content": user_message})
 
         response = await stream_chat(
             model=model_name,
             messages=messages,  # type: ignore[arg-type]
+            accept_language=accept_language,
         )
 
         async for chunk in response:
