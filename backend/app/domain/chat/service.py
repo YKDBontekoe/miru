@@ -111,7 +111,7 @@ class ChatService:
             )
         messages.append({"role": "user", "content": user_message})
 
-        response = await stream_chat(
+        response = stream_chat(
             model=model_name,
             messages=messages,  # type: ignore[arg-type]
         )

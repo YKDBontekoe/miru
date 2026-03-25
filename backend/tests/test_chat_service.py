@@ -424,16 +424,17 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     chunk3 = MagicMock()
     chunk3.choices = []
 
-    async def mock_async_generator() -> typing.AsyncGenerator[typing.Any, None]:
+    async def mock_async_generator(
+        *args: typing.Any, **kwargs: typing.Any
+    ) -> typing.AsyncGenerator[typing.Any, None]:
         yield chunk1
         yield chunk3
         yield chunk2
 
     with patch(
         "app.domain.chat.service.stream_chat",
-        new_callable=AsyncMock,
     ) as mock_stream_chat:
-        mock_stream_chat.return_value = mock_async_generator()
+        mock_stream_chat.side_effect = mock_async_generator
         responses = []
         async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
             responses.append(r)
