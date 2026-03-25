@@ -210,6 +210,30 @@ def test_tortoise_url_strips_pgbouncer(test_env_vars: dict[str, str]) -> None:
             == "postgres://user:pass@host:6543/db?statement_cache_size=0"
         )
 
+
+def test_tortoise_url_maps_search_path(test_env_vars: dict[str, str]) -> None:
+    """Verify that the tortoise URL builder maps search_path to schema.
+
+    This ensures that any `search_path=public,auth` parameter is mapped to
+    `schema=public,auth` when generating the `postgres://` URL so that asyncpg
+    does not throw an unexpected keyword argument error.
+    """
+    import os
+    from unittest.mock import patch
+
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?search_path=public,auth",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?schema=public%2Cauth&statement_cache_size=0"
+        )
+
     with patch.dict(
         os.environ,
         {
