@@ -12,9 +12,7 @@ jest.mock('react-i18next', () => ({
 
 describe('ChatBubble', () => {
   it('renders user message correctly', () => {
-    const { getByText } = render(
-      <ChatBubble text="User message" isUser={true} />
-    );
+    const { getByText } = render(<ChatBubble text="User message" isUser={true} />);
     expect(getByText('User message')).toBeTruthy();
   });
 
@@ -51,14 +49,10 @@ describe('ChatBubble', () => {
     // Just ensure that the component mounts by not failing completely.
     try {
       const { toJSON } = render(
-        <ChatBubble
-          text=""
-          isUser={false}
-          status={MessageStatus.streaming}
-        />
+        <ChatBubble text="" isUser={false} status={MessageStatus.streaming} />
       );
       expect(toJSON()).toBeTruthy();
-    } catch (e) {
+    } catch {
       // Ignore inner Worklet error from reanimated during render.
       // This is a known issue with Jest and Reanimated testing environments
       // without extensive transpiler setup.
