@@ -12,6 +12,7 @@ from app.infrastructure.external.openrouter import (
     chat_completion,
     embed,
     get_openrouter_client,
+    stream_chat,
     structured_completion,
 )
 
@@ -300,7 +301,6 @@ async def test_standalone_structured_completion_cancelled() -> None:
         assert mock_client.structured_completion.call_count == 1
 
 
-from app.infrastructure.external.openrouter import stream_chat
 
 
 @pytest.mark.asyncio

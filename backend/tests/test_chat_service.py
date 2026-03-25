@@ -404,7 +404,6 @@ async def test_stream_room_responses_no_agents(
 
 @pytest.mark.asyncio
 async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch) -> None:
-    from unittest.mock import AsyncMock
 
     user_id = uuid4()
 
