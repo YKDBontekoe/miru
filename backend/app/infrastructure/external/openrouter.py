@@ -158,7 +158,37 @@ async def stream_chat(
 ) -> typing.AsyncIterator[typing.Any]:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
-    return await client.stream_chat(messages, chosen_model)
+    try:
+        # Since this returns an async generator, we must iterate over it
+        # to actually catch exceptions that occur during connection/streaming.
+        stream = await client.stream_chat(messages, chosen_model)
+        # Yield the very first chunk to catch early errors (like 429/500)
+        try:
+            first_chunk = await anext(stream)  # type: ignore[name-defined]
+            yield first_chunk
+        except StopAsyncIteration:
+            return
+
+        # If the first chunk succeeded, yield the rest of the stream normally
+        async for chunk in stream:
+            yield chunk
+
+    except Exception as e:
+        if isinstance(e, asyncio.CancelledError):
+            raise
+        fallback = get_settings().fallback_chat_model
+        if fallback and fallback != chosen_model:
+            logger.warning(
+                "stream_chat failed with model %s, falling back to %s", chosen_model, fallback
+            )
+            try:
+                fallback_stream = await client.stream_chat(messages, fallback)
+                async for chunk in fallback_stream:
+                    yield chunk
+            except Exception as fallback_e:
+                raise fallback_e from e
+        else:
+            raise
 
 
 async def structured_completion(

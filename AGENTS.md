@@ -63,6 +63,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 ### 1. Jules
 
+// DOCS(miru-agent): prompt mismatch
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
