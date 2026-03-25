@@ -386,9 +386,13 @@ jobs:
         run: |
           npm install -g newman
           PIDS=()
+          # Generate dummy JWT for postman tests
+          export SUPABASE_JWT_SECRET=$(az containerapp secret show --name "${{ env.PR_APP }}" --resource-group "${{ env.PR_RG }}" --secret-name "supabase-jwt-secret" --query "value" -o tsv)
+          export AUTH_TOKEN=$(node backend/scripts/generate_test_token.js)
+
           for collection in backend/tests/postman/*.json; do
             echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} --env-var authToken=$AUTH_TOKEN &
             PIDS+=($!)
           done
 

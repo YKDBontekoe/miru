@@ -13,8 +13,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401\", function () {",
-              "    pm.response.to.have.status(401);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -26,8 +26,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms"
+          ]
         }
       }
     },
@@ -38,8 +44,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -51,8 +57,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms"
+          ]
         }
       }
     },
@@ -63,8 +75,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -76,8 +88,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/chat",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "chat"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "chat"
+          ]
         }
       }
     },
@@ -88,8 +106,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -101,8 +119,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/crew",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "crew"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "crew"
+          ]
         }
       }
     },
@@ -113,8 +137,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -126,8 +150,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "agents"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "agents"
+          ]
         }
       }
     },
@@ -138,8 +170,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -151,8 +183,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "agents"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "agents"
+          ]
         }
       }
     },
@@ -163,8 +203,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -176,8 +216,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/messages",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "messages"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "messages"
+          ]
         }
       }
     },
@@ -188,8 +236,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -201,8 +249,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/chat",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "chat"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "chat"
+          ]
         }
       }
     },
@@ -213,8 +269,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -226,10 +282,29 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/{{roomId}}/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "{{roomId}}", "agents", "{{agentId}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "{{roomId}}",
+            "agents",
+            "{{agentId}}"
+          ]
         }
       }
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }
