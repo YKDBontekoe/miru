@@ -372,8 +372,6 @@ export default function SettingsScreen() {
     [currentLang]
   );
 
-
-
   const loadMemories = useCallback(async () => {
     setIsLoadingMemories(true);
     try {
