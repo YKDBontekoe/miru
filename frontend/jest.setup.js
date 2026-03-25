@@ -39,7 +39,45 @@ jest.mock('expo-constants', () => ({
 // Mock nativewind
 jest.mock('nativewind', () => ({
   styled: (Component) => Component,
+  useColorScheme: () => ({ colorScheme: 'light', toggleColorScheme: jest.fn(), setColorScheme: jest.fn() }),
 }));
+
+// Mock react-native-reanimated properly to avoid Native Worklets errors
+jest.mock('react-native-reanimated', () => {
+  const View = require('react-native/Libraries/Components/View/View');
+  const Text = require('react-native/Libraries/Text/Text');
+  const Image = require('react-native/Libraries/Image/Image');
+  const ScrollView = require('react-native/Libraries/Components/ScrollView/ScrollView');
+  const Pressable = require('react-native/Libraries/Components/Pressable/Pressable');
+
+  return {
+    __esModule: true,
+    default: {
+      call: () => {},
+      View,
+      Text,
+      Image,
+      ScrollView,
+      createAnimatedComponent: jest.fn((Component) => Component),
+    },
+    useSharedValue: jest.fn((val) => ({ value: val })),
+    useAnimatedStyle: jest.fn((cb) => cb()),
+    useAnimatedProps: jest.fn((cb) => cb()),
+    withTiming: jest.fn((val) => val),
+    withSpring: jest.fn((val) => val),
+    withRepeat: jest.fn((val) => val),
+    withSequence: jest.fn((val) => val),
+    withDelay: jest.fn((delay, val) => val),
+    FadeIn: { duration: jest.fn(() => ({ duration: jest.fn() })) },
+    FadeOut: { duration: jest.fn(() => ({ duration: jest.fn() })) },
+    createAnimatedComponent: jest.fn((Component) => Component),
+    View,
+    Text,
+    Image,
+    ScrollView,
+    Pressable,
+  };
+});
 
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
