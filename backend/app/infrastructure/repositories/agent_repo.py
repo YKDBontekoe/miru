@@ -79,7 +79,7 @@ class AgentRepository:
             agent_id = UUID(agent_id)
         if isinstance(user_id, str):
             user_id = UUID(user_id)
-        agent = await Agent.get_or_none(id=agent_id, user_id=user_id, deleted_at=None)
+        agent = await Agent.get_or_none(id=agent_id, user_id=user_id, deleted_at__isnull=True)
         if agent:
             agent.deleted_at = datetime.now(UTC)
             await agent.save()
