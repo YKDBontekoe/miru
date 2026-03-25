@@ -275,7 +275,7 @@ jobs:
             "SUPABASE_URL=secretref:supabase-url"
             "SUPABASE_KEY=secretref:supabase-key"
             "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
-            "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
+            "SUPABASE_JWT_SECRET=${{ secrets.STAGING_SUPABASE_JWT_SECRET }}"
             "OPENROUTER_API_KEY=secretref:openrouter-api-key"
             "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
             "EMBEDDING_MODEL=secretref:embedding-model"
@@ -399,19 +399,6 @@ jobs:
 
           AUTH_TOKEN=""
           RESOLVED_JWT_SECRET="${SUPABASE_JWT_SECRET}"
-
-          LIVE_JWT_SECRET=$(az containerapp secret show \
-            --name "$PR_APP" \
-            --resource-group "$PR_RG" \
-            --secret-name "supabase-jwt-secret" \
-            --query value \
-            --output tsv 2>/dev/null || true)
-
-          if [ -n "$LIVE_JWT_SECRET" ]; then
-            RESOLVED_JWT_SECRET="$LIVE_JWT_SECRET"
-          else
-            echo "::warning::Could not read live supabase-jwt-secret from Container App; using workflow secret"
-          fi
 
           PIDS=()
           for collection in backend/tests/postman/*.json; do
