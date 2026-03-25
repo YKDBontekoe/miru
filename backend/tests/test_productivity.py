@@ -483,7 +483,9 @@ async def test_handle_db_errors_integrity() -> None:
         async with handle_db_errors("create test"):
             raise IntegrityError("FOREIGN KEY constraint failed")
     assert exc_info.value.status_code == 400  # type: ignore[unreachable]
-    assert exc_info.value.detail["error"] == "invalid_reference"
+    detail = exc_info.value.detail
+    assert isinstance(detail, dict)  # type: ignore[unreachable]
+    assert detail["error"] == "invalid_reference"  # type: ignore[unreachable]
 
 
 @pytest.mark.asyncio
