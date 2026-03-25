@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "11111111-1111-1111-1111-000000000001",
     "name": "Public Endpoints",
-    "description": "Integration tests for public endpoints.",
+    "description": "Integration tests for public (unauthenticated) endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -16,12 +16,19 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
+              "",
               "pm.test(\"Response is valid JSON\", function () {",
               "    pm.response.to.be.json;",
               "});",
-              "pm.test(\"Status is ok\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "",
+              "pm.test(\"Status field is 'ok'\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.have.property('status');",
+              "    pm.expect(json.status).to.eql('ok');",
+              "});",
+              "",
+              "pm.test(\"Response time is below 2000ms\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(2000);",
               "});"
             ],
             "type": "text/javascript"
@@ -48,8 +55,19 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
+              "",
               "pm.test(\"Response is valid JSON\", function () {",
               "    pm.response.to.be.json;",
+              "});",
+              "",
+              "pm.test(\"Schema contains openapi version field\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.have.property('openapi');",
+              "});",
+              "",
+              "pm.test(\"Schema contains paths\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.have.property('paths');",
               "});"
             ],
             "type": "text/javascript"
@@ -75,6 +93,10 @@
             "exec": [
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains HTML content\", function () {",
+              "    pm.expect(pm.response.text()).to.include('<html');",
               "});"
             ],
             "type": "text/javascript"

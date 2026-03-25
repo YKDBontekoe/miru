@@ -75,8 +75,8 @@ jobs:
       - name: Deploy image to staging
         env:
           SECRET_DATABASE_URL:                              ${{ secrets.STAGING_DATABASE_URL }}
-          SECRET_SUPABASE_URL:                              ${{ secrets.STAGING_SUPABASE_URL }}
-          SECRET_SUPABASE_KEY:                              ${{ secrets.STAGING_SUPABASE_KEY }}
+          SECRET_SUPABASE_URL:                              ${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_STAGING_URL }}
+          SECRET_SUPABASE_KEY:                              ${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_STAGING_KEY }}
           SECRET_SUPABASE_SERVICE_ROLE_KEY:                 ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
           SECRET_SUPABASE_JWT_SECRET:                       ${{ secrets.STAGING_SUPABASE_JWT_SECRET }}
           SECRET_OPENROUTER_API_KEY:                        ${{ secrets.OPENROUTER_API_KEY }}

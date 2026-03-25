@@ -272,10 +272,10 @@ jobs:
           # secrets by name via secretref:.
           ENV_VARS=(
             "DATABASE_URL=secretref:database-url"
-            "SUPABASE_URL=secretref:supabase-url"
-            "SUPABASE_KEY=secretref:supabase-key"
+            "SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_STAGING_URL }}"
+            "SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_STAGING_KEY }}"
             "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
-            "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
+            "SUPABASE_JWT_SECRET=${{ secrets.STAGING_SUPABASE_JWT_SECRET }}"
             "OPENROUTER_API_KEY=secretref:openrouter-api-key"
             "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
             "EMBEDDING_MODEL=secretref:embedding-model"
@@ -289,6 +289,9 @@ jobs:
             "AZURE_NOTIFICATION_HUB_NAME=secretref:azure-notification-hub-name"
             "AZURE_NOTIFICATION_HUB_CONNECTION_STRING=secretref:azure-notification-hub-connection-string"
             "SENTRY_ENVIRONMENT=pr-preview"
+            "DB_SCHEMA=pr_${{ github.event.pull_request.number }}"
+            "TEST_USER_EMAIL=${{ secrets.SUPABASE_TEST_EMAIL }}"
+            "TEST_USER_PASSWORD=${{ secrets.SUPABASE_TEST_PASSWORD }}"
           )
 
           NEW_REVISION=$(az containerapp update \
@@ -383,12 +386,32 @@ jobs:
           echo "All smoke tests passed."
 
       - name: Run Postman integration tests
+        env:
+          SUPABASE_JWT_SECRET: ${{ secrets.STAGING_SUPABASE_JWT_SECRET }}
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_STAGING_URL }}
+          SUPABASE_KEY: ${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_STAGING_KEY }}
+          FALLBACK_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          FALLBACK_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+          SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
+          SUPABASE_TEST_PASSWORD: ${{ secrets.SUPABASE_TEST_PASSWORD }}
         run: |
           npm install -g newman
+
+          AUTH_TOKEN=""
+          RESOLVED_JWT_SECRET="${SUPABASE_JWT_SECRET}"
+
           PIDS=()
           for collection in backend/tests/postman/*.json; do
+            # Skip the environment file itself
+            [[ "$(basename "$collection")" == "environment.json" ]] && continue
             echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            newman run "$collection" \
+              --environment backend/tests/postman/environment.json \
+              --env-var baseUrl=${{ steps.app-url.outputs.url }} \
+              --env-var authToken="${AUTH_TOKEN}" \
+              --env-var jwtSecret="${RESOLVED_JWT_SECRET}" \
+              --reporters cli \
+              --reporter-cli-no-banner &
             PIDS+=($!)
           done
 
