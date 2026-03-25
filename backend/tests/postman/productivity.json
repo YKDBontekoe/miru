@@ -669,6 +669,18 @@
           "name": "Create Event — returns 201 with id",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var start = new Date(Date.now() + 60*1000).toISOString();",
+                  "var end = new Date(Date.now() + 61*60*1000).toISOString();",
+                  "pm.variables.set(\"start_time\", start);",
+                  "pm.variables.set(\"end_time\", end);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
@@ -699,7 +711,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Test Event\",\n  \"start_time\": \"2026-12-01T09:00:00Z\",\n  \"end_time\": \"2026-12-01T10:00:00Z\"\n}"
+              "raw": "{\n  \"title\": \"Test Event\",\n  \"start_time\": \"{{start_time}}\",\n  \"end_time\": \"{{end_time}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/productivity/events",

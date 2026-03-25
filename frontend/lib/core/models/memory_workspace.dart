@@ -10,8 +10,11 @@ class MemoryCollection {
   });
 
   factory MemoryCollection.fromJson(Map<String, dynamic> json) {
+    if (json['id'] == null) {
+      throw const FormatException('MemoryCollection: missing required field id');
+    }
     return MemoryCollection(
-      id: json['id']?.toString() ?? '',
+      id: json['id'].toString(),
       name: json['name']?.toString() ?? 'Untitled',
       description: json['description']?.toString(),
     );
@@ -32,10 +35,19 @@ class WorkspaceMemory {
   });
 
   factory WorkspaceMemory.fromJson(Map<String, dynamic> json) {
+    if (json['id'] == null) {
+      throw const FormatException('WorkspaceMemory: missing required field id');
+    }
+    if (json['created_at'] == null) {
+      throw const FormatException('WorkspaceMemory: missing required field created_at');
+    }
+    // Validate created_at is a valid ISO8601 string
+    DateTime.parse(json['created_at'].toString());
+
     return WorkspaceMemory(
-      id: json['id']?.toString() ?? '',
+      id: json['id'].toString(),
       content: json['content']?.toString() ?? '',
-      createdAt: json['created_at']?.toString() ?? '',
+      createdAt: json['created_at'].toString(),
       collectionId: json['collection_id']?.toString(),
     );
   }

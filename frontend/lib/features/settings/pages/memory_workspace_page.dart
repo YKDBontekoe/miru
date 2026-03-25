@@ -23,6 +23,7 @@ class _MemoryWorkspacePageState extends State<MemoryWorkspacePage> {
   List<TimelineBucket> _timeline = <TimelineBucket>[];
   List<WorkspaceMemory> _onThisDay = <WorkspaceMemory>[];
 
+  int _workspaceRequestId = 0;
   String? _selectedCollectionId;
   DateTimeRange? _dateRange;
   bool _loading = true;
@@ -41,21 +42,29 @@ class _MemoryWorkspacePageState extends State<MemoryWorkspacePage> {
   }
 
   Future<void> _loadWorkspace() async {
+    final reqId = ++_workspaceRequestId;
     setState(() => _loading = true);
     try {
       final collections = await ApiService.instance.getMemoryCollections();
+      if (reqId != _workspaceRequestId) return;
+
       final memories = await ApiService.instance.searchMemories(
         query: _searchController.text,
         collectionId: _selectedCollectionId,
         startDate: _dateRange?.start.toIso8601String().split('T').first,
         endDate: _dateRange?.end.toIso8601String().split('T').first,
       );
+      if (reqId != _workspaceRequestId) return;
+
       final timeline = await ApiService.instance.getMemoryTimeline(
         collectionId: _selectedCollectionId,
         startDate: _dateRange?.start.toIso8601String().split('T').first,
         endDate: _dateRange?.end.toIso8601String().split('T').first,
       );
+      if (reqId != _workspaceRequestId) return;
+
       final onThisDay = await ApiService.instance.getOnThisDayMemories();
+      if (reqId != _workspaceRequestId) return;
 
       if (!mounted) return;
       setState(() {
@@ -63,15 +72,20 @@ class _MemoryWorkspacePageState extends State<MemoryWorkspacePage> {
         _memories = memories;
         _timeline = timeline;
         _onThisDay = onThisDay;
+
+        // Reconcile selection: only keep IDs that still exist in results
+        final currentMemoryIds = memories.map((m) => m.id).toSet();
+        _selectedForMerge.retainWhere((id) => currentMemoryIds.contains(id));
       });
     } catch (e, s) {
+      if (reqId != _workspaceRequestId) return;
       developer.log('memory_workspace load failed', error: e, stackTrace: s);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not load memory workspace.')),
       );
     } finally {
-      if (mounted) {
+      if (reqId == _workspaceRequestId && mounted) {
         setState(() => _loading = false);
       }
     }
@@ -168,38 +182,45 @@ class _MemoryWorkspacePageState extends State<MemoryWorkspacePage> {
   }
 
   Future<void> _exportMemories(String format) async {
-    final exported = await ApiService.instance.exportMemories(
-      format,
-      collectionId: _selectedCollectionId,
-    );
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Exported as ${format.toUpperCase()}'),
-        content: SizedBox(
-          width: 500,
-          child: SingleChildScrollView(child: Text(exported)),
+    try {
+      final exported = await ApiService.instance.exportMemories(
+        format,
+        collectionId: _selectedCollectionId,
+      );
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Exported as ${format.toUpperCase()}'),
+          content: SizedBox(
+            width: 500,
+            child: SingleChildScrollView(child: Text(exported)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: exported));
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Export copied to clipboard.')),
+                );
+              },
+              child: const Text('Copy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: exported));
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Export copied to clipboard.')),
-              );
-            },
-            child: const Text('Copy'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to export memories: $e')),
+      );
+    }
   }
 
   Future<void> _moveMemoryToCollection(WorkspaceMemory memory) async {
@@ -223,10 +244,18 @@ class _MemoryWorkspacePageState extends State<MemoryWorkspacePage> {
     );
 
     if (selected == null) return;
-    await ApiService.instance.organizeMemories([
-      memory.id,
-    ], collectionId: selected.isEmpty ? null : selected);
-    await _loadWorkspace();
+    try {
+      await ApiService.instance.organizeMemories([
+        memory.id,
+      ], collectionId: selected.isEmpty ? null : selected);
+      if (!mounted) return;
+      await _loadWorkspace();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to move memory: $e')),
+      );
+    }
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
@@ -234,14 +263,24 @@ class _MemoryWorkspacePageState extends State<MemoryWorkspacePage> {
     if (newIndex > oldIndex) {
       newIndex -= 1;
     }
+    final previous = [..._memories];
     final updated = [..._memories];
     final item = updated.removeAt(oldIndex);
     updated.insert(newIndex, item);
     setState(() => _memories = updated);
-    await ApiService.instance.organizeMemories(
-      updated.map((m) => m.id).toList(),
-      collectionId: _selectedCollectionId,
-    );
+
+    try {
+      await ApiService.instance.organizeMemories(
+        updated.map((m) => m.id).toList(),
+        collectionId: _selectedCollectionId,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _memories = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to reorder: $e')),
+      );
+    }
   }
 
   @override

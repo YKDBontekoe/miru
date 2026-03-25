@@ -199,6 +199,15 @@
                   "",
                   "pm.test(\"Response is valid JSON\", function () {",
                   "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"Graph contains nodes and edges\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('object');",
+                  "    pm.expect(json).to.have.property('nodes');",
+                  "    pm.expect(json).to.have.property('edges');",
+                  "    pm.expect(json.nodes).to.be.an('array');",
+                  "    pm.expect(json.edges).to.be.an('array');",
                   "});"
                 ],
                 "type": "text/javascript"

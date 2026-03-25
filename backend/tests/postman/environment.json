@@ -30,6 +30,5 @@
       "description": "Stable test user UUID embedded in the generated JWT"
     }
   ],
-  "_postman_variable_scope": "environment",
-  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/environment.json"
+  "_postman_variable_scope": "environment"
 }

@@ -390,7 +390,7 @@ jobs:
           PIDS=()
           for collection in backend/tests/postman/*.json; do
             # Skip the environment file itself
-            [[ "$collection" == *"environment.json" ]] && continue
+            [[ "$(basename "$collection")" == "environment.json" ]] && continue
             echo "Starting Postman Collection: $collection"
             newman run "$collection" \
               --environment backend/tests/postman/environment.json \

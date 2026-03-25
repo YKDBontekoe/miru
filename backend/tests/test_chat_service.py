@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import typing
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -30,7 +30,7 @@ def chat_service() -> ChatService:
     return ChatService(chat_repo, agent_repo, memory_repo)
 
 
-def test_get_agent_tools(chat_service: typing.Any) -> None:
+def test_get_agent_tools(chat_service: Any) -> None:
     """_get_agent_tools is synchronous and reads from prefetched agent_integrations."""
     # Agent with no integrations
     agent1 = MagicMock()
@@ -81,7 +81,7 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     assert tools[1].name == "steam_owned_games"
 
 
-def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
+def test_get_agent_tools_disabled_integration(chat_service: Any) -> None:
     """Disabled integrations are skipped."""
     agent = MagicMock()
     agent.id = uuid4()
@@ -106,7 +106,7 @@ def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
     assert "DeleteEventTool" in tool_types
 
 
-def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
+def test_get_agent_tools_steam_missing_id(chat_service: Any) -> None:
     """Steam integration without steam_id produces no tools."""
     agent = MagicMock()
     agent.id = uuid4()
@@ -133,7 +133,7 @@ def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
 
 @pytest.mark.asyncio
 async def test_run_crew_task_has_single_agent(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
 
     user_id = uuid4()
@@ -189,7 +189,7 @@ async def test_run_crew_task_has_single_agent(
 
 @pytest.mark.asyncio
 async def test_run_crew_task_has_multiple_agents(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
 
     user_id = uuid4()
@@ -256,7 +256,7 @@ async def test_run_crew_task_has_multiple_agents(
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_single_agent(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
 
     user_id = uuid4()
@@ -317,7 +317,7 @@ async def test_stream_room_responses_single_agent(
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_multiple_agents(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
 
     user_id = uuid4()
@@ -388,12 +388,12 @@ async def test_stream_room_responses_multiple_agents(
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_no_agents(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     user_id = uuid4()
     room_id = uuid4()
 
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
+    cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
 
     responses = []
     async for r in chat_service.stream_room_responses(room_id, "hello", user_id):
@@ -403,7 +403,7 @@ async def test_stream_room_responses_no_agents(
 
 
 @pytest.mark.asyncio
-async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_stream_responses(chat_service: Any, monkeypatch: pytest.MonkeyPatch) -> None:
     from unittest.mock import AsyncMock
 
     user_id = uuid4()
@@ -424,7 +424,7 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     chunk3 = MagicMock()
     chunk3.choices = []
 
-    async def mock_async_generator() -> typing.AsyncGenerator[typing.Any, None]:
+    async def mock_async_generator() -> typing.AsyncGenerator[Any, None]:
         yield chunk1
         yield chunk3
         yield chunk2
@@ -445,7 +445,7 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
 
 
 @pytest.mark.asyncio
-async def test_stream_responses_no_agents(chat_service: typing.Any) -> None:
+async def test_stream_responses_no_agents(chat_service: Any) -> None:
     user_id = uuid4()
     chat_service.agent_repo.list_by_user.return_value = []
 
@@ -458,7 +458,7 @@ async def test_stream_responses_no_agents(chat_service: typing.Any) -> None:
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_slow_kickoff(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import asyncio
 
@@ -510,7 +510,7 @@ async def test_stream_room_responses_slow_kickoff(
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_increment_failure(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """increment_message_count failure is swallowed; stream completes normally."""
 
@@ -558,7 +558,7 @@ async def test_stream_room_responses_increment_failure(
 
 @pytest.mark.asyncio
 async def test_stream_room_responses_cancel_task(
-    chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch
+    chat_service: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import asyncio
 
@@ -618,13 +618,13 @@ async def test_handle_message_persistence_and_broadcast(chat_service: ChatServic
         mock_hub.broadcast_to_room = AsyncMock()
         mock_hub.send_to_user = AsyncMock()
 
-        async def _save_mock(msg: typing.Any) -> typing.Any:
+        async def _save_mock(msg: Any) -> Any:
             from datetime import datetime
 
             msg.created_at = datetime.now()
             return msg
 
-        typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
+        cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
 
         user_msg = await chat_service.ws_broadcaster.handle_message_persistence_and_broadcast(
             room_id, message, user_id, "temp123"
@@ -632,9 +632,7 @@ async def test_handle_message_persistence_and_broadcast(chat_service: ChatServic
 
         assert user_msg.content == message
         assert getattr(user_msg, "room_id") == room_id  # noqa: B009
-        typing.cast("AsyncMock", chat_service.chat_repo.save_message).assert_called_once_with(
-            user_msg
-        )
+        cast("AsyncMock", chat_service.chat_repo.save_message).assert_called_once_with(user_msg)
         mock_hub.broadcast_to_room.assert_called_once()
         mock_hub.send_to_user.assert_called_once()
 
@@ -709,7 +707,7 @@ async def test_execute_crew_task(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await CrewOrchestrator.execute_crew_task(
-            typing.cast("list[typing.Any]", room_agents),
+            cast("list[Any]", room_agents),
             "Hello",
             user_id,
             user_msg_id,
@@ -754,7 +752,7 @@ async def test_execute_crew_task_multi(
         mock_crew_cls.return_value = mock_crew_instance
 
         result = await CrewOrchestrator.execute_crew_task(
-            typing.cast("list[typing.Any]", room_agents),
+            cast("list[Any]", room_agents),
             "Hello",
             user_id,
             user_msg_id,
@@ -777,23 +775,24 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
 
-        async def _save_mock(msg: typing.Any) -> typing.Any:
+        async def _save_mock(msg: Any) -> Any:
             from datetime import datetime
 
             msg.created_at = datetime.now()
             return msg
 
-        typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
-        mock_incr = typing.cast("AsyncMock", chat_service.agent_repo.increment_message_count)
-        mock_incr.return_value = None
+        cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
+        cast("AsyncMock", chat_service.agent_repo.increment_message_count).return_value = None
 
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, cast("list[Any]", room_agents), "Done!", agent_names
         )
 
-        typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
-        typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
-        mock_incr.assert_called_once_with(room_agents[0].id)
+        cast("Any", chat_service.chat_repo.save_message).assert_called_once()
+        cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
+        cast("AsyncMock", chat_service.agent_repo.increment_message_count).assert_called_once_with(
+            room_agents[0].id
+        )
         assert mock_hub.broadcast_to_room.call_count == 1
 
 
@@ -807,10 +806,10 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
 
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, cast("list[Any]", room_agents), "Done!", agent_names
         )
 
-    typing.cast("typing.Any", chat_service.chat_repo.save_message).assert_called_once()
+    cast("Any", chat_service.chat_repo.save_message).assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -818,7 +817,7 @@ async def test_run_room_chat_ws_no_agents(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
 
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
+    cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = []
 
     with (
         patch.object(
@@ -839,7 +838,7 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
 
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+    cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
         MagicMock(id=uuid4(), name="Agent1")
     ]
 
