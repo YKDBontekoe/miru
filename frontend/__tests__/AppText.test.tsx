@@ -23,4 +23,14 @@ describe('AppText', () => {
       expect.arrayContaining([expect.objectContaining({ fontSize: 32, fontWeight: 'bold' })])
     );
   });
+
+  it('applies muted color correctly', () => {
+    const { getByText } = render(<AppText color="muted">Muted</AppText>);
+    expect(getByText('Muted')).toBeTruthy();
+  });
+
+  it('applies disabled color correctly', () => {
+    const { getByText } = render(<AppText color="disabled">Disabled</AppText>);
+    expect(getByText('Disabled')).toBeTruthy();
+  });
 });

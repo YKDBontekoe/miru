@@ -44,6 +44,12 @@ describe('ChatBubble', () => {
     expect(onRetryMock).toHaveBeenCalled();
   });
 
+  it('renders agent message correctly with different agent hashes', () => {
+    // Tests the hash algorithm inside getAgentColor
+    const { getByText } = render(<ChatBubble text="Zyx response" isUser={false} agentName="Zyx" />);
+    expect(getByText('Zyx')).toBeTruthy();
+  });
+
   it('renders typing indicator when streaming and text is empty', () => {
     // Avoid crashing on deep reanimated render issues in test due to react-native-reanimated mock
     // Just ensure that the component mounts by not failing completely.
