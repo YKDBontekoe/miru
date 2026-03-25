@@ -479,6 +479,12 @@ async def test_handle_db_errors_integrity() -> None:
     assert exc_info.value.status_code == 500  # type: ignore[unreachable]
     assert "Database error occurred while creating test" in exc_info.value.detail
 
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("create test"):
+            raise IntegrityError("FOREIGN KEY constraint failed")
+    assert exc_info.value.status_code == 400  # type: ignore[unreachable]
+    assert exc_info.value.detail["error"] == "invalid_reference"
+
 
 @pytest.mark.asyncio
 async def test_handle_db_errors_unexpected() -> None:
@@ -539,3 +545,42 @@ async def test_handle_db_errors_action_mapping() -> None:
         async with handle_db_errors("create task"):
             raise Exception("unexpected create test")
     assert exc_info.value.status_code == 500  # type: ignore[unreachable]
+
+
+@pytest.mark.asyncio
+async def test_create_event_no_values_fetched(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Test Event",
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(hours=1)).isoformat(),
+        },
+    )
+    assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_create_event_invalid_foreign_keys(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Test Event FK",
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(hours=1)).isoformat(),
+            "agent_id": str(uuid.uuid4()),  # Non-existent agent
+            "origin_message_id": str(uuid.uuid4()),  # Non-existent message
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"]["error"] == "invalid_reference"

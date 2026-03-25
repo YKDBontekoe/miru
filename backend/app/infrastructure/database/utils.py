@@ -27,7 +27,20 @@ async def handle_db_errors(action: str) -> AsyncGenerator[None, None]:
         logger.exception(f"Validation error while {action}")
         raise HTTPException(status_code=400, detail=str(e)) from e
     except (IntegrityError, OperationalError, DBConnectionError) as e:
-        logger.exception(f"Failed to {action}")
+        # Catch foreign key constraints and return 400 Bad Request to avoid Sentry noise
+        if isinstance(e, IntegrityError) and (
+            "FOREIGN KEY constraint failed" in str(e) or "violates foreign key constraint" in str(e)
+        ):
+            logger.warning("Validation error (foreign key) while %s: %s", action, e)
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_reference",
+                    "message": "Provided reference (e.g., agent or message) does not exist.",
+                },
+            ) from e
+
+        logger.exception("Failed to %s", action)
 
         parts = action.split(" ", 1)
         verb = parts[0].lower()
