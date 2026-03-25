@@ -57,7 +57,13 @@ export function AppCard({
     },
     Platform.select({
       ios: theme.elevation[elevation],
-      android: { elevation: theme.elevation[elevation].elevation },
+      android: {
+        elevation: theme.elevation[elevation].elevation,
+        shadowColor: 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+      },
     }),
     style,
   ];
