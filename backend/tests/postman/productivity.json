@@ -13,7 +13,10 @@
           "// Generate a Supabase-compatible HS256 JWT for authenticated tests.",
           "// Requires the `jwtSecret` environment variable to be set via --env-var jwtSecret=<SUPABASE_JWT_SECRET>.",
           "var secret = pm.environment.get('jwtSecret') || pm.variables.get('jwtSecret');",
-          "if (!secret) { return; }",
+          "if (!secret) {",
+          "    pm.environment.unset('authToken');",
+          "    return;",
+          "}",
           "",
           "var userId = pm.environment.get('testUserId') || '11111111-1111-1111-1111-111111111111';",
           "var now = Math.floor(Date.now() / 1000);",
@@ -117,9 +120,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/productivity/tasks/test-task-id",
+              "raw": "{{baseUrl}}/api/v1/productivity/tasks/11111111-1111-1111-1111-111111111111",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "productivity", "tasks", "test-task-id"]
+              "path": ["api", "v1", "productivity", "tasks", "11111111-1111-1111-1111-111111111111"]
             }
           }
         },
@@ -192,9 +195,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/productivity/notes/test-note-id",
+              "raw": "{{baseUrl}}/api/v1/productivity/notes/11111111-1111-1111-1111-111111111111",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "productivity", "notes", "test-note-id"]
+              "path": ["api", "v1", "productivity", "notes", "11111111-1111-1111-1111-111111111111"]
             }
           }
         },
@@ -267,9 +270,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/productivity/events/test-event-id",
+              "raw": "{{baseUrl}}/api/v1/productivity/events/11111111-1111-1111-1111-111111111111",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "productivity", "events", "test-event-id"]
+              "path": ["api", "v1", "productivity", "events", "11111111-1111-1111-1111-111111111111"]
             }
           }
         }
