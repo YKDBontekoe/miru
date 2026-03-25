@@ -45,6 +45,33 @@ async def test_decode_expired_jwt_raises_401() -> None:
         await service.decode_jwt(token)
 
 
+@pytest.mark.asyncio
+async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
+    import logging
+
+    from app.domain.auth.service import AuthService
+    from app.infrastructure.repositories.auth_repo import AuthRepository
+
+    token = "invalid.token.format"
+    service = AuthService(AuthRepository(MagicMock()))
+
+    with (
+        caplog.at_level(logging.WARNING),
+        pytest.raises(jwt.DecodeError, match="Invalid token format"),
+    ):
+        await service.decode_jwt(token)
+
+    assert any(
+        record.levelname == "WARNING" and "JWT validation failed" in record.message
+        for record in caplog.records
+    )
+    assert not any(
+        record.levelname == "ERROR" and "JWT validation failed" in record.message
+        for record in caplog.records
+    )
+
+
 def test_memories_requires_auth(client: TestClient) -> None:
     """GET /api/v1/memory without a token returns 401."""
     app.dependency_overrides[get_supabase] = lambda: MagicMock()
