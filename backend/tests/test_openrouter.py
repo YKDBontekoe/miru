@@ -7,6 +7,7 @@ import pytest
 from pydantic import BaseModel
 
 from app.infrastructure.external.openrouter import (
+    stream_chat,
     OpenRouterClient,
     chat_completion,
     embed,
@@ -297,3 +298,70 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_standalone_chat_completion_with_language() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(return_value="bonjour")
+        mock_get_client.return_value = mock_client
+
+        result = await chat_completion(
+            [{"role": "user", "content": "hi"}], accept_language="fr-FR"
+        )
+
+        assert result == "bonjour"
+        called_msgs = mock_client.chat_completion.call_args[0][0]
+        assert len(called_msgs) == 2
+        assert called_msgs[0]["role"] == "system"
+        assert "fr-FR" in called_msgs[0]["content"]
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_with_language() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+
+        async def mock_gen():
+            yield "bonjour"
+
+        mock_client.stream_chat = AsyncMock(return_value=mock_gen())
+        mock_get_client.return_value = mock_client
+
+        result_gen = await stream_chat(
+            [{"role": "user", "content": "hi"}], accept_language="fr-FR"
+        )
+        items = [x async for x in result_gen]
+        assert items == ["bonjour"]
+        called_msgs = mock_client.stream_chat.call_args[0][0]
+        assert len(called_msgs) == 2
+        assert called_msgs[0]["role"] == "system"
+        assert "fr-FR" in called_msgs[0]["content"]
+
+@pytest.mark.asyncio
+async def test_standalone_structured_completion_with_language() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(return_value=DummyModel(name="bonjour"))
+        mock_get_client.return_value = mock_client
+
+        result = await structured_completion(
+            [{"role": "user", "content": "hi"}], DummyModel, accept_language="fr-FR"
+        )
+
+        assert result.name == "bonjour"
+        called_msgs = mock_client.structured_completion.call_args[0][0]
+        assert len(called_msgs) == 2
+        assert called_msgs[0]["role"] == "system"
+        assert "fr-FR" in called_msgs[0]["content"]
