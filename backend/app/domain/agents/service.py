@@ -37,17 +37,16 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
     cap_ids: list[str] = [cap.pk for cap in agent.capabilities.related_objects]
     integration_ids: list[str] = [
         ai.integration_id
-        for ai in agent.agent_integrations  # type: ignore[attr-defined]
+        for ai in agent.agent_integrations  # ty: ignore[unresolved-attribute]
         if ai.enabled
     ]
     integration_configs: dict = {
         ai.integration_id: ai.config
-        for ai in agent.agent_integrations  # type: ignore[attr-defined]
+        for ai in agent.agent_integrations  # ty: ignore[unresolved-attribute]
         if ai.enabled and ai.config
     }
     return AgentResponse(
         id=agent.pk,
-        user_id=agent.user_id,
         name=agent.name,
         personality=agent.personality,
         description=agent.description,

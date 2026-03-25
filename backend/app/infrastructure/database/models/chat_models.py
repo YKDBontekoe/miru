@@ -16,7 +16,7 @@ class ChatRoom(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
-    name: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    name: str = fields.CharField(max_length=255)  # ty: ignore[invalid-assignment]
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
@@ -39,7 +39,7 @@ class ChatMessage(SupabaseModel):
     user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
     agent_id: UUID | None = fields.UUIDField(null=True, db_index=True)
     content: str = fields.TextField()
-    message_type: str = fields.CharField(max_length=50, default="text")  # type: ignore[assignment]
+    message_type: str = fields.CharField(max_length=50, default="text")  # ty: ignore[invalid-assignment]
     attachments: list = fields.JSONField(default=[])
 
     created_at: datetime = fields.DatetimeField(auto_now_add=True)

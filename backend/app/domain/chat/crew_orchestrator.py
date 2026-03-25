@@ -332,7 +332,7 @@ class CrewOrchestrator:
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
-                agents=crew_agents,  # type: ignore[arg-type]
+                agents=crew_agents,  # ty: ignore[invalid-argument-type]
                 tasks=[task],
                 process=Process.hierarchical,
                 manager_llm=llm,
@@ -350,7 +350,7 @@ class CrewOrchestrator:
                 agent=crew_agents[0],
             )
             crew = Crew(
-                agents=crew_agents,  # type: ignore[arg-type]
+                agents=crew_agents,  # ty: ignore[invalid-argument-type]
                 tasks=[task],
                 process=Process.sequential,
                 **kwargs,

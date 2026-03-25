@@ -19,13 +19,13 @@ class AgentTool(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
-    name: str = fields.CharField(max_length=100, db_index=True)  # type: ignore[assignment]
+    name: str = fields.CharField(max_length=100, db_index=True)  # ty: ignore[invalid-assignment]
     description: str = fields.TextField()
-    category: str = fields.CharField(max_length=50, default="utility", db_index=True)  # type: ignore[assignment]
-    version: str = fields.CharField(max_length=20, default="1.0.0")  # type: ignore[assignment]
+    category: str = fields.CharField(max_length=50, default="utility", db_index=True)  # ty: ignore[invalid-assignment]
+    version: str = fields.CharField(max_length=20, default="1.0.0")  # ty: ignore[invalid-assignment]
     parameters_schema: dict = fields.JSONField(default={})
-    is_public: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
+    is_public: bool = fields.BooleanField(default=False)  # ty: ignore[invalid-assignment]
+    status: str = fields.CharField(max_length=20, default="active")  # ty: ignore[invalid-assignment]
 
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)

@@ -49,7 +49,7 @@ lint-backend:
 	cd backend && \
 	ruff check . && \
 	ruff format --check . && \
-	ty check app/
+	ty check .
 
 # Run frontend linting
 lint-frontend:

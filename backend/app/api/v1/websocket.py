@@ -29,6 +29,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
+from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.infrastructure.database.supabase import get_supabase
@@ -115,6 +116,7 @@ async def websocket_chat_hub(
             chat_repo=ChatRepository(),
             agent_repo=AgentRepository(),
             memory_repo=MemoryRepository(),
+            agent_service=AgentService(repo=AgentRepository()),
         )
 
         while True:

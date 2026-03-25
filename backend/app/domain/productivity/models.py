@@ -21,9 +21,9 @@ class Task(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
-    title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    title: str = fields.CharField(max_length=255)  # ty: ignore[invalid-assignment]
     description: str | None = fields.TextField(null=True)
-    is_completed: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
+    is_completed: bool = fields.BooleanField(default=False)  # ty: ignore[invalid-assignment]
     due_date: datetime | None = fields.DatetimeField(null=True)
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
@@ -57,9 +57,9 @@ class Note(SupabaseModel):
         on_delete=fields.SET_NULL,
     )
     origin_context: str | None = fields.TextField(null=True)
-    title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    title: str = fields.CharField(max_length=255)  # ty: ignore[invalid-assignment]
     content: str = fields.TextField()
-    is_pinned: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
+    is_pinned: bool = fields.BooleanField(default=False)  # ty: ignore[invalid-assignment]
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
@@ -245,12 +245,12 @@ class CalendarEvent(SupabaseModel):
         on_delete=fields.SET_NULL,
     )
     origin_context: str | None = fields.TextField(null=True)
-    title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
+    title: str = fields.CharField(max_length=255)  # ty: ignore[invalid-assignment]
     description: str | None = fields.TextField(null=True)
     start_time: datetime = fields.DatetimeField()
     end_time: datetime = fields.DatetimeField()
-    is_all_day: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-    location: str | None = fields.CharField(max_length=255, null=True)  # type: ignore[assignment]
+    is_all_day: bool = fields.BooleanField(default=False)  # ty: ignore[invalid-assignment]
+    location: str | None = fields.CharField(max_length=255, null=True)  # ty: ignore[invalid-assignment]
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)

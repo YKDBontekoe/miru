@@ -17,12 +17,12 @@ class Agent(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
-    name: str = fields.CharField(max_length=100, db_index=True)  # type: ignore[assignment]
+    name: str = fields.CharField(max_length=100, db_index=True)  # ty: ignore[invalid-assignment]
     personality: str = fields.TextField()
     description: str | None = fields.TextField(null=True)
     system_prompt: str | None = fields.TextField(null=True)
-    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
-    mood: str = fields.CharField(max_length=50, default="Neutral")  # type: ignore[assignment]
+    status: str = fields.CharField(max_length=20, default="active")  # ty: ignore[invalid-assignment]
+    mood: str = fields.CharField(max_length=50, default="Neutral")  # ty: ignore[invalid-assignment]
 
     capabilities: fields.ManyToManyRelation[Capability] = fields.ManyToManyField(
         "models.Capability", related_name="agents", table="agents_capabilities"
@@ -45,11 +45,11 @@ class Agent(SupabaseModel):
 class Capability(SupabaseModel):
     """Database entity for Agent Capabilities."""
 
-    id: str = fields.CharField(primary_key=True, max_length=50)  # type: ignore[assignment]
-    name: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    id: str = fields.CharField(primary_key=True, max_length=50)  # ty: ignore[invalid-assignment]
+    name: str = fields.CharField(max_length=100)  # ty: ignore[invalid-assignment]
     description: str = fields.TextField()
-    icon: str = fields.CharField(max_length=50)  # type: ignore[assignment]
-    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
+    icon: str = fields.CharField(max_length=50)  # ty: ignore[invalid-assignment]
+    status: str = fields.CharField(max_length=20, default="active")  # ty: ignore[invalid-assignment]
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
@@ -63,11 +63,11 @@ class Capability(SupabaseModel):
 class Integration(SupabaseModel):
     """Database entity for external service definitions (e.g. Steam)."""
 
-    id: str = fields.CharField(primary_key=True, max_length=50)  # type: ignore[assignment]
-    display_name: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    id: str = fields.CharField(primary_key=True, max_length=50)  # ty: ignore[invalid-assignment]
+    display_name: str = fields.CharField(max_length=100)  # ty: ignore[invalid-assignment]
     description: str = fields.TextField()
-    icon: str = fields.CharField(max_length=50)  # type: ignore[assignment]
-    status: str = fields.CharField(max_length=20, default="active")  # type: ignore[assignment]
+    icon: str = fields.CharField(max_length=50)  # ty: ignore[invalid-assignment]
+    status: str = fields.CharField(max_length=20, default="active")  # ty: ignore[invalid-assignment]
     config_schema: list | dict = fields.JSONField(default=[])
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
@@ -90,7 +90,7 @@ class AgentIntegration(SupabaseModel):
         "models.Integration", related_name="connected_agents", on_delete=fields.CASCADE
     )
 
-    enabled: bool = fields.BooleanField(default=True)  # type: ignore[assignment]
+    enabled: bool = fields.BooleanField(default=True)  # ty: ignore[invalid-assignment]
     config: dict = fields.JSONField(default={})
     credentials: dict = fields.JSONField(default={})
 
@@ -114,7 +114,7 @@ class AgentTemplate(SupabaseModel):
     """Template for creating new agents."""
 
     id: UUID = fields.UUIDField(primary_key=True)
-    name: str = fields.CharField(max_length=100)  # type: ignore[assignment]
+    name: str = fields.CharField(max_length=100)  # ty: ignore[invalid-assignment]
     description: str = fields.TextField()
     personality: str = fields.TextField()
     goals: list[str] = fields.JSONField(default=[])
@@ -173,7 +173,7 @@ class AgentActionLog(SupabaseModel):
         on_delete=fields.SET_NULL,
         null=True,
     )
-    action_type: str = fields.CharField(max_length=50)  # type: ignore[assignment]
+    action_type: str = fields.CharField(max_length=50)  # ty: ignore[invalid-assignment]
     content: str = fields.TextField()
     meta: dict = fields.JSONField(default={})
     created_at: datetime = fields.DatetimeField(auto_now_add=True)

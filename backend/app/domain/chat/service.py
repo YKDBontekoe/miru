@@ -137,7 +137,7 @@ class ChatService:
 
         response = await stream_chat(
             model=model_name,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,  # ty: ignore[invalid-argument-type]
         )
 
         async for chunk in response:

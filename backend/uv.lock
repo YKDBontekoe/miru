@@ -1179,6 +1179,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/29/b3/fd13123ac936a4f79f1ba20ad67328a8d09d586262b8f28cc1cfaa555213/granian-2.7.2-cp314-cp314t-win_amd64.whl", hash = "sha256:e8b87d7ada696eec7e9023974665c83cec978cb83c205eae8fe377de20622f25", size = 4101983, upload-time = "2026-02-24T23:04:04.792Z" },
 ]
 
+[package.optional-dependencies]
+reload = [
+    { name = "watchfiles" },
+]
+
 [[package]]
 name = "grpcio"
 version = "1.78.0"
@@ -1939,7 +1944,7 @@ dependencies = [
     { name = "crewai", extra = ["tools"] },
     { name = "crewai-tools" },
     { name = "fastapi" },
-    { name = "granian" },
+    { name = "granian", extra = ["reload"] },
     { name = "httpx" },
     { name = "instructor" },
     { name = "litellm" },
@@ -1984,7 +1989,7 @@ requires-dist = [
     { name = "crewai", extras = ["tools"], specifier = ">=1.10.1" },
     { name = "crewai-tools", specifier = ">=0.12.1" },
     { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "granian", specifier = ">=1.0.0" },
+    { name = "granian", extras = ["reload"], specifier = ">=1.0.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "instructor", specifier = ">=1.7.0" },
     { name = "litellm", specifier = ">=1.82.1" },
