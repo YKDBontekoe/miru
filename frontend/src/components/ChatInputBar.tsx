@@ -1,20 +1,9 @@
 import React, { useRef } from 'react';
-import { View, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { View, TextInput, Pressable, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-const C = {
-  bg: '#FFFFFF',
-  border: '#E0E0EC',
-  inputBg: '#F0F0F6',
-  inputBorder: '#E0E0EC',
-  text: '#12121A',
-  placeholder: '#A0A0B4',
-  primary: '#2563EB',
-  sendDisabled: '#D0D0DC',
-  stopBg: '#FEF2F2',
-  stopBorder: '#FECACA',
-  stopIcon: '#DC2626',
-};
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { useColorScheme } from 'nativewind';
+import { theme } from '../core/theme';
 
 interface ChatInputBarProps {
   value: string;
@@ -25,6 +14,8 @@ interface ChatInputBarProps {
   placeholder?: string;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 // DOCS(miru-agent): needs documentation
 export function ChatInputBar({
   value,
@@ -34,8 +25,27 @@ export function ChatInputBar({
   onStop,
   placeholder = 'Message...',
 }: ChatInputBarProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const inputRef = useRef<TextInput>(null);
   const canSend = value.trim().length > 0 && !isStreaming;
+
+  const scale = useSharedValue(1);
+
+  const handlePressIn = () => {
+    if (canSend || isStreaming) {
+      scale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+    }
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const handleSend = () => {
     if (!canSend) return;
@@ -43,51 +53,36 @@ export function ChatInputBar({
     // Keep focus so keyboard stays open for follow-up messages
   };
 
+  const containerStyle = {
+    backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light,
+    borderTopColor: isDark ? theme.colors.border.dark : theme.colors.border.light,
+  };
+
+  const inputContainerStyle = {
+    backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highLight,
+    borderColor: isDark ? theme.colors.border.dark : theme.colors.border.light,
+  };
+
+  const inputTextStyle = {
+    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+    ...theme.typography.body,
+  };
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        paddingBottom: Platform.OS === 'ios' ? 10 : 10,
-        backgroundColor: C.bg,
-        borderTopWidth: 1,
-        borderTopColor: C.border,
-        gap: 8,
-      }}
-    >
+    <View style={[styles.container, containerStyle]}>
       {/* Text input */}
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: C.inputBg,
-          borderRadius: 22,
-          borderWidth: 1,
-          borderColor: C.inputBorder,
-          paddingHorizontal: 16,
-          paddingTop: Platform.OS === 'ios' ? 10 : 8,
-          paddingBottom: Platform.OS === 'ios' ? 10 : 8,
-          minHeight: 44,
-          maxHeight: 130,
-          justifyContent: 'center',
-        }}
-      >
+      <View style={[styles.inputContainer, inputContainerStyle]}>
         <TextInput
           ref={inputRef}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={C.placeholder}
+          placeholderTextColor={
+            isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight
+          }
           multiline
           textAlignVertical="center"
-          style={{
-            color: C.text,
-            fontSize: 16,
-            lineHeight: 22,
-            padding: 0,
-            margin: 0,
-          }}
+          style={[styles.input, inputTextStyle]}
           returnKeyType="default"
           blurOnSubmit={false}
         />
@@ -95,40 +90,99 @@ export function ChatInputBar({
 
       {/* Action button */}
       {isStreaming ? (
-        <TouchableOpacity
+        <AnimatedPressable
+          testID="stop-button"
           onPress={onStop}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: C.stopBg,
-            borderWidth: 1,
-            borderColor: C.stopBorder,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          activeOpacity={0.75}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor: isDark
+                ? theme.colors.status.errorSurfaceDark
+                : theme.colors.status.errorSurfaceLight,
+              borderColor: isDark
+                ? theme.colors.status.errorSurfaceDark
+                : theme.colors.status.errorSurfaceLight, // keep border same to avoid layout shift
+            },
+            animatedStyle,
+          ]}
         >
           {/* Stop square */}
-          <View style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: C.stopIcon }} />
-        </TouchableOpacity>
+          <View style={[styles.stopSquare, { backgroundColor: theme.colors.status.error }]} />
+        </AnimatedPressable>
       ) : (
-        <TouchableOpacity
+        <AnimatedPressable
+          testID="send-button"
           onPress={handleSend}
           disabled={!canSend}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: canSend ? C.primary : C.sendDisabled,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          activeOpacity={0.8}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor: canSend
+                ? theme.colors.primary.DEFAULT
+                : isDark
+                  ? theme.colors.surface.highestDark
+                  : theme.colors.onSurface.disabledLight,
+            },
+            animatedStyle,
+          ]}
         >
-          <Ionicons name="arrow-up" size={22} color="#FFFFFF" />
-        </TouchableOpacity>
+          <Ionicons
+            name="arrow-up"
+            size={22}
+            color={
+              canSend
+                ? theme.colors.white
+                : isDark
+                  ? theme.colors.onSurface.disabledDark
+                  : theme.colors.onSurface.disabledLight
+            }
+          />
+        </AnimatedPressable>
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderTopWidth: 1,
+    gap: theme.spacing.sm,
+  },
+  inputContainer: {
+    flex: 1,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? theme.spacing.md : theme.spacing.sm,
+    paddingBottom: Platform.OS === 'ios' ? theme.spacing.md : theme.spacing.sm,
+    minHeight: theme.spacing.inputBarMinHeight,
+    maxHeight: theme.spacing.inputBarMaxHeight,
+    justifyContent: 'center',
+  },
+  input: {
+    padding: 0,
+    margin: 0,
+  },
+  actionButton: {
+    width: theme.spacing.inputBarButton,
+    height: theme.spacing.inputBarButton,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  stopSquare: {
+    width: theme.spacing.inputBarStopSquare,
+    height: theme.spacing.inputBarStopSquare,
+    borderRadius: theme.borderRadius.xs,
+  },
+});

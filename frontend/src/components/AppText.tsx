@@ -1,10 +1,13 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
+import { useColorScheme } from 'nativewind';
+import { theme } from '../core/theme';
 
 export interface AppTextProps extends TextProps {
-  variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySm' | 'caption';
+  variant?: keyof typeof theme.typography;
   color?: 'primary' | 'muted' | 'disabled' | 'brand';
   className?: string;
+  style?: TextProps['style'];
 }
 
 // DOCS(miru-agent): needs documentation
@@ -13,49 +16,38 @@ export function AppText({
   variant = 'body',
   color = 'primary',
   className = '',
+  style,
   ...props
 }: AppTextProps) {
-  let textClass = '';
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
-  switch (variant) {
-    case 'h1':
-      textClass = 'text-3xl font-bold';
-      break;
-    case 'h2':
-      textClass = 'text-2xl font-semibold';
-      break;
-    case 'h3':
-      textClass = 'text-xl font-medium';
-      break;
-    case 'body':
-      textClass = 'text-base';
-      break;
-    case 'bodySm':
-      textClass = 'text-sm';
-      break;
-    case 'caption':
-      textClass = 'text-xs';
-      break;
-  }
-
-  let colorClass = '';
-  switch (color) {
-    case 'primary':
-      colorClass = 'text-onSurface-light dark:text-onSurface-dark';
-      break;
-    case 'muted':
-      colorClass = 'text-onSurface-mutedLight dark:text-onSurface-mutedDark';
-      break;
-    case 'disabled':
-      colorClass = 'text-onSurface-disabledLight dark:text-onSurface-disabledDark';
-      break;
-    case 'brand':
-      colorClass = 'text-primary';
-      break;
-  }
+  const getTextColorStyle = () => {
+    switch (color) {
+      case 'muted':
+        return {
+          color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
+        };
+      case 'disabled':
+        return {
+          color: isDark
+            ? theme.colors.onSurface.disabledDark
+            : theme.colors.onSurface.disabledLight,
+        };
+      case 'brand':
+        return { color: theme.colors.primary.DEFAULT };
+      case 'primary':
+      default:
+        return { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light };
+    }
+  };
 
   return (
-    <Text className={`${textClass} ${colorClass} ${className}`} {...props}>
+    <Text
+      className={className}
+      style={[theme.typography[variant], getTextColorStyle(), style]}
+      {...props}
+    >
       {children}
     </Text>
   );
