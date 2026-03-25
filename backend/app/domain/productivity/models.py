@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -279,7 +279,14 @@ class CalendarEventCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_time_range(self) -> CalendarEventCreate:
-        if self.end_time <= self.start_time:
+        start = self.start_time
+        end = self.end_time
+        if getattr(start, "tzinfo", None) is None:
+            start = start.replace(tzinfo=UTC)
+        if getattr(end, "tzinfo", None) is None:
+            end = end.replace(tzinfo=UTC)
+
+        if end <= start:
             raise ValueError("end_time must be greater than start_time")
         return self
 
