@@ -8,7 +8,12 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, AnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  AnimatedStyle,
+} from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { theme } from '../core/theme';
 
@@ -100,12 +105,7 @@ export function AppCard({
 
   if (onTap) {
     return (
-      <TappableCard
-        onTap={onTap}
-        className={className}
-        cardStyle={cardStyle}
-        {...props}
-      >
+      <TappableCard onTap={onTap} className={className} cardStyle={cardStyle} {...props}>
         {children}
       </TappableCard>
     );

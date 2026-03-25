@@ -89,36 +89,39 @@ export function ChatBubble({
     color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
   };
 
-  const markdownStyles = React.useMemo(() => ({
-    body: {
-      color: isFailed ? theme.colors.status.error : agentTextStyle.color,
-      ...theme.typography.body,
-      margin: 0,
-    },
-    paragraph: { marginTop: 0, marginBottom: 0 },
-    code_inline: {
-      backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highestLight,
-      borderRadius: theme.borderRadius.xs,
-      paddingHorizontal: theme.spacing.xs,
-      color: agentTextStyle.color,
-      ...theme.typography.bodySm,
-    },
-    fence: {
-      backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.highLight,
-      borderRadius: theme.borderRadius.sm,
-      padding: theme.spacing.md,
-      marginVertical: theme.spacing.xs,
-    },
-    code_block: {
-      backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.highLight,
-      borderRadius: theme.borderRadius.sm,
-      padding: theme.spacing.md,
-      color: agentTextStyle.color,
-      ...theme.typography.bodySm,
-    },
-    strong: { fontWeight: '700' as const },
-    em: { fontStyle: 'italic' as const },
-  }), [isDark, isFailed, agentTextStyle.color]);
+  const markdownStyles = React.useMemo(
+    () => ({
+      body: {
+        color: isFailed ? theme.colors.status.error : agentTextStyle.color,
+        ...theme.typography.body,
+        margin: 0,
+      },
+      paragraph: { marginTop: 0, marginBottom: 0 },
+      code_inline: {
+        backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highestLight,
+        borderRadius: theme.borderRadius.xs,
+        paddingHorizontal: theme.spacing.xs,
+        color: agentTextStyle.color,
+        ...theme.typography.bodySm,
+      },
+      fence: {
+        backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.highLight,
+        borderRadius: theme.borderRadius.sm,
+        padding: theme.spacing.md,
+        marginVertical: theme.spacing.xs,
+      },
+      code_block: {
+        backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.highLight,
+        borderRadius: theme.borderRadius.sm,
+        padding: theme.spacing.md,
+        color: agentTextStyle.color,
+        ...theme.typography.bodySm,
+      },
+      strong: { fontWeight: '700' as const },
+      em: { fontStyle: 'italic' as const },
+    }),
+    [isDark, isFailed, agentTextStyle.color]
+  );
 
   if (isUser) {
     return (
@@ -127,7 +130,18 @@ export function ChatBubble({
           <AppText style={[styles.messageText, userTextStyle]}>{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={styles.timestampRight(isDark)}>{formatTime(timestamp, i18n.language)}</AppText>
+          <AppText
+            style={[
+              styles.timestampRightBase,
+              {
+                color: isDark
+                  ? theme.colors.onSurface.disabledDark
+                  : theme.colors.onSurface.disabledLight,
+              },
+            ]}
+          >
+            {formatTime(timestamp, i18n.language)}
+          </AppText>
         )}
       </View>
     );
@@ -201,7 +215,18 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={styles.timestampLeft(isDark)}>{formatTime(timestamp, i18n.language)}</AppText>
+        <AppText
+          style={[
+            styles.timestampLeftBase,
+            {
+              color: isDark
+                ? theme.colors.onSurface.disabledDark
+                : theme.colors.onSurface.disabledLight,
+            },
+          ]}
+        >
+          {formatTime(timestamp, i18n.language)}
+        </AppText>
       )}
     </View>
   );
@@ -283,16 +308,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  timestampRight: (isDark: boolean) => ({
-    color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight,
+  timestampRightBase: {
     fontSize: 10,
     marginTop: theme.spacing.xs,
     marginEnd: theme.spacing.xxs,
-  }),
-  timestampLeft: (isDark: boolean) => ({
-    color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight,
+  },
+  timestampLeftBase: {
     fontSize: 10,
     marginTop: theme.spacing.xs,
     marginStart: theme.spacing.bubbleTimestampIndent,
-  }),
+  },
 });

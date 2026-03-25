@@ -1,6 +1,18 @@
 import React from 'react';
-import { Pressable, ActivityIndicator, PressableProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, AnimatedStyle } from 'react-native-reanimated';
+import {
+  Pressable,
+  ActivityIndicator,
+  PressableProps,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  AnimatedStyle,
+} from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { AppText } from './AppText';
 import { theme } from '../core/theme';
@@ -113,7 +125,11 @@ export function AppButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={[getContainerStyle(), animatedStyle, style] as StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>}
+      style={
+        [getContainerStyle(), animatedStyle, style] as StyleProp<
+          AnimatedStyle<StyleProp<ViewStyle>>
+        >
+      }
       {...props}
     >
       {isLoading ? (

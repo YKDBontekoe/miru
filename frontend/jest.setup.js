@@ -43,7 +43,8 @@ jest.mock('nativewind', () => ({
   useColorScheme: () => ({
     colorScheme: mockCurrentColorHooksScheme.current,
     toggleColorScheme: jest.fn(() => {
-      mockCurrentColorHooksScheme.current = mockCurrentColorHooksScheme.current === 'light' ? 'dark' : 'light';
+      mockCurrentColorHooksScheme.current =
+        mockCurrentColorHooksScheme.current === 'light' ? 'dark' : 'light';
     }),
     setColorScheme: jest.fn((scheme) => {
       mockCurrentColorHooksScheme.current = scheme;
