@@ -73,6 +73,15 @@ async def init_db() -> None:
             # Drop all tables in this schema and recreate them
             await Tortoise._drop_databases()
             await Tortoise.generate_schemas()
+
+            # Seed the test user for integration tests
+            if settings.test_user_id:
+                conn = Tortoise.get_connection("default")
+                await conn.execute_script(f"""
+                    INSERT INTO profiles (id, display_name, bio)
+                    VALUES ('{settings.test_user_id}', 'Test User', 'Automated test account for CI/CD')
+                    ON CONFLICT (id) DO NOTHING;
+                    """)
         else:
             # For other non-public schemas, just ensure tables exist
             await Tortoise.generate_schemas()

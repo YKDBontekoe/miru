@@ -290,6 +290,8 @@ jobs:
             "AZURE_NOTIFICATION_HUB_CONNECTION_STRING=secretref:azure-notification-hub-connection-string"
             "SENTRY_ENVIRONMENT=pr-preview"
             "DB_SCHEMA=pr_${{ github.event.pull_request.number }}"
+            "TEST_USER_EMAIL=${{ secrets.SUPABASE_TEST_EMAIL }}"
+            "TEST_USER_PASSWORD=${{ secrets.SUPABASE_TEST_PASSWORD }}"
           )
 
           NEW_REVISION=$(az containerapp update \

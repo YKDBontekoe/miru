@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     database_url: str | None = None
     # Schema name to use for the database connection.
     db_schema: str = "public"
+    # Test user configuration for CI/CD seeding
+    test_user_id: str = "11111111-1111-1111-1111-111111111111"
+    test_user_email: str | None = None
     # Whether to use SSL for the database connection. Defaults to True for Supabase.
     database_ssl: bool = True
     # Embedding model used for memory storage/retrieval — required, no fallback.
