@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
-  ScrollView,
   TouchableOpacity,
   Switch,
   Alert,
   ActivityIndicator,
   Modal,
+  FlatList,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,152 +37,279 @@ const C = {
   destructiveBorder: '#FECACA',
 };
 
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 },
+  sectionHeader: {
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.muted,
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  settingRowIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: 12,
+  },
+  settingRowContent: { flex: 1 },
+  settingRowTitle: { fontSize: 15, fontWeight: '500' },
+  settingRowSubtitle: { color: C.muted, marginTop: 2, fontSize: 12 },
+  memoryItemContainer: {
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  memoryItemDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: C.primary,
+    marginTop: 6,
+    marginEnd: 12,
+  },
+  memoryItemContent: { flex: 1 },
+  memoryItemText: { lineHeight: 20, fontSize: 14, color: C.text },
+  memoryItemDate: { color: C.muted, marginTop: 4, fontSize: 11 },
+  memoryItemClose: { marginStart: 8 },
+  langModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  langModalContent: {
+    backgroundColor: C.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+  },
+  langModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  langModalTitle: { color: C.text },
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  langRowContent: { flex: 1 },
+  langRowNativeLabel: { fontSize: 15, fontWeight: '600' },
+  langRowLabel: { fontSize: 12, color: C.muted, marginTop: 2 },
+  accountContainer: {
+    backgroundColor: C.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: C.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  accountAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: C.primarySurface,
+    borderWidth: 1,
+    borderColor: `${C.primary}25`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: 14,
+  },
+  accountContent: { flex: 1 },
+  accountEmail: { fontWeight: '600', fontSize: 15, color: C.text },
+  accountSubtitle: { color: C.muted, fontSize: 12 },
+  noMemoriesContainer: {
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: 'center',
+  },
+  noMemoriesIcon: { marginBottom: 8 },
+  noMemoriesText: { textAlign: 'center', fontSize: 13, color: C.muted },
+  refreshButton: { alignItems: 'center', paddingVertical: 8 },
+  refreshButtonText: { color: C.primary, fontSize: 13, fontWeight: '600' },
+  sectionContainer: { marginTop: 16 },
+  listContainer: { paddingHorizontal: 20, paddingBottom: 40 },
+});
+
 const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English', nativeLabel: 'English' },
   { code: 'nl', label: 'Dutch', nativeLabel: 'Nederlands' },
 ];
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <AppText
-      style={{
-        textTransform: 'uppercase',
-        letterSpacing: 1.2,
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.muted,
-        marginBottom: 10,
-        marginTop: 8,
-      }}
-    >
-      {title}
-    </AppText>
-  );
-}
+const SectionHeader = React.memo(({ title }: { title: string }) => (
+  <AppText style={styles.sectionHeader}>{title}</AppText>
+));
 
-function SettingRow({
-  icon,
-  iconColor,
-  title,
-  subtitle,
-  onPress,
-  rightElement,
-  destructive,
-}: {
-  icon: IoniconsName;
-  iconColor?: string;
-  title: string;
-  subtitle?: string;
-  onPress?: () => void;
-  rightElement?: React.ReactNode;
-  destructive?: boolean;
-}) {
-  const Wrapper = onPress ? TouchableOpacity : View;
-  const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
+const SettingRow = React.memo(
+  ({
+    icon,
+    iconColor,
+    title,
+    subtitle,
+    onPress,
+    rightElement,
+    destructive,
+  }: {
+    icon: IoniconsName;
+    iconColor?: string;
+    title: string;
+    subtitle?: string;
+    onPress?: () => void;
+    rightElement?: React.ReactNode;
+    destructive?: boolean;
+  }) => {
+    const Wrapper = onPress ? TouchableOpacity : View;
+    const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
 
-  return (
-    <Wrapper
-      {...(wrapperProps as any)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: destructive ? C.destructiveSurface : C.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: destructive ? C.destructiveBorder : C.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 3,
-        elevation: 1,
-      }}
-    >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
-          borderWidth: 1,
-          borderColor: destructive ? C.destructiveBorder : C.border,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 12,
-        }}
+    return (
+      <Wrapper
+        {...(wrapperProps as any)}
+        style={[
+          styles.settingRow,
+          {
+            backgroundColor: destructive ? C.destructiveSurface : C.surface,
+            borderColor: destructive ? C.destructiveBorder : C.border,
+          },
+        ]}
       >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={destructive ? C.destructive : (iconColor ?? C.muted)}
-        />
-      </View>
-      <View style={{ flex: 1 }}>
-        <AppText
-          style={{ fontSize: 15, fontWeight: '500', color: destructive ? C.destructive : C.text }}
+        <View
+          style={[
+            styles.settingRowIconContainer,
+            {
+              backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
+              borderColor: destructive ? C.destructiveBorder : C.border,
+            },
+          ]}
         >
-          {title}
-        </AppText>
-        {subtitle && (
-          <AppText variant="caption" style={{ color: C.muted, marginTop: 2, fontSize: 12 }}>
-            {subtitle}
+          <Ionicons
+            name={icon}
+            size={18}
+            color={destructive ? C.destructive : (iconColor ?? C.muted)}
+          />
+        </View>
+        <View style={styles.settingRowContent}>
+          <AppText
+            style={[styles.settingRowTitle, { color: destructive ? C.destructive : C.text }]}
+          >
+            {title}
           </AppText>
-        )}
-      </View>
-      {rightElement ??
-        (onPress && !destructive ? (
-          <Ionicons name="chevron-forward" size={16} color={C.faint} />
-        ) : null)}
-    </Wrapper>
-  );
-}
+          {subtitle && (
+            <AppText variant="caption" style={styles.settingRowSubtitle}>
+              {subtitle}
+            </AppText>
+          )}
+        </View>
+        {rightElement ??
+          (onPress && !destructive ? (
+            <Ionicons name="chevron-forward" size={16} color={C.faint} />
+          ) : null)}
+      </Wrapper>
+    );
+  }
+);
 
-function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
-  const { i18n } = useTranslation();
-  const date = new Intl.DateTimeFormat(i18n.language, {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(memory.created_at));
-  return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: C.border,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-      }}
-    >
-      <View
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: C.primary,
-          marginTop: 6,
-          marginEnd: 12,
-        }}
-      />
-      <View style={{ flex: 1 }}>
-        <AppText style={{ lineHeight: 20, fontSize: 14, color: C.text }}>{memory.content}</AppText>
-        <AppText variant="caption" style={{ color: C.muted, marginTop: 4, fontSize: 11 }}>
-          {date}
-        </AppText>
+const MemoryItem = React.memo(
+  ({ memory, onDelete }: { memory: Memory; onDelete: (memory: Memory) => void }) => {
+    const { i18n } = useTranslation();
+    const date = new Intl.DateTimeFormat(i18n.language, {
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(memory.created_at));
+
+    const handleDelete = useCallback(() => onDelete(memory), [memory, onDelete]);
+
+    return (
+      <View style={styles.memoryItemContainer}>
+        <View style={styles.memoryItemDot} />
+        <View style={styles.memoryItemContent}>
+          <AppText style={styles.memoryItemText}>{memory.content}</AppText>
+          <AppText variant="caption" style={styles.memoryItemDate}>
+            {date}
+          </AppText>
+        </View>
+        <TouchableOpacity
+          onPress={handleDelete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.memoryItemClose}
+        >
+          <Ionicons name="close" size={16} color={C.faint} />
+        </TouchableOpacity>
       </View>
+    );
+  }
+);
+
+const LangRow = React.memo(
+  ({
+    lang,
+    isSelected,
+    onSelect,
+  }: {
+    lang: (typeof SUPPORTED_LANGUAGES)[0];
+    isSelected: boolean;
+    onSelect: (code: string) => void;
+  }) => {
+    const handleSelect = useCallback(() => onSelect(lang.code), [lang.code, onSelect]);
+
+    return (
       <TouchableOpacity
-        onPress={onDelete}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginStart: 8 }}
+        onPress={handleSelect}
+        activeOpacity={0.75}
+        style={[
+          styles.langRow,
+          {
+            backgroundColor: isSelected ? C.primarySurface : C.surfaceHigh,
+            borderColor: isSelected ? `${C.primary}40` : C.border,
+          },
+        ]}
       >
-        <Ionicons name="close" size={16} color={C.faint} />
+        <View style={styles.langRowContent}>
+          <AppText style={[styles.langRowNativeLabel, { color: isSelected ? C.primary : C.text }]}>
+            {lang.nativeLabel}
+          </AppText>
+          <AppText style={styles.langRowLabel}>{lang.label}</AppText>
+        </View>
+        {isSelected && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
       </TouchableOpacity>
-    </View>
-  );
-}
+    );
+  }
+);
 
 // ─── Language picker modal ────────────────────────────────────────────────────
 function LanguagePickerModal({
@@ -196,68 +324,32 @@ function LanguagePickerModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+
+  const renderItem = useCallback(
+    ({ item }: { item: (typeof SUPPORTED_LANGUAGES)[0] }) => (
+      <LangRow lang={item} isSelected={currentLang.startsWith(item.code)} onSelect={onSelect} />
+    ),
+    [currentLang, onSelect]
+  );
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 20,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
+      <View style={styles.langModalOverlay}>
+        <View style={styles.langModalContent}>
+          <View style={styles.langModalHeader}>
+            <AppText variant="h2" style={styles.langModalTitle}>
               {t('settings.items.language')}
             </AppText>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close-circle" size={26} color={C.faint} />
             </TouchableOpacity>
           </View>
-          {SUPPORTED_LANGUAGES.map((lang) => {
-            const isSelected = currentLang.startsWith(lang.code);
-            return (
-              <TouchableOpacity
-                key={lang.code}
-                onPress={() => onSelect(lang.code)}
-                activeOpacity={0.75}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: isSelected ? C.primarySurface : C.surfaceHigh,
-                  borderRadius: 14,
-                  padding: 16,
-                  marginBottom: 10,
-                  borderWidth: 1,
-                  borderColor: isSelected ? `${C.primary}40` : C.border,
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <AppText
-                    style={{
-                      fontSize: 15,
-                      fontWeight: '600',
-                      color: isSelected ? C.primary : C.text,
-                    }}
-                  >
-                    {lang.nativeLabel}
-                  </AppText>
-                  <AppText style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                    {lang.label}
-                  </AppText>
-                </View>
-                {isSelected && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
-              </TouchableOpacity>
-            );
-          })}
+          <FlatList
+            data={SUPPORTED_LANGUAGES}
+            keyExtractor={(item) => item.code}
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+          />
         </View>
       </View>
     </Modal>
@@ -275,14 +367,12 @@ export default function SettingsScreen() {
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   const currentLang = language ?? i18n.language ?? 'en';
-  const currentLangLabel =
-    SUPPORTED_LANGUAGES.find((l) => currentLang.startsWith(l.code))?.nativeLabel ?? 'English';
+  const currentLangLabel = useMemo(
+    () => SUPPORTED_LANGUAGES.find((l) => currentLang.startsWith(l.code))?.nativeLabel ?? 'English',
+    [currentLang]
+  );
 
-  useEffect(() => {
-    loadMemories();
-  }, []);
-
-  const loadMemories = async () => {
+  const loadMemories = useCallback(async () => {
     setIsLoadingMemories(true);
     try {
       const data = await ApiService.getMemories();
@@ -292,31 +382,41 @@ export default function SettingsScreen() {
     } finally {
       setIsLoadingMemories(false);
     }
-  };
+  }, []);
 
-  const handleDeleteMemory = (memory: Memory) => {
-    Alert.alert(
-      t('settings.actions.forget_memory_title'),
-      `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
-      [
-        { text: t('settings.actions.cancel'), style: 'cancel' },
-        {
-          text: t('settings.actions.forget'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await ApiService.deleteMemory(memory.id);
-              setMemories((prev) => prev.filter((m) => m.id !== memory.id));
-            } catch {
-              Alert.alert(t('settings.actions.error'), t('settings.actions.delete_memory_failed'));
-            }
+  useEffect(() => {
+    loadMemories();
+  }, [loadMemories]);
+
+  const handleDeleteMemory = useCallback(
+    (memory: Memory) => {
+      Alert.alert(
+        t('settings.actions.forget_memory_title'),
+        `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
+        [
+          { text: t('settings.actions.cancel'), style: 'cancel' },
+          {
+            text: t('settings.actions.forget'),
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await ApiService.deleteMemory(memory.id);
+                setMemories((prev) => prev.filter((m) => m.id !== memory.id));
+              } catch {
+                Alert.alert(
+                  t('settings.actions.error'),
+                  t('settings.actions.delete_memory_failed')
+                );
+              }
+            },
           },
-        },
-      ]
-    );
-  };
+        ]
+      );
+    },
+    [t]
+  );
 
-  const handleSignOut = () => {
+  const handleSignOut = useCallback(() => {
     Alert.alert(
       t('settings.actions.sign_out_confirm_title'),
       t('settings.actions.sign_out_confirm_desc'),
@@ -325,69 +425,35 @@ export default function SettingsScreen() {
         { text: t('settings.items.sign_out'), style: 'destructive', onPress: () => signOut() },
       ]
     );
-  };
+  }, [t, signOut]);
 
-  const handleSelectLanguage = (code: string) => {
-    setLanguage(code);
-    i18n.changeLanguage(code);
-    setShowLanguagePicker(false);
-  };
+  const handleSelectLanguage = useCallback(
+    (code: string) => {
+      setLanguage(code);
+      i18n.changeLanguage(code);
+      setShowLanguagePicker(false);
+    },
+    [setLanguage]
+  );
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 }}>
-        <AppText
-          variant="h1"
-          style={{ fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
-        >
-          {t('settings.title')}
-        </AppText>
-      </View>
+  const renderMemoryItem = useCallback(
+    ({ item }: { item: Memory }) => <MemoryItem memory={item} onDelete={handleDeleteMemory} />,
+    [handleDeleteMemory]
+  );
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-      >
-        {/* ── Account ─────────────────────────────── */}
+  const ListHeaderComponent = useMemo(
+    () => (
+      <>
         <SectionHeader title={t('settings.sections.account')} />
-
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: C.border,
-            flexDirection: 'row',
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.03,
-            shadowRadius: 3,
-            elevation: 1,
-          }}
-        >
-          <View
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              backgroundColor: C.primarySurface,
-              borderWidth: 1,
-              borderColor: `${C.primary}25`,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginEnd: 14,
-            }}
-          >
+        <View style={styles.accountContainer}>
+          <View style={styles.accountAvatar}>
             <Ionicons name="person" size={22} color={C.primary} />
           </View>
-          <View style={{ flex: 1 }}>
-            <AppText style={{ fontWeight: '600', fontSize: 15, color: C.text }} numberOfLines={1}>
+          <View style={styles.accountContent}>
+            <AppText style={styles.accountEmail} numberOfLines={1}>
               {user?.email ?? t('settings.items.signed_in')}
             </AppText>
-            <AppText variant="caption" style={{ color: C.muted, fontSize: 12 }}>
+            <AppText variant="caption" style={styles.accountSubtitle}>
               {t('settings.items.signed_in_with_magic_link')}
             </AppText>
           </View>
@@ -401,58 +467,40 @@ export default function SettingsScreen() {
           destructive
         />
 
-        {/* ── Personal Memories ────────────────────── */}
-        <View style={{ marginTop: 16 }}>
+        <View style={styles.sectionContainer}>
           <SectionHeader title={t('settings.items.personal_memories')} />
-
-          {isLoadingMemories ? (
+          {isLoadingMemories && (
             <View style={{ alignItems: 'center', paddingVertical: 20 }}>
               <ActivityIndicator color={C.primary} />
             </View>
-          ) : memories.length === 0 ? (
-            <View
-              style={{
-                backgroundColor: C.surface,
-                borderRadius: 14,
-                padding: 16,
-                borderWidth: 1,
-                borderColor: C.border,
-                alignItems: 'center',
-              }}
-            >
-              <Ionicons
-                name="sparkles-outline"
-                size={28}
-                color={C.faint}
-                style={{ marginBottom: 8 }}
-              />
-              <AppText style={{ textAlign: 'center', fontSize: 13, color: C.muted }}>
-                {t('settings.items.no_memories')}
-              </AppText>
-            </View>
-          ) : (
-            <>
-              {memories.map((memory) => (
-                <MemoryItem
-                  key={memory.id}
-                  memory={memory}
-                  onDelete={() => handleDeleteMemory(memory)}
-                />
-              ))}
-              <TouchableOpacity
-                onPress={loadMemories}
-                style={{ alignItems: 'center', paddingVertical: 8 }}
-              >
-                <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
-                  {t('settings.actions.refresh')}
-                </AppText>
-              </TouchableOpacity>
-            </>
           )}
         </View>
+      </>
+    ),
+    [t, user?.email, handleSignOut, isLoadingMemories]
+  );
+
+  const ListEmptyComponent = useMemo(() => {
+    if (isLoadingMemories) return null;
+    return (
+      <View style={styles.noMemoriesContainer}>
+        <Ionicons name="sparkles-outline" size={28} color={C.faint} style={styles.noMemoriesIcon} />
+        <AppText style={styles.noMemoriesText}>{t('settings.items.no_memories')}</AppText>
+      </View>
+    );
+  }, [isLoadingMemories, t]);
+
+  const ListFooterComponent = useMemo(
+    () => (
+      <>
+        {!isLoadingMemories && memories.length > 0 && (
+          <TouchableOpacity onPress={loadMemories} style={styles.refreshButton}>
+            <AppText style={styles.refreshButtonText}>{t('settings.actions.refresh')}</AppText>
+          </TouchableOpacity>
+        )}
 
         {/* ── Preferences ─────────────────────────── */}
-        <View style={{ marginTop: 16 }}>
+        <View style={styles.sectionContainer}>
           <SectionHeader title={t('settings.sections.preferences')} />
 
           <SettingRow
@@ -493,7 +541,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* ── About ───────────────────────────────── */}
-        <View style={{ marginTop: 16 }}>
+        <View style={styles.sectionContainer}>
           <SectionHeader title={t('settings.sections.about')} />
           <SettingRow
             icon="information-circle-outline"
@@ -508,7 +556,37 @@ export default function SettingsScreen() {
             subtitle={t('settings.items.tech_desc')}
           />
         </View>
-      </ScrollView>
+      </>
+    ),
+    [
+      isLoadingMemories,
+      memories.length,
+      loadMemories,
+      t,
+      currentLangLabel,
+      privacyMode,
+      notificationsEnabled,
+    ]
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <AppText variant="h1" style={styles.headerTitle}>
+          {t('settings.title')}
+        </AppText>
+      </View>
+
+      <FlatList
+        data={memories}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMemoryItem}
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        ListFooterComponent={ListFooterComponent}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+      />
 
       <LanguagePickerModal
         visible={showLanguagePicker}
@@ -519,3 +597,9 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
+
+// --- Auto-added display names ---
+SectionHeader.displayName = 'SectionHeader';
+SettingRow.displayName = 'SettingRow';
+MemoryItem.displayName = 'MemoryItem';
+LangRow.displayName = 'LangRow';
