@@ -784,9 +784,9 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             return msg
 
         typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
-        typing.cast(
-            "AsyncMock", chat_service.agent_repo.increment_message_count
-        ).return_value = None
+        typing.cast("AsyncMock", chat_service.agent_repo.increment_message_count).return_value = (
+            None
+        )
 
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
             room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
