@@ -375,8 +375,8 @@ async def test_create_event(
     agent = await Agent.create(
         user_id=mock_user_id, name="Test Agent", description="Test", personality="Test"
     )
-    room = await ChatRoom.create(user_id=mock_user_id, title="Test Room", name="Test")
-    msg = await ChatMessage.create(room=room, role="user", content="Test")
+    room = await ChatRoom.create(user_id=mock_user_id, name="Test Room")
+    msg = await ChatMessage.create(room=room, user_id=mock_user_id, message_type="user", content="Test")
 
     mock_agent_id = str(agent.id)
     mock_message_id = str(msg.id)
