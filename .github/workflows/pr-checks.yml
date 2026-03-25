@@ -60,7 +60,7 @@ jobs:
       - name: Validate lockfile
         working-directory: ./frontend
         run: |
-          npm install --package-lock-only
+          npm install --package-lock-only --ignore-scripts
           if ! git diff --quiet package-lock.json; then
             echo "::error::package-lock.json is out of sync with package.json. Run 'npm install' locally and commit the changes."
             exit 1
