@@ -40,6 +40,69 @@ jobs:
             workflows:
               - '.github/workflows/**'
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Frontend Security & Quality Gates
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  frontend-lockfile-validation:
+    name: Frontend Lockfile Validation
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate lockfile
+        working-directory: ./frontend
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          if ! git diff --quiet package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json. Run 'npm install' locally and commit the changes."
+            exit 1
+          fi
+          echo "Lockfile validation passed."
+
+  frontend-npm-audit:
+    name: Frontend Security Audit
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./frontend
+        continue-on-error: true
+        run: |
+          {
+            echo "## NPM Audit Results"
+            echo ""
+            npm audit --audit-level=moderate --production 2>&1 | tee audit-output.txt || true
+            echo "\`\`\`"
+            cat audit-output.txt
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Backend Checks
+  # ─────────────────────────────────────────────────────────────────────────────
+
   backend-checks:
     name: Backend
     needs: changes
@@ -65,9 +128,13 @@ jobs:
       - name: Check Postman Coverage
         run: python3 backend/scripts/enforce_postman_tests.py
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Frontend Checks
+  # ─────────────────────────────────────────────────────────────────────────────
+
   frontend-checks:
     name: Frontend
-    needs: changes
+    needs: [changes, frontend-lockfile-validation]
     if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
     uses: ./.github/workflows/reusable-frontend-setup.yml
     with:
@@ -75,70 +142,16 @@ jobs:
       working-directory: './frontend'
       run-tests: true
       run-lint: true
+      run-format-check: true
       upload-coverage: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
 
-  security-audit:
-    name: Security Audit
-    needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-      - name: Set up Python
-        run: uv python install 3.13
-      - name: Run security audit
-        continue-on-error: true
-        run: |
-          cd backend
-          uv sync --all-extras
-          # safety check is used because safety scan requires an account/key in CI
-          uv run safety check --policy-file .safety-policy.yml
-          # SEC(agent): review needed - ignoring GHSA-rf74-v2fm-23pw, GHSA-gfwx-w7gr-fvh7, GHSA-jm6w-m3j8-898g (nltk via safety dev dependency) which have no current fixes
-          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g
-
-  actionlint:
-    name: Lint Workflows
-    needs: changes
-    if: needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.11
-
-  pr-size-check:
-    name: PR Size Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Check PR size
-        run: |
-          # Sum added and deleted lines across all changed files.
-          # git diff --numstat is more reliable than --shortstat whose field positions
-          # shift depending on whether insertions or deletions are present.
-          CHANGED_LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD \
-            | awk '{add+=$1; del+=$2} END {print add+del}')
-          echo "Total lines changed: ${CHANGED_LINES}"
-          if [ "${CHANGED_LINES}" -gt 1000 ]; then
-            echo "::warning::PR is large (${CHANGED_LINES} lines changed). Consider splitting into smaller PRs."
-          fi
-
-  # ── Frontend additional checks ──────────────────────────────────────────────────
-
   frontend-web-build:
     name: Frontend Web Build
-    needs: [changes]
+    needs: [changes, frontend-checks]
     if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     defaults:
@@ -155,6 +168,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
 
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: ./frontend/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('./frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
       - name: Install dependencies
         run: npm ci
 
@@ -164,18 +185,87 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
         run: npx expo export -p web
 
+      - name: Analyze bundle size
+        run: |
+          {
+            echo "## Bundle Size Analysis"
+            echo ""
+            TOTAL_SIZE=$(du -sb ./dist | cut -f1)
+            TOTAL_SIZE_MB=$(echo "scale=2; ${TOTAL_SIZE} / 1024 / 1024" | bc)
+            echo "**Total Bundle Size:** ${TOTAL_SIZE_MB} MB"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  # ── PR Backend Preview Deployment ────────────────────────────────────────────
-  # Builds a PR-tagged Docker image and deploys it to a shared PR preview
-  # Container App so reviewers can test the backend before merging.
-  #
-  # Prerequisites:
-  #   • A 'pr-preview' GitHub Environment exists with the same secrets as
-  #     'staging' (STAGING_DATABASE_URL, STAGING_SUPABASE_URL, etc.) plus
-  #     AZURE_CREDENTIALS with Contributor on the PR Container App.
-  #   • A PR preview Container App exists (default: aca-miru-pr).
-  #     Override via PR_CONTAINER_APP_NAME and PR_RESOURCE_GROUP repo variables.
-  #   • Note: this is a *shared* preview — only one PR is live at a time.
+          if (( $(echo "${TOTAL_SIZE_MB} > 10" | bc -l) )); then
+            echo "::warning::Bundle size (${TOTAL_SIZE_MB} MB) exceeds 10 MB threshold."
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-pr-build
+          path: ./frontend/dist
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Security & Workflow Checks
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  security-audit:
+    name: Security Audit
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Run security audit
+        continue-on-error: true
+        run: |
+          cd backend
+          uv sync --all-extras
+          uv run safety check --policy-file .safety-policy.yml
+          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g
+
+  actionlint:
+    name: Lint Workflows
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run actionlint
+        uses: rhysd/actionlint@v1.7.11
+
+  pr-size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          CHANGED_LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD \
+            | awk '{add+=$1; del+=$2} END {print add+del}')
+          echo "Total lines changed: ${CHANGED_LINES}"
+          if [ "${CHANGED_LINES}" -gt 1000 ]; then
+            echo "::warning::PR is large (${CHANGED_LINES} lines changed). Consider splitting into smaller PRs."
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PR Backend Preview Deployment
+  # ─────────────────────────────────────────────────────────────────────────────
 
   pr-backend-build:
     name: Build PR Backend Image
@@ -262,14 +352,6 @@ jobs:
           IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
           [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
 
-          # aca-miru-pr is permanently in 'Labels' revision mode. In this mode every
-          # write operation (secret set, revision set-mode) requires --target-label,
-          # which those commands do not support. All 17 secrets are pre-configured on
-          # the app and do not need to be re-set per deploy.
-          #
-          # az containerapp update is the only command that accepts --target-label, so
-          # it is the sole deploy command. Env vars wire up the already-configured
-          # secrets by name via secretref:.
           ENV_VARS=(
             "DATABASE_URL=secretref:database-url"
             "SUPABASE_URL=secretref:supabase-url"
@@ -302,11 +384,10 @@ jobs:
             --output tsv)
 
           echo "Created revision: $NEW_REVISION with label pr-${{ github.event.pull_request.number }}"
+
       - name: Get app URL
         id: app-url
         run: |
-          # Use the label's FQDN to ensure we are testing this PR's specific revision
-          # ACA URLs for labels follow: <app-name>---<label>.<env-domain>
           FQDN=$(az containerapp show \
             --name "${{ env.PR_APP }}" \
             --resource-group "${{ env.PR_RG }}" \
@@ -321,8 +402,6 @@ jobs:
           echo "Testing PR URL: $TEST_URL"
 
       - name: Wait for PR deployment to become healthy
-        # Scale-to-zero aware: --max-time 90 keeps the connection open through
-        # a full ACA cold start rather than abandoning it mid-boot.
         run: |
           APP_URL="${{ steps.app-url.outputs.url }}"
 
