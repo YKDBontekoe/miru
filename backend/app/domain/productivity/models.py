@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -207,8 +207,10 @@ class NoteResponse(BaseModel):
 
     id: UUID
     user_id: UUID
-    agent_id: UUID | None = Field(None, validation_alias="agent")
-    origin_message_id: UUID | None = Field(None, validation_alias="origin_message")
+    agent_id: UUID | None = Field(None, validation_alias=AliasChoices("agent", "agent_id"))
+    origin_message_id: UUID | None = Field(
+        None, validation_alias=AliasChoices("origin_message", "origin_message_id")
+    )
     origin_context: str | None = None
     title: str
     content: str
@@ -300,8 +302,10 @@ class CalendarEventResponse(BaseModel):
 
     id: UUID
     user_id: UUID
-    agent_id: UUID | None = Field(None, validation_alias="agent")
-    origin_message_id: UUID | None = Field(None, validation_alias="origin_message")
+    agent_id: UUID | None = Field(None, validation_alias=AliasChoices("agent", "agent_id"))
+    origin_message_id: UUID | None = Field(
+        None, validation_alias=AliasChoices("origin_message", "origin_message_id")
+    )
     origin_context: str | None = None
     title: str
     description: str | None = None

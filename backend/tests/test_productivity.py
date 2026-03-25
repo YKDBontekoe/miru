@@ -245,17 +245,27 @@ async def test_delete_task_not_found_or_forbidden(
 
 
 @pytest.mark.asyncio
-async def test_create_note(async_client: AsyncClient, override_get_current_user: None) -> None:
+async def test_create_note(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
     """Test creating a note."""
+    from app.domain.agents.models import Agent
+
+    agent = await Agent.create(
+        user_id=mock_user_id, name="Test Agent", description="Test", personality="Test"
+    )
+    mock_agent_id = str(agent.id)
+
     response = await async_client.post(
         "/api/v1/productivity/notes",
-        json={"title": "Test Note", "content": "This is a test note."},
+        json={"title": "Test Note", "content": "This is a test note.", "agent_id": mock_agent_id},
     )
     assert response.status_code == 201
     data = response.json()
     assert data["title"] == "Test Note"
     assert data["content"] == "This is a test note."
     assert data["is_pinned"] is False
+    assert data["agent_id"] == mock_agent_id
     assert "id" in data
 
 
@@ -376,21 +386,41 @@ async def test_delete_note_not_found_or_forbidden(
 
 
 @pytest.mark.asyncio
-async def test_create_event(async_client: AsyncClient, override_get_current_user: None) -> None:
+async def test_create_event(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
     """Test creating a calendar event."""
     from datetime import datetime, timedelta
 
+    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
+
     now = datetime.now(UTC)
+    agent = await Agent.create(
+        user_id=mock_user_id, name="Test Agent", description="Test", personality="Test"
+    )
+    room = await ChatRoom.create(user_id=mock_user_id, name="Test Room")
+    msg = await ChatMessage.create(
+        room=room, user_id=mock_user_id, message_type="user", content="Test"
+    )
+
+    mock_agent_id = str(agent.id)
+    mock_message_id = str(msg.id)
     response = await async_client.post(
         "/api/v1/productivity/events",
         json={
             "title": "Test Event",
             "start_time": now.isoformat(),
             "end_time": (now + timedelta(hours=1)).isoformat(),
+            "agent_id": mock_agent_id,
+            "origin_message_id": mock_message_id,
         },
     )
     assert response.status_code == 201
-    assert response.json()["title"] == "Test Event"
+    data = response.json()
+    assert data["title"] == "Test Event"
+    assert data["agent_id"] == mock_agent_id
+    assert data["origin_message_id"] == mock_message_id
 
 
 @pytest.mark.asyncio
