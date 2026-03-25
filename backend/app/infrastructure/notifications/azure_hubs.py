@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from notificationhubs_rest_python.NotificationHub import AzureNotification, AzureNotificationHub
 
@@ -38,6 +38,7 @@ class AzureNotificationHubClient:
         if not self.hub:
             logger.warning("Notification Hub is not initialized. Skipping notification.")
             return
+        assert isinstance(self.hub, AzureNotificationHub)
 
         try:
             if isinstance(payload, dict):
@@ -45,7 +46,7 @@ class AzureNotificationHubClient:
             notification = AzureNotification(notification_format="template", payload=payload)
             # notificationhubs-rest-python client is synchronous.
             # Use asyncio.to_thread to offload blocking I/O off the main event loop.
-            await asyncio.to_thread(self.hub.send_notification, notification, tags)  # ty: ignore[unresolved-attribute]
+            await asyncio.to_thread(cast(Any, self.hub).send_notification, notification, tags)
             logger.info("Successfully sent notification.")
         except Exception as exc:
             logger.exception("Failed to send notification", exc_info=exc)

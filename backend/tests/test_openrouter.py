@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -67,7 +68,7 @@ async def test_embed_success() -> None:
 
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=[0.1, 0.2])]
-        client.openai_client.embeddings.create = AsyncMock(return_value=mock_response)  # ty: ignore[invalid-assignment]
+        cast(Any, client.openai_client.embeddings).create = AsyncMock(return_value=mock_response)
 
         result = await client.embed("test text", "test-model")
         assert result == [0.1, 0.2]
@@ -84,7 +85,7 @@ async def test_chat_completion_success() -> None:
         from app.infrastructure.external.openrouter import ChatResponse
 
         mock_response = ChatResponse(message="hello")
-        client.instructor_client.chat.completions.create = AsyncMock(return_value=mock_response)  # ty: ignore[invalid-assignment]
+        cast(Any, client.instructor_client.chat.completions).create = AsyncMock(return_value=mock_response)
 
         result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model")
         assert result == "hello"
@@ -103,7 +104,7 @@ async def test_structured_completion_success() -> None:
         client = OpenRouterClient("test-key")
 
         mock_response = DummyModel(name="test")
-        client.instructor_client.chat.completions.create = AsyncMock(return_value=mock_response)  # ty: ignore[invalid-assignment]
+        cast(Any, client.instructor_client.chat.completions).create = AsyncMock(return_value=mock_response)
 
         result = await client.structured_completion(
             [{"role": "user", "content": "hi"}], "test-model", DummyModel
