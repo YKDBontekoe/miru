@@ -20,7 +20,7 @@ if raw_url.startswith("postgres://"):
     # Passing "search_path" directly causes TypeError: connect() got an unexpected keyword argument
     filtered_params = []
     for k, v in query_params:
-        if k == "pgbouncer":
+        if k.lower() == "pgbouncer":
             continue
         if k == "search_path":
             filtered_params.append(("schema", v))
