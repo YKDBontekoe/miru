@@ -405,6 +405,7 @@ jobs:
             if ! AUTH_TOKEN=$(SUPABASE_URL="$RESOLVED_SUPABASE_URL" SUPABASE_KEY="$RESOLVED_SUPABASE_KEY" SUPABASE_TEST_EMAIL="$SUPABASE_TEST_EMAIL" SUPABASE_TEST_PASSWORD="$SUPABASE_TEST_PASSWORD" python3 - <<'PY'
           import json
           import os
+          import re
           import sys
           import time
           import urllib.error
@@ -414,9 +415,35 @@ jobs:
           login_url = base_url + "/auth/v1/token?grant_type=password"
           signup_url = base_url + "/auth/v1/signup"
           api_key = os.environ["SUPABASE_KEY"]
+          def clean_secret(value: str) -> str:
+              cleaned = value.strip()
+              if (cleaned.startswith('"') and cleaned.endswith('"')) or (
+                  cleaned.startswith("'") and cleaned.endswith("'")
+              ):
+                  cleaned = cleaned[1:-1].strip()
+              return cleaned
+
+          raw_email = clean_secret(os.environ["SUPABASE_TEST_EMAIL"])
+          raw_password = clean_secret(os.environ["SUPABASE_TEST_PASSWORD"])
+
+          email = raw_email
+          if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+              email = "ci-postman-pr317@example.com"
+              print(
+                  f"::warning::SUPABASE_TEST_EMAIL is invalid after normalization; using {email}",
+                  file=sys.stderr,
+              )
+
+          password = raw_password if len(raw_password) >= 8 else "PostmanCi!23456"
+          if password != raw_password:
+              print(
+                  "::warning::SUPABASE_TEST_PASSWORD is too short/invalid; using CI fallback password",
+                  file=sys.stderr,
+              )
+
           payload = {
-              "email": os.environ["SUPABASE_TEST_EMAIL"],
-              "password": os.environ["SUPABASE_TEST_PASSWORD"],
+              "email": email,
+              "password": password,
           }
 
           headers = {
