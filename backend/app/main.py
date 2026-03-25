@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+import typing
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.agents import router as agents_router
@@ -84,7 +85,9 @@ app.include_router(websocket_router, prefix="/api/v1")
 
 
 @app.middleware("http")
-async def audit_log_middleware(request: Request, call_next):
+async def audit_log_middleware(
+    request: Request, call_next: typing.Callable[[Request], typing.Awaitable[Response]]
+) -> Response:
     # To log status code and handle unhandled exceptions safely
     status_code = 500
     try:
