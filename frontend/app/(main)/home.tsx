@@ -200,7 +200,7 @@ function RecentChatRow({
   onPress: () => void;
   isLast: boolean;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
   const relativeTime = () => {

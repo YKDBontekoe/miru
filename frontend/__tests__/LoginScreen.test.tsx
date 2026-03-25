@@ -20,15 +20,16 @@ jest.mock('react-i18next', () => ({
         'auth.desc_passkey': 'Sign in with your biometrics or security key.',
         'auth.email_label': 'Email address',
         'auth.password_label': 'Password',
-        'auth.passkey_hint': 'Your device will prompt you to authenticate with Face ID, Touch ID, or a security key.',
-        'auth.footer_note': 'By signing in you agree to keep your account secure.\nMagic links expire after 1 hour.'
+        'auth.passkey_hint':
+          'Your device will prompt you to authenticate with Face ID, Touch ID, or a security key.',
+        'auth.footer_note':
+          'By signing in you agree to keep your account secure.\nMagic links expire after 1 hour.',
       };
       return keys[key] || key;
     },
     i18n: { language: 'en' },
   }),
 }));
-
 
 describe('LoginScreen', () => {
   const mockSignInWithMagicLink = jest.fn();

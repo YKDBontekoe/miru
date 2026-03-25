@@ -138,7 +138,8 @@ export default function LoginScreen() {
             Check your email
           </AppText>
           <AppText variant="body" color="muted" className="text-center mb-xxxl">
-            {t('auth.magic_link_sent')}{'\n'}
+            {t('auth.magic_link_sent')}
+            {'\n'}
             <AppText variant="body" className="font-semibold">
               {email.trim()}
             </AppText>
