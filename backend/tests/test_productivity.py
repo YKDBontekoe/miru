@@ -352,6 +352,26 @@ async def test_delete_note_not_found_or_forbidden(
 
 
 @pytest.mark.asyncio
+async def test_create_event_mixed_timezones(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    """Test creating a calendar event with mixed offset-aware and offset-naive timezones."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Mixed Timezones Event",
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(hours=1)).replace(tzinfo=None).isoformat(),
+        },
+    )
+    assert response.status_code == 201
+    assert response.json()["title"] == "Mixed Timezones Event"
+
+
+@pytest.mark.asyncio
 async def test_create_event(async_client: AsyncClient, override_get_current_user: None) -> None:
     """Test creating a calendar event."""
     from datetime import datetime, timedelta
@@ -446,6 +466,27 @@ async def test_update_event(
     response = await async_client.patch(
         f"/api/v1/productivity/events/{event.id}",
         json={"end_time": (now - timedelta(hours=1)).isoformat()},
+    )
+    assert response.status_code == 400
+    assert "end_time must be after start_time" in response.json()["detail"]["message"]
+
+    # Test update with mixed offset-aware and naive timezones
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={
+            "start_time": (now + timedelta(hours=2)).replace(tzinfo=None).isoformat(),
+            "end_time": (now + timedelta(hours=3)).isoformat(),
+        },
+    )
+    assert response.status_code == 200
+
+    # Test update invalid time range with mixed offset-aware and naive timezones
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={
+            "start_time": (now + timedelta(hours=5)).isoformat(),
+            "end_time": (now + timedelta(hours=4)).replace(tzinfo=None).isoformat(),
+        },
     )
     assert response.status_code == 400
     assert "end_time must be after start_time" in response.json()["detail"]["message"]

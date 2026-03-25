@@ -149,7 +149,17 @@ class ManageProductivityUseCase:
         self, user_id: UUID, event_data: CalendarEventCreate
     ) -> CalendarEventEntity:
         """Create a new calendar event for the user."""
-        if event_data.end_time <= event_data.start_time:
+        start = event_data.start_time
+        end = event_data.end_time
+
+        from datetime import UTC
+
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=UTC)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=UTC)
+
+        if end <= start:
             logger.warning("Attempted to create event with end_time before start_time")
             raise InvalidTimeRangeError("end_time must be after start_time")
 
@@ -190,6 +200,13 @@ class ManageProductivityUseCase:
 
         new_start = valid_keys.get("start_time", event.start_time)
         new_end = valid_keys.get("end_time", event.end_time)
+
+        from datetime import UTC
+
+        if new_start.tzinfo is None:
+            new_start = new_start.replace(tzinfo=UTC)
+        if new_end.tzinfo is None:
+            new_end = new_end.replace(tzinfo=UTC)
 
         if new_end <= new_start:
             logger.warning("Attempted to update event with end_time before start_time")
