@@ -20,11 +20,8 @@ if raw_url.startswith("postgres://"):
     if not any(k == "statement_cache_size" for k, v in query_params):
         query_params.append(("statement_cache_size", "0"))
 
-    # Add search_path if a specific schema is requested
-    if settings.db_schema and settings.db_schema != "public":
-        # Remove any existing search_path
-        query_params = [(k, v) for k, v in query_params if k != "search_path"]
-        query_params.append(("search_path", settings.db_schema))
+    # Note: search_path cannot be passed as a connection parameter to asyncpg.
+    # Schema is set after connection establishment in init_db()
 
     new_query = urllib.parse.urlencode(query_params)
     raw_url = urllib.parse.urlunsplit(
@@ -65,8 +62,9 @@ async def init_db() -> None:
         await Tortoise.init(config=TORTOISE_ORM)
         conn = Tortoise.get_connection("default")
 
-        # Create schema if it doesn't exist
+        # Create schema if it doesn't exist and set it as the search path
         await conn.execute_script(f"CREATE SCHEMA IF NOT EXISTS {settings.db_schema}")
+        await conn.execute_script(f"SET search_path TO {settings.db_schema}, public")
 
         # If we are in a PR environment (schema starts with pr_), we want a fresh start
         if settings.db_schema.startswith("pr_"):
@@ -79,6 +77,10 @@ async def init_db() -> None:
             command = Command(tortoise_config=TORTOISE_ORM, app="models")
             await command.init()
             await command.upgrade(run_in_transaction=True)
+
+            # Set search path after reconnection
+            conn = Tortoise.get_connection("default")
+            await conn.execute_script(f"SET search_path TO {settings.db_schema}, public")
 
             # Seed the test user for integration tests
             if settings.test_user_id:
