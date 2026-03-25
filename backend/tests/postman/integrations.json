@@ -13,8 +13,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -26,10 +26,28 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/integrations/steam/resolve-user",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "integrations", "steam", "resolve-user"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "integrations",
+            "steam",
+            "resolve-user"
+          ]
         }
       }
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }

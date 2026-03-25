@@ -13,8 +13,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -26,8 +26,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents"
+          ]
         }
       }
     },
@@ -38,8 +44,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -51,8 +57,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents"
+          ]
         }
       }
     },
@@ -63,8 +75,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -76,8 +88,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents/capabilities",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents", "capabilities"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents",
+            "capabilities"
+          ]
         }
       }
     },
@@ -88,8 +107,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -101,8 +120,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents/integrations",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents", "integrations"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents",
+            "integrations"
+          ]
         }
       }
     },
@@ -113,8 +139,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 201, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -126,8 +152,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents/generate",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents", "generate"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents",
+            "generate"
+          ]
         }
       }
     },
@@ -138,8 +171,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -151,8 +184,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents/templates",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents", "templates"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents",
+            "templates"
+          ]
         }
       }
     },
@@ -163,8 +203,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -176,8 +216,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents", "{{agentId}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents",
+            "{{agentId}}"
+          ]
         }
       }
     },
@@ -188,8 +235,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "pm.test(\"Status code is 200, 404, or 422\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 422, 404]);",
               "});"
             ],
             "type": "text/javascript"
@@ -201,10 +248,27 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "agents", "{{agentId}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agents",
+            "{{agentId}}"
+          ]
         }
       }
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  }
 }

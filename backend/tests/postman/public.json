@@ -33,8 +33,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
         }
       }
     },
@@ -61,8 +65,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/openapi.json",
-          "host": ["{{baseUrl}}"],
-          "path": ["openapi.json"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "openapi.json"
+          ]
         }
       }
     },
@@ -86,8 +94,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/docs",
-          "host": ["{{baseUrl}}"],
-          "path": ["docs"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "docs"
+          ]
         }
       }
     }
