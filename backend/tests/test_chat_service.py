@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -16,8 +17,6 @@ from app.domain.chat.service import ChatService
 @pytest.fixture
 def chat_service() -> ChatService:
     chat_repo = AsyncMock()
-
-    from typing import Any
 
     async def mock_save_message(msg: Any) -> Any:
         msg.id = msg.id or uuid4()
@@ -424,7 +423,7 @@ async def test_stream_responses(chat_service: Any, monkeypatch: pytest.MonkeyPat
     chunk3 = MagicMock()
     chunk3.choices = []
 
-    async def mock_async_generator() -> typing.AsyncGenerator[Any, None]:
+    async def mock_async_generator() -> AsyncGenerator[Any, None]:
         yield chunk1
         yield chunk3
         yield chunk2
