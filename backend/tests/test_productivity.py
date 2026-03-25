@@ -386,6 +386,31 @@ async def test_delete_note_not_found_or_forbidden(
 
 
 @pytest.mark.asyncio
+async def test_create_event_mixed_timezones(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
+    """Test creating a calendar event with mixed timezone awareness."""
+    from datetime import UTC, datetime, timedelta
+
+    # start_time is naive (no tzinfo)
+    naive_now = datetime.now()
+    # end_time is aware (UTC)
+    aware_end = datetime.now(UTC) + timedelta(hours=1)
+
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Test Mixed Timezones",
+            "start_time": naive_now.isoformat(),
+            "end_time": aware_end.isoformat(),
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == "Test Mixed Timezones"
+
+
+@pytest.mark.asyncio
 async def test_create_event(
     async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
 ) -> None:
@@ -480,6 +505,29 @@ async def test_list_events(
     response = await async_client.get("/api/v1/productivity/events")
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_update_event_mixed_timezones(
+    async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
+) -> None:
+    """Test updating a calendar event with mixed timezone awareness."""
+    from datetime import UTC, datetime, timedelta
+
+    aware_now = datetime.now(UTC)
+    aware_end = aware_now + timedelta(hours=1)
+    event = await CalendarEvent.create(
+        user_id=mock_user_id, title="Original Event", start_time=aware_now, end_time=aware_end
+    )
+
+    naive_end = datetime.now() + timedelta(hours=2)
+
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={"end_time": naive_end.isoformat()},
+    )
+    assert response.status_code == 200
+    assert response.json()["title"] == "Original Event"
 
 
 @pytest.mark.asyncio

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 from uuid import UUID
 
 from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
@@ -149,7 +150,14 @@ class ManageProductivityUseCase:
         self, user_id: UUID, event_data: CalendarEventCreate
     ) -> CalendarEventEntity:
         """Create a new calendar event for the user."""
-        if event_data.end_time <= event_data.start_time:
+        start = event_data.start_time
+        end = event_data.end_time
+        if getattr(start, "tzinfo", None) is None:
+            start = start.replace(tzinfo=UTC)
+        if getattr(end, "tzinfo", None) is None:
+            end = end.replace(tzinfo=UTC)
+
+        if end <= start:
             logger.warning("Attempted to create event with end_time before start_time")
             raise InvalidTimeRangeError("end_time must be after start_time")
 
@@ -191,7 +199,14 @@ class ManageProductivityUseCase:
         new_start = valid_keys.get("start_time", event.start_time)
         new_end = valid_keys.get("end_time", event.end_time)
 
-        if new_end <= new_start:
+        compare_start = new_start
+        compare_end = new_end
+        if getattr(compare_start, "tzinfo", None) is None:
+            compare_start = compare_start.replace(tzinfo=UTC)
+        if getattr(compare_end, "tzinfo", None) is None:
+            compare_end = compare_end.replace(tzinfo=UTC)
+
+        if compare_end <= compare_start:
             logger.warning("Attempted to update event with end_time before start_time")
             raise InvalidTimeRangeError("end_time must be after start_time")
 
