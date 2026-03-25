@@ -577,3 +577,46 @@ async def test_list_notes_and_events_without_agent(
     assert len(events_data) == 1
     assert events_data[0]["agent_id"] is None
     assert events_data[0]["origin_message_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_map_note_and_event_no_values_fetched() -> None:
+    """Test that _map_note and _map_event correctly handle missing prefetched relations."""
+    import uuid
+    from datetime import UTC, datetime
+
+    from app.infrastructure.repositories.productivity_repo import _map_event, _map_note
+
+    mock_user_id = uuid.uuid4()
+    mock_id = uuid.uuid4()
+
+    # Create an unsaved Note instance with string IDs (which extract_uuid rejects, returning None)
+    # This forces the code to fall back to the relation (getattr(note, "agent", None))
+    note = Note(
+        id=mock_id,
+        user_id=mock_user_id,
+        title="Test",
+        content="Test",
+        agent_id=None,  # type: ignore
+        origin_message_id=None,  # type: ignore
+    )
+    # Mapping should safely catch NoValuesFetched for agent and origin_message
+    entity = _map_note(note)
+    assert entity.agent_id is None
+    assert entity.origin_message_id is None
+
+    # Create an unsaved CalendarEvent instance with string IDs
+    now = datetime.now(UTC)
+    event = CalendarEvent(
+        id=mock_id,
+        user_id=mock_user_id,
+        title="Test Event",
+        start_time=now,
+        end_time=now,
+        agent_id=None,  # type: ignore
+        origin_message_id=None,  # type: ignore
+    )
+    # Mapping should safely catch NoValuesFetched for agent and origin_message
+    event_entity = _map_event(event)
+    assert event_entity.agent_id is None
+    assert event_entity.origin_message_id is None
