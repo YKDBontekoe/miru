@@ -56,7 +56,7 @@ jest.mock('react-native', () => ({
 }));
 
 // Mock XMLHttpRequest
-global.XMLHttpRequest = jest.fn() as any;
+global.XMLHttpRequest = jest.fn() as unknown as typeof XMLHttpRequest;
 
 describe('apiClient', () => {
   beforeEach(() => {
@@ -187,7 +187,7 @@ describe('streamChat', () => {
       responseText: '',
       status: 200,
     };
-    (global.XMLHttpRequest as jest.Mock).mockImplementation(() => mockXHR);
+    (global.XMLHttpRequest as unknown as jest.Mock).mockImplementation(() => mockXHR);
   });
 
   it('should stream chat successfully', async () => {
