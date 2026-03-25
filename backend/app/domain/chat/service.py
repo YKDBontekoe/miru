@@ -7,6 +7,8 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 
+from openai.types.chat import ChatCompletionMessageParam
+
 from app.core.config import get_settings
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.dtos import (
@@ -125,7 +127,7 @@ class ChatService:
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
-        messages: list[dict[str, str]] = [{"role": "system", "content": agent.personality}]
+        messages: list[ChatCompletionMessageParam] = [{"role": "system", "content": agent.personality}]
         if accept_language:
             messages.append(
                 {
@@ -137,7 +139,7 @@ class ChatService:
 
         response = await stream_chat(
             model=model_name,
-            messages=messages,  # ty: ignore[invalid-argument-type]
+            messages=messages,
         )
 
         async for chunk in response:

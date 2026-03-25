@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import crewai
-from crewai import LLM, Crew, Process, Task
+from crewai import LLM, Agent as BaseAgent, Crew, Process, Task
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (

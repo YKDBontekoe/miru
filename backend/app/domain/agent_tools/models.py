@@ -17,19 +17,19 @@ if TYPE_CHECKING:
 class AgentTool(SupabaseModel):
     """Database entity for Agent Tools/Skills."""
 
-    id: UUID = fields.UUIDField(primary_key=True)
-    user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
-    name: str = fields.CharField(max_length=100, db_index=True)  # ty: ignore[invalid-assignment]
-    description: str = fields.TextField()
-    category: str = fields.CharField(max_length=50, default="utility", db_index=True)  # ty: ignore[invalid-assignment]
-    version: str = fields.CharField(max_length=20, default="1.0.0")  # ty: ignore[invalid-assignment]
-    parameters_schema: dict = fields.JSONField(default={})
-    is_public: bool = fields.BooleanField(default=False)  # ty: ignore[invalid-assignment]
-    status: str = fields.CharField(max_length=20, default="active")  # ty: ignore[invalid-assignment]
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(null=True, db_index=True)
+    name = fields.CharField(max_length=100, db_index=True)
+    description = fields.TextField()
+    category = fields.CharField(max_length=50, default="utility", db_index=True)
+    version = fields.CharField(max_length=20, default="1.0.0")
+    parameters_schema = fields.JSONField(default={})
+    is_public = fields.BooleanField(default=False)
+    status = fields.CharField(max_length=20, default="active")
 
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
-    updated_at: datetime = fields.DatetimeField(auto_now=True)
-    deleted_at: datetime | None = fields.DatetimeField(null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+    deleted_at = fields.DatetimeField(null=True)
 
     class Meta:
         table = "agent_tools"
@@ -51,7 +51,7 @@ class AgentToolLink(SupabaseModel):
     tool: fields.ForeignKeyRelation[AgentTool] = fields.ForeignKeyField(
         "models.AgentTool", related_name="agent_links", on_delete=fields.CASCADE
     )
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "agent_tool_links"

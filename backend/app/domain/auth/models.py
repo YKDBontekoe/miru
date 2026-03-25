@@ -59,15 +59,15 @@ class Profile(SupabaseModel):
 class Passkey(SupabaseModel):
     """WebAuthn passkeys for passwordless login."""
 
-    id: UUID = fields.UUIDField(primary_key=True)
-    user_id: UUID = fields.UUIDField(db_index=True)
-    credential_id: str = fields.CharField(max_length=512, db_index=True)  # ty: ignore[invalid-assignment]
-    public_key: str = fields.TextField()
-    sign_count: int = fields.IntField(default=0)
-    device_name: str | None = fields.CharField(max_length=255, null=True)  # ty: ignore[invalid-assignment]
-    transports: list[str] = fields.JSONField(default=[])
-    last_used_at: datetime | None = fields.DatetimeField(null=True)
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(db_index=True)
+    credential_id = fields.CharField(max_length=512, db_index=True)
+    public_key = fields.TextField()
+    sign_count = fields.IntField(default=0)
+    device_name = fields.CharField(max_length=255, null=True)
+    transports = fields.JSONField(default=[])
+    last_used_at = fields.DatetimeField(null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
         table = "passkeys"

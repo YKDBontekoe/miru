@@ -26,7 +26,7 @@ def _map_room_to_entity(room: ChatRoom) -> ChatRoomEntity:
 def _map_message_to_entity(message: ChatMessage) -> ChatMessageEntity:
     return ChatMessageEntity(
         id=message.id,
-        room_id=message.room_id,  # ty: ignore[unresolved-attribute]
+        room_id=message.room_id,
         content=message.content,
         message_type=message.message_type,
         user_id=message.user_id,
@@ -78,8 +78,8 @@ class ChatRepository:
         """Associate an agent with a room."""
         assoc = await ChatRoomAgent.create(room_id=room_id, agent_id=agent_id)
         return ChatRoomAgentEntity(
-            room_id=assoc.room_id,  # ty: ignore[unresolved-attribute]
-            agent_id=assoc.agent_id,  # ty: ignore[unresolved-attribute]
+            room_id=assoc.room_id,
+            agent_id=assoc.agent_id,
             created_at=assoc.created_at,
         )
 

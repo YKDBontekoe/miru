@@ -14,12 +14,12 @@ from app.infrastructure.database.base import SupabaseModel
 class MemoryCollection(SupabaseModel):
     """Groupings of related memories."""
 
-    id: UUID = fields.UUIDField(primary_key=True)
-    user_id: UUID = fields.UUIDField(db_index=True)
-    name: str = fields.CharField(max_length=255)  # ty: ignore[invalid-assignment]
-    description: str | None = fields.TextField(null=True)
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
-    updated_at: datetime = fields.DatetimeField(auto_now=True)
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(db_index=True)
+    name = fields.CharField(max_length=255)
+    description = fields.TextField(null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "memory_collections"
@@ -80,7 +80,7 @@ class MemoryRelationship(SupabaseModel):
     target: fields.ForeignKeyRelation[Memory] = fields.ForeignKeyField(
         "models.Memory", related_name="relationships_in", on_delete=fields.CASCADE
     )
-    relationship_type: str = fields.CharField(max_length=50, default="RELATED_TO")  # ty: ignore[invalid-assignment]
+    relationship_type = fields.CharField(max_length=50, default="RELATED_TO")
     weight: float = fields.FloatField(default=1.0)
     meta: dict = fields.JSONField(default={})
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
@@ -109,8 +109,8 @@ class MemoryGraphNode(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
-    name: str = fields.CharField(max_length=255, db_index=True)  # ty: ignore[invalid-assignment]
-    entity_type: str = fields.CharField(max_length=50, db_index=True)  # ty: ignore[invalid-assignment]
+    name = fields.CharField(max_length=255, db_index=True)
+    entity_type = fields.CharField(max_length=50, db_index=True)
     description: str | None = fields.TextField(null=True)
     meta: dict = fields.JSONField(default={})
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
@@ -135,7 +135,7 @@ class MemoryGraphEdge(SupabaseModel):
     target_node: fields.ForeignKeyRelation[MemoryGraphNode] = fields.ForeignKeyField(
         "models.MemoryGraphNode", related_name="edges_in", on_delete=fields.CASCADE
     )
-    relationship: str = fields.CharField(max_length=100)  # ty: ignore[invalid-assignment]
+    relationship = fields.CharField(max_length=100)
     weight: float = fields.FloatField(default=1.0)
     meta: dict = fields.JSONField(default={})
     created_at: datetime = fields.DatetimeField(auto_now_add=True)

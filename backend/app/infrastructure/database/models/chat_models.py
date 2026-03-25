@@ -16,7 +16,7 @@ class ChatRoom(SupabaseModel):
 
     id: UUID = fields.UUIDField(primary_key=True)
     user_id: UUID = fields.UUIDField(db_index=True)
-    name: str = fields.CharField(max_length=255)  # ty: ignore[invalid-assignment]
+    name = fields.CharField(max_length=255)
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
     updated_at: datetime = fields.DatetimeField(auto_now=True)
     deleted_at: datetime | None = fields.DatetimeField(null=True)
@@ -36,10 +36,11 @@ class ChatMessage(SupabaseModel):
     room: fields.ForeignKeyRelation[ChatRoom] = fields.ForeignKeyField(
         "models.ChatRoom", related_name="messages", on_delete=fields.CASCADE
     )
+    room_id: UUID  # Tortoise ORM FK column accessor
     user_id: UUID | None = fields.UUIDField(null=True, db_index=True)
     agent_id: UUID | None = fields.UUIDField(null=True, db_index=True)
     content: str = fields.TextField()
-    message_type: str = fields.CharField(max_length=50, default="text")  # ty: ignore[invalid-assignment]
+    message_type = fields.CharField(max_length=50, default="text")
     attachments: list = fields.JSONField(default=[])
 
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
@@ -75,9 +76,11 @@ class ChatRoomAgent(SupabaseModel):
     room: fields.ForeignKeyRelation[ChatRoom] = fields.ForeignKeyField(
         "models.ChatRoom", related_name="room_agents", on_delete=fields.CASCADE
     )
+    room_id: UUID  # Tortoise ORM FK column accessor
     agent: fields.ForeignKeyRelation[Any] = fields.ForeignKeyField(
         "models.Agent", related_name="agent_rooms", on_delete=fields.CASCADE
     )
+    agent_id: UUID  # Tortoise ORM FK column accessor
     created_at: datetime = fields.DatetimeField(auto_now_add=True)
 
     class Meta:
