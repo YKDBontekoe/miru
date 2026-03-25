@@ -23,7 +23,7 @@ setup-hooks:
 
 # Run the FastAPI server (requires backend/.env to be present)
 backend:
-	cd backend && .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && .venv/bin/granian --interface asgi --host 0.0.0.0 --port 8000 --reload app.main:app
 
 # Run React Native in the simulator / connected device
 frontend:
@@ -48,9 +48,8 @@ test: test-backend test-frontend
 lint-backend:
 	cd backend && \
 	ruff check . && \
-	black --check . && \
-	isort --check-only . && \
-	mypy app/
+	ruff format --check . && \
+	ty check app/
 
 # Run frontend linting
 lint-frontend:
@@ -63,8 +62,7 @@ lint: lint-backend lint-frontend
 fix-backend:
 	cd backend && \
 	ruff check --fix . && \
-	black . && \
-	isort .
+	ruff format .
 
 # Fix frontend code style
 fix-frontend:
