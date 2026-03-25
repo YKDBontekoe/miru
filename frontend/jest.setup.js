@@ -39,7 +39,11 @@ jest.mock('expo-constants', () => ({
 // Mock nativewind
 jest.mock('nativewind', () => ({
   styled: (Component) => Component,
-  useColorScheme: () => ({ colorScheme: 'light', toggleColorScheme: jest.fn(), setColorScheme: jest.fn() }),
+  useColorScheme: () => ({
+    colorScheme: 'light',
+    toggleColorScheme: jest.fn(),
+    setColorScheme: jest.fn(),
+  }),
 }));
 
 // Mock react-native-reanimated properly to avoid Native Worklets errors

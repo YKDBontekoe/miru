@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Pressable, ViewProps, StyleProp, ViewStyle, StyleSheet, Platform } from 'react-native';
+import {
+  View,
+  Pressable,
+  ViewProps,
+  StyleProp,
+  ViewStyle,
+  StyleSheet,
+  Platform,
+} from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { theme } from '../core/theme';

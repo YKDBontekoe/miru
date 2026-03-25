@@ -75,7 +75,9 @@ export function ChatBubble({
   };
 
   const errorBubbleStyle = {
-    backgroundColor: isDark ? theme.colors.status.errorSurfaceDark : theme.colors.status.errorSurfaceLight,
+    backgroundColor: isDark
+      ? theme.colors.status.errorSurfaceDark
+      : theme.colors.status.errorSurfaceLight,
     borderColor: theme.colors.status.error,
   };
 
@@ -125,9 +127,7 @@ export function ChatBubble({
           <AppText style={[styles.messageText, userTextStyle]}>{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={styles.timestampRight}>
-            {formatTime(timestamp, i18n.language)}
-          </AppText>
+          <AppText style={styles.timestampRight}>{formatTime(timestamp, i18n.language)}</AppText>
         )}
       </View>
     );
@@ -141,7 +141,10 @@ export function ChatBubble({
           style={[
             styles.avatar,
             isFailed
-              ? { backgroundColor: errorBubbleStyle.backgroundColor, borderColor: errorBubbleStyle.borderColor }
+              ? {
+                  backgroundColor: errorBubbleStyle.backgroundColor,
+                  borderColor: errorBubbleStyle.borderColor,
+                }
               : { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}35` },
           ]}
         >
@@ -157,9 +160,7 @@ export function ChatBubble({
 
         <View style={styles.bubbleContentWrapper}>
           {agentName && (
-            <AppText style={[styles.agentName, { color: accentColor }]}>
-              {agentName}
-            </AppText>
+            <AppText style={[styles.agentName, { color: accentColor }]}>{agentName}</AppText>
           )}
 
           <View
@@ -172,9 +173,7 @@ export function ChatBubble({
             {text === '' && isStreaming ? (
               <TypingIndicator dotColor={accentColor} />
             ) : (
-              <Markdown style={markdownStyles}>
-                {text}
-              </Markdown>
+              <Markdown style={markdownStyles}>{text}</Markdown>
             )}
           </View>
 
@@ -192,9 +191,7 @@ export function ChatBubble({
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons name="refresh-outline" size={13} color={theme.colors.primary.DEFAULT} />
-                  <AppText style={styles.retryText}>
-                    {t('chat.retry')}
-                  </AppText>
+                  <AppText style={styles.retryText}>{t('chat.retry')}</AppText>
                 </AnimatedPressable>
               )}
             </View>
@@ -203,9 +200,7 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={styles.timestampLeft}>
-          {formatTime(timestamp, i18n.language)}
-        </AppText>
+        <AppText style={styles.timestampLeft}>{formatTime(timestamp, i18n.language)}</AppText>
       )}
     </View>
   );

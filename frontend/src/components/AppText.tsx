@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextProps, StyleSheet } from 'react-native';
+import { Text, TextProps } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { theme } from '../core/theme';
 
@@ -27,9 +27,15 @@ export function AppText({
       case 'primary':
         return { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light };
       case 'muted':
-        return { color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight };
+        return {
+          color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
+        };
       case 'disabled':
-        return { color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight };
+        return {
+          color: isDark
+            ? theme.colors.onSurface.disabledDark
+            : theme.colors.onSurface.disabledLight,
+        };
       case 'brand':
         return { color: theme.colors.primary.DEFAULT };
       default:
@@ -40,11 +46,7 @@ export function AppText({
   return (
     <Text
       className={className}
-      style={[
-        theme.typography[variant],
-        getTextColorStyle(),
-        style,
-      ]}
+      style={[theme.typography[variant], getTextColorStyle(), style]}
       {...props}
     >
       {children}

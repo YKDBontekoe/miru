@@ -77,7 +77,9 @@ export function ChatInputBar({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight}
+          placeholderTextColor={
+            isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight
+          }
           multiline
           textAlignVertical="center"
           style={[styles.input, inputTextStyle]}
@@ -95,8 +97,12 @@ export function ChatInputBar({
           style={[
             styles.actionButton,
             {
-              backgroundColor: isDark ? theme.colors.status.errorSurfaceDark : theme.colors.status.errorSurfaceLight,
-              borderColor: isDark ? theme.colors.status.errorSurfaceDark : theme.colors.status.errorSurfaceLight, // keep border same to avoid layout shift
+              backgroundColor: isDark
+                ? theme.colors.status.errorSurfaceDark
+                : theme.colors.status.errorSurfaceLight,
+              borderColor: isDark
+                ? theme.colors.status.errorSurfaceDark
+                : theme.colors.status.errorSurfaceLight, // keep border same to avoid layout shift
             },
             animatedStyle,
           ]}
@@ -116,8 +122,8 @@ export function ChatInputBar({
               backgroundColor: canSend
                 ? theme.colors.primary.DEFAULT
                 : isDark
-                ? theme.colors.surface.highestDark
-                : theme.colors.onSurface.disabledLight,
+                  ? theme.colors.surface.highestDark
+                  : theme.colors.onSurface.disabledLight,
             },
             animatedStyle,
           ]}

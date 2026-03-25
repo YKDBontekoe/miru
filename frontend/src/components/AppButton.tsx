@@ -1,11 +1,6 @@
 import React from 'react';
 import { Pressable, ActivityIndicator, PressableProps, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { AppText } from './AppText';
 import { theme } from '../core/theme';
@@ -57,13 +52,31 @@ export function AppButton({
     switch (variant) {
       case 'primary':
         if (isDisabled) {
-          return [baseStyle, { backgroundColor: isDark ? theme.colors.surface.highestDark : theme.colors.surface.highestLight }];
+          return [
+            baseStyle,
+            {
+              backgroundColor: isDark
+                ? theme.colors.surface.highestDark
+                : theme.colors.surface.highestLight,
+            },
+          ];
         }
         return [baseStyle, { backgroundColor: theme.colors.primary.DEFAULT }];
       case 'secondary':
-        return [baseStyle, { backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highLight }];
+        return [
+          baseStyle,
+          {
+            backgroundColor: isDark
+              ? theme.colors.surface.highDark
+              : theme.colors.surface.highLight,
+          },
+        ];
       case 'outline':
-        return [baseStyle, styles.outline, { borderColor: isDark ? theme.colors.border.dark : theme.colors.border.light }];
+        return [
+          baseStyle,
+          styles.outline,
+          { borderColor: isDark ? theme.colors.border.dark : theme.colors.border.light },
+        ];
       case 'ghost':
         return [baseStyle, styles.ghost];
       default:
@@ -75,7 +88,11 @@ export function AppButton({
     switch (variant) {
       case 'primary':
         if (isDisabled) {
-          return { color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight };
+          return {
+            color: isDark
+              ? theme.colors.onSurface.disabledDark
+              : theme.colors.onSurface.disabledLight,
+          };
         }
         return { color: theme.colors.white };
       case 'secondary':
@@ -99,7 +116,11 @@ export function AppButton({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' && !isDisabled ? theme.colors.white : theme.colors.primary.light} />
+        <ActivityIndicator
+          color={
+            variant === 'primary' && !isDisabled ? theme.colors.white : theme.colors.primary.light
+          }
+        />
       ) : (
         <AppText style={[styles.text, getTextColorStyle()]}>{label}</AppText>
       )}
