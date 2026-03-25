@@ -272,8 +272,8 @@ jobs:
           # secrets by name via secretref:.
           ENV_VARS=(
             "DATABASE_URL=secretref:database-url"
-            "SUPABASE_URL=secretref:supabase-url"
-            "SUPABASE_KEY=secretref:supabase-key"
+            "SUPABASE_URL=${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_STAGING_URL }}"
+            "SUPABASE_KEY=${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_STAGING_KEY }}"
             "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
             "SUPABASE_JWT_SECRET=${{ secrets.STAGING_SUPABASE_JWT_SECRET }}"
             "OPENROUTER_API_KEY=secretref:openrouter-api-key"
