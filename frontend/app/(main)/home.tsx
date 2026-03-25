@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function getGreeting(hour: number, t: (k: string) => string): string {
+function getGreeting(hour: number, t: any): string {
   if (hour < 12) return t('home.greeting.morning', 'Good morning');
   if (hour < 17) return t('home.greeting.afternoon', 'Good afternoon');
   return t('home.greeting.evening', 'Good evening');

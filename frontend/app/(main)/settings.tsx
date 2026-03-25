@@ -395,9 +395,6 @@ export default function SettingsScreen() {
       setIsLoadingMemories(false);
     }
   }, []);
-      setIsLoadingMemories(false);
-    }
-  };
 
   const handleDeleteMemory = useCallback((memory: Memory) => {
     Alert.alert(
