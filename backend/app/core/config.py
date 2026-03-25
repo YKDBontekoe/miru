@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     # Direct database URL for migrations (Supabase direct connection string)
     # Get this from Supabase Dashboard > Settings > Database > Connection string > URI
     database_url: str | None = None
+    # Schema name to use for the database connection.
+    db_schema: str = "public"
     # Whether to use SSL for the database connection. Defaults to True for Supabase.
     database_ssl: bool = True
     # Embedding model used for memory storage/retrieval — required, no fallback.
