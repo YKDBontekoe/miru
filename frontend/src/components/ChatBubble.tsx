@@ -184,6 +184,7 @@ export function ChatBubble({
               <AppText style={styles.errorText}>{t('chat.failed_to_send')}</AppText>
               {onRetry && (
                 <AnimatedPressable
+                  testID="retry-button"
                   onPress={onRetry}
                   onPressIn={handleRetryPressIn}
                   onPressOut={handleRetryPressOut}

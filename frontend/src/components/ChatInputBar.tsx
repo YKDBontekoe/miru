@@ -91,6 +91,7 @@ export function ChatInputBar({
       {/* Action button */}
       {isStreaming ? (
         <AnimatedPressable
+          testID="stop-button"
           onPress={onStop}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -112,6 +113,7 @@ export function ChatInputBar({
         </AnimatedPressable>
       ) : (
         <AnimatedPressable
+          testID="send-button"
           onPress={handleSend}
           disabled={!canSend}
           onPressIn={handlePressIn}
