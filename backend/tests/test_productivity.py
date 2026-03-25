@@ -73,6 +73,18 @@ async def test_create_task(async_client: AsyncClient, override_get_current_user:
 
 
 @pytest.mark.asyncio
+async def test_create_task_invalid_title(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    """Test creating a task with a title exceeding max_length."""
+    response = await async_client.post(
+        "/api/v1/productivity/tasks",
+        json={"title": "a" * 256, "description": "Test Description"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_list_tasks(
     async_client: AsyncClient,
     mock_user_id: uuid.UUID,
@@ -248,6 +260,18 @@ async def test_create_note(async_client: AsyncClient, override_get_current_user:
 
 
 @pytest.mark.asyncio
+async def test_create_note_invalid_title(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    """Test creating a note with a title exceeding max_length."""
+    response = await async_client.post(
+        "/api/v1/productivity/notes",
+        json={"title": "a" * 256, "content": "This is a test note."},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_list_notes(
     async_client: AsyncClient,
     mock_user_id: uuid.UUID,
@@ -385,6 +409,25 @@ async def test_create_event_invalid_time(
             "title": "Invalid Event",
             "start_time": now.isoformat(),
             "end_time": (now - timedelta(hours=1)).isoformat(),
+        },
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_event_invalid_title(
+    async_client: AsyncClient, override_get_current_user: None
+) -> None:
+    """Test creating a calendar event with a title exceeding max_length."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now(UTC)
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "a" * 256,
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(hours=1)).isoformat(),
         },
     )
     assert response.status_code == 422

@@ -101,7 +101,7 @@ class TaskCreate(BaseModel):
         due_date: Optional due date for the task.
     """
 
-    title: str
+    title: str = Field(..., max_length=255)
     description: str | None = None
     is_completed: bool = False
     due_date: datetime | None = None
@@ -117,7 +117,7 @@ class TaskUpdate(BaseModel):
         due_date: Optional new due date.
     """
 
-    title: str | None = None
+    title: str | None = Field(None, max_length=255)
     description: str | None = None
     is_completed: bool | None = None
     due_date: datetime | None = None
@@ -163,7 +163,7 @@ class NoteCreate(BaseModel):
         origin_context: Optional context/description of why the note was created.
     """
 
-    title: str
+    title: str = Field(..., max_length=255)
     content: str
     is_pinned: bool = False
     agent_id: UUID | None = None
@@ -180,7 +180,7 @@ class NoteUpdate(BaseModel):
         is_pinned: Optional new pinned status.
     """
 
-    title: str | None = None
+    title: str | None = Field(None, max_length=255)
     content: str | None = None
     is_pinned: bool | None = None
 
@@ -265,12 +265,12 @@ class CalendarEvent(SupabaseModel):
 class CalendarEventCreate(BaseModel):
     """Schema for creating a new Calendar Event."""
 
-    title: str
+    title: str = Field(..., max_length=255)
     description: str | None = None
     start_time: datetime
     end_time: datetime
     is_all_day: bool = False
-    location: str | None = None
+    location: str | None = Field(None, max_length=255)
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
     origin_context: str | None = None
@@ -285,12 +285,12 @@ class CalendarEventCreate(BaseModel):
 class CalendarEventUpdate(BaseModel):
     """Schema for updating an existing Calendar Event."""
 
-    title: str | None = None
+    title: str | None = Field(None, max_length=255)
     description: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
     is_all_day: bool | None = None
-    location: str | None = None
+    location: str | None = Field(None, max_length=255)
 
 
 class CalendarEventResponse(BaseModel):
