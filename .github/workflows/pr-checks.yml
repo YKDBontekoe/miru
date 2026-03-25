@@ -388,8 +388,8 @@ jobs:
       - name: Run Postman integration tests
         env:
           SUPABASE_JWT_SECRET: ${{ secrets.STAGING_SUPABASE_JWT_SECRET }}
-          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.STAGING_SUPABASE_KEY }}
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL || secrets.SUPABASE_STAGING_URL }}
+          SUPABASE_KEY: ${{ secrets.STAGING_SUPABASE_KEY || secrets.SUPABASE_STAGING_KEY }}
           FALLBACK_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           FALLBACK_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           SUPABASE_TEST_EMAIL: ${{ secrets.SUPABASE_TEST_EMAIL }}
