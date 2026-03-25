@@ -13,7 +13,7 @@ from app.domain.agent_tools.productivity.events_tools import (
     ListEventsTool,
     UpdateEventTool,
 )
-from app.domain.productivity.models import CalendarEvent
+from app.infrastructure.database.models.productivity_models import CalendarEvent
 
 
 @pytest.fixture

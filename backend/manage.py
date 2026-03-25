@@ -81,7 +81,7 @@ ALL_MODEL_MODULES = [
     "app.infrastructure.database.models.chat_models",
     "app.domain.memory.models",
     "app.domain.agent_tools.models",
-    "app.domain.productivity.models",
+    "app.infrastructure.database.models.productivity_models",
 ]
 
 
