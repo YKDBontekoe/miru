@@ -604,13 +604,13 @@ async def test_map_note_and_event_no_values_fetched() -> None:
             self.origin_context = None
 
         @property
-        def agent(self):
+        def agent(self) -> None:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("agent not fetched")
 
         @property
-        def origin_message(self):
+        def origin_message(self) -> None:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("origin_message not fetched")
@@ -633,13 +633,13 @@ async def test_map_note_and_event_no_values_fetched() -> None:
             self.origin_context = None
 
         @property
-        def agent(self):
+        def agent(self) -> None:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("agent not fetched")
 
         @property
-        def origin_message(self):
+        def origin_message(self) -> None:
             from tortoise.exceptions import NoValuesFetched
 
             raise NoValuesFetched("origin_message not fetched")
