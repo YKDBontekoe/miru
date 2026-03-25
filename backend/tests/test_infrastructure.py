@@ -225,6 +225,29 @@ def test_tortoise_url_strips_pgbouncer(test_env_vars: dict[str, str]) -> None:
         )
 
 
+def test_tortoise_url_renames_search_path(test_env_vars: dict[str, str]) -> None:
+    """Verify that the tortoise URL builder renames search_path to schema.
+
+    This prevents the 'TypeError: connect() got an unexpected keyword argument search_path'
+    error in asyncpg since it expects 'schema'.
+    """
+    import os
+    from unittest.mock import patch
+
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?search_path=public&pgbouncer=true",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?schema=public&statement_cache_size=0"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Supabase singleton
 # ---------------------------------------------------------------------------

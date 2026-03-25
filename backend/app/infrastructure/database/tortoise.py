@@ -15,10 +15,21 @@ if raw_url.startswith("postgresql://"):
 if raw_url.startswith("postgres://"):
     parsed = urllib.parse.urlsplit(raw_url)
     query_params = urllib.parse.parse_qsl(parsed.query)
-    query_params = [(k, v) for k, v in query_params if k != "pgbouncer"]
-    if not any(k == "statement_cache_size" for k, v in query_params):
-        query_params.append(("statement_cache_size", "0"))
-    new_query = urllib.parse.urlencode(query_params)
+
+    # Convert search_path to schema for asyncpg, strip pgbouncer
+    clean_params = []
+    for k, v in query_params:
+        if k == "pgbouncer":
+            continue
+        if k == "search_path":
+            clean_params.append(("schema", v))
+        else:
+            clean_params.append((k, v))
+
+    if not any(k == "statement_cache_size" for k, v in clean_params):
+        clean_params.append(("statement_cache_size", "0"))
+
+    new_query = urllib.parse.urlencode(clean_params)
     raw_url = urllib.parse.urlunsplit(
         (parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment)
     )
