@@ -26,8 +26,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms"
+          ]
         }
       }
     },
@@ -51,8 +57,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms"
+          ]
         }
       }
     },
@@ -76,8 +88,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/chat",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "chat"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "chat"
+          ]
         }
       }
     },
@@ -101,8 +119,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/crew",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "crew"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "crew"
+          ]
         }
       }
     },
@@ -126,8 +150,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "agents"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "agents"
+          ]
         }
       }
     },
@@ -151,8 +183,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/agents",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "agents"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "agents"
+          ]
         }
       }
     },
@@ -176,33 +216,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/test-room/messages",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "messages"]
-        }
-      }
-    },
-    {
-      "name": "Room Chat",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/rooms/test-room/chat",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "test-room", "chat"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "test-room",
+            "messages"
+          ]
         }
       }
     },
@@ -226,10 +249,77 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/rooms/{{roomId}}/agents/{{agentId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "rooms", "{{roomId}}", "agents", "{{agentId}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "{{roomId}}",
+            "agents",
+            "{{agentId}}"
+          ]
         }
       }
+    },
+    {
+      "name": "Edit Message",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/rooms/{{roomId}}/messages/{{messageId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "{{roomId}}",
+            "messages",
+            "{{messageId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"content\": \"Updated message content\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Message",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/rooms/{{roomId}}/messages/{{messageId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rooms",
+            "{{roomId}}",
+            "messages",
+            "{{messageId}}"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }

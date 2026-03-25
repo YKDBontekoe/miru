@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
+import math
 from datetime import UTC, datetime
 from uuid import UUID
 
-from app.domain.agents.models import Agent, AgentTemplate, Capability, Integration
+from tortoise.transactions import in_transaction
+
+from app.domain.agents.models import (
+    Agent,
+    AgentTemplate,
+    Capability,
+    Integration,
+    UserAgentAffinity,
+)
 
 
 class AgentRepository:
@@ -99,3 +108,42 @@ class AgentRepository:
         if agent:
             agent.message_count += 1
             await agent.save()
+
+    _AFFINITY_MILESTONES = (
+        (10, "first_chat"),
+        (50, "regular"),
+        (100, "trusted"),
+        (500, "companion"),
+    )
+
+    async def upsert_affinity(
+        self, user_id: UUID, agent_id: UUID, score_delta: float = 1.0
+    ) -> None:
+        """Increment affinity score, unlock milestones, and update trust level.
+
+        The entire read-modify-write is wrapped in a transaction with a row-level
+        lock (``select_for_update``) to prevent concurrent increments from racing.
+        """
+        async with in_transaction():
+            affinity = await UserAgentAffinity.select_for_update().get_or_none(
+                user_id=user_id, agent_id=agent_id
+            )
+            if affinity is None:
+                affinity = UserAgentAffinity(
+                    user_id=user_id,
+                    agent_id=agent_id,
+                    affinity_score=0.0,
+                    trust_level=1,
+                    milestones=[],
+                )
+            affinity.affinity_score = (affinity.affinity_score or 0.0) + score_delta
+
+            milestones: list = list(affinity.milestones or [])
+            for threshold, name in self._AFFINITY_MILESTONES:
+                if affinity.affinity_score >= threshold and name not in milestones:
+                    milestones.append(name)
+            affinity.milestones = milestones
+
+            # Trust level grows logarithmically: 1–6 range across 1–500k score
+            affinity.trust_level = max(1, int(math.log10(max(1.0, affinity.affinity_score)) + 1))
+            await affinity.save()

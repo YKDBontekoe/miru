@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
+
+from tortoise.expressions import Q
 
 from app.domain.agents.models import Agent
 from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
@@ -92,10 +95,57 @@ class ChatRepository:
         )
         return [assoc.agent for assoc in assocs]
 
-    async def get_room_messages(self, room_id: UUID) -> list[ChatMessageEntity]:
-        """Fetch all messages in a room."""
-        messages = await ChatMessage.filter(room_id=room_id).order_by("created_at").all()
-        return [_map_message_to_entity(msg) for msg in messages]
+    async def get_room_messages(
+        self, room_id: UUID, limit: int = 50, before_id: UUID | None = None
+    ) -> list[ChatMessageEntity]:
+        """Fetch the most recent *limit* non-deleted messages in a room, in ascending order.
+
+        Pass *before_id* as a cursor to page backwards through older messages.
+        """
+        q = ChatMessage.filter(room_id=room_id, deleted_at__isnull=True)
+        if before_id is not None:
+            anchor = await ChatMessage.get_or_none(id=before_id, room_id=room_id)
+            if anchor:
+                q = q.filter(
+                    Q(created_at__lt=anchor.created_at)
+                    | Q(created_at=anchor.created_at, id__lt=before_id)
+                )
+        # Fetch descending so LIMIT cuts off the oldest, then reverse for chronological output.
+        messages = await q.order_by("-created_at", "-id").limit(limit).all()
+        return [_map_message_to_entity(msg) for msg in reversed(messages)]
+
+    async def update_message(
+        self, message_id: UUID, content: str, user_id: UUID | None = None
+    ) -> ChatMessageEntity | None:
+        """Update the content of a non-deleted message.
+
+        When *user_id* is provided the message must belong to that user (i.e. it
+        is a user-authored message, not an agent reply).
+        """
+        filters: dict = {"id": message_id, "deleted_at__isnull": True}
+        if user_id is not None:
+            filters["user_id"] = user_id
+        msg = await ChatMessage.get_or_none(**filters)
+        if msg:
+            msg.content = content
+            await msg.save()
+            return _map_message_to_entity(msg)
+        return None
+
+    async def soft_delete_message(self, message_id: UUID, user_id: UUID | None = None) -> bool:
+        """Soft-delete a message by stamping deleted_at.
+
+        When *user_id* is provided the message must belong to that user.
+        """
+        filters: dict = {"id": message_id, "deleted_at__isnull": True}
+        if user_id is not None:
+            filters["user_id"] = user_id
+        msg = await ChatMessage.get_or_none(**filters)
+        if msg:
+            msg.deleted_at = datetime.now(UTC)
+            await msg.save()
+            return True
+        return False
 
     async def room_belongs_to_user(self, room_id: UUID, user_id: UUID) -> bool:
         """Return True if the room exists and is owned by *user_id*."""

@@ -134,49 +134,115 @@ class ChatWebSocketBroadcaster:
 
         return _step_callback
 
+    @staticmethod
+    def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
+        """Parse a multi-agent transcript into (agent_name, message) pairs.
+
+        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
+        Falls back to a single unnamed entry when the format cannot be parsed.
+        """
+        if not agent_names or len(agent_names) == 1:
+            return [("", result_text.strip())]
+
+        # Build a set of known names (case-insensitive) for matching
+        name_set = {n.lower() for n in agent_names}
+        segments: list[tuple[str, str]] = []
+        current_name = ""
+        current_lines: list[str] = []
+
+        for line in result_text.splitlines():
+            # Detect "AgentName: ..." prefix
+            colon_pos = line.find(":")
+            if colon_pos > 0:
+                candidate = line[:colon_pos].strip()
+                if candidate.lower() in name_set:
+                    # Save previous segment
+                    if current_lines or current_name:
+                        segments.append((current_name, "\n".join(current_lines).strip()))
+                    current_name = candidate
+                    current_lines = [line[colon_pos + 1 :].strip()]
+                    continue
+            current_lines.append(line)
+
+        if current_lines or current_name:
+            segments.append((current_name, "\n".join(current_lines).strip()))
+
+        # Drop empty segments
+        segments = [(n, m) for n, m in segments if m]
+        return (
+            segments
+            if segments
+            else ([] if not result_text.strip() else [("", result_text.strip())])
+        )
+
     async def persist_and_broadcast_agent_response(
         self,
         room_id: UUID,
         room_agents: list[Agent],
         result_text: str,
         agent_names: list[str],
-    ) -> None:
-        """Save the agent response and broadcast to room."""
+    ) -> list[Agent]:
+        """Save the agent response(s) and broadcast to room.
+
+        For multi-agent rooms the transcript is split into individual per-agent
+        messages so each agent's reply appears in its own bubble.
+
+        Returns the list of agents who actually produced a response segment so
+        that the caller can run per-agent post-processing (mood, affinity, etc.).
+        """
         from tortoise.exceptions import BaseORMException
 
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
-        agent_id_for_msg = None if len(room_agents) > 1 else room_agents[0].id
-        agent_msg = ChatMessageEntity(
-            id=uuid.uuid4(),
-            room_id=room_id,
-            agent_id=agent_id_for_msg,
-            content=result_text,
-        )
-        try:
-            agent_msg = await self.chat_repo.save_message(agent_msg)
-        except BaseORMException:
-            logger.exception("Failed to persist agent message  room=%s", room_id)
-            raise
+        agent_by_name = {a.name.lower(): a for a in room_agents}
+        segments = self.parse_transcript(result_text, agent_names)
+
+        responded: list[Agent] = []
+
+        # Persist and broadcast each segment as a separate message
+        for agent_name, content in segments:
+            matched_agent = agent_by_name.get(agent_name.lower())
+            # Single-agent fallback: attribute the message to the only agent in the room.
+            effective_agent = matched_agent or (room_agents[0] if len(room_agents) == 1 else None)
+            agent_id_for_msg = effective_agent.id if effective_agent else None
+
+            if effective_agent and effective_agent not in responded:
+                responded.append(effective_agent)
+
+            msg_entity = ChatMessageEntity(
+                id=uuid.uuid4(),
+                room_id=room_id,
+                agent_id=agent_id_for_msg,
+                content=content,
+            )
+            try:
+                msg_entity = await self.chat_repo.save_message(msg_entity)
+            except BaseORMException:
+                logger.exception("Failed to persist agent message room=%s", room_id)
+                raise
+
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "message",
+                    "data": {
+                        "id": str(msg_entity.id),
+                        "room_id": str(room_id),
+                        "user_id": None,
+                        "agent_id": str(agent_id_for_msg) if agent_id_for_msg else None,
+                        "content": content,
+                        "created_at": msg_entity.created_at.isoformat(),
+                    },
+                },
+            )
 
         await self.chat_repo.touch_room(room_id)
-        for agent in room_agents:
+
+        # Only increment message_count for agents that actually responded.
+        for agent in responded:
             try:
                 await self.agent_repo.increment_message_count(agent.id)
             except BaseORMException:
                 logger.warning("Failed to increment message_count for agent %s", agent.id)
 
-        await chat_hub.broadcast_to_room(
-            room_id,
-            {
-                "type": "message",
-                "data": {
-                    "id": str(agent_msg.id),
-                    "room_id": str(room_id),
-                    "user_id": None,
-                    "agent_id": str(agent_id_for_msg) if agent_id_for_msg else None,
-                    "content": result_text,
-                    "created_at": agent_msg.created_at.isoformat(),
-                },
-            },
-        )
+        return responded

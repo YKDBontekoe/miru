@@ -16,7 +16,7 @@ from app.domain.agents.models import (
     Capability,
     Integration,
 )
-from app.infrastructure.external.openrouter import structured_completion
+from app.infrastructure.external.openrouter import chat_completion, structured_completion
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -95,7 +95,14 @@ class AgentService:
         capability_ids: list[str] | None = None,
     ) -> str:
         """Build a rich system prompt from agent profile fields."""
-        sections = [f"You are {name}."]
+        sections = [
+            f"You are {name}.",
+            (
+                "Respond naturally and concisely like a real person in a chat. "
+                "Never introduce yourself, announce your capabilities, or explain what you can do "
+                "unless the user specifically asks. Just answer helpfully and directly."
+            ),
+        ]
         if description:
             sections.append(description)
         sections.append(f"\nPersonality & Behavior:\n{personality}")
@@ -106,7 +113,11 @@ class AgentService:
             all_caps = await self.list_capabilities()
             cap_names = [c.name for c in all_caps if c.id in capability_ids]
             cap_list = ", ".join(cap_names)
-            sections.append(f"\nYou have the following capabilities: {cap_list}.")
+            sections.append(
+                f"\nYou have access to the following tools: {cap_list}. "
+                "Use them proactively when the user's request calls for it, "
+                "but do not mention or advertise them."
+            )
         return "\n".join(sections)
 
     async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
@@ -175,26 +186,55 @@ class AgentService:
     async def update_agent(
         self, agent_id: UUID | str, user_id: UUID, data: AgentUpdate
     ) -> AgentResponse | None:
-        """Update an agent's profile fields and rebuild system prompt in one write."""
-        # First fetch the agent to get current state (capability IDs, etc.)
+        """Update an agent's profile fields and rebuild system prompt in one write.
+
+        If ``capabilities`` or ``integrations`` are supplied the M2M relations are
+        replaced and the system prompt is rebuilt to reflect the new configuration.
+        """
         agent = await self.repo.get_by_id(agent_id)
         if not agent or str(agent.user_id) != str(user_id):
             return None
 
         fields = data.model_dump(exclude_none=True)
-        # Merge incoming fields with current values so build_system_prompt has full context
+
+        # --- capabilities ---
+        new_capability_ids: list[str] | None = fields.pop("capabilities", None)
+        if new_capability_ids is not None:
+            caps = await Capability.filter(id__in=new_capability_ids)
+            await agent.capabilities.clear()
+            if caps:
+                await agent.capabilities.add(*caps)
+            effective_cap_ids = new_capability_ids
+        else:
+            effective_cap_ids = [str(c.id) for c in (await agent.capabilities.all())]
+
+        # --- integrations ---
+        new_integration_ids: list[str] | None = fields.pop("integrations", None)
+        new_integration_configs: dict = fields.pop("integration_configs", None) or {}
+        if new_integration_ids is not None:
+            await AgentIntegration.filter(agent=agent).delete()
+            for integration_id in new_integration_ids:
+                integration = await Integration.get_or_none(id=integration_id)
+                if integration:
+                    await AgentIntegration.create(
+                        agent=agent,
+                        integration=integration,
+                        config=new_integration_configs.get(integration_id, {}),
+                        enabled=True,
+                    )
+
+        # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
         personality = fields.get("personality", agent.personality)
         description = fields.get("description", agent.description)
         goals = fields.get("goals", agent.goals)
-        capability_ids = [str(c.id) for c in (await agent.capabilities.all())]
 
         updated_prompt = await self.build_system_prompt(
             name=name,
             personality=personality,
             description=description,
             goals=goals,
-            capability_ids=capability_ids or None,
+            capability_ids=effective_cap_ids or None,
         )
         fields["system_prompt"] = updated_prompt
 
@@ -212,8 +252,42 @@ class AgentService:
         templates = await self.repo.list_templates(skip=skip, limit=limit)
         return [AgentTemplateResponse.model_validate(t) for t in templates]
 
+    _VALID_MOODS = (
+        "Neutral",
+        "Optimistic",
+        "Happy",
+        "Curious",
+        "Focused",
+        "Excited",
+        "Calm",
+        "Playful",
+        "Serious",
+        "Creative",
+    )
+
     async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
-        """Analyze history and update agent mood via repository."""
+        """Infer agent mood from recent conversation history and persist it."""
         if not recent_history.strip():
             return
-        await self.repo.update_mood(agent_id, "Optimistic")
+        mood_list = ", ".join(self._VALID_MOODS)
+        try:
+            mood = await chat_completion(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            f"You are a mood classifier. Given a conversation excerpt, "
+                            f"pick the single most fitting mood for the AI agent from this list: "
+                            f"{mood_list}. Reply with ONLY the mood word, nothing else."
+                        ),
+                    },
+                    {"role": "user", "content": recent_history},
+                ]
+            )
+            mood = mood.strip().capitalize()
+            if mood not in self._VALID_MOODS:
+                mood = "Neutral"
+        except Exception:
+            logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
+            return
+        await self.repo.update_mood(agent_id, mood)
