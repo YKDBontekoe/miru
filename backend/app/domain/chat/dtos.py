@@ -40,3 +40,7 @@ class ChatRequest(BaseModel):
     message: str | None = None
     content: str | None = None
     use_crew: bool = False
+
+
+class MessageUpdate(BaseModel):
+    content: str

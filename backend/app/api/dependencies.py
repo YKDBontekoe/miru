@@ -51,8 +51,9 @@ def get_chat_service(
     chat_repo: Annotated[ChatRepository, Depends(get_chat_repo)],
     agent_repo: Annotated[AgentRepository, Depends(get_agent_repo)],
     memory_repo: Annotated[MemoryRepository, Depends(get_memory_repo)],
+    agent_service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> ChatService:
-    return ChatService(chat_repo, agent_repo, memory_repo)
+    return ChatService(chat_repo, agent_repo, memory_repo, agent_service)
 
 
 def get_memory_service(
