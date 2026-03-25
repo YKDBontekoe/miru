@@ -1,15 +1,16 @@
 import React from 'react';
-import { Pressable, ActivityIndicator, PressableProps, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { Pressable, ActivityIndicator, PressableProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, AnimatedStyle } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { AppText } from './AppText';
 import { theme } from '../core/theme';
 
-export interface AppButtonProps extends PressableProps {
+export interface AppButtonProps extends Omit<PressableProps, 'style'> {
   label: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
   className?: string;
+  style?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -112,7 +113,7 @@ export function AppButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={[getContainerStyle(), animatedStyle, style as any]}
+      style={[getContainerStyle(), animatedStyle, style] as StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>}
       {...props}
     >
       {isLoading ? (

@@ -37,12 +37,17 @@ jest.mock('expo-constants', () => ({
 }));
 
 // Mock nativewind
+const mockCurrentColorHooksScheme = { current: 'light' };
 jest.mock('nativewind', () => ({
   styled: (Component) => Component,
   useColorScheme: () => ({
-    colorScheme: 'light',
-    toggleColorScheme: jest.fn(),
-    setColorScheme: jest.fn(),
+    colorScheme: mockCurrentColorHooksScheme.current,
+    toggleColorScheme: jest.fn(() => {
+      mockCurrentColorHooksScheme.current = mockCurrentColorHooksScheme.current === 'light' ? 'dark' : 'light';
+    }),
+    setColorScheme: jest.fn((scheme) => {
+      mockCurrentColorHooksScheme.current = scheme;
+    }),
   }),
 }));
 
@@ -74,7 +79,6 @@ jest.mock('react-native-reanimated', () => {
     withDelay: jest.fn((delay, val) => val),
     FadeIn: { duration: jest.fn(() => ({ duration: jest.fn() })) },
     FadeOut: { duration: jest.fn(() => ({ duration: jest.fn() })) },
-    createAnimatedComponent: jest.fn((Component) => Component),
     View,
     Text,
     Image,

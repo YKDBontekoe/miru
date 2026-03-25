@@ -8,20 +8,62 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, AnimatedStyle } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { theme } from '../core/theme';
 
-export interface AppCardProps extends ViewProps {
+export interface AppCardProps extends Omit<ViewProps, 'style'> {
   children: React.ReactNode;
   className?: string;
   onTap?: () => void;
   showBorder?: boolean;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
   elevation?: keyof typeof theme.elevation;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function TappableCard({
+  children,
+  onTap,
+  cardStyle,
+  className,
+  ...props
+}: {
+  children: React.ReactNode;
+  onTap: () => void;
+  cardStyle: any;
+  className: string;
+}) {
+  const scale = useSharedValue(1);
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  return (
+    <AnimatedPressable
+      onPress={onTap}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      className={className}
+      style={[cardStyle, animatedStyle] as StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>}
+      {...props}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
 
 // DOCS(miru-agent): needs documentation
 export function AppCard({
@@ -35,26 +77,6 @@ export function AppCard({
 }: AppCardProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-
-  const scale = useSharedValue(1);
-
-  const handlePressIn = () => {
-    if (onTap) {
-      scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-    }
-  };
-
-  const handlePressOut = () => {
-    if (onTap) {
-      scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-    }
-  };
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
 
   const cardStyle = [
     styles.card,
@@ -78,21 +100,19 @@ export function AppCard({
 
   if (onTap) {
     return (
-      <AnimatedPressable
-        onPress={onTap}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+      <TappableCard
+        onTap={onTap}
         className={className}
-        style={[cardStyle, animatedStyle] as any}
+        cardStyle={cardStyle}
         {...props}
       >
         {children}
-      </AnimatedPressable>
+      </TappableCard>
     );
   }
 
   return (
-    <View className={className} style={cardStyle} {...props}>
+    <View className={className} style={cardStyle as StyleProp<ViewStyle>} {...props}>
       {children}
     </View>
   );

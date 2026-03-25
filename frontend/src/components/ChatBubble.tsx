@@ -89,7 +89,7 @@ export function ChatBubble({
     color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
   };
 
-  const markdownStyles = {
+  const markdownStyles = React.useMemo(() => ({
     body: {
       color: isFailed ? theme.colors.status.error : agentTextStyle.color,
       ...theme.typography.body,
@@ -118,7 +118,7 @@ export function ChatBubble({
     },
     strong: { fontWeight: '700' as const },
     em: { fontStyle: 'italic' as const },
-  };
+  }), [isDark, isFailed, agentTextStyle.color]);
 
   if (isUser) {
     return (
@@ -127,7 +127,7 @@ export function ChatBubble({
           <AppText style={[styles.messageText, userTextStyle]}>{text}</AppText>
         </View>
         {timestamp && (
-          <AppText style={styles.timestampRight}>{formatTime(timestamp, i18n.language)}</AppText>
+          <AppText style={styles.timestampRight(isDark)}>{formatTime(timestamp, i18n.language)}</AppText>
         )}
       </View>
     );
@@ -201,7 +201,7 @@ export function ChatBubble({
       </View>
 
       {timestamp && !isFailed && (
-        <AppText style={styles.timestampLeft}>{formatTime(timestamp, i18n.language)}</AppText>
+        <AppText style={styles.timestampLeft(isDark)}>{formatTime(timestamp, i18n.language)}</AppText>
       )}
     </View>
   );
@@ -283,16 +283,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  timestampRight: {
-    color: theme.colors.onSurface.disabledLight,
+  timestampRight: (isDark: boolean) => ({
+    color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight,
     fontSize: 10,
     marginTop: theme.spacing.xs,
     marginEnd: theme.spacing.xxs,
-  },
-  timestampLeft: {
-    color: theme.colors.onSurface.disabledLight,
+  }),
+  timestampLeft: (isDark: boolean) => ({
+    color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight,
     fontSize: 10,
     marginTop: theme.spacing.xs,
     marginStart: theme.spacing.bubbleTimestampIndent,
-  },
+  }),
 });

@@ -24,8 +24,6 @@ export function AppText({
 
   const getTextColorStyle = () => {
     switch (color) {
-      case 'primary':
-        return { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light };
       case 'muted':
         return {
           color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
@@ -38,6 +36,7 @@ export function AppText({
         };
       case 'brand':
         return { color: theme.colors.primary.DEFAULT };
+      case 'primary':
       default:
         return { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light };
     }

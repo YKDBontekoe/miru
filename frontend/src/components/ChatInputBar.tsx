@@ -130,7 +130,17 @@ export function ChatInputBar({
             animatedStyle,
           ]}
         >
-          <Ionicons name="arrow-up" size={22} color={theme.colors.white} />
+          <Ionicons
+            name="arrow-up"
+            size={22}
+            color={
+              canSend
+                ? theme.colors.white
+                : isDark
+                  ? theme.colors.onSurface.disabledDark
+                  : theme.colors.onSurface.disabledLight
+            }
+          />
         </AnimatedPressable>
       )}
     </View>
