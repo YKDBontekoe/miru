@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
+from tortoise.exceptions import NoValuesFetched
+
 from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
 from app.domain.productivity.interfaces.repository import IProductivityRepository
 from app.domain.productivity.models import (
@@ -38,16 +40,24 @@ def _map_note(note: Note) -> NoteEntity:
         if hasattr(note, "agent_id")
         else getattr(note, "agent_id", None)
     )
-    if not agent_id and getattr(note, "agent", None):
-        agent_id = getattr(note.agent, "id", None)
+    if not agent_id:
+        try:
+            if getattr(note, "agent", None):
+                agent_id = getattr(note.agent, "id", None)
+        except NoValuesFetched:
+            pass
 
     origin_message_id = (
         _extract_uuid(note.origin_message_id)
         if hasattr(note, "origin_message_id")
         else getattr(note, "origin_message_id", None)
     )
-    if not origin_message_id and getattr(note, "origin_message", None):
-        origin_message_id = getattr(note.origin_message, "id", None)
+    if not origin_message_id:
+        try:
+            if getattr(note, "origin_message", None):
+                origin_message_id = getattr(note.origin_message, "id", None)
+        except NoValuesFetched:
+            pass
 
     return NoteEntity(
         id=note.id,
@@ -70,16 +80,24 @@ def _map_event(event: CalendarEvent) -> CalendarEventEntity:
         if hasattr(event, "agent_id")
         else getattr(event, "agent_id", None)
     )
-    if not agent_id and getattr(event, "agent", None):
-        agent_id = getattr(event.agent, "id", None)
+    if not agent_id:
+        try:
+            if getattr(event, "agent", None):
+                agent_id = getattr(event.agent, "id", None)
+        except NoValuesFetched:
+            pass
 
     origin_message_id = (
         _extract_uuid(event.origin_message_id)
         if hasattr(event, "origin_message_id")
         else getattr(event, "origin_message_id", None)
     )
-    if not origin_message_id and getattr(event, "origin_message", None):
-        origin_message_id = getattr(event.origin_message, "id", None)
+    if not origin_message_id:
+        try:
+            if getattr(event, "origin_message", None):
+                origin_message_id = getattr(event.origin_message, "id", None)
+        except NoValuesFetched:
+            pass
 
     return CalendarEventEntity(
         id=event.id,

@@ -539,3 +539,41 @@ async def test_handle_db_errors_action_mapping() -> None:
         async with handle_db_errors("create task"):
             raise Exception("unexpected create test")
     assert exc_info.value.status_code == 500  # type: ignore[unreachable]
+
+
+@pytest.mark.asyncio
+async def test_list_notes_and_events_without_agent(
+    async_client: AsyncClient,
+    mock_user_id: uuid.UUID,
+    override_get_current_user: None,
+) -> None:
+    """Test that notes and events without agents can be listed without NoValuesFetched errors."""
+    from datetime import UTC, datetime, timedelta
+
+    # Create note without agent or origin_message
+    await Note.create(user_id=mock_user_id, title="Orphan Note", content="Content")
+
+    # Create event without agent or origin_message
+    now = datetime.now(UTC)
+    await CalendarEvent.create(
+        user_id=mock_user_id,
+        title="Orphan Event",
+        start_time=now,
+        end_time=now + timedelta(hours=1),
+    )
+
+    # Note list should not throw 500 error
+    note_response = await async_client.get("/api/v1/productivity/notes")
+    assert note_response.status_code == 200
+    notes_data = note_response.json()
+    assert len(notes_data) == 1
+    assert notes_data[0]["agent_id"] is None
+    assert notes_data[0]["origin_message_id"] is None
+
+    # Event list should not throw 500 error
+    event_response = await async_client.get("/api/v1/productivity/events")
+    assert event_response.status_code == 200
+    events_data = event_response.json()
+    assert len(events_data) == 1
+    assert events_data[0]["agent_id"] is None
+    assert events_data[0]["origin_message_id"] is None
