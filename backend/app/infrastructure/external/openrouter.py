@@ -180,7 +180,22 @@ async def stream_chat(
             },
             *messages,
         ]
-    return await client.stream_chat(messages, chosen_model)
+    try:
+        return await client.stream_chat(messages, chosen_model)
+    except Exception as e:
+        if isinstance(e, asyncio.CancelledError):
+            raise
+        fallback = get_settings().fallback_chat_model
+        if fallback and fallback != chosen_model:
+            logger.warning(
+                "stream_chat failed with model %s, falling back to %s", chosen_model, fallback
+            )
+            try:
+                return await client.stream_chat(messages, fallback)
+            except Exception as fallback_e:
+                raise fallback_e from e
+        raise
+
 
 
 async def structured_completion(

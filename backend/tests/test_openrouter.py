@@ -7,11 +7,11 @@ import pytest
 from pydantic import BaseModel
 
 from app.infrastructure.external.openrouter import (
-    stream_chat,
     OpenRouterClient,
     chat_completion,
     embed,
     get_openrouter_client,
+    stream_chat,
     structured_completion,
 )
 
@@ -299,6 +299,7 @@ async def test_standalone_structured_completion_cancelled() -> None:
 
         assert mock_client.structured_completion.call_count == 1
 
+
 @pytest.mark.asyncio
 async def test_standalone_chat_completion_with_language() -> None:
     with (
@@ -310,15 +311,14 @@ async def test_standalone_chat_completion_with_language() -> None:
         mock_client.chat_completion = AsyncMock(return_value="bonjour")
         mock_get_client.return_value = mock_client
 
-        result = await chat_completion(
-            [{"role": "user", "content": "hi"}], accept_language="fr-FR"
-        )
+        result = await chat_completion([{"role": "user", "content": "hi"}], accept_language="fr-FR")
 
         assert result == "bonjour"
         called_msgs = mock_client.chat_completion.call_args[0][0]
         assert len(called_msgs) == 2
         assert called_msgs[0]["role"] == "system"
         assert "fr-FR" in called_msgs[0]["content"]
+
 
 @pytest.mark.asyncio
 async def test_standalone_stream_chat_with_language() -> None:
@@ -335,15 +335,14 @@ async def test_standalone_stream_chat_with_language() -> None:
         mock_client.stream_chat = AsyncMock(return_value=mock_gen())
         mock_get_client.return_value = mock_client
 
-        result_gen = await stream_chat(
-            [{"role": "user", "content": "hi"}], accept_language="fr-FR"
-        )
+        result_gen = await stream_chat([{"role": "user", "content": "hi"}], accept_language="fr-FR")
         items = [x async for x in result_gen]
         assert items == ["bonjour"]
         called_msgs = mock_client.stream_chat.call_args[0][0]
         assert len(called_msgs) == 2
         assert called_msgs[0]["role"] == "system"
         assert "fr-FR" in called_msgs[0]["content"]
+
 
 @pytest.mark.asyncio
 async def test_standalone_structured_completion_with_language() -> None:
@@ -365,3 +364,97 @@ async def test_standalone_structured_completion_with_language() -> None:
         assert len(called_msgs) == 2
         assert called_msgs[0]["role"] == "system"
         assert "fr-FR" in called_msgs[0]["content"]
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_cancellation() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.stream_chat = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(asyncio.CancelledError):
+            result_gen = await stream_chat([{"role": "user", "content": "hi"}])
+            async for _ in result_gen:
+                pass
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_fallback() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model", fallback_chat_model="fallback-model")
+        mock_client = MagicMock()
+
+        async def mock_gen():
+            yield "bonjour"
+
+        mock_client.stream_chat = AsyncMock(side_effect=[Exception("Error"), mock_gen()])
+        mock_get_client.return_value = mock_client
+
+        result_gen = await stream_chat([{"role": "user", "content": "hi"}])
+        items = [x async for x in result_gen]
+        assert items == ["bonjour"]
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_fallback_fails() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model", fallback_chat_model="fallback-model")
+        mock_client = MagicMock()
+        mock_client.stream_chat = AsyncMock(side_effect=[Exception("Error"), Exception("FallbackError")])
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(Exception, match="FallbackError"):
+            result_gen = await stream_chat([{"role": "user", "content": "hi"}])
+            async for _ in result_gen:
+                pass
+
+@pytest.mark.asyncio
+async def test_standalone_structured_completion_cancellation() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(asyncio.CancelledError):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+
+@pytest.mark.asyncio
+async def test_standalone_structured_completion_fallback_language() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model", fallback_chat_model="fallback-model")
+        mock_client = MagicMock()
+
+        mock_client.structured_completion = AsyncMock(side_effect=[Exception("Error"), DummyModel(name="bonjour")])
+        mock_get_client.return_value = mock_client
+
+        result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel, accept_language="fr-FR")
+        assert result.name == "bonjour"
+
+@pytest.mark.asyncio
+async def test_standalone_structured_completion_fallback_fails_language() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model", fallback_chat_model="fallback-model")
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=[Exception("Error"), Exception("FallbackError")])
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(Exception, match="FallbackError"):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
