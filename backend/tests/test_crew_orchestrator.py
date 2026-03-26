@@ -23,15 +23,17 @@ class MockAgent:
         self.description = None
 
 
+from typing import cast, Any
+
 @pytest.fixture
 def mock_agent():
-    return MockAgent(
+    return cast(Any, MockAgent(
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         name="Test Agent",
         personality="Helpful",
         system_prompt="Be helpful",
-    )
+    ))
 
 
 class MockOutput:
@@ -62,13 +64,13 @@ async def test_execute_crew_task_single_agent_success(mock_agent):
 
 @pytest.mark.asyncio
 async def test_execute_crew_task_multi_agent_success(mock_agent):
-    mock_agent2 = MockAgent(
+    mock_agent2 = cast(Any, MockAgent(
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         name="Test Agent 2",
         personality="Helpful",
         system_prompt="Be helpful",
-    )
+    ))
     with patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_class:
         mock_crew_instance = mock_crew_class.return_value
         mock_result = MockOutput(

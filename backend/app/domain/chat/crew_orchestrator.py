@@ -376,8 +376,8 @@ class CrewOrchestrator:
         for attempt in (0, 1):
             try:
                 result = await crew.kickoff_async()
-                if result and hasattr(result, "pydantic") and result.pydantic:
-                    return result.pydantic.model_dump_json()
+                if hasattr(result, "pydantic") and isinstance(getattr(result, "pydantic"), BaseModel):
+                    return getattr(result, "pydantic").model_dump_json()
                 break
             except asyncio.CancelledError:
                 raise
