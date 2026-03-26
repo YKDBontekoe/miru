@@ -20,6 +20,8 @@ def test_get_openrouter_client() -> None:
         patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
         patch("app.infrastructure.external.openrouter.OpenRouterClient") as mock_client_class,
     ):
+        import app.infrastructure.external.openrouter as openrouter
+        openrouter._client = None
         mock_settings.return_value = MagicMock(openrouter_api_key="test-key")
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
