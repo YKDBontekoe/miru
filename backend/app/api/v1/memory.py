@@ -7,6 +7,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 from openai import APIConnectionError
 
 from app.api.dependencies import get_memory_service
@@ -31,15 +32,15 @@ router = APIRouter(tags=["Memory"])
 async def list_memories(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
-) -> dict[str, list[Memory]]:
+) -> dict[str, list[Memory]] | JSONResponse:
     """Retrieve top memories for the current user."""
     try:
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
-    except (APIConnectionError, OSError) as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    except (APIConnectionError, OSError):
+        return JSONResponse(
+            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+        )
 
 
 @router.get(
@@ -56,14 +57,14 @@ async def list_memories(
 async def get_memory_graph(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
-) -> dict[str, Any]:
+) -> dict[str, Any] | JSONResponse:
     """Fetch the memory graph for the current user."""
     try:
         return await service.get_memory_graph(user_id)
-    except (APIConnectionError, OSError) as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    except (APIConnectionError, OSError):
+        return JSONResponse(
+            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+        )
 
 
 @router.post(
@@ -82,16 +83,15 @@ async def store_memory(
     data: MemoryRequest,
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
-) -> dict[str, Any]:
+) -> dict[str, Any] | JSONResponse:
     """Manually store a new memory."""
     try:
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
-    except (APIConnectionError, OSError) as e:
-        raise HTTPException(
-            status_code=503,
-            detail="Upstream AI service is currently unreachable",
-        ) from e
+    except (APIConnectionError, OSError):
+        return JSONResponse(
+            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+        )
 
 
 @router.post(
@@ -113,7 +113,7 @@ async def upload_document(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
     file: UploadFile = File(...),
-) -> dict[str, Any]:
+) -> dict[str, Any] | JSONResponse:
     """Upload a document to extract text and store in memories."""
     # 1. Validate content type
     allowed_types = {
@@ -158,10 +158,10 @@ async def upload_document(
             "message": f"Document processed and stored in {len(memory_ids)} chunks.",
             "memory_ids": [str(m) for m in memory_ids],
         }
-    except (APIConnectionError, OSError) as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    except (APIConnectionError, OSError):
+        return JSONResponse(
+            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
 
