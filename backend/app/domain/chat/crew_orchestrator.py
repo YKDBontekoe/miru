@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -141,8 +142,7 @@ MULTI_AGENT_PROMPT = (
     "without introducing themselves or listing their capabilities. "
     "Agents MAY respond to each other's points if it adds value. "
     "If an agent has nothing useful to add, they should stay silent. "
-    "Return a transcript of only the agents who actually responded, "
-    "formatted as 'AgentName: message' with one blank line between agents.{locale_instruction}"
+    "Return a transcript of only the agents who actually responded.{locale_instruction}"
 )
 
 SINGLE_AGENT_PROMPT = (
@@ -153,9 +153,18 @@ SINGLE_AGENT_PROMPT = (
     "Do not introduce yourself or list your capabilities — just answer directly.{locale_instruction}"
 )
 
+class AgentMessage(BaseModel):
+    agent_name: str
+    message: str
+
+class MultiAgentResponse(BaseModel):
+    messages: list[AgentMessage]
+
+class SingleAgentResponse(BaseModel):
+    message: str
+
 MULTI_AGENT_EXPECTED_OUTPUT = (
     "A chat transcript with only the relevant agents responding. "
-    "Format: 'AgentName: message' with one blank line between agents. "
     "Agents should be concise and natural, not self-promotional."
 )
 
@@ -330,6 +339,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=MultiAgentResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -347,6 +357,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=SingleAgentResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -361,6 +372,8 @@ class CrewOrchestrator:
         for attempt in (0, 1):
             try:
                 result = await crew.kickoff_async()
+                if result and hasattr(result, "pydantic") and result.pydantic:
+                    return result.pydantic.model_dump_json()
                 break
             except asyncio.CancelledError:
                 raise

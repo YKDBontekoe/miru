@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import uuid
 from collections.abc import Callable
@@ -138,42 +139,34 @@ class ChatWebSocketBroadcaster:
     def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
         """Parse a multi-agent transcript into (agent_name, message) pairs.
 
-        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
+        Expected format: structured JSON object outputted from CrewAI output_pydantic mapping.
         Falls back to a single unnamed entry when the format cannot be parsed.
         """
         if not agent_names or len(agent_names) == 1:
+            try:
+                data = json.loads(result_text)
+                if isinstance(data, dict) and "message" in data:
+                    return [("", data["message"].strip())]
+            except Exception:
+                pass
             return [("", result_text.strip())]
 
-        # Build a set of known names (case-insensitive) for matching
         name_set = {n.lower() for n in agent_names}
-        segments: list[tuple[str, str]] = []
-        current_name = ""
-        current_lines: list[str] = []
+        try:
+            data = json.loads(result_text)
+            if isinstance(data, dict) and "messages" in data and isinstance(data["messages"], list):
+                segments = []
+                for entry in data["messages"]:
+                    if isinstance(entry, dict) and "agent_name" in entry and "message" in entry:
+                        agent_name = entry["agent_name"].strip()
+                        if agent_name.lower() in name_set:
+                            segments.append((agent_name, entry["message"].strip()))
+                if segments:
+                    return segments
+        except Exception:
+            pass
 
-        for line in result_text.splitlines():
-            # Detect "AgentName: ..." prefix
-            colon_pos = line.find(":")
-            if colon_pos > 0:
-                candidate = line[:colon_pos].strip()
-                if candidate.lower() in name_set:
-                    # Save previous segment
-                    if current_lines or current_name:
-                        segments.append((current_name, "\n".join(current_lines).strip()))
-                    current_name = candidate
-                    current_lines = [line[colon_pos + 1 :].strip()]
-                    continue
-            current_lines.append(line)
-
-        if current_lines or current_name:
-            segments.append((current_name, "\n".join(current_lines).strip()))
-
-        # Drop empty segments
-        segments = [(n, m) for n, m in segments if m]
-        return (
-            segments
-            if segments
-            else ([] if not result_text.strip() else [("", result_text.strip())])
-        )
+        return ([] if not result_text.strip() else [("", result_text.strip())])
 
     async def persist_and_broadcast_agent_response(
         self,
