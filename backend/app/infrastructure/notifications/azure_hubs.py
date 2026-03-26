@@ -46,7 +46,7 @@ class AzureNotificationHubClient:
             notification = AzureNotification(notification_format="template", payload=payload)
             # notificationhubs-rest-python client is synchronous.
             # Use asyncio.to_thread to offload blocking I/O off the main event loop.
-            await asyncio.to_thread(cast(Any, self.hub).send_notification, notification, tags)
+            await asyncio.to_thread(cast("Any", self.hub).send_notification, notification, tags)
             logger.info("Successfully sent notification.")
         except Exception as exc:
             logger.exception("Failed to send notification", exc_info=exc)

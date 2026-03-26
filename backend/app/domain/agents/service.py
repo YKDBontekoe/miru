@@ -36,14 +36,10 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
     """
     cap_ids: list[str] = [cap.pk for cap in agent.capabilities.related_objects]
     integration_ids: list[str] = [
-        ai.integration_id
-        for ai in agent.agent_integrations
-        if ai.enabled
+        ai.integration_id for ai in agent.agent_integrations if ai.enabled
     ]
     integration_configs: dict = {
-        ai.integration_id: ai.config
-        for ai in agent.agent_integrations
-        if ai.enabled and ai.config
+        ai.integration_id: ai.config for ai in agent.agent_integrations if ai.enabled and ai.config
     }
     return AgentResponse(
         id=agent.pk,

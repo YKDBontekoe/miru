@@ -28,7 +28,7 @@ class Agent(SupabaseModel):
         "models.Capability", related_name="agents", table="agents_capabilities"
     )
     goals = fields.JSONField(default=[])
-    agent_integrations: fields.ReverseRelation["AgentIntegration"]
+    agent_integrations: fields.ReverseRelation[AgentIntegration]
 
     message_count = fields.IntField(default=0)
     created_at = fields.DatetimeField(auto_now_add=True)

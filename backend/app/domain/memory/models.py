@@ -45,9 +45,7 @@ class Memory(SupabaseModel):
     )
 
     content = fields.TextField()
-    embedding = (
-        fields.JSONField()
-    )  # Stored as vector(1536) in Postgres; patched by generator
+    embedding = fields.JSONField()  # Stored as vector(1536) in Postgres; patched by generator
     meta = fields.JSONField(default={})
 
     created_at = fields.DatetimeField(auto_now_add=True)

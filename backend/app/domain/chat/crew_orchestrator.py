@@ -7,7 +7,7 @@ import logging
 from typing import TYPE_CHECKING, Any, cast
 
 import crewai
-from crewai import LLM, Agent as BaseAgent, Crew, Process, Task
+from crewai import LLM, Crew, Process, Task
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -332,7 +332,7 @@ class CrewOrchestrator:
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
-                agents=cast(Any, crew_agents),
+                agents=cast("Any", crew_agents),
                 tasks=[task],
                 process=Process.hierarchical,
                 manager_llm=llm,
@@ -350,7 +350,7 @@ class CrewOrchestrator:
                 agent=crew_agents[0],
             )
             crew = Crew(
-                agents=cast(Any, crew_agents),
+                agents=cast("Any", crew_agents),
                 tasks=[task],
                 process=Process.sequential,
                 **kwargs,

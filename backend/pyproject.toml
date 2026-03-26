@@ -15,7 +15,6 @@ dependencies = [
     "numpy>=1.26.0",
     "pydantic-settings>=2.10.0",
     "python-dotenv>=1.0.1",
-    "httpx>=0.28.0",
     "webauthn>=2.7.0",
     "pyjwt[crypto]>=2.10.0",
     "sentry-sdk[fastapi]>=2.1.0",
@@ -29,9 +28,9 @@ dependencies = [
     "pyopenssl>=26.0.0",
     "notificationhubs-rest-python>=1.0.2",
     "python-multipart>=0.0.22",
-    "pypdf>=6.9.1",
     "python-docx>=1.2.0",
     "pillow>=12.1.1",
+    "pdf-oxide>=0.3.17",
 ]
 
 [project.optional-dependencies]
@@ -46,6 +45,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.0.0",
+    "httpx>=0.28.0",
 ]
 
 [tool.setuptools]

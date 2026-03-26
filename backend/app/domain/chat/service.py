@@ -7,8 +7,6 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 
-from openai.types.chat import ChatCompletionMessageParam
-
 from app.core.config import get_settings
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.dtos import (
@@ -21,6 +19,8 @@ from app.infrastructure.external.openrouter import stream_chat
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
+
+    from openai.types.chat import ChatCompletionMessageParam
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
@@ -127,7 +127,9 @@ class ChatService:
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
-        messages: list[ChatCompletionMessageParam] = [{"role": "system", "content": agent.personality}]
+        messages: list[ChatCompletionMessageParam] = [
+            {"role": "system", "content": agent.personality}
+        ]
         if accept_language:
             messages.append(
                 {
