@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
@@ -20,7 +20,7 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 RUN /uv/bin/uv sync --frozen --no-dev --no-install-project
 
 # Stage 2: Runtime
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
