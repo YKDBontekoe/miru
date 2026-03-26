@@ -38,7 +38,6 @@ class AzureNotificationHubClient:
         if not self.hub:
             logger.warning("Notification Hub is not initialized. Skipping notification.")
             return
-        assert isinstance(self.hub, AzureNotificationHub)
 
         try:
             if isinstance(payload, dict):

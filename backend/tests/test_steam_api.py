@@ -1,9 +1,8 @@
 """Tests for Steam Web API client."""
 
 import typing
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
-import httpx
 import pytest
 
 from app.infrastructure.external.steam import (
@@ -23,29 +22,23 @@ def mock_settings() -> typing.Generator[typing.Any, None, None]:
 @pytest.mark.asyncio
 async def test_get_player_summaries(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
-        "response": {"players": [{"personaname": "Robin", "personastate": 1}]}
-    }
-    mock_response.raise_for_status.return_value = None
+    mock_data = {"response": {"players": [{"personaname": "Robin", "personastate": 1}]}}
 
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = mock_response
+    with patch("app.infrastructure.external.steam._get", return_value=mock_data) as mock_get:
         summaries = await get_player_summaries([steam_id])
 
         assert len(summaries) == 1
         assert summaries[0]["personaname"] == "Robin"
         mock_get.assert_called_once()
-        args, kwargs = mock_get.call_args
-        assert steam_id in kwargs["params"]["steamids"]
-        assert "test_steam_key" in kwargs["params"]["key"]
+        _, params = mock_get.call_args[0]
+        assert steam_id in params["steamids"]
+        assert params["key"] == "test_steam_key"
 
 
 @pytest.mark.asyncio
 async def test_get_owned_games(mock_settings: typing.Any) -> None:
     steam_id = "76561197960435530"
-    mock_response = MagicMock()
-    mock_response.json.return_value = {
+    mock_data = {
         "response": {
             "game_count": 2,
             "games": [
@@ -54,18 +47,16 @@ async def test_get_owned_games(mock_settings: typing.Any) -> None:
             ],
         }
     }
-    mock_response.raise_for_status.return_value = None
 
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = mock_response
+    with patch("app.infrastructure.external.steam._get", return_value=mock_data) as mock_get:
         games = await get_owned_games(steam_id)
 
         assert len(games) == 2
         assert games[0]["name"] == "Counter-Strike"
         mock_get.assert_called_once()
-        args, kwargs = mock_get.call_args
-        assert kwargs["params"]["steamid"] == steam_id
-        assert "test_steam_key" in kwargs["params"]["key"]
+        _, params = mock_get.call_args[0]
+        assert params["steamid"] == steam_id
+        assert params["key"] == "test_steam_key"
 
 
 @pytest.mark.asyncio
@@ -78,27 +69,20 @@ async def test_get_player_summaries_no_key() -> None:
 
 @pytest.mark.asyncio
 async def test_get_player_summaries_http_error(mock_settings: typing.Any) -> None:
-    steam_id = "76561197960435530"
+    import urllib.error
 
-    mock_response = MagicMock()
-    # Ensure raise_for_status raises HTTPError
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "Error", request=MagicMock(), response=MagicMock()
-    )
-
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = mock_response
-        summaries = await get_player_summaries([steam_id])
+    with patch(
+        "app.infrastructure.external.steam._get",
+        side_effect=urllib.error.URLError("403 Forbidden"),
+    ):
+        summaries = await get_player_summaries(["76561197960435530"])
         assert summaries == []
 
 
 @pytest.mark.asyncio
 async def test_get_player_summaries_exception(mock_settings: typing.Any) -> None:
-    steam_id = "76561197960435530"
-
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.side_effect = Exception("Unexpected error")
-        summaries = await get_player_summaries([steam_id])
+    with patch("app.infrastructure.external.steam._get", side_effect=Exception("Unexpected error")):
+        summaries = await get_player_summaries(["76561197960435530"])
         assert summaries == []
 
 
@@ -110,26 +94,20 @@ async def test_get_player_summaries_no_ids(mock_settings: typing.Any) -> None:
 
 @pytest.mark.asyncio
 async def test_get_owned_games_http_error(mock_settings: typing.Any) -> None:
-    steam_id = "76561197960435530"
+    import urllib.error
 
-    mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "Error", request=MagicMock(), response=MagicMock()
-    )
-
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = mock_response
-        games = await get_owned_games(steam_id)
+    with patch(
+        "app.infrastructure.external.steam._get",
+        side_effect=urllib.error.URLError("403 Forbidden"),
+    ):
+        games = await get_owned_games("76561197960435530")
         assert games == []
 
 
 @pytest.mark.asyncio
 async def test_get_owned_games_exception(mock_settings: typing.Any) -> None:
-    steam_id = "76561197960435530"
-
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.side_effect = Exception("Unexpected error")
-        games = await get_owned_games(steam_id)
+    with patch("app.infrastructure.external.steam._get", side_effect=Exception("Unexpected error")):
+        games = await get_owned_games("76561197960435530")
         assert games == []
 
 
@@ -144,30 +122,24 @@ async def test_get_owned_games_no_key() -> None:
 @pytest.mark.asyncio
 async def test_resolve_vanity_url_success(mock_settings: typing.Any) -> None:
     vanity_url = "robinwalker"
-    mock_response = MagicMock()
-    mock_response.json.return_value = {"response": {"success": 1, "steamid": "76561197960435530"}}
-    mock_response.raise_for_status.return_value = None
+    mock_data = {"response": {"success": 1, "steamid": "76561197960435530"}}
 
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = mock_response
+    with patch("app.infrastructure.external.steam._get", return_value=mock_data) as mock_get:
         steam_id = await resolve_vanity_url(vanity_url)
 
         assert steam_id == "76561197960435530"
         mock_get.assert_called_once()
-        args, kwargs = mock_get.call_args
-        assert kwargs["params"]["vanityurl"] == vanity_url
-        assert "test_steam_key" in kwargs["params"]["key"]
+        _, params = mock_get.call_args[0]
+        assert params["vanityurl"] == vanity_url
+        assert params["key"] == "test_steam_key"
 
 
 @pytest.mark.asyncio
 async def test_resolve_vanity_url_not_found(mock_settings: typing.Any) -> None:
     vanity_url = "nonexistent_url_12345"
-    mock_response = MagicMock()
-    mock_response.json.return_value = {"response": {"success": 42, "message": "No match"}}
-    mock_response.raise_for_status.return_value = None
+    mock_data = {"response": {"success": 42, "message": "No match"}}
 
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.return_value = mock_response
+    with patch("app.infrastructure.external.steam._get", return_value=mock_data) as mock_get:
         steam_id = await resolve_vanity_url(vanity_url)
 
         assert steam_id is None
@@ -184,8 +156,6 @@ async def test_resolve_vanity_url_no_key() -> None:
 
 @pytest.mark.asyncio
 async def test_resolve_vanity_url_exception(mock_settings: typing.Any) -> None:
-    vanity_url = "robinwalker"
-    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
-        mock_get.side_effect = Exception("Unexpected error")
-        steam_id = await resolve_vanity_url(vanity_url)
+    with patch("app.infrastructure.external.steam._get", side_effect=Exception("Unexpected error")):
+        steam_id = await resolve_vanity_url("robinwalker")
         assert steam_id is None
