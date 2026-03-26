@@ -17,8 +17,17 @@ from app.domain.memory.service import MemoryService  # noqa: TCH001
 router = APIRouter(tags=["Memory"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("", response_model=dict[str, list[MemoryResponse]])
+@router.get(
+    "",
+    response_model=dict[str, list[MemoryResponse]],
+    summary="List memories",
+    description="Retrieve top memories for the current user. Requires authentication.",
+    responses={
+        200: {"description": "List of memories retrieved successfully."},
+        401: {"description": "Authentication required"},
+        503: {"description": "Upstream AI service is currently unreachable"},
+    },
+)
 async def list_memories(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -33,8 +42,17 @@ async def list_memories(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/graph", response_model=dict[str, Any])
+@router.get(
+    "/graph",
+    response_model=dict[str, Any],
+    summary="Get memory graph",
+    description="Fetch the memory graph for the current user. Requires authentication.",
+    responses={
+        200: {"description": "Memory graph retrieved successfully."},
+        401: {"description": "Authentication required"},
+        503: {"description": "Upstream AI service is currently unreachable"},
+    },
+)
 async def get_memory_graph(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -48,8 +66,18 @@ async def get_memory_graph(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("", response_model=dict[str, Any])
+@router.post(
+    "",
+    response_model=dict[str, Any],
+    summary="Store a memory",
+    description="Manually store a new memory for the current user. Requires authentication.",
+    responses={
+        200: {"description": "Memory stored successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+        503: {"description": "Upstream AI service is currently unreachable"},
+    },
+)
 async def store_memory(
     data: MemoryRequest,
     user_id: CurrentUser,
@@ -66,8 +94,21 @@ async def store_memory(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/upload", response_model=dict[str, Any])
+@router.post(
+    "/upload",
+    response_model=dict[str, Any],
+    summary="Upload a document to extract memories",
+    description="Upload a document to extract text and store in memories. Requires authentication.",
+    responses={
+        200: {"description": "Document processed and stored successfully."},
+        401: {"description": "Authentication required"},
+        413: {"description": "File too large. Maximum allowed size is 10MB."},
+        415: {"description": "Unsupported file type"},
+        422: {"description": "Validation Error"},
+        500: {"description": "Failed to process document"},
+        503: {"description": "Upstream AI service is currently unreachable"},
+    },
+)
 async def upload_document(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -125,8 +166,17 @@ async def upload_document(
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/{memory_id}")
+@router.delete(
+    "/{memory_id}",
+    summary="Delete a memory",
+    description="Delete a memory by ID. Requires authentication.",
+    responses={
+        200: {"description": "Memory deleted successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Memory not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_memory(
     memory_id: UUID,
     _user_id: CurrentUser,

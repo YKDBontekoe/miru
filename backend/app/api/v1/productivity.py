@@ -54,8 +54,16 @@ async def create_task(
     return TaskResponse.model_validate(task)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/tasks", response_model=list[TaskResponse])
+@router.get(
+    "/tasks",
+    response_model=list[TaskResponse],
+    summary="List tasks",
+    description="Retrieve all tasks for the current user. Requires authentication.",
+    responses={
+        200: {"description": "Tasks retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_tasks(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
@@ -104,8 +112,18 @@ async def update_task(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/tasks/{task_id}", status_code=204)
+@router.delete(
+    "/tasks/{task_id}",
+    status_code=204,
+    summary="Delete task",
+    description="Delete an existing task. Requires authentication.",
+    responses={
+        204: {"description": "Task deleted successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Task not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_task(
     task_id: UUID,
     user_id: CurrentUser,
@@ -137,8 +155,16 @@ async def create_note(
     return NoteResponse.model_validate(note)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/notes", response_model=list[NoteResponse])
+@router.get(
+    "/notes",
+    response_model=list[NoteResponse],
+    summary="List notes",
+    description="Retrieve all notes for the current user. Requires authentication.",
+    responses={
+        200: {"description": "Notes retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_notes(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
@@ -185,8 +211,18 @@ async def update_note(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/notes/{note_id}", status_code=204)
+@router.delete(
+    "/notes/{note_id}",
+    status_code=204,
+    summary="Delete note",
+    description="Delete an existing note. Requires authentication.",
+    responses={
+        204: {"description": "Note deleted successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Note not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_note(
     note_id: UUID,
     user_id: CurrentUser,
@@ -224,8 +260,16 @@ async def create_event(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/events", response_model=list[CalendarEventResponse])
+@router.get(
+    "/events",
+    response_model=list[CalendarEventResponse],
+    summary="List calendar events",
+    description="Retrieve all calendar events for the current user. Requires authentication.",
+    responses={
+        200: {"description": "Events retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_events(
     user_id: CurrentUser,
     use_case: ProductivityUseCaseDep,
@@ -278,8 +322,18 @@ async def update_event(
         ) from e
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/events/{event_id}", status_code=204)
+@router.delete(
+    "/events/{event_id}",
+    status_code=204,
+    summary="Delete calendar event",
+    description="Delete an existing calendar event. Requires authentication.",
+    responses={
+        204: {"description": "Event deleted successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Event not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_event(
     event_id: UUID,
     user_id: CurrentUser,
