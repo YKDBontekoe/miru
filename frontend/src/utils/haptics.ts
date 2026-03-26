@@ -4,12 +4,12 @@
  * all calls are silently no-ops.
  */
 
+import * as ExpoHaptics from 'expo-haptics';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let H: any = null;
 try {
-  // Dynamic require so a missing package never crashes the app
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  H = require('expo-haptics');
+  H = ExpoHaptics;
 } catch {}
 
 const safe = (fn: () => Promise<void> | undefined) => {

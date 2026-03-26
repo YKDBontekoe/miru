@@ -25,7 +25,6 @@ import { AgentDetailSheet } from '../../src/components/agents/AgentDetailSheet';
 import { AgentCard, AgentGridCard } from '../../src/components/agents/AgentCard';
 import { EmptyState } from '../../src/components/agents/EmptyState';
 import { useAgentStore, AgentTemplate } from '../../src/store/useAgentStore';
-import { ApiService } from '../../src/core/api/ApiService';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { haptic } from '../../src/utils/haptics';

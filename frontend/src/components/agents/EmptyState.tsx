@@ -112,48 +112,37 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
 
   if (searchQuery.trim()) {
     return (
-      <Animated.View
-        entering={FadeIn.duration(300)}
-        style={styles.searchContainer}
-      >
+      <Animated.View entering={FadeIn.duration(300)} style={styles.searchContainer}>
         <View style={styles.searchIconCircle}>
           <Ionicons name="search" size={26} color={C.faint} />
         </View>
-        <AppText style={styles.searchTitle}>
-          No matches
-        </AppText>
-        <AppText style={styles.searchSubtitle}>
-          Try a different search term.
-        </AppText>
+        <AppText style={styles.searchTitle}>No matches</AppText>
+        <AppText style={styles.searchSubtitle}>Try a different search term.</AppText>
       </Animated.View>
     );
   }
 
   return (
-    <Animated.View
-      entering={FadeIn.duration(400)}
-      style={styles.emptyContainer}
-    >
+    <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
         <Ionicons name="people" size={36} color={`${C.primary}90`} />
       </View>
-      <AppText style={styles.emptyTitle}>
-        No personas yet
-      </AppText>
+      <AppText style={styles.emptyTitle}>No personas yet</AppText>
       <AppText style={styles.emptySubtitle}>
         Create your first AI persona or start from a template.
       </AppText>
       <ScalePressable onPress={onCreate}>
         <View style={styles.createButtonContainer}>
-          <Ionicons name="sparkles" size={17} color={theme.colors.white} style={styles.createButtonIcon} />
-          <AppText style={styles.createButtonText}>
-            Create Persona
-          </AppText>
+          <Ionicons
+            name="sparkles"
+            size={17}
+            color={theme.colors.white}
+            style={styles.createButtonIcon}
+          />
+          <AppText style={styles.createButtonText}>Create Persona</AppText>
         </View>
       </ScalePressable>
-      <ScalePressable
-        onPress={onBrowse}
-      >
+      <ScalePressable onPress={onBrowse}>
         <View style={styles.browseButton}>
           <Ionicons name="albums-outline" size={15} color={C.muted} />
           <AppText style={styles.browseButtonText}>Browse templates</AppText>

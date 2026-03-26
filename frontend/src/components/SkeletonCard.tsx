@@ -33,7 +33,7 @@ function ShimmerBox({
         false
       )
     );
-  }, [delay]);
+  }, [delay, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
