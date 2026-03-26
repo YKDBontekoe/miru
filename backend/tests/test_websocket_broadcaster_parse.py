@@ -1,5 +1,5 @@
-import pytest
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
+
 
 def test_parse_transcript_single_agent():
     # Test fallback text parsing when single agent
@@ -7,8 +7,11 @@ def test_parse_transcript_single_agent():
     assert result == [("", "Hello, this is my message.")]
 
     # Test JSON parsing when single agent
-    json_result = ChatWebSocketBroadcaster.parse_transcript('{"message": "Hello from JSON."}', ["Agent A"])
+    json_result = ChatWebSocketBroadcaster.parse_transcript(
+        '{"message": "Hello from JSON."}', ["Agent A"]
+    )
     assert json_result == [("", "Hello from JSON.")]
+
 
 def test_parse_transcript_multi_agent():
     agent_names = ["Alice", "Bob"]
@@ -27,6 +30,7 @@ def test_parse_transcript_multi_agent():
     bad_json_input = '{"messages": [{"wrong_key": "Alice", "message": "Hi Bob!"}]}'
     result3 = ChatWebSocketBroadcaster.parse_transcript(bad_json_input, agent_names)
     assert result3 == [("", bad_json_input)]
+
 
 def test_parse_transcript_no_agents():
     result = ChatWebSocketBroadcaster.parse_transcript("Something", [])
