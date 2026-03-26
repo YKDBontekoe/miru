@@ -166,7 +166,7 @@ class ChatWebSocketBroadcaster:
         except Exception:
             pass
 
-        return ([] if not result_text.strip() else [("", result_text.strip())])
+        return [] if not result_text.strip() else [("", result_text.strip())]
 
     async def persist_and_broadcast_agent_response(
         self,

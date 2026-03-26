@@ -153,15 +153,19 @@ SINGLE_AGENT_PROMPT = (
     "Do not introduce yourself or list your capabilities — just answer directly.{locale_instruction}"
 )
 
+
 class AgentMessage(BaseModel):
     agent_name: str
     message: str
 
+
 class MultiAgentResponse(BaseModel):
     messages: list[AgentMessage]
 
+
 class SingleAgentResponse(BaseModel):
     message: str
+
 
 MULTI_AGENT_EXPECTED_OUTPUT = (
     "A chat transcript with only the relevant agents responding. "
