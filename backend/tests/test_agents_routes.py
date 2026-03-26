@@ -151,7 +151,7 @@ async def test_agent_service_caching() -> None:
 async def test_generate_agent_profile_service_with_language():
     with patch("app.domain.agents.service.structured_completion") as mock_completion:
         mock_completion.return_value = AgentGenerationResponse(
-            name="Gen", personality="Gen", description="Gen", system_prompt="Gen", goals=[]
+            name="Gen", personality="Gen", description="Gen", goals=[]
         )
         service = AgentService(repo=MagicMock())
         await service.generate_agent_profile("test keywords", accept_language="es-ES")
@@ -169,7 +169,7 @@ async def test_generate_agent_profile_service_with_language_direct():
 
     with patch("app.domain.agents.service.structured_completion") as mock_completion:
         mock_completion.return_value = AgentGenerationResponse(
-            name="Gen", personality="Gen", description="Gen", system_prompt="Gen", goals=[]
+            name="Gen", personality="Gen", description="Gen", goals=[]
         )
 
         # Test directly calling the method
@@ -186,7 +186,7 @@ async def test_generate_agent_profile_service_with_language_direct():
 async def test_generate_agent_profile_service_no_language():
     with patch("app.domain.agents.service.structured_completion") as mock_completion:
         mock_completion.return_value = AgentGenerationResponse(
-            name="Gen", personality="Gen", description="Gen", system_prompt="Gen", goals=[]
+            name="Gen", personality="Gen", description="Gen", goals=[]
         )
         service = AgentService(repo=MagicMock())
         await service.generate_agent_profile("test keywords")
