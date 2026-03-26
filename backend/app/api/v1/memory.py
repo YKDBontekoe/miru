@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import errno
 import io
+import logging
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -16,10 +18,15 @@ from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # no
 from app.domain.memory.service import MemoryService  # noqa: TCH001
 
 router = APIRouter(tags=["Memory"])
+logger = logging.getLogger(__name__)
 
 
 # DOCS(miru-agent): undocumented endpoint
-@router.get("", response_model=dict[str, list[MemoryResponse]])
+@router.get(
+    "",
+    response_model=dict[str, list[MemoryResponse]],
+    responses={503: {"description": "Upstream AI service is currently unreachable"}},
+)
 async def list_memories(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -28,14 +35,30 @@ async def list_memories(
     try:
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
-    except (APIConnectionError, OSError):
+    except (APIConnectionError, OSError) as e:
+        if isinstance(e, OSError) and e.errno not in (
+            errno.ENETUNREACH,
+            errno.EHOSTUNREACH,
+            errno.ENETDOWN,
+            errno.ECONNREFUSED,
+            errno.ETIMEDOUT,
+        ):
+            raise
         return JSONResponse(
-            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+            status_code=503,
+            content={
+                "detail": "Upstream AI service is currently unreachable",
+                "error": "upstream_unreachable",
+            },
         )
 
 
 # DOCS(miru-agent): undocumented endpoint
-@router.get("/graph", response_model=dict[str, Any])
+@router.get(
+    "/graph",
+    response_model=dict[str, Any],
+    responses={503: {"description": "Upstream AI service is currently unreachable"}},
+)
 async def get_memory_graph(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -43,14 +66,30 @@ async def get_memory_graph(
     """Fetch the memory graph for the current user."""
     try:
         return await service.get_memory_graph(user_id)
-    except (APIConnectionError, OSError):
+    except (APIConnectionError, OSError) as e:
+        if isinstance(e, OSError) and e.errno not in (
+            errno.ENETUNREACH,
+            errno.EHOSTUNREACH,
+            errno.ENETDOWN,
+            errno.ECONNREFUSED,
+            errno.ETIMEDOUT,
+        ):
+            raise
         return JSONResponse(
-            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+            status_code=503,
+            content={
+                "detail": "Upstream AI service is currently unreachable",
+                "error": "upstream_unreachable",
+            },
         )
 
 
 # DOCS(miru-agent): undocumented endpoint
-@router.post("", response_model=dict[str, Any])
+@router.post(
+    "",
+    response_model=dict[str, Any],
+    responses={503: {"description": "Upstream AI service is currently unreachable"}},
+)
 async def store_memory(
     data: MemoryRequest,
     user_id: CurrentUser,
@@ -60,14 +99,30 @@ async def store_memory(
     try:
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
-    except (APIConnectionError, OSError):
+    except (APIConnectionError, OSError) as e:
+        if isinstance(e, OSError) and e.errno not in (
+            errno.ENETUNREACH,
+            errno.EHOSTUNREACH,
+            errno.ENETDOWN,
+            errno.ECONNREFUSED,
+            errno.ETIMEDOUT,
+        ):
+            raise
         return JSONResponse(
-            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+            status_code=503,
+            content={
+                "detail": "Upstream AI service is currently unreachable",
+                "error": "upstream_unreachable",
+            },
         )
 
 
 # DOCS(miru-agent): undocumented endpoint
-@router.post("/upload", response_model=dict[str, Any])
+@router.post(
+    "/upload",
+    response_model=dict[str, Any],
+    responses={503: {"description": "Upstream AI service is currently unreachable"}},
+)
 async def upload_document(
     user_id: CurrentUser,
     service: Annotated[MemoryService, Depends(get_memory_service)],
@@ -117,12 +172,25 @@ async def upload_document(
             "message": f"Document processed and stored in {len(memory_ids)} chunks.",
             "memory_ids": [str(m) for m in memory_ids],
         }
-    except (APIConnectionError, OSError):
+    except (APIConnectionError, OSError) as e:
+        if isinstance(e, OSError) and e.errno not in (
+            errno.ENETUNREACH,
+            errno.EHOSTUNREACH,
+            errno.ENETDOWN,
+            errno.ECONNREFUSED,
+            errno.ETIMEDOUT,
+        ):
+            raise
         return JSONResponse(
-            status_code=503, content={"detail": "Upstream AI service is currently unreachable"}
+            status_code=503,
+            content={
+                "detail": "Upstream AI service is currently unreachable",
+                "error": "upstream_unreachable",
+            },
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
+        logger.exception("Failed to process document")
+        raise HTTPException(status_code=500, detail="Failed to process document") from e
 
 
 # DOCS(miru-agent): undocumented endpoint
