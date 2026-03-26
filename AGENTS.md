@@ -69,7 +69,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 - Scheduled every 6 hours to pull open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
-**Note on Prompt:** Jules is instructed to strictly follow project architecture (Domain logic in `backend/app/domain/`, routes in `backend/app/api/v1/`, frontend in `frontend/`) and test requirements (never mock the database or Redis, mock external services).
+**Note on Prompt:** Jules is instructed to strictly follow project architecture (Domain logic in `backend/app/domain/`, routes in `backend/app/api/v1/`, frontend in `frontend/`) and test requirements (never mock the database or Redis, mock external services). // DOCS(miru-agent): prompt mismatch
 
 ### 2. CodeRabbit
 
@@ -101,6 +101,12 @@ backend/
         service.py
       memory/
         models.py    # Memory, MemoryGraphNode/Edge models + schemas
+        service.py
+      notifications/
+        api/         # Push notification endpoints
+        service.py   # Token registration service
+      productivity/
+        models.py    # Task, Note, CalendarEvent models + schemas
         service.py
       agent_tools/
         models.py    # AgentTool, AgentToolLink models + schemas

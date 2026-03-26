@@ -26,8 +26,17 @@ from app.domain.agents.service import AgentService  # noqa: TCH001
 router = APIRouter(tags=["Agents"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("", response_model=AgentResponse)
+@router.post(
+    "",
+    response_model=AgentResponse,
+    summary="Create agent",
+    description="Create a new AI agent. Requires authentication.",
+    responses={
+        200: {"description": "Agent created successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def create_agent(
     agent_data: AgentCreate,
     user_id: CurrentUser,
@@ -37,8 +46,16 @@ async def create_agent(
     return await service.create_agent(agent_data, user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("", response_model=list[AgentResponse])
+@router.get(
+    "",
+    response_model=list[AgentResponse],
+    summary="List agents",
+    description="Retrieve all available AI agents. Requires authentication.",
+    responses={
+        200: {"description": "Agents retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_agents(
     user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],

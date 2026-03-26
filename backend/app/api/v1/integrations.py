@@ -10,8 +10,23 @@ from app.infrastructure.external.steam import get_player_summaries, resolve_vani
 router = APIRouter(tags=["Integrations"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/steam/resolve-user")
+@router.get(
+    "/steam/resolve-user",
+    summary="Resolve Steam user",
+    description="Resolve a Steam username or ID and return the Steam64 ID and persona name. Requires authentication.",
+    responses={
+        200: {
+            "description": "Steam user resolved successfully.",
+            "content": {
+                "application/json": {
+                    "example": {"steam_id": "76561197960435530", "persona_name": "Robin"}
+                }
+            },
+        },
+        401: {"description": "Authentication required"},
+        404: {"description": "Steam user not found"},
+    },
+)
 async def resolve_steam_user(
     username: str,
     user_id: CurrentUser,

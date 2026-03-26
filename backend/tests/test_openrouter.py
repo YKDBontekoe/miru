@@ -16,6 +16,9 @@ from app.infrastructure.external.openrouter import (
 
 
 def test_get_openrouter_client() -> None:
+    from app.infrastructure.external import openrouter
+
+    openrouter._client = None
     with (
         patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
         patch("app.infrastructure.external.openrouter.OpenRouterClient") as mock_client_class,
@@ -28,6 +31,7 @@ def test_get_openrouter_client() -> None:
         client = get_openrouter_client()
         assert client == mock_client
         mock_client_class.assert_called_once_with("test-key")
+    openrouter._client = None
 
 
 def test_openrouter_client_init() -> None:

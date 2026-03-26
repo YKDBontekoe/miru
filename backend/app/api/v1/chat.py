@@ -148,8 +148,18 @@ async def remove_agent_from_room(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/rooms/{room_id}/messages", response_model=list[ChatMessageResponse])
+@router.get(
+    "/rooms/{room_id}/messages",
+    response_model=list[ChatMessageResponse],
+    summary="List chat messages",
+    description="Retrieve all messages in a chat room. Requires authentication.",
+    responses={
+        200: {"description": "Messages retrieved successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Chat room not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def get_room_messages(
     room_id: UUID,
     _user_id: CurrentUser,
