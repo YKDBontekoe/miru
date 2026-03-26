@@ -722,7 +722,7 @@ export function AgentDetailSheet({
                     marginBottom: 40,
                   }}
                 >
-                  {t('agents.created')}
+                  {t('agents.created')}{' '}
                   {new Intl.DateTimeFormat(i18n.language, {
                     month: 'long',
                     day: 'numeric',

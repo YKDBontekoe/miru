@@ -160,7 +160,9 @@ class AgentService:
         agents = await self.repo.list_by_user(user_id)
         return [_build_agent_response(a) for a in agents]
 
-    async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
+    async def generate_agent_profile(
+        self, keywords: str, accept_language: str | None = None
+    ) -> AgentGenerationResponse:
         """Use Instructor to generate a validated agent profile."""
         messages: list[ChatCompletionMessageParam] = [
             {
@@ -176,6 +178,7 @@ class AgentService:
         return await structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
+            accept_language=accept_language,
         )
 
     async def update_agent(
