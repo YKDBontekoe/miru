@@ -21,7 +21,7 @@ export interface EmptyStateProps {
  * @param {EmptyStateProps} props - The properties for the component.
  * @returns {JSX.Element} The rendered empty state view.
  */
-export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps) {
+export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, onBrowse }) => {
   const { C } = useTheme();
 
   const styles = StyleSheet.create({
@@ -103,6 +103,7 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing.sm,
+      padding: theme.spacing.sm,
     },
     browseButtonText: {
       color: C.muted,

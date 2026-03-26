@@ -26,7 +26,7 @@ export interface AgentCardProps {
  * @param {AgentCardProps} props - The properties for the component.
  * @returns {JSX.Element} The rendered list item card.
  */
-export function AgentCard({ item, index, onPress, onLongPress, isPinned }: AgentCardProps) {
+export const AgentCard: React.FC<AgentCardProps> = ({ item, index, onPress, onLongPress, isPinned }) => {
   const { C } = useTheme();
   const color = getAgentColor(item.name);
   const level = Math.floor(item.message_count / 10) + 1;
@@ -163,7 +163,7 @@ export function AgentCard({ item, index, onPress, onLongPress, isPinned }: Agent
  * @param {AgentCardProps} props - The properties for the component.
  * @returns {JSX.Element} The rendered grid tile card.
  */
-export function AgentGridCard({ item, index, onPress, onLongPress, isPinned }: AgentCardProps) {
+export const AgentGridCard: React.FC<AgentCardProps> = ({ item, index, onPress, onLongPress, isPinned }) => {
   const { C } = useTheme();
   const color = getAgentColor(item.name);
   const level = Math.floor(item.message_count / 10) + 1;
