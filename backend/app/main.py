@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,7 +65,7 @@ app = FastAPI(
 )
 
 app.add_middleware(
-    CORSMiddleware,
+    cast("Any", CORSMiddleware),
     allow_origins=settings.cors_allowed_origins.split(","),
     allow_credentials=True,
     allow_methods=["*"],

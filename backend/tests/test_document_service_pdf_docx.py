@@ -6,13 +6,11 @@ from unittest.mock import MagicMock, patch
 from app.domain.memory.document_service import DocumentService
 
 
-@patch("app.domain.memory.document_service.pypdf.PdfReader")
-def test_extract_text_pdf(mock_pdf_reader: MagicMock) -> None:
-    mock_page = MagicMock()
-    mock_page.extract_text.return_value = "Page 1 Content"
-    mock_reader_instance = MagicMock()
-    mock_reader_instance.pages = [mock_page, mock_page]
-    mock_pdf_reader.return_value = mock_reader_instance
+@patch("app.domain.memory.document_service.pdf_oxide.PdfDocument")
+def test_extract_text_pdf(mock_pdf_doc: MagicMock) -> None:
+    mock_doc_instance = MagicMock()
+    mock_doc_instance.to_plain_text_all.return_value = "Page 1 Content\nPage 1 Content"
+    mock_pdf_doc.from_bytes.return_value = mock_doc_instance
 
     file = io.BytesIO(b"fake pdf")
     text = DocumentService.extract_text(file, "test.pdf", "application/pdf")

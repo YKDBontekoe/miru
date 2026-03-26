@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
+    from openai.types.chat import ChatCompletionMessageParam
+
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity
@@ -125,7 +127,9 @@ class ChatService:
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
-        messages: list[dict[str, str]] = [{"role": "system", "content": agent.personality}]
+        messages: list[ChatCompletionMessageParam] = [
+            {"role": "system", "content": agent.personality}
+        ]
         if accept_language:
             messages.append(
                 {
@@ -137,7 +141,7 @@ class ChatService:
 
         response = await stream_chat(
             model=model_name,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
         )
 
         async for chunk in response:

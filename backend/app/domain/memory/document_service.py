@@ -4,7 +4,7 @@ import logging
 from typing import BinaryIO
 
 import docx
-import pypdf
+import pdf_oxide
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,8 @@ class DocumentService:
         text = ""
         try:
             if content_type == "application/pdf" or filename.endswith(".pdf"):
-                reader = pypdf.PdfReader(file)
-                for page in reader.pages:
-                    text += page.extract_text() + "\n"
+                doc = pdf_oxide.PdfDocument.from_bytes(file.read())
+                text = doc.to_plain_text_all()
             elif content_type in [
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "application/msword",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
@@ -332,7 +332,7 @@ class CrewOrchestrator:
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
             )
             crew = Crew(
-                agents=crew_agents,  # type: ignore[arg-type]
+                agents=cast("Any", crew_agents),
                 tasks=[task],
                 process=Process.hierarchical,
                 manager_llm=llm,
@@ -350,7 +350,7 @@ class CrewOrchestrator:
                 agent=crew_agents[0],
             )
             crew = Crew(
-                agents=crew_agents,  # type: ignore[arg-type]
+                agents=cast("Any", crew_agents),
                 tasks=[task],
                 process=Process.sequential,
                 **kwargs,

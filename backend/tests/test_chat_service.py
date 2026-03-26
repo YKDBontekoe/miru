@@ -514,7 +514,7 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
     agent_names = ["Agent1"]
 
-    chat_service.chat_repo.save_message = AsyncMock(side_effect=BaseORMException("DB error"))  # type: ignore[method-assign]
+    chat_service.chat_repo.save_message = AsyncMock(side_effect=BaseORMException("DB error"))  # ty: ignore[invalid-assignment]
 
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(

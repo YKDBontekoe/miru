@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,6 +20,7 @@ def test_get_openrouter_client() -> None:
     with (
         patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
         patch("app.infrastructure.external.openrouter.OpenRouterClient") as mock_client_class,
+        patch("app.infrastructure.external.openrouter._client", None),
     ):
         mock_settings.return_value = MagicMock(openrouter_api_key="test-key")
         mock_client = MagicMock()
@@ -67,7 +69,7 @@ async def test_embed_success() -> None:
 
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=[0.1, 0.2])]
-        client.openai_client.embeddings.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
+        cast("Any", client.openai_client.embeddings).create = AsyncMock(return_value=mock_response)
 
         result = await client.embed("test text", "test-model")
         assert result == [0.1, 0.2]
@@ -84,7 +86,9 @@ async def test_chat_completion_success() -> None:
         from app.infrastructure.external.openrouter import ChatResponse
 
         mock_response = ChatResponse(message="hello")
-        client.instructor_client.chat.completions.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
+        cast("Any", client.instructor_client.chat.completions).create = AsyncMock(
+            return_value=mock_response
+        )
 
         result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model")
         assert result == "hello"
@@ -103,7 +107,9 @@ async def test_structured_completion_success() -> None:
         client = OpenRouterClient("test-key")
 
         mock_response = DummyModel(name="test")
-        client.instructor_client.chat.completions.create = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
+        cast("Any", client.instructor_client.chat.completions).create = AsyncMock(
+            return_value=mock_response
+        )
 
         result = await client.structured_completion(
             [{"role": "user", "content": "hi"}], "test-model", DummyModel
@@ -119,7 +125,7 @@ async def test_standalone_embed() -> None:
     ):
         mock_settings.return_value = MagicMock(embedding_model="test-embed-model")
         mock_client = MagicMock()
-        mock_client.embed = AsyncMock(return_value=[0.1, 0.2])  # type: ignore[method-assign]
+        mock_client.embed = AsyncMock(return_value=[0.1, 0.2])
         mock_get_client.return_value = mock_client
 
         result = await embed("test text")
@@ -135,7 +141,7 @@ async def test_standalone_chat_completion_success() -> None:
     ):
         mock_settings.return_value = MagicMock(default_chat_model="default-model")
         mock_client = MagicMock()
-        mock_client.chat_completion = AsyncMock(return_value="hello")  # type: ignore[method-assign]
+        mock_client.chat_completion = AsyncMock(return_value="hello")
         mock_get_client.return_value = mock_client
 
         result = await chat_completion([{"role": "user", "content": "hi"}])
@@ -159,7 +165,7 @@ async def test_standalone_chat_completion_fallback() -> None:
         # First call fails, second call succeeds
         mock_client.chat_completion = AsyncMock(
             side_effect=[Exception("First error"), "fallback-hello"]
-        )  # type: ignore[method-assign]
+        )
         mock_get_client.return_value = mock_client
 
         result = await chat_completion([{"role": "user", "content": "hi"}])
@@ -186,7 +192,7 @@ async def test_standalone_chat_completion_fallback_fails() -> None:
         # Both calls fail
         mock_client.chat_completion = AsyncMock(
             side_effect=[Exception("First error"), Exception("Fallback error")]
-        )  # type: ignore[method-assign]
+        )
         mock_get_client.return_value = mock_client
 
         with pytest.raises(Exception, match="Fallback error"):
@@ -204,7 +210,7 @@ async def test_standalone_chat_completion_cancelled() -> None:
         )
         mock_client = MagicMock()
 
-        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())  # type: ignore[method-assign]
+        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())
         mock_get_client.return_value = mock_client
 
         with pytest.raises(asyncio.CancelledError):
@@ -221,7 +227,7 @@ async def test_standalone_structured_completion_success() -> None:
     ):
         mock_settings.return_value = MagicMock(default_chat_model="default-model")
         mock_client = MagicMock()
-        mock_client.structured_completion = AsyncMock(return_value=DummyModel(name="hello"))  # type: ignore[method-assign]
+        mock_client.structured_completion = AsyncMock(return_value=DummyModel(name="hello"))
         mock_get_client.return_value = mock_client
 
         result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
@@ -245,7 +251,7 @@ async def test_standalone_structured_completion_fallback() -> None:
         # First call fails, second call succeeds
         mock_client.structured_completion = AsyncMock(
             side_effect=[Exception("First error"), DummyModel(name="fallback-hello")]
-        )  # type: ignore[method-assign]
+        )
         mock_get_client.return_value = mock_client
 
         result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
@@ -272,7 +278,7 @@ async def test_standalone_structured_completion_fallback_fails() -> None:
         # Both calls fail
         mock_client.structured_completion = AsyncMock(
             side_effect=[Exception("First error"), Exception("Fallback error")]
-        )  # type: ignore[method-assign]
+        )
         mock_get_client.return_value = mock_client
 
         with pytest.raises(Exception, match="Fallback error"):
@@ -290,7 +296,7 @@ async def test_standalone_structured_completion_cancelled() -> None:
         )
         mock_client = MagicMock()
 
-        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())  # type: ignore[method-assign]
+        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())
         mock_get_client.return_value = mock_client
 
         with pytest.raises(asyncio.CancelledError):

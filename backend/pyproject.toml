@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.29.0",
+    "granian[reload]>=1.0.0",
     "supabase>=2.3.0",
     "openrouter>=0.7.11",
     "crewai[tools]>=1.10.1",
@@ -15,7 +15,6 @@ dependencies = [
     "numpy>=1.26.0",
     "pydantic-settings>=2.10.0",
     "python-dotenv>=1.0.1",
-    "httpx>=0.28.0",
     "webauthn>=2.7.0",
     "pyjwt[crypto]>=2.10.0",
     "sentry-sdk[fastapi]>=2.1.0",
@@ -29,17 +28,15 @@ dependencies = [
     "pyopenssl>=26.0.0",
     "notificationhubs-rest-python>=1.0.2",
     "python-multipart>=0.0.22",
-    "pypdf>=6.9.1",
     "python-docx>=1.2.0",
     "pillow>=12.1.1",
+    "pdf-oxide>=0.3.17",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.4.0",
-    "black>=24.4.0",
-    "isort>=5.13.0",
-    "mypy>=1.10.0",
+    "ruff>=0.9.0",
+    "ty>=0.0.1",
     "types-requests>=2.31.0",
     "types-python-dateutil>=2.8.19",
     "pytest-xdist>=3.6.1",
@@ -48,6 +45,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.0.0",
+    "httpx>=0.28.0",
 ]
 
 [tool.setuptools]
@@ -93,47 +91,11 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.black]
-line-length = 100
-target-version = ["py313"]
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
+[tool.ty.rules]
+all = "error"
 
-[tool.isort]
-profile = "black"
-line_length = 100
-known_first_party = ["app"]
-skip_glob = [".venv*/*", "migrations/*"]
-
-[tool.mypy]
-python_version = "3.13"
-exclude = ["build/"]
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = false
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = false
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-ignore_missing_imports = true
-disable_error_code = ["call-arg", "call-overload", "no-any-return"]
+[tool.ty.terminal]
+error-on-warning = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

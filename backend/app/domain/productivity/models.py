@@ -19,15 +19,15 @@ if TYPE_CHECKING:
 class Task(SupabaseModel):
     """Database entity for User Tasks."""
 
-    id: UUID = fields.UUIDField(primary_key=True)
-    user_id: UUID = fields.UUIDField(db_index=True)
-    title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
-    description: str | None = fields.TextField(null=True)
-    is_completed: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-    due_date: datetime | None = fields.DatetimeField(null=True)
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
-    updated_at: datetime = fields.DatetimeField(auto_now=True)
-    deleted_at: datetime | None = fields.DatetimeField(null=True)
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(db_index=True)
+    title = fields.CharField(max_length=255)
+    description = fields.TextField(null=True)
+    is_completed = fields.BooleanField(default=False)
+    due_date = fields.DatetimeField(null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+    deleted_at = fields.DatetimeField(null=True)
 
     class Meta:
         table = "tasks"
@@ -40,8 +40,8 @@ class Task(SupabaseModel):
 class Note(SupabaseModel):
     """Database entity for User Notes."""
 
-    id: UUID = fields.UUIDField(primary_key=True)
-    user_id: UUID = fields.UUIDField(db_index=True)
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(db_index=True)
     agent: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
         "models.Agent",
         related_name="notes",
@@ -56,13 +56,13 @@ class Note(SupabaseModel):
         db_index=True,
         on_delete=fields.SET_NULL,
     )
-    origin_context: str | None = fields.TextField(null=True)
-    title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
-    content: str = fields.TextField()
-    is_pinned: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
-    updated_at: datetime = fields.DatetimeField(auto_now=True)
-    deleted_at: datetime | None = fields.DatetimeField(null=True)
+    origin_context = fields.TextField(null=True)
+    title = fields.CharField(max_length=255)
+    content = fields.TextField()
+    is_pinned = fields.BooleanField(default=False)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+    deleted_at = fields.DatetimeField(null=True)
 
     class Meta:
         table = "notes"
@@ -228,8 +228,8 @@ class NoteResponse(BaseModel):
 class CalendarEvent(SupabaseModel):
     """Database entity for User Calendar Events."""
 
-    id: UUID = fields.UUIDField(primary_key=True)
-    user_id: UUID = fields.UUIDField(db_index=True)
+    id = fields.UUIDField(primary_key=True)
+    user_id = fields.UUIDField(db_index=True)
     agent: fields.ForeignKeyNullableRelation[Agent] = fields.ForeignKeyField(
         "models.Agent",
         related_name="calendar_events",
@@ -244,16 +244,16 @@ class CalendarEvent(SupabaseModel):
         db_index=True,
         on_delete=fields.SET_NULL,
     )
-    origin_context: str | None = fields.TextField(null=True)
-    title: str = fields.CharField(max_length=255)  # type: ignore[assignment]
-    description: str | None = fields.TextField(null=True)
-    start_time: datetime = fields.DatetimeField()
-    end_time: datetime = fields.DatetimeField()
-    is_all_day: bool = fields.BooleanField(default=False)  # type: ignore[assignment]
-    location: str | None = fields.CharField(max_length=255, null=True)  # type: ignore[assignment]
-    created_at: datetime = fields.DatetimeField(auto_now_add=True)
-    updated_at: datetime = fields.DatetimeField(auto_now=True)
-    deleted_at: datetime | None = fields.DatetimeField(null=True)
+    origin_context = fields.TextField(null=True)
+    title = fields.CharField(max_length=255)
+    description = fields.TextField(null=True)
+    start_time = fields.DatetimeField()
+    end_time = fields.DatetimeField()
+    is_all_day = fields.BooleanField(default=False)
+    location = fields.CharField(max_length=255, null=True)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+    deleted_at = fields.DatetimeField(null=True)
 
     class Meta:
         table = "calendar_events"
