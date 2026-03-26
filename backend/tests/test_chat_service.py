@@ -1,5 +1,3 @@
-"""Tests for ChatService logic."""
-
 from __future__ import annotations
 
 import typing
@@ -11,6 +9,8 @@ from tortoise.exceptions import BaseORMException
 
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.service import ChatService
+
+"""Tests for ChatService logic."""
 
 
 @pytest.fixture
@@ -600,3 +600,40 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         assert mock_hub.broadcast_to_room.call_args[0][1]["data"]["activity"] == "done"
         # Background memory task should have been scheduled
         m_create_task.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_crew_no_agents():
+    mock_agent_repo = MagicMock()
+    mock_agent_repo.list_by_user = AsyncMock(return_value=[])
+
+    service = ChatService(
+        chat_repo=MagicMock(),
+        agent_repo=mock_agent_repo,
+        memory_repo=MagicMock(),
+        agent_service=MagicMock(),
+    )
+
+    result = await service.run_crew("hello", uuid4())
+    assert result == {"task_type": "error", "result": "No agents available."}
+
+
+@pytest.mark.asyncio
+async def test_run_crew_with_language():
+    mock_agent_repo = MagicMock()
+    mock_agent_repo.list_by_user = AsyncMock(return_value=[MagicMock()])
+
+    service = ChatService(
+        chat_repo=MagicMock(),
+        agent_repo=mock_agent_repo,
+        memory_repo=MagicMock(),
+        agent_service=MagicMock(),
+    )
+
+    with patch("app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task") as mock_exec:
+        mock_exec.return_value = "Result"
+        result = await service.run_crew("hello", uuid4(), accept_language="es-ES")
+        assert result == {"task_type": "general", "result": "Result"}
+        mock_exec.assert_called_once()
+        kwargs = mock_exec.call_args.kwargs
+        assert kwargs["accept_language"] == "es-ES"
