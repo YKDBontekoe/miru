@@ -110,19 +110,19 @@ class PasskeyRecord(BaseModel):
 
 
 class PasskeyRegisterOptionsRequest(BaseModel):
-    device_name: str | None = None
+    device_name: str | None = Field(default=None, max_length=255)
 
 
 class PasskeyRegisterVerifyRequest(BaseModel):
-    challenge_id: str
-    credential: str  # JSON-encoded PublicKeyCredential
-    device_name: str | None = None
+    challenge_id: str = Field(max_length=255)
+    credential: str = Field(max_length=4096)  # JSON-encoded PublicKeyCredential
+    device_name: str | None = Field(default=None, max_length=255)
 
 
 class PasskeyLoginOptionsRequest(BaseModel):
-    email: str
+    email: str = Field(max_length=255)
 
 
 class PasskeyLoginVerifyRequest(BaseModel):
-    challenge_id: str
-    credential: str  # JSON-encoded PublicKeyCredential (assertion)
+    challenge_id: str = Field(max_length=255)
+    credential: str = Field(max_length=4096)  # JSON-encoded PublicKeyCredential (assertion)

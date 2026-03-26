@@ -296,7 +296,18 @@ class AgentUpdate(BaseModel):
 class AgentGenerate(BaseModel):
     """Input for AI-powered agent generation."""
 
-    keywords: str
+    keywords: str = Field(max_length=200)
+
+    @field_validator("keywords", mode="before")
+    @classmethod
+    def sanitize_keywords(cls, v: Any) -> str:
+        """Sanitize keywords to prevent prompt injection."""
+        if not isinstance(v, str):
+            v = str(v)
+        import re
+
+        # Strip non-alphanumeric and safe characters
+        return re.sub(r"[^a-zA-Z0-9\s,\.\-]", "", v)
 
 
 class AgentGenerationResponse(BaseModel):
