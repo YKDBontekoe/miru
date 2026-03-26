@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Generator
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -8,8 +10,8 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import get_current_user
-from app.domain.agents.models import Agent
-from app.domain.agents.service import _build_agent_response
+from app.domain.agents.models import Agent, AgentGenerationResponse
+from app.domain.agents.service import AgentService, _build_agent_response
 from app.main import app
 
 
@@ -118,7 +120,6 @@ def test_build_agent_response_without_avatar() -> None:
 @pytest.mark.asyncio
 async def test_agent_service_caching() -> None:
     from app.domain.agents.models import Capability, Integration
-    from app.domain.agents.service import AgentService
 
     mock_repo = MagicMock()
     mock_repo.list_capabilities = AsyncMock(return_value=[Capability(id="cap1", name="Cap 1")])
@@ -144,3 +145,54 @@ async def test_agent_service_caching() -> None:
     # Call count should still be 1
     mock_repo.list_capabilities.assert_called_once()
     mock_repo.list_integrations.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_agent_profile_service_with_language():
+    with patch("app.domain.agents.service.structured_completion") as mock_completion:
+        mock_completion.return_value = AgentGenerationResponse(
+            name="Gen", personality="Gen", description="Gen", goals=[]
+        )
+        service = AgentService(repo=MagicMock())
+        await service.generate_agent_profile("test keywords", accept_language="es-ES")
+
+        mock_completion.assert_called_once()
+        kwargs = mock_completion.call_args.kwargs
+        assert kwargs.get("accept_language") == "es-ES"
+        assert kwargs["response_model"] == AgentGenerationResponse
+        assert "Keywords: test keywords" in kwargs["messages"][1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_generate_agent_profile_service_with_language_direct():
+    service = AgentService(repo=MagicMock())
+
+    with patch("app.domain.agents.service.structured_completion") as mock_completion:
+        mock_completion.return_value = AgentGenerationResponse(
+            name="Gen", personality="Gen", description="Gen", goals=[]
+        )
+
+        # Test directly calling the method
+        result = await service.generate_agent_profile("test keywords", accept_language="es-ES")
+
+        assert result.name == "Gen"
+        mock_completion.assert_called_once()
+        kwargs = mock_completion.call_args.kwargs
+        assert kwargs.get("accept_language") == "es-ES"
+        assert "Keywords: test keywords" in kwargs["messages"][1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_generate_agent_profile_service_no_language():
+    with patch("app.domain.agents.service.structured_completion") as mock_completion:
+        mock_completion.return_value = AgentGenerationResponse(
+            name="Gen", personality="Gen", description="Gen", goals=[]
+        )
+        service = AgentService(repo=MagicMock())
+        await service.generate_agent_profile("test keywords")
+
+        mock_completion.assert_called_once()
+        kwargs = mock_completion.call_args.kwargs
+        assert kwargs.get("accept_language") is None
+        assert kwargs["response_model"] == AgentGenerationResponse
+        assert "Keywords: test keywords" in kwargs["messages"][1]["content"]

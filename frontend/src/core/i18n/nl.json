@@ -140,7 +140,9 @@
       "about": "Over",
       "goals": "Doelen",
       "integrations": "Integraties",
-      "level": "Niveau {{level}}"
+      "level": "Niveau {{level}}",
+      "name": "Naam",
+      "relationship": "Relatie"
     },
     "create_modal": {
       "title": "Nieuwe agent",
@@ -157,7 +159,16 @@
       "generate_failed": "Kon geen persona genereren. Probeer opnieuw.",
       "create_failed": "Aanmaken van agent mislukt. Probeer opnieuw.",
       "name_required": "Naam en persoonlijkheid zijn vereist."
-    }
+    },
+    "empty_state": {
+      "no_matches": "Geen resultaten",
+      "try_different": "Probeer een andere zoekterm.",
+      "no_personas_yet": "Nog geen persona's",
+      "create_first": "Maak je eerste AI-persona of begin vanuit een sjabloon.",
+      "create_persona": "Persona aanmaken",
+      "browse_templates": "Blader door sjablonen"
+    },
+    "created": "Gemaakt"
   },
   "productivity": {
     "title_required": "Titel vereist",
@@ -185,5 +196,8 @@
     "note_title_placeholder": "Notitietitel",
     "note_content_placeholder": "Schrijf hier je notitie...",
     "task_content_placeholder": "Wat moet er gedaan worden?"
+  },
+  "common": {
+    "try_again": "Opnieuw proberen"
   }
 }

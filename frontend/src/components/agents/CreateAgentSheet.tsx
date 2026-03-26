@@ -14,6 +14,7 @@ import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { TemplateGallerySheet } from './TemplateGallerySheet';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
 import { haptic } from '../../utils/haptics';
 import { TONES, SURPRISE_KEYWORDS, getTonePrefix } from './agentUtils';
@@ -35,6 +36,7 @@ interface CreateAgentSheetProps {
 
 export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: CreateAgentSheetProps) {
   const { C } = useTheme();
+  const { t } = useTranslation();
   const { createAgent, generateAgent } = useAgentStore();
 
   const [name, setName] = useState('');
@@ -334,7 +336,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 </Animated.View>
               )}
 
-              <AppText style={label}>Name</AppText>
+              <AppText style={label}>{t('agents.labels.name')}</AppText>
               <TextInput
                 value={name}
                 onChangeText={setName}
@@ -389,7 +391,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 })}
               </ScrollView>
 
-              <AppText style={label}>Personality</AppText>
+              <AppText style={label}>{t('agents.labels.personality')}</AppText>
               <TextInput
                 value={personality}
                 onChangeText={setPersonality}

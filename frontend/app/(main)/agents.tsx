@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import {
   View,
@@ -33,6 +34,7 @@ import { Agent } from '../../src/core/models';
 
 export default function AgentsScreen() {
   const { C } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const {
     agents,
@@ -314,7 +316,9 @@ export default function AgentsScreen() {
                 }}
               >
                 <Ionicons name="add" size={18} color="white" style={{ marginEnd: 4 }} />
-                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>New</AppText>
+                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>
+                  {t('agents.new')}
+                </AppText>
               </View>
             </ScalePressable>
           </View>
