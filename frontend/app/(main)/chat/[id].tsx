@@ -516,7 +516,6 @@ export default function ChatRoomScreen() {
                 .filter((a) => !roomAgents.some((r) => r.id === a.id))
                 .map((agent) => {
                   const color = getAgentColor(agent.name);
-                  const alreadyAdded = false; // already filtered out above
                   return (
                     <View
                       key={agent.id}

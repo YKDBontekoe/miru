@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 
@@ -33,7 +34,8 @@ function ShimmerBox({
         false
       )
     );
-  }, [delay]);
+    return () => cancelAnimation(opacity);
+  }, [delay, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 

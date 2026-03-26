@@ -6,13 +6,20 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let H: any = null;
-try {
-  // Dynamic require so a missing package never crashes the app
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  H = require('expo-haptics');
-} catch {}
+let initialized = false;
+
+function ensureInit() {
+  if (initialized) return;
+  try {
+    // Dynamic require so a missing package never crashes the app
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    H = require('expo-haptics');
+  } catch {}
+  initialized = true;
+}
 
 const safe = (fn: () => Promise<void> | undefined) => {
+  ensureInit();
   try {
     fn()?.catch(() => {});
   } catch {}
