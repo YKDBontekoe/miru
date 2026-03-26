@@ -102,7 +102,7 @@ async def generate_agent(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
     accept_language: Annotated[
-        str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
+        str | None, Header(pattern=r"^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9-]+)*$")
     ] = None,
 ) -> AgentGenerationResponse:
     """Use AI to generate an agent persona."""

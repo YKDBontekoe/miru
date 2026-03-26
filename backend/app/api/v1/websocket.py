@@ -99,7 +99,7 @@ async def websocket_chat_hub(
     websocket: WebSocket,
     token: str = Query(..., description="Supabase JWT access token"),
     lang: str | None = Query(
-        None, description="Preferred language", pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$"
+        None, description="Preferred language", pattern=r"^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9-]+)*$"
     ),
 ) -> None:
     """Main WebSocket endpoint — acts as a SignalR hub for chat rooms."""

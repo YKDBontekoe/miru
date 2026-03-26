@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   FlatList,
@@ -58,7 +58,7 @@ export default function AgentsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  // Undo-delete state
+  // {t('common.undo')}-delete state
   const [snackbar, setSnackbar] = useState<{ visible: boolean; agent: Agent | null }>({
     visible: false,
     agent: null,
@@ -71,8 +71,8 @@ export default function AgentsScreen() {
 
   // Debounce search to avoid filtering on every keystroke
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(searchQuery), 250);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 250);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const filteredAgents = useMemo(() => {
@@ -452,8 +452,8 @@ export default function AgentsScreen() {
       <TemplateGallerySheet
         visible={showTemplates}
         onClose={() => setShowTemplates(false)}
-        onSelect={(t) => {
-          setCreatePrefill(t);
+        onSelect={(template) => {
+          setCreatePrefill(template);
           setShowTemplates(false);
           setShowCreateSheet(true);
         }}
@@ -469,11 +469,11 @@ export default function AgentsScreen() {
         onUpdated={handleAgentUpdated}
       />
 
-      {/* ── Undo snackbar ── */}
+      {/* ── {t('common.undo')} snackbar ── */}
       <Snackbar
         visible={snackbar.visible}
         message={`"${snackbar.agent?.name ?? 'Persona'}" archived`}
-        actionLabel="Undo"
+        actionLabel={t('common.undo')}
         onAction={handleUndo}
         onDismiss={() => setSnackbar((s) => ({ ...s, visible: false }))}
       />

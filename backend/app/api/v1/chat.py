@@ -51,7 +51,7 @@ async def chat(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
     accept_language: Annotated[
-        str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
+        str | None, Header(pattern=r"^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9-]+)*$")
     ] = None,
 ) -> StreamingResponse:
     """General chat stream without a specified room."""
@@ -71,7 +71,7 @@ async def run_crew(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
     accept_language: Annotated[
-        str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
+        str | None, Header(pattern=r"^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9-]+)*$")
     ] = None,
 ) -> dict[str, Any]:
     """Run a full CrewAI orchestration for a single task and return structured output."""

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   TouchableOpacity,
@@ -14,7 +15,6 @@ import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { TemplateGallerySheet } from './TemplateGallerySheet';
 import { useTheme } from '../../hooks/useTheme';
-import { useTranslation } from 'react-i18next';
 import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
 import { haptic } from '../../utils/haptics';
 import { TONES, SURPRISE_KEYWORDS, getTonePrefix } from './agentUtils';
@@ -139,11 +139,11 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     }
   };
 
-  const handleSelectTemplate = (t: AgentTemplate) => {
-    setName(t.name);
-    setPersonality(t.personality);
-    setDescription(t.description ?? '');
-    setGoals(t.goals ?? []);
+  const handleSelectTemplate = (template: AgentTemplate) => {
+    setName(template.name);
+    setPersonality(template.personality);
+    setDescription(template.description ?? '');
+    setGoals(template.goals ?? []);
     setWasGenerated(true);
   };
 
@@ -517,8 +517,8 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       <TemplateGallerySheet
         visible={showTemplates}
         onClose={() => setShowTemplates(false)}
-        onSelect={(t) => {
-          handleSelectTemplate(t);
+        onSelect={(template) => {
+          handleSelectTemplate(template);
           setShowTemplates(false);
         }}
       />

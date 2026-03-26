@@ -658,8 +658,8 @@ export default function HomeScreen() {
                   flex: 1,
                   alignItems: 'center',
                   paddingVertical: 14,
-                  borderRightWidth: i < stats.length - 1 ? 1 : 0,
-                  borderRightColor: C.border,
+                  borderEndWidth: i < stats.length - 1 ? 1 : 0,
+                  borderEndColor: C.border,
                 }}
               >
                 <View

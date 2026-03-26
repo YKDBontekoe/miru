@@ -142,7 +142,15 @@
       "integrations": "Integrations",
       "level": "Level {{level}}",
       "name": "Name",
-      "relationship": "Relationship"
+      "relationship": "Relationship",
+      "saveChanges": "Save Changes",
+      "archivePersona": "Archive Persona",
+      "startChat": "Start Chat",
+      "levelPrefix": "Lv ",
+      "description": "Description",
+      "tone": {
+        "optional": "Tone (optional)"
+      }
     },
     "create_modal": {
       "title": "New Agent",
@@ -168,7 +176,20 @@
       "create_persona": "Create Persona",
       "browse_templates": "Browse templates"
     },
-    "created": "Created"
+    "created": "Created",
+    "searchPlaceholder": "Search personas...",
+    "pinned": "Pinned",
+    "archivedMessage": "Agent archived",
+    "companions": "{{count}} personas",
+    "companions_plural": "{{count}} personas",
+    "companions_zero": "0 personas",
+    "companions_one": "1 persona",
+    "placeholders": {
+      "personaName": "Persona name"
+    },
+    "notes": {
+      "aiGenerated": "AI-generated \u00b7 review and edit before saving"
+    }
   },
   "productivity": {
     "title_required": "Title required",
@@ -198,6 +219,11 @@
     "task_content_placeholder": "What needs to be done?"
   },
   "common": {
-    "try_again": "Try Again"
+    "try_again": "Try Again",
+    "undo": "Undo"
+  },
+  "errors": {
+    "server_unavailable": "Server Unavailable",
+    "server_unavailable_description": "Could not connect to the backend server. Please make sure the API is running."
   }
 }

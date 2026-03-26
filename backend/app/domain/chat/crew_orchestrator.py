@@ -176,6 +176,23 @@ class _OpenRouterLLM(LLM):
         return True
 
 
+class CustomOpenRouterLLM(_OpenRouterLLM):
+    accept_language: str | None = None
+
+    def call(self, *args, **kwargs) -> str:
+        # Before calling the litellm function, we want to inject headers
+        # Wait, litellm accepts extra_headers directly. We can append it to kwargs if litellm receives it.
+        # Actually litellm handles default_headers if passed to custom_llm_provider setup, but BaseLLM doesn't support the param.
+        # However, passing extra_headers to the underlying __call__ / generate might work. Let's just override _get_native_provider to inject extra_headers, or better:
+        if self.accept_language:
+            if "extra_headers" not in kwargs:
+                kwargs["extra_headers"] = {}
+            if kwargs["extra_headers"] is None:
+                kwargs["extra_headers"] = {}
+            kwargs["extra_headers"]["Accept-Language"] = self.accept_language
+        return super().call(*args, **kwargs)
+
+
 class CrewOrchestrator:
     """Handles the creation and execution of CrewAI tasks and agents."""
 
@@ -183,12 +200,12 @@ class CrewOrchestrator:
     def get_crew_llm(accept_language: str | None = None) -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return _OpenRouterLLM(
+        return CustomOpenRouterLLM(
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
             additional_drop_params=["tool_choice"],
-            default_headers={"Accept-Language": accept_language} if accept_language else None,
+            accept_language=accept_language,
         )
 
     @staticmethod

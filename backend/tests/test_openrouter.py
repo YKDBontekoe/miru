@@ -307,3 +307,21 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_chat_completion_with_language_nl():
+    with patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client:
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(return_value="Dutch value")
+        mock_get_client.return_value = mock_client
+
+        with patch("app.infrastructure.external.openrouter.get_settings") as mock_settings:
+            mock_settings.return_value = MagicMock(default_chat_model="default-model")
+
+            res = await chat_completion([{"role": "user", "content": "hoi"}], accept_language="nl")
+
+            assert res == "Dutch value"
+            mock_client.chat_completion.assert_called_once_with(
+                [{"role": "user", "content": "hoi"}], "default-model", accept_language="nl"
+            )

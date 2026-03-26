@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   TouchableOpacity,
@@ -16,7 +17,6 @@ import { AgentAvatar } from '../AgentAvatar';
 import { XPBar } from '../XPBar';
 import { ScalePressable } from '../ScalePressable';
 import { useTheme } from '../../hooks/useTheme';
-import { useTranslation } from 'react-i18next';
 import i18n from '../../core/i18n';
 import { useAgentStore } from '../../store/useAgentStore';
 import { useChatStore } from '../../store/useChatStore';

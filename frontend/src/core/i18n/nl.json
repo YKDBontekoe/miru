@@ -142,7 +142,15 @@
       "integrations": "Integraties",
       "level": "Niveau {{level}}",
       "name": "Naam",
-      "relationship": "Relatie"
+      "relationship": "Relatie",
+      "saveChanges": "Wijzigingen opslaan",
+      "archivePersona": "Archiveer Persona",
+      "startChat": "Start Chat",
+      "levelPrefix": "Nv ",
+      "description": "Beschrijving",
+      "tone": {
+        "optional": "Toon (optioneel)"
+      }
     },
     "create_modal": {
       "title": "Nieuwe agent",
@@ -168,7 +176,20 @@
       "create_persona": "Persona aanmaken",
       "browse_templates": "Blader door sjablonen"
     },
-    "created": "Gemaakt"
+    "created": "Gemaakt",
+    "searchPlaceholder": "Zoek persona's...",
+    "pinned": "Vastgezet",
+    "archivedMessage": "Agent gearchiveerd",
+    "companions": "{{count}} persona's",
+    "companions_plural": "{{count}} persona's",
+    "companions_zero": "0 persona's",
+    "companions_one": "1 persona",
+    "placeholders": {
+      "personaName": "Persona naam"
+    },
+    "notes": {
+      "aiGenerated": "Gegenereerd door AI \u00b7 controleer en bewerk voor het opslaan"
+    }
   },
   "productivity": {
     "title_required": "Titel vereist",
@@ -198,6 +219,11 @@
     "task_content_placeholder": "Wat moet er gedaan worden?"
   },
   "common": {
-    "try_again": "Opnieuw proberen"
+    "try_again": "Opnieuw proberen",
+    "undo": "Ongedaan maken"
+  },
+  "errors": {
+    "server_unavailable": "Server niet beschikbaar",
+    "server_unavailable_description": "Kan geen verbinding maken met de back-end server. Zorg ervoor dat de API draait."
   }
 }
