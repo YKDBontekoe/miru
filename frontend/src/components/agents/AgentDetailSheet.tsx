@@ -16,6 +16,8 @@ import { AgentAvatar } from '../AgentAvatar';
 import { XPBar } from '../XPBar';
 import { ScalePressable } from '../ScalePressable';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../core/i18n';
 import { useAgentStore } from '../../store/useAgentStore';
 import { useChatStore } from '../../store/useChatStore';
 import { haptic } from '../../utils/haptics';
@@ -38,6 +40,7 @@ export function AgentDetailSheet({
   onUpdated,
 }: AgentDetailSheetProps) {
   const { C } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const { updateAgent } = useAgentStore();
   const { createRoom, addAgentToRoom } = useChatStore();
@@ -298,7 +301,7 @@ export function AgentDetailSheet({
           <ScrollView style={{ padding: 20 }} showsVerticalScrollIndicator={false}>
             {isEditing ? (
               <Animated.View entering={FadeIn.duration(200)}>
-                <AppText style={label}>Personality</AppText>
+                <AppText style={label}>{t('agents.labels.personality')}</AppText>
                 <TextInput
                   value={editPersonality}
                   onChangeText={setEditPersonality}
@@ -323,7 +326,7 @@ export function AgentDetailSheet({
                   placeholderTextColor={C.faint}
                 />
 
-                <AppText style={label}>Goals</AppText>
+                <AppText style={label}>{t('agents.labels.goals')}</AppText>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                   <TextInput
                     value={goalInput}
@@ -550,7 +553,7 @@ export function AgentDetailSheet({
                     borderColor: C.border,
                   }}
                 >
-                  <AppText style={label}>Relationship</AppText>
+                  <AppText style={label}>{t('agents.labels.relationship')}</AppText>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -635,7 +638,7 @@ export function AgentDetailSheet({
 
                 {/* Personality */}
                 <View style={{ marginBottom: 16 }}>
-                  <AppText style={label}>Personality</AppText>
+                  <AppText style={label}>{t('agents.labels.personality')}</AppText>
                   <AppText style={{ lineHeight: 23, color: C.text, fontSize: 15 }}>
                     {agent.personality}
                   </AppText>
@@ -643,7 +646,7 @@ export function AgentDetailSheet({
 
                 {agent.description ? (
                   <View style={{ marginBottom: 16 }}>
-                    <AppText style={label}>About</AppText>
+                    <AppText style={label}>{t('agents.labels.about')}</AppText>
                     <AppText style={{ lineHeight: 23, color: C.text, fontSize: 15 }}>
                       {agent.description}
                     </AppText>
@@ -652,7 +655,7 @@ export function AgentDetailSheet({
 
                 {agent.goals?.length > 0 && (
                   <View style={{ marginBottom: 16 }}>
-                    <AppText style={label}>Goals</AppText>
+                    <AppText style={label}>{t('agents.labels.goals')}</AppText>
                     {agent.goals.map((goal, i) => (
                       <View
                         key={i}
@@ -685,7 +688,7 @@ export function AgentDetailSheet({
 
                 {agent.integrations?.length > 0 && (
                   <View style={{ marginBottom: 16 }}>
-                    <AppText style={label}>Integrations</AppText>
+                    <AppText style={label}>{t('agents.labels.integrations')}</AppText>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {agent.integrations.map((ig, i) => (
                         <View
@@ -719,12 +722,12 @@ export function AgentDetailSheet({
                     marginBottom: 40,
                   }}
                 >
-                  Created{' '}
-                  {new Date(agent.created_at).toLocaleDateString(undefined, {
+                  {t('agents.created')}
+                  {new Intl.DateTimeFormat(i18n.language, {
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric',
-                  })}
+                  }).format(new Date(agent.created_at))}
                 </AppText>
               </Animated.View>
             )}

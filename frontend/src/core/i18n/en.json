@@ -140,7 +140,9 @@
       "about": "About",
       "goals": "Goals",
       "integrations": "Integrations",
-      "level": "Level {{level}}"
+      "level": "Level {{level}}",
+      "name": "Name",
+      "relationship": "Relationship"
     },
     "create_modal": {
       "title": "New Agent",
@@ -157,7 +159,16 @@
       "generate_failed": "Could not generate persona. Try again.",
       "create_failed": "Failed to create agent. Please try again.",
       "name_required": "Name and personality are required."
-    }
+    },
+    "empty_state": {
+      "no_matches": "No matches",
+      "try_different": "Try a different search term.",
+      "no_personas_yet": "No personas yet",
+      "create_first": "Create your first AI persona or start from a template.",
+      "create_persona": "Create Persona",
+      "browse_templates": "Browse templates"
+    },
+    "created": "Created"
   },
   "productivity": {
     "title_required": "Title required",
@@ -185,5 +196,8 @@
     "note_title_placeholder": "Note title",
     "note_content_placeholder": "Write your note here...",
     "task_content_placeholder": "What needs to be done?"
+  },
+  "common": {
+    "try_again": "Try Again"
   }
 }

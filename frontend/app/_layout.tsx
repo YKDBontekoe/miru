@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Linking } from 'react-native';
 import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../src/core/services/supabase';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { useAppStore } from '../src/store/useAppStore';
@@ -17,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function RootLayout() {
   const { initialize, user, isLoading } = useAuthStore();
   const { isOnboardingComplete, language } = useAppStore();
+  const { t } = useTranslation();
   const segments = useSegments() as string[];
   const router = useRouter();
 
@@ -128,7 +130,7 @@ export default function RootLayout() {
           className="bg-blue-600 px-6 py-3.5 rounded-2xl flex-row items-center gap-2"
         >
           <Ionicons name="refresh" size={20} color="#FFFFFF" />
-          <AppText className="text-white font-semibold text-base">Try Again</AppText>
+          <AppText className="text-white font-semibold text-base">{t('common.try_again')}</AppText>
         </TouchableOpacity>
       </View>
     );

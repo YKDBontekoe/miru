@@ -5,6 +5,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 
 interface EmptyStateProps {
   searchQuery: string;
@@ -14,6 +15,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps) {
   const { C } = useTheme();
+  const { t } = useTranslation();
 
   if (searchQuery.trim()) {
     return (
@@ -37,10 +39,10 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
           <Ionicons name="search" size={26} color={C.faint} />
         </View>
         <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
-          No matches
+          {t('agents.empty_state.no_matches')}
         </AppText>
         <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
-          Try a different search term.
+          {t('agents.empty_state.try_different')}
         </AppText>
       </Animated.View>
     );
@@ -67,7 +69,7 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
         <Ionicons name="people" size={36} color={`${C.primary}90`} />
       </View>
       <AppText style={{ color: C.text, fontWeight: '700', fontSize: 18, marginBottom: 8 }}>
-        No personas yet
+        {t('agents.empty_state.no_personas_yet')}
       </AppText>
       <AppText
         style={{
@@ -78,7 +80,7 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
           marginBottom: 28,
         }}
       >
-        Create your first AI persona or start from a template.
+        {t('agents.empty_state.create_first')}
       </AppText>
       <ScalePressable onPress={onCreate}>
         <View
@@ -99,7 +101,7 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
         >
           <Ionicons name="sparkles" size={17} color="white" style={{ marginEnd: 8 }} />
           <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
-            Create Persona
+            {t('agents.empty_state.create_persona')}
           </AppText>
         </View>
       </ScalePressable>
@@ -108,7 +110,9 @@ export function EmptyState({ searchQuery, onCreate, onBrowse }: EmptyStateProps)
         style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
       >
         <Ionicons name="albums-outline" size={15} color={C.muted} />
-        <AppText style={{ color: C.muted, fontSize: 14 }}>Browse templates</AppText>
+        <AppText style={{ color: C.muted, fontSize: 14 }}>
+          {t('agents.empty_state.browse_templates')}
+        </AppText>
       </TouchableOpacity>
     </Animated.View>
   );

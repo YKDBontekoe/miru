@@ -180,7 +180,7 @@ class CrewOrchestrator:
     """Handles the creation and execution of CrewAI tasks and agents."""
 
     @staticmethod
-    def get_crew_llm() -> _OpenRouterLLM:
+    def get_crew_llm(accept_language: str | None = None) -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
         return _OpenRouterLLM(
@@ -188,6 +188,7 @@ class CrewOrchestrator:
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
             additional_drop_params=["tool_choice"],
+            default_headers={"Accept-Language": accept_language} if accept_language else None,
         )
 
     @staticmethod
@@ -296,7 +297,7 @@ class CrewOrchestrator:
             raise ValueError("No agents available to execute the task.")
 
         is_multi = len(room_agents) > 1
-        llm = CrewOrchestrator.get_crew_llm()
+        llm = CrewOrchestrator.get_crew_llm(accept_language=accept_language)
         crew_agents = CrewOrchestrator.create_crew_agents(
             room_agents,
             llm,
