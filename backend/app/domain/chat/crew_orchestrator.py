@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -160,6 +161,10 @@ MULTI_AGENT_EXPECTED_OUTPUT = (
 )
 
 SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message."
+
+
+class CrewResponse(BaseModel):
+    message: str
 
 
 class _OpenRouterLLM(LLM):
@@ -330,6 +335,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=CrewResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -348,6 +354,7 @@ class CrewOrchestrator:
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
                 agent=crew_agents[0],
+                output_pydantic=CrewResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -370,4 +377,6 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
+        if result is not None and getattr(result, "pydantic", None) is not None:
+            return result.pydantic.message
         return str(result)
