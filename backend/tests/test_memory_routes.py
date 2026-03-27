@@ -198,6 +198,25 @@ def test_upload_document(client: TestClient) -> None:
     mock_service.store_document_memory.assert_awaited_once()
 
 
+def test_upload_document_unexpected_error(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
+
+    user_id = uuid4()
+    mock_service = AsyncMock()
+    mock_service.store_document_memory.side_effect = Exception("Unexpected parsing error")
+
+    app.dependency_overrides[get_memory_service] = lambda: mock_service
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    response = client.post(
+        "/api/v1/memory/upload",
+        files={"file": ("test.txt", b"Hello World", "text/plain")},
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to process document"}
+
+
 def test_upload_document_service_unavailable(client: TestClient) -> None:
     from httpx import Request
     from openai import APIConnectionError
