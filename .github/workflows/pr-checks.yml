@@ -112,7 +112,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.11
+        run: |
+          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
 
   pr-size-check:
     name: PR Size Check
