@@ -32,6 +32,12 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleClose = () => {
+    setTitle('');
+    setIsSaving(false);
+    onClose();
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       Alert.alert(t('productivity.title_required'), t('productivity.enter_task_title'));
@@ -62,7 +68,7 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
               {t('productivity.new_task') || 'New Task'}
             </AppText>
             <Pressable
-              onPress={onClose}
+              onPress={handleClose}
               style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]}
               hitSlop={8}
             >

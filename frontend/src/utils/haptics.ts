@@ -7,24 +7,35 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let H: any = null;
 let initialized = false;
+let initPromise: Promise<void> | null = null;
 
-function ensureInit() {
-  if (initialized) return;
-  try {
-    // Dynamic import to prevent 'require() style import is forbidden'
-    import('expo-haptics')
-      .then((m) => {
-        H = m;
-      })
-      .catch(() => {
-        // Ignore
-      });
-  } catch {}
-  initialized = true;
-}
+export const ensureHapticsInitialized = () => {
+  if (initialized) return Promise.resolve();
+  if (initPromise) return initPromise;
 
-const safe = (fn: () => Promise<void> | undefined) => {
-  ensureInit();
+  initPromise = new Promise((resolve) => {
+    try {
+      import('expo-haptics')
+        .then((m) => {
+          H = m;
+          initialized = true;
+          resolve();
+        })
+        .catch(() => {
+          initialized = true;
+          resolve();
+        });
+    } catch {
+      initialized = true;
+      resolve();
+    }
+  });
+
+  return initPromise;
+};
+
+const safe = async (fn: () => Promise<void> | undefined) => {
+  await ensureHapticsInitialized();
   try {
     fn()?.catch(() => {});
   } catch {}

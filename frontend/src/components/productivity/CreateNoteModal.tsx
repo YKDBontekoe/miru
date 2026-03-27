@@ -33,6 +33,13 @@ export function CreateNoteModal({ visible, onClose, onCreated }: Props) {
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleClose = () => {
+    setTitle('');
+    setContent('');
+    setIsSaving(false);
+    onClose();
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       Alert.alert(t('productivity.title_required'), t('productivity.enter_title'));
@@ -64,7 +71,7 @@ export function CreateNoteModal({ visible, onClose, onCreated }: Props) {
               {t('productivity.new_note') || 'New Note'}
             </AppText>
             <Pressable
-              onPress={onClose}
+              onPress={handleClose}
               style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]}
               hitSlop={8}
             >

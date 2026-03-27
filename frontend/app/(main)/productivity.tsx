@@ -27,6 +27,7 @@ const S = theme.spacing;
 const R = theme.borderRadius;
 
 type RenderItemData = {
+  date?: number;
   type: 'note' | 'task';
   item: Note | Task;
   id: string;
@@ -99,7 +100,7 @@ export default function ProductivityScreen() {
         item: n,
         id: `note-${n.id}`,
         date: new Date(n.created_at).getTime(),
-      } as RenderItemData & { date: number })
+      })
     );
     filteredTasks.forEach((t) =>
       arr.push({
@@ -107,9 +108,9 @@ export default function ProductivityScreen() {
         item: t,
         id: `task-${t.id}`,
         date: new Date(t.created_at).getTime(),
-      } as RenderItemData & { date: number })
+      })
     );
-    return (arr as (RenderItemData & { date: number })[]).sort((a, b) => b.date - a.date); // Sort newest first
+    return arr.sort((a, b) => (b.date || 0) - (a.date || 0)); // Sort newest first
   }, [filteredNotes, filteredTasks]);
 
   const renderItem = useCallback(
@@ -148,8 +149,9 @@ export default function ProductivityScreen() {
             </AppText>
             <AppText style={styles.headerSubtitle}>
               {pendingTasksCount === 0
-                ? "You're all caught up for today."
-                : `You have ${pendingTasksCount} tasks pending.`}
+                ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
+                : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
+                  `You have ${pendingTasksCount} tasks pending.`}
             </AppText>
           </View>
 
@@ -242,17 +244,18 @@ export default function ProductivityScreen() {
             </View>
             <AppText variant="h3" style={styles.emptyTitle}>
               {searchQuery
-                ? 'No matches found'
+                ? t('productivity.no_matches') || 'No matches found'
                 : activeTab === 'notes'
                   ? t('productivity.no_notes') || 'No Notes'
                   : activeTab === 'tasks'
                     ? t('productivity.no_tasks') || 'No Tasks'
-                    : 'Your workspace is clear'}
+                    : t('productivity.workspace_clear') || 'Your workspace is clear'}
             </AppText>
             <AppText style={styles.emptySubtitle}>
               {searchQuery
-                ? 'Try adjusting your search terms.'
-                : 'Capture your thoughts and track what needs to get done.'}
+                ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
+                : t('productivity.capture_thoughts') ||
+                  'Capture your thoughts and track what needs to get done.'}
             </AppText>
 
             {!searchQuery && (
@@ -263,7 +266,9 @@ export default function ProductivityScreen() {
                     style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
                   >
                     <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
-                    <AppText style={styles.emptyButtonText}>New Note</AppText>
+                    <AppText style={styles.emptyButtonText}>
+                      {t('productivity.newNote') || 'New Note'}
+                    </AppText>
                   </Pressable>
                 )}
                 {(activeTab === 'all' || activeTab === 'tasks') && (

@@ -35,6 +35,7 @@ export const theme = {
       success: '#34D399',
       successSurfaceDark: '#0D2E1F',
       successSurfaceLight: '#F0FDF4',
+      success100: '#D1FAE5',
       warning: '#FBBF24',
       warningSurfaceDark: '#2E2610',
       warningSurfaceLight: '#FFFBEB',

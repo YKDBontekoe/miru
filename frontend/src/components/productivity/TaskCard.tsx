@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   taskCardCompleted: {
     backgroundColor: T.status.successSurfaceLight,
-    borderColor: '#D1FAE5', // success 100
+    borderColor: T.status.success100,
   },
   taskToggle: {
     marginRight: S.md,
