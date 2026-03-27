@@ -100,7 +100,7 @@ def extract_added_routes() -> list:
                     prefix = "/api/v1"
                 elif "api/v1/memory.py" in current_file:
                     prefix = "/api/v1/memory"
-                elif "api/v1/productivity.py" in current_file:
+                elif "api/v1/productivity" in current_file:
                     prefix = "/api/v1/productivity"
                 elif "api/v1/integrations.py" in current_file:
                     prefix = "/api/v1/integrations"

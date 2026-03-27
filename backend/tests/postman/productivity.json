@@ -26,8 +26,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/tasks",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "tasks"
+          ]
         }
       }
     },
@@ -51,8 +58,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/tasks",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "tasks"
+          ]
         }
       }
     },
@@ -76,8 +90,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/tasks/test-task-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "tasks", "test-task-id"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "tasks",
+            "test-task-id"
+          ]
         }
       }
     },
@@ -101,8 +123,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/notes",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "notes"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "notes"
+          ]
         }
       }
     },
@@ -126,8 +155,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/notes",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "notes"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "notes"
+          ]
         }
       }
     },
@@ -151,8 +187,16 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/notes/test-note-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "notes", "test-note-id"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "notes",
+            "test-note-id"
+          ]
         }
       }
     },
@@ -176,8 +220,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/events",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "events"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "events"
+          ]
         }
       }
     },
@@ -201,8 +252,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/events",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "events"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "events"
+          ]
         }
       }
     },
@@ -226,10 +284,207 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/productivity/events/test-event-id",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "productivity", "events", "test-event-id"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "events",
+            "test-event-id"
+          ]
         }
       }
+    },
+    {
+      "name": "Get Task",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{task_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "tasks",
+            "{{task_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Task",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/tasks/{{task_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "tasks",
+            "{{task_id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated title\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Note",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/notes/{{note_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "notes",
+            "{{note_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Note",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/notes/{{note_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "notes",
+            "{{note_id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated title\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Event",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/events/{{event_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "events",
+            "{{event_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Event",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/productivity/events/{{event_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "productivity",
+            "events",
+            "{{event_id}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated title\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
     }
   ]
 }
