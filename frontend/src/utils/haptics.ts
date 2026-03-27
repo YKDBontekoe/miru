@@ -4,7 +4,7 @@
  * all calls are silently no-ops.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 let H: any = null;
 let initialized = false;
 let initPromise: Promise<void> | null = null;
