@@ -554,6 +554,19 @@ async def test_handle_db_errors_integrity() -> None:
 
 
 @pytest.mark.asyncio
+async def test_handle_db_errors_connection_does_not_exist() -> None:
+    """Test the handle_db_errors context manager handles asyncpg ConnectionDoesNotExistError."""
+    import asyncpg.exceptions
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc_info:
+        async with handle_db_errors("update task"):
+            raise asyncpg.exceptions.ConnectionDoesNotExistError("connection was closed")
+    assert exc_info.value.status_code == 500  # type: ignore[unreachable]
+    assert "Database error occurred while updating task" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
 async def test_handle_db_errors_unexpected() -> None:
     """Test the handle_db_errors context manager handles unexpected Exceptions."""
     from fastapi import HTTPException
