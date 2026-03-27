@@ -1,33 +1,46 @@
-import { Platform } from 'react-native';
+/**
+ * Haptics utility — wraps expo-haptics with graceful fallback.
+ * If expo-haptics isn't installed or the device doesn't support haptics,
+ * all calls are silently no-ops.
+ */
 
-let Haptics: any = null;
-try {
-  // Use dynamic import instead of require
-  import('expo-haptics')
-    .then((m) => {
-      Haptics = m;
-    })
-    .catch(() => {
-      // Ignore error if module is missing
-    });
-} catch {
-  // Ignore
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let H: any = null;
+let initialized = false;
+
+function ensureInit() {
+  if (initialized) return;
+  try {
+    // Dynamic import to prevent 'require() style import is forbidden'
+    import('expo-haptics')
+      .then((m) => {
+        H = m;
+      })
+      .catch(() => {
+        // Ignore
+      });
+  } catch {}
+  initialized = true;
 }
 
-export const triggerLightHaptic = async () => {
-  if (Platform.OS === 'web' || !Haptics) return;
+const safe = (fn: () => Promise<void> | undefined) => {
+  ensureInit();
   try {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  } catch {
-    // Ignore
-  }
+    fn()?.catch(() => {});
+  } catch {}
 };
 
-export const triggerMediumHaptic = async () => {
-  if (Platform.OS === 'web' || !Haptics) return;
-  try {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  } catch {
-    // Ignore
-  }
+export const haptic = {
+  /** Subtle tap — use on list item press */
+  light: () => safe(() => H?.impactAsync?.(H.ImpactFeedbackStyle?.Light)),
+  /** Medium tap — use on primary actions */
+  medium: () => safe(() => H?.impactAsync?.(H.ImpactFeedbackStyle?.Medium)),
+  /** Heavy tap — use on long-press reveal */
+  heavy: () => safe(() => H?.impactAsync?.(H.ImpactFeedbackStyle?.Heavy)),
+  /** Success pattern — use on create/save */
+  success: () => safe(() => H?.notificationAsync?.(H.NotificationFeedbackType?.Success)),
+  /** Error pattern — use on delete/fail */
+  error: () => safe(() => H?.notificationAsync?.(H.NotificationFeedbackType?.Error)),
+  /** Subtle tick — use on toggle/pin */
+  selection: () => safe(() => H?.selectionAsync?.()),
 };
