@@ -15,14 +15,14 @@ export interface Agent {
   created_at: string;
 }
 
-/* eslint-disable no-unused-vars */
+
 export enum MessageStatus {
   sent = 'sent',
   streaming = 'streaming',
   delivered = 'delivered',
   error = 'error',
 }
-/* eslint-enable no-unused-vars */
+
 
 export interface ChatMessage {
   id: string;
