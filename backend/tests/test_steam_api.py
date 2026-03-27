@@ -1,7 +1,7 @@
 """Tests for Steam Web API client."""
 
 import typing
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
