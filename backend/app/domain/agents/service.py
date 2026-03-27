@@ -202,7 +202,8 @@ class AgentService:
             effective_cap_ids = new_capability_ids
         else:
             effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
+                str(c_id)
+                for c_id in await agent.capabilities.all().values_list("id", flat=True)
             ]
 
         # --- integrations ---
