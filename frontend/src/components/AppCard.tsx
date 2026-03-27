@@ -22,24 +22,26 @@ export interface AppCardProps extends Omit<ViewProps, 'style'> {
   className?: string;
   onTap?: () => void;
   showBorder?: boolean;
-  style?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
+  style?: StyleProp<AnimatedStyle<ViewStyle>>;
   elevation?: keyof typeof theme.elevation;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function TappableCard({
+interface TappableCardProps extends Omit<ViewProps, 'style'> {
+  children: React.ReactNode;
+  onTap: () => void;
+  cardStyle: StyleProp<AnimatedStyle<ViewStyle>>;
+  className: string;
+}
+
+const TappableCard = ({
   children,
   onTap,
   cardStyle,
   className,
   ...props
-}: {
-  children: React.ReactNode;
-  onTap: () => void;
-  cardStyle: any;
-  className: string;
-}) {
+}: TappableCardProps) => {
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
@@ -62,7 +64,7 @@ function TappableCard({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={[cardStyle, animatedStyle] as StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>}
+      style={[cardStyle, animatedStyle] as StyleProp<AnimatedStyle<ViewStyle>>}
       {...props}
     >
       {children}
