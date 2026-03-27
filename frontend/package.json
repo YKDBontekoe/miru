@@ -25,8 +25,7 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterEnv": [
-    ],
+    "setupFilesAfterEnv": [],
     "setupFiles": [
       "./jest.setup.js"
     ],
@@ -96,6 +95,8 @@
     "glob": "^12",
     "rimraf": "^5",
     "whatwg-encoding": "^3.1.1",
-    "inflight": "^1.0.6"
+    "inflight": "^1.0.6",
+    "test-exclude": "^7.0.1",
+    "babel-plugin-istanbul": "^7.0.0"
   }
 }
