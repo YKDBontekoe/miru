@@ -6,6 +6,7 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import asyncpg.exceptions
 from fastapi import HTTPException
 from tortoise.exceptions import DBConnectionError, IntegrityError, OperationalError
 
@@ -26,7 +27,12 @@ async def handle_db_errors(action: str) -> AsyncGenerator[None, None]:
     except ValueError as e:
         logger.exception(f"Validation error while {action}")
         raise HTTPException(status_code=400, detail=str(e)) from e
-    except (IntegrityError, OperationalError, DBConnectionError) as e:
+    except (
+        IntegrityError,
+        OperationalError,
+        DBConnectionError,
+        asyncpg.exceptions.ConnectionDoesNotExistError,
+    ) as e:
         logger.exception(f"Failed to {action}")
 
         parts = action.split(" ", 1)
