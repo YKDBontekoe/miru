@@ -93,7 +93,6 @@ async def _handle_send_message(
 # ---------------------------------------------------------------------------
 # WebSocket endpoint
 # ---------------------------------------------------------------------------
-# DOCS(miru-agent): undocumented endpoint
 @router.websocket("/ws/chat")
 async def websocket_chat_hub(
     websocket: WebSocket,

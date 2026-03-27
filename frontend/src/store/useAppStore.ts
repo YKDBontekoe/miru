@@ -14,7 +14,16 @@ interface AppState {
 const FALLBACK_URL = 'https://aca-miru.whitefield-4145d509.westeurope.azurecontainerapps.io/api/v1';
 const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_URL;
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing global application preferences and configuration.
+ *
+ * State is persisted to secure local storage.
+ *
+ * State includes:
+ * - `isOnboardingComplete`: Whether the user has completed the initial app tour.
+ * - `baseUrl`: The target backend API URL.
+ * - `language`: The user's preferred language code.
+ */
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({

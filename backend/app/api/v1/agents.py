@@ -64,8 +64,16 @@ async def list_agents(
     return await service.list_agents(user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/capabilities", response_model=list[CapabilityResponse])
+@router.get(
+    "/capabilities",
+    response_model=list[CapabilityResponse],
+    summary="List capabilities",
+    description="List all available capabilities. Requires authentication.",
+    responses={
+        200: {"description": "Capabilities retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_capabilities(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
@@ -74,8 +82,16 @@ async def list_capabilities(
     return await service.list_capabilities()
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/integrations", response_model=list[IntegrationResponse])
+@router.get(
+    "/integrations",
+    response_model=list[IntegrationResponse],
+    summary="List integrations",
+    description="List all available integrations. Requires authentication.",
+    responses={
+        200: {"description": "Integrations retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_integrations(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
@@ -84,8 +100,17 @@ async def list_integrations(
     return await service.list_integrations()
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/templates", response_model=list[AgentTemplateResponse])
+@router.get(
+    "/templates",
+    response_model=list[AgentTemplateResponse],
+    summary="List templates",
+    description="List available persona templates (paginated). Requires authentication.",
+    responses={
+        200: {"description": "Templates retrieved successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def list_templates(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],

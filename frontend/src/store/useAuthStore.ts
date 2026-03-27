@@ -14,7 +14,17 @@ interface AuthState {
   initialize: () => void;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing user authentication state.
+ *
+ * Interfaces with the Supabase client for session management, magic links,
+ * and password logins. Also coordinates passkey/WebAuthn flows via the backend.
+ *
+ * State includes:
+ * - `user`: The current authenticated user object from Supabase (null if logged out).
+ * - `session`: The active Supabase session object.
+ * - `isLoading`: Boolean flag indicating if the initial session check is still running.
+ */
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,

@@ -28,8 +28,19 @@ router = APIRouter(tags=["calendar_events"])
 ProductivityUseCaseDep = Annotated[ManageProductivityUseCase, Depends(get_productivity_use_case)]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/events", response_model=CalendarEventResponse, status_code=201)
+@router.post(
+    "/events",
+    response_model=CalendarEventResponse,
+    status_code=201,
+    summary="Create calendar event",
+    description="Create a new calendar event for the current user. Requires authentication.",
+    responses={
+        201: {"description": "Event created successfully."},
+        400: {"description": "Invalid time range"},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def create_event(
     event_data: CalendarEventCreate,
     user_id: CurrentUser,
@@ -66,8 +77,18 @@ async def list_events(
     return [CalendarEventResponse.model_validate(e) for e in events]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/events/{event_id}", response_model=CalendarEventResponse)
+@router.get(
+    "/events/{event_id}",
+    response_model=CalendarEventResponse,
+    summary="Get calendar event",
+    description="Retrieve a specific calendar event by ID. Requires authentication.",
+    responses={
+        200: {"description": "Event retrieved successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Event not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def get_event(
     event_id: UUID,
     user_id: CurrentUser,
@@ -84,8 +105,19 @@ async def get_event(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/events/{event_id}", response_model=CalendarEventResponse)
+@router.patch(
+    "/events/{event_id}",
+    response_model=CalendarEventResponse,
+    summary="Update calendar event",
+    description="Update a specific calendar event by ID. Requires authentication.",
+    responses={
+        200: {"description": "Event updated successfully."},
+        400: {"description": "Invalid time range"},
+        401: {"description": "Authentication required"},
+        404: {"description": "Event not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def update_event(
     event_id: UUID,
     event_data: CalendarEventUpdate,

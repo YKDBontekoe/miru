@@ -26,7 +26,12 @@ import type { AgentActivityData } from '../core/services/ChatHubService';
 // Bouncing dot (reused from TypingIndicator pattern)
 // ---------------------------------------------------------------------------
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A single animated bouncing dot used in the typing indicator.
+ *
+ * @param props.delay - The animation delay in milliseconds (staggers the dots).
+ * @param props.color - The hex color for the dot.
+ */
 const Dot = ({ delay, color }: { delay: number; color: string }) => {
   const ty = useSharedValue(0);
 
@@ -90,7 +95,16 @@ interface AgentActivityIndicatorProps {
   activity: AgentActivityData;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Renders an animated status indicator for an active agent.
+ *
+ * This component fades in and out smoothly when the activity changes, and
+ * displays a label and optional detail string indicating what the agent
+ * is currently doing (e.g. "thinking", "working").
+ *
+ * @param props.activity - The current activity state of the agent, containing status,
+ *                         agent names, and optional detail.
+ */
 export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps) {
   const color = activityColor(activity.activity);
   const names = activity.agent_names.join(', ');

@@ -25,8 +25,16 @@ from app.domain.chat.service import ChatService  # noqa: TCH001
 router = APIRouter(tags=["Chat"])
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/rooms", response_model=list[RoomResponse])
+@router.get(
+    "/rooms",
+    response_model=list[RoomResponse],
+    summary="List rooms",
+    description="List all chat rooms for the current user. Requires authentication.",
+    responses={
+        200: {"description": "Rooms retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
 async def list_rooms(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
@@ -34,8 +42,17 @@ async def list_rooms(
     return await service.list_rooms(user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/rooms", response_model=RoomResponse)
+@router.post(
+    "/rooms",
+    response_model=RoomResponse,
+    summary="Create room",
+    description="Create a new chat room. Requires authentication.",
+    responses={
+        200: {"description": "Room created successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def create_room(
     data: RoomCreate,
     user_id: CurrentUser,
@@ -44,8 +61,17 @@ async def create_room(
     return await service.create_room(data.name, user_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/chat")
+@router.post(
+    "/chat",
+    summary="Chat without a room",
+    description="General chat stream without a specified room. Requires authentication.",
+    responses={
+        200: {"description": "Chat response streamed successfully."},
+        400: {"description": "Message or content is required"},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def chat(
     request: ChatRequest,
     user_id: CurrentUser,
@@ -64,8 +90,17 @@ async def chat(
     )
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/crew")
+@router.post(
+    "/crew",
+    summary="Run CrewAI",
+    description="Run a full CrewAI orchestration for a single task and return structured output. Requires authentication.",
+    responses={
+        200: {"description": "Crew run successfully."},
+        400: {"description": "Message or content is required"},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def run_crew(
     request: ChatRequest,
     user_id: CurrentUser,
@@ -81,8 +116,18 @@ async def run_crew(
     return await service.run_crew(message, user_id, accept_language=accept_language)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/rooms/{room_id}", response_model=RoomResponse)
+@router.patch(
+    "/rooms/{room_id}",
+    response_model=RoomResponse,
+    summary="Update room",
+    description="Update a chat room's details. Requires authentication.",
+    responses={
+        200: {"description": "Room updated successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Room not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def update_room(
     room_id: UUID,
     data: RoomUpdate,
@@ -95,8 +140,17 @@ async def update_room(
     return room
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/rooms/{room_id}")
+@router.delete(
+    "/rooms/{room_id}",
+    summary="Delete room",
+    description="Delete a chat room. Requires authentication.",
+    responses={
+        200: {"description": "Room deleted successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Room not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_room(
     room_id: UUID,
     _user_id: CurrentUser,
@@ -108,8 +162,16 @@ async def delete_room(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/rooms/{room_id}/agents")
+@router.post(
+    "/rooms/{room_id}/agents",
+    summary="Add agent to room",
+    description="Add an agent to a chat room. Requires authentication.",
+    responses={
+        200: {"description": "Agent added to room successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
@@ -120,8 +182,17 @@ async def add_agent_to_room(
     return {"status": "ok"}
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/rooms/{room_id}/agents", response_model=list[AgentResponse])
+@router.get(
+    "/rooms/{room_id}/agents",
+    response_model=list[AgentResponse],
+    summary="Get room agents",
+    description="List all agents in a chat room. Requires authentication.",
+    responses={
+        200: {"description": "Room agents retrieved successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def get_room_agents(
     room_id: UUID,
     _user_id: CurrentUser,
@@ -131,8 +202,17 @@ async def get_room_agents(
     return [AgentResponse.model_validate(a) for a in agents]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/rooms/{room_id}/agents/{agent_id}")
+@router.delete(
+    "/rooms/{room_id}/agents/{agent_id}",
+    summary="Remove agent from room",
+    description="Remove an agent from a chat room. Requires authentication.",
+    responses={
+        200: {"description": "Agent removed from room successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Agent not found in room"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def remove_agent_from_room(
     room_id: UUID,
     agent_id: UUID,
@@ -170,8 +250,18 @@ async def get_room_messages(
     return await service.get_room_messages(room_id, limit=limit, before_id=before_id)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/rooms/{room_id}/messages/{message_id}", response_model=ChatMessageResponse)
+@router.patch(
+    "/rooms/{room_id}/messages/{message_id}",
+    response_model=ChatMessageResponse,
+    summary="Update message",
+    description="Update a chat message. Requires authentication.",
+    responses={
+        200: {"description": "Message updated successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Message not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def update_message(
     room_id: UUID,
     message_id: UUID,
@@ -188,8 +278,17 @@ async def update_message(
     return msg
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/rooms/{room_id}/messages/{message_id}")
+@router.delete(
+    "/rooms/{room_id}/messages/{message_id}",
+    summary="Delete message",
+    description="Delete a chat message. Requires authentication.",
+    responses={
+        200: {"description": "Message deleted successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Message not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_message(
     room_id: UUID,
     message_id: UUID,

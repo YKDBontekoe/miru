@@ -27,8 +27,18 @@ router = APIRouter(tags=["notes"])
 ProductivityUseCaseDep = Annotated[ManageProductivityUseCase, Depends(get_productivity_use_case)]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/notes", response_model=NoteResponse, status_code=201)
+@router.post(
+    "/notes",
+    response_model=NoteResponse,
+    status_code=201,
+    summary="Create note",
+    description="Create a new note for the current user. Requires authentication.",
+    responses={
+        201: {"description": "Note created successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def create_note(
     note_data: NoteCreate,
     user_id: CurrentUser,
@@ -60,8 +70,18 @@ async def list_notes(
     return [NoteResponse.model_validate(n) for n in notes]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/notes/{note_id}", response_model=NoteResponse)
+@router.get(
+    "/notes/{note_id}",
+    response_model=NoteResponse,
+    summary="Get note",
+    description="Retrieve a specific note by ID. Requires authentication.",
+    responses={
+        200: {"description": "Note retrieved successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Note not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def get_note(
     note_id: UUID,
     user_id: CurrentUser,
@@ -77,8 +97,18 @@ async def get_note(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/notes/{note_id}", response_model=NoteResponse)
+@router.patch(
+    "/notes/{note_id}",
+    response_model=NoteResponse,
+    summary="Update note",
+    description="Update a specific note by ID. Requires authentication.",
+    responses={
+        200: {"description": "Note updated successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Note not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def update_note(
     note_id: UUID,
     note_data: NoteUpdate,

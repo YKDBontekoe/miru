@@ -27,8 +27,18 @@ router = APIRouter(tags=["tasks"])
 ProductivityUseCaseDep = Annotated[ManageProductivityUseCase, Depends(get_productivity_use_case)]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/tasks", response_model=TaskResponse, status_code=201)
+@router.post(
+    "/tasks",
+    response_model=TaskResponse,
+    status_code=201,
+    summary="Create task",
+    description="Create a new task for the current user. Requires authentication.",
+    responses={
+        201: {"description": "Task created successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def create_task(
     task_data: TaskCreate,
     user_id: CurrentUser,
@@ -62,8 +72,18 @@ async def list_tasks(
     return [TaskResponse.model_validate(t) for t in tasks]
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.get("/tasks/{task_id}", response_model=TaskResponse)
+@router.get(
+    "/tasks/{task_id}",
+    response_model=TaskResponse,
+    summary="Get task",
+    description="Retrieve a specific task by ID. Requires authentication.",
+    responses={
+        200: {"description": "Task retrieved successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Task not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def get_task(
     task_id: UUID,
     user_id: CurrentUser,
@@ -80,8 +100,18 @@ async def get_task(
         ) from None
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/tasks/{task_id}", response_model=TaskResponse)
+@router.patch(
+    "/tasks/{task_id}",
+    response_model=TaskResponse,
+    summary="Update task",
+    description="Update a specific task by ID. Requires authentication.",
+    responses={
+        200: {"description": "Task updated successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Task not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def update_task(
     task_id: UUID,
     task_data: TaskUpdate,

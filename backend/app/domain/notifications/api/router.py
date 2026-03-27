@@ -21,8 +21,17 @@ class NotificationRequest(BaseModel):
     title: str = "New Notification"
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/send", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/send",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Send notification",
+    description="Test endpoint to send a notification to the current user. Requires authentication.",
+    responses={
+        202: {"description": "Notification sent successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def send_notification(
     request: NotificationRequest,
     user_id: CurrentUser,
