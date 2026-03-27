@@ -39,7 +39,21 @@ interface ChatState {
 // Hub unsubscribe kept outside state so it doesn't trigger re-renders
 let _hubUnsub: (() => void) | null = null;
 
-// DOCS(miru-agent): needs documentation
+/**
+ * Zustand store for managing global chat state.
+ *
+ * Handles HTTP requests for loading rooms/messages, and orchestrates the
+ * SignalR-compatible WebSocket hub for real-time messaging, typing indicators,
+ * and agent activity updates.
+ *
+ * State includes:
+ * - `rooms`: List of chat rooms.
+ * - `messages`: Record mapping room IDs to message arrays.
+ * - `agentActivity`: Real-time agent status (e.g., "thinking") per room.
+ * - `joinedRooms`: Rooms successfully joined via the WebSocket hub.
+ * - `hubError`: The most recent user-facing error from the WebSocket.
+ * - `isLoadingRooms` / `isLoadingMessages` / `isStreaming`: Loading flags.
+ */
 export const useChatStore = create<ChatState>((set, get) => ({
   rooms: [],
   messages: {},

@@ -27,7 +27,18 @@ export interface AppButtonProps extends Omit<PressableProps, 'style'> {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A customizable button component adhering to the Miru design system.
+ *
+ * Supports multiple visual variants, loading states, and animated press feedback.
+ *
+ * @param props.label - The text to display inside the button.
+ * @param props.variant - The visual style of the button ('primary', 'secondary', 'outline', or 'ghost').
+ * @param props.isLoading - If true, displays an activity indicator and disables the button.
+ * @param props.disabled - Standard React Native disabled prop.
+ * @param props.className - Optional NativeWind class string for additional styling.
+ * @param props.style - Optional Reanimated style object.
+ */
 export function AppButton({
   label,
   variant = 'primary',

@@ -10,7 +10,18 @@ export interface AppTextProps extends TextProps {
   style?: TextProps['style'];
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A themed wrapper around React Native's Text component.
+ *
+ * Automatically applies typography scales and text colors based on the current
+ * color scheme (light/dark mode) and Miru design tokens.
+ *
+ * @param props.children - The text content to display.
+ * @param props.variant - The typography variant from the theme (e.g., 'body', 'h1', 'label'). Defaults to 'body'.
+ * @param props.color - The semantic text color to apply ('primary', 'muted', 'disabled', or 'brand').
+ * @param props.className - Optional NativeWind class string for additional styling.
+ * @param props.style - Optional React Native Text style overrides.
+ */
 export function AppText({
   children,
   variant = 'body',

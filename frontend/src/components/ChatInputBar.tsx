@@ -16,7 +16,19 @@ interface ChatInputBarProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A text input bar for sending messages in a chat interface.
+ *
+ * Features an auto-expanding multi-line text input, a dynamic send/stop button
+ * with tap animations, and support for light/dark themes.
+ *
+ * @param props.value - The current text value of the input.
+ * @param props.onChangeText - Callback invoked when the text input value changes.
+ * @param props.onSend - Callback invoked when the user taps the send button.
+ * @param props.isStreaming - If true, replaces the send button with a stop button.
+ * @param props.onStop - Callback invoked when the user taps the stop button while streaming.
+ * @param props.placeholder - Optional placeholder text (defaults to 'Message...').
+ */
 export function ChatInputBar({
   value,
   onChangeText,

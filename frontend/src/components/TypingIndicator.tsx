@@ -14,7 +14,12 @@ interface TypingIndicatorProps {
   dotColor?: string;
 }
 
-// DOCS(miru-agent): needs documentation
+/**
+ * A single animated bouncing dot used in the typing indicator.
+ *
+ * @param props.delay - The animation delay in milliseconds (staggers the dots).
+ * @param props.color - The hex color for the dot.
+ */
 const Dot = ({ delay, color }: { delay: number; color: string }) => {
   const translateY = useSharedValue(0);
 
@@ -44,7 +49,13 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
   );
 };
 
-// DOCS(miru-agent): needs documentation
+/**
+ * An animated three-dot typing indicator.
+ *
+ * Used to indicate that an agent is currently streaming a response or "typing".
+ *
+ * @param props.dotColor - The color of the animated dots (defaults to a neutral gray).
+ */
 export function TypingIndicator({ dotColor = '#A0A0B0' }: TypingIndicatorProps) {
   return (
     <View className="flex-row items-center h-4 px-xs">
