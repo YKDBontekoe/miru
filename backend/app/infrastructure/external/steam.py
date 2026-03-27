@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import urllib.error
-import urllib.parse
-import urllib.request
 from typing import Any
+
+import httpx
 
 from app.core.config import get_settings
 
@@ -16,11 +14,12 @@ logger = logging.getLogger(__name__)
 STEAM_API_BASE = "https://api.steampowered.com"
 
 
-def _get(url: str, params: dict[str, str]) -> Any:
-    """Synchronous GET with urllib; returns parsed JSON or raises."""
-    full_url = url + "?" + urllib.parse.urlencode(params)
-    with urllib.request.urlopen(full_url, timeout=10) as resp:  # noqa: S310
-        return json.loads(resp.read())
+async def _get_async(url: str, params: dict[str, str]) -> Any:
+    """Asynchronous GET with httpx; returns parsed JSON or raises."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(url, params=params)
+        resp.raise_for_status()
+        return resp.json()
 
 
 async def get_player_summaries(steam_ids: list[str]) -> list[dict[str, Any]]:
@@ -40,9 +39,12 @@ async def get_player_summaries(steam_ids: list[str]) -> list[dict[str, Any]]:
     }
 
     try:
-        data = _get(url, params)
+        data = await _get_async(url, params)
         return list(data.get("response", {}).get("players", []))
-    except urllib.error.URLError:
+    except httpx.HTTPStatusError:
+        logger.exception("Steam API returned error status for player summaries")
+        return []
+    except httpx.RequestError:
         logger.exception("Failed to fetch Steam player summaries")
         return []
     except Exception:
@@ -69,9 +71,12 @@ async def get_owned_games(
     }
 
     try:
-        data = _get(url, params)
+        data = await _get_async(url, params)
         return list(data.get("response", {}).get("games", []))
-    except urllib.error.URLError:
+    except httpx.HTTPStatusError:
+        logger.exception("Steam API returned error status for owned games")
+        return []
+    except httpx.RequestError:
         logger.exception("Failed to fetch Steam owned games")
         return []
     except Exception:
@@ -93,7 +98,7 @@ async def resolve_vanity_url(vanityurl: str) -> str | None:
     }
 
     try:
-        data = _get(url, params)
+        data = await _get_async(url, params)
         if data.get("response", {}).get("success") == 1:
             return str(data["response"]["steamid"])
         return None
