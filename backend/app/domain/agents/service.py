@@ -201,22 +201,25 @@ class AgentService:
                 await agent.capabilities.add(*caps)
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [str(c.id) for c in (await agent.capabilities.all())]
+            effective_cap_ids = [str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)]
 
         # --- integrations ---
         new_integration_ids: list[str] | None = fields.pop("integrations", None)
         new_integration_configs: dict = fields.pop("integration_configs", None) or {}
         if new_integration_ids is not None:
             await AgentIntegration.filter(agent=agent).delete()
-            for integration_id in new_integration_ids:
-                integration = await Integration.get_or_none(id=integration_id)
-                if integration:
-                    await AgentIntegration.create(
-                        agent=agent,
-                        integration=integration,
-                        config=new_integration_configs.get(integration_id, {}),
-                        enabled=True,
-                    )
+            integrations = await Integration.filter(id__in=new_integration_ids)
+            agent_integrations = [
+                AgentIntegration(
+                    agent=agent,
+                    integration=integration,
+                    config=new_integration_configs.get(str(integration.id), {}),
+                    enabled=True,
+                )
+                for integration in integrations
+            ]
+            if agent_integrations:
+                await AgentIntegration.bulk_create(agent_integrations)
 
         # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
