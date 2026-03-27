@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Pressable,
-  ViewProps,
-  StyleProp,
-  ViewStyle,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { View, Pressable, ViewProps, StyleProp, ViewStyle, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -64,13 +56,13 @@ const TappableCard = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={[cardStyle, animatedStyle] as StyleProp<AnimatedStyle<ViewStyle>>}
+      style={[cardStyle, animatedStyle]}
       {...props}
     >
       {children}
     </AnimatedPressable>
   );
-}
+};
 
 /**
  * A flexible card container component following the Miru design system.
@@ -86,7 +78,7 @@ const TappableCard = ({
  * @param props.style - Optional Reanimated or standard style object.
  * @param props.elevation - The elevation preset from the theme to apply (default: 'sm').
  */
-export function AppCard({
+export const AppCard = ({
   children,
   className = '',
   onTap,
@@ -94,12 +86,11 @@ export function AppCard({
   style,
   elevation = 'sm',
   ...props
-}: AppCardProps) {
+}: AppCardProps) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const cardStyle = [
-    styles.card,
+  const cardStyle: StyleProp<AnimatedStyle<ViewStyle>> = [
     {
       backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light,
       borderColor: isDark ? theme.colors.border.dark : theme.colors.border.light,
@@ -118,24 +109,19 @@ export function AppCard({
     style,
   ];
 
+  const fullClassName = `rounded-md p-lg ${className}`.trim();
+
   if (onTap) {
     return (
-      <TappableCard onTap={onTap} className={className} cardStyle={cardStyle} {...props}>
+      <TappableCard onTap={onTap} className={fullClassName} cardStyle={cardStyle} {...props}>
         {children}
       </TappableCard>
     );
   }
 
   return (
-    <View className={className} style={cardStyle as StyleProp<ViewStyle>} {...props}>
+    <View className={fullClassName} style={cardStyle as StyleProp<ViewStyle>} {...props}>
       {children}
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-  },
-});
+};
