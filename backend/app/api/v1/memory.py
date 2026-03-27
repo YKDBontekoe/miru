@@ -8,7 +8,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from openai import APIConnectionError
+from openai import APIConnectionError, APITimeoutError
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
@@ -38,7 +38,7 @@ async def list_memories(
     try:
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
-    except (APIConnectionError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError) as e:
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
@@ -62,7 +62,7 @@ async def get_memory_graph(
     """Fetch the memory graph for the current user."""
     try:
         return await service.get_memory_graph(user_id)
-    except (APIConnectionError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError) as e:
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
@@ -89,7 +89,7 @@ async def store_memory(
     try:
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
-    except (APIConnectionError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError) as e:
         raise HTTPException(
             status_code=503,
             detail="Upstream AI service is currently unreachable",
@@ -160,7 +160,7 @@ async def upload_document(
             "message": f"Document processed and stored in {len(memory_ids)} chunks.",
             "memory_ids": [str(m) for m in memory_ids],
         }
-    except (APIConnectionError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError) as e:
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
