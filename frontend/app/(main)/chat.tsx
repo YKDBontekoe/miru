@@ -3,7 +3,6 @@ import {
   View,
   TouchableOpacity,
   RefreshControl,
-  ScrollView,
   Modal,
   TextInput,
   Alert,

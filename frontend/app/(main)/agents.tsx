@@ -4,7 +4,6 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
-  ScrollView,
   TextInput,
   Alert,
   ActionSheetIOS,

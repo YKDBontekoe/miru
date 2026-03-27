@@ -25,30 +25,21 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
         hitSlop={12}
         style={({ pressed }) => [styles.taskToggle, pressed && { opacity: 0.7 }]}
       >
-        <View
-          style={[
-            styles.taskCheckbox,
-            task.completed && styles.taskCheckboxActive,
-          ]}
-        >
+        <View style={[styles.taskCheckbox, task.completed && styles.taskCheckboxActive]}>
           {task.completed && <Ionicons name="checkmark" size={16} color={T.white} />}
         </View>
       </Pressable>
       <View style={styles.taskBody}>
-        <AppText
-          style={[
-            styles.taskTitle,
-            task.completed && styles.taskTitleCompleted,
-          ]}
-        >
+        <AppText style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>
           {task.title}
         </AppText>
         {task.due_date && (
           <AppText variant="caption" style={styles.taskDueDate}>
             {t('productivity.due_date', {
-              date: new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
-                new Date(task.due_date)
-              ),
+              date: new Intl.DateTimeFormat(i18n.language, {
+                month: 'short',
+                day: 'numeric',
+              }).format(new Date(task.due_date)),
             })}
           </AppText>
         )}
@@ -63,6 +54,8 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
     </View>
   );
 });
+
+TaskCard.displayName = 'TaskCard';
 
 const styles = StyleSheet.create({
   taskCard: {

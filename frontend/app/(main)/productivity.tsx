@@ -53,60 +53,89 @@ export default function ProductivityScreen() {
     fetchTasks();
   }, [fetchNotes, fetchTasks]);
 
-  const confirmDelete = useCallback((action: () => Promise<void>) =>
-    Alert.alert(t('productivity.delete') || 'Delete', t('productivity.are_you_sure') || 'Are you sure?', [
-      { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
-      { text: t('settings.actions.delete') || 'Delete', style: 'destructive', onPress: () => action() },
-    ]), [t]);
+  const confirmDelete = useCallback(
+    (action: () => Promise<void>) =>
+      Alert.alert(
+        t('productivity.delete') || 'Delete',
+        t('productivity.are_you_sure') || 'Are you sure?',
+        [
+          {
+            text: t('settings.actions.cancel') || 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: t('settings.actions.delete') || 'Delete',
+            style: 'destructive',
+            onPress: () => action(),
+          },
+        ]
+      ),
+    [t]
+  );
 
   // Derived state for filtering
   const filteredNotes = useMemo(() => {
     if (!searchQuery) return notes;
     const lowerQ = searchQuery.toLowerCase();
-    return notes.filter(n => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ));
+    return notes.filter(
+      (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
+    );
   }, [notes, searchQuery]);
 
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return tasks;
     const lowerQ = searchQuery.toLowerCase();
-    return tasks.filter(t => t.title.toLowerCase().includes(lowerQ));
+    return tasks.filter((t) => t.title.toLowerCase().includes(lowerQ));
   }, [tasks, searchQuery]);
 
-  const pendingTasksCount = useMemo(() => tasks.filter(t => !t.completed).length, [tasks]);
+  const pendingTasksCount = useMemo(() => tasks.filter((t) => !t.completed).length, [tasks]);
 
   // Combine items for 'all' tab
   const mixedData = useMemo(() => {
-    const arr: Array<{ type: 'note' | 'task', item: Note | Task, id: string, date: number }> = [];
-    filteredNotes.forEach(n => arr.push({ type: 'note', item: n, id: `note-${n.id}`, date: new Date(n.created_at).getTime() }));
-    filteredTasks.forEach(t => arr.push({ type: 'task', item: t, id: `task-${t.id}`, date: new Date(t.created_at).getTime() }));
-    return arr.sort((a, b) => b.date - a.date); // Sort newest first
+    const arr: RenderItemData[] = [];
+    filteredNotes.forEach((n) =>
+      arr.push({
+        type: 'note',
+        item: n,
+        id: `note-${n.id}`,
+        date: new Date(n.created_at).getTime(),
+      } as RenderItemData & { date: number })
+    );
+    filteredTasks.forEach((t) =>
+      arr.push({
+        type: 'task',
+        item: t,
+        id: `task-${t.id}`,
+        date: new Date(t.created_at).getTime(),
+      } as RenderItemData & { date: number })
+    );
+    return (arr as (RenderItemData & { date: number })[]).sort((a, b) => b.date - a.date); // Sort newest first
   }, [filteredNotes, filteredTasks]);
 
-  const renderItem = useCallback(({ item }: { item: RenderItemData }) => {
-    if (item.type === 'note') {
-      const note = item.item as Note;
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => {
+      if (item.type === 'note') {
+        const note = item.item as Note;
+        return <NoteCard note={note} onDelete={() => confirmDelete(() => deleteNote(note.id))} />;
+      }
+      const task = item.item as Task;
       return (
-        <NoteCard
-          note={note}
-          onDelete={() => confirmDelete(() => deleteNote(note.id))}
+        <TaskCard
+          task={task}
+          onToggle={() => toggleTask(task.id)}
+          onDelete={() => confirmDelete(() => deleteTask(task.id))}
         />
       );
-    }
-    const task = item.item as Task;
-    return (
-      <TaskCard
-        task={task}
-        onToggle={() => toggleTask(task.id)}
-        onDelete={() => confirmDelete(() => deleteTask(task.id))}
-      />
-    );
-  }, [confirmDelete, deleteNote, deleteTask, toggleTask]);
+    },
+    [confirmDelete, deleteNote, deleteTask, toggleTask]
+  );
 
-  const dataToRender: RenderItemData[] = activeTab === 'all'
-    ? mixedData
-    : activeTab === 'notes'
-      ? filteredNotes.map(n => ({ type: 'note' as const, item: n, id: n.id }))
-      : filteredTasks.map(t => ({ type: 'task' as const, item: t, id: t.id }));
+  const dataToRender: RenderItemData[] =
+    activeTab === 'all'
+      ? mixedData
+      : activeTab === 'notes'
+        ? filteredNotes.map((n) => ({ type: 'note' as const, item: n, id: n.id }))
+        : filteredTasks.map((t) => ({ type: 'task' as const, item: t, id: t.id }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -142,7 +171,12 @@ export default function ProductivityScreen() {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={T.onSurface.mutedLight} style={styles.searchIcon} />
+          <Ionicons
+            name="search"
+            size={18}
+            color={T.onSurface.mutedLight}
+            style={styles.searchIcon}
+          />
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -163,17 +197,12 @@ export default function ProductivityScreen() {
             style={({ pressed }) => [
               styles.tabButton,
               activeTab === tab && styles.tabButtonActive,
-              pressed && activeTab !== tab && { opacity: 0.6 }
+              pressed && activeTab !== tab && { opacity: 0.6 },
             ]}
           >
-            <AppText
-              style={[
-                styles.tabText,
-                activeTab === tab && styles.tabTextActive,
-              ]}
-            >
+            <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
               {tab === 'all'
-                ? (t('productivity.all') || 'All')
+                ? t('productivity.all') || 'All'
                 : tab === 'notes'
                   ? t('productivity.notes') || 'Notes'
                   : t('productivity.tasks') || 'Tasks'}
@@ -200,7 +229,13 @@ export default function ProductivityScreen() {
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
               <Ionicons
-                name={activeTab === 'notes' ? "document-text" : activeTab === 'tasks' ? "checkbox" : "planet"}
+                name={
+                  activeTab === 'notes'
+                    ? 'document-text'
+                    : activeTab === 'tasks'
+                      ? 'checkbox'
+                      : 'planet'
+                }
                 size={42}
                 color={T.primary.DEFAULT}
               />
@@ -237,11 +272,24 @@ export default function ProductivityScreen() {
                     style={({ pressed }) => [
                       styles.emptyButton,
                       activeTab === 'all' && styles.emptyButtonSecondary,
-                      pressed && { opacity: 0.8 }
+                      pressed && { opacity: 0.8 },
                     ]}
                   >
-                    <Ionicons name="add" size={18} color={activeTab === 'all' ? T.primary.DEFAULT : T.white} style={{ marginEnd: 6 }} />
-                    <AppText style={activeTab === 'all' ? styles.emptyButtonTextSecondary : styles.emptyButtonText}>New Task</AppText>
+                    <Ionicons
+                      name="add"
+                      size={18}
+                      color={activeTab === 'all' ? T.primary.DEFAULT : T.white}
+                      style={{ marginEnd: 6 }}
+                    />
+                    <AppText
+                      style={
+                        activeTab === 'all'
+                          ? styles.emptyButtonTextSecondary
+                          : styles.emptyButtonText
+                      }
+                    >
+                      New Task
+                    </AppText>
                   </Pressable>
                 )}
               </View>
@@ -413,8 +461,8 @@ const styles = StyleSheet.create({
       },
       default: {
         elevation: 0,
-      }
-    })
+      },
+    }),
   },
   emptyButtonText: {
     color: T.white,

@@ -1,41 +1,33 @@
-/**
- * Haptics utility — wraps expo-haptics with graceful fallback.
- * If expo-haptics isn't installed or the device doesn't support haptics,
- * all calls are silently no-ops.
- */
+import { Platform } from 'react-native';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let H: any = null;
-let initialized = false;
-
-function ensureInit() {
-  if (initialized) return;
-  try {
-    // Dynamic require so a missing package never crashes the app
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    H = require('expo-haptics');
-  } catch {}
-  initialized = true;
+let Haptics: any = null;
+try {
+  // Use dynamic import instead of require
+  import('expo-haptics')
+    .then((m) => {
+      Haptics = m;
+    })
+    .catch(() => {
+      // Ignore error if module is missing
+    });
+} catch {
+  // Ignore
 }
 
-const safe = (fn: () => Promise<void> | undefined) => {
-  ensureInit();
+export const triggerLightHaptic = async () => {
+  if (Platform.OS === 'web' || !Haptics) return;
   try {
-    fn()?.catch(() => {});
-  } catch {}
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  } catch {
+    // Ignore
+  }
 };
 
-export const haptic = {
-  /** Subtle tap — use on list item press */
-  light: () => safe(() => H?.impactAsync?.(H.ImpactFeedbackStyle?.Light)),
-  /** Medium tap — use on primary actions */
-  medium: () => safe(() => H?.impactAsync?.(H.ImpactFeedbackStyle?.Medium)),
-  /** Heavy tap — use on long-press reveal */
-  heavy: () => safe(() => H?.impactAsync?.(H.ImpactFeedbackStyle?.Heavy)),
-  /** Success pattern — use on create/save */
-  success: () => safe(() => H?.notificationAsync?.(H.NotificationFeedbackType?.Success)),
-  /** Error pattern — use on delete/fail */
-  error: () => safe(() => H?.notificationAsync?.(H.NotificationFeedbackType?.Error)),
-  /** Subtle tick — use on toggle/pin */
-  selection: () => safe(() => H?.selectionAsync?.()),
+export const triggerMediumHaptic = async () => {
+  if (Platform.OS === 'web' || !Haptics) return;
+  try {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  } catch {
+    // Ignore
+  }
 };

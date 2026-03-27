@@ -42,7 +42,12 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
         </AppText>
       ) : null}
       <View style={styles.noteCardFooter}>
-        <Ionicons name="time-outline" size={12} color={T.onSurface.disabledLight} style={{ marginRight: 4 }} />
+        <Ionicons
+          name="time-outline"
+          size={12}
+          color={T.onSurface.disabledLight}
+          style={{ marginRight: 4 }}
+        />
         <AppText variant="caption" style={styles.noteCardDate}>
           {date}
         </AppText>
@@ -50,6 +55,8 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
     </View>
   );
 });
+
+NoteCard.displayName = 'NoteCard';
 
 const styles = StyleSheet.create({
   noteCard: {
