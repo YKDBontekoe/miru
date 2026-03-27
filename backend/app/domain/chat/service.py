@@ -7,6 +7,8 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 
+import openai
+
 from app.core.config import get_settings
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.dtos import (
@@ -139,18 +141,29 @@ class ChatService:
             )
         messages.append({"role": "user", "content": user_message})
 
-        response = await stream_chat(
-            model=model_name,
-            messages=messages,
-        )
+        try:
+            response = await stream_chat(
+                model=model_name,
+                messages=messages,
+            )
 
-        async for chunk in response:
-            if not chunk.choices:
-                continue
-            delta_content = chunk.choices[0].delta.content
-            if delta_content:
-                yield delta_content
-        yield "[[STATUS:done]]\n"
+            async for chunk in response:
+                if not chunk.choices:
+                    continue
+                delta_content = chunk.choices[0].delta.content
+                if delta_content:
+                    yield delta_content
+            yield "[[STATUS:done]]\n"
+        except TimeoutError:
+            logger.warning("Timeout connecting to AI service for user=%s", user_id)
+            yield "\n[[STATUS:error]]\nConnection timed out. Please try again later.\n"
+        except Exception as e:
+            if isinstance(e, (openai.APIConnectionError, openai.APITimeoutError, OSError)):
+                logger.warning("Connection error to AI service for user=%s", user_id)
+                yield "\n[[STATUS:error]]\nConnection error. Please try again later.\n"
+            else:
+                logger.exception("Unexpected error in chat stream for user=%s", user_id)
+                yield "\n[[STATUS:error]]\nAn unexpected error occurred.\n"
 
     async def run_crew(
         self, user_message: str, user_id: UUID, accept_language: str | None = None

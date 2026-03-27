@@ -258,6 +258,54 @@ async def test_run_crew_task_has_multiple_agents(
 
 
 @pytest.mark.asyncio
+async def test_stream_responses_timeout_error(chat_service: typing.Any) -> None:
+    from unittest.mock import AsyncMock
+
+    user_id = uuid4()
+    agent = MagicMock()
+    agent.personality = "Helpful"
+    chat_service.agent_repo.list_by_user.return_value = [agent]
+
+    with patch(
+        "app.domain.chat.service.stream_chat",
+        new_callable=AsyncMock,
+    ) as mock_stream_chat:
+        mock_stream_chat.side_effect = TimeoutError("Connection timed out")
+        responses = []
+        async for r in chat_service.stream_responses("Hi", user_id):
+            responses.append(r)
+
+    assert responses == ["\n[[STATUS:error]]\nConnection timed out. Please try again later.\n"]
+    mock_stream_chat.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_stream_responses_api_connection_error(chat_service: typing.Any) -> None:
+    from unittest.mock import AsyncMock
+
+    import httpx
+    import openai
+
+    user_id = uuid4()
+    agent = MagicMock()
+    agent.personality = "Helpful"
+    chat_service.agent_repo.list_by_user.return_value = [agent]
+
+    with patch(
+        "app.domain.chat.service.stream_chat",
+        new_callable=AsyncMock,
+    ) as mock_stream_chat:
+        request = httpx.Request("POST", "http://test")
+        mock_stream_chat.side_effect = openai.APIConnectionError(request=request)
+        responses = []
+        async for r in chat_service.stream_responses("Hi", user_id):
+            responses.append(r)
+
+    assert responses == ["\n[[STATUS:error]]\nConnection error. Please try again later.\n"]
+    mock_stream_chat.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.MonkeyPatch) -> None:
     from unittest.mock import AsyncMock
 
