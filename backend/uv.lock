@@ -1945,6 +1945,7 @@ dependencies = [
     { name = "crewai-tools" },
     { name = "fastapi" },
     { name = "granian", extra = ["reload"] },
+    { name = "httpx" },
     { name = "instructor" },
     { name = "litellm" },
     { name = "nest-asyncio" },
@@ -1954,7 +1955,6 @@ dependencies = [
     { name = "pdf-oxide" },
     { name = "pillow" },
     { name = "pydantic-settings" },
-    { name = "pyjwt", extra = ["crypto"] },
     { name = "pyopenssl" },
     { name = "python-docx" },
     { name = "python-dotenv" },
@@ -1968,7 +1968,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pip-audit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1981,6 +1980,13 @@ dev = [
     { name = "types-requests" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pyjwt" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aerich", specifier = ">=0.7.2" },
@@ -1990,7 +1996,7 @@ requires-dist = [
     { name = "crewai-tools", specifier = ">=0.12.1" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "granian", extras = ["reload"], specifier = ">=1.0.0" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "instructor", specifier = ">=1.7.0" },
     { name = "litellm", specifier = ">=1.82.1" },
     { name = "nest-asyncio" },
@@ -2001,7 +2007,6 @@ requires-dist = [
     { name = "pillow", specifier = ">=12.1.1" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0" },
     { name = "pydantic-settings", specifier = ">=2.10.0" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10.0" },
     { name = "pyopenssl", specifier = ">=26.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.3.0" },
@@ -2022,6 +2027,13 @@ requires-dist = [
     { name = "webauthn", specifier = ">=2.7.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pyjwt", specifier = ">=2.12.0" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+]
 
 [[package]]
 name = "mmh3"

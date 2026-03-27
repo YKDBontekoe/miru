@@ -16,7 +16,6 @@ dependencies = [
     "pydantic-settings>=2.10.0",
     "python-dotenv>=1.0.1",
     "webauthn>=2.7.0",
-    "pyjwt[crypto]>=2.10.0",
     "sentry-sdk[fastapi]>=2.1.0",
     "instructor>=1.7.0",
     "authlib>=1.3.0",
@@ -54,6 +53,13 @@ packages = ["app"]
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pyjwt>=2.12.0",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]
 
 
 [tool.ruff]
