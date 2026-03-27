@@ -17,8 +17,10 @@ export interface AppTextProps extends TextProps {
  * color scheme (light/dark mode) and Miru design tokens.
  *
  * @param props.children - The text content to display.
- * @param props.variant - The typography variant from the theme (e.g., 'body', 'h1', 'label'). Defaults to 'body'.
- * @param props.color - The semantic text color to apply ('primary', 'muted', 'disabled', or 'brand').
+ * @param props.variant - The typography variant from the theme (e.g., 'body', 'h1', 'label').
+ *                        Defaults to 'body'.
+ * @param props.color - The semantic text color to apply ('primary', 'muted', 'disabled',
+ *                      or 'brand').
  * @param props.className - Optional NativeWind class string for additional styling.
  * @param props.style - Optional React Native Text style overrides.
  */

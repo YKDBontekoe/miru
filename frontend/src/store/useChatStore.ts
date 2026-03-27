@@ -43,8 +43,8 @@ let _hubUnsub: (() => void) | null = null;
  * Zustand store for managing global chat state.
  *
  * Handles HTTP requests for loading rooms/messages, and orchestrates the
- * SignalR-compatible WebSocket hub for real-time messaging, typing indicators,
- * and agent activity updates.
+ * SignalR-compatible WebSocket hub for real-time messaging,
+ * typing indicators, and agent activity updates.
  *
  * State includes:
  * - `rooms`: List of chat rooms.

@@ -78,7 +78,8 @@ function TappableCard({
  *
  * @param props.children - The content to render inside the card.
  * @param props.className - Optional NativeWind class string for additional styling.
- * @param props.onTap - Optional callback when the card is pressed. Makes the card animatable.
+ * @param props.onTap - Optional callback when the card is pressed.
+ *                      Makes the card animatable.
  * @param props.showBorder - Whether to render a 1px border around the card (default: true).
  * @param props.style - Optional Reanimated or standard style object.
  * @param props.elevation - The elevation preset from the theme to apply (default: 'sm').

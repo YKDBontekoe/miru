@@ -102,7 +102,8 @@ interface AgentActivityIndicatorProps {
  * displays a label and optional detail string indicating what the agent
  * is currently doing (e.g. "thinking", "working").
  *
- * @param props.activity - The current activity state of the agent, containing status, agent names, and optional detail.
+ * @param props.activity - The current activity state of the agent, containing status,
+ *                         agent names, and optional detail.
  */
 export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps) {
   const color = activityColor(activity.activity);
