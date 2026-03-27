@@ -50,7 +50,7 @@ async def handle_db_errors(action: str) -> AsyncGenerator[None, None]:
         raise HTTPException(
             status_code=500, detail=f"Database error occurred while {action_ing}"
         ) from e
-    except Exception as e:
+    except Exception:
         method_name = action.replace(" ", "_")
         logger.exception(f"Unexpected error in {method_name}")
-        raise HTTPException(status_code=500, detail=f"Failed to {action}") from e
+        raise HTTPException(status_code=500, detail="Internal server error") from None

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import logging
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Memory"])
 
 
@@ -162,8 +164,9 @@ async def upload_document(
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process document: {e}") from e
+    except Exception:
+        logger.exception("Failed to process document")
+        raise HTTPException(status_code=500, detail="Failed to process document") from None
 
 
 @router.delete(

@@ -568,7 +568,7 @@ async def test_handle_db_errors_unexpected() -> None:
         async with handle_db_errors("update test"):
             raise KeyError("mock key error")
     assert exc_info.value.status_code == 500  # type: ignore[unreachable]
-    assert "Failed to update test" in exc_info.value.detail
+    assert "Internal server error" in exc_info.value.detail
 
 
 @pytest.mark.asyncio
