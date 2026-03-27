@@ -56,7 +56,7 @@ const TappableCard = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={[cardStyle, animatedStyle]}
+      style={[cardStyle, animatedStyle] as StyleProp<AnimatedStyle<ViewStyle>>}
       {...props}
     >
       {children}
