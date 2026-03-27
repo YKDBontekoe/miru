@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -154,10 +155,60 @@ function CreateRoomModal({
   const { createRoom, addAgentToRoom } = useChatStore();
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
-  const toggleAgent = (id: string) =>
-    setSelectedAgentIds((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
-    );
+  const toggleAgent = React.useCallback(
+    (id: string) =>
+      setSelectedAgentIds((prev) =>
+        prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+      ),
+    []
+  );
+
+  const renderAgentItem = React.useCallback(
+    ({ item: agent }: { item: Agent }) => {
+      const color = getAgentColor(agent.name);
+      const selected = selectedAgentIds.includes(agent.id);
+      return (
+        <TouchableOpacity
+          onPress={() => toggleAgent(agent.id)}
+          activeOpacity={0.8}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: selected ? `${color}10` : C.surfaceHigh,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 8,
+            borderWidth: 1,
+            borderColor: selected ? `${color}40` : C.border,
+          }}
+        >
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: `${color}18`,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginEnd: 12,
+            }}
+          >
+            <AppText style={{ color, fontWeight: '700' }}>{agent.name[0].toUpperCase()}</AppText>
+          </View>
+          <View style={{ flex: 1 }}>
+            <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
+              {agent.name}
+            </AppText>
+            <AppText variant="caption" style={{ color: C.muted }} numberOfLines={1}>
+              {agent.personality}
+            </AppText>
+          </View>
+          {selected && <Ionicons name="checkmark-circle" size={20} color={color} />}
+        </TouchableOpacity>
+      );
+    },
+    [selectedAgentIds, toggleAgent]
+  );
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -255,54 +306,13 @@ function CreateRoomModal({
               >
                 Add Agents
               </AppText>
-              <ScrollView style={{ maxHeight: 180 }} showsVerticalScrollIndicator={false}>
-                {agents.map((agent) => {
-                  const color = getAgentColor(agent.name);
-                  const selected = selectedAgentIds.includes(agent.id);
-                  return (
-                    <TouchableOpacity
-                      key={agent.id}
-                      onPress={() => toggleAgent(agent.id)}
-                      activeOpacity={0.8}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: selected ? `${color}10` : C.surfaceHigh,
-                        borderRadius: 12,
-                        padding: 12,
-                        marginBottom: 8,
-                        borderWidth: 1,
-                        borderColor: selected ? `${color}40` : C.border,
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 18,
-                          backgroundColor: `${color}18`,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginEnd: 12,
-                        }}
-                      >
-                        <AppText style={{ color, fontWeight: '700' }}>
-                          {agent.name[0].toUpperCase()}
-                        </AppText>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
-                          {agent.name}
-                        </AppText>
-                        <AppText variant="caption" style={{ color: C.muted }} numberOfLines={1}>
-                          {agent.personality}
-                        </AppText>
-                      </View>
-                      {selected && <Ionicons name="checkmark-circle" size={20} color={color} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+              <FlatList
+                data={agents}
+                keyExtractor={(item) => item.id}
+                renderItem={renderAgentItem}
+                showsVerticalScrollIndicator={false}
+                style={{ maxHeight: 180 }}
+              />
             </>
           )}
 
@@ -344,6 +354,24 @@ export default function ChatListScreen() {
     fetchAgents();
   }, [fetchRooms, fetchAgents]);
 
+  const renderRoomItem = React.useCallback(
+    ({ item: room }: { item: ChatRoom }) => (
+      <RoomCard
+        room={room}
+        agents={roomAgents[room.id] ?? []}
+        onPress={() => router.push(`/(main)/chat/${room.id}`)}
+      />
+    ),
+    [roomAgents, router]
+  );
+
+  const renderHeaderAgentPill = React.useCallback(
+    ({ item }: { item: Agent }) => (
+      <AgentPill agent={item} onPress={() => router.push('/(main)/agents')} />
+    ),
+    [router]
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
@@ -375,8 +403,12 @@ export default function ChatListScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <FlatList
+        data={rooms}
+        keyExtractor={(item) => item.id}
+        renderItem={renderRoomItem}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 20 }}
         refreshControl={
           <RefreshControl
             refreshing={isLoadingRooms}
@@ -387,63 +419,57 @@ export default function ChatListScreen() {
             tintColor={C.primary}
           />
         }
-        contentContainerStyle={{ paddingBottom: 24 }}
-      >
-        {/* Agents row */}
-        {agents.length > 0 && (
-          <View style={{ marginBottom: 8 }}>
+        ListHeaderComponent={
+          <>
+            {/* Agents row */}
+            {agents.length > 0 && (
+              <View style={{ marginBottom: 8, marginHorizontal: -20 }}>
+                <AppText
+                  variant="caption"
+                  style={{
+                    textTransform: 'uppercase',
+                    letterSpacing: 1.2,
+                    fontSize: 11,
+                    fontWeight: '700',
+                    color: C.muted,
+                    paddingHorizontal: 20,
+                    marginBottom: 14,
+                  }}
+                >
+                  {t('chat.personas', 'Personas')}
+                </AppText>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4 }}
+                  data={agents}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderHeaderAgentPill}
+                />
+              </View>
+            )}
+
+            {agents.length > 0 && (
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: C.borderLight,
+                  marginBottom: 20,
+                }}
+              />
+            )}
+
             <AppText
               variant="caption"
-              style={{
-                textTransform: 'uppercase',
-                letterSpacing: 1.2,
-                fontSize: 11,
-                fontWeight: '700',
-                color: C.muted,
-                paddingHorizontal: 20,
-                marginBottom: 14,
-              }}
+              color="muted"
+              className="uppercase tracking-widest font-bold mb-3.5"
             >
-              {t('chat.personas', 'Personas')}
+              {t('chat.chats', 'Chats')}
             </AppText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4 }}
-            >
-              {agents.map((agent) => (
-                <AgentPill
-                  key={agent.id}
-                  agent={agent}
-                  onPress={() => router.push('/(main)/agents')}
-                />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {agents.length > 0 && (
-          <View
-            style={{
-              height: 1,
-              backgroundColor: C.borderLight,
-              marginHorizontal: 20,
-              marginBottom: 20,
-            }}
-          />
-        )}
-
-        {/* Chats */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <AppText
-            variant="caption"
-            color="muted"
-            className="uppercase tracking-widest font-bold mb-3.5"
-          >
-            {t('chat.chats', 'Chats')}
-          </AppText>
-
-          {rooms.length === 0 && !isLoadingRooms ? (
+          </>
+        }
+        ListEmptyComponent={
+          !isLoadingRooms ? (
             <View style={{ alignItems: 'center', paddingVertical: 48 }}>
               <View
                 style={{
@@ -493,18 +519,9 @@ export default function ChatListScreen() {
                 </AppText>
               </TouchableOpacity>
             </View>
-          ) : (
-            rooms.map((room) => (
-              <RoomCard
-                key={room.id}
-                room={room}
-                agents={roomAgents[room.id] ?? []}
-                onPress={() => router.push(`/(main)/chat/${room.id}`)}
-              />
-            ))
-          )}
-        </View>
-      </ScrollView>
+          ) : null
+        }
+      />
 
       <CreateRoomModal
         visible={showCreateModal}

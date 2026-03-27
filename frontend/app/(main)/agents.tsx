@@ -208,6 +208,19 @@ export default function AgentsScreen() {
     [pinnedIds, showQuickActions]
   );
 
+  const renderPinnedAgentItem = useCallback(
+    ({ item: agent }: { item: Agent }) => (
+      <PinnedChip
+        agent={agent}
+        onPress={() => {
+          haptic.light();
+          setSelectedAgent(agent);
+        }}
+      />
+    ),
+    [setSelectedAgent]
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       {/* ── Header ── */}
@@ -368,22 +381,14 @@ export default function AgentsScreen() {
               Pinned
             </AppText>
           </View>
-          <ScrollView
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20 }}
-          >
-            {pinnedAgents.map((agent) => (
-              <PinnedChip
-                key={agent.id}
-                agent={agent}
-                onPress={() => {
-                  haptic.light();
-                  setSelectedAgent(agent);
-                }}
-              />
-            ))}
-          </ScrollView>
+            data={pinnedAgents}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPinnedAgentItem}
+          />
           <View
             style={{ height: 1, backgroundColor: C.border, marginHorizontal: 20, marginTop: 14 }}
           />

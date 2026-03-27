@@ -151,4 +151,4 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, o
       </ScalePressable>
     </Animated.View>
   );
-}
+};
