@@ -8,8 +8,10 @@ export default [
       "dist/**",
       "node_modules/**",
       "coverage/**",
-      "**/*.test.tsx",
-      "**/*.test.ts"
+      ".expo/**",
+      "web-build/**",
+      "android/**",
+      "ios/**"
     ],
   },
   {
@@ -17,16 +19,40 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.node,
-        ...globals.jest,
       }
     },
     rules: {
       "react/no-unescaped-entities": "off",
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "off",
       "import/no-named-as-default-member": "off",
       "import/no-duplicates": "off"
+    }
+  },
+  {
+    files: ["src/core/models.ts"],
+    rules: {
+      "no-unused-vars": "off"
+    }
+  },
+  {
+    files: ["src/utils/haptics.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off"
+    }
+  },
+  {
+    files: ["**/*.test.{js,jsx,ts,tsx}", "**/__tests__/**", "jest.setup.js"],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      }
+    }
+  },
+  {
+    files: ["**/*.config.{js,mjs,cjs}", "babel.config.js", "jest.config.js", "metro.config.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      }
     }
   }
 ];
