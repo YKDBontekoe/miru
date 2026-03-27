@@ -96,10 +96,12 @@ jobs:
             //   <details>\n<summary>🤖 Prompt …</summary>\n\n```\n<content>\n```\n</details>
             // The closing fence may have trailing whitespace or be immediately followed
             // by a newline + </details>, so we stop at any line that is *only* backticks.
+            const hasPromptSection = /prompt for all review comments[\s\S]*ai agents/i.test(sourceBody);
+            if (!hasPromptSection) return;
+
             const promptRegexes = [
-              /<summary>[^<]*prompt[^<]*ai agents[^<]*<\/summary>[\s\S]*?```(?:[\w-]*)\s*([\s\S]*?)\s*```/i,
-              /prompt for all review comments[\s\S]*?```(?:[\w-]*)\s*([\s\S]*?)\s*```/i,
-              /```(?:[\w-]*)\s*([\s\S]*?)\s*```/i,
+              /<summary>[^<]*prompt for all review comments[^<]*ai agents[^<]*<\/summary>[\s\S]*?```(?:[\w-]*)\s*([\s\S]*?)\s*```/i,
+              /\*\*Actionable comments posted:\s*\d+\*\*[\s\S]*?prompt for all review comments[\s\S]*?```(?:[\w-]*)\s*([\s\S]*?)\s*```/i,
             ];
 
             const match = promptRegexes
