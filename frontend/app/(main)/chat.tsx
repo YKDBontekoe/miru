@@ -155,10 +155,13 @@ function CreateRoomModal({
   const { createRoom, addAgentToRoom } = useChatStore();
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
-  const toggleAgent = React.useCallback((id: string) =>
-    setSelectedAgentIds((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
-    ), []);
+  const toggleAgent = React.useCallback(
+    (id: string) =>
+      setSelectedAgentIds((prev) =>
+        prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
+      ),
+    []
+  );
 
   const renderAgentItem = React.useCallback(
     ({ item: agent }: { item: Agent }) => {
@@ -190,9 +193,7 @@ function CreateRoomModal({
               marginEnd: 12,
             }}
           >
-            <AppText style={{ color, fontWeight: '700' }}>
-              {agent.name[0].toUpperCase()}
-            </AppText>
+            <AppText style={{ color, fontWeight: '700' }}>{agent.name[0].toUpperCase()}</AppText>
           </View>
           <View style={{ flex: 1 }}>
             <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
@@ -366,10 +367,7 @@ export default function ChatListScreen() {
 
   const renderHeaderAgentPill = React.useCallback(
     ({ item }: { item: Agent }) => (
-      <AgentPill
-        agent={item}
-        onPress={() => router.push('/(main)/agents')}
-      />
+      <AgentPill agent={item} onPress={() => router.push('/(main)/agents')} />
     ),
     [router]
   );
