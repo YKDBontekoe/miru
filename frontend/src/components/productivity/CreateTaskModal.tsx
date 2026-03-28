@@ -6,17 +6,17 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  Pressable,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
+import { ScalePressable } from '../ScalePressable';
 import { useProductivityStore } from '../../store/useProductivityStore';
 import { theme } from '../../core/theme';
+import { useTheme } from '../../hooks/useTheme';
 
-const T = theme.colors;
 const S = theme.spacing;
 const R = theme.borderRadius;
 
@@ -29,6 +29,8 @@ interface Props {
 export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
   const { t } = useTranslation();
   const { createTask } = useProductivityStore();
+  const { C } = useTheme();
+
   const [title, setTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -56,6 +58,69 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
     }
   };
 
+  const styles = React.useMemo(() => StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: C.backdrop,
+    },
+    modalContent: {
+      backgroundColor: C.surface,
+      borderTopLeftRadius: R.xxl,
+      borderTopRightRadius: R.xxl,
+      padding: S.xxl,
+      paddingBottom: Platform.OS === 'ios' ? 40 : S.xxl,
+      ...theme.elevation.lg,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: S.xl,
+    },
+    modalTitle: {
+      color: C.text,
+    },
+    closeButton: {
+      padding: S.xs,
+    },
+    inputLabel: {
+      color: C.muted,
+      marginBottom: S.sm,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      fontWeight: '600',
+    },
+    textInput: {
+      backgroundColor: C.surfaceHigh,
+      borderRadius: R.lg,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: S.lg,
+      paddingVertical: S.md,
+      color: C.text,
+      fontSize: 16,
+      marginBottom: S.xl,
+    },
+    primaryButton: {
+      backgroundColor: C.primary,
+      borderRadius: R.xl,
+      paddingVertical: S.lg,
+      alignItems: 'center',
+      marginTop: S.sm,
+      ...theme.elevation.md,
+    },
+    primaryButtonDisabled: {
+      backgroundColor: C.primarySurface,
+      ...theme.elevation.none,
+    },
+    primaryButtonText: {
+      color: theme.colors.white,
+      fontWeight: '700',
+      fontSize: 16,
+    },
+  }), [C]);
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView
@@ -67,13 +132,9 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
             <AppText variant="h2" style={styles.modalTitle}>
               {t('productivity.new_task') || 'New Task'}
             </AppText>
-            <Pressable
-              onPress={handleClose}
-              style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]}
-              hitSlop={8}
-            >
-              <Ionicons name="close-circle" size={26} color={T.onSurface.mutedLight} />
-            </Pressable>
+            <ScalePressable onPress={handleClose} hitSlop={8} style={styles.closeButton}>
+              <Ionicons name="close-circle" size={26} color={C.muted} />
+            </ScalePressable>
           </View>
 
           <AppText variant="caption" style={styles.inputLabel}>
@@ -83,93 +144,26 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
             value={title}
             onChangeText={setTitle}
             placeholder={t('productivity.task_content_placeholder')}
-            placeholderTextColor={T.onSurface.disabledLight}
+            placeholderTextColor={C.faint}
             style={styles.textInput}
             autoFocus
           />
 
-          <Pressable
+          <ScalePressable
             onPress={handleSave}
             disabled={isSaving}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              isSaving && styles.primaryButtonDisabled,
-              pressed && { transform: [{ scale: 0.98 }] },
-            ]}
+            style={[styles.primaryButton, isSaving && styles.primaryButtonDisabled]}
           >
             {isSaving ? (
-              <ActivityIndicator color={T.white} />
+              <ActivityIndicator color={theme.colors.white} />
             ) : (
               <AppText style={styles.primaryButtonText}>
                 {t('productivity.add_task') || 'Add Task'}
               </AppText>
             )}
-          </Pressable>
+          </ScalePressable>
         </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(18, 18, 26, 0.4)',
-  },
-  modalContent: {
-    backgroundColor: T.surface.light,
-    borderTopLeftRadius: R.xxl,
-    borderTopRightRadius: R.xxl,
-    padding: S.xxl,
-    paddingBottom: Platform.OS === 'ios' ? 40 : S.xxl,
-    ...theme.elevation.lg,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: S.xl,
-  },
-  modalTitle: {
-    color: T.onSurface.light,
-  },
-  closeButton: {
-    padding: S.xs,
-  },
-  inputLabel: {
-    color: T.onSurface.mutedLight,
-    marginBottom: S.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    fontWeight: '600',
-  },
-  textInput: {
-    backgroundColor: T.surface.highLight,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    paddingHorizontal: S.lg,
-    paddingVertical: S.md,
-    color: T.onSurface.light,
-    fontSize: 16,
-    marginBottom: S.xl,
-  },
-  primaryButton: {
-    backgroundColor: T.primary.DEFAULT,
-    borderRadius: R.xl,
-    paddingVertical: S.lg,
-    alignItems: 'center',
-    marginTop: S.sm,
-    ...theme.elevation.md,
-  },
-  primaryButtonDisabled: {
-    backgroundColor: T.primary.light,
-    ...theme.elevation.none,
-  },
-  primaryButtonText: {
-    color: T.white,
-    fontWeight: '700',
-    fontSize: 16,
-  },
-});

@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Pressable, Platform } from 'react-native';
+import { View, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
+import { ScalePressable } from '../ScalePressable';
 import { Note } from '../../core/models';
 import { theme } from '../../core/theme';
-
-const T = theme.colors;
+import { useTheme } from '../../hooks/useTheme';
 
 interface Props {
   note: Note;
@@ -15,51 +15,82 @@ interface Props {
 
 export const NoteCard = React.memo(({ note, onDelete }: Props) => {
   const { i18n } = useTranslation();
+  const { C } = useTheme();
+
   const date = new Intl.DateTimeFormat(i18n.language, {
     month: 'short',
     day: 'numeric',
   }).format(new Date(note.created_at));
 
-  // Dynamic style for cross-platform elevation handling
-  const dynamicCardStyle = Platform.select({
-    ios: theme.elevation.sm as any,
-    android: { elevation: 1 },
-    default: { elevation: 1 },
-  });
+  const styles = React.useMemo(() => StyleSheet.create({
+    card: {
+      backgroundColor: C.surface,
+      borderRadius: theme.borderRadius.xl,
+      padding: theme.spacing.lg,
+      marginBottom: theme.spacing.md,
+      borderWidth: 1,
+      borderColor: C.border,
+      ...Platform.select({
+        ios: theme.elevation.sm as any,
+        android: { elevation: 1 },
+        default: { elevation: 1 },
+      }),
+    },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: theme.spacing.xs,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: C.text,
+      flex: 1,
+      marginRight: theme.spacing.sm,
+    },
+    deleteIconWrapper: {
+      padding: theme.spacing.xs,
+    },
+    content: {
+      color: C.muted,
+      marginTop: theme.spacing.xs,
+      lineHeight: 20,
+      marginBottom: theme.spacing.md,
+    },
+    footerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: theme.spacing.xs,
+    },
+    dateText: {
+      color: C.faint,
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    timeIcon: {
+      marginRight: 4,
+    },
+  }), [C]);
 
   return (
-    <View
-      className="bg-surface-light rounded-xl p-lg mb-md border border-border-light"
-      style={dynamicCardStyle}
-    >
-      <View className="flex-row justify-between items-start mb-xs">
-        <AppText
-          className="text-base font-bold text-onSurface-light flex-1 mr-sm"
-          numberOfLines={1}
-        >
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
+        <AppText style={styles.title} numberOfLines={1}>
           {note.title}
         </AppText>
-        <Pressable onPress={onDelete} hitSlop={8} className="p-xs active:opacity-50">
-          <Ionicons name="trash-outline" size={18} color={T.onSurface.mutedLight} />
-        </Pressable>
+        <ScalePressable onPress={onDelete} hitSlop={8} style={styles.deleteIconWrapper}>
+          <Ionicons name="trash-outline" size={18} color={C.muted} />
+        </ScalePressable>
       </View>
       {note.content ? (
-        <AppText
-          variant="bodySm"
-          className="text-onSurface-mutedLight mt-xs leading-5 mb-md"
-          numberOfLines={3}
-        >
+        <AppText variant="bodySm" style={styles.content} numberOfLines={3}>
           {note.content}
         </AppText>
       ) : null}
-      <View className="flex-row items-center mt-xs">
-        <Ionicons
-          name="time-outline"
-          size={12}
-          color={T.onSurface.disabledLight}
-          style={{ marginRight: 4 }}
-        />
-        <AppText variant="caption" className="text-onSurface-disabledLight text-[11px] font-medium">
+      <View style={styles.footerRow}>
+        <Ionicons name="time-outline" size={12} color={C.faint} style={styles.timeIcon} />
+        <AppText variant="caption" style={styles.dateText}>
           {date}
         </AppText>
       </View>
