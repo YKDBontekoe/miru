@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import typing
 
 import nest_asyncio
@@ -23,8 +24,12 @@ def _run_async_in_sync(coro: typing.Coroutine[typing.Any, typing.Any, str]) -> s
         asyncio.get_running_loop()
         nest_asyncio.apply()
     except RuntimeError:
+        # No running event loop expected when called synchronously
         pass
     return asyncio.run(coro)
+
+
+logger = logging.getLogger(__name__)
 
 
 class SpotifyCurrentlyPlayingTool(BaseTool):
@@ -94,7 +99,9 @@ class SpotifySearchTool(BaseTool):
         "Requires a query string and a valid Spotify access token."
     )
 
-    query: str = Field(..., description="The search query (e.g., 'artist:muse track:madness').")
+    query: str = Field(
+        default="", description="The search query (e.g., 'artist:muse track:madness')."
+    )
     access_token: str = Field(..., description="The Spotify OAuth access token.")
     item_type: str = Field(
         default="track",
@@ -111,6 +118,8 @@ class SpotifySearchTool(BaseTool):
         Returns:
             str: JSON formatted response or error message.
         """
+        if not self.query:
+            return "Error: query is required."
         try:
             results = await search_spotify(self.access_token, self.query, self.item_type)
             if not results:

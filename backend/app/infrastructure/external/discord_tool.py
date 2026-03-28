@@ -26,7 +26,7 @@ class DiscordGetServerInfoTool(BaseTool):
     )
 
     bot_token: str = Field(..., description="The Discord Bot token.")
-    guild_id: str = Field(..., description="The ID of the Discord server (guild).")
+    guild_id: str = Field(default="", description="The ID of the Discord server (guild).")
 
     def _run(self) -> str:
         """Run the tool synchronously."""
@@ -34,11 +34,14 @@ class DiscordGetServerInfoTool(BaseTool):
             asyncio.get_running_loop()
             nest_asyncio.apply()
         except RuntimeError:
+            # No running event loop expected when called synchronously
             pass
         return asyncio.run(self._arun())
 
     async def _arun(self) -> str:
         """Async implementation of the tool."""
+        if not self.guild_id:
+            return "Error: guild_id is required."
         try:
             info = await get_server_info(self.bot_token, self.guild_id)
             if not info:
@@ -59,8 +62,8 @@ class DiscordSendMessageTool(BaseTool):
     )
 
     bot_token: str = Field(..., description="The Discord Bot token.")
-    channel_id: str = Field(..., description="The ID of the Discord channel.")
-    content: str = Field(..., description="The text content of the message.")
+    channel_id: str = Field(default="", description="The ID of the Discord channel.")
+    content: str = Field(default="", description="The text content of the message.")
 
     def _run(self) -> str:
         """Run the tool synchronously."""
@@ -68,6 +71,7 @@ class DiscordSendMessageTool(BaseTool):
             asyncio.get_running_loop()
             nest_asyncio.apply()
         except RuntimeError:
+            # No running event loop expected when called synchronously
             pass
         return asyncio.run(self._arun())
 
@@ -77,6 +81,8 @@ class DiscordSendMessageTool(BaseTool):
         Returns:
             str: JSON formatted response or error message.
         """
+        if not self.channel_id or not self.content:
+            return "Error: channel_id and content are required."
         try:
             success = await send_message(self.bot_token, self.channel_id, self.content)
             if not success:

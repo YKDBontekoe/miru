@@ -224,9 +224,7 @@ class CrewOrchestrator:
                             SpotifyRecentlyPlayedTool(access_token=access_token),
                         ]
                     )
-                    query = ai.config.get("query")
-                    if query:
-                        tools.append(SpotifySearchTool(access_token=access_token, query=query))
+                    tools.append(SpotifySearchTool(access_token=access_token))
             elif ai.integration_id == "discord":
                 bot_token = ai.config.get("bot_token")
                 if bot_token:
