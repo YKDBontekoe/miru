@@ -314,3 +314,9 @@ class AgentGenerationResponse(BaseModel):
         description="List of integration IDs (e.g., discord, slack) the agent could use.",
     )
     goals: list[str]
+
+
+class MoodResponse(BaseModel):
+    """Structured output for mood classification."""
+
+    mood: str

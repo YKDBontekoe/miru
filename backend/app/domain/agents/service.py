@@ -15,8 +15,9 @@ from app.domain.agents.models import (
     AgentUpdate,
     Capability,
     Integration,
+    MoodResponse,
 )
-from app.infrastructure.external.openrouter import chat_completion, structured_completion
+from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -271,20 +272,21 @@ class AgentService:
             return
         mood_list = ", ".join(self._VALID_MOODS)
         try:
-            mood = await chat_completion(
+            response = await structured_completion(
                 messages=[
                     {
                         "role": "system",
                         "content": (
                             f"You are a mood classifier. Given a conversation excerpt, "
                             f"pick the single most fitting mood for the AI agent from this list: "
-                            f"{mood_list}. Reply with ONLY the mood word, nothing else."
+                            f"{mood_list}."
                         ),
                     },
                     {"role": "user", "content": recent_history},
-                ]
+                ],
+                response_model=MoodResponse,
             )
-            mood = mood.strip().capitalize()
+            mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
         except Exception:
