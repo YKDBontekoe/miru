@@ -177,7 +177,7 @@ SEED_SQL: list[str] = [
         '\'["Suggest recipes based on available ingredients", '
         '"Provide cooking techniques and tips", '
         '"Help plan meals and menus"]\'::jsonb) '
-        "ON CONFLICT DO NOTHING;"
+        "ON CONFLICT (id) DO NOTHING;"
     ),
 ]
 
