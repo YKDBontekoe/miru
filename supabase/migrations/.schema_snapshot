@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS "agents" (
     "mood" VARCHAR(50) NOT NULL DEFAULT 'Neutral',
     "goals" JSONB NOT NULL,
     "message_count" INT NOT NULL DEFAULT 0,
+    "personality_history" JSONB NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ
@@ -238,6 +239,9 @@ CREATE TABLE IF NOT EXISTS "calendar_events" (
     "end_time" TIMESTAMPTZ NOT NULL,
     "is_all_day" BOOL NOT NULL DEFAULT False,
     "location" VARCHAR(255),
+    "recurrence_rule" VARCHAR(50),
+    "recurrence_end_date" TIMESTAMPTZ,
+    "linked_task_id" UUID,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ,
@@ -272,6 +276,9 @@ CREATE TABLE IF NOT EXISTS "tasks" (
     "description" TEXT,
     "is_completed" BOOL NOT NULL DEFAULT False,
     "due_date" TIMESTAMPTZ,
+    "recurrence_rule" VARCHAR(50),
+    "recurrence_end_date" TIMESTAMPTZ,
+    "calendar_event_id" UUID,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ

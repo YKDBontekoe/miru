@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from tortoise import fields
 
@@ -177,6 +177,13 @@ class AgentActionLog(SupabaseModel):
     content = fields.TextField()
     meta = fields.JSONField(default={})
     created_at = fields.DatetimeField(auto_now_add=True)
+
+    # Tortoise ORM generates these FK id attributes at runtime; declared here for type checkers.
+    if TYPE_CHECKING:
+        from uuid import UUID as _UUID
+
+        agent_id: _UUID
+        room_id: _UUID | None
 
     class Meta:
         table = "agent_action_logs"

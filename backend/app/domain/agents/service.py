@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
+    from app.domain.notifications.services import NotificationService
     from app.infrastructure.repositories.agent_repo import AgentRepository
 
 logger = logging.getLogger(__name__)
@@ -289,7 +290,7 @@ class AgentService:
     async def check_proactive_nudges(
         self,
         user_id: UUID,
-        notification_service: object | None = None,
+        notification_service: NotificationService | None = None,
     ) -> NudgeCheckResponse:
         """Scan for patterns that warrant a push notification and fire them.
 
@@ -320,7 +321,7 @@ class AgentService:
                 )
                 if notification_service is not None:
                     try:
-                        await notification_service.notify_user(  # type: ignore[union-attr,attr-defined]
+                        await notification_service.notify_user(
                             str(user_id), msg, title=f"Say hi to {agent.name}!"
                         )
                         nudges_sent += 1

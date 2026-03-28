@@ -253,8 +253,8 @@ async def get_room_agent_logs(
     return [
         {
             "id": str(log.id),
-            "agent_id": str(log.agent_id),  # type: ignore[attr-defined]
-            "room_id": str(log.room_id),  # type: ignore[attr-defined]
+            "agent_id": str(log.agent_id),
+            "room_id": str(log.room_id),
             "action_type": log.action_type,
             "content": log.content,
             "meta": log.meta,
