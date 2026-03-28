@@ -24,7 +24,9 @@ async def test_update_mood_success():
     service = AgentService(repo)
     agent_id = str(uuid.uuid4())
 
-    with patch("app.domain.agents.service.structured_completion") as mock_completion:
+    with patch(
+        "app.domain.agents.service.structured_completion", new_callable=AsyncMock
+    ) as mock_completion:
         mock_completion.return_value = MoodResponse(mood="Happy")
 
         await service.update_mood(agent_id, "User said something nice")
@@ -39,7 +41,9 @@ async def test_update_mood_invalid_mood():
     service = AgentService(repo)
     agent_id = str(uuid.uuid4())
 
-    with patch("app.domain.agents.service.structured_completion") as mock_completion:
+    with patch(
+        "app.domain.agents.service.structured_completion", new_callable=AsyncMock
+    ) as mock_completion:
         mock_completion.return_value = MoodResponse(mood="UnknownMood")
 
         await service.update_mood(agent_id, "User said something weird")
@@ -55,7 +59,8 @@ async def test_update_mood_exception():
     agent_id = str(uuid.uuid4())
 
     with patch(
-        "app.domain.agents.service.structured_completion", side_effect=Exception("API Error")
-    ):
+        "app.domain.agents.service.structured_completion", new_callable=AsyncMock
+    ) as mock_completion:
+        mock_completion.side_effect = Exception("API Error")
         await service.update_mood(agent_id, "User said something")
         repo.update_mood.assert_not_called()
