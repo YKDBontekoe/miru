@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { View, TouchableOpacity, Modal, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeInDown } from 'react-native-reanimated';
 import { AppText } from '../AppText';
@@ -28,147 +28,6 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
       fetchTemplates().catch(() => setHasError(true));
     }
   }, [visible, templates.length, fetchTemplates]);
-
-  const skeletonData = useMemo(() => [0, 1, 2], []);
-
-  const renderTemplateItem = React.useCallback(
-    ({ item: template, index: i }: { item: AgentTemplate; index: number }) => {
-      const color = getAgentColor(template.name);
-      return (
-        <Animated.View
-          entering={FadeInDown.delay(i * 60)
-            .springify()
-            .damping(20)}
-        >
-          <ScalePressable
-            onPress={() => {
-              haptic.light();
-              onSelect(template);
-              onClose();
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: C.surfaceHigh,
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 10,
-                borderWidth: 1,
-                borderColor: C.border,
-                borderLeftWidth: 3,
-                borderLeftColor: color,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <AgentAvatar name={template.name} size={42} color={color} />
-                <View style={{ flex: 1, marginStart: 12 }}>
-                  <AppText style={{ fontSize: 15, fontWeight: '700', color: C.text }}>
-                    {template.name}
-                  </AppText>
-                  <AppText style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
-                    {template.description}
-                  </AppText>
-                </View>
-                <View
-                  style={{
-                    backgroundColor: `${color}18`,
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                  }}
-                >
-                  <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>Use</AppText>
-                </View>
-              </View>
-              {template.goals.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                  {template.goals.slice(0, 3).map((g, gi) => (
-                    <View
-                      key={gi}
-                      style={{
-                        backgroundColor: `${color}12`,
-                        borderRadius: 10,
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                      }}
-                    >
-                      <AppText style={{ color, fontSize: 11 }}>{g}</AppText>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          </ScalePressable>
-        </Animated.View>
-      );
-    },
-    [onSelect, onClose, C.surfaceHigh, C.border, C.text, C.muted]
-  );
-
-  const renderContent = () => {
-    if (hasError) {
-      return (
-        <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-          <AppText style={{ fontSize: 40, marginBottom: 12 }}>⚠️</AppText>
-          <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
-            Failed to load templates
-          </AppText>
-          <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14, marginBottom: 16 }}>
-            Check your connection and try again.
-          </AppText>
-          <TouchableOpacity
-            onPress={() => {
-              setHasError(false);
-              fetchTemplates().catch(() => setHasError(true));
-            }}
-            style={{
-              backgroundColor: C.primary,
-              borderRadius: 10,
-              paddingHorizontal: 20,
-              paddingVertical: 9,
-            }}
-          >
-            <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>Retry</AppText>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (isLoadingTemplates) {
-      return (
-        <FlatList
-          data={skeletonData}
-          keyExtractor={(item) => item.toString()}
-          scrollEnabled={false}
-          renderItem={({ item }) => <SkeletonAgentCard index={item} />}
-        />
-      );
-    }
-
-    if (templates.length === 0) {
-      return (
-        <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-          <AppText style={{ fontSize: 40, marginBottom: 12 }}>🏗️</AppText>
-          <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
-            Templates coming soon
-          </AppText>
-          <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
-            Pre-built personas will be available here.
-          </AppText>
-        </View>
-      );
-    }
-
-    return (
-      <FlatList
-        data={templates}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
-        renderItem={renderTemplateItem}
-      />
-    );
-  };
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -218,7 +77,132 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
             </TouchableOpacity>
           </View>
 
-          {renderContent()}
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {hasError ? (
+              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+                <AppText style={{ fontSize: 40, marginBottom: 12 }}>⚠️</AppText>
+                <AppText
+                  style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}
+                >
+                  Failed to load templates
+                </AppText>
+                <AppText
+                  style={{ color: C.muted, textAlign: 'center', fontSize: 14, marginBottom: 16 }}
+                >
+                  Check your connection and try again.
+                </AppText>
+                <TouchableOpacity
+                  onPress={() => {
+                    setHasError(false);
+                    fetchTemplates().catch(() => setHasError(true));
+                  }}
+                  style={{
+                    backgroundColor: C.primary,
+                    borderRadius: 10,
+                    paddingHorizontal: 20,
+                    paddingVertical: 9,
+                  }}
+                >
+                  <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>
+                    Retry
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            ) : isLoadingTemplates ? (
+              [0, 1, 2].map((i) => <SkeletonAgentCard key={i} index={i} />)
+            ) : templates.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+                <AppText style={{ fontSize: 40, marginBottom: 12 }}>🏗️</AppText>
+                <AppText
+                  style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}
+                >
+                  Templates coming soon
+                </AppText>
+                <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
+                  Pre-built personas will be available here.
+                </AppText>
+              </View>
+            ) : (
+              templates.map((template, i) => {
+                const color = getAgentColor(template.name);
+                return (
+                  <Animated.View
+                    key={template.id}
+                    entering={FadeInDown.delay(i * 60)
+                      .springify()
+                      .damping(20)}
+                  >
+                    <ScalePressable
+                      onPress={() => {
+                        haptic.light();
+                        onSelect(template);
+                        onClose();
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: C.surfaceHigh,
+                          borderRadius: 16,
+                          padding: 16,
+                          marginBottom: 10,
+                          borderWidth: 1,
+                          borderColor: C.border,
+                          borderLeftWidth: 3,
+                          borderLeftColor: color,
+                        }}
+                      >
+                        <View
+                          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                        >
+                          <AgentAvatar name={template.name} size={42} color={color} />
+                          <View style={{ flex: 1, marginStart: 12 }}>
+                            <AppText style={{ fontSize: 15, fontWeight: '700', color: C.text }}>
+                              {template.name}
+                            </AppText>
+                            <AppText style={{ fontSize: 12, color: C.muted }} numberOfLines={1}>
+                              {template.description}
+                            </AppText>
+                          </View>
+                          <View
+                            style={{
+                              backgroundColor: `${color}18`,
+                              borderRadius: 8,
+                              paddingHorizontal: 8,
+                              paddingVertical: 4,
+                            }}
+                          >
+                            <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
+                              Use
+                            </AppText>
+                          </View>
+                        </View>
+                        {template.goals.length > 0 && (
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                            {template.goals.slice(0, 3).map((g, gi) => (
+                              <View
+                                key={gi}
+                                style={{
+                                  backgroundColor: `${color}12`,
+                                  borderRadius: 10,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 3,
+                                }}
+                              >
+                                <AppText style={{ color, fontSize: 11 }}>{g}</AppText>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    </ScalePressable>
+                  </Animated.View>
+                );
+              })
+            )}
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>

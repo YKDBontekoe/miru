@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  FlatList,
   ScrollView,
   TouchableOpacity,
   Switch,
@@ -138,14 +137,12 @@ function SettingRow({
   );
 }
 
-const MemoryItem = React.memo(function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
+function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
   const { i18n } = useTranslation();
-  const date = React.useMemo(() => {
-    return new Intl.DateTimeFormat(i18n.language, {
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(memory.created_at));
-  }, [i18n.language, memory.created_at]);
+  const date = new Intl.DateTimeFormat(i18n.language, {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(memory.created_at));
   return (
     <View
       style={{
@@ -184,7 +181,7 @@ const MemoryItem = React.memo(function MemoryItem({ memory, onDelete }: { memory
       </TouchableOpacity>
     </View>
   );
-});
+}
 
 // ─── Language picker modal ────────────────────────────────────────────────────
 function LanguagePickerModal({
@@ -281,7 +278,11 @@ export default function SettingsScreen() {
   const currentLangLabel =
     SUPPORTED_LANGUAGES.find((l) => currentLang.startsWith(l.code))?.nativeLabel ?? 'English';
 
-  const loadMemories = React.useCallback(async () => {
+  useEffect(() => {
+    loadMemories();
+  }, []);
+
+  const loadMemories = async () => {
     setIsLoadingMemories(true);
     try {
       const data = await ApiService.getMemories();
@@ -291,13 +292,9 @@ export default function SettingsScreen() {
     } finally {
       setIsLoadingMemories(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    loadMemories();
-  }, [loadMemories]);
-
-  const handleDeleteMemory = React.useCallback((memory: Memory) => {
+  const handleDeleteMemory = (memory: Memory) => {
     Alert.alert(
       t('settings.actions.forget_memory_title'),
       `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
@@ -317,23 +314,7 @@ export default function SettingsScreen() {
         },
       ]
     );
-  }, [t]);
-
-  const renderMemoryItem = React.useCallback(
-    ({ item }: { item: Memory }) => (
-      <MemoryItem memory={item} onDelete={() => handleDeleteMemory(item)} />
-    ),
-    [handleDeleteMemory]
-  );
-
-  const handleSelectLanguage = React.useCallback(
-    (code: string) => {
-      setLanguage(code);
-      i18n.changeLanguage(code);
-      setShowLanguagePicker(false);
-    },
-    [setLanguage]
-  );
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -346,6 +327,11 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleSelectLanguage = (code: string) => {
+    setLanguage(code);
+    i18n.changeLanguage(code);
+    setShowLanguagePicker(false);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -445,22 +431,23 @@ export default function SettingsScreen() {
               </AppText>
             </View>
           ) : (
-            <FlatList
-              data={memories}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              renderItem={renderMemoryItem}
-              ListFooterComponent={
-                <TouchableOpacity
-                  onPress={loadMemories}
-                  style={{ alignItems: 'center', paddingVertical: 8 }}
-                >
-                  <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
-                    {t('settings.actions.refresh')}
-                  </AppText>
-                </TouchableOpacity>
-              }
-            />
+            <>
+              {memories.map((memory) => (
+                <MemoryItem
+                  key={memory.id}
+                  memory={memory}
+                  onDelete={() => handleDeleteMemory(memory)}
+                />
+              ))}
+              <TouchableOpacity
+                onPress={loadMemories}
+                style={{ alignItems: 'center', paddingVertical: 8 }}
+              >
+                <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
+                  {t('settings.actions.refresh')}
+                </AppText>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 

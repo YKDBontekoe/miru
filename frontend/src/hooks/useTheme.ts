@@ -3,7 +3,6 @@ import { useColorScheme } from 'react-native';
 
 export interface ThemeColors {
   bg: string;
-  backdrop: string;
   surface: string;
   surfaceHigh: string;
   surfaceMid: string;
@@ -29,7 +28,6 @@ export function useTheme(): { isDark: boolean; C: ThemeColors } {
       isDark
         ? {
             bg: '#0E0E18',
-            backdrop: 'rgba(0, 0, 0, 0.7)',
             surface: '#1A1A28',
             surfaceHigh: '#242438',
             surfaceMid: '#1F1F32',
@@ -47,7 +45,6 @@ export function useTheme(): { isDark: boolean; C: ThemeColors } {
           }
         : {
             bg: '#F5F5FB',
-            backdrop: 'rgba(0, 0, 0, 0.5)',
             surface: '#FFFFFF',
             surfaceHigh: '#F0F0F7',
             surfaceMid: '#F8F8FC',
