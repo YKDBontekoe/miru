@@ -195,7 +195,11 @@ All routes are under `/api/v1` and require a Supabase JWT Bearer token (except h
 | Prefix | Description |
 |--------|-------------|
 | `GET /health` | Health check |
-| `/api/v1/agents` | Agent CRUD, AI generation, capabilities, integrations |
+| `/api/v1/agents` | Agent CRUD |
+| `/api/v1/agents/capabilities` | List available capabilities |
+| `/api/v1/agents/integrations` | List available integrations |
+| `/api/v1/agents/templates` | List available persona templates |
+| `/api/v1/agents/generate` | Use AI to generate an agent persona |
 | `/api/v1/auth` | Passkey registration and login (WebAuthn) |
 | `/api/v1/rooms` | Chat rooms, messages, streaming responses |
 | `/api/v1/crew` | CrewAI multi-agent orchestration |
