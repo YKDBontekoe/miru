@@ -71,10 +71,18 @@ export default function ChatRoomScreen() {
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
 
-  const room = rooms.find((r) => r.id === roomId);
-  const roomMessages = messages[roomId ?? ''] ?? [];
-  const currentActivity = roomId ? agentActivity[roomId] : null;
-  const agentMap = Object.fromEntries(roomAgents.map((a) => [a.id, a]));
+  const room = React.useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
+  const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
+  const currentActivity = React.useMemo(() => (roomId ? agentActivity[roomId] : null), [agentActivity, roomId]);
+  const agentMap = React.useMemo(() => Object.fromEntries(roomAgents.map((a) => [a.id, a])), [roomAgents]);
+
+  const availableAgents = React.useMemo(() => {
+    return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));
+  }, [agents, roomAgents]);
+
+  const activeAgents = React.useMemo(() => {
+    return roomAgents;
+  }, [roomAgents]);
 
   // Connect hub and join room when screen mounts
   useEffect(() => {
@@ -422,25 +430,29 @@ export default function ChatRoomScreen() {
 
             <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
               {/* In Room section */}
-              {roomAgents.length > 0 && (
-                <>
-                  <AppText
-                    style={{
-                      color: C.muted,
-                      fontSize: 11,
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.8,
-                      marginBottom: 8,
-                    }}
-                  >
-                    In this chat
-                  </AppText>
-                  {roomAgents.map((agent) => {
+              {activeAgents.length > 0 && (
+                <FlatList
+                  data={activeAgents}
+                  keyExtractor={(item) => `in-${item.id}`}
+                  scrollEnabled={false}
+                  ListHeaderComponent={
+                    <AppText
+                      style={{
+                        color: C.muted,
+                        fontSize: 11,
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.8,
+                        marginBottom: 8,
+                      }}
+                    >
+                      In this chat
+                    </AppText>
+                  }
+                  renderItem={({ item: agent }) => {
                     const color = getAgentColor(agent.name);
                     return (
                       <View
-                        key={`in-${agent.id}`}
                         style={{
                           flexDirection: 'row',
                           alignItems: 'center',
@@ -494,8 +506,16 @@ export default function ChatRoomScreen() {
                         </TouchableOpacity>
                       </View>
                     );
-                  })}
-                  {agents.filter((a) => !roomAgents.some((r) => r.id === a.id)).length > 0 && (
+                  }}
+                />
+              )}
+
+              <FlatList
+                data={availableAgents}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                ListHeaderComponent={
+                  availableAgents.length > 0 && activeAgents.length > 0 ? (
                     <AppText
                       style={{
                         color: C.muted,
@@ -509,16 +529,27 @@ export default function ChatRoomScreen() {
                     >
                       Add more
                     </AppText>
-                  )}
-                </>
-              )}
-              {agents
-                .filter((a) => !roomAgents.some((r) => r.id === a.id))
-                .map((agent) => {
+                  ) : null
+                }
+                ListEmptyComponent={
+                  agents.length === 0 ? (
+                    <View style={{ alignItems: 'center', paddingVertical: 36 }}>
+                      <Ionicons
+                        name="people-outline"
+                        size={36}
+                        color={C.faint}
+                        style={{ marginBottom: 12 }}
+                      />
+                      <AppText style={{ textAlign: 'center', color: C.muted }}>
+                        {t('chat.no_agents_create')}
+                      </AppText>
+                    </View>
+                  ) : null
+                }
+                renderItem={({ item: agent }) => {
                   const color = getAgentColor(agent.name);
                   return (
                     <View
-                      key={agent.id}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
@@ -572,20 +603,8 @@ export default function ChatRoomScreen() {
                       </TouchableOpacity>
                     </View>
                   );
-                })}
-              {agents.length === 0 && (
-                <View style={{ alignItems: 'center', paddingVertical: 36 }}>
-                  <Ionicons
-                    name="people-outline"
-                    size={36}
-                    color={C.faint}
-                    style={{ marginBottom: 12 }}
-                  />
-                  <AppText style={{ textAlign: 'center', color: C.muted }}>
-                    {t('chat.no_agents_create')}
-                  </AppText>
-                </View>
-              )}
+                }}
+              />
               <View style={{ height: 40 }} />
             </ScrollView>
           </Animated.View>
