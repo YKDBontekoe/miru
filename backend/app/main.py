@@ -15,6 +15,7 @@ from app.api.v1.chat import router as chat_router
 from app.api.v1.integrations import router as integrations_router
 from app.api.v1.memory import router as memory_router
 from app.api.v1.productivity import router as productivity_router
+from app.api.v1.search import router as search_router
 from app.api.v1.websocket import router as websocket_router
 from app.core.config import get_settings
 from app.domain.notifications.api.router import router as notifications_router
@@ -79,6 +80,7 @@ app.include_router(memory_router, prefix="/api/v1/memory")
 app.include_router(productivity_router, prefix="/api/v1/productivity")
 app.include_router(integrations_router, prefix="/api/v1/integrations")
 app.include_router(notifications_router, prefix="/api/v1/notifications")
+app.include_router(search_router, prefix="/api/v1")
 app.include_router(websocket_router, prefix="/api/v1")
 
 

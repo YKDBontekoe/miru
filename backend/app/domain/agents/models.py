@@ -28,6 +28,7 @@ class Agent(SupabaseModel):
     agent_integrations: fields.ReverseRelation[AgentIntegration]
 
     message_count = fields.IntField(default=0)
+    personality_history = fields.JSONField(default=list)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
     deleted_at = fields.DatetimeField(null=True)

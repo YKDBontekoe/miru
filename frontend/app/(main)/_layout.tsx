@@ -123,6 +123,7 @@ export default function MainLayout() {
       />
       {/* Hide nested routes from tab bar */}
       <Tabs.Screen name="chat/[id]" options={{ href: null }} />
+      <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );
 }
