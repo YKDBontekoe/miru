@@ -22,14 +22,16 @@ async def test_update_mood_background_success(background_service: ChatBackground
     recent_context = "User: Hello\nAgent: Hi!"
 
     await background_service.update_mood_background(agent_id, recent_context)
-    background_service.agent_service.update_mood.assert_called_once_with(agent_id, recent_context)
+    background_service.agent_service.update_mood.assert_called_once_with(  # type: ignore
+        agent_id, recent_context
+    )
 
 
 @pytest.mark.asyncio
 async def test_update_mood_background_exception(background_service: ChatBackgroundService) -> None:
     agent_id = uuid.uuid4()
     recent_context = "User: Hello\nAgent: Hi!"
-    background_service.agent_service.update_mood.side_effect = Exception("Failed")
+    background_service.agent_service.update_mood.side_effect = Exception("Failed")  # type: ignore
 
     # Should not raise
     with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
@@ -45,7 +47,7 @@ async def test_update_affinity_background_success(
     agent_id = uuid.uuid4()
 
     await background_service.update_affinity_background(user_id, agent_id)
-    background_service.agent_repo.upsert_affinity.assert_called_once_with(user_id, agent_id)
+    background_service.agent_repo.upsert_affinity.assert_called_once_with(user_id, agent_id)  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -54,7 +56,7 @@ async def test_update_affinity_background_exception(
 ) -> None:
     user_id = uuid.uuid4()
     agent_id = uuid.uuid4()
-    background_service.agent_repo.upsert_affinity.side_effect = Exception("Failed")
+    background_service.agent_repo.upsert_affinity.side_effect = Exception("Failed")  # type: ignore
 
     # Should not raise
     with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
@@ -86,11 +88,16 @@ async def test_store_memories_background_success(background_service: ChatBackgro
         mock_embed.return_value = [0.1, 0.2, 0.3]
 
         await background_service.store_memories_background(
-            user_id, room_id, user_message, responded_agents, result_text, agent_names
+            user_id,
+            room_id,
+            user_message,
+            responded_agents,
+            result_text,
+            agent_names,  # type: ignore
         )
 
         # 1 for user message, 1 for agent message
-        assert background_service.memory_repo.insert_memory.call_count == 2
+        assert background_service.memory_repo.insert_memory.call_count == 2  # type: ignore
         assert mock_embed.call_count == 2
 
 
