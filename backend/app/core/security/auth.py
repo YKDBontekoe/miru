@@ -30,7 +30,16 @@ async def get_current_user(
         ) from exc
 
     # payload is now a JWTPayload model, use attribute access
-    return payload.sub
+    user_id = payload.sub
+
+    # For Supabase RLS policies to work with raw Tortoise connections in CI,
+    # we set the session variable that our auth.uid() mock expects.
+    from tortoise import Tortoise
+
+    conn = Tortoise.get_connection("default")
+    await conn.execute_script(f"SET LOCAL \"request.jwt.claim.sub\" = '{user_id}';")
+
+    return user_id
 
 
 # Convenience type alias for route signatures.

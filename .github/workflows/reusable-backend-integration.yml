@@ -57,6 +57,8 @@ jobs:
 
       - name: Generate Test Token
         id: generate-token
+        env:
+          DATABASE_URL: postgres://miru:miru@localhost:5432/miru
         run: |
           TOKEN=$(python3 backend/scripts/generate_token.py)
           echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
