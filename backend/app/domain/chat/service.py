@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from typing import TYPE_CHECKING
 
 import openai
 
 from app.core.config import get_settings
-from app.domain.chat.background_service import ChatBackgroundService
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.dtos import (
     ChatMessageResponse,
@@ -43,17 +43,11 @@ class ChatService:
         agent_repo: AgentRepository,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
-        bg_service: ChatBackgroundService | None = None,
     ):
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
         self.agent_service = agent_service
-
-        # Initialize the background service
-        self.bg_service = ChatBackgroundService(agent_repo, memory_repo, agent_service)
-
-        # Initialize the WebSocket broadcaster
         self.ws_broadcaster = ChatWebSocketBroadcaster(self.chat_repo, self.agent_repo)
 
     async def create_room(self, name: str, user_id: UUID) -> RoomResponse:
@@ -210,6 +204,80 @@ class ChatService:
         """Return True if *user_id* owns the room (authorised to send messages)."""
         return await self.chat_repo.room_belongs_to_user(room_id, user_id)
 
+    # ------------------------------------------------------------------
+    # Background helpers
+    # ------------------------------------------------------------------
+
+    async def _update_mood_background(self, agent_id: UUID, recent_context: str) -> None:
+        """Infer and persist an agent's mood from the recent conversation turn."""
+        try:
+            await self.agent_service.update_mood(agent_id, recent_context)
+        except Exception:
+            logger.warning("Background mood update failed for agent %s", agent_id, exc_info=True)
+
+    async def _update_affinity_background(self, user_id: UUID, agent_id: UUID) -> None:
+        """Increment the user ↔ agent affinity score after a conversation turn."""
+        try:
+            await self.agent_repo.upsert_affinity(user_id, agent_id)
+        except Exception:
+            logger.warning(
+                "Background affinity update failed for user=%s agent=%s",
+                user_id,
+                agent_id,
+                exc_info=True,
+            )
+
+    async def _store_memories_background(
+        self,
+        user_id: UUID,
+        room_id: UUID,
+        user_message: str,
+        responded_agents: list[Agent],
+        result_text: str,
+        agent_names: list[str],
+    ) -> None:
+        """Embed and store the conversation turn as memories for future retrieval."""
+        from app.domain.memory.models import Memory  # noqa: PLC0415
+        from app.infrastructure.external.openrouter import embed  # noqa: PLC0415
+
+        try:
+            # Store user message
+            user_vector = await embed(user_message)
+            await self.memory_repo.insert_memory(
+                Memory(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    room_id=room_id,
+                    content=f"User: {user_message}",
+                    embedding=user_vector,
+                    meta={"role": "user"},
+                )
+            )
+
+            # Store each agent response segment individually
+            agent_by_name = {a.name.lower(): a for a in responded_agents}
+            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
+            for agent_name, content in segments:
+                matched = (
+                    agent_by_name.get(agent_name.lower())
+                    if agent_name
+                    else (responded_agents[0] if responded_agents else None)
+                )
+                agent_vector = await embed(content)
+                await self.memory_repo.insert_memory(
+                    Memory(
+                        id=uuid.uuid4(),
+                        user_id=user_id,
+                        agent_id=matched.id if matched else None,
+                        room_id=room_id,
+                        content=f"{agent_name or 'Agent'}: {content}",
+                        embedding=agent_vector,
+                        meta={"role": "agent", "agent_name": agent_name or ""},
+                    )
+                )
+        except Exception:
+            logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
+
     async def run_room_chat_ws(
         self,
         room_id: UUID,
@@ -302,14 +370,14 @@ class ChatService:
 
             for agent in responded_agents:
                 asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_mood_background(agent.id, recent_context)
+                    self._update_mood_background(agent.id, recent_context)
                 )
                 asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_affinity_background(user_id, agent.id)
+                    self._update_affinity_background(user_id, agent.id)
                 )
 
             asyncio.create_task(  # noqa: RUF006
-                self.bg_service.store_memories_background(
+                self._store_memories_background(
                     user_id, room_id, user_message, responded_agents, result_text, agent_names
                 )
             )

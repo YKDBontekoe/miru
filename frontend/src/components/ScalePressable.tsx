@@ -7,28 +7,20 @@ interface ScalePressableProps {
   onLongPress?: () => void;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  hitSlop?: number | { top?: number; bottom?: number; left?: number; right?: number };
-  disabled?: boolean;
 }
 
-export function ScalePressable({ onPress, onLongPress, children, style, hitSlop, disabled }: ScalePressableProps) {
+export function ScalePressable({ onPress, onLongPress, children, style }: ScalePressableProps) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
-      disabled={disabled}
-      hitSlop={hitSlop}
       onPressIn={() => {
-        if (!disabled) {
-          scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
-        }
+        scale.value = withSpring(0.97, { damping: 15, stiffness: 300 });
       }}
       onPressOut={() => {
-        if (!disabled) {
-          scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-        }
+        scale.value = withSpring(1, { damping: 15, stiffness: 300 });
       }}
       style={style}
     >
