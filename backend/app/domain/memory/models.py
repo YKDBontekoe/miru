@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from uuid import UUID
-
-from pydantic import BaseModel
 from tortoise import fields
 
 from app.infrastructure.database.base import SupabaseModel
@@ -147,23 +143,3 @@ class MemoryGraphEdge(SupabaseModel):
             "SELECT 1 FROM memory_graph_nodes WHERE id = source_node_id AND user_id = auth.uid()"
             "));",
         ]
-
-
-# ---------------------------------------------------------------------------
-# API Pydantic Schemas
-# ---------------------------------------------------------------------------
-
-
-class MemoryResponse(BaseModel):
-    id: UUID
-    user_id: UUID | None
-    agent_id: UUID | None
-    room_id: UUID | None
-    content: str
-    meta: dict
-    created_at: datetime
-    updated_at: datetime
-
-
-class MemoryRequest(BaseModel):
-    message: str

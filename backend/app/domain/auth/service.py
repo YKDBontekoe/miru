@@ -9,7 +9,7 @@ from uuid import UUID
 import jwt
 
 from app.core.config import get_settings
-from app.domain.auth.models import JWTPayload
+from app.domain.auth.schemas import JWTPayload
 
 if TYPE_CHECKING:
     from app.infrastructure.repositories.auth_repo import AuthRepository

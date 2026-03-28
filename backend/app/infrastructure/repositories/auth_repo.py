@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from app.domain.auth.models import PasskeyRecord
+from app.domain.auth.schemas import PasskeyRecord
 
 if TYPE_CHECKING:
     from uuid import UUID

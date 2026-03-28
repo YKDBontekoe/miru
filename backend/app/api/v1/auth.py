@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_auth_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.auth.models import (
+from app.domain.auth.schemas import (
     PasskeyLoginOptionsRequest,
     PasskeyLoginVerifyRequest,
     PasskeyRecord,

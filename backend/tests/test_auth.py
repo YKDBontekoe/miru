@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 
-from app.domain.auth.models import JWTPayload
+from app.domain.auth.schemas import JWTPayload
 from app.infrastructure.database.supabase import get_supabase
 from app.main import app
 
