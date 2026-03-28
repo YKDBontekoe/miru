@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 
 import nest_asyncio
 from crewai.tools import BaseTool
 from pydantic import Field
 
 from app.infrastructure.external.discord import get_server_info, send_message
+
+logger = logging.getLogger(__name__)
 
 
 class DiscordGetServerInfoTool(BaseTool):
@@ -69,6 +72,11 @@ class DiscordSendMessageTool(BaseTool):
         return asyncio.run(self._arun())
 
     async def _arun(self) -> str:
+        """Async implementation of the tool.
+
+        Returns:
+            str: JSON formatted response or error message.
+        """
         try:
             success = await send_message(self.bot_token, self.channel_id, self.content)
             if not success:

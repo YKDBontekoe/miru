@@ -126,7 +126,7 @@ async def search_spotify(
                 "url": item.get("external_urls", {}).get("spotify"),
             }
 
-            if item_type == "track" or item_type == "album":
+            if item_type in ("track", "album"):
                 result["artists"] = [artist.get("name") for artist in item.get("artists", [])]
 
             results.append(result)

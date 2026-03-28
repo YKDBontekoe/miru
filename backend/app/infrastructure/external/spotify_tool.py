@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import typing
 
 import nest_asyncio
 from crewai.tools import BaseTool
@@ -14,6 +15,16 @@ from app.infrastructure.external.spotify import (
     get_recently_played,
     search_spotify,
 )
+
+
+def _run_async_in_sync(coro: typing.Coroutine[typing.Any, typing.Any, str]) -> str:
+    """Run an async coroutine synchronously using nest_asyncio."""
+    try:
+        asyncio.get_running_loop()
+        nest_asyncio.apply()
+    except RuntimeError:
+        pass
+    return asyncio.run(coro)
 
 
 class SpotifyCurrentlyPlayingTool(BaseTool):
@@ -29,12 +40,7 @@ class SpotifyCurrentlyPlayingTool(BaseTool):
 
     def _run(self) -> str:
         """Run the tool synchronously."""
-        try:
-            asyncio.get_running_loop()
-            nest_asyncio.apply()
-        except RuntimeError:
-            pass
-        return asyncio.run(self._arun())
+        return _run_async_in_sync(self._arun())
 
     async def _arun(self) -> str:
         """Async implementation of the tool."""
@@ -61,14 +67,14 @@ class SpotifyRecentlyPlayedTool(BaseTool):
 
     def _run(self) -> str:
         """Run the tool synchronously."""
-        try:
-            asyncio.get_running_loop()
-            nest_asyncio.apply()
-        except RuntimeError:
-            pass
-        return asyncio.run(self._arun())
+        return _run_async_in_sync(self._arun())
 
     async def _arun(self) -> str:
+        """Async implementation of the tool.
+
+        Returns:
+            str: JSON formatted response or error message.
+        """
         try:
             tracks = await get_recently_played(self.access_token)
             if not tracks:
@@ -97,14 +103,14 @@ class SpotifySearchTool(BaseTool):
 
     def _run(self) -> str:
         """Run the tool synchronously."""
-        try:
-            asyncio.get_running_loop()
-            nest_asyncio.apply()
-        except RuntimeError:
-            pass
-        return asyncio.run(self._arun())
+        return _run_async_in_sync(self._arun())
 
     async def _arun(self) -> str:
+        """Async implementation of the tool.
+
+        Returns:
+            str: JSON formatted response or error message.
+        """
         try:
             results = await search_spotify(self.access_token, self.query, self.item_type)
             if not results:

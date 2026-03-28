@@ -222,18 +222,28 @@ class CrewOrchestrator:
                         [
                             SpotifyCurrentlyPlayingTool(access_token=access_token),
                             SpotifyRecentlyPlayedTool(access_token=access_token),
-                            SpotifySearchTool(access_token=access_token),
                         ]
                     )
+                    query = ai.config.get("query")
+                    if query:
+                        tools.append(SpotifySearchTool(access_token=access_token, query=query))
             elif ai.integration_id == "discord":
                 bot_token = ai.config.get("bot_token")
                 if bot_token:
-                    tools.extend(
-                        [
-                            DiscordGetServerInfoTool(bot_token=bot_token),
-                            DiscordSendMessageTool(bot_token=bot_token),
-                        ]
-                    )
+                    guild_id = ai.config.get("guild_id")
+                    if guild_id:
+                        tools.append(
+                            DiscordGetServerInfoTool(bot_token=bot_token, guild_id=guild_id)
+                        )
+
+                    channel_id = ai.config.get("channel_id")
+                    content_val = ai.config.get("content")
+                    if channel_id and content_val:
+                        tools.append(
+                            DiscordSendMessageTool(
+                                bot_token=bot_token, channel_id=channel_id, content=content_val
+                            )
+                        )
 
         tools.extend(
             [

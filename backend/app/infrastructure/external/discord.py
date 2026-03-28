@@ -32,7 +32,7 @@ async def _post_async(url: str, headers: dict[str, str], json_data: dict[str, An
 
 async def get_server_info(bot_token: str, guild_id: str) -> dict[str, Any] | None:
     """Fetch basic information about a Discord server (guild)."""
-    url = f"{DISCORD_API_BASE}/guilds/{guild_id}"
+    url = f"{DISCORD_API_BASE}/guilds/{guild_id}?with_counts=true"
     headers = {
         "Authorization": f"Bot {bot_token}",
     }
