@@ -1,6 +1,4 @@
-import re
-
-with open("app/domain/chat/service.py", "r") as f:
+with open("app/domain/chat/service.py") as f:
     content = f.read()
 
 # Make sure we pass room_summary into run_crew_task inside run_room_chat_ws

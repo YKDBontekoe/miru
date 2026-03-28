@@ -1,6 +1,4 @@
-import re
-
-with open("backend/app/domain/memory/graph_service.py", "r") as f:
+with open("backend/app/domain/memory/graph_service.py") as f:
     content = f.read()
 
 # Make it completely standalone with its own imports correctly placed

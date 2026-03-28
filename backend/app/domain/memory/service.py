@@ -71,6 +71,7 @@ class MemoryService:
         if u_id:
             try:
                 import asyncio
+
                 from app.domain.memory.graph_service import GraphExtractionService
 
                 asyncio.create_task(  # noqa: RUF006

@@ -1,6 +1,4 @@
-import re
-
-with open("app/domain/chat/background_service.py", "r") as f:
+with open("app/domain/chat/background_service.py") as f:
     content = f.read()
 
 content = content.replace(

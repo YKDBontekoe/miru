@@ -1,6 +1,4 @@
-import re
-
-with open("app/domain/chat/crew_orchestrator.py", "r") as f:
+with open("app/domain/chat/crew_orchestrator.py") as f:
     content = f.read()
 
 # Add room_summary to execute_crew_task signature

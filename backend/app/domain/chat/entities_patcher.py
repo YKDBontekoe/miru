@@ -1,6 +1,4 @@
-import re
-
-with open("app/domain/chat/entities.py", "r") as f:
+with open("app/domain/chat/entities.py") as f:
     content = f.read()
 
 # Fix dataclass ordering

@@ -1,6 +1,4 @@
-import re
-
-with open("app/domain/memory/service.py", "r") as f:
+with open("app/domain/memory/service.py") as f:
     content = f.read()
 
 content = content.replace(
