@@ -20,6 +20,11 @@ export interface ThemeColors {
   successSurface: string;
 }
 
+/**
+ * Hook to manage dynamic design tokens. Returns theme colors based on device's current colour scheme.
+ *
+ * @returns {{ isDark: boolean; C: ThemeColors }} An object containing `isDark` flag and `C` object holding current theme's colors.
+ */
 export function useTheme(): { isDark: boolean; C: ThemeColors } {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
