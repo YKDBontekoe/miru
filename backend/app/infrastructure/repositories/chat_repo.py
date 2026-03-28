@@ -17,6 +17,7 @@ def _map_room_to_entity(room: ChatRoom) -> ChatRoomEntity:
         id=room.id,
         user_id=room.user_id,
         name=room.name,
+        summary=room.summary,
         created_at=room.created_at,
         updated_at=room.updated_at,
         deleted_at=room.deleted_at,
@@ -180,3 +181,12 @@ class ChatRepository:
         room = await ChatRoom.get_or_none(id=room_id)
         if room:
             await room.save()  # auto_now=True on updated_at refreshes the timestamp
+
+    async def update_room_summary(self, room_id: UUID, summary: str) -> bool:
+        """Update a room's summary."""
+        room = await ChatRoom.get_or_none(id=room_id)
+        if not room:
+            return False
+        room.summary = summary
+        await room.save()
+        return True

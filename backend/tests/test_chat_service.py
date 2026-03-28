@@ -28,7 +28,8 @@ def chat_service() -> ChatService:
     agent_repo = AsyncMock()
     memory_repo = AsyncMock()
     agent_service = AsyncMock()
-    return ChatService(chat_repo, agent_repo, memory_repo, agent_service)
+    bg_service = AsyncMock()
+    return ChatService(chat_repo, agent_repo, memory_repo, agent_service, bg_service)
 
 
 def test_get_agent_tools(chat_service: typing.Any) -> None:
@@ -632,6 +633,11 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         # Return empty list so no mood/affinity tasks are scheduled
         m_agent_resp.return_value = []
         m_create_task.return_value = MagicMock()
+
+        typing.cast("typing.Any", chat_service.bg_service).store_memories_background = MagicMock()
+        typing.cast(
+            "typing.Any", chat_service.bg_service
+        ).update_room_summary_background = MagicMock()
 
         await chat_service.run_room_chat_ws(room_id, "Hello", user_id, accept_language="es-MX")
 
