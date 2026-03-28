@@ -114,7 +114,7 @@ class CreateEventTool(BaseTool):
     ) -> str:
         try:
             # We import here to avoid circular dependencies if needed, but it's already in models
-            from app.domain.productivity.models import CalendarEventCreate
+            from app.domain.productivity.schemas import CalendarEventCreate
 
             event_data = CalendarEventCreate(
                 title=title,
@@ -177,7 +177,7 @@ class UpdateEventTool(BaseTool):
         location: str | None = None,
     ) -> str:
         try:
-            from app.domain.productivity.models import CalendarEventUpdate
+            from app.domain.productivity.schemas import CalendarEventUpdate
 
             update_fields: dict[str, Any] = {}
             if title is not None:

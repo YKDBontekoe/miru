@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.domain.agents.models import MoodResponse
+from app.domain.agents.schemas import MoodResponse
 from app.domain.agents.service import AgentService
 
 

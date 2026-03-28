@@ -9,16 +9,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.agents.models import (
+from app.domain.agents.models import Capability, Integration
+from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerate,
     AgentGenerationResponse,
     AgentResponse,
     AgentTemplateResponse,
     AgentUpdate,
-    Capability,
     CapabilityResponse,
-    Integration,
     IntegrationResponse,
 )
 from app.domain.agents.service import AgentService  # noqa: TCH001

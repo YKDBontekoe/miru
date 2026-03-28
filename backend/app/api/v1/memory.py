@@ -12,7 +12,8 @@ from openai import APIConnectionError, APITimeoutError
 
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.memory.models import Memory, MemoryRequest, MemoryResponse  # noqa: TCH001
+from app.domain.memory.models import Memory
+from app.domain.memory.schemas import MemoryRequest, MemoryResponse  # noqa: TCH001
 from app.domain.memory.service import MemoryService  # noqa: TCH001
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from app.domain.productivity.dependencies import get_productivity_use_case
-from app.domain.productivity.models import NoteCreate
+from app.domain.productivity.schemas import NoteCreate
 
 logger = logging.getLogger(__name__)
 

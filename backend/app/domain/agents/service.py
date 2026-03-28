@@ -5,16 +5,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from app.domain.agents.models import (
-    Agent,
+from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
-    AgentIntegration,
     AgentResponse,
     AgentTemplateResponse,
     AgentUpdate,
-    Capability,
-    Integration,
     MoodResponse,
 )
 from app.infrastructure.external.openrouter import structured_completion

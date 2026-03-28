@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.dependencies import get_productivity_use_case
-from app.domain.productivity.models import (
+from app.domain.productivity.schemas import (
     NoteCreate,
     NoteResponse,
     NoteUpdate,
