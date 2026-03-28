@@ -82,25 +82,19 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
               </View>
               {template.goals.length > 0 && (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-                  <FlatList
-                    data={template.goals.slice(0, 3)}
-                    keyExtractor={(_, index) => index.toString()}
-                    scrollEnabled={false}
-                    horizontal
-                    ItemSeparatorComponent={() => <View style={{ width: 5 }} />}
-                    renderItem={({ item: g }) => (
-                      <View
-                        style={{
-                          backgroundColor: `${color}12`,
-                          borderRadius: 10,
-                          paddingHorizontal: 8,
-                          paddingVertical: 3,
-                        }}
-                      >
-                        <AppText style={{ color, fontSize: 11 }}>{g}</AppText>
-                      </View>
-                    )}
-                  />
+                  {template.goals.slice(0, 3).map((g, gi) => (
+                    <View
+                      key={gi}
+                      style={{
+                        backgroundColor: `${color}12`,
+                        borderRadius: 10,
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                      }}
+                    >
+                      <AppText style={{ color, fontSize: 11 }}>{g}</AppText>
+                    </View>
+                  ))}
                 </View>
               )}
             </View>

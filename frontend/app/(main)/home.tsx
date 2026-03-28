@@ -204,7 +204,7 @@ const RecentChatRow = React.memo(function RecentChatRow({
   const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
-  const relativeTime = React.useCallback(() => {
+  const relativeTimeStr = React.useMemo(() => {
     const diff = Date.now() - new Date(room.updated_at).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return t('home.time.minutes_ago_one', { count: mins });
@@ -248,7 +248,7 @@ const RecentChatRow = React.memo(function RecentChatRow({
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <AppText style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>
-          {relativeTime()}
+          {relativeTimeStr}
         </AppText>
         <Ionicons name="chevron-forward" size={13} color={C.faint} />
       </View>
@@ -829,16 +829,14 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                <FlatList
-                  data={topAgents}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={false}
-                  numColumns={2}
-                  columnWrapperStyle={{ flexWrap: 'wrap' }}
-                  renderItem={renderAgentChip}
-                />
-              </View>
+              <FlatList
+                data={topAgents}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                numColumns={2}
+                columnWrapperStyle={{ flexWrap: 'wrap' }}
+                renderItem={renderAgentChip}
+              />
             </Card>
           )}
 

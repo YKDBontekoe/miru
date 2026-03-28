@@ -80,10 +80,6 @@ export default function ChatRoomScreen() {
     return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));
   }, [agents, roomAgents]);
 
-  const activeAgents = React.useMemo(() => {
-    return roomAgents;
-  }, [roomAgents]);
-
   // Connect hub and join room when screen mounts
   useEffect(() => {
     if (!roomId) return;
@@ -430,9 +426,9 @@ export default function ChatRoomScreen() {
 
             <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
               {/* In Room section */}
-              {activeAgents.length > 0 && (
+              {roomAgents.length > 0 && (
                 <FlatList
-                  data={activeAgents}
+                  data={roomAgents}
                   keyExtractor={(item) => `in-${item.id}`}
                   scrollEnabled={false}
                   ListHeaderComponent={
@@ -515,7 +511,7 @@ export default function ChatRoomScreen() {
                 keyExtractor={(item) => item.id}
                 scrollEnabled={false}
                 ListHeaderComponent={
-                  availableAgents.length > 0 && activeAgents.length > 0 ? (
+                  availableAgents.length > 0 && roomAgents.length > 0 ? (
                     <AppText
                       style={{
                         color: C.muted,
@@ -542,6 +538,18 @@ export default function ChatRoomScreen() {
                       />
                       <AppText style={{ textAlign: 'center', color: C.muted }}>
                         {t('chat.no_agents_create')}
+                      </AppText>
+                    </View>
+                  ) : availableAgents.length === 0 && agents.length > 0 ? (
+                    <View style={{ alignItems: 'center', paddingVertical: 36 }}>
+                      <Ionicons
+                        name="people-outline"
+                        size={36}
+                        color={C.faint}
+                        style={{ marginBottom: 12 }}
+                      />
+                      <AppText style={{ textAlign: 'center', color: C.muted }}>
+                        {t('chat.no_more_agents_to_add', 'No more agents to add.')}
                       </AppText>
                     </View>
                   ) : null
