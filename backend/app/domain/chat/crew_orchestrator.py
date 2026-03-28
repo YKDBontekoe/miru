@@ -21,6 +21,15 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.infrastructure.external.discord_tool import (
+    DiscordGetServerInfoTool,
+    DiscordSendMessageTool,
+)
+from app.infrastructure.external.spotify_tool import (
+    SpotifyCurrentlyPlayingTool,
+    SpotifyRecentlyPlayedTool,
+    SpotifySearchTool,
+)
 from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
 
 if TYPE_CHECKING:
@@ -204,6 +213,25 @@ class CrewOrchestrator:
                         [
                             SteamPlayerSummaryTool(steam_id=steam_id),
                             SteamOwnedGamesTool(steam_id=steam_id),
+                        ]
+                    )
+            elif ai.integration_id == "spotify":
+                access_token = ai.config.get("access_token")
+                if access_token:
+                    tools.extend(
+                        [
+                            SpotifyCurrentlyPlayingTool(access_token=access_token),
+                            SpotifyRecentlyPlayedTool(access_token=access_token),
+                            SpotifySearchTool(access_token=access_token),
+                        ]
+                    )
+            elif ai.integration_id == "discord":
+                bot_token = ai.config.get("bot_token")
+                if bot_token:
+                    tools.extend(
+                        [
+                            DiscordGetServerInfoTool(bot_token=bot_token),
+                            DiscordSendMessageTool(bot_token=bot_token),
                         ]
                     )
 
