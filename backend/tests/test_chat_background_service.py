@@ -91,9 +91,9 @@ async def test_store_memories_background_success(background_service: ChatBackgro
             user_id,
             room_id,
             user_message,
-            responded_agents,
+            responded_agents,  # type: ignore
             result_text,
-            agent_names,  # type: ignore
+            agent_names,
         )
 
         # 1 for user message, 1 for agent message
