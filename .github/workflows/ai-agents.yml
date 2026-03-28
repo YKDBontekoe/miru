@@ -111,16 +111,17 @@ jobs:
 
             const aiPrompt = match[1].trim();
 
-            // Count all AI exchange comments on this PR (both bridge proxy posts
-            // and any Jules response comments) to detect runaway loops reliably.
+            // Count only bridge proxy comments (one per attempt) to detect
+            // runaway loops. Counting Jules response comments too caused the
+            // counter to exceed 3 after just 1-2 rounds when Jules posted
+            // multiple acknowledgment/progress comments per round.
             const { data: allComments } = await github.rest.issues.listComments({
-              owner, repo, issue_number: prNumber,
+              owner, repo, issue_number: prNumber, per_page: 100,
             });
-            const aiExchangeComments = allComments.filter(c =>
-              (c.body && c.body.includes('Jules-CodeRabbit Bridge')) ||
-              (c.user && c.user.login === 'jules[bot]')
+            const bridgeComments = allComments.filter(c =>
+              c.body && c.body.includes('Jules-CodeRabbit Bridge')
             );
-            const attemptNumber = aiExchangeComments.length + 1;
+            const attemptNumber = bridgeComments.length + 1;
 
             if (attemptNumber > 3) {
               await github.rest.issues.createComment({

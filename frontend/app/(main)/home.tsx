@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   RefreshControl,
   Modal,
@@ -191,7 +192,7 @@ function QuickAction({
 }
 
 // ─── Recent chat row ──────────────────────────────────────────────────────────
-function RecentChatRow({
+const RecentChatRow = React.memo(function RecentChatRow({
   room,
   onPress,
   isLast,
@@ -203,14 +204,14 @@ function RecentChatRow({
   const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
-  const relativeTime = () => {
+  const relativeTimeStr = React.useMemo(() => {
     const diff = Date.now() - new Date(room.updated_at).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return t('home.time.minutes_ago_one', { count: mins });
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return t('home.time.hours_ago_one', { count: hrs });
     return t('home.time.days_ago_one', { count: Math.floor(hrs / 24) });
-  };
+  }, [t, room.updated_at]);
 
   return (
     <TouchableOpacity
@@ -247,16 +248,16 @@ function RecentChatRow({
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <AppText style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>
-          {relativeTime()}
+          {relativeTimeStr}
         </AppText>
         <Ionicons name="chevron-forward" size={13} color={C.faint} />
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Task row ─────────────────────────────────────────────────────────────────
-function TaskRow({
+const TaskRow = React.memo(function TaskRow({
   task,
   onToggle,
   isLast,
@@ -325,10 +326,10 @@ function TaskRow({
       )}
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Agent chip ───────────────────────────────────────────────────────────────
-function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -382,7 +383,7 @@ function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
       )}
     </TouchableOpacity>
   );
-}
+});
 
 // ─── New-chat modal ───────────────────────────────────────────────────────────
 function NewChatModal({
@@ -527,13 +528,59 @@ export default function HomeScreen() {
   const firstName = getFirstName(user?.email);
   const initials = getInitials(user?.email);
 
-  const recentRooms = [...rooms]
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 3);
+  const recentRooms = React.useMemo(() => {
+    return [...rooms]
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .slice(0, 3);
+  }, [rooms]);
 
-  const pendingTasks = tasks.filter((task) => !task.completed).slice(0, 4);
-  const completedCount = tasks.filter((task) => task.completed).length;
-  const topAgents = agents.slice(0, 6);
+  const { pendingTasks, completedCount } = React.useMemo(() => {
+    const pending = tasks.filter((task) => !task.completed);
+    return {
+      pendingTasks: pending.slice(0, 4),
+      completedCount: tasks.length - pending.length,
+    };
+  }, [tasks]);
+
+  const topAgents = React.useMemo(() => agents.slice(0, 6), [agents]);
+
+  const handleRecentRoomPress = React.useCallback(
+    (id: string) => router.push(`/(main)/chat/${id}`),
+    [router]
+  );
+  const handleAgentPress = React.useCallback(
+    () => router.push('/(main)/agents'),
+    [router]
+  );
+
+  const renderRecentChatRow = React.useCallback(
+    ({ item, index }: { item: ChatRoom; index: number }) => (
+      <RecentChatRow
+        room={item}
+        isLast={index === recentRooms.length - 1}
+        onPress={() => handleRecentRoomPress(item.id)}
+      />
+    ),
+    [recentRooms.length, handleRecentRoomPress]
+  );
+
+  const renderTaskRow = React.useCallback(
+    ({ item, index }: { item: Task; index: number }) => (
+      <TaskRow
+        task={item}
+        isLast={index === pendingTasks.length - 1}
+        onToggle={() => toggleTask(item.id)}
+      />
+    ),
+    [pendingTasks.length, toggleTask]
+  );
+
+  const renderAgentChip = React.useCallback(
+    ({ item }: { item: Agent }) => (
+      <AgentChip agent={item} onPress={handleAgentPress} />
+    ),
+    [handleAgentPress]
+  );
 
   useEffect(() => {
     Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
@@ -730,14 +777,12 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.see_all')}
                 onAction={() => router.push('/(main)/chat')}
               />
-              {recentRooms.map((room, index) => (
-                <RecentChatRow
-                  key={room.id}
-                  room={room}
-                  isLast={index === recentRooms.length - 1}
-                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
-                />
-              ))}
+              <FlatList
+                data={recentRooms}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                renderItem={renderRecentChatRow}
+              />
             </Card>
           )}
 
@@ -766,14 +811,12 @@ export default function HomeScreen() {
                   </AppText>
                 </View>
               ) : (
-                pendingTasks.map((task, index) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    isLast={index === pendingTasks.length - 1}
-                    onToggle={() => toggleTask(task.id)}
-                  />
-                ))
+                <FlatList
+                  data={pendingTasks}
+                  keyExtractor={(item) => item.id}
+                  scrollEnabled={false}
+                  renderItem={renderTaskRow}
+                />
               )}
             </Card>
           )}
@@ -786,15 +829,14 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                {topAgents.map((agent) => (
-                  <AgentChip
-                    key={agent.id}
-                    agent={agent}
-                    onPress={() => router.push('/(main)/agents')}
-                  />
-                ))}
-              </View>
+              <FlatList
+                data={topAgents}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                numColumns={2}
+                columnWrapperStyle={{ flexWrap: 'wrap' }}
+                renderItem={renderAgentChip}
+              />
             </Card>
           )}
 
