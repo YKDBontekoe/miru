@@ -1,8 +1,10 @@
 """More tests for Discord tools to increase coverage."""
+
 from __future__ import annotations
 
 import typing
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from app.infrastructure.external.discord_tool import (
@@ -10,9 +12,11 @@ from app.infrastructure.external.discord_tool import (
     DiscordSendMessageTool,
 )
 
+
 @pytest.fixture
 def bot_token() -> str:
     return "test_bot_token"
+
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.discord_tool.get_server_info", new_callable=AsyncMock)
@@ -22,6 +26,7 @@ async def test_discord_get_server_info_empty(mock_get: typing.Any, bot_token: st
     result = await tool._arun()
     assert "Could not fetch info" in result
 
+
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.discord_tool.get_server_info", new_callable=AsyncMock)
 async def test_discord_get_server_info_error(mock_get: typing.Any, bot_token: str) -> None:
@@ -29,6 +34,7 @@ async def test_discord_get_server_info_error(mock_get: typing.Any, bot_token: st
     tool = DiscordGetServerInfoTool(bot_token=bot_token, guild_id="123")
     result = await tool._arun()
     assert "Error fetching Discord server info" in result
+
 
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.discord_tool.send_message", new_callable=AsyncMock)
@@ -38,6 +44,7 @@ async def test_discord_send_message_failure(mock_send: typing.Any, bot_token: st
     result = await tool._arun()
     assert "Failed to send message" in result
 
+
 @pytest.mark.asyncio
 @patch("app.infrastructure.external.discord_tool.send_message", new_callable=AsyncMock)
 async def test_discord_send_message_error(mock_send: typing.Any, bot_token: str) -> None:
@@ -46,11 +53,13 @@ async def test_discord_send_message_error(mock_send: typing.Any, bot_token: str)
     result = await tool._arun()
     assert "Error sending Discord message" in result
 
+
 def test_discord_server_info_sync(bot_token: str) -> None:
     tool = DiscordGetServerInfoTool(bot_token=bot_token, guild_id="123")
     with patch.object(tool, "_arun", return_value="Sync OK"):
         res = tool._run()
         assert res == "Sync OK"
+
 
 def test_discord_send_message_sync(bot_token: str) -> None:
     tool = DiscordSendMessageTool(bot_token=bot_token, channel_id="123", content="test")
@@ -58,16 +67,22 @@ def test_discord_send_message_sync(bot_token: str) -> None:
         res = tool._run()
         assert res == "Sync OK"
 
+
 def test_discord_get_server_info_sync_runtime_err(bot_token: str) -> None:
     tool = DiscordGetServerInfoTool(bot_token=bot_token, guild_id="123")
-    with patch("asyncio.get_running_loop", side_effect=RuntimeError):
-        with patch.object(tool, "_arun", return_value="Sync OK"):
-            res = tool._run()
-            assert res == "Sync OK"
+    with (
+        patch("asyncio.get_running_loop", side_effect=RuntimeError),
+        patch.object(tool, "_arun", return_value="Sync OK"),
+    ):
+        res = tool._run()
+        assert res == "Sync OK"
+
 
 def test_discord_send_message_sync_runtime_err(bot_token: str) -> None:
     tool = DiscordSendMessageTool(bot_token=bot_token, channel_id="123", content="fail")
-    with patch("asyncio.get_running_loop", side_effect=RuntimeError):
-        with patch.object(tool, "_arun", return_value="Sync OK"):
-            res = tool._run()
-            assert res == "Sync OK"
+    with (
+        patch("asyncio.get_running_loop", side_effect=RuntimeError),
+        patch.object(tool, "_arun", return_value="Sync OK"),
+    ):
+        res = tool._run()
+        assert res == "Sync OK"
