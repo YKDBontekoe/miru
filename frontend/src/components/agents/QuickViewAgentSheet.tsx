@@ -59,7 +59,7 @@ export function QuickViewAgentSheet({
         onPress={onClose}
       >
         <Animated.View
-          entering={SlideInUp.springify().damping(22)}
+          entering={SlideInUp.duration(300)}
           exiting={SlideOutDown.duration(180)}
           style={{
             backgroundColor: C.surface,

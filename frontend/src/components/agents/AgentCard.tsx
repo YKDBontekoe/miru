@@ -121,11 +121,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   });
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 50)
-        .springify()
-        .damping(20)}
-    >
+    <Animated.View entering={FadeInDown.delay(index * 50).duration(300)}>
       <ScalePressable onPress={onPress} onLongPress={onLongPress}>
         <View style={styles.cardContainer}>
           <View style={styles.innerContainer}>
@@ -242,12 +238,7 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
   });
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 45)
-        .springify()
-        .damping(20)}
-      style={styles.wrapper}
-    >
+    <Animated.View entering={FadeInDown.delay(index * 45).duration(300)} style={styles.wrapper}>
       <ScalePressable onPress={onPress} onLongPress={onLongPress}>
         <View style={styles.cardContainer}>
           <View style={styles.avatarWrapper}>

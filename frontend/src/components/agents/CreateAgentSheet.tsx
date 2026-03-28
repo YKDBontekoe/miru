@@ -170,7 +170,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       <Modal visible={visible} animationType="slide" transparent>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
           <Animated.View
-            entering={SlideInUp.springify().damping(22)}
+            entering={SlideInUp.duration(300)}
             exiting={SlideOutDown.duration(200)}
             style={{
               backgroundColor: C.surface,
