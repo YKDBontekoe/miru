@@ -233,12 +233,12 @@ const RecentChatRow = React.memo(function RecentChatRow({
           backgroundColor: C.primaryLight,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginEnd: 12,
         }}
       >
         <AppText style={{ color: C.primary, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
       </View>
-      <View style={{ flex: 1, marginRight: 8 }}>
+      <View style={{ flex: 1, marginEnd: 8 }}>
         <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
           {room.name}
         </AppText>
@@ -289,7 +289,7 @@ const TaskRow = React.memo(function TaskRow({
           backgroundColor: task.completed ? C.primary : 'transparent',
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginEnd: 12,
         }}
       >
         {task.completed && <Ionicons name="checkmark" size={13} color="white" />}
@@ -312,7 +312,7 @@ const TaskRow = React.memo(function TaskRow({
             borderRadius: 8,
             paddingHorizontal: 8,
             paddingVertical: 3,
-            marginLeft: 8,
+            marginStart: 8,
             borderWidth: 1,
             borderColor: C.primaryLight,
           }}
@@ -343,7 +343,7 @@ const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Age
         paddingHorizontal: 12,
         borderWidth: 1,
         borderColor: C.primaryLight,
-        marginRight: 8,
+        marginEnd: 8,
         marginBottom: 8,
       }}
     >
@@ -355,7 +355,7 @@ const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Age
           backgroundColor: C.primaryLight,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 7,
+          marginEnd: 7,
         }}
       >
         <AppText style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>
@@ -373,7 +373,7 @@ const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Age
             paddingHorizontal: 5,
             alignItems: 'center',
             justifyContent: 'center',
-            marginLeft: 7,
+            marginStart: 7,
           }}
         >
           <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
@@ -424,8 +424,8 @@ function NewChatModal({
         <View
           style={{
             backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
+            borderTopStartRadius: 28,
+            borderTopEndRadius: 28,
             padding: 24,
             paddingBottom: 40,
           }}
@@ -638,7 +638,7 @@ export default function HomeScreen() {
               marginBottom: 20,
             }}
           >
-            <View style={{ flex: 1, paddingRight: 16 }}>
+            <View style={{ flex: 1, paddingEnd: 16 }}>
               <AppText style={{ fontSize: 13, color: C.muted, fontWeight: '500', marginBottom: 4 }}>
                 {greeting}
               </AppText>
@@ -898,7 +898,7 @@ export default function HomeScreen() {
                   elevation: 5,
                 }}
               >
-                <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
+                <Ionicons name="add" size={19} color="white" style={{ marginEnd: 7 }} />
                 <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
                   {t('home.actions.start_chat')}
                 </AppText>

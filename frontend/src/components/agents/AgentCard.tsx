@@ -197,7 +197,7 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
     pinBadge: {
       position: 'absolute',
       top: -3,
-      right: -3,
+      end: -3,
       backgroundColor: theme.colors.status.warning,
       width: 16,
       height: 16,

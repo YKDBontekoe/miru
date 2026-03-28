@@ -268,11 +268,11 @@ const styles = StyleSheet.create({
   },
   userBubbleShape: {
     borderRadius: theme.borderRadius.xl,
-    borderBottomRightRadius: theme.borderRadius.xs,
+    borderBottomEndRadius: theme.borderRadius.xs,
   },
   agentBubbleShape: {
     borderRadius: theme.borderRadius.xl,
-    borderBottomLeftRadius: theme.borderRadius.xs,
+    borderBottomStartRadius: theme.borderRadius.xs,
   },
   messageText: {
     ...theme.typography.body,

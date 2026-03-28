@@ -75,8 +75,8 @@ export function Snackbar({
         {
           position: 'absolute',
           bottom: 24,
-          left: 16,
-          right: 16,
+          start: 16,
+          end: 16,
           backgroundColor: '#1A1A2E',
           borderRadius: 16,
           paddingHorizontal: 18,
