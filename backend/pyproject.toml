@@ -5,7 +5,7 @@ description = "FastAPI backend for Miru AI Assistant"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.135.2",
+    "fastapi>=0.115.0",
     "granian[reload]>=1.0.0",
     "supabase>=2.3.0",
     "openrouter>=0.7.11",
