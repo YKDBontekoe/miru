@@ -182,9 +182,9 @@ async def create_playlist(access_token: str, name: str, description: str = "") -
     except httpx.HTTPStatusError as e:
         logger.error(f"Failed to create playlist: {e.response.text}")
         return {"error": f"Spotify API error: {e.response.status_code}"}
-    except Exception as e:
-        logger.error(f"Unexpected error creating playlist: {e}")
-        return {"error": str(e)}
+    except Exception:
+        logger.exception("Unexpected error creating playlist")
+        return {"error": "Unexpected Spotify integration error"}
 
 
 async def add_tracks_to_playlist(
@@ -201,9 +201,9 @@ async def add_tracks_to_playlist(
     except httpx.HTTPStatusError as e:
         logger.error(f"Failed to add tracks: {e.response.text}")
         return {"error": f"Spotify API error: {e.response.status_code}"}
-    except Exception as e:
-        logger.error(f"Unexpected error adding tracks: {e}")
-        return {"error": str(e)}
+    except Exception:
+        logger.exception("Unexpected error adding tracks")
+        return {"error": "Unexpected Spotify integration error"}
 
 
 async def get_recommendations(
@@ -233,6 +233,6 @@ async def get_recommendations(
     except httpx.HTTPStatusError as e:
         logger.error(f"Failed to get recommendations: {e.response.text}")
         return {"error": f"Spotify API error: {e.response.status_code}"}
-    except Exception as e:
-        logger.error(f"Unexpected error getting recommendations: {e}")
-        return {"error": str(e)}
+    except Exception:
+        logger.exception("Unexpected error getting recommendations")
+        return {"error": "Unexpected Spotify integration error"}

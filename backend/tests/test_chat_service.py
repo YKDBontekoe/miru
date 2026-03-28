@@ -28,7 +28,8 @@ def chat_service() -> ChatService:
     agent_repo = AsyncMock()
     memory_repo = AsyncMock()
     agent_service = AsyncMock()
-    return ChatService(chat_repo, agent_repo, memory_repo, agent_service)
+    bg_service = AsyncMock()
+    return ChatService(chat_repo, agent_repo, memory_repo, agent_service, bg_service)
 
 
 def test_get_agent_tools(chat_service: typing.Any) -> None:

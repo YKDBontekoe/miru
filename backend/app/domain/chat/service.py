@@ -51,7 +51,7 @@ class ChatService:
         self.agent_service = agent_service
 
         # Initialize the background service
-        self.bg_service = ChatBackgroundService(agent_repo, memory_repo, agent_service)
+        self.bg_service = ChatBackgroundService(agent_repo, memory_repo, agent_service, chat_repo)
 
         # Initialize the WebSocket broadcaster
         self.ws_broadcaster = ChatWebSocketBroadcaster(self.chat_repo, self.agent_repo)

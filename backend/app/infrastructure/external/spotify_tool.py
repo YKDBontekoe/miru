@@ -173,12 +173,20 @@ class SpotifyAddTracksToPlaylistTool(BaseTool):
         if not uris_list:
             return "No valid track URIs provided. Must start with 'spotify:track:'"
 
+        import json
+
         result = _run_async_in_sync(
             add_tracks_to_playlist(self.access_token, playlist_id, uris_list)
         )
         if isinstance(result, dict) and "error" in result:
-            return f"Failed to add tracks: {result['error']}"
-        return f"Successfully added {len(uris_list)} tracks to the playlist."
+            return json.dumps({"success": False, "error": result["error"]})
+        return json.dumps(
+            {
+                "success": True,
+                "track_count": len(uris_list),
+                "message": "Successfully added tracks to the playlist",
+            }
+        )
 
 
 class SpotifyGetRecommendationsTool(BaseTool):
@@ -202,17 +210,19 @@ class SpotifyGetRecommendationsTool(BaseTool):
 
         result = _run_async_in_sync(get_recommendations(self.access_token, sa, sg, st, limit))
 
+        import json
+
         if isinstance(result, dict) and "error" in result:
-            return f"Failed to get recommendations: {result['error']}"
+            return json.dumps({"success": False, "error": result["error"]})
 
         if not isinstance(result, dict) or "tracks" not in result or not result["tracks"]:
-            return "No recommendations found."
+            return json.dumps({"success": True, "items": []})
 
-        lines = ["Recommended Tracks:"]
+        items = []
         for t in result["tracks"]:
             t_name = t.get("name", "Unknown")
             artists = ", ".join([a.get("name", "Unknown") for a in t.get("artists", [])])
             uri = t.get("uri", "")
-            lines.append(f"- {t_name} by {artists} (URI: {uri})")
+            items.append({"name": t_name, "artists": artists, "uri": uri})
 
-        return "\n".join(lines)
+        return json.dumps({"success": True, "items": items})

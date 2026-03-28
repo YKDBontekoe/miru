@@ -24,7 +24,7 @@ class GraphRelationship(BaseModel):
     relationship: str = Field(
         description="The relationship type, e.g., 'LIKES', 'VISITED', 'OWNS', 'IS_A'"
     )
-    weight: float = Field(default=1.0, description="The strength of the relationship (0.0 to 1.0)")
+    weight: float = Field(default=0.1, description="The strength of the relationship (0.0 to 1.0)")
 
 
 class GraphExtractionSchema(BaseModel):
@@ -45,8 +45,8 @@ class GraphExtractionService:
 
             from app.core.config import get_settings
 
-            # Use OpenAI directly instead of OpenRouter because OpenRouter
-            # doesn't fully support structured output parsing (.parse) yet for all models.
+            # OpenRouter's OpenAI-compatible API now supports structured output
+            # parsing (e.g., client.beta.chat.completions.parse and Pydantic response_format)
             client = AsyncOpenAI(
                 api_key=get_settings().openrouter_api_key,
                 base_url="https://openrouter.ai/api/v1",
@@ -86,20 +86,19 @@ class GraphExtractionService:
             # 1. Upsert Nodes
             node_map: dict[str, MemoryGraphNode] = {}
             for entity in extraction.entities:
-                # Find existing or create new
-                node = await MemoryGraphNode.get_or_none(user_id=user_id, name=entity.name)
-                if not node:
-                    node = await MemoryGraphNode.create(
-                        user_id=user_id,
-                        name=entity.name,
-                        entity_type=entity.entity_type,
-                        description=entity.description,
-                    )
-                else:
-                    # Append description if it's new information
-                    if entity.description not in str(node.description):
-                        node.description = f"{node.description}\n{entity.description}".strip()
-                        await node.save()
+                # Atomic get_or_create to prevent race conditions
+                node, created = await MemoryGraphNode.get_or_create(
+                    user_id=user_id,
+                    name=entity.name,
+                    defaults={
+                        "entity_type": entity.entity_type,
+                        "description": entity.description,
+                    },
+                )
+                # Append description if it's new information
+                if not created and entity.description not in str(node.description):
+                    node.description = f"{node.description}\n{entity.description}".strip()
+                    await node.save()
 
                 node_map[entity.name.lower()] = node
 
@@ -109,21 +108,17 @@ class GraphExtractionService:
                 target_node = node_map.get(rel.target.lower())
 
                 if source_node and target_node:
-                    # Check if edge already exists
-                    edge = await MemoryGraphEdge.get_or_none(
+                    # Atomic get_or_create to prevent race conditions
+                    edge, created = await MemoryGraphEdge.get_or_create(
                         source_node=source_node,
                         target_node=target_node,
                         relationship=rel.relationship,
+                        defaults={
+                            "weight": rel.weight,
+                        },
                     )
 
-                    if not edge:
-                        await MemoryGraphEdge.create(
-                            source_node=source_node,
-                            target_node=target_node,
-                            relationship=rel.relationship,
-                            weight=rel.weight,
-                        )
-                    else:
+                    if not created:
                         # Strengthen existing relationship
                         edge.weight = min(1.0, edge.weight + 0.1)
                         await edge.save()

@@ -25,7 +25,7 @@ class ChatBackgroundService:
         agent_repo: AgentRepository,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
-        chat_repo: Any = None,
+        chat_repo: Any,
     ):
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
