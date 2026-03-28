@@ -1,0 +1,88 @@
+name: Reusable Backend Integration
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+    outputs:
+      success:
+        description: "Whether the tests passed"
+        value: ${{ jobs.postman-tests.result }}
+
+jobs:
+  postman-tests:
+    name: Postman Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: pip install pyjwt
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start services
+        env:
+          BACKEND_IMAGE: ${{ inputs.image-tag }}
+        run: |
+          # Use the pre-built image instead of building locally
+          docker compose -f docker-compose.ci.yml up -d
+          # Wait for backend
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/health; then
+              echo "Backend is up!"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Backend failed"
+          docker compose -f docker-compose.ci.yml logs
+          exit 1
+
+      - name: Generate Test Token
+        id: generate-token
+        env:
+          DATABASE_URL: postgres://miru:miru@localhost:5432/miru
+        run: |
+          TOKEN=$(python3 backend/scripts/generate_token.py)
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Run Postman Tests
+        run: |
+          npm install -g newman
+          FAILURES=0
+          newman run backend/tests/postman/logic_tests.json \
+            --env-var baseUrl=http://localhost:8000 \
+            --env-var token=${{ steps.generate-token.outputs.token }} || FAILURES=$((FAILURES+1))
+          
+          for collection in backend/tests/postman/*.json; do
+            if [[ "$collection" != *"logic_tests.json" ]]; then
+              newman run "$collection" \
+                --env-var baseUrl=http://localhost:8000 \
+                --env-var token=${{ steps.generate-token.outputs.token }} || FAILURES=$((FAILURES+1))
+            fi
+          done
+          
+          if [ "$FAILURES" -gt 0 ]; then
+            exit 1
+          fi
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker-compose.ci.yml down

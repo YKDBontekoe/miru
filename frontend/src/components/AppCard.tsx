@@ -1,11 +1,6 @@
 import React from 'react';
 import { View, Pressable, ViewProps, StyleProp, ViewStyle, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  AnimatedStyle,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { theme } from '../core/theme';
 
@@ -14,7 +9,7 @@ export interface AppCardProps extends Omit<ViewProps, 'style'> {
   className?: string;
   onTap?: () => void;
   showBorder?: boolean;
-  style?: StyleProp<AnimatedStyle<ViewStyle>>;
+  style?: StyleProp<ViewStyle>;
   elevation?: keyof typeof theme.elevation;
 }
 
@@ -23,17 +18,11 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 interface TappableCardProps extends Omit<ViewProps, 'style'> {
   children: React.ReactNode;
   onTap: () => void;
-  cardStyle: StyleProp<AnimatedStyle<ViewStyle>>;
+  cardStyle: StyleProp<ViewStyle>;
   className: string;
 }
 
-const TappableCard = ({
-  children,
-  onTap,
-  cardStyle,
-  className,
-  ...props
-}: TappableCardProps) => {
+const TappableCard = ({ children, onTap, cardStyle, className, ...props }: TappableCardProps) => {
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
@@ -56,7 +45,7 @@ const TappableCard = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={[cardStyle, animatedStyle] as StyleProp<AnimatedStyle<ViewStyle>>}
+      style={[cardStyle, animatedStyle] as StyleProp<ViewStyle>}
       {...props}
     >
       {children}
@@ -90,7 +79,7 @@ export const AppCard = ({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const cardStyle: StyleProp<AnimatedStyle<ViewStyle>> = [
+  const cardStyle: StyleProp<ViewStyle> = [
     {
       backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light,
       borderColor: isDark ? theme.colors.border.dark : theme.colors.border.light,

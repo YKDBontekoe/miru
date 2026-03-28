@@ -1,6 +1,21 @@
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Mock Supabase Auth schema for RLS and triggers
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE TABLE IF NOT EXISTS auth.users (
+    id UUID PRIMARY KEY,
+    email TEXT,
+    raw_user_meta_data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Mock auth.uid() function for RLS
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS $$
+    SELECT current_setting('request.jwt.claim.sub', true)::uuid;
+$$ LANGUAGE sql STABLE;
+
 -- Memories table: stores user memories with embeddings.
 -- Embedding dimension is 1536 to match openai/text-embedding-3-small via OpenRouter.
 CREATE TABLE IF NOT EXISTS memories (

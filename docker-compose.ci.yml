@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: miru_db_test
+    environment:
+      POSTGRES_USER: miru
+      POSTGRES_PASSWORD: miru
+      POSTGRES_DB: miru
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U miru"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ${BACKEND_IMAGE:-miru-backend:latest}
+    container_name: miru_backend_test
+    environment:
+      - DATABASE_URL=postgres://miru:miru@db:5432/miru
+      - SUPABASE_URL=http://supabase-mock
+      - SUPABASE_KEY=fake-key
+      - SUPABASE_SERVICE_ROLE_KEY=fake-service-role-key
+      - SUPABASE_JWT_SECRET=ci-test-secret-must-be-at-least-32-chars-long-123456
+      - EMBEDDING_MODEL=openai/text-embedding-3-small
+      - DEFAULT_CHAT_MODEL=google/gemma-3-27b-it:free
+      - OPENROUTER_API_KEY=fake-openrouter-key
+      - WEBAUTHN_RP_ID=localhost
+      - WEBAUTHN_EXPECTED_ORIGIN=http://localhost
+      - CORS_ALLOWED_ORIGINS=*
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      bash -c "
+        # Wait for DB to be really ready
+        sleep 10
+        # Initialize DB using the custom migrate command
+        python manage.py migrate
+        # Start app
+        granian --interface asgi --host 0.0.0.0 --port 8000 --access-log app.main:app
+      "

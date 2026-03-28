@@ -29,17 +29,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install only the runtime libraries (e.g., libpq5 for PostgreSQL/Supabase)
+# Install only the runtime libraries (e.g., libpq5 for PostgreSQL/Supabase and psql for migrations)
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libpq5 \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the virtualenv from the builder stage
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy application code and SQL scripts
+# Copy application code, SQL scripts, and migrations
 COPY app/ ./app/
 COPY sql/ ./sql/
+COPY migrations/ ./migrations/
+COPY manage.py ./
 
 # Security: Run as a non-privileged user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

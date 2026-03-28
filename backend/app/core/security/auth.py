@@ -30,7 +30,20 @@ async def get_current_user(
         ) from exc
 
     # payload is now a JWTPayload model, use attribute access
-    return payload.sub
+    user_id = payload.sub
+
+    # For Supabase RLS policies to work with raw Tortoise connections in CI,
+    # we set the session variable that our auth.uid() mock expects.
+    # Only execute if using PostgreSQL (asyncpg), as SQLite/other providers don't support SET LOCAL.
+    # We check for AsyncpgDBClient explicitly to avoid issues with mocks or SQLite.
+    from tortoise import Tortoise
+    from tortoise.backends.asyncpg.client import AsyncpgDBClient
+
+    conn = Tortoise.get_connection("default")
+    if isinstance(conn, AsyncpgDBClient) and conn.in_transaction:
+        await conn.execute_script(f"SET LOCAL \"request.jwt.claim.sub\" = '{user_id}';")
+
+    return user_id
 
 
 # Convenience type alias for route signatures.
