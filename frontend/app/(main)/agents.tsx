@@ -403,6 +403,7 @@ export default function AgentsScreen() {
         </View>
       ) : viewMode === 'grid' ? (
         <FlatList
+          key="grid"
           data={filteredAgents}
           keyExtractor={(item) => item.id}
           numColumns={2}
@@ -421,6 +422,7 @@ export default function AgentsScreen() {
         />
       ) : (
         <FlatList
+          key="list"
           data={filteredAgents}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48 }}
