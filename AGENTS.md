@@ -92,25 +92,31 @@ backend/
         auth.py      # Supabase JWT validation, get_current_user() dependency
     domain/          # One package per bounded context
       agents/
-        models.py    # Tortoise ORM models + Pydantic schemas for agents, capabilities, etc.
+        models.py    # Tortoise ORM models
+        schemas.py   # Pydantic schemas for agents, capabilities, etc.
         service.py
       auth/
-        models.py    # Profile, Passkey models + schemas
+        models.py    # Profile, Passkey Tortoise ORM models
+        schemas.py   # Profile, Passkey Pydantic schemas
         service.py
       chat/
-        models.py    # ChatRoom, ChatMessage models + schemas
+        models.py    # ChatRoom, ChatMessage Tortoise ORM models
+        schemas.py   # ChatRoom, ChatMessage Pydantic schemas
         service.py
       memory/
-        models.py    # Memory, MemoryGraphNode/Edge models + schemas
+        models.py    # Memory, MemoryGraphNode/Edge Tortoise ORM models
+        schemas.py   # Memory, MemoryGraphNode/Edge Pydantic schemas
         service.py
       notifications/
         api/         # Push notification endpoints
         service.py   # Token registration service
       productivity/
-        models.py    # Task, Note, CalendarEvent models + schemas
+        models.py    # Task, Note, CalendarEvent Tortoise ORM models
+        schemas.py   # Task, Note, CalendarEvent Pydantic schemas
         service.py
       agent_tools/
-        models.py    # AgentTool, AgentToolLink models + schemas
+        models.py    # AgentTool, AgentToolLink Tortoise ORM models
+        schemas.py   # AgentTool, AgentToolLink Pydantic schemas
     infrastructure/
       database/
         base.py      # SupabaseModel — abstract Tortoise base with sql_policies/indexes/functions
@@ -173,7 +179,8 @@ Makefile
 Application code is organised into bounded-context packages under `app/domain/`. The key modules are:
 
 - **`app/api/v1/`** — Route handlers, one file per domain area, all mounted under `/api/v1` in `main.py`.
-- **`app/domain/**/models.py`** — Tortoise ORM models and co-located Pydantic schemas for each domain (agents, auth, chat, memory, agent_tools).
+- **`app/domain/**/models.py`** — Tortoise ORM models for each domain (agents, auth, chat, memory, agent_tools).
+- **`app/domain/**/schemas.py`** — Pydantic schemas corresponding to the ORM models to maintain clean separation of concerns.
 - **`app/domain/**/service.py`** — Business logic and database operations for each domain.
 - **`app/infrastructure/external/openrouter.py`** — All LLM and embedding calls go through here. Models are configurable via env vars (`EMBEDDING_MODEL`, `DEFAULT_CHAT_MODEL`).
 - **`app/core/security/auth.py`** — JWT validation (supports HS256 and ES256/RS256 via JWKS). The `get_current_user()` FastAPI dependency is defined here.
@@ -426,7 +433,7 @@ Install with: `make setup-hooks`
 
 ### Adding a New API Endpoint
 1. Add the route handler in the appropriate `backend/app/api/v1/` file for the domain
-2. Add any new Pydantic models to the relevant `app/domain/**/models.py`
+2. Add any new Pydantic models to the relevant `app/domain/**/schemas.py`
 3. Add business logic to the corresponding `app/domain/**/service.py`
 4. Write tests in `backend/tests/`, mocking Supabase and any external services
 5. Run `make test-backend` and `make lint-backend`

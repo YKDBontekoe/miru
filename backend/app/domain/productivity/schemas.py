@@ -32,7 +32,7 @@ class TaskCreate(BaseModel):
         due_date: Optional due date for the task.
     """
 
-    title: str = Field(..., max_length=255)
+    title: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     is_completed: bool = False
     due_date: datetime | None = None
@@ -48,7 +48,7 @@ class TaskUpdate(BaseModel):
         due_date: Optional new due date.
     """
 
-    title: str | None = Field(None, max_length=255)
+    title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     is_completed: bool | None = None
     due_date: datetime | None = None
@@ -94,7 +94,7 @@ class NoteCreate(BaseModel):
         origin_context: Optional context/description of why the note was created.
     """
 
-    title: str = Field(..., max_length=255)
+    title: str = Field(..., min_length=1, max_length=255)
     content: str
     is_pinned: bool = False
     agent_id: UUID | None = None
@@ -111,7 +111,7 @@ class NoteUpdate(BaseModel):
         is_pinned: Optional new pinned status.
     """
 
-    title: str | None = Field(None, max_length=255)
+    title: str | None = Field(None, min_length=1, max_length=255)
     content: str | None = None
     is_pinned: bool | None = None
 
@@ -159,7 +159,7 @@ class NoteResponse(BaseModel):
 class CalendarEventCreate(BaseModel):
     """Schema for creating a new Calendar Event."""
 
-    title: str = Field(..., max_length=255)
+    title: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     start_time: datetime
     end_time: datetime
@@ -179,7 +179,7 @@ class CalendarEventCreate(BaseModel):
 class CalendarEventUpdate(BaseModel):
     """Schema for updating an existing Calendar Event."""
 
-    title: str | None = Field(None, max_length=255)
+    title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None

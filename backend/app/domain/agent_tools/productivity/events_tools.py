@@ -113,7 +113,7 @@ class CreateEventTool(BaseTool):
         origin_context: str | None = None,
     ) -> str:
         try:
-            # We import here to avoid circular dependencies if needed, but it's already in models
+            # We import here to avoid circular imports after refactor
             from app.domain.productivity.schemas import CalendarEventCreate
 
             event_data = CalendarEventCreate(

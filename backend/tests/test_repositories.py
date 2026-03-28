@@ -23,7 +23,6 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 class TestAgentRepository:
     @pytest.mark.asyncio
-    @pytest.mark.asyncio
     async def test_list_capabilities_returns_list(self) -> None:
         repo = AgentRepository()
         result = await repo.list_capabilities()

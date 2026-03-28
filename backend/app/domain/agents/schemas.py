@@ -10,6 +10,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CapabilityResponse(BaseModel):
+    """Schema for returning capability data.
+
+    Attributes:
+        id: Unique identifier for the capability.
+        name: Name of the capability.
+        description: Description of the capability.
+        icon: Icon representing the capability.
+        status: Current status of the capability.
+        created_at: The timestamp when the capability was created.
+    """
+
     id: str
     name: str
     description: str
@@ -19,6 +30,18 @@ class CapabilityResponse(BaseModel):
 
 
 class IntegrationResponse(BaseModel):
+    """Schema for returning integration data.
+
+    Attributes:
+        id: Unique identifier for the integration.
+        display_name: Display name of the integration.
+        description: Description of the integration.
+        icon: Icon representing the integration.
+        status: Current status of the integration.
+        config_schema: Schema for the integration configuration.
+        created_at: The timestamp when the integration was created.
+    """
+
     id: str
     display_name: str
     description: str
@@ -42,9 +65,9 @@ class AgentBase(BaseModel):
 class AgentCreate(AgentBase):
     """Schema for creating a new agent."""
 
-    goals: list[str] = []
-    capabilities: list[str] = []
-    integrations: list[str] = []
+    goals: list[str] = Field(default_factory=list)
+    capabilities: list[str] = Field(default_factory=list)
+    integrations: list[str] = Field(default_factory=list)
     integration_configs: dict = Field(default_factory=dict)
 
 
@@ -54,9 +77,9 @@ class AgentResponse(AgentBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    goals: list[str] = []
-    capabilities: list[str] = []
-    integrations: list[str] = []
+    goals: list[str] = Field(default_factory=list)
+    capabilities: list[str] = Field(default_factory=list)
+    integrations: list[str] = Field(default_factory=list)
     integration_configs: dict = Field(default_factory=dict)
     message_count: int
     created_at: datetime
@@ -75,7 +98,11 @@ class AgentResponse(AgentBase):
     def extract_integrations(cls, v: Any) -> list[str]:
         """Extract integration IDs from prefetched agent_integrations or plain list."""
         if hasattr(v, "related_objects"):
-            return [obj.pk for obj in v.related_objects]
+            return [
+                obj.integration_id if hasattr(obj, "integration_id") else obj.pk
+                for obj in v.related_objects
+                if getattr(obj, "enabled", True)
+            ]
         if hasattr(v, "__iter__") and not isinstance(v, (str, dict)):
             items = list(v)
             if items and hasattr(items[0], "integration_id"):
@@ -93,7 +120,7 @@ class AgentTemplateResponse(BaseModel):
     name: str
     description: str
     personality: str
-    goals: list[str] = []
+    goals: list[str] = Field(default_factory=list)
     created_at: datetime
 
 
@@ -104,6 +131,9 @@ class AgentUpdate(BaseModel):
     personality: str | None = Field(default=None, max_length=1000)
     description: str | None = Field(default=None, max_length=500)
     goals: list[str] | None = None
+    capabilities: list[str] | None = None
+    integrations: list[str] | None = None
+    integration_configs: dict[str, Any] | None = None
 
 
 class AgentGenerate(BaseModel):
