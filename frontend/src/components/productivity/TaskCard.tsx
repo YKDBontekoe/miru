@@ -21,7 +21,7 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
   const { t, i18n } = useTranslation();
   const { C } = useTheme();
 
-  const styles = StyleSheet.create({
+  const styles = React.useMemo(() => StyleSheet.create({
     taskCard: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -79,7 +79,7 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
     deleteIcon: {
       padding: S.xs,
     },
-  });
+  }), [C]);
 
   return (
     <View style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>

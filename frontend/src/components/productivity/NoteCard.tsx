@@ -22,7 +22,7 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
     day: 'numeric',
   }).format(new Date(note.created_at));
 
-  const styles = StyleSheet.create({
+  const styles = React.useMemo(() => StyleSheet.create({
     card: {
       backgroundColor: C.surface,
       borderRadius: theme.borderRadius.xl,
@@ -71,7 +71,7 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
     timeIcon: {
       marginRight: 4,
     },
-  });
+  }), [C]);
 
   return (
     <View style={styles.card}>

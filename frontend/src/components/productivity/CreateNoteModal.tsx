@@ -61,11 +61,11 @@ export function CreateNoteModal({ visible, onClose, onCreated }: Props) {
     }
   };
 
-  const styles = StyleSheet.create({
+  const styles = React.useMemo(() => StyleSheet.create({
     modalOverlay: {
       flex: 1,
       justifyContent: 'flex-end',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: C.backdrop,
     },
     modalContent: {
       backgroundColor: C.surface,
@@ -127,7 +127,7 @@ export function CreateNoteModal({ visible, onClose, onCreated }: Props) {
       fontWeight: '700',
       fontSize: 16,
     },
-  });
+  }), [C]);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
