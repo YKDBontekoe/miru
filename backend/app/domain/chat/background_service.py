@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -25,10 +25,12 @@ class ChatBackgroundService:
         agent_repo: AgentRepository,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
+        chat_repo: Any = None,
     ):
         self.agent_repo = agent_repo
         self.memory_repo = memory_repo
         self.agent_service = agent_service
+        self.chat_repo = chat_repo
 
     async def update_mood_background(self, agent_id: UUID, recent_context: str) -> None:
         """Infer and persist an agent's mood from the recent conversation turn."""
@@ -100,3 +102,72 @@ class ChatBackgroundService:
                 )
         except Exception:
             logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
+
+    async def update_room_summary_background(
+        self, room_id: UUID, conversation_history: list[dict]
+    ) -> None:
+        """Summarize the conversation history and update the room summary."""
+        if not self.chat_repo:
+            return
+
+        from app.infrastructure.external.openrouter import stream_chat
+
+        try:
+            # Check if history is getting long enough to warrant a summary
+            if len(conversation_history) < 25:
+                return
+
+            room = await self.chat_repo.get_room(room_id)
+            if not room:
+                return
+
+            # Build transcript of history to summarize
+            lines = []
+            for entry in conversation_history:
+                name = entry.get("name", "User" if entry.get("role") == "user" else "Agent")
+                lines.append(f"{name}: {entry.get('content')}")
+            transcript = "\n".join(lines)
+
+            # Build the prompt
+            current_summary = room.summary or "No previous summary."
+            prompt = (
+                "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
+                "Below is the current summary of the older parts of the conversation, followed by the latest messages.\n\n"
+                f"CURRENT SUMMARY:\n{current_summary}\n\n"
+                f"LATEST MESSAGES:\n{transcript}\n\n"
+                "Please generate a new, comprehensive but concise summary of the ENTIRE conversation (merging the current summary with the new messages). "
+                "Focus on the main topics discussed, user preferences revealed, and any ongoing tasks or context the agents need to remember. "
+                "Return ONLY the summary text, nothing else."
+            )
+
+            # Call LLM
+
+            # Ensure model is fetched correctly or hardcode model string if stream_chat accepts it
+            model_name = "gpt-4o-mini"
+            try:
+                from app.core.config import get_settings
+
+                model_name = get_settings().default_chat_model
+            except Exception:
+                pass
+
+            response_generator = await stream_chat(
+                model=model_name,  # Use a fast/cheap model for summarization
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            new_summary_chunks = []
+            async for chunk in response_generator:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    new_summary_chunks.append(chunk.choices[0].delta.content)
+
+            new_summary = "".join(new_summary_chunks).strip()
+
+            if new_summary:
+                await self.chat_repo.update_room_summary(room_id, new_summary)
+                logger.info(f"Successfully updated summary for room {room_id}")
+
+        except Exception:
+            logger.warning(
+                "Background room summary update failed for room %s", room_id, exc_info=True
+            )
