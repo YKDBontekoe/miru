@@ -186,5 +186,3 @@ class AgentActionLog(SupabaseModel):
             "CREATE POLICY agent_action_logs_owner_insert ON public.agent_action_logs "
             "FOR INSERT WITH CHECK (auth.uid() = user_id);",
         ]
-
-

@@ -143,5 +143,3 @@ class MemoryGraphEdge(SupabaseModel):
             "SELECT 1 FROM memory_graph_nodes WHERE id = source_node_id AND user_id = auth.uid()"
             "));",
         ]
-
-

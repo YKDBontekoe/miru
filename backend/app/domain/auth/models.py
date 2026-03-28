@@ -71,5 +71,3 @@ class Passkey(SupabaseModel):
             "ALTER TABLE public.passkeys ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY passkeys_owner_all ON public.passkeys FOR ALL USING (auth.uid() = user_id);",
         ]
-
-
