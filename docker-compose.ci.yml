@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: miru
     ports:
       - "5432:5432"
+    volumes:
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U miru"]
       interval: 5s
@@ -21,7 +23,7 @@ services:
     container_name: miru_backend_test
     environment:
       - DATABASE_URL=postgres://miru:miru@db:5432/miru
-      - SUPABASE_URL=http://localhost:8000
+      - SUPABASE_URL=http://supabase-mock
       - SUPABASE_KEY=fake-key
       - SUPABASE_SERVICE_ROLE_KEY=fake-service-role-key
       - SUPABASE_JWT_SECRET=ci-test-secret-must-be-at-least-32-chars-long-123456
