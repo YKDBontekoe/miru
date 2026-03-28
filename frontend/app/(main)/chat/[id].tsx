@@ -382,10 +382,9 @@ export default function ChatRoomScreen() {
           <Animated.View
             entering={SlideInUp.springify().damping(22)}
             exiting={SlideOutDown.duration(200)}
+            className="rounded-t-2xl"
             style={{
               backgroundColor: C.surface,
-              borderTopStartRadius: 32,
-              borderTopEndRadius: 32,
               maxHeight: '72%',
             }}
           >

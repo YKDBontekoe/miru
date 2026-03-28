@@ -203,10 +203,9 @@ function LanguagePickerModal({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
         <View
+          className="rounded-t-[28px]"
           style={{
             backgroundColor: C.surface,
-            borderTopStartRadius: 28,
-            borderTopEndRadius: 28,
             padding: 24,
           }}
         >

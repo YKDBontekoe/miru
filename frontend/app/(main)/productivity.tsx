@@ -177,7 +177,7 @@ export default function ProductivityScreen() {
             name="search"
             size={18}
             color={T.onSurface.mutedLight}
-            style={styles.searchIcon}
+            className="me-2"
           />
           <TextInput
             value={searchQuery}
@@ -368,9 +368,6 @@ const styles = StyleSheet.create({
     height: 44,
     borderWidth: 1,
     borderColor: T.border.light,
-  },
-  searchIcon: {
-    marginEnd: S.sm,
   },
   searchInput: {
     flex: 1,

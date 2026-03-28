@@ -70,18 +70,14 @@ function formatDate(): string {
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <View
+      className="rounded-[20px] p-[18px] border mb-3 shadow-sm elevation-2"
       style={{
         backgroundColor: C.surface,
-        borderRadius: 20,
-        padding: 18,
-        borderWidth: 1,
         borderColor: C.border,
-        marginBottom: 12,
         shadowColor: '#2563EB',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.04,
         shadowRadius: 8,
-        elevation: 2,
       }}
     >
       {children}
@@ -705,8 +701,8 @@ export default function HomeScreen() {
                   flex: 1,
                   alignItems: 'center',
                   paddingVertical: 14,
-                  borderRightWidth: i < stats.length - 1 ? 1 : 0,
-                  borderRightColor: C.border,
+                  borderEndWidth: i < stats.length - 1 ? 1 : 0,
+                  borderEndColor: C.border,
                 }}
               >
                 <View
