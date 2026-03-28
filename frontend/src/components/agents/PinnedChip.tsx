@@ -41,7 +41,7 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
           style={{
             position: 'absolute',
             bottom: -2,
-            right: -2,
+            end: -2,
             backgroundColor: '#F59E0B',
             width: 14,
             height: 14,

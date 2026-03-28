@@ -66,8 +66,8 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
     },
     modalContent: {
       backgroundColor: C.surface,
-      borderTopLeftRadius: R.xxl,
-      borderTopRightRadius: R.xxl,
+      borderTopStartRadius: R.xxl,
+      borderTopEndRadius: R.xxl,
       padding: S.xxl,
       paddingBottom: Platform.OS === 'ios' ? 40 : S.xxl,
       ...theme.elevation.lg,

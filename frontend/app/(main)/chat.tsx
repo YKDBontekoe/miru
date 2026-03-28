@@ -242,8 +242,8 @@ function CreateRoomModal({
         <View
           style={{
             backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
+            borderTopStartRadius: 28,
+            borderTopEndRadius: 28,
             padding: 24,
             maxHeight: '82%',
           }}

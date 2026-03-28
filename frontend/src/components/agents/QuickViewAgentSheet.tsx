@@ -63,8 +63,8 @@ export function QuickViewAgentSheet({
           exiting={SlideOutDown.duration(180)}
           style={{
             backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
+            borderTopStartRadius: 28,
+            borderTopEndRadius: 28,
             padding: 24,
           }}
           onStartShouldSetResponder={() => true}

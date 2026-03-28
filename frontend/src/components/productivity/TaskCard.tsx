@@ -42,7 +42,7 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
       borderColor: C.success,
     },
     taskToggle: {
-      marginRight: S.md,
+      marginEnd: S.md,
     },
     taskCheckbox: {
       width: 24,

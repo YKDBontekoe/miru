@@ -169,8 +169,8 @@ export function AgentDetailSheet({
           exiting={SlideOutDown.duration(200)}
           style={{
             backgroundColor: C.surface,
-            borderTopLeftRadius: 32,
-            borderTopRightRadius: 32,
+            borderTopStartRadius: 32,
+            borderTopEndRadius: 32,
             maxHeight: '92%',
           }}
         >
