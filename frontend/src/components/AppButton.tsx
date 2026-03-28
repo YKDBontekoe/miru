@@ -7,12 +7,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  AnimatedStyle,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { AppText } from './AppText';
 import { theme } from '../core/theme';
@@ -22,7 +17,7 @@ export interface AppButtonProps extends Omit<PressableProps, 'style'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   isLoading?: boolean;
   className?: string;
-  style?: StyleProp<AnimatedStyle<StyleProp<ViewStyle>>>;
+  style?: StyleProp<ViewStyle>;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -137,11 +132,7 @@ export function AppButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className={className}
-      style={
-        [getContainerStyle(), animatedStyle, style] as StyleProp<
-          AnimatedStyle<StyleProp<ViewStyle>>
-        >
-      }
+      style={[getContainerStyle(), animatedStyle, style] as StyleProp<ViewStyle>}
       {...props}
     >
       {isLoading ? (

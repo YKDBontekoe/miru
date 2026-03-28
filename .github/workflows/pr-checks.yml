@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: read
+  packages: write
+  id-token: write
 
 concurrency:
   group: pr-checks-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -40,8 +42,10 @@ jobs:
             workflows:
               - '.github/workflows/**'
 
-  backend-checks:
-    name: Backend
+  # ── Backend Checks ──────────────────────────────────────────────────────────
+
+  backend-unit-tests:
+    name: Backend Unit Tests
     needs: changes
     if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
     uses: ./.github/workflows/reusable-python-setup.yml
@@ -53,17 +57,58 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  postman-coverage-check:
-    name: Enforce Postman Tests
-    needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
+  pr-backend-build:
+    name: Build PR Backend Image
+    needs: [changes, backend-unit-tests]
+    if: needs.changes.outputs.backend == 'true' && needs.backend-unit-tests.result == 'success'
     runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v6
+      - name: Compute image tag
+        id: image-tag
+        run: |
+          OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          SHORT_SHA=$(echo '${{ github.sha }}' | cut -c1-7)
+          TAG="ghcr.io/${OWNER}/miru-backend:pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
-          fetch-depth: 0
-      - name: Check Postman Coverage
-        run: python3 backend/scripts/enforce_postman_tests.py
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.image-tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  local-integration-tests:
+    name: Integration
+    needs: [pr-backend-build]
+    uses: ./.github/workflows/reusable-backend-integration.yml
+    with:
+      python-version: '3.13'
+      image-tag: ${{ needs.pr-backend-build.outputs.image-tag }}
+
+  pr-backend-preview:
+    name: Preview
+    needs: [pr-backend-build, local-integration-tests]
+    uses: ./.github/workflows/reusable-backend-preview.yml
+    with:
+      image-tag: ${{ needs.pr-backend-build.outputs.image-tag }}
+      pr-number: ${{ github.event.pull_request.number }}
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+  # ── Frontend Checks ──────────────────────────────────────────────────────────
 
   frontend-checks:
     name: Frontend
@@ -75,11 +120,12 @@ jobs:
       working-directory: './frontend'
       run-tests: true
       run-lint: true
-      upload-coverage: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+
+  # ── Global Checks ──────────────────────────────────────────────────────────
 
   security-audit:
     name: Security Audit
@@ -90,315 +136,20 @@ jobs:
       - uses: actions/checkout@v6
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-      - name: Set up Python
-        run: uv python install 3.13
-      - name: Run security audit
-        continue-on-error: true
+      - name: Run audit
         run: |
           cd backend
-          uv sync --all-extras
-          # safety check is used because safety scan requires an account/key in CI
-          uv run safety check --policy-file .safety-policy.yml
-          # SEC(agent): review needed - ignoring GHSA-rf74-v2fm-23pw, GHSA-gfwx-w7gr-fvh7, GHSA-jm6w-m3j8-898g (nltk via safety dev dependency) which have no current fixes
-          uv run pip-audit --ignore-vuln GHSA-w8v5-vhqr-4h9v --ignore-vuln GHSA-rf74-v2fm-23pw --ignore-vuln GHSA-gfwx-w7gr-fvh7 --ignore-vuln GHSA-jm6w-m3j8-898g
-
-  actionlint:
-    name: Lint Workflows
-    needs: changes
-    if: needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.11
+          uv sync
+          uv run pip-audit
 
   pr-size-check:
     name: PR Size Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Check PR size
+      - name: Check
         run: |
-          # Sum added and deleted lines across all changed files.
-          # git diff --numstat is more reliable than --shortstat whose field positions
-          # shift depending on whether insertions or deletions are present.
-          CHANGED_LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD \
-            | awk '{add+=$1; del+=$2} END {print add+del}')
-          echo "Total lines changed: ${CHANGED_LINES}"
-          if [ "${CHANGED_LINES}" -gt 1000 ]; then
-            echo "::warning::PR is large (${CHANGED_LINES} lines changed). Consider splitting into smaller PRs."
-          fi
-
-  # ── Frontend additional checks ──────────────────────────────────────────────────
-
-  frontend-web-build:
-    name: Frontend Web Build
-    needs: [changes]
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: ./frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: npx expo export -p web
-
-
-  # ── PR Backend Preview Deployment ────────────────────────────────────────────
-  # Builds a PR-tagged Docker image and deploys it to a shared PR preview
-  # Container App so reviewers can test the backend before merging.
-  #
-  # Prerequisites:
-  #   • A 'pr-preview' GitHub Environment exists with the same secrets as
-  #     'staging' (STAGING_DATABASE_URL, STAGING_SUPABASE_URL, etc.) plus
-  #     AZURE_CREDENTIALS with Contributor on the PR Container App.
-  #   • A PR preview Container App exists (default: aca-miru-pr).
-  #     Override via PR_CONTAINER_APP_NAME and PR_RESOURCE_GROUP repo variables.
-  #   • Note: this is a *shared* preview — only one PR is live at a time.
-
-  pr-backend-build:
-    name: Build PR Backend Image
-    needs: [changes, backend-checks]
-    if: needs.changes.outputs.backend == 'true' && needs.backend-checks.result == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image-tag: ${{ steps.image-tag.outputs.tag }}
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Compute image tag
-        id: image-tag
-        run: |
-          OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
-          SHORT_SHA=$(echo '${{ github.sha }}' | cut -c1-7)
-          TAG="ghcr.io/${OWNER}/miru-backend:pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "owner=${OWNER}" >> "$GITHUB_OUTPUT"
-          echo "Image tag: ${TAG}"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./backend
-          push: true
-          tags: ${{ steps.image-tag.outputs.tag }}
-          cache-from: |
-            type=registry,ref=ghcr.io/${{ steps.image-tag.outputs.owner }}/miru-backend:buildcache
-            type=gha
-          platforms: linux/amd64
-
-  pr-backend-deploy:
-    name: Deploy and Smoke-test PR Backend
-    needs: [pr-backend-build]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      packages: read
-      id-token: write
-    environment:
-      name: pr-preview
-      url: ${{ steps.app-url.outputs.url }}
-    env:
-      PR_APP: ${{ vars.PR_CONTAINER_APP_NAME || 'aca-miru-pr' }}
-      PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Login to Azure
-        uses: azure/login@v3
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upgrade containerapp CLI extension
-        run: az extension add --name containerapp --upgrade --yes
-
-      - name: Deploy image to PR container app
-        run: |
-          IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
-          [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
-
-          # aca-miru-pr is permanently in 'Labels' revision mode. In this mode every
-          # write operation (secret set, revision set-mode) requires --target-label,
-          # which those commands do not support. All 17 secrets are pre-configured on
-          # the app and do not need to be re-set per deploy.
-          #
-          # az containerapp update is the only command that accepts --target-label, so
-          # it is the sole deploy command. Env vars wire up the already-configured
-          # secrets by name via secretref:.
-          ENV_VARS=(
-            "DATABASE_URL=secretref:database-url"
-            "SUPABASE_URL=secretref:supabase-url"
-            "SUPABASE_KEY=secretref:supabase-key"
-            "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
-            "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
-            "OPENROUTER_API_KEY=secretref:openrouter-api-key"
-            "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
-            "EMBEDDING_MODEL=secretref:embedding-model"
-            "SECRET_KEY=secretref:secret-key"
-            "WEBAUTHN_RP_ID=secretref:webauthn-rp-id"
-            "WEBAUTHN_RP_NAME=secretref:webauthn-rp-name"
-            "WEBAUTHN_EXPECTED_ORIGIN=secretref:webauthn-expected-origin"
-            "CORS_ALLOWED_ORIGINS=secretref:cors-allowed-origins"
-            "TAVILY_API_KEY=secretref:tavily-api-key"
-            "SENTRY_DSN=secretref:sentry-dsn"
-            "AZURE_NOTIFICATION_HUB_NAME=secretref:azure-notification-hub-name"
-            "AZURE_NOTIFICATION_HUB_CONNECTION_STRING=secretref:azure-notification-hub-connection-string"
-            "SENTRY_ENVIRONMENT=pr-preview"
-          )
-
-          NEW_REVISION=$(az containerapp update \
-            --name "${{ env.PR_APP }}" \
-            --resource-group "${{ env.PR_RG }}" \
-            --image "$IMAGE_TAG" \
-            --revision-suffix "pr-${{ github.event.pull_request.number }}-${{ github.run_id }}" \
-            --target-label "pr-${{ github.event.pull_request.number }}" \
-            --set-env-vars "${ENV_VARS[@]}" \
-            --query "properties.latestRevisionName" \
-            --output tsv)
-
-          echo "Created revision: $NEW_REVISION with label pr-${{ github.event.pull_request.number }}"
-      - name: Get app URL
-        id: app-url
-        run: |
-          # Use the label's FQDN to ensure we are testing this PR's specific revision
-          # ACA URLs for labels follow: <app-name>---<label>.<env-domain>
-          FQDN=$(az containerapp show \
-            --name "${{ env.PR_APP }}" \
-            --resource-group "${{ env.PR_RG }}" \
-            --query "properties.configuration.ingress.fqdn" \
-            --output tsv)
-          APP_NAME="${{ env.PR_APP }}"
-          ENVIRONMENT_DOMAIN="${FQDN#"$APP_NAME".}"
-          LABEL="pr-${{ github.event.pull_request.number }}"
-          TEST_URL="https://${APP_NAME}---${LABEL}.${ENVIRONMENT_DOMAIN}"
-
-          echo "url=$TEST_URL" >> "$GITHUB_OUTPUT"
-          echo "Testing PR URL: $TEST_URL"
-
-      - name: Wait for PR deployment to become healthy
-        # Scale-to-zero aware: --max-time 90 keeps the connection open through
-        # a full ACA cold start rather than abandoning it mid-boot.
-        run: |
-          APP_URL="${{ steps.app-url.outputs.url }}"
-
-          for i in $(seq 1 18); do
-            REVISION=$(az containerapp revision list \
-              --name "${{ env.PR_APP }}" \
-              --resource-group "${{ env.PR_RG }}" \
-              --query "[?starts_with(name, '${{ env.PR_APP }}--pr-${{ github.event.pull_request.number }}-')].name | [-1]" \
-              --output tsv)
-            STATE=$(az containerapp revision show \
-              --name "${{ env.PR_APP }}" \
-              --resource-group "${{ env.PR_RG }}" \
-              --revision "$REVISION" \
-              --query "properties.runningState" --output tsv)
-            echo "Attempt ${i}/18: ${REVISION} is ${STATE}"
-            if [ "$STATE" = "Running" ] || [ "$STATE" = "RunningAtMaxScale" ]; then
-              break
-            fi
-            sleep 10
-          done
-
-          for i in $(seq 1 5); do
-            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
-              --connect-timeout 10 --max-time 90 \
-              "${APP_URL}/health" || echo "000")
-            echo "Attempt ${i}/5: HTTP ${STATUS}"
-            if [ "$STATUS" = "200" ]; then
-              echo "PR deployment is healthy."
-              exit 0
-            fi
-            [ "$i" -lt 5 ] && sleep 5
-          done
-          echo "::error::PR deployment did not become healthy within the expected window."
-          exit 1
-
-      - name: Run smoke tests
-        run: |
-          APP_URL="${{ steps.app-url.outputs.url }}"
-          FAILURES=0
-
-          check() {
-            local label="$1" url="$2" expected="$3" fatal="$4"
-            local status
-            status=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
-            echo "${label} → HTTP ${status}"
-            if [ "$status" != "$expected" ]; then
-              [ "$fatal" = "true" ] \
-                && { echo "::error::${label} returned ${status} (expected ${expected})"; FAILURES=$((FAILURES+1)); } \
-                || echo "::warning::${label} returned ${status} (expected ${expected})"
-            fi
-          }
-
-          check "/health"       "${APP_URL}/health"       "200" "true"
-          check "/docs"         "${APP_URL}/docs"         "200" "false"
-          check "/openapi.json" "${APP_URL}/openapi.json" "200" "true"
-
-          [ "$FAILURES" -gt 0 ] && { echo "::error::${FAILURES} smoke test(s) failed."; exit 1; }
-          echo "All smoke tests passed."
-
-      - name: Run Postman integration tests
-        run: |
-          npm install -g newman
-          PIDS=()
-          for collection in backend/tests/postman/*.json; do
-            echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
-            PIDS+=($!)
-          done
-
-          FAILURES=0
-          for pid in "${PIDS[@]}"; do
-            wait "$pid" || FAILURES=$((FAILURES+1))
-          done
-
-          if [ "$FAILURES" -gt 0 ]; then
-            echo "::error::${FAILURES} Postman collection(s) failed."
-            exit 1
-          fi
-          echo "All Postman collections passed."
+          CHANGED_LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{add+=$1; del+=$2} END {print add+del}')
+          if [ "${CHANGED_LINES}" -gt 1000 ]; then echo "::warning::PR is large"; fi

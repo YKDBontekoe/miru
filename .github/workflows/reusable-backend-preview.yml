@@ -1,0 +1,112 @@
+name: Reusable Backend Preview Deployment
+
+on:
+  workflow_call:
+    inputs:
+      image-tag:
+        required: true
+        type: string
+      pr-number:
+        required: true
+        type: string
+    secrets:
+      AZURE_CREDENTIALS:
+        required: true
+
+jobs:
+  pr-backend-deploy:
+    name: Deploy and Smoke-test PR Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: pr-preview
+    env:
+      PR_APP: ${{ vars.PR_CONTAINER_APP_NAME || 'aca-miru-pr' }}
+      PR_RG:  ${{ vars.PR_RESOURCE_GROUP    || 'rg-miru' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Upgrade containerapp CLI extension
+        run: az extension add --name containerapp --upgrade --yes
+
+      - name: Deploy image to PR container app
+        run: |
+          IMAGE_TAG="${{ inputs.image-tag }}"
+          ENV_VARS=(
+            "DATABASE_URL=secretref:database-url"
+            "SUPABASE_URL=secretref:supabase-url"
+            "SUPABASE_KEY=secretref:supabase-key"
+            "SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key"
+            "SUPABASE_JWT_SECRET=secretref:supabase-jwt-secret"
+            "OPENROUTER_API_KEY=secretref:openrouter-api-key"
+            "DEFAULT_CHAT_MODEL=secretref:default-chat-model"
+            "EMBEDDING_MODEL=secretref:embedding-model"
+            "SECRET_KEY=secretref:secret-key"
+            "WEBAUTHN_RP_ID=secretref:webauthn-rp-id"
+            "WEBAUTHN_RP_NAME=secretref:webauthn-rp-name"
+            "WEBAUTHN_EXPECTED_ORIGIN=secretref:webauthn-expected-origin"
+            "CORS_ALLOWED_ORIGINS=secretref:cors-allowed-origins"
+            "TAVILY_API_KEY=secretref:tavily-api-key"
+            "SENTRY_DSN=secretref:sentry-dsn"
+            "AZURE_NOTIFICATION_HUB_NAME=secretref:azure-notification-hub-name"
+            "AZURE_NOTIFICATION_HUB_CONNECTION_STRING=secretref:azure-notification-hub-connection-string"
+            "SENTRY_ENVIRONMENT=pr-preview"
+          )
+
+          az containerapp update \
+            --name "${{ env.PR_APP }}" \
+            --resource-group "${{ env.PR_RG }}" \
+            --image "$IMAGE_TAG" \
+            --revision-suffix "pr-${{ inputs.pr-number }}-${{ github.run_id }}" \
+            --target-label "pr-${{ inputs.pr-number }}" \
+            --set-env-vars "${ENV_VARS[@]}"
+
+      - name: Get app URL
+        id: app-url
+        run: |
+          FQDN=$(az containerapp show \
+            --name "${{ env.PR_APP }}" \
+            --resource-group "${{ env.PR_RG }}" \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
+          APP_NAME="${{ env.PR_APP }}"
+          ENVIRONMENT_DOMAIN="${FQDN#"$APP_NAME".}"
+          LABEL="pr-${{ inputs.pr-number }}"
+          TEST_URL="https://${APP_NAME}---${LABEL}.${ENVIRONMENT_DOMAIN}"
+          echo "url=$TEST_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for PR deployment to become healthy
+        run: |
+          APP_URL="${{ steps.app-url.outputs.url }}"
+          for i in $(seq 1 5); do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 --max-time 90 \
+              "${APP_URL}/health" || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          APP_URL="${{ steps.app-url.outputs.url }}"
+          FAILURES=0
+          check() {
+            local label="$1" url="$2" expected="$3"
+            status=$(curl -sf -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+            if [ "$status" != "$expected" ]; then
+              FAILURES=$((FAILURES+1))
+            fi
+          }
+          check "/health"       "${APP_URL}/health"       "200"
+          check "/openapi.json" "${APP_URL}/openapi.json" "200"
+          [ "$FAILURES" -gt 0 ] && exit 1
+          exit 0
