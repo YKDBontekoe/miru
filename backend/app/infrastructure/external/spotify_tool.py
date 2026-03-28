@@ -21,7 +21,7 @@ from app.infrastructure.external.spotify import (
 )
 
 
-def _run_async_in_sync(coro: typing.Coroutine[typing.Any, typing.Any, str]) -> str:
+def _run_async_in_sync(coro: typing.Coroutine[typing.Any, typing.Any, typing.Any]) -> typing.Any:
     """Run an async coroutine synchronously using nest_asyncio."""
     try:
         asyncio.get_running_loop()
@@ -205,7 +205,7 @@ class SpotifyGetRecommendationsTool(BaseTool):
         if isinstance(result, dict) and "error" in result:
             return f"Failed to get recommendations: {result['error']}"
 
-        if not result or "tracks" not in result or not result["tracks"]:
+        if not isinstance(result, dict) or "tracks" not in result or not result["tracks"]:
             return "No recommendations found."
 
         lines = ["Recommended Tracks:"]

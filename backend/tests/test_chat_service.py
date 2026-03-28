@@ -633,10 +633,10 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         m_agent_resp.return_value = []
         m_create_task.return_value = MagicMock()
 
-        chat_service.bg_service.store_memories_background = (
-            MagicMock()
-        )  # Non-async mock so it doesn't return a coroutine
-        chat_service.bg_service.update_room_summary_background = MagicMock()
+        typing.cast("typing.Any", chat_service.bg_service).store_memories_background = MagicMock()
+        typing.cast(
+            "typing.Any", chat_service.bg_service
+        ).update_room_summary_background = MagicMock()
 
         await chat_service.run_room_chat_ws(room_id, "Hello", user_id, accept_language="es-MX")
 
