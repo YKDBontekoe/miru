@@ -4,6 +4,7 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app.domain.chat.background_service import ChatBackgroundService
 
 
@@ -37,7 +38,9 @@ async def test_update_mood_background_exception(background_service: ChatBackgrou
 
 
 @pytest.mark.asyncio
-async def test_update_affinity_background_success(background_service: ChatBackgroundService) -> None:
+async def test_update_affinity_background_success(
+    background_service: ChatBackgroundService,
+) -> None:
     user_id = uuid.uuid4()
     agent_id = uuid.uuid4()
 
@@ -46,7 +49,9 @@ async def test_update_affinity_background_success(background_service: ChatBackgr
 
 
 @pytest.mark.asyncio
-async def test_update_affinity_background_exception(background_service: ChatBackgroundService) -> None:
+async def test_update_affinity_background_exception(
+    background_service: ChatBackgroundService,
+) -> None:
     user_id = uuid.uuid4()
     agent_id = uuid.uuid4()
     background_service.agent_repo.upsert_affinity.side_effect = Exception("Failed")
@@ -72,7 +77,9 @@ async def test_store_memories_background_success(background_service: ChatBackgro
     agent_names = ["Agent1"]
 
     with (
-        patch("app.domain.chat.websocket_broadcaster.ChatWebSocketBroadcaster.parse_transcript") as mock_parse,
+        patch(
+            "app.domain.chat.websocket_broadcaster.ChatWebSocketBroadcaster.parse_transcript"
+        ) as mock_parse,
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
     ):
         mock_parse.return_value = [("Agent1", "How can I help?")]
@@ -88,7 +95,9 @@ async def test_store_memories_background_success(background_service: ChatBackgro
 
 
 @pytest.mark.asyncio
-async def test_store_memories_background_exception(background_service: ChatBackgroundService) -> None:
+async def test_store_memories_background_exception(
+    background_service: ChatBackgroundService,
+) -> None:
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
 
@@ -99,8 +108,6 @@ async def test_store_memories_background_exception(background_service: ChatBackg
         mock_embed.side_effect = Exception("Embed failed")
 
         # Should not raise
-        await background_service.store_memories_background(
-            user_id, room_id, "Hello", [], "", []
-        )
+        await background_service.store_memories_background(user_id, room_id, "Hello", [], "", [])
 
         mock_logger.assert_called_once()
