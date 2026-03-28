@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { useChatStore } from '../../src/store/useChatStore';
+import { ApiService } from '../../src/core/api/ApiService';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { ChatRoom, Agent } from '../../src/core/models';
 
@@ -346,12 +347,38 @@ export default function ChatListScreen() {
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
   const { agents, fetchAgents } = useAgentStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [roomAgents] = useState<Record<string, Agent[]>>({});
+  const [roomAgents, setRoomAgents] = useState<Record<string, Agent[]>>({});
 
   useEffect(() => {
     fetchRooms();
     fetchAgents();
   }, [fetchRooms, fetchAgents]);
+
+  useEffect(() => {
+    if (rooms.length === 0) return;
+    let isMounted = true;
+
+    const loadRoomAgents = async () => {
+      try {
+        const agentPromises = rooms.map(async (room) => {
+          const roomAgentsData = await ApiService.getRoomAgents(room.id);
+          return { roomId: room.id, agents: roomAgentsData };
+        });
+        const results = await Promise.all(agentPromises);
+        if (!isMounted) return;
+        const newRoomAgents: Record<string, Agent[]> = {};
+        for (const res of results) {
+          newRoomAgents[res.roomId] = res.agents;
+        }
+        setRoomAgents(newRoomAgents);
+      } catch {}
+    };
+
+    loadRoomAgents();
+    return () => {
+      isMounted = false;
+    };
+  }, [rooms]);
 
   const renderRoomItem = React.useCallback(
     ({ item: room }: { item: ChatRoom }) => (
