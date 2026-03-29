@@ -110,7 +110,7 @@ class ChatBackgroundService:
         if not self.chat_repo:
             return
 
-        from app.infrastructure.external.openrouter import stream_chat
+        from app.infrastructure.external.openrouter import chat_completion
 
         try:
             # Check if history is getting long enough to warrant a summary
@@ -151,21 +151,16 @@ class ChatBackgroundService:
             except Exception:
                 pass
 
-            response_generator = await stream_chat(
+            new_summary = await chat_completion(
                 model=model_name,  # Use a fast/cheap model for summarization
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            new_summary_chunks = []
-            async for chunk in response_generator:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    new_summary_chunks.append(chunk.choices[0].delta.content)
-
-            new_summary = "".join(new_summary_chunks).strip()
+            new_summary = new_summary.strip()
 
             if new_summary:
                 await self.chat_repo.update_room_summary(room_id, new_summary)
-                logger.info(f"Successfully updated summary for room {room_id}")
+                logger.info("Successfully updated summary for room %s", room_id)
 
         except Exception:
             logger.warning(
