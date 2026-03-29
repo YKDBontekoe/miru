@@ -119,3 +119,62 @@ async def test_store_memories_background_exception(
         await background_service.store_memories_background(user_id, room_id, "Hello", [], "", [])
 
         mock_logger.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_skip_small_history(
+    background_service: ChatBackgroundService,
+) -> None:
+    room_id = uuid.uuid4()
+    # History too short, should return early
+    await background_service.update_room_summary_background(
+        room_id, [{"role": "user", "content": "hi"}]
+    )
+    background_service.chat_repo.get_room.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_success(
+    background_service: ChatBackgroundService,
+) -> None:
+    room_id = uuid.uuid4()
+
+    # Needs at least 25 messages
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+
+    mock_room = MagicMock()
+    mock_room.summary = "old summary"
+    background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
+
+    with patch(
+        "app.infrastructure.external.openrouter.chat_completion", new_callable=AsyncMock
+    ) as mock_chat_completion:
+        mock_chat_completion.return_value = "new updated summary"
+
+        await background_service.update_room_summary_background(room_id, history)
+
+        mock_chat_completion.assert_called_once()
+        background_service.chat_repo.update_room_summary.assert_called_once_with(
+            room_id, "new updated summary"
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    room_id = uuid.uuid4()
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+
+    mock_room = MagicMock()
+    mock_room.summary = "old summary"
+    background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
+
+    with patch(
+        "app.infrastructure.external.openrouter.chat_completion", new_callable=AsyncMock
+    ) as mock_chat_completion:
+        mock_chat_completion.side_effect = Exception("error")
+
+        with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+            await background_service.update_room_summary_background(room_id, history)
+            mock_logger.assert_called_once()
