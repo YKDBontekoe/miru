@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { supabase } from '../services/supabase';
 import { Platform } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
+import { normalizeApiBaseUrl, toHealthBaseUrl } from '../utils/backendUrl';
 import i18next from 'i18next';
 
 const LOCAL_BACKEND_URL = Platform.select({
@@ -22,7 +23,10 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(async (config) => {
   const storeUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-  config.baseURL = storeUrl.endsWith('/') ? storeUrl : `${storeUrl}/`;
+  const normalizedApiBaseUrl = normalizeApiBaseUrl(storeUrl);
+  config.baseURL = normalizedApiBaseUrl.endsWith('/')
+    ? normalizedApiBaseUrl
+    : `${normalizedApiBaseUrl}/`;
 
   const {
     data: { session },
@@ -49,7 +53,7 @@ apiClient.interceptors.response.use(
 
 export async function waitForBackend(maxAttempts = 30, initialDelay = 1000): Promise<void> {
   const baseUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-  const healthUrl = `${baseUrl.replace(/\/api\/v1\/?$/, '')}/health`;
+  const healthUrl = `${toHealthBaseUrl(baseUrl)}/health`;
 
   let currentDelay = initialDelay;
 
@@ -79,7 +83,11 @@ export async function streamChat(
   signal?: AbortSignal
 ): Promise<void> {
   const storeUrl = useAppStore.getState().baseUrl || LOCAL_BACKEND_URL;
-  const fullUrl = `${storeUrl.endsWith('/') ? storeUrl : `${storeUrl}/`}${endpoint}`;
+  const normalizedApiBaseUrl = normalizeApiBaseUrl(storeUrl);
+  const baseWithSlash = normalizedApiBaseUrl.endsWith('/')
+    ? normalizedApiBaseUrl
+    : `${normalizedApiBaseUrl}/`;
+  const fullUrl = `${baseWithSlash}${endpoint}`;
   const {
     data: { session },
   } = await supabase.auth.getSession();

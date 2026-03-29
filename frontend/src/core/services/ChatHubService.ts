@@ -12,6 +12,7 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { useAppStore } from '../../store/useAppStore';
+import { normalizeApiBaseUrl } from '../utils/backendUrl';
 import i18next from 'i18next';
 
 // ---------------------------------------------------------------------------
@@ -64,9 +65,9 @@ const LOCAL_BACKEND_URL = Platform.select({
 });
 
 function toWsUrl(httpBase: string): string {
-  const base = httpBase.replace(/^http/, 'ws').replace(/\/+$/, '');
-  // Avoid doubling the /api/v1 segment when the baseUrl already includes it
-  return base.endsWith('/api/v1') ? `${base}/ws/chat` : `${base}/api/v1/ws/chat`;
+  const apiBase = normalizeApiBaseUrl(httpBase);
+  const wsBase = apiBase.replace(/^http/, 'ws').replace(/\/+$/, '');
+  return `${wsBase}/ws/chat`;
 }
 
 type FrameListener = (frame: HubFrame) => void;
