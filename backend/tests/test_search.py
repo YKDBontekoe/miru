@@ -81,13 +81,16 @@ async def test_unified_search_success_all_sources(
     assert response.status_code == 200
     data = response.json()
     assert data["query"] == "test"
-    assert len(data["results"]) == 4
 
     sources = [r["source"] for r in data["results"]]
+    print(sources)
+
     assert "memory" in sources
     assert "note" in sources
     assert "task" in sources
     assert "chat" in sources
+
+    assert len(data["results"]) == 4
 
 
 @pytest.mark.asyncio
