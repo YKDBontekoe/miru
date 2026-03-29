@@ -120,8 +120,17 @@ async def list_templates(
     return await service.list_templates(skip=skip, limit=limit)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.post("/generate", response_model=AgentGenerationResponse)
+@router.post(
+    "/generate",
+    response_model=AgentGenerationResponse,
+    summary="Generate agent persona",
+    description="Use AI to generate an agent persona from keywords.",
+    responses={
+        200: {"description": "Agent persona generated successfully."},
+        401: {"description": "Authentication required"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def generate_agent(
     data: AgentGenerate,
     _user_id: CurrentUser,
@@ -131,8 +140,18 @@ async def generate_agent(
     return await service.generate_agent_profile(data.keywords)
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.patch("/{agent_id}", response_model=AgentResponse)
+@router.patch(
+    "/{agent_id}",
+    response_model=AgentResponse,
+    summary="Update agent",
+    description="Update an existing agent.",
+    responses={
+        200: {"description": "Agent updated successfully."},
+        401: {"description": "Authentication required"},
+        404: {"description": "Agent not found"},
+        422: {"description": "Validation Error"},
+    },
+)
 async def update_agent(
     agent_id: UUID,
     data: AgentUpdate,
@@ -149,8 +168,29 @@ async def update_agent(
     return result
 
 
-# DOCS(miru-agent): undocumented endpoint
-@router.delete("/{agent_id}")
+@router.delete(
+    "/{agent_id}",
+    summary="Delete agent",
+    description="Delete an agent.",
+    responses={
+        200: {
+            "description": "Agent deleted successfully.",
+            "content": {"application/json": {"example": {"status": "ok"}}},
+        },
+        401: {"description": "Authentication required"},
+        404: {
+            "description": "Agent not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {"message": "Agent not found", "error": "AGENT_NOT_FOUND"}
+                    }
+                }
+            },
+        },
+        422: {"description": "Validation Error"},
+    },
+)
 async def delete_agent(
     agent_id: UUID,
     user_id: CurrentUser,
