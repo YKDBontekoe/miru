@@ -14,7 +14,10 @@ from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
 @pytest.fixture
 def mock_memory_service():
-    return AsyncMock(spec=MemoryService)
+    mock = AsyncMock(spec=MemoryService)
+    # Ensure retrieve_memories is a fully functional coroutine that returns a list
+    mock.retrieve_memories = AsyncMock(return_value=[])
+    return mock
 
 
 @pytest.fixture
