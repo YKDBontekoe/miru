@@ -120,6 +120,7 @@ async def list_templates(
     return await service.list_templates(skip=skip, limit=limit)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.post("/generate", response_model=AgentGenerationResponse)
 async def generate_agent(
     data: AgentGenerate,
@@ -130,6 +131,7 @@ async def generate_agent(
     return await service.generate_agent_profile(data.keywords)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.patch("/{agent_id}", response_model=AgentResponse)
 async def update_agent(
     agent_id: UUID,
@@ -147,6 +149,7 @@ async def update_agent(
     return result
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.delete("/{agent_id}")
 async def delete_agent(
     agent_id: UUID,

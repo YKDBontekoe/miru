@@ -66,7 +66,8 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
-- Scheduled every 6 hours to pull open issues labeled `jules-fix-pending`.
+- Triggered automatically when an issue is labeled `jules-fix-pending`.
+- Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
