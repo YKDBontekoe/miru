@@ -84,10 +84,40 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   createAgent: async (data) => {
-    // Optimistically add a placeholder, then replace with real data
-    const agent = await ApiService.createAgent(data);
-    set((state) => ({ agents: [agent, ...state.agents] }));
-    return agent;
+    // Optimistically add a placeholder with a temporary ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const optimisticAgent: Agent = {
+      id: tempId,
+      name: data.name ?? 'New Persona',
+      personality: data.personality ?? '',
+      description: data.description ?? null,
+      goals: data.goals ?? [],
+      capabilities: [],
+      integrations: [],
+      integration_configs: {},
+      message_count: 0,
+      status: 'active',
+      mood: 'Neutral',
+      system_prompt: '',
+      user_id: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    set((state) => ({ agents: [optimisticAgent, ...state.agents] }));
+
+    try {
+      const realAgent = await ApiService.createAgent(data);
+      set((state) => ({
+        // Replace the temporary agent with the real one returned from the server
+        agents: state.agents.map((a) => (a.id === tempId ? realAgent : a)),
+      }));
+      return realAgent;
+    } catch (error) {
+      // Rollback optimistic update
+      set((state) => ({ agents: state.agents.filter((a) => a.id !== tempId) }));
+      throw error;
+    }
   },
 
   generateAgent: async (keywords) => {
