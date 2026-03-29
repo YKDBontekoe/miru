@@ -227,6 +227,12 @@ class ChatService:
         """Process a room message and push all updates via the WebSocket hub."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
+        if not await self.user_in_room(user_id, room_id):
+            await chat_hub.send_to_user(
+                user_id, {"type": "error", "data": {"message": "You do not have access to this room."}}
+            )
+            return
+
         # 1. Fetch room agents first so we can attach names to history entries.
         room_agents = await self.chat_repo.list_room_agents(room_id)
 

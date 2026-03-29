@@ -169,15 +169,21 @@ async def delete_room(
     responses={
         200: {"description": "Agent added to room successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         422: {"description": "Validation Error"},
     },
 )
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    if not await service.user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"message": "Forbidden", "error": "NOT_ROOM_OWNER"},
+        )
     await service.add_agent_to_room(room_id, data.agent_id)
     return {"status": "ok"}
 
@@ -209,6 +215,7 @@ async def get_room_agents(
     responses={
         200: {"description": "Agent removed from room successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         404: {"description": "Agent not found in room"},
         422: {"description": "Validation Error"},
     },
@@ -216,9 +223,14 @@ async def get_room_agents(
 async def remove_agent_from_room(
     room_id: UUID,
     agent_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    if not await service.user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"message": "Forbidden", "error": "NOT_ROOM_OWNER"},
+        )
     success = await service.remove_agent_from_room(room_id, agent_id)
     if not success:
         raise HTTPException(
