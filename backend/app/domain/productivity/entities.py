@@ -17,6 +17,9 @@ class TaskEntity:
     updated_at: datetime
     description: str | None = None
     due_date: datetime | None = None
+    recurrence_rule: str | None = None
+    recurrence_end_date: datetime | None = None
+    calendar_event_id: UUID | None = None
     deleted_at: datetime | None = None
 
 
@@ -50,4 +53,7 @@ class CalendarEventEntity:
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
     origin_context: str | None = None
+    recurrence_rule: str | None = None
+    recurrence_end_date: datetime | None = None
+    linked_task_id: UUID | None = None
     deleted_at: datetime | None = None

@@ -65,7 +65,15 @@ class AgentRepository:
             await agent.save()
 
     _ALLOWED_AGENT_FIELDS: frozenset[str] = frozenset(
-        {"name", "personality", "description", "goals", "system_prompt", "mood"}
+        {
+            "name",
+            "personality",
+            "description",
+            "goals",
+            "system_prompt",
+            "mood",
+            "personality_history",
+        }
     )
 
     async def update_agent(
@@ -101,6 +109,10 @@ class AgentRepository:
             await agent.save()
             return True
         return False
+
+    async def get_affinity(self, user_id: UUID, agent_id: UUID) -> UserAgentAffinity | None:
+        """Fetch the affinity record for a user-agent pair, or None if not yet established."""
+        return await UserAgentAffinity.get_or_none(user_id=user_id, agent_id=agent_id)
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""

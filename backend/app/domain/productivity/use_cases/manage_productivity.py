@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from uuid import UUID
 
 from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
@@ -46,8 +47,39 @@ class ManageProductivityUseCase:
     # ---------------------------------------------------------------------------
 
     async def create_task(self, user_id: UUID, task_data: TaskCreate) -> TaskEntity:
-        """Create a new task for the user."""
-        return await self._repo.create_task(user_id, task_data)
+        """Create a new task for the user.
+
+        When ``task_data.auto_create_event`` is True and a ``due_date`` is present,
+        a linked calendar event is automatically created and its ID is stored on
+        the returned task entity.
+        """
+        task = await self._repo.create_task(user_id, task_data)
+
+        if task_data.auto_create_event and task_data.due_date:
+            event_start = task_data.due_date
+            event_end = event_start + timedelta(hours=1)
+            event_data = CalendarEventCreate(  # type: ignore[call-arg]
+                title=task_data.title,
+                description=task_data.description,
+                start_time=event_start,
+                end_time=event_end,
+                linked_task_id=task.id,
+            )
+            try:
+                event = await self._repo.create_event(user_id, event_data)
+                # Link back: update the task with the new event id
+                updated = await self._repo.update_task(
+                    user_id, task.id, {"calendar_event_id": event.id}
+                )
+                if updated:
+                    task = updated
+            except Exception:
+                logger.warning(
+                    "auto_create_event failed for task %s; task created without event link",
+                    task.id,
+                )
+
+        return task
 
     async def list_tasks(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[TaskEntity]:
         """List tasks for the user with pagination."""

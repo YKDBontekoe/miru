@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
+    AffinityResponse,
     AgentCreate,
     AgentGenerationResponse,
     AgentResponse,
     AgentTemplateResponse,
     AgentUpdate,
     MoodResponse,
+    NudgeCheckResponse,
+    PersonalityDriftResponse,
 )
 from app.infrastructure.external.openrouter import structured_completion
 
@@ -21,6 +25,7 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
+    from app.domain.notifications.services import NotificationService
     from app.infrastructure.repositories.agent_repo import AgentRepository
 
 logger = logging.getLogger(__name__)
@@ -262,6 +267,131 @@ class AgentService:
         "Serious",
         "Creative",
     )
+
+    async def get_affinity(self, user_id: UUID, agent_id: UUID) -> AffinityResponse | None:
+        """Return the affinity record for a user-agent pair, or None if no interactions yet."""
+        from uuid import UUID as _UUID
+
+        if isinstance(agent_id, str):
+            agent_id = _UUID(agent_id)
+        if isinstance(user_id, str):
+            user_id = _UUID(user_id)
+        record = await self.repo.get_affinity(user_id, agent_id)
+        if record is None:
+            return None
+        return AffinityResponse(
+            agent_id=agent_id,
+            affinity_score=record.affinity_score,
+            trust_level=record.trust_level,
+            milestones=list(record.milestones or []),
+            last_interaction_at=record.last_interaction_at,
+        )
+
+    async def check_proactive_nudges(
+        self,
+        user_id: UUID,
+        notification_service: NotificationService | None = None,
+    ) -> NudgeCheckResponse:
+        """Scan for patterns that warrant a push notification and fire them.
+
+        Checks performed:
+        - Agents the user hasn't interacted with in >7 days.
+        - Overdue tasks (handled by the caller passing in task data).
+
+        Returns the number of nudges sent and a human-readable summary.
+        """
+        from uuid import UUID as _UUID
+
+        if isinstance(user_id, str):
+            user_id = _UUID(user_id)
+
+        agents = await self.repo.list_by_user(user_id)
+        nudges_sent = 0
+        details: list[str] = []
+        now = datetime.now(UTC)
+
+        for agent in agents:
+            affinity = await self.repo.get_affinity(user_id, agent.pk)
+            if affinity is None:
+                continue
+            days_since = (now - affinity.last_interaction_at.replace(tzinfo=UTC)).days
+            if days_since >= 7:
+                msg = (
+                    f"{agent.name} misses you! It's been {days_since} days since you last chatted."
+                )
+                if notification_service is not None:
+                    try:
+                        await notification_service.notify_user(
+                            str(user_id), msg, title=f"Say hi to {agent.name}!"
+                        )
+                        nudges_sent += 1
+                        details.append(msg)
+                    except Exception:
+                        logger.warning("Failed to send nudge for agent %s", agent.pk)
+
+        return NudgeCheckResponse(nudges_sent=nudges_sent, details=details)
+
+    async def update_personality_drift(
+        self, agent_id: UUID | str, recent_history: str
+    ) -> str | None:
+        """Suggest a personality refinement based on recent conversation history.
+
+        The new personality is appended to `personality_history` for traceability
+        and saved as the active `personality` on the agent.  Returns the new
+        personality string, or None if no change was warranted.
+        """
+        if not recent_history.strip():
+            return None
+        agent = await self.repo.get_by_id(agent_id)
+        if not agent:
+            return None
+        try:
+            response = await structured_completion(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a character evolution director. Given an AI agent's current "
+                            "personality and their recent conversation history, suggest a subtle "
+                            "refinement that reflects how the agent is growing. Keep the same "
+                            "tone and style but incorporate nuances observed in the conversations. "
+                            "The updated_personality should be ≤300 words."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Current personality:\n{agent.personality}\n\n"
+                            f"Recent conversations:\n{recent_history}"
+                        ),
+                    },
+                ],
+                response_model=PersonalityDriftResponse,
+            )
+        except Exception:
+            logger.warning("Personality drift inference failed for agent %s", agent_id)
+            return None
+
+        new_personality = response.updated_personality.strip()
+        if not new_personality or new_personality == agent.personality:
+            return None
+
+        history: list = list(agent.personality_history or [])
+        history.append(
+            {
+                "date": datetime.now(UTC).isoformat(),
+                "personality": agent.personality,
+                "trigger": "conversation_drift",
+                "summary": response.summary,
+            }
+        )
+        await self.repo.update_agent(
+            agent_id,
+            agent.user_id,
+            personality=new_personality,
+            personality_history=history,
+        )
+        return new_personality
 
     async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
         """Infer agent mood from recent conversation history and persist it."""

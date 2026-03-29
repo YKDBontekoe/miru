@@ -77,7 +77,7 @@ class CreateTaskTool(BaseTool):
 
     async def _run(self, title: str, description: str | None = None) -> str:
         try:
-            task_data = TaskCreate(title=title, description=description, is_completed=False)
+            task_data = TaskCreate(title=title, description=description, is_completed=False)  # type: ignore[call-arg]
             task = await get_productivity_use_case().create_task(
                 user_id=self.user_id, task_data=task_data
             )
@@ -115,7 +115,7 @@ class UpdateTaskTool(BaseTool):
         self, task_id: UUID, is_completed: bool | None = None, title: str | None = None
     ) -> str:
         try:
-            update_data = TaskUpdate(is_completed=is_completed, title=title)
+            update_data = TaskUpdate(is_completed=is_completed, title=title)  # type: ignore[call-arg]
             task = await get_productivity_use_case().update_task(
                 user_id=self.user_id, task_id=task_id, update_data=update_data
             )
