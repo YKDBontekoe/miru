@@ -7,6 +7,11 @@ on:
       - 'frontend/**'
       - '.github/workflows/ios-eas-build.yml'
   workflow_dispatch:
+    inputs:
+      force_native_build:
+        description: 'Force a new native development build'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,13 +21,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    name: Detect native dependency changes
+    runs-on: ubuntu-latest
+    outputs:
+      native_changed: ${{ steps.check.outputs.native_changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check for native changes
+        id: check
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^frontend/(package\.json|app\.json|eas\.json|ios/)'; then
+            echo "native_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "native_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   eas-update:
-    name: Publish EAS update (Expo Go)
+    name: Publish EAS update (OTA)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./frontend
-
     steps:
       - uses: actions/checkout@v6
 
@@ -49,4 +74,40 @@ jobs:
           eas update \
             --branch development \
             --message "${{ github.event.head_commit.message }}" \
+            --non-interactive
+
+  eas-native-build:
+    name: Build native dev client (EAS cloud)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.native_changed == 'true' || inputs.force_native_build == true
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build development client
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
+          EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          eas build \
+            --platform ios \
+            --profile development \
             --non-interactive
