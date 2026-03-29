@@ -200,7 +200,7 @@ class AgentRepository:
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
-        agent = await self.get_by_id(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
         if agent:
             agent.mood = mood
             await agent.save()
@@ -299,7 +299,7 @@ class AgentRepository:
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""
-        agent = await self.get_by_id(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
         if agent:
             agent.message_count += 1
             await agent.save()
