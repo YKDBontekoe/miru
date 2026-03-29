@@ -47,34 +47,40 @@ const ToneItemComponent = ({
   onSelect: (id: string) => void;
   themeC: any;
 }) => {
+  const dynamicStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          paddingHorizontal: 12,
+          paddingVertical: 7,
+          borderRadius: 20,
+          backgroundColor: isSelected ? themeC.primary : themeC.surfaceHigh,
+          borderWidth: 1,
+          borderColor: isSelected ? themeC.primary : themeC.border,
+        },
+        icon: { fontSize: 13 },
+        label: {
+          fontSize: 13,
+          fontWeight: '600',
+          color: isSelected ? 'white' : themeC.text,
+        },
+      }),
+    [isSelected, themeC]
+  );
+
   return (
     <TouchableOpacity
       onPress={() => {
         haptic.selection();
         onSelect(tone.id);
       }}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 20,
-        backgroundColor: isSelected ? themeC.primary : themeC.surfaceHigh,
-        borderWidth: 1,
-        borderColor: isSelected ? themeC.primary : themeC.border,
-      }}
+      style={dynamicStyles.container}
     >
-      <AppText style={{ fontSize: 13 }}>{tone.icon}</AppText>
-      <AppText
-        style={{
-          fontSize: 13,
-          fontWeight: '600',
-          color: isSelected ? 'white' : themeC.text,
-        }}
-      >
-        {tone.label}
-      </AppText>
+      <AppText style={dynamicStyles.icon}>{tone.icon}</AppText>
+      <AppText style={dynamicStyles.label}>{tone.label}</AppText>
     </TouchableOpacity>
   );
 };
