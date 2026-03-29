@@ -229,7 +229,8 @@ class ChatService:
 
         if not await self.user_in_room(user_id, room_id):
             await chat_hub.send_to_user(
-                user_id, {"type": "error", "data": {"message": "You do not have access to this room."}}
+                user_id,
+                {"type": "error", "data": {"message": "You do not have access to this room."}},
             )
             return
 
