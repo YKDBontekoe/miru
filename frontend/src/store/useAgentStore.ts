@@ -90,7 +90,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       id: tempId,
       name: data.name ?? 'New Persona',
       personality: data.personality ?? '',
-      description: data.description ?? null,
+      description: data.description ?? undefined,
       goals: data.goals ?? [],
       capabilities: [],
       integrations: [],
@@ -99,9 +99,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       status: 'active',
       mood: 'Neutral',
       system_prompt: '',
-      user_id: '',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
 
     set((state) => ({ agents: [optimisticAgent, ...state.agents] }));
