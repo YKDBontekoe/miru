@@ -8,11 +8,7 @@ from uuid import UUID
 from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
 from app.domain.productivity.interfaces.repository import IProductivityRepository
 from app.domain.productivity.models import CalendarEvent, Note, Task
-from app.domain.productivity.schemas import (
-    CalendarEventCreate,
-    NoteCreate,
-    TaskCreate,
-)
+from app.domain.productivity.schemas import CalendarEventCreate, NoteCreate, TaskCreate
 from app.infrastructure.database.utils import handle_db_errors
 
 
@@ -24,6 +20,9 @@ def _map_task(task: Task) -> TaskEntity:
         description=task.description,
         is_completed=task.is_completed,
         due_date=task.due_date,
+        recurrence_rule=task.recurrence_rule,
+        recurrence_end_date=task.recurrence_end_date,
+        calendar_event_id=task.calendar_event_id,
         created_at=task.created_at,
         updated_at=task.updated_at,
         deleted_at=task.deleted_at,
@@ -91,6 +90,9 @@ def _map_event(event: CalendarEvent) -> CalendarEventEntity:
         agent_id=agent_id,
         origin_message_id=origin_message_id,
         origin_context=event.origin_context,
+        recurrence_rule=event.recurrence_rule,
+        recurrence_end_date=event.recurrence_end_date,
+        linked_task_id=event.linked_task_id,
         created_at=event.created_at,
         updated_at=event.updated_at,
         deleted_at=event.deleted_at,
@@ -116,6 +118,8 @@ class ProductivityRepository(IProductivityRepository):
                 description=task_data.description,
                 is_completed=task_data.is_completed,
                 due_date=task_data.due_date,
+                recurrence_rule=task_data.recurrence_rule,
+                recurrence_end_date=task_data.recurrence_end_date,
             )
             return _map_task(task)
 
@@ -218,6 +222,9 @@ class ProductivityRepository(IProductivityRepository):
                 end_time=event_data.end_time,
                 is_all_day=event_data.is_all_day,
                 location=event_data.location,
+                recurrence_rule=event_data.recurrence_rule,
+                recurrence_end_date=event_data.recurrence_end_date,
+                linked_task_id=event_data.linked_task_id,
             )
             return _map_event(event)
 
