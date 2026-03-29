@@ -41,20 +41,10 @@ class GraphExtractionService:
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
         try:
-            from openai import AsyncOpenAI
+            from app.infrastructure.external.openrouter import structured_completion
 
-            from app.core.config import get_settings
-
-            # OpenRouter's OpenAI-compatible API now supports structured output
-            # parsing (e.g., client.beta.chat.completions.parse and Pydantic response_format)
-            client = AsyncOpenAI(
-                api_key=get_settings().openrouter_api_key,
-                base_url="https://openrouter.ai/api/v1",
-            )
-
-            # Using GPT-4o-mini for fast/cheap structured extraction
-            response = await client.beta.chat.completions.parse(
-                model="gpt-4o-mini",
+            # Using gpt-4o-mini for fast/cheap structured extraction
+            return await structured_completion(
                 messages=[
                     {
                         "role": "system",
@@ -65,12 +55,9 @@ class GraphExtractionService:
                         "content": text,
                     },
                 ],
-                response_format=GraphExtractionSchema,
+                response_model=GraphExtractionSchema,
+                model="gpt-4o-mini",
             )
-
-            if response.choices and response.choices[0].message.parsed:
-                return response.choices[0].message.parsed
-            return None
         except Exception:
             logger.warning("Graph extraction failed", exc_info=True)
             return None
