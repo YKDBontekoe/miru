@@ -96,32 +96,11 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
 
-[tool.isort]
-profile = "black"
-known_first_party = ["app"]
-line_length = 100
-
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
-
-[tool.mypy]
-python_version = "3.12"
-ignore_missing_imports = true
-# Tortoise ORM JSONField and other dynamic fields don't have Python-level type annotations;
-# suppressing var-annotated noise from ORM model definitions and Pydantic Settings.
-[[tool.mypy.overrides]]
-module = [
-    "app.domain.agents.models",
-    "app.domain.agent_tools.models",
-    "app.domain.memory.models",
-    "app.domain.auth.models",
-    "app.infrastructure.database.models.chat_models",
-    "app.core.config",
-]
-ignore_errors = true
 
 [tool.ty.rules]
 all = "error"

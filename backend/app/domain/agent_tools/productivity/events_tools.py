@@ -116,7 +116,7 @@ class CreateEventTool(BaseTool):
             # We import here to avoid circular imports after refactor
             from app.domain.productivity.schemas import CalendarEventCreate
 
-            event_data = CalendarEventCreate(  # type: ignore[call-arg]
+            event_data = CalendarEventCreate(
                 title=title,
                 description=description,
                 start_time=start_time,

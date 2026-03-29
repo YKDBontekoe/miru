@@ -1,19 +1,5 @@
 import { apiClient, streamChat } from './client';
-import {
-  Agent,
-  AgentActionLog,
-  AgentAffinity,
-  CalendarEvent,
-  ChatMessage,
-  ChatRoom,
-  DailyBrief,
-  Memory,
-  Note,
-  NudgeCheckResponse,
-  RecurrenceRule,
-  Task,
-  UnifiedSearchResponse,
-} from '../models';
+import { Agent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
 
 type AgentTemplate = {
   id: string;
@@ -70,37 +56,6 @@ export const ApiService = {
     return response.data;
   },
 
-  async updateAgent(
-    id: string,
-    data: Partial<Pick<Agent, 'name' | 'personality' | 'description' | 'goals'>>
-  ): Promise<Agent> {
-    const response = await apiClient.patch<Agent>(`agents/${id}`, data);
-    return response.data;
-  },
-
-  async deleteAgent(id: string): Promise<void> {
-    await apiClient.delete(`agents/${id}`);
-  },
-
-  async getTemplates(): Promise<AgentTemplate[]> {
-    const response = await apiClient.get<AgentTemplate[]>('agents/templates');
-    return response.data;
-  },
-
-  async getAgentAffinity(agentId: string): Promise<AgentAffinity | null> {
-    try {
-      const response = await apiClient.get<AgentAffinity>(`agents/${agentId}/affinity`);
-      return response.data;
-    } catch {
-      return null;
-    }
-  },
-
-  async triggerNudgeCheck(): Promise<NudgeCheckResponse> {
-    const response = await apiClient.post<NudgeCheckResponse>('agents/nudge-check', {});
-    return response.data;
-  },
-
   // --- Chat Rooms API ---
   async getRooms(): Promise<ChatRoom[]> {
     const response = await apiClient.get<ChatRoom[]>('rooms');
@@ -117,13 +72,6 @@ export const ApiService = {
     return response.data;
   },
 
-  async getRoomAgentLogs(roomId: string, limit = 50): Promise<AgentActionLog[]> {
-    const response = await apiClient.get<AgentActionLog[]>(
-      `rooms/${roomId}/agent-logs?limit=${limit}`
-    );
-    return response.data;
-  },
-
   async getRoomAgents(roomId: string): Promise<Agent[]> {
     const response = await apiClient.get<Agent[]>(`rooms/${roomId}/agents`);
     return response.data;
@@ -135,6 +83,23 @@ export const ApiService = {
 
   async removeAgentFromRoom(roomId: string, agentId: string): Promise<void> {
     await apiClient.delete(`rooms/${roomId}/agents/${agentId}`);
+  },
+
+  async updateAgent(
+    id: string,
+    data: Partial<Pick<Agent, 'name' | 'personality' | 'description' | 'goals'>>
+  ): Promise<Agent> {
+    const response = await apiClient.patch<Agent>(`agents/${id}`, data);
+    return response.data;
+  },
+
+  async deleteAgent(id: string): Promise<void> {
+    await apiClient.delete(`agents/${id}`);
+  },
+
+  async getTemplates(): Promise<AgentTemplate[]> {
+    const response = await apiClient.get<AgentTemplate[]>('agents/templates');
+    return response.data;
   },
 
   // --- Productivity: Notes ---
@@ -158,31 +123,14 @@ export const ApiService = {
     return response.data.map(normalizeTask);
   },
 
-  async createTask(
-    title: string,
-    opts?: {
-      due_date?: string | null;
-      recurrence_rule?: RecurrenceRule | null;
-      recurrence_end_date?: string | null;
-      auto_create_event?: boolean;
-    }
-  ): Promise<Task> {
-    const response = await apiClient.post<Record<string, unknown>>('productivity/tasks', {
-      title,
-      ...opts,
-    });
+  async createTask(title: string): Promise<Task> {
+    const response = await apiClient.post<Record<string, unknown>>('productivity/tasks', { title });
     return normalizeTask(response.data);
   },
 
   async updateTask(
     id: string,
-    data: Partial<{
-      completed: boolean;
-      title: string;
-      due_date: string | null;
-      recurrence_rule: RecurrenceRule | null;
-      recurrence_end_date: string | null;
-    }>
+    data: Partial<{ completed: boolean; title: string; due_date: string | null }>
   ): Promise<Task> {
     // Map completed -> is_completed for the backend schema.
     const { completed, ...rest } = data;
@@ -197,45 +145,6 @@ export const ApiService = {
 
   async deleteTask(id: string): Promise<void> {
     await apiClient.delete(`productivity/tasks/${id}`);
-  },
-
-  // --- Productivity: Calendar Events ---
-  async getCalendarEvents(): Promise<CalendarEvent[]> {
-    const response = await apiClient.get<CalendarEvent[]>('productivity/events');
-    return response.data;
-  },
-
-  async createCalendarEvent(data: {
-    title: string;
-    start_time: string;
-    end_time: string;
-    description?: string | null;
-    is_all_day?: boolean;
-    location?: string | null;
-    recurrence_rule?: RecurrenceRule | null;
-    recurrence_end_date?: string | null;
-    linked_task_id?: string | null;
-  }): Promise<CalendarEvent> {
-    const response = await apiClient.post<CalendarEvent>('productivity/events', data);
-    return response.data;
-  },
-
-  async deleteCalendarEvent(id: string): Promise<void> {
-    await apiClient.delete(`productivity/events/${id}`);
-  },
-
-  // --- Daily Brief ---
-  async getDailyBrief(): Promise<DailyBrief> {
-    const response = await apiClient.get<DailyBrief>('productivity/daily-brief');
-    return response.data;
-  },
-
-  // --- Unified Search ---
-  async search(query: string, limit = 20): Promise<UnifiedSearchResponse> {
-    const response = await apiClient.get<UnifiedSearchResponse>(
-      `search?q=${encodeURIComponent(query)}&limit=${limit}`
-    );
-    return response.data;
   },
 
   // Streaming Chat

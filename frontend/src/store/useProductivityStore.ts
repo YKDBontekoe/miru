@@ -1,13 +1,6 @@
 import { create } from 'zustand';
 import { ApiService } from '../core/api/ApiService';
-import { Note, RecurrenceRule, Task } from '../core/models';
-
-interface CreateTaskOpts {
-  due_date?: string | null;
-  recurrence_rule?: RecurrenceRule | null;
-  recurrence_end_date?: string | null;
-  auto_create_event?: boolean;
-}
+import { Note, Task } from '../core/models';
 
 interface ProductivityState {
   notes: Note[];
@@ -17,7 +10,7 @@ interface ProductivityState {
   fetchTasks: () => Promise<void>;
   createNote: (title: string, content: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
-  createTask: (title: string, opts?: CreateTaskOpts) => Promise<void>;
+  createTask: (title: string) => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 }
@@ -70,8 +63,8 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
     set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
   },
 
-  createTask: async (title: string, opts?: CreateTaskOpts) => {
-    const task = await ApiService.createTask(title, opts);
+  createTask: async (title: string) => {
+    const task = await ApiService.createTask(title);
     set((state) => ({ tasks: [task, ...state.tasks] }));
   },
 

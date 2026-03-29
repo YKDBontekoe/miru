@@ -19,8 +19,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useAgentStore } from '../../store/useAgentStore';
 import { useChatStore } from '../../store/useChatStore';
 import { haptic } from '../../utils/haptics';
-import { Agent, AgentAffinity } from '../../core/models';
-import { ApiService } from '../../core/api/ApiService';
+import { Agent } from '../../core/models';
 import { getAgentColor, getMoodEmoji, MILESTONES } from './agentUtils';
 
 interface AgentDetailSheetProps {
@@ -51,8 +50,6 @@ export function AgentDetailSheet({
   const [goalInput, setGoalInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isStartingChat, setIsStartingChat] = useState(false);
-  const [affinity, setAffinity] = useState<AgentAffinity | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (agent) {
@@ -62,11 +59,6 @@ export function AgentDetailSheet({
       setEditGoals(agent.goals ?? []);
       setIsEditing(false);
       setGoalInput('');
-      setAffinity(null);
-      setShowHistory(false);
-      ApiService.getAgentAffinity(agent.id)
-        .then(setAffinity)
-        .catch(() => {});
     }
   }, [agent]);
 
@@ -78,24 +70,17 @@ export function AgentDetailSheet({
   const xpProgress = (agent.message_count % 10) / 10;
   const moodEmoji = getMoodEmoji(agent.mood);
 
-  // Use real affinity data when available, fall back to message_count estimate
-  const trustLevel =
-    affinity?.trust_level ??
-    Math.min(Math.floor(Math.log10(Math.max(1, agent.message_count)) + 1), 6);
-  const affinityPct = affinity
-    ? Math.min((affinity.affinity_score / 500) * 100, 100)
-    : Math.min(agent.message_count * 1.5, 100);
+  const affinityPct = Math.min(agent.message_count * 1.5, 100);
   const affinityLabel =
-    trustLevel <= 1
+    affinityPct < 10
       ? 'Stranger'
-      : trustLevel === 2
+      : affinityPct < 30
         ? 'Acquaintance'
-        : trustLevel === 3
+        : affinityPct < 55
           ? 'Familiar'
-          : trustLevel === 4
+          : affinityPct < 80
             ? 'Trusted Friend'
             : 'Soulbound';
-  const apiMilestones = affinity?.milestones ?? [];
 
   const nextMilestone = MILESTONES.find((m) => agent.message_count < m.threshold);
 
@@ -608,8 +593,7 @@ export function AgentDetailSheet({
                   {/* Milestone badges */}
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
                     {MILESTONES.map((m) => {
-                      const earned =
-                        apiMilestones.includes(m.key) || agent.message_count >= m.threshold;
+                      const earned = agent.message_count >= m.threshold;
                       return (
                         <View
                           key={m.threshold}
@@ -647,75 +631,14 @@ export function AgentDetailSheet({
                       messages ({nextMilestone.threshold - agent.message_count} to go)
                     </AppText>
                   )}
-                  {affinity && (
-                    <AppText style={{ color: C.faint, fontSize: 11, marginTop: 4 }}>
-                      Trust level {affinity.trust_level} · Score{' '}
-                      {Math.round(affinity.affinity_score)}
-                    </AppText>
-                  )}
                 </View>
 
                 {/* Personality */}
-                <View style={{ marginBottom: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if ((agent.personality_history?.length ?? 0) > 0) {
-                        haptic.light();
-                        setShowHistory((v) => !v);
-                      }
-                    }}
-                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}
-                  >
-                    <AppText style={[label, { flex: 1, marginBottom: 0 }]}>Personality</AppText>
-                    {(agent.personality_history?.length ?? 0) > 0 && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <AppText style={{ color: C.primary, fontSize: 11 }}>
-                          {agent.personality_history!.length} evolution
-                          {agent.personality_history!.length !== 1 ? 's' : ''}
-                        </AppText>
-                        <Ionicons
-                          name={showHistory ? 'chevron-up' : 'chevron-down'}
-                          size={12}
-                          color={C.primary}
-                        />
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                <View style={{ marginBottom: 16 }}>
+                  <AppText style={label}>Personality</AppText>
                   <AppText style={{ lineHeight: 23, color: C.text, fontSize: 15 }}>
                     {agent.personality}
                   </AppText>
-                  {showHistory && (agent.personality_history?.length ?? 0) > 0 && (
-                    <View
-                      style={{
-                        marginTop: 10,
-                        borderLeftWidth: 2,
-                        borderLeftColor: `${displayColor}40`,
-                        paddingStart: 12,
-                        gap: 12,
-                      }}
-                    >
-                      {agent
-                        .personality_history!.slice()
-                        .reverse()
-                        .map((snap, i) => (
-                          <View key={i}>
-                            <AppText style={{ color: C.muted, fontSize: 10, marginBottom: 2 }}>
-                              {new Date(snap.date).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                              {snap.summary ? ` · ${snap.summary}` : ''}
-                            </AppText>
-                            <AppText
-                              style={{ color: C.text, fontSize: 13, lineHeight: 20, opacity: 0.75 }}
-                            >
-                              {snap.personality}
-                            </AppText>
-                          </View>
-                        ))}
-                    </View>
-                  )}
                 </View>
 
                 {agent.description ? (

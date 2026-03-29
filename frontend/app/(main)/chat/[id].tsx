@@ -9,7 +9,6 @@ import {
   Modal,
   ScrollView,
   ActivityIndicator,
-  RefreshControl,
 } from 'react-native';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +22,7 @@ import { AgentActivityIndicator } from '../../../src/components/AgentActivityInd
 import { useChatStore } from '../../../src/store/useChatStore';
 import { useAgentStore } from '../../../src/store/useAgentStore';
 import { ApiService } from '../../../src/core/api/ApiService';
-import { Agent, AgentActionLog } from '../../../src/core/models';
+import { Agent } from '../../../src/core/models';
 import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
 
 const C = {
@@ -67,24 +66,15 @@ export default function ChatRoomScreen() {
   const { agents, fetchAgents } = useAgentStore();
   const [inputText, setInputText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isLogVisible, setIsLogVisible] = useState(false);
   const [roomAgents, setRoomAgents] = useState<Agent[]>([]);
   const [quickViewAgent, setQuickViewAgent] = useState<Agent | null>(null);
-  const [agentLogs, setAgentLogs] = useState<AgentActionLog[]>([]);
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
 
   const room = React.useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
   const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
-  const currentActivity = React.useMemo(
-    () => (roomId ? agentActivity[roomId] : null),
-    [agentActivity, roomId]
-  );
-  const agentMap = React.useMemo(
-    () => Object.fromEntries(roomAgents.map((a) => [a.id, a])),
-    [roomAgents]
-  );
+  const currentActivity = React.useMemo(() => (roomId ? agentActivity[roomId] : null), [agentActivity, roomId]);
+  const agentMap = React.useMemo(() => Object.fromEntries(roomAgents.map((a) => [a.id, a])), [roomAgents]);
 
   const availableAgents = React.useMemo(() => {
     return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));
@@ -154,20 +144,6 @@ export default function ChatRoomScreen() {
     setRoomAgents(updated);
     setIsModalVisible(false);
   };
-
-  const handleOpenLog = useCallback(async () => {
-    if (!roomId) return;
-    setIsLogVisible(true);
-    setIsLoadingLogs(true);
-    try {
-      const logs = await ApiService.getRoomAgentLogs(roomId);
-      setAgentLogs(logs);
-    } catch {
-      // silently fail
-    } finally {
-      setIsLoadingLogs(false);
-    }
-  }, [roomId]);
 
   const handleRemoveAgent = async (agentId: string) => {
     if (!roomId) return;
@@ -280,22 +256,6 @@ export default function ChatRoomScreen() {
             )}
           </View>
         )}
-
-        <TouchableOpacity
-          onPress={handleOpenLog}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: C.surfaceHigh,
-            borderWidth: 1,
-            borderColor: C.border,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name="analytics-outline" size={16} color={C.muted} />
-        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => setIsModalVisible(true)}
@@ -655,174 +615,6 @@ export default function ChatRoomScreen() {
               />
               <View style={{ height: 40 }} />
             </ScrollView>
-          </Animated.View>
-        </View>
-      </Modal>
-
-      {/* Agent Delegation Log Modal */}
-      <Modal visible={isLogVisible} animationType="slide" transparent>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-          <Animated.View
-            entering={SlideInUp.springify().damping(22)}
-            exiting={SlideOutDown.duration(200)}
-            style={{
-              backgroundColor: C.surface,
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              maxHeight: '78%',
-            }}
-          >
-            <View style={{ alignItems: 'center', paddingTop: 12, marginBottom: 2 }}>
-              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: 20,
-                paddingVertical: 14,
-              }}
-            >
-              <View>
-                <AppText style={{ fontSize: 18, fontWeight: '700', color: C.text }}>
-                  Agent Activity Log
-                </AppText>
-                <AppText style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>
-                  Steps taken by agents in this chat
-                </AppText>
-              </View>
-              <TouchableOpacity
-                onPress={() => setIsLogVisible(false)}
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  backgroundColor: C.surfaceHigh,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Ionicons name="close" size={16} color={C.muted} />
-              </TouchableOpacity>
-            </View>
-
-            {isLoadingLogs ? (
-              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                <ActivityIndicator size="large" color={C.primary} />
-              </View>
-            ) : agentLogs.length === 0 ? (
-              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                <Ionicons
-                  name="pulse-outline"
-                  size={40}
-                  color={C.faint}
-                  style={{ marginBottom: 12 }}
-                />
-                <AppText style={{ color: C.muted, textAlign: 'center' }}>
-                  No agent activity recorded yet.
-                </AppText>
-              </View>
-            ) : (
-              <ScrollView
-                style={{ paddingHorizontal: 20 }}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={isLoadingLogs}
-                    onRefresh={handleOpenLog}
-                    tintColor={C.primary}
-                  />
-                }
-              >
-                {agentLogs.map((log) => {
-                  const isThinking = log.action_type === 'thinking';
-                  const isTool = log.action_type === 'using_tool';
-                  const iconName = isThinking
-                    ? 'bulb-outline'
-                    : isTool
-                      ? 'construct-outline'
-                      : 'chatbubble-outline';
-                  const accentColor = isThinking ? '#8B5CF6' : isTool ? '#F59E0B' : C.primary;
-                  return (
-                    <View
-                      key={log.id}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        marginBottom: 12,
-                        gap: 10,
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 15,
-                          backgroundColor: `${accentColor}18`,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginTop: 2,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Ionicons name={iconName} size={14} color={accentColor} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 6,
-                            marginBottom: 3,
-                          }}
-                        >
-                          <AppText
-                            style={{
-                              fontSize: 11,
-                              fontWeight: '700',
-                              color: accentColor,
-                              textTransform: 'uppercase',
-                              letterSpacing: 0.5,
-                            }}
-                          >
-                            {log.action_type.replace('_', ' ')}
-                          </AppText>
-                          {(log.agent_name ?? log.meta?.agent_name) && (
-                            <AppText style={{ fontSize: 11, color: C.muted }}>
-                              · {log.agent_name ?? log.meta?.agent_name}
-                            </AppText>
-                          )}
-                        </View>
-                        <View
-                          style={{
-                            backgroundColor: C.surfaceHigh,
-                            borderRadius: 10,
-                            padding: 10,
-                            borderLeftWidth: 3,
-                            borderLeftColor: accentColor,
-                          }}
-                        >
-                          <AppText
-                            style={{ fontSize: 13, color: C.text, lineHeight: 18 }}
-                            numberOfLines={6}
-                          >
-                            {log.content}
-                          </AppText>
-                        </View>
-                        <AppText style={{ fontSize: 10, color: C.faint, marginTop: 4 }}>
-                          {new Date(log.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </AppText>
-                      </View>
-                    </View>
-                  );
-                })}
-                <View style={{ height: 32 }} />
-              </ScrollView>
-            )}
           </Animated.View>
         </View>
       </Modal>

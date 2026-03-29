@@ -80,50 +80,11 @@ class ChatWebSocketBroadcaster:
             },
         )
 
-    def create_step_callback(
-        self,
-        room_id: UUID,
-        agent_names: list[str],
-        user_id: UUID | None = None,
-        agent_name_to_id: dict[str, UUID] | None = None,
-    ) -> Callable[[Any], None]:
-        """Create a callback for CrewAI to broadcast live activity and log delegation steps.
-
-        When ``user_id`` and ``agent_name_to_id`` are provided each step is also
-        persisted to ``AgentActionLog`` so the UI can display a thinking trace.
-        """
+    def create_step_callback(self, room_id: UUID, agent_names: list[str]) -> Callable[[Any], None]:
+        """Create a callback for CrewAI to broadcast live activity."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         loop = asyncio.get_running_loop()
-
-        async def _persist_action_log(
-            acting_name: str,
-            action_type: str,
-            content: str,
-            meta: dict,
-        ) -> None:
-            from app.domain.agents.models import AgentActionLog  # noqa: PLC0415
-
-            if user_id is None or agent_name_to_id is None:
-                return
-            agent_id = agent_name_to_id.get(acting_name)
-            if agent_id is None:
-                return
-            try:
-                await AgentActionLog.create(
-                    user_id=user_id,
-                    agent_id=agent_id,
-                    room_id=room_id,
-                    action_type=action_type,
-                    content=content,
-                    meta=meta,
-                )
-            except Exception:
-                logger.warning(
-                    "Failed to persist AgentActionLog for agent=%s room=%s",
-                    acting_name,
-                    room_id,
-                )
 
         def _step_callback(output: Any) -> None:  # noqa: ANN401
             acting_name = "Agent"
@@ -156,17 +117,6 @@ class ChatWebSocketBroadcaster:
                                 "detail": detail,
                             },
                         },
-                    ),
-                    loop,
-                )
-
-                # Persist delegation/tool step to AgentActionLog
-                asyncio.run_coroutine_threadsafe(
-                    _persist_action_log(
-                        acting_name,
-                        activity,
-                        detail,
-                        {"tool": tool_name, "raw_log": str(getattr(output, "log", ""))[:500]},
                     ),
                     loop,
                 )
