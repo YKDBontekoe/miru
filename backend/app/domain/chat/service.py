@@ -66,29 +66,38 @@ class ChatService:
             for r in rooms
         ]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, user_id, name)
         if room:
             return RoomResponse(
                 id=room.id, name=room.name, created_at=room.created_at, updated_at=room.updated_at
             )
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> None:
+        agent = await self.agent_repo.get_by_id(agent_id)
+        if not agent or agent.user_id != user_id:
+            raise PermissionError("You do not own this agent.")
         await self.chat_repo.add_agent_to_room(room_id, agent_id)
 
     async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        if not await self.user_in_room(user_id, room_id):
+            raise PermissionError("NOT_ROOM_OWNER")
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(
-        self, room_id: UUID, limit: int = 50, before_id: UUID | None = None
+        self, room_id: UUID, user_id: UUID, limit: int = 50, before_id: UUID | None = None
     ) -> list[ChatMessageResponse]:
+        # Ownership check
+        if not await self.user_in_room(user_id, room_id):
+            raise PermissionError("NOT_ROOM_OWNER")
+
         msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, before_id=before_id)
         return [
             ChatMessageResponse(
@@ -217,6 +226,13 @@ class ChatService:
     ) -> None:
         """Process a room message and push all updates via the WebSocket hub."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
+        if not await self.user_in_room(user_id, room_id):
+            await chat_hub.send_to_user(
+                user_id,
+                {"type": "error", "data": {"message": "You do not have access to this room."}},
+            )
+            return
 
         # 1. Fetch room agents first so we can attach names to history entries.
         room_agents = await self.chat_repo.list_room_agents(room_id)

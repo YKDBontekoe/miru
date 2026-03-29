@@ -74,6 +74,14 @@ async def _handle_send_message(
     accept_language: str | None = None,
 ) -> None:
     """Process a user message and push results via the hub."""
+    from app.infrastructure.websocket.manager import chat_hub
+
+    if not await service.user_in_room(user_id, room_id):
+        await chat_hub.send_to_user(
+            user_id, {"type": "error", "data": {"message": "You do not have access to this room."}}
+        )
+        return
+
     try:
         await service.run_room_chat_ws(
             room_id=room_id,
@@ -147,6 +155,19 @@ async def websocket_chat_hub(
                             "data": {
                                 "message": "invalid room_id",
                                 "room_id": msg.get("room_id"),
+                            },
+                        },
+                    )
+                    continue
+                if not await service.user_in_room(user_id, room_id):
+                    await chat_hub.send_to_user(
+                        user_id,
+                        {
+                            "type": "error",
+                            "action": "join_room",
+                            "data": {
+                                "message": "You do not have access to this room.",
+                                "room_id": str(room_id),
                             },
                         },
                     )

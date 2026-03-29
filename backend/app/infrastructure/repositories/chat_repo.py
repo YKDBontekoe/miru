@@ -53,23 +53,26 @@ class ChatRepository:
         rooms = await ChatRoom.filter(user_id=user_id).all()
         return [_map_room_to_entity(room) for room in rooms]
 
-    async def get_room(self, room_id: UUID) -> ChatRoomEntity | None:
+    async def get_room(self, room_id: UUID, user_id: UUID | None = None) -> ChatRoomEntity | None:
         """Fetch a single room."""
-        room = await ChatRoom.get_or_none(id=room_id)
+        if user_id:
+            room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
+        else:
+            room = await ChatRoom.get_or_none(id=room_id)
         return _map_room_to_entity(room) if room else None
 
-    async def update_room(self, room_id: UUID, name: str) -> ChatRoomEntity | None:
+    async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> ChatRoomEntity | None:
         """Update a room's name."""
-        room = await ChatRoom.get_or_none(id=room_id)
+        room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
         if room:
             room.name = name
             await room.save()
             return _map_room_to_entity(room)
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
         """Delete a room."""
-        room = await ChatRoom.get_or_none(id=room_id)
+        room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
         if room:
             await room.delete()
             return True

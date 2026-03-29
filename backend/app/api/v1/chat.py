@@ -131,10 +131,10 @@ async def run_crew(
 async def update_room(
     room_id: UUID,
     data: RoomUpdate,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    room = await service.update_room(room_id, data.name)
+    room = await service.update_room(room_id, user_id, data.name)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     return room
@@ -153,10 +153,10 @@ async def update_room(
 )
 async def delete_room(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    success = await service.delete_room(room_id)
+    success = await service.delete_room(room_id, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Room not found")
     return {"status": "ok"}
@@ -169,16 +169,28 @@ async def delete_room(
     responses={
         200: {"description": "Agent added to room successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         422: {"description": "Validation Error"},
     },
 )
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    await service.add_agent_to_room(room_id, data.agent_id)
+    if not await service.user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"message": "Forbidden", "error": "NOT_ROOM_OWNER"},
+        )
+    try:
+        await service.add_agent_to_room(room_id, data.agent_id, user_id)
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
+            detail={"message": str(e), "error": "AGENT_NOT_OWNED"},
+        ) from None
     return {"status": "ok"}
 
 
@@ -190,16 +202,22 @@ async def add_agent_to_room(
     responses={
         200: {"description": "Room agents retrieved successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         422: {"description": "Validation Error"},
     },
 )
 async def get_room_agents(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    agents = await service.list_room_agents(room_id)
-    return [AgentResponse.model_validate(a) for a in agents]
+    try:
+        agents = await service.list_room_agents(room_id, user_id)
+        return [AgentResponse.model_validate(a) for a in agents]
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403, detail={"message": str(e), "error": "NOT_ROOM_OWNER"}
+        ) from None
 
 
 @router.delete(
@@ -209,6 +227,7 @@ async def get_room_agents(
     responses={
         200: {"description": "Agent removed from room successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         404: {"description": "Agent not found in room"},
         422: {"description": "Validation Error"},
     },
@@ -216,9 +235,14 @@ async def get_room_agents(
 async def remove_agent_from_room(
     room_id: UUID,
     agent_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    if not await service.user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=403,
+            detail={"message": "Forbidden", "error": "NOT_ROOM_OWNER"},
+        )
     success = await service.remove_agent_from_room(room_id, agent_id)
     if not success:
         raise HTTPException(
@@ -272,18 +296,24 @@ async def get_room_agent_logs(
     responses={
         200: {"description": "Messages retrieved successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         404: {"description": "Chat room not found"},
         422: {"description": "Validation Error"},
     },
 )
 async def get_room_messages(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(room_id, limit=limit, before_id=before_id)
+    try:
+        return await service.get_room_messages(room_id, user_id, limit=limit, before_id=before_id)
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403, detail={"message": str(e), "error": "NOT_ROOM_OWNER"}
+        ) from None
 
 
 @router.patch(
