@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.domain.agents.models import Agent
+    from app.domain.agents.entities import AgentEntity
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity
     from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -83,7 +83,7 @@ class ChatService:
     async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID) -> list[AgentEntity]:
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(

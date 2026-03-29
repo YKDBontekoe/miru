@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.entities import AgentEntity, CapabilityEntity, IntegrationEntity
 from app.domain.agents.schemas import (
     AffinityResponse,
     AgentCreate,
@@ -31,13 +31,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _build_agent_response(agent: Agent) -> AgentResponse:
-    """Construct an AgentResponse from a prefetched Agent ORM instance.
-
-    Assumes ``capabilities`` and ``agent_integrations__integration`` have been
-    prefetched on the agent before calling this function.
-    """
-    cap_ids: list[str] = [cap.pk for cap in agent.capabilities.related_objects]
+def _build_agent_response(agent: AgentEntity) -> AgentResponse:
+    """Construct an AgentResponse from an AgentEntity."""
+    cap_ids: list[str] = [cap.id for cap in agent.capabilities]
     integration_ids: list[str] = [
         ai.integration_id for ai in agent.agent_integrations if ai.enabled
     ]
@@ -45,7 +41,7 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
         ai.integration_id: ai.config for ai in agent.agent_integrations if ai.enabled and ai.config
     }
     return AgentResponse(
-        id=agent.pk,
+        id=agent.id,
         name=agent.name,
         personality=agent.personality,
         description=agent.description,
@@ -65,10 +61,10 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
 class AgentService:
     def __init__(self, repo: AgentRepository):
         self.repo = repo
-        self._cached_capabilities: list[Capability] | None = None
-        self._cached_integrations: list[Integration] | None = None
+        self._cached_capabilities: list[CapabilityEntity] | None = None
+        self._cached_integrations: list[IntegrationEntity] | None = None
 
-    async def list_capabilities(self) -> list[Capability]:
+    async def list_capabilities(self) -> list[CapabilityEntity]:
         """List all capabilities from the database."""
         # Justification: Cache capabilities per-request to avoid redundant DB queries
         # when building prompts for multiple agents or repeatedly verifying capabilities.
@@ -76,7 +72,7 @@ class AgentService:
             self._cached_capabilities = await self.repo.list_capabilities()
         return self._cached_capabilities
 
-    async def list_integrations(self) -> list[Integration]:
+    async def list_integrations(self) -> list[IntegrationEntity]:
         """List all integrations from the database."""
         # Justification: Cache integrations per-request to avoid redundant DB queries
         # when building agents.
@@ -128,35 +124,19 @@ class AgentService:
             capability_ids=agent_data.capabilities,
         )
 
-        agent = await Agent.create(
+        agent = await self.repo.create_agent(
             user_id=user_id,
             name=agent_data.name,
             personality=agent_data.personality,
+            system_prompt=system_prompt,
             description=agent_data.description,
             goals=agent_data.goals,
-            system_prompt=system_prompt,
+            capability_ids=agent_data.capabilities,
+            integration_ids=agent_data.integrations,
+            integration_configs=agent_data.integration_configs,
         )
 
-        if agent_data.capabilities:
-            caps = await Capability.filter(id__in=agent_data.capabilities)
-            await agent.capabilities.add(*caps)
-
-        if agent_data.integrations:
-            for integration_id in agent_data.integrations:
-                integration = await Integration.get_or_none(id=integration_id)
-                if integration:
-                    config = agent_data.integration_configs.get(integration_id, {})
-                    await AgentIntegration.create(
-                        agent=agent,
-                        integration=integration,
-                        config=config,
-                        enabled=True,
-                    )
-
-        # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
-        assert refetched is not None
-        return _build_agent_response(refetched)
+        return _build_agent_response(agent)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
         """List all agents for a user."""
@@ -198,33 +178,13 @@ class AgentService:
         # --- capabilities ---
         new_capability_ids: list[str] | None = fields.pop("capabilities", None)
         if new_capability_ids is not None:
-            caps = await Capability.filter(id__in=new_capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
-            ]
+            effective_cap_ids = [str(c.id) for c in agent.capabilities]
 
         # --- integrations ---
         new_integration_ids: list[str] | None = fields.pop("integrations", None)
         new_integration_configs: dict = fields.pop("integration_configs", None) or {}
-        if new_integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=new_integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=new_integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
 
         # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
@@ -241,7 +201,14 @@ class AgentService:
         )
         fields["system_prompt"] = updated_prompt
 
-        updated = await self.repo.update_agent(agent_id, user_id, **fields)
+        updated = await self.repo.update_agent(
+            agent_id,
+            user_id,
+            capability_ids=new_capability_ids,
+            integration_ids=new_integration_ids,
+            integration_configs=new_integration_configs,
+            **fields,
+        )
         if not updated:
             return None
         return _build_agent_response(updated)
@@ -311,7 +278,7 @@ class AgentService:
         now = datetime.now(UTC)
 
         for agent in agents:
-            affinity = await self.repo.get_affinity(user_id, agent.pk)
+            affinity = await self.repo.get_affinity(user_id, agent.id)
             if affinity is None:
                 continue
             days_since = (now - affinity.last_interaction_at.replace(tzinfo=UTC)).days
@@ -327,7 +294,7 @@ class AgentService:
                         nudges_sent += 1
                         details.append(msg)
                     except Exception:
-                        logger.warning("Failed to send nudge for agent %s", agent.pk)
+                        logger.warning("Failed to send nudge for agent %s", agent.id)
 
         return NudgeCheckResponse(nudges_sent=nudges_sent, details=details)
 
