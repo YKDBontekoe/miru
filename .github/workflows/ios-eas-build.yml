@@ -44,8 +44,9 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           eas update \
             --branch development \
-            --message "${{ github.sha }}" \
+            --message "$COMMIT_SHA" \
             --non-interactive

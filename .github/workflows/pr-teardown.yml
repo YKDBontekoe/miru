@@ -32,8 +32,10 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Remove PR Label and Deactivate Revisions
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          LABEL="pr-${{ github.event.pull_request.number }}"
+          LABEL="pr-${PR_NUMBER}"
           echo "Cleaning up PR revisions for label: $LABEL"
 
           # Remove the label if it exists (so it doesn't hold up traffic mapping)
@@ -66,5 +68,5 @@ jobs:
                 --revision "$REVISION" || echo "Revision '$REVISION' may already be deactivated."
             done
 
-            echo "Successfully cleaned up PR environment for PR #${{ github.event.pull_request.number }}."
+            echo "Successfully cleaned up PR environment for PR #${PR_NUMBER}."
           fi

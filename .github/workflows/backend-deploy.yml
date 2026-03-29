@@ -59,7 +59,9 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Set lowercase owner
-        run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: echo "OWNER=$(echo "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -99,12 +101,16 @@ jobs:
 
       - name: Set image tag output
         id: image-tag
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          OWNER=$(echo "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
           # Use the expression-provided SHA so this step never needs a git command.
           # git rev-parse can silently fail on shallow clones; ${{ github.sha }} is always set.
-          SHORT_SHA=$(echo '${{ github.sha }}' | cut -c1-7)
-          BRANCH=$(echo '${{ github.ref_name }}' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+          SHORT_SHA=$(echo "$SHA" | cut -c1-7)
+          BRANCH=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
           TAG="${{ env.REGISTRY }}/${OWNER}/${{ env.IMAGE_NAME }}:${BRANCH}-${SHORT_SHA}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Image tag: ${TAG}"
@@ -148,7 +154,9 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Set lowercase owner
-        run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: echo "OWNER=$(echo "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
@@ -305,10 +313,12 @@ jobs:
       - name: Verify Docker image signature
         # Confirm the image was signed by THIS workflow before deploying.
         # Prevents a tampered or unrelated image from reaching production.
+        env:
+          REPOSITORY: ${{ github.repository }}
         run: |
           cosign verify \
             --certificate-identity-regexp \
-              "https://github.com/${{ github.repository }}/.github/workflows/backend-deploy.yml@.*" \
+              "https://github.com/${REPOSITORY}/.github/workflows/backend-deploy.yml@.*" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
             "${{ needs.build.outputs.image-tag }}"
 
@@ -323,7 +333,9 @@ jobs:
 
       - name: Set Sentry release identifier
         id: sentry-release
-        run: echo "value=miru-backend@$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+        env:
+          SHA: ${{ github.sha }}
+        run: echo "value=miru-backend@$(echo "$SHA" | cut -c1-7)" >> "$GITHUB_OUTPUT"
 
       - name: Capture active revision for rollback
         id: prev-revision
@@ -542,10 +554,15 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          ACTOR: ${{ github.actor }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           STATUS="${{ job.status }}"
           [ "$STATUS" = "success" ] && EMOJI="✅" || EMOJI="❌"
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          SHORT_SHA=$(echo "$SHA" | cut -c1-7)
           NEW_REVISION=$(az containerapp revision list \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -558,7 +575,7 @@ jobs:
                   || echo "")
           if [ -n "$WEEK_AGO" ]; then
             DEPLOYS_7D=$(gh api \
-              "repos/${{ github.repository }}/actions/workflows/backend-deploy.yml/runs?per_page=100&status=success&branch=main" \
+              "repos/${REPOSITORY}/actions/workflows/backend-deploy.yml/runs?per_page=100&status=success&branch=main" \
               --jq "[.workflow_runs[] | select(.created_at > \"${WEEK_AGO}\")] | length" 2>/dev/null || echo "?")
           else
             DEPLOYS_7D="?"
@@ -575,8 +592,8 @@ jobs:
             if [ "$STATUS" != "success" ]; then
               echo "| **Rolled back to** | \`${{ steps.prev-revision.outputs.name }}\` |"
             fi
-            echo "| **Commit** | [\`${SHORT_SHA}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |"
-            echo "| **Actor** | @${{ github.actor }} |"
+            echo "| **Commit** | [\`${SHORT_SHA}\`](${SERVER_URL}/${REPOSITORY}/commit/${SHA}) |"
+            echo "| **Actor** | @${ACTOR} |"
             echo "| **URL** | ${{ vars.PRODUCTION_URL }} |"
             echo "| **Sentry release** | \`${{ steps.sentry-release.outputs.value }}\` |"
             echo ""
@@ -585,7 +602,7 @@ jobs:
             echo "|---|---|"
             echo "| **Deploy frequency (7d)** | ${DEPLOYS_7D} deploys |"
             echo ""
-            echo "> [View full run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            echo "> [View full run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID})"
           } >> "$GITHUB_STEP_SUMMARY"
 
   # Staging deploy lives in backend-deploy-staging.yml and is triggered via
