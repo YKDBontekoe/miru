@@ -260,7 +260,7 @@ class ChatService:
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
-        agent_name_to_id = {a.name: a.pk for a in room_agents}
+        agent_name_to_id = {a.name: a.id for a in room_agents}
         await self.ws_broadcaster.broadcast_thinking_status(room_id, agent_names)
         step_callback = self.ws_broadcaster.create_step_callback(
             room_id, agent_names, user_id=user_id, agent_name_to_id=agent_name_to_id
