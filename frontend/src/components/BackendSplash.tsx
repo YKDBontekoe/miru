@@ -7,8 +7,6 @@ import Animated, {
   withRepeat,
   withSequence,
   Easing,
-  FadeIn,
-  FadeOut,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
@@ -81,11 +79,7 @@ export function BackendSplash() {
 
   return (
     <View className="flex-1 bg-white items-center justify-center">
-      <Animated.View
-        entering={FadeIn.duration(500)}
-        exiting={FadeOut.duration(300)}
-        className="items-center justify-center"
-      >
+      <Animated.View className="items-center justify-center">
         <View className="w-40 h-40 items-center justify-center mb-10">
           <Animated.View
             className="absolute w-32 h-32 rounded-full bg-blue-50 border-2 border-blue-600/30"
@@ -105,11 +99,7 @@ export function BackendSplash() {
           </AppText>
           <View className="flex-row items-center justify-center">
             <ActivityIndicator size="small" color="#2563EB" className="mr-2" />
-            <Animated.View
-              key={messageIndex}
-              entering={FadeIn.duration(400)}
-              exiting={FadeOut.duration(400)}
-            >
+            <Animated.View key={messageIndex}>
               <AppText color="muted" className="text-base font-medium">
                 {MESSAGES[messageIndex]}
               </AppText>
