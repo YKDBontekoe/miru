@@ -329,7 +329,13 @@ const TaskRow = React.memo(function TaskRow({
 });
 
 // ─── Agent chip ───────────────────────────────────────────────────────────────
-const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+const AgentChip = React.memo(function AgentChip({
+  agent,
+  onPress,
+}: {
+  agent: Agent;
+  onPress: () => void;
+}) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -548,10 +554,7 @@ export default function HomeScreen() {
     (id: string) => router.push(`/(main)/chat/${id}`),
     [router]
   );
-  const handleAgentPress = React.useCallback(
-    () => router.push('/(main)/agents'),
-    [router]
-  );
+  const handleAgentPress = React.useCallback(() => router.push('/(main)/agents'), [router]);
 
   const renderRecentChatRow = React.useCallback(
     ({ item, index }: { item: ChatRoom; index: number }) => (
@@ -576,9 +579,7 @@ export default function HomeScreen() {
   );
 
   const renderAgentChip = React.useCallback(
-    ({ item }: { item: Agent }) => (
-      <AgentChip agent={item} onPress={handleAgentPress} />
-    ),
+    ({ item }: { item: Agent }) => <AgentChip agent={item} onPress={handleAgentPress} />,
     [handleAgentPress]
   );
 

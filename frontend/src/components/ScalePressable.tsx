@@ -11,7 +11,14 @@ interface ScalePressableProps {
   disabled?: boolean;
 }
 
-export function ScalePressable({ onPress, onLongPress, children, style, hitSlop, disabled }: ScalePressableProps) {
+export function ScalePressable({
+  onPress,
+  onLongPress,
+  children,
+  style,
+  hitSlop,
+  disabled,
+}: ScalePressableProps) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
