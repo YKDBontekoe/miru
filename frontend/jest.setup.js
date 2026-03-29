@@ -1,3 +1,7 @@
+// Force axios to use XHR adapter instead of fetch, avoiding conflict
+// with Expo's ReadableStream polyfill which doesn't support cancellation
+delete global.ReadableStream;
+
 // Mock environment variables for Supabase
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-key';
