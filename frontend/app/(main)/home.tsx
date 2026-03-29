@@ -19,8 +19,7 @@ import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
-import { Agent, ChatRoom, DailyBrief, Task } from '../../src/core/models';
-import { ApiService } from '../../src/core/api/ApiService';
+import { Agent, ChatRoom, Task } from '../../src/core/models';
 
 // ─── Palette — white + blue only ─────────────────────────────────────────────
 const C = {
@@ -330,13 +329,7 @@ const TaskRow = React.memo(function TaskRow({
 });
 
 // ─── Agent chip ───────────────────────────────────────────────────────────────
-const AgentChip = React.memo(function AgentChip({
-  agent,
-  onPress,
-}: {
-  agent: Agent;
-  onPress: () => void;
-}) {
+const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -529,7 +522,6 @@ export default function HomeScreen() {
   const { tasks, fetchTasks, toggleTask } = useProductivityStore();
   const [showNewChat, setShowNewChat] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [dailyBrief, setDailyBrief] = useState<DailyBrief | null>(null);
 
   const hour = new Date().getHours();
   const greeting = getGreeting(hour, t);
@@ -556,7 +548,10 @@ export default function HomeScreen() {
     (id: string) => router.push(`/(main)/chat/${id}`),
     [router]
   );
-  const handleAgentPress = React.useCallback(() => router.push('/(main)/agents'), [router]);
+  const handleAgentPress = React.useCallback(
+    () => router.push('/(main)/agents'),
+    [router]
+  );
 
   const renderRecentChatRow = React.useCallback(
     ({ item, index }: { item: ChatRoom; index: number }) => (
@@ -581,27 +576,19 @@ export default function HomeScreen() {
   );
 
   const renderAgentChip = React.useCallback(
-    ({ item }: { item: Agent }) => <AgentChip agent={item} onPress={handleAgentPress} />,
+    ({ item }: { item: Agent }) => (
+      <AgentChip agent={item} onPress={handleAgentPress} />
+    ),
     [handleAgentPress]
   );
 
   useEffect(() => {
     Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
-    ApiService.getDailyBrief()
-      .then(setDailyBrief)
-      .catch(() => {});
   }, [fetchRooms, fetchAgents, fetchTasks]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchRooms(),
-      fetchAgents(),
-      fetchTasks(),
-      ApiService.getDailyBrief()
-        .then(setDailyBrief)
-        .catch(() => {}),
-    ]);
+    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
     setRefreshing(false);
   };
 
@@ -753,60 +740,6 @@ export default function HomeScreen() {
 
         {/* ── Body ────────────────────────────────────────────────────── */}
         <View style={{ paddingHorizontal: 14 }}>
-          {/* Daily brief */}
-          {dailyBrief && (
-            <View
-              style={{
-                backgroundColor: C.primary,
-                borderRadius: 20,
-                padding: 18,
-                marginBottom: 12,
-                shadowColor: C.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.25,
-                shadowRadius: 10,
-                elevation: 4,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <Ionicons
-                  name="sunny"
-                  size={16}
-                  color="rgba(255,255,255,0.8)"
-                  style={{ marginEnd: 6 }}
-                />
-                <AppText
-                  style={{
-                    color: 'rgba(255,255,255,0.8)',
-                    fontSize: 11,
-                    fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: 1,
-                  }}
-                >
-                  Daily Brief
-                </AppText>
-              </View>
-              <AppText style={{ color: '#fff', fontWeight: '700', fontSize: 16, marginBottom: 6 }}>
-                {dailyBrief.greeting}
-              </AppText>
-              <AppText style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21 }}>
-                {dailyBrief.summary}
-              </AppText>
-              {dailyBrief.overdue_tasks.length > 0 && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 6 }}>
-                  <Ionicons name="alert-circle" size={14} color="rgba(255,200,0,0.9)" />
-                  <AppText
-                    style={{ color: 'rgba(255,200,0,0.9)', fontSize: 12, fontWeight: '600' }}
-                  >
-                    {dailyBrief.overdue_tasks.length} overdue task
-                    {dailyBrief.overdue_tasks.length !== 1 ? 's' : ''}
-                  </AppText>
-                </View>
-              )}
-            </View>
-          )}
-
           {/* Quick actions */}
           <Card>
             <SectionHeader title={t('home.sections.quick_actions')} />
@@ -832,11 +765,6 @@ export default function HomeScreen() {
                 icon="checkbox"
                 label={t('home.actions.new_task')}
                 onPress={() => router.push('/(main)/productivity')}
-              />
-              <QuickAction
-                icon="search"
-                label="Search"
-                onPress={() => router.push('/(main)/search')}
               />
             </View>
           </Card>

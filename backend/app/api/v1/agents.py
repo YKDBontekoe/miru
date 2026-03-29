@@ -11,7 +11,6 @@ from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import Capability, Integration
 from app.domain.agents.schemas import (
-    AffinityResponse,
     AgentCreate,
     AgentGenerate,
     AgentGenerationResponse,
@@ -20,7 +19,6 @@ from app.domain.agents.schemas import (
     AgentUpdate,
     CapabilityResponse,
     IntegrationResponse,
-    NudgeCheckResponse,
 )
 from app.domain.agents.service import AgentService  # noqa: TCH001
 
@@ -169,47 +167,6 @@ async def update_agent(
         )
     return result
 
-@router.get(
-    "/{agent_id}/affinity",
-    response_model=AffinityResponse,
-    summary="Get agent affinity",
-    description="Get the affinity score between the current user and the given agent.",
-    responses={
-        200: {"description": "Affinity data returned."},
-        404: {"description": "No affinity record yet (agent exists but no interactions)."},
-        401: {"description": "Authentication required"},
-    },
-)
-async def get_agent_affinity(
-    agent_id: UUID,
-    user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
-) -> AffinityResponse:
-    """Return affinity score, trust level, and milestones for this user-agent pair."""
-    result = await service.get_affinity(user_id, agent_id)
-    if result is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"message": "No affinity record found", "error": "AFFINITY_NOT_FOUND"},
-        )
-    return result
-
-
-@router.post(
-    "/nudge-check",
-    response_model=NudgeCheckResponse,
-    summary="Proactive nudge check",
-    description="Check patterns and send push notifications for dormant agent relationships.",
-)
-async def nudge_check(
-    user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
-) -> NudgeCheckResponse:
-    """Fire proactive nudge notifications for agents the user hasn't talked to recently."""
-    from app.api.dependencies import get_notification_service
-
-    notification_service = get_notification_service()
-    return await service.check_proactive_nudges(user_id, notification_service)
 
 @router.delete(
     "/{agent_id}",

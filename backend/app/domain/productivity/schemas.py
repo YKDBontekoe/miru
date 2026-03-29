@@ -30,18 +30,12 @@ class TaskCreate(BaseModel):
         description: An optional description.
         is_completed: Indicates whether the task is complete. Defaults to False.
         due_date: Optional due date for the task.
-        recurrence_rule: Optional recurrence rule (daily/weekly/biweekly/monthly/yearly).
-        recurrence_end_date: Optional end date for the recurrence.
-        auto_create_event: When True and due_date is set, auto-creates a linked calendar event.
     """
 
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     is_completed: bool = False
     due_date: datetime | None = None
-    recurrence_rule: str | None = Field(None, pattern=r"^(daily|weekly|biweekly|monthly|yearly)$")
-    recurrence_end_date: datetime | None = None
-    auto_create_event: bool = False
 
 
 class TaskUpdate(BaseModel):
@@ -52,16 +46,12 @@ class TaskUpdate(BaseModel):
         description: Optional new description.
         is_completed: Optional new completion status.
         due_date: Optional new due date.
-        recurrence_rule: Optional new recurrence rule.
-        recurrence_end_date: Optional new recurrence end date.
     """
 
     title: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     is_completed: bool | None = None
     due_date: datetime | None = None
-    recurrence_rule: str | None = Field(None, pattern=r"^(daily|weekly|biweekly|monthly|yearly)$")
-    recurrence_end_date: datetime | None = None
 
 
 class TaskResponse(BaseModel):
@@ -76,9 +66,6 @@ class TaskResponse(BaseModel):
         description: The description of the task, if any.
         is_completed: Whether the task is completed.
         due_date: Optional due date for the task.
-        recurrence_rule: Optional recurrence rule.
-        recurrence_end_date: Optional recurrence end date.
-        calendar_event_id: Optional linked calendar event ID.
         created_at: The timestamp when the task was created.
         updated_at: The timestamp when the task was last updated.
     """
@@ -91,9 +78,6 @@ class TaskResponse(BaseModel):
     description: str | None = None
     is_completed: bool
     due_date: datetime | None = None
-    recurrence_rule: str | None = None
-    recurrence_end_date: datetime | None = None
-    calendar_event_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -184,9 +168,6 @@ class CalendarEventCreate(BaseModel):
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
     origin_context: str | None = None
-    recurrence_rule: str | None = Field(None, pattern=r"^(daily|weekly|biweekly|monthly|yearly)$")
-    recurrence_end_date: datetime | None = None
-    linked_task_id: UUID | None = None
 
     @model_validator(mode="after")
     def validate_time_range(self) -> CalendarEventCreate:
@@ -204,8 +185,6 @@ class CalendarEventUpdate(BaseModel):
     end_time: datetime | None = None
     is_all_day: bool | None = None
     location: str | None = Field(None, max_length=255)
-    recurrence_rule: str | None = Field(None, pattern=r"^(daily|weekly|biweekly|monthly|yearly)$")
-    recurrence_end_date: datetime | None = None
 
 
 class CalendarEventResponse(BaseModel):
@@ -226,9 +205,6 @@ class CalendarEventResponse(BaseModel):
     end_time: datetime
     is_all_day: bool
     location: str | None = None
-    recurrence_rule: str | None = None
-    recurrence_end_date: datetime | None = None
-    linked_task_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
 

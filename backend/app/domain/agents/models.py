@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from tortoise import fields
 
@@ -28,7 +28,6 @@ class Agent(SupabaseModel):
     agent_integrations: fields.ReverseRelation[AgentIntegration]
 
     message_count = fields.IntField(default=0)
-    personality_history = fields.JSONField(default=list)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
     deleted_at = fields.DatetimeField(null=True)
@@ -177,13 +176,6 @@ class AgentActionLog(SupabaseModel):
     content = fields.TextField()
     meta = fields.JSONField(default={})
     created_at = fields.DatetimeField(auto_now_add=True)
-
-    # Tortoise ORM generates these FK id attributes at runtime; declared here for type checkers.
-    if TYPE_CHECKING:
-        from uuid import UUID as _UUID
-
-        agent_id: _UUID
-        room_id: _UUID | None
 
     class Meta:
         table = "agent_action_logs"

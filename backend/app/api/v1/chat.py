@@ -229,42 +229,6 @@ async def remove_agent_from_room(
 
 
 @router.get(
-    "/rooms/{room_id}/agent-logs",
-    summary="Get agent action logs for a room",
-    description="Retrieve the delegation/thinking trace for a chat room. Requires authentication.",
-    responses={
-        200: {"description": "Action logs retrieved."},
-        401: {"description": "Authentication required"},
-    },
-)
-async def get_room_agent_logs(
-    room_id: UUID,
-    user_id: CurrentUser,
-    limit: int = Query(50, ge=1, le=200),
-) -> list[dict]:
-    """Return the AgentActionLog entries for the given room, most recent first."""
-    from app.domain.agents.models import AgentActionLog  # noqa: PLC0415
-
-    logs = (
-        await AgentActionLog.filter(room_id=room_id, user_id=user_id)
-        .order_by("-created_at")
-        .limit(limit)
-    )
-    return [
-        {
-            "id": str(log.id),
-            "agent_id": str(log.agent_id),
-            "room_id": str(log.room_id),
-            "action_type": log.action_type,
-            "content": log.content,
-            "meta": log.meta,
-            "created_at": log.created_at.isoformat(),
-        }
-        for log in logs
-    ]
-
-
-@router.get(
     "/rooms/{room_id}/messages",
     response_model=list[ChatMessageResponse],
     summary="List chat messages",

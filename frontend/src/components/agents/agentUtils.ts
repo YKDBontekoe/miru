@@ -35,11 +35,11 @@ export const SURPRISE_KEYWORDS = [
 ];
 
 export const MILESTONES = [
-  { threshold: 1, key: 'first_chat', label: 'First words', icon: '👋' },
-  { threshold: 10, key: 'first_chat', label: 'Getting to know', icon: '🤝' },
-  { threshold: 50, key: 'regular', label: 'Trusted friend', icon: '💙' },
-  { threshold: 100, key: 'trusted', label: 'Old companion', icon: '🌟' },
-  { threshold: 500, key: 'companion', label: 'Soulbound', icon: '🔮' },
+  { threshold: 1, label: 'First words', icon: '👋' },
+  { threshold: 10, label: 'Getting to know', icon: '🤝' },
+  { threshold: 50, label: 'Trusted friend', icon: '💙' },
+  { threshold: 100, label: 'Old companion', icon: '🌟' },
+  { threshold: 500, label: 'Soulbound', icon: '🔮' },
 ];
 
 export function getAgentColor(name: string): string {

@@ -163,29 +163,3 @@ class MoodResponse(BaseModel):
     """Structured output for mood classification."""
 
     mood: str
-
-
-class PersonalityDriftResponse(BaseModel):
-    """Structured output for personality drift suggestion."""
-
-    updated_personality: str
-    summary: str
-
-
-class AffinityResponse(BaseModel):
-    """Schema for returning user-agent affinity data."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    agent_id: UUID
-    affinity_score: float
-    trust_level: int
-    milestones: list[str]
-    last_interaction_at: datetime
-
-
-class NudgeCheckResponse(BaseModel):
-    """Schema returned by the proactive nudge check endpoint."""
-
-    nudges_sent: int
-    details: list[str]

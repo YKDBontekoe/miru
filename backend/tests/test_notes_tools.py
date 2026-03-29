@@ -7,7 +7,10 @@ from uuid import uuid4
 
 import pytest
 
-from app.domain.agent_tools.productivity.notes_tools import CreateNoteTool, ListNotesTool
+from app.domain.agent_tools.productivity.notes_tools import (
+    CreateNoteTool,
+    ListNotesTool,
+)
 from app.domain.productivity.entities import NoteEntity
 
 

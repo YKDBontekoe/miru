@@ -6,7 +6,10 @@ from unittest.mock import patch
 
 import pytest
 
-from app.infrastructure.external.discord import get_server_info, send_message
+from app.infrastructure.external.discord import (
+    get_server_info,
+    send_message,
+)
 
 
 @pytest.fixture
