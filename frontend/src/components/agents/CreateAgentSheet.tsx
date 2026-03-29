@@ -5,7 +5,6 @@ import {
   Modal,
   ScrollView,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +47,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   const [isGenerating, setIsGenerating] = useState(false);
   const [wasGenerated, setWasGenerated] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const reset = () => {
     setName('');
@@ -58,6 +58,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     setKeywords('');
     setSelectedTone('');
     setWasGenerated(false);
+    setErrorMsg('');
   };
 
   // Apply prefill when sheet becomes visible with pre-filled data
@@ -72,9 +73,10 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   }, [visible, prefill]);
 
   const handleGenerate = async (kw?: string) => {
+    setErrorMsg('');
     const words = kw ?? keywords.trim();
     if (!words) {
-      Alert.alert('Keywords required', 'Enter a description to generate from.');
+      setErrorMsg('Enter a description to generate from.');
       return;
     }
     setIsGenerating(true);
@@ -89,7 +91,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       haptic.success();
     } catch {
       haptic.error();
-      Alert.alert('Error', 'Could not generate persona. Try again.');
+      setErrorMsg('Could not generate persona. Try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -111,17 +113,23 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
 
   const handleSave = async () => {
     if (isSaving) return;
-    if (!name.trim() || !personality.trim()) {
-      Alert.alert('Required', 'Name and personality are required.');
+    setErrorMsg('');
+
+    const trimmedName = name.trim();
+    const trimmedPersonality = personality.trim();
+
+    if (!trimmedName || !trimmedPersonality) {
+      setErrorMsg('Name and personality are required.');
       return;
     }
+
     setIsSaving(true);
     haptic.medium();
     try {
       const tonePrefix = getTonePrefix(selectedTone);
       await createAgent({
-        name: name.trim(),
-        personality: (tonePrefix + personality).trim(),
+        name: trimmedName,
+        personality: (tonePrefix + trimmedPersonality).trim(),
         description: description.trim() || undefined,
         goals: goals.filter(Boolean),
       });
@@ -129,9 +137,21 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       reset();
       onCreated();
       onClose();
-    } catch {
+    } catch (err: any) {
       haptic.error();
-      Alert.alert('Error', 'Failed to create persona. Please try again.');
+      // Handle potential 409 or 422 errors from backend
+      const detail = err.response?.data?.detail;
+      let errMsg = 'Failed to create persona. Please try again.';
+
+      if (Array.isArray(detail)) {
+        errMsg = detail.map((d: any) => `${d.loc?.[d.loc.length - 1] ?? 'Field'}: ${d.msg}`).join('\n');
+      } else if (typeof detail?.message === 'string') {
+        errMsg = detail.message;
+      } else if (typeof detail === 'string') {
+        errMsg = detail;
+      }
+
+      setErrorMsg(errMsg);
     } finally {
       setIsSaving(false);
     }
@@ -334,6 +354,26 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 </Animated.View>
               )}
 
+              {!!errorMsg && (
+                <Animated.View
+                  entering={FadeIn.duration(200)}
+                  style={{
+                    backgroundColor: `${C.danger}15`,
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 16,
+                    borderWidth: 1,
+                    borderColor: `${C.danger}30`,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Ionicons name="alert-circle" size={16} color={C.danger} />
+                  <AppText style={{ color: C.danger, fontSize: 13, flex: 1 }}>{errorMsg}</AppText>
+                </Animated.View>
+              )}
+
               <AppText style={label}>Name</AppText>
               <TextInput
                 value={name}
@@ -482,10 +522,10 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 </Animated.View>
               )}
 
-              <ScalePressable onPress={handleSave}>
+              <ScalePressable onPress={handleSave} disabled={isSaving || !name.trim()}>
                 <View
                   style={{
-                    backgroundColor: !name.trim() ? C.faint : C.primary,
+                    backgroundColor: !name.trim() || isSaving ? C.faint : C.primary,
                     borderRadius: 16,
                     paddingVertical: 15,
                     alignItems: 'center',
@@ -493,9 +533,9 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                     marginBottom: 40,
                     shadowColor: C.primary,
                     shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: name.trim() ? 0.25 : 0,
+                    shadowOpacity: name.trim() && !isSaving ? 0.25 : 0,
                     shadowRadius: 8,
-                    elevation: name.trim() ? 3 : 0,
+                    elevation: name.trim() && !isSaving ? 3 : 0,
                   }}
                 >
                   {isSaving ? (

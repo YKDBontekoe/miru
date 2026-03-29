@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 
 class CapabilityResponse(BaseModel):
@@ -54,7 +54,7 @@ class IntegrationResponse(BaseModel):
 class AgentBase(BaseModel):
     """Shared fields for Agent schemas."""
 
-    name: str = Field(max_length=100)
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     personality: str = Field(max_length=1000)
     description: str | None = Field(default=None, max_length=500)
     system_prompt: str | None = Field(default=None)
@@ -127,7 +127,9 @@ class AgentTemplateResponse(BaseModel):
 class AgentUpdate(BaseModel):
     """Schema for updating an existing agent."""
 
-    name: str | None = Field(default=None, max_length=100)
+    name: Annotated[
+        str | None, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
+    ] = None
     personality: str | None = Field(default=None, max_length=1000)
     description: str | None = Field(default=None, max_length=500)
     goals: list[str] | None = None
