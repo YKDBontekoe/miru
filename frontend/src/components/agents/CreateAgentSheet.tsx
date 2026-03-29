@@ -5,7 +5,6 @@ import {
   Modal,
   ScrollView,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,6 +58,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     setKeywords('');
     setSelectedTone('');
     setWasGenerated(false);
+    setErrorMsg('');
   };
 
   // Apply prefill when sheet becomes visible with pre-filled data
@@ -140,8 +140,18 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     } catch (err: any) {
       haptic.error();
       // Handle potential 409 or 422 errors from backend
-      const errMsg = err.response?.data?.detail?.message || err.response?.data?.detail || 'Failed to create persona. Please try again.';
-      setErrorMsg(typeof errMsg === 'string' ? errMsg : 'Failed to create persona. Please try again.');
+      const detail = err.response?.data?.detail;
+      let errMsg = 'Failed to create persona. Please try again.';
+
+      if (Array.isArray(detail)) {
+        errMsg = detail.map((d: any) => `${d.loc?.[d.loc.length - 1] ?? 'Field'}: ${d.msg}`).join('\n');
+      } else if (typeof detail?.message === 'string') {
+        errMsg = detail.message;
+      } else if (typeof detail === 'string') {
+        errMsg = detail;
+      }
+
+      setErrorMsg(errMsg);
     } finally {
       setIsSaving(false);
     }

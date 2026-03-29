@@ -85,7 +85,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   createAgent: async (data) => {
     // Optimistically add a placeholder with a temporary ID
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const optimisticAgent: Agent = {
       id: tempId,
       name: data.name ?? 'New Persona',
