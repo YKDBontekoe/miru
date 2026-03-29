@@ -4,7 +4,8 @@
     "chat": "Chat",
     "agents": "Agents",
     "productivity": "Productivity",
-    "settings": "Settings"
+    "settings": "Settings",
+    "search": "Search"
   },
   "settings": {
     "title": "Settings",
@@ -68,20 +69,21 @@
       "done": "Done",
       "create": "Create",
       "start_chat": "Start a Chat",
-      "tap_to_continue": "Tap to continue"
+      "tap_to_continue": "Tap to continue",
+      "search": "Search"
     },
     "chat_modal": {
       "title": "New Chat",
-      "placeholder": "Chat name\u2026",
+      "placeholder": "Chat name…",
       "name_required": "Name required",
       "please_enter_name": "Please enter a name for this chat.",
       "error": "Error",
       "failed_to_create": "Failed to create chat. Please try again."
     },
     "tasks": {
-      "all_done": "Tasks \u00b7 All done!",
+      "all_done": "Tasks · All done!",
       "caught_up": "You're all caught up!",
-      "open_count": "Tasks \u00b7 {{count}} open"
+      "open_count": "Tasks · {{count}} open"
     },
     "empty": {
       "title": "Welcome to Miru",
@@ -94,7 +96,10 @@
       "hours_ago_other": "{{count}}h ago",
       "days_ago_one": "{{count}}d ago",
       "days_ago_other": "{{count}}d ago"
-    }
+    },
+    "daily_brief": "Daily Brief",
+    "overdue_tasks_one": "{{count}} overdue task",
+    "overdue_tasks_other": "{{count}} overdue tasks"
   },
   "chat": {
     "title": "Miru",
@@ -157,7 +162,8 @@
       "generate_failed": "Could not generate persona. Try again.",
       "create_failed": "Failed to create agent. Please try again.",
       "name_required": "Name and personality are required."
-    }
+    },
+    "search_placeholder": "Search personas…"
   },
   "productivity": {
     "title_required": "Title required",
@@ -185,5 +191,12 @@
     "note_title_placeholder": "Note title",
     "note_content_placeholder": "Write your note here...",
     "task_content_placeholder": "What needs to be done?"
+  },
+  "search": {
+    "placeholder": "Search notes, tasks, memories, messages…",
+    "no_results": "No results found",
+    "no_results_desc": "Try searching for something else.",
+    "everything": "Search everything",
+    "everything_desc": "Notes, tasks, memories, and messages"
   }
 }

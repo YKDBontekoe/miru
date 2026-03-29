@@ -148,6 +148,7 @@ class ChatService:
             response = await stream_chat(
                 model=model_name,
                 messages=messages,
+                accept_language=accept_language,
             )
 
             async for chunk in response:

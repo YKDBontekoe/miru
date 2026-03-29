@@ -28,10 +28,12 @@ import { useChatStore } from '../../src/store/useChatStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { haptic } from '../../src/utils/haptics';
 import { Agent } from '../../src/core/models';
+import { useTranslation } from 'react-i18next';
 
 export default function AgentsScreen() {
   const { C } = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const {
     agents,
     fetchAgents,
@@ -350,7 +352,7 @@ export default function AgentsScreen() {
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search personas…"
+                placeholder={t('agents.search_placeholder')}
                 placeholderTextColor={C.faint}
                 style={{ flex: 1, color: C.text, fontSize: 14 }}
               />

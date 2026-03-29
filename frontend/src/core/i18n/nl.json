@@ -4,7 +4,8 @@
     "chat": "Chat",
     "agents": "Agenten",
     "productivity": "Productiviteit",
-    "settings": "Instellingen"
+    "settings": "Instellingen",
+    "search": "Zoeken"
   },
   "settings": {
     "title": "Instellingen",
@@ -68,20 +69,21 @@
       "done": "Klaar",
       "create": "Aanmaken",
       "start_chat": "Start een chat",
-      "tap_to_continue": "Tik om verder te gaan"
+      "tap_to_continue": "Tik om verder te gaan",
+      "search": "Zoeken"
     },
     "chat_modal": {
       "title": "Nieuwe chat",
-      "placeholder": "Chatnaam\u2026",
+      "placeholder": "Chatnaam…",
       "name_required": "Naam vereist",
       "please_enter_name": "Voer een naam in voor deze chat.",
       "error": "Fout",
       "failed_to_create": "Aanmaken van chat mislukt. Probeer opnieuw."
     },
     "tasks": {
-      "all_done": "Taken \u00b7 Alles klaar!",
+      "all_done": "Taken · Alles klaar!",
       "caught_up": "Je bent helemaal bijgewerkt!",
-      "open_count": "Taken \u00b7 {{count}} open"
+      "open_count": "Taken · {{count}} open"
     },
     "empty": {
       "title": "Welkom bij Miru",
@@ -94,7 +96,10 @@
       "hours_ago_other": "{{count}}u geleden",
       "days_ago_one": "{{count}}d geleden",
       "days_ago_other": "{{count}}d geleden"
-    }
+    },
+    "daily_brief": "Dagelijkse Briefing",
+    "overdue_tasks_one": "{{count}} achterstallige taak",
+    "overdue_tasks_other": "{{count}} achterstallige taken"
   },
   "chat": {
     "title": "Miru",
@@ -157,7 +162,8 @@
       "generate_failed": "Kon geen persona genereren. Probeer opnieuw.",
       "create_failed": "Aanmaken van agent mislukt. Probeer opnieuw.",
       "name_required": "Naam en persoonlijkheid zijn vereist."
-    }
+    },
+    "search_placeholder": "Zoek persona's…"
   },
   "productivity": {
     "title_required": "Titel vereist",
@@ -185,5 +191,12 @@
     "note_title_placeholder": "Notitietitel",
     "note_content_placeholder": "Schrijf hier je notitie...",
     "task_content_placeholder": "Wat moet er gedaan worden?"
+  },
+  "search": {
+    "placeholder": "Zoek notities, taken, herinneringen, berichten…",
+    "no_results": "Geen resultaten gevonden",
+    "no_results_desc": "Probeer ergens anders naar te zoeken.",
+    "everything": "Zoek alles",
+    "everything_desc": "Notities, taken, herinneringen en berichten"
   }
 }

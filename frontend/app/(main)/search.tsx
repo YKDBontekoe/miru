@@ -14,6 +14,7 @@ import { AppText } from '../../src/components/AppText';
 import { ApiService } from '../../src/core/api/ApiService';
 import { SearchResultItem } from '../../src/core/models';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { theme } from '../../src/core/theme';
 
 const S = theme.spacing;
@@ -28,6 +29,7 @@ const SOURCE_META: Record<string, { icon: string; label: string; color: string }
 
 export default function SearchScreen() {
   const { C } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [query, setQuery] = useState('');
@@ -104,7 +106,7 @@ export default function SearchScreen() {
           <TextInput
             value={query}
             onChangeText={handleChange}
-            placeholder="Search notes, tasks, memories, messages…"
+            placeholder={t("search.placeholder")}
             placeholderTextColor={C.faint}
             autoFocus
             returnKeyType="search"

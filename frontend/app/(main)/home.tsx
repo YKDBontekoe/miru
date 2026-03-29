@@ -799,8 +799,7 @@ export default function HomeScreen() {
                   <AppText
                     style={{ color: 'rgba(255,200,0,0.9)', fontSize: 12, fontWeight: '600' }}
                   >
-                    {dailyBrief.overdue_tasks.length} overdue task
-                    {dailyBrief.overdue_tasks.length !== 1 ? 's' : ''}
+                    {dailyBrief.overdue_tasks.length === 1 ? t('home.overdue_tasks_one', { count: dailyBrief.overdue_tasks.length }) : t('home.overdue_tasks_other', { count: dailyBrief.overdue_tasks.length })}
                   </AppText>
                 </View>
               )}
@@ -835,7 +834,7 @@ export default function HomeScreen() {
               />
               <QuickAction
                 icon="search"
-                label="Search"
+                label={t('home.actions.search')}
                 onPress={() => router.push('/(main)/search')}
               />
             </View>
