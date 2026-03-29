@@ -72,8 +72,12 @@ def test_build_agent_response_without_avatar() -> None:
     from app.domain.agents.entities import AgentEntity, AgentIntegrationEntity, CapabilityEntity
 
     now = datetime.now()
-    cap1 = CapabilityEntity(id="cap1", name="Cap1", description="desc", icon="icon", status="active", created_at=now)
-    cap2 = CapabilityEntity(id="cap2", name="Cap2", description="desc", icon="icon", status="active", created_at=now)
+    cap1 = CapabilityEntity(
+        id="cap1", name="Cap1", description="desc", icon="icon", status="active", created_at=now
+    )
+    cap2 = CapabilityEntity(
+        id="cap2", name="Cap2", description="desc", icon="icon", status="active", created_at=now
+    )
 
     integration_mock = AgentIntegrationEntity(
         id=uuid4(),
