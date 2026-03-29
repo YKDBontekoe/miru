@@ -53,7 +53,7 @@ def _map_integration_to_entity(integration: Integration) -> IntegrationEntity:
 def _map_agent_integration_to_entity(ai: AgentIntegration) -> AgentIntegrationEntity:
     return AgentIntegrationEntity(
         id=ai.id,
-        agent_id=ai.agent_id if hasattr(ai, "agent_id") else getattr(ai, "agent").id,
+        agent_id=ai.agent_id if hasattr(ai, "agent_id") else ai.agent.id,
         integration_id=ai.integration_id,
         enabled=ai.enabled,
         config=ai.config,
