@@ -80,7 +80,10 @@ class ChatService:
     async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
         return await self.chat_repo.delete_room(room_id, user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> None:
+        agent = await self.agent_repo.get_by_id(agent_id)
+        if not agent or agent.user_id != user_id:
+            raise PermissionError("You do not own this agent.")
         await self.chat_repo.add_agent_to_room(room_id, agent_id)
 
     async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
@@ -88,7 +91,7 @@ class ChatService:
 
     async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
         if not await self.user_in_room(user_id, room_id):
-            return []
+            raise PermissionError("NOT_ROOM_OWNER")
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(
@@ -96,7 +99,7 @@ class ChatService:
     ) -> list[ChatMessageResponse]:
         # Ownership check
         if not await self.user_in_room(user_id, room_id):
-            return []
+            raise PermissionError("NOT_ROOM_OWNER")
 
         msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, before_id=before_id)
         return [

@@ -184,7 +184,13 @@ async def add_agent_to_room(
             status_code=403,
             detail={"message": "Forbidden", "error": "NOT_ROOM_OWNER"},
         )
-    await service.add_agent_to_room(room_id, data.agent_id)
+    try:
+        await service.add_agent_to_room(room_id, data.agent_id, user_id)
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403,
+            detail={"message": str(e), "error": "AGENT_NOT_OWNED"},
+        ) from None
     return {"status": "ok"}
 
 
@@ -196,6 +202,7 @@ async def add_agent_to_room(
     responses={
         200: {"description": "Room agents retrieved successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         422: {"description": "Validation Error"},
     },
 )
@@ -204,8 +211,13 @@ async def get_room_agents(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    agents = await service.list_room_agents(room_id, user_id)
-    return [AgentResponse.model_validate(a) for a in agents]
+    try:
+        agents = await service.list_room_agents(room_id, user_id)
+        return [AgentResponse.model_validate(a) for a in agents]
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403, detail={"message": str(e), "error": "NOT_ROOM_OWNER"}
+        ) from None
 
 
 @router.delete(
@@ -248,6 +260,7 @@ async def remove_agent_from_room(
     responses={
         200: {"description": "Messages retrieved successfully."},
         401: {"description": "Authentication required"},
+        403: {"description": "Forbidden"},
         404: {"description": "Chat room not found"},
         422: {"description": "Validation Error"},
     },
@@ -259,7 +272,12 @@ async def get_room_messages(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(room_id, user_id, limit=limit, before_id=before_id)
+    try:
+        return await service.get_room_messages(room_id, user_id, limit=limit, before_id=before_id)
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=403, detail={"message": str(e), "error": "NOT_ROOM_OWNER"}
+        ) from None
 
 
 @router.patch(

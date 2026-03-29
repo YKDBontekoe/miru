@@ -434,6 +434,55 @@ async def test_create_step_callback(chat_service: ChatService) -> None:
 
 
 @pytest.mark.asyncio
+async def test_add_agent_to_room_ownership_fails(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    agent_id = uuid4()
+    user_id = uuid4()
+    mock_agent = AsyncMock()
+    mock_agent.user_id = uuid4()  # different
+    typing.cast("AsyncMock", chat_service.agent_repo.get_by_id).return_value = mock_agent
+
+    with pytest.raises(PermissionError):
+        await chat_service.add_agent_to_room(room_id, agent_id, user_id)
+
+
+@pytest.mark.asyncio
+async def test_add_agent_to_room_success(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    agent_id = uuid4()
+    user_id = uuid4()
+    mock_agent = AsyncMock()
+    mock_agent.user_id = user_id
+    typing.cast("AsyncMock", chat_service.agent_repo.get_by_id).return_value = mock_agent
+    typing.cast("AsyncMock", chat_service.chat_repo.add_agent_to_room).return_value = None
+
+    await chat_service.add_agent_to_room(room_id, agent_id, user_id)
+    typing.cast("AsyncMock", chat_service.chat_repo.add_agent_to_room).assert_called_once_with(
+        room_id, agent_id
+    )
+
+
+@pytest.mark.asyncio
+async def test_list_room_agents_fails(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    with pytest.raises(PermissionError):
+        await chat_service.list_room_agents(room_id, user_id)
+
+
+@pytest.mark.asyncio
+async def test_get_room_messages_fails(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
+
+    with pytest.raises(PermissionError):
+        await chat_service.get_room_messages(room_id, user_id)
+
+
+@pytest.mark.asyncio
 async def test_execute_crew_task(
     chat_service: ChatService, monkeypatch: pytest.MonkeyPatch
 ) -> None:
