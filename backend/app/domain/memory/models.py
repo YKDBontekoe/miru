@@ -112,6 +112,7 @@ class MemoryGraphNode(SupabaseModel):
 
     class Meta:
         table = "memory_graph_nodes"
+        unique_together = (("user_id", "name"),)
         sql_policies = [
             "ALTER TABLE public.memory_graph_nodes ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY memory_graph_nodes_owner ON public.memory_graph_nodes "
@@ -136,6 +137,7 @@ class MemoryGraphEdge(SupabaseModel):
 
     class Meta:
         table = "memory_graph_edges"
+        unique_together = (("source_node", "target_node", "relationship"),)
         sql_policies = [
             "ALTER TABLE public.memory_graph_edges ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY memory_graph_edges_owner ON public.memory_graph_edges "

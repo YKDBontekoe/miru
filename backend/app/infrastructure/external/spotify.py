@@ -141,3 +141,98 @@ async def search_spotify(
     except Exception:
         logger.exception("Unexpected error searching Spotify")
         return []
+
+
+async def _post_async(
+    url: str, headers: dict[str, str], json_data: dict[str, Any] | None = None
+) -> Any:
+    """Asynchronous POST with httpx; returns parsed JSON or raises."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(url, headers=headers, json=json_data)
+        if resp.status_code == 204:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+
+async def get_user_profile(access_token: str) -> dict[str, Any]:
+    """Get current user's profile."""
+    url = f"{SPOTIFY_API_BASE}/me"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    return await _get_async(url, headers)
+
+
+async def create_playlist(access_token: str, name: str, description: str = "") -> dict[str, Any]:
+    """Create a new Spotify playlist for the user."""
+    try:
+        profile = await get_user_profile(access_token)
+        user_id = profile.get("id")
+        if not user_id:
+            return {"error": "Could not determine Spotify user ID."}
+
+        url = f"{SPOTIFY_API_BASE}/users/{user_id}/playlists"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        payload = {
+            "name": name,
+            "description": description,
+            "public": False,  # Default to private for safety
+        }
+
+        return await _post_async(url, headers, payload)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Failed to create playlist: {e.response.text}")
+        return {"error": f"Spotify API error: {e.response.status_code}"}
+    except Exception:
+        logger.exception("Unexpected error creating playlist")
+        return {"error": "Unexpected Spotify integration error"}
+
+
+async def add_tracks_to_playlist(
+    access_token: str, playlist_id: str, uris: list[str]
+) -> dict[str, Any]:
+    """Add items to a playlist."""
+    try:
+        url = f"{SPOTIFY_API_BASE}/playlists/{playlist_id}/tracks"
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        payload = {"uris": uris}
+
+        result = await _post_async(url, headers, payload)
+        return {"success": True, "snapshot_id": result.get("snapshot_id")}
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Failed to add tracks: {e.response.text}")
+        return {"error": f"Spotify API error: {e.response.status_code}"}
+    except Exception:
+        logger.exception("Unexpected error adding tracks")
+        return {"error": "Unexpected Spotify integration error"}
+
+
+async def get_recommendations(
+    access_token: str,
+    seed_artists: str | None = None,
+    seed_genres: str | None = None,
+    seed_tracks: str | None = None,
+    limit: int = 10,
+) -> dict[str, Any]:
+    """Get Recommendations Based on Seeds."""
+    try:
+        url = f"{SPOTIFY_API_BASE}/recommendations"
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        params: dict[str, Any] = {"limit": min(limit, 50)}
+        if seed_artists:
+            params["seed_artists"] = seed_artists
+        if seed_genres:
+            params["seed_genres"] = seed_genres
+        if seed_tracks:
+            params["seed_tracks"] = seed_tracks
+
+        if not (seed_artists or seed_genres or seed_tracks):
+            return {"error": "At least one seed (artist, genre, or track) must be provided."}
+
+        return await _get_async(url, headers, params)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Failed to get recommendations: {e.response.text}")
+        return {"error": f"Spotify API error: {e.response.status_code}"}
+    except Exception:
+        logger.exception("Unexpected error getting recommendations")
+        return {"error": "Unexpected Spotify integration error"}

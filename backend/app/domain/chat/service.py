@@ -48,7 +48,7 @@ class ChatService:
         self.agent_service = agent_service
 
         # Initialize the background service
-        self.bg_service = ChatBackgroundService(agent_repo, memory_repo, agent_service)
+        self.bg_service = ChatBackgroundService(agent_repo, memory_repo, agent_service, chat_repo)
 
         # Initialize the WebSocket broadcaster
         self.ws_broadcaster = ChatWebSocketBroadcaster(self.chat_repo, self.agent_repo)
@@ -267,6 +267,10 @@ class ChatService:
         )
 
         try:
+            # Check room summary to pass as context
+            room = await self.chat_repo.get_room(room_id)
+            room_summary = room.summary if room else None
+
             result_text = await CrewOrchestrator.execute_crew_task(
                 room_agents=room_agents,
                 user_message=user_message,
@@ -276,6 +280,7 @@ class ChatService:
                 accept_language=accept_language,
                 conversation_history=conversation_history,
                 memory_context=memory_context,
+                room_summary=room_summary,
             )
 
             # 6. Persist + broadcast — returns only the agents that actually responded.
@@ -313,6 +318,12 @@ class ChatService:
                     user_id, room_id, user_message, responded_agents, result_text, agent_names
                 )
             )
+
+            # Fire background task to update room summary if conversation gets long
+            if len(conversation_history) >= CONVERSATION_HISTORY_LIMIT - 5:
+                asyncio.create_task(  # noqa: RUF006
+                    self.bg_service.update_room_summary_background(room_id, conversation_history)
+                )
 
         except Exception:
             logger.exception("Failed processing crew task for room=%s", room_id)

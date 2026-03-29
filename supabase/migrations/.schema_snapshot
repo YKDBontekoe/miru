@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS "chat_rooms" (
     "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID NOT NULL,
     "name" VARCHAR(255) NOT NULL,
+    "summary" TEXT,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ
@@ -177,7 +178,8 @@ CREATE TABLE IF NOT EXISTS "memory_graph_nodes" (
     "description" TEXT,
     "meta" JSONB NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "uid_memory_grap_user_id_94cacf" UNIQUE ("user_id", "name")
 );
 CREATE INDEX IF NOT EXISTS "idx_memory_grap_user_id_d72df4" ON "memory_graph_nodes" ("user_id");
 CREATE INDEX IF NOT EXISTS "idx_memory_grap_name_e854af" ON "memory_graph_nodes" ("name");
@@ -190,7 +192,8 @@ CREATE TABLE IF NOT EXISTS "memory_graph_edges" (
     "meta" JSONB NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "source_node_id" UUID NOT NULL REFERENCES "memory_graph_nodes" ("id") ON DELETE CASCADE,
-    "target_node_id" UUID NOT NULL REFERENCES "memory_graph_nodes" ("id") ON DELETE CASCADE
+    "target_node_id" UUID NOT NULL REFERENCES "memory_graph_nodes" ("id") ON DELETE CASCADE,
+    CONSTRAINT "uid_memory_grap_source__62d059" UNIQUE ("source_node_id", "target_node_id", "relationship")
 );
 COMMENT ON TABLE "memory_graph_edges" IS 'Relationship between two graph nodes.';
 CREATE TABLE IF NOT EXISTS "memory_relationships" (

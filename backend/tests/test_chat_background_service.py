@@ -13,7 +13,8 @@ def background_service() -> ChatBackgroundService:
     agent_repo = AsyncMock()
     memory_repo = AsyncMock()
     agent_service = AsyncMock()
-    return ChatBackgroundService(agent_repo, memory_repo, agent_service)
+    chat_repo = AsyncMock()
+    return ChatBackgroundService(agent_repo, memory_repo, agent_service, chat_repo)
 
 
 @pytest.mark.asyncio

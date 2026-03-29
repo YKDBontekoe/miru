@@ -139,7 +139,10 @@ _MEMORY_PREFIX = (
     "{memories}\n\n"
 )
 
+_SUMMARY_PREFIX = "Summary of the older parts of this conversation:\n{summary}\n\n"
+
 MULTI_AGENT_PROMPT = (
+    "{summary_section}"
     "{memory_section}"
     "{history_section}"
     "User said: {user_message}. "
@@ -155,6 +158,7 @@ MULTI_AGENT_PROMPT = (
 )
 
 SINGLE_AGENT_PROMPT = (
+    "{summary_section}"
     "{memory_section}"
     "{history_section}"
     "User said: {user_message}. "
@@ -317,6 +321,7 @@ class CrewOrchestrator:
         accept_language: str | None = None,
         conversation_history: list[dict] | None = None,
         memory_context: str | None = None,
+        room_summary: str | None = None,
     ) -> str:
         """Build and execute the CrewAI task.
 
@@ -351,6 +356,7 @@ class CrewOrchestrator:
         history_text = CrewOrchestrator.format_history(conversation_history)
         history_section = _HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = _MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
+        summary_section = _SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
 
         kwargs = {}
         if step_callback:
@@ -360,6 +366,7 @@ class CrewOrchestrator:
         if is_multi:
             task = Task(
                 description=MULTI_AGENT_PROMPT.format(
+                    summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
                     user_message=user_message,
@@ -377,6 +384,7 @@ class CrewOrchestrator:
         else:
             task = Task(
                 description=SINGLE_AGENT_PROMPT.format(
+                    summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
                     user_message=user_message,
