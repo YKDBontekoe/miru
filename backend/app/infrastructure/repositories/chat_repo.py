@@ -55,10 +55,10 @@ class ChatRepository:
 
     async def get_room(self, room_id: UUID, user_id: UUID | None = None) -> ChatRoomEntity | None:
         """Fetch a single room."""
-        filters = {"id": room_id}
         if user_id:
-            filters["user_id"] = user_id
-        room = await ChatRoom.get_or_none(**filters)
+            room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
+        else:
+            room = await ChatRoom.get_or_none(id=room_id)
         return _map_room_to_entity(room) if room else None
 
     async def update_room(self, room_id: UUID, user_id: UUID, name: str) -> ChatRoomEntity | None:

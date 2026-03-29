@@ -122,6 +122,15 @@ class TestChatRepository:
         assert result is True
 
     @pytest.mark.asyncio
+    async def test_delete_room_fails_for_other_user(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        room = await repo.create_room("Delete Me Not", user_id)
+        result = await repo.delete_room(room.id, other_user_id)
+        assert result is False
+
+    @pytest.mark.asyncio
     async def test_update_room_name(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -129,6 +138,27 @@ class TestChatRepository:
         updated = await repo.update_room(room.id, user_id, "New Name")
         assert updated is not None
         assert updated.name == "New Name"
+
+    @pytest.mark.asyncio
+    async def test_update_room_fails_for_other_user(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        room = await repo.create_room("Old Name", user_id)
+        updated = await repo.update_room(room.id, other_user_id, "New Name")
+        assert updated is None
+
+    @pytest.mark.asyncio
+    async def test_get_room_with_user_id(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        room = await repo.create_room("My Room", user_id)
+        fetched = await repo.get_room(room.id, user_id=user_id)
+        assert fetched is not None
+        assert fetched.id == room.id
+        not_fetched = await repo.get_room(room.id, user_id=other_user_id)
+        assert not_fetched is None
 
     @pytest.mark.asyncio
     async def test_get_room_messages_empty(self) -> None:
@@ -211,6 +241,16 @@ class TestMemoryRepository:
     async def test_delete_memory_returns_false_for_unknown(self) -> None:
         repo = MemoryRepository()
         result = await repo.delete_memory(uuid4(), uuid4())
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_delete_memory_returns_false_for_other_user(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        memory = Memory(content="To delete not", user_id=user_id, embedding=[0.0])
+        await repo.insert_memory(memory)
+        result = await repo.delete_memory(memory.id, other_user_id)
         assert result is False
 
     @pytest.mark.asyncio
