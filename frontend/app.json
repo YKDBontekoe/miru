@@ -46,6 +46,9 @@
         }
       ]
     ],
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "extra": {
       "router": {},
       "eas": {
