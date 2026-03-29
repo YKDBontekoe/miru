@@ -69,39 +69,49 @@ def test_get_agents_route(client: TestClient) -> None:
 
 def test_build_agent_response_without_avatar() -> None:
     """Test that agent response is built correctly without an avatar_url field."""
+    from app.domain.agents.entities import AgentEntity, AgentIntegrationEntity, CapabilityEntity
+
     now = datetime.now()
-    agent = MagicMock()
-    agent.pk = uuid4()
-    agent.user_id = uuid4()
-    agent.name = "Test Agent"
-    agent.personality = "Test Personality"
-    agent.description = "Test Description"
-    agent.system_prompt = "Test Prompt"
-    agent.status = "active"
-    agent.mood = "Neutral"
-    agent.goals = ["Goal 1", "Goal 2"]
-    agent.message_count = 0
-    agent.created_at = now
-    agent.updated_at = now
+    cap1 = CapabilityEntity(
+        id="cap1", name="Cap1", description="desc", icon="icon", status="active", created_at=now
+    )
+    cap2 = CapabilityEntity(
+        id="cap2", name="Cap2", description="desc", icon="icon", status="active", created_at=now
+    )
 
-    # Mock prefetched relations
-    cap1 = MagicMock()
-    cap1.pk = "cap1"
-    cap2 = MagicMock()
-    cap2.pk = "cap2"
+    integration_mock = AgentIntegrationEntity(
+        id=uuid4(),
+        agent_id=uuid4(),
+        integration_id="steam",
+        enabled=True,
+        config={"steam_id": "123"},
+        credentials={},
+        connected_at=now,
+        created_at=now,
+        updated_at=now,
+    )
 
-    caps_mock = MagicMock()
-    caps_mock.related_objects = [cap1, cap2]
-    agent.capabilities = caps_mock
-
-    integration_mock = MagicMock()
-    integration_mock.integration_id = "steam"
-    integration_mock.enabled = True
-    integration_mock.config = {"steam_id": "123"}
-    agent.agent_integrations = [integration_mock]
+    agent = AgentEntity(
+        id=uuid4(),
+        user_id=uuid4(),
+        name="Test Agent",
+        personality="Test Personality",
+        description="Test Description",
+        system_prompt="Test Prompt",
+        status="active",
+        mood="Neutral",
+        goals=["Goal 1", "Goal 2"],
+        message_count=0,
+        personality_history=[],
+        created_at=now,
+        updated_at=now,
+        capabilities=[cap1, cap2],
+        agent_integrations=[integration_mock],
+    )
 
     response = _build_agent_response(agent)
 
+    assert response.id == agent.id
     assert response.name == "Test Agent"
     assert response.personality == "Test Personality"
     assert response.description == "Test Description"

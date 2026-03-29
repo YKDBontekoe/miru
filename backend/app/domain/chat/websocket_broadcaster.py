@@ -12,7 +12,7 @@ from uuid import UUID
 from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
-    from app.domain.agents.models import Agent
+    from app.domain.agents.entities import AgentEntity
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
 
@@ -228,10 +228,10 @@ class ChatWebSocketBroadcaster:
     async def persist_and_broadcast_agent_response(
         self,
         room_id: UUID,
-        room_agents: list[Agent],
+        room_agents: list[AgentEntity],
         result_text: str,
         agent_names: list[str],
-    ) -> list[Agent]:
+    ) -> list[AgentEntity]:
         """Save the agent response(s) and broadcast to room.
 
         For multi-agent rooms the transcript is split into individual per-agent
@@ -247,7 +247,7 @@ class ChatWebSocketBroadcaster:
         agent_by_name = {a.name.lower(): a for a in room_agents}
         segments = self.parse_transcript(result_text, agent_names)
 
-        responded: list[Agent] = []
+        responded: list[AgentEntity] = []
 
         # Persist and broadcast each segment as a separate message
         for agent_name, content in segments:

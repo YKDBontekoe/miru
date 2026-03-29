@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.domain.agents.models import Agent
+    from app.domain.agents.entities import AgentEntity
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity
     from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -83,7 +83,7 @@ class ChatService:
     async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID) -> list[AgentEntity]:
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(
@@ -260,7 +260,7 @@ class ChatService:
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
-        agent_name_to_id = {a.name: a.pk for a in room_agents}
+        agent_name_to_id = {a.name: a.id for a in room_agents}
         await self.ws_broadcaster.broadcast_thinking_status(room_id, agent_names)
         step_callback = self.ws_broadcaster.create_step_callback(
             room_id, agent_names, user_id=user_id, agent_name_to_id=agent_name_to_id

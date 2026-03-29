@@ -7,9 +7,10 @@ from uuid import UUID
 
 from tortoise.expressions import Q
 
-from app.domain.agents.models import Agent
+from app.domain.agents.entities import AgentEntity
 from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
 from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom, ChatRoomAgent
+from app.infrastructure.repositories.agent_repo import _map_agent_to_entity
 
 
 def _map_room_to_entity(room: ChatRoom) -> ChatRoomEntity:
@@ -89,12 +90,12 @@ class ChatRepository:
         deleted_count = await ChatRoomAgent.filter(room_id=room_id, agent_id=agent_id).delete()
         return deleted_count > 0
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID) -> list[AgentEntity]:
         """Fetch all agents associated with a room, with integrations prefetched."""
         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
             "agent__capabilities", "agent__agent_integrations__integration"
         )
-        return [assoc.agent for assoc in assocs]
+        return [_map_agent_to_entity(assoc.agent) for assoc in assocs]
 
     async def get_room_messages(
         self, room_id: UUID, limit: int = 50, before_id: UUID | None = None

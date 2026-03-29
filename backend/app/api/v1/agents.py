@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.agents.models import Capability, Integration
+from app.domain.agents.entities import CapabilityEntity, IntegrationEntity
 from app.domain.agents.schemas import (
     AffinityResponse,
     AgentCreate,
@@ -78,7 +78,7 @@ async def list_agents(
 async def list_capabilities(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Capability]:
+) -> list[CapabilityEntity]:
     """List all available capabilities."""
     return await service.list_capabilities()
 
@@ -96,7 +96,7 @@ async def list_capabilities(
 async def list_integrations(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Integration]:
+) -> list[IntegrationEntity]:
     """List all available integrations."""
     return await service.list_integrations()
 

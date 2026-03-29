@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from app.domain.agents.models import Agent
+    from app.domain.agents.entities import AgentEntity
     from app.domain.agents.service import AgentService
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -56,7 +56,7 @@ class ChatBackgroundService:
         user_id: UUID,
         room_id: UUID,
         user_message: str,
-        responded_agents: list[Agent],
+        responded_agents: list[AgentEntity],
         result_text: str,
         agent_names: list[str],
     ) -> None:
