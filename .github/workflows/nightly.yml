@@ -53,17 +53,23 @@ jobs:
       - name: Create issue if vulnerabilities found
         if: steps.security_audit.outcome == 'failure'
         uses: actions/github-script@v8
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         with:
           script: |
+            const { WORKFLOW, SERVER_URL, REPOSITORY, RUN_ID } = process.env;
             const title = '🔒 Security: Vulnerabilities found in Python dependencies';
             const body = `## Security Alert
 
             Automated security scan found vulnerabilities in Python dependencies.
 
             **Run Date:** ${new Date().toISOString()}
-            **Workflow:** ${{ github.workflow }}
+            **Workflow:** ${WORKFLOW}
 
-            Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+            Please review the [workflow run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}) for details.
 
             ### Recommended Actions:
             1. Run \`safety check\` locally
@@ -102,7 +108,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -128,17 +134,23 @@ jobs:
       - name: Create issue if vulnerabilities found
         if: steps.npm_audit.outcome == 'failure'
         uses: actions/github-script@v8
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         with:
           script: |
+            const { WORKFLOW, SERVER_URL, REPOSITORY, RUN_ID } = process.env;
             const title = '🔒 Security: Vulnerabilities found in Frontend dependencies';
             const body = `## Security Alert
 
             Automated \`npm audit\` found vulnerabilities in Frontend dependencies.
 
             **Run Date:** ${new Date().toISOString()}
-            **Workflow:** ${{ github.workflow }}
+            **Workflow:** ${WORKFLOW}
 
-            Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+            Please review the [workflow run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}) for details.
 
             ### Recommended Actions:
             1. Run \`npm audit fix\` locally
@@ -177,7 +189,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -194,8 +206,14 @@ jobs:
       - name: Create issue on failure
         if: failure()
         uses: actions/github-script@v8
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         with:
           script: |
+            const { WORKFLOW, SERVER_URL, REPOSITORY, RUN_ID } = process.env;
             const title = `🔥 Nightly Build Failed: Frontend Web`;
 
             const existing = await github.rest.issues.listForRepo({
@@ -218,9 +236,9 @@ jobs:
             The nightly build for **Frontend Web** failed.
 
             **Run Date:** ${new Date().toISOString()}
-            **Workflow:** ${{ github.workflow }}
+            **Workflow:** ${WORKFLOW}
 
-            Please review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+            Please review the [workflow run](${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}) for details.
             `,
               labels: ['bug', 'ci/cd'],
             });

@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -44,8 +44,9 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           eas update \
             --branch development \
-            --message "${{ github.event.head_commit.message }}" \
+            --message "$COMMIT_SHA" \
             --non-interactive
