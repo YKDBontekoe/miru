@@ -1,24 +1,29 @@
 import { create } from 'zustand';
-import { createMMKV } from 'react-native-mmkv';
+import * as SecureStore from 'expo-secure-store';
 import { ApiService } from '../core/api/ApiService';
 import { Agent } from '../core/models';
 
-// Persistent preferences stored in MMKV
-const prefs = createMMKV({ id: 'agent-prefs' });
-
-function loadPinnedIds(): string[] {
+async function loadPinnedIds(): Promise<string[]> {
   try {
-    const raw = prefs.getString('pinned_ids');
+    const raw = await SecureStore.getItemAsync('agent_pinned_ids');
     return raw ? (JSON.parse(raw) as string[]) : [];
   } catch {
     return [];
   }
 }
-function savePinnedIds(ids: string[]) {
-  prefs.set('pinned_ids', JSON.stringify(ids));
+async function savePinnedIds(ids: string[]) {
+  await SecureStore.setItemAsync('agent_pinned_ids', JSON.stringify(ids));
 }
-function loadViewMode(): 'list' | 'grid' {
-  return (prefs.getString('view_mode') as 'list' | 'grid') ?? 'list';
+async function loadViewMode(): Promise<'list' | 'grid'> {
+  try {
+    const val = await SecureStore.getItemAsync('agent_view_mode');
+    return (val as 'list' | 'grid') ?? 'list';
+  } catch {
+    return 'list';
+  }
+}
+async function saveViewMode(mode: 'list' | 'grid') {
+  await SecureStore.setItemAsync('agent_view_mode', mode);
 }
 
 export interface AgentTemplate {
@@ -67,8 +72,8 @@ interface AgentState {
 export const useAgentStore = create<AgentState>((set, get) => ({
   agents: [],
   isLoading: false,
-  pinnedIds: loadPinnedIds(),
-  viewMode: loadViewMode(),
+  pinnedIds: [],
+  viewMode: 'list',
   templates: [],
   isLoadingTemplates: false,
 
@@ -181,7 +186,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   setViewMode: (mode) => {
-    prefs.set('view_mode', mode);
+    saveViewMode(mode);
     set({ viewMode: mode });
   },
 }));
+
+// Hydrate persisted preferences after store is created
+Promise.all([loadPinnedIds(), loadViewMode()]).then(([pinnedIds, viewMode]) => {
+  useAgentStore.setState({ pinnedIds, viewMode });
+});
