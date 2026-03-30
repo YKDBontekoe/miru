@@ -11,11 +11,13 @@ interface ScalePressableProps {
   disabled?: boolean;
 }
 
-export function ScalePressable({ onPress, onLongPress, children, style, hitSlop, disabled }: ScalePressableProps) {
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+export const ScalePressable = ({ onPress, onLongPress, children, style, hitSlop, disabled }: ScalePressableProps) => {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={disabled}
@@ -30,9 +32,9 @@ export function ScalePressable({ onPress, onLongPress, children, style, hitSlop,
           scale.value = withSpring(1, { damping: 15, stiffness: 300 });
         }
       }}
-      style={style}
+      style={[style, animStyle]}
     >
-      <Animated.View style={animStyle}>{children}</Animated.View>
-    </Pressable>
+      {children}
+    </AnimatedPressable>
   );
 }

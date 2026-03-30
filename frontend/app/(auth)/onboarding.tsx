@@ -1,44 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, FlatList, Dimensions, Animated } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { View, FlatList, Dimensions, Animated, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../../src/components/AppText';
+import { ScalePressable } from '../../src/components/ScalePressable';
 import { useAppStore } from '../../src/store/useAppStore';
+import { useTheme } from '../../src/hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-const PAGES = [
-  {
-    icon: 'sparkles' as IoniconsName,
-    accent: '#2563EB',
-    accentBg: '#EFF6FF',
-    title: 'Meet Miru',
-    subtitle: 'Your personal AI companion',
-    description:
-      "Miru learns from every conversation, remembers what matters to you, and gets smarter over time \u2014 like a brilliant friend who's always there.",
-  },
-  {
-    icon: 'people' as IoniconsName,
-    accent: '#8B5CF6',
-    accentBg: '#F5F3FF',
-    title: 'Multiple Personas',
-    subtitle: 'The right expert for every task',
-    description:
-      'Create AI agents with distinct personalities and expertise. A creative writer, a data analyst, a life coach — all working together for you.',
-  },
-  {
-    icon: 'shield-checkmark' as IoniconsName,
-    accent: '#059669',
-    accentBg: '#F0FDF4',
-    title: 'Your Privacy First',
-    subtitle: 'You stay in control',
-    description:
-      'Your data is yours. Miru is built with privacy at the core — you decide what it remembers and what it forgets.',
-  },
-];
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -46,6 +18,38 @@ export default function OnboardingScreen() {
   const scrollX = useRef(new Animated.Value(0)).current;
   const setOnboardingComplete = useAppStore((state) => state.setOnboardingComplete);
   const router = useRouter();
+
+  const { C, isDark } = useTheme();
+
+  const PAGES = useMemo(() => [
+    {
+      icon: 'sparkles' as IoniconsName,
+      accent: C.primary,
+      accentBg: C.primarySurface,
+      title: 'Meet Miru',
+      subtitle: 'Your personal AI companion',
+      description:
+        "Miru learns from every conversation, remembers what matters to you, and gets smarter over time \u2014 like a brilliant friend who's always there.",
+    },
+    {
+      icon: 'people' as IoniconsName,
+      accent: isDark ? '#A78BFA' : '#8B5CF6',
+      accentBg: isDark ? '#2E1065' : '#F5F3FF',
+      title: 'Multiple Personas',
+      subtitle: 'The right expert for every task',
+      description:
+        'Create AI agents with distinct personalities and expertise. A creative writer, a data analyst, a life coach — all working together for you.',
+    },
+    {
+      icon: 'shield-checkmark' as IoniconsName,
+      accent: C.success,
+      accentBg: C.successSurface,
+      title: 'Your Privacy First',
+      subtitle: 'You stay in control',
+      description:
+        'Your data is yours. Miru is built with privacy at the core — you decide what it remembers and what it forgets.',
+    },
+  ], [C, isDark]);
 
   const finish = () => {
     setOnboardingComplete(true);
@@ -64,49 +68,115 @@ export default function OnboardingScreen() {
 
   const page = PAGES[currentIndex];
 
+  const styles = useMemo(() => StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: C.bg,
+    },
+    skipContainer: {
+      alignItems: 'flex-end',
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 4,
+    },
+    skipText: {
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    pageContainer: {
+      width,
+      paddingHorizontal: 32,
+      paddingTop: 16,
+    },
+    illustrationContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 40,
+    },
+    outerRing: {
+      width: '100%',
+      aspectRatio: 1,
+      maxWidth: 200,
+      borderRadius: 100,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    middleRing: {
+      width: '74%',
+      aspectRatio: 1,
+      borderRadius: 100,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    innerRing: {
+      width: '67%',
+      aspectRatio: 1,
+      borderRadius: 100,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    subtitle: {
+      fontWeight: '700',
+      letterSpacing: 1.4,
+      textTransform: 'uppercase',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    title: {
+      textAlign: 'center',
+      marginBottom: 16,
+      fontSize: 32,
+      letterSpacing: -0.5,
+    },
+    description: {
+      textAlign: 'center',
+      lineHeight: 26,
+    },
+    list: {
+      flex: 1,
+    },
+    bottomControls: {
+      paddingHorizontal: 28,
+      paddingBottom: 24,
+      gap: 24,
+    },
+    dotsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    dot: {
+      height: 8,
+      borderRadius: 4,
+    },
+    button: {
+      height: 56,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    buttonText: {
+      color: '#FFFFFF',
+      fontWeight: '700',
+      fontSize: 17,
+    },
+    pageCounter: {
+      textAlign: 'center',
+    },
+  }), [C, width]);
+
   const renderItem = ({ item }: { item: (typeof PAGES)[0] }) => (
-    <View style={{ width, paddingHorizontal: 32, paddingTop: 16 }}>
+    <View style={styles.pageContainer}>
       {/* Illustration */}
-      <View
-        style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 40,
-        }}
-      >
+      <View style={styles.illustrationContainer}>
         {/* Outer ring */}
-        <View
-          style={{
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: item.accentBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <View style={[styles.outerRing, { backgroundColor: item.accentBg }]}>
           {/* Middle ring */}
-          <View
-            style={{
-              width: 148,
-              height: 148,
-              borderRadius: 74,
-              backgroundColor: `${item.accent}18`,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <View style={[styles.middleRing, { backgroundColor: `${item.accent}18` }]}>
             {/* Inner circle */}
-            <View
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                backgroundColor: `${item.accent}25`,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <View style={[styles.innerRing, { backgroundColor: `${item.accent}25` }]}>
               <Ionicons name={item.icon} size={48} color={item.accent} />
             </View>
           </View>
@@ -114,42 +184,27 @@ export default function OnboardingScreen() {
       </View>
 
       {/* Text */}
-      <AppText
-        variant="caption"
-        style={{
-          color: item.accent,
-          fontWeight: '700',
-          letterSpacing: 1.4,
-          textTransform: 'uppercase',
-          marginBottom: 8,
-          textAlign: 'center',
-        }}
-      >
+      <AppText variant="caption" style={[styles.subtitle, { color: item.accent }]}>
         {item.subtitle}
       </AppText>
-      <AppText
-        variant="h1"
-        style={{ textAlign: 'center', marginBottom: 16, fontSize: 32, letterSpacing: -0.5 }}
-      >
+      <AppText variant="h1" style={styles.title}>
         {item.title}
       </AppText>
-      <AppText variant="body" color="muted" style={{ textAlign: 'center', lineHeight: 26 }}>
+      <AppText variant="body" color="muted" style={styles.description}>
         {item.description}
       </AppText>
     </View>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Skip */}
-      <View
-        style={{ alignItems: 'flex-end', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 }}
-      >
-        <TouchableOpacity onPress={finish} hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}>
-          <AppText color="muted" style={{ fontSize: 15, fontWeight: '500' }}>
+      <View style={styles.skipContainer}>
+        <ScalePressable onPress={finish} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
+          <AppText color="muted" style={styles.skipText}>
             Skip
           </AppText>
-        </TouchableOpacity>
+        </ScalePressable>
       </View>
 
       {/* Pages */}
@@ -169,41 +224,33 @@ export default function OnboardingScreen() {
           setCurrentIndex(index);
         }}
         keyExtractor={(_, i) => i.toString()}
-        style={{ flex: 1 }}
+        style={styles.list}
       />
 
       {/* Bottom controls */}
-      <View style={{ paddingHorizontal: 28, paddingBottom: 24, gap: 24 }}>
+      <View style={styles.bottomControls}>
         {/* Dot indicators */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+        <View style={styles.dotsContainer}>
           {PAGES.map((p, i) => (
             <View
               key={i}
-              style={{
-                height: 8,
-                width: i === currentIndex ? 28 : 8,
-                borderRadius: 4,
-                backgroundColor: i === currentIndex ? page.accent : '#D8D8E4',
-              }}
+              style={[
+                styles.dot,
+                {
+                  width: i === currentIndex ? 28 : 8,
+                  backgroundColor: i === currentIndex ? page.accent : C.faint,
+                },
+              ]}
             />
           ))}
         </View>
 
         {/* Next / Get Started */}
-        <TouchableOpacity
+        <ScalePressable
           onPress={handleNext}
-          activeOpacity={0.85}
-          style={{
-            height: 56,
-            borderRadius: 16,
-            backgroundColor: page.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            gap: 8,
-          }}
+          style={[styles.button, { backgroundColor: page.accent }]}
         >
-          <AppText style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 17 }}>
+          <AppText style={styles.buttonText}>
             {currentIndex === PAGES.length - 1 ? 'Get Started' : 'Continue'}
           </AppText>
           <Ionicons
@@ -211,10 +258,10 @@ export default function OnboardingScreen() {
             size={18}
             color="#FFFFFF"
           />
-        </TouchableOpacity>
+        </ScalePressable>
 
         {/* Page counter */}
-        <AppText variant="caption" color="muted" style={{ textAlign: 'center' }}>
+        <AppText variant="caption" color="muted" style={styles.pageCounter}>
           {currentIndex + 1} of {PAGES.length}
         </AppText>
       </View>
