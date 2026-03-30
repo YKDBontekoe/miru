@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, TouchableOpacity, Pressable, Modal, Alert } from 'react-native';
+import { View,Pressable, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { Agent } from '../../core/models';
+import { ScalePressable } from '../ScalePressable';
 
 const C = {
   surface: '#FFFFFF',
@@ -122,7 +123,7 @@ export function QuickViewAgentSheet({
           </AppText>
 
           {isInRoom ? (
-            <TouchableOpacity
+            <ScalePressable
               onPress={handleRemove}
               style={{
                 flexDirection: 'row',
@@ -145,9 +146,9 @@ export function QuickViewAgentSheet({
               <AppText style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>
                 Remove from Chat
               </AppText>
-            </TouchableOpacity>
+            </ScalePressable>
           ) : (
-            <TouchableOpacity
+            <ScalePressable
               onPress={handleAdd}
               style={{
                 flexDirection: 'row',
@@ -168,7 +169,7 @@ export function QuickViewAgentSheet({
               <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
                 Add to Chat
               </AppText>
-            </TouchableOpacity>
+            </ScalePressable>
           )}
         </Animated.View>
       </Pressable>

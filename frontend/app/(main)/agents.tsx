@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
   TextInput,
   Alert,
   ActionSheetIOS,
@@ -16,7 +15,6 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../../src/components/AppText';
 import { SkeletonAgentCard } from '../../src/components/SkeletonCard';
 import { Snackbar } from '../../src/components/Snackbar';
-import { ScalePressable } from '../../src/components/ScalePressable';
 import { PinnedChip } from '../../src/components/agents/PinnedChip';
 import { TemplateGallerySheet } from '../../src/components/agents/TemplateGallerySheet';
 import { CreateAgentSheet } from '../../src/components/agents/CreateAgentSheet';
@@ -28,6 +26,7 @@ import { useChatStore } from '../../src/store/useChatStore';
 import { useTheme } from '../../src/hooks/useTheme';
 import { haptic } from '../../src/utils/haptics';
 import { Agent } from '../../src/core/models';
+import { ScalePressable } from '@/components/ScalePressable';
 
 export default function AgentsScreen() {
   const { C } = useTheme();
@@ -259,7 +258,7 @@ export default function AgentsScreen() {
                 }}
               >
                 {(['list', 'grid'] as const).map((mode) => (
-                  <TouchableOpacity
+                  <ScalePressable
                     key={mode}
                     onPress={() => {
                       haptic.selection();
@@ -275,14 +274,14 @@ export default function AgentsScreen() {
                       size={15}
                       color={viewMode === mode ? 'white' : C.muted}
                     />
-                  </TouchableOpacity>
+                  </ScalePressable>
                 ))}
               </View>
             )}
 
             {/* Templates */}
             {agents.length > 0 && (
-              <TouchableOpacity
+              <ScalePressable
                 onPress={() => {
                   haptic.light();
                   setShowTemplates(true);
@@ -299,7 +298,7 @@ export default function AgentsScreen() {
                 }}
               >
                 <Ionicons name="albums-outline" size={17} color={C.muted} />
-              </TouchableOpacity>
+              </ScalePressable>
             )}
 
             {/* New button */}
@@ -355,9 +354,9 @@ export default function AgentsScreen() {
                 style={{ flex: 1, color: C.text, fontSize: 14 }}
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <ScalePressable onPress={() => setSearchQuery('')}>
                   <Ionicons name="close-circle" size={16} color={C.faint} />
-                </TouchableOpacity>
+                </ScalePressable>
               )}
             </View>
           </Animated.View>

@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../AppText';
 import { useTheme } from '../../hooks/useTheme';
 import { getAgentColor } from './agentUtils';
 import { Agent } from '../../core/models';
+import { ScalePressable } from '../ScalePressable';
 
 interface PinnedChipProps {
   agent: Agent;
@@ -16,9 +17,8 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
   const color = getAgentColor(agent.name);
 
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onPress}
-      activeOpacity={0.75}
       style={{ alignItems: 'center', marginEnd: 14, width: 64 }}
     >
       <View
@@ -58,6 +58,6 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
       <AppText style={{ fontSize: 11, color: C.muted, textAlign: 'center' }} numberOfLines={1}>
         {agent.name}
       </AppText>
-    </TouchableOpacity>
+    </ScalePressable>
   );
 }

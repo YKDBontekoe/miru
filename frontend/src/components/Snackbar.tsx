@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,6 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { AppText } from './AppText';
+import { ScalePressable } from './ScalePressable';
 
 interface SnackbarProps {
   visible: boolean;
@@ -98,11 +99,11 @@ export function Snackbar({
         {message}
       </AppText>
       {onAction && (
-        <TouchableOpacity onPress={handleAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
+        <ScalePressable onPress={handleAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
           <AppText style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14, marginStart: 16 }}>
             {actionLabel}
           </AppText>
-        </TouchableOpacity>
+        </ScalePressable>
       )}
     </Animated.View>
   );

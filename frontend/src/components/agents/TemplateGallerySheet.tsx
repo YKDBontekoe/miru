@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View,Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeInDown } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { SkeletonAgentCard } from '../SkeletonCard';
 import { AgentAvatar } from '../AgentAvatar';
-import { ScalePressable } from '../ScalePressable';
 import { useTheme } from '../../hooks/useTheme';
 import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
 import { getAgentColor } from './agentUtils';
 import { haptic } from '../../utils/haptics';
+import { ScalePressable } from '../ScalePressable';
 
 interface TemplateGallerySheetProps {
   visible: boolean;
@@ -116,7 +116,7 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
           <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14, marginBottom: 16 }}>
             Check your connection and try again.
           </AppText>
-          <TouchableOpacity
+          <ScalePressable
             onPress={() => {
               setHasError(false);
               fetchTemplates().catch(() => setHasError(true));
@@ -129,7 +129,7 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
             }}
           >
             <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>Retry</AppText>
-          </TouchableOpacity>
+          </ScalePressable>
         </View>
       );
     }
@@ -203,7 +203,7 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
                 Start with a pre-built persona
               </AppText>
             </View>
-            <TouchableOpacity
+            <ScalePressable
               onPress={onClose}
               style={{
                 width: 30,
@@ -215,7 +215,7 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
               }}
             >
               <Ionicons name="close" size={16} color={C.muted} />
-            </TouchableOpacity>
+            </ScalePressable>
           </View>
 
           {renderContent()}

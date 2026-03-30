@@ -2,7 +2,6 @@ import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   TextInput,
-  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -12,9 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { AppButton } from '@/components/AppButton';
-import { ScalePressable } from '@/components/ScalePressable';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTheme } from '@/hooks/useTheme';
+import { ScalePressable } from '@/components/ScalePressable';
 
 type AuthMode = 'magic-link' | 'password' | 'passkey';
 

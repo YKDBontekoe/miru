@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  TouchableOpacity,
   Modal,
-  ScrollView,
+  ScrollView, FlatList,
   TextInput,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
 import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
 import { TemplateGallerySheet } from './TemplateGallerySheet';
 import { useTheme } from '../../hooks/useTheme';
 import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
 import { haptic } from '../../utils/haptics';
 import { TONES, SURPRISE_KEYWORDS, getTonePrefix } from './agentUtils';
+import { ScalePressable } from '../ScalePressable';
 
 interface Prefill {
   name?: string;
@@ -216,7 +215,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
               <AppText style={{ fontSize: 22, fontWeight: '700', color: C.text }}>
                 New Persona
               </AppText>
-              <TouchableOpacity
+              <ScalePressable
                 onPress={() => {
                   reset();
                   onClose();
@@ -231,7 +230,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 }}
               >
                 <Ionicons name="close" size={16} color={C.muted} />
-              </TouchableOpacity>
+              </ScalePressable>
             </View>
 
             <ScrollView
@@ -240,7 +239,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
               keyboardShouldPersistTaps="handled"
             >
               {/* Templates shortcut */}
-              <TouchableOpacity
+              <ScalePressable
                 onPress={() => setShowTemplates(true)}
                 style={{
                   flexDirection: 'row',
@@ -259,7 +258,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   Browse persona templates
                 </AppText>
                 <Ionicons name="chevron-forward" size={14} color={C.faint} />
-              </TouchableOpacity>
+              </ScalePressable>
 
               {/* AI Generation */}
               <View
@@ -277,7 +276,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   <AppText style={{ color: C.primary, fontWeight: '700', fontSize: 14, flex: 1 }}>
                     Generate with AI
                   </AppText>
-                  <TouchableOpacity
+                  <ScalePressable
                     onPress={handleSurprise}
                     disabled={isGenerating}
                     style={{
@@ -294,7 +293,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                     <AppText style={{ color: C.primary, fontSize: 12, fontWeight: '600' }}>
                       Surprise me
                     </AppText>
-                  </TouchableOpacity>
+                  </ScalePressable>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TextInput
@@ -316,7 +315,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                     onSubmitEditing={() => handleGenerate()}
                     returnKeyType="go"
                   />
-                  <TouchableOpacity
+                  <ScalePressable
                     onPress={() => handleGenerate()}
                     disabled={isGenerating}
                     style={{
@@ -332,7 +331,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                     ) : (
                       <Ionicons name="arrow-forward" size={18} color="white" />
                     )}
-                  </TouchableOpacity>
+                  </ScalePressable>
                 </View>
               </View>
 
@@ -387,16 +386,17 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
               <AppText style={label}>
                 Tone <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
               </AppText>
-              <ScrollView
+              <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={false}
+                data={TONES}
+                keyExtractor={(item: {id: string}) => item.id}
                 style={{ marginBottom: 14 }}
                 contentContainerStyle={{ gap: 8 }}
-              >
-                {TONES.map((tone) => {
+                renderItem={({ item: tone }: {item: any}) => {
                   const isSelected = selectedTone === tone.id;
                   return (
-                    <TouchableOpacity
+                    <ScalePressable
                       key={tone.id}
                       onPress={() => {
                         haptic.selection();
@@ -424,10 +424,10 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                       >
                         {tone.label}
                       </AppText>
-                    </TouchableOpacity>
+                    </ScalePressable>
                   );
-                })}
-              </ScrollView>
+                }}
+              />
 
               <AppText style={label}>Personality</AppText>
               <TextInput
@@ -479,7 +479,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   onSubmitEditing={addGoal}
                   returnKeyType="done"
                 />
-                <TouchableOpacity
+                <ScalePressable
                   onPress={addGoal}
                   style={{
                     width: 40,
@@ -492,7 +492,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   }}
                 >
                   <Ionicons name="add" size={20} color={C.primary} />
-                </TouchableOpacity>
+                </ScalePressable>
               </View>
               {goals.length > 0 && (
                 <Animated.View
@@ -500,7 +500,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}
                 >
                   {goals.map((g, i) => (
-                    <TouchableOpacity
+                    <ScalePressable
                       key={i}
                       onPress={() => setGoals((gs) => gs.filter((_, idx) => idx !== i))}
                       style={{
@@ -517,7 +517,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                     >
                       <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
                       <Ionicons name="close" size={11} color={C.primary} />
-                    </TouchableOpacity>
+                    </ScalePressable>
                   ))}
                 </Animated.View>
               )}

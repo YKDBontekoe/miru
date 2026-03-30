@@ -4,7 +4,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
   View,
   Modal,
   ScrollView,
@@ -24,6 +23,7 @@ import { useAgentStore } from '../../../src/store/useAgentStore';
 import { ApiService } from '../../../src/core/api/ApiService';
 import { Agent } from '../../../src/core/models';
 import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
+import { ScalePressable } from '@/components/ScalePressable';
 
 const C = {
   bg: '#F8F8FC',
@@ -170,12 +170,12 @@ export default function ChatRoomScreen() {
           gap: 8,
         }}
       >
-        <TouchableOpacity
+        <ScalePressable
           onPress={() => router.back()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="chevron-back" size={26} color={C.text} />
-        </TouchableOpacity>
+        </ScalePressable>
 
         <View
           style={{
@@ -211,7 +211,7 @@ export default function ChatRoomScreen() {
             {roomAgents.slice(0, 3).map((agent, i) => {
               const color = getAgentColor(agent.name);
               return (
-                <TouchableOpacity
+                <ScalePressable
                   key={agent.id}
                   onPress={() => setQuickViewAgent(agent)}
                   style={{
@@ -226,12 +226,11 @@ export default function ChatRoomScreen() {
                     marginStart: i === 0 ? 0 : -9,
                     zIndex: 3 - i,
                   }}
-                  activeOpacity={0.75}
                 >
                   <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>
                     {agent.name[0].toUpperCase()}
                   </AppText>
-                </TouchableOpacity>
+                </ScalePressable>
               );
             })}
             {roomAgents.length > 3 && (
@@ -257,7 +256,7 @@ export default function ChatRoomScreen() {
           </View>
         )}
 
-        <TouchableOpacity
+        <ScalePressable
           onPress={() => setIsModalVisible(true)}
           style={{
             width: 32,
@@ -271,7 +270,7 @@ export default function ChatRoomScreen() {
           }}
         >
           <Ionicons name="person-add-outline" size={16} color={C.primary} />
-        </TouchableOpacity>
+        </ScalePressable>
       </View>
 
       <KeyboardAvoidingView
@@ -403,7 +402,7 @@ export default function ChatRoomScreen() {
                 <AppText style={{ fontSize: 18, fontWeight: '700', color: C.text }}>
                   {t('chat.manage_agents', 'Manage Agents')}
                 </AppText>
-                <TouchableOpacity
+                <ScalePressable
                   onPress={() => setIsModalVisible(false)}
                   style={{
                     width: 30,
@@ -415,7 +414,7 @@ export default function ChatRoomScreen() {
                   }}
                 >
                   <Ionicons name="close" size={16} color={C.muted} />
-                </TouchableOpacity>
+                </ScalePressable>
               </View>
               {roomAgents.length > 0 && (
                 <AppText style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>
@@ -483,7 +482,7 @@ export default function ChatRoomScreen() {
                             {agent.personality}
                           </AppText>
                         </View>
-                        <TouchableOpacity
+                        <ScalePressable
                           onPress={() => handleRemoveAgent(agent.id)}
                           style={{
                             backgroundColor: '#FEE2E2',
@@ -499,7 +498,7 @@ export default function ChatRoomScreen() {
                           <AppText style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
                             Remove
                           </AppText>
-                        </TouchableOpacity>
+                        </ScalePressable>
                       </View>
                     );
                   }}
@@ -592,7 +591,7 @@ export default function ChatRoomScreen() {
                           {agent.personality}
                         </AppText>
                       </View>
-                      <TouchableOpacity
+                      <ScalePressable
                         onPress={() => handleAddAgent(agent.id)}
                         style={{
                           backgroundColor: C.primarySurface,
@@ -608,7 +607,7 @@ export default function ChatRoomScreen() {
                         <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
                           Add
                         </AppText>
-                      </TouchableOpacity>
+                      </ScalePressable>
                     </View>
                   );
                 }}
