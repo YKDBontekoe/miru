@@ -16,6 +16,14 @@ describe('AppText', () => {
     );
   });
 
+  it('applies white color correctly', () => {
+    const { getByText } = render(<AppText color="white">White Text</AppText>);
+    const textElement = getByText('White Text');
+    expect(textElement.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ color: '#FFFFFF' })])
+    );
+  });
+
   it('applies variant typography correctly', () => {
     const { getByText } = render(<AppText variant="h1">H1 Text</AppText>);
     const textElement = getByText('H1 Text');

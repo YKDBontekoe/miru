@@ -5,7 +5,7 @@ import { theme } from '../core/theme';
 
 export interface AppTextProps extends TextProps {
   variant?: keyof typeof theme.typography;
-  color?: 'primary' | 'muted' | 'disabled' | 'brand';
+  color?: 'primary' | 'muted' | 'disabled' | 'brand' | 'white';
   className?: string;
   style?: TextProps['style'];
 }
@@ -20,7 +20,7 @@ export interface AppTextProps extends TextProps {
  * @param props.variant - The typography variant from the theme (e.g., 'body', 'h1', 'label').
  *                        Defaults to 'body'.
  * @param props.color - The semantic text color to apply ('primary', 'muted', 'disabled',
- *                      or 'brand').
+ *                      'brand', or 'white').
  * @param props.className - Optional NativeWind class string for additional styling.
  * @param props.style - Optional React Native Text style overrides.
  */
@@ -49,6 +49,8 @@ export function AppText({
         };
       case 'brand':
         return { color: theme.colors.primary.DEFAULT };
+      case 'white':
+        return { color: theme.colors.white };
       case 'primary':
       default:
         return { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light };
