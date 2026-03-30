@@ -9,7 +9,7 @@ from tortoise import fields
 from app.infrastructure.database.base import SupabaseModel
 
 if TYPE_CHECKING:
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agents_models import Agent
 
 
 class AgentTool(SupabaseModel):

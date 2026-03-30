@@ -249,7 +249,7 @@ async def test_create_note(
     async_client: AsyncClient, mock_user_id: uuid.UUID, override_get_current_user: None
 ) -> None:
     """Test creating a note."""
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agents_models import Agent
 
     agent = await Agent.create(
         user_id=mock_user_id, name="Test Agent", description="Test", personality="Test"
@@ -392,7 +392,7 @@ async def test_create_event(
     """Test creating a calendar event."""
     from datetime import datetime, timedelta
 
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agents_models import Agent
     from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     now = datetime.now(UTC)
@@ -636,7 +636,7 @@ async def test_list_events_with_relations(
     """Test that listing calendar events correctly exposes related models like agent and origin_message."""
     from datetime import UTC, datetime, timedelta
 
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agents_models import Agent
     from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     now = datetime.now(UTC)

@@ -6,10 +6,10 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_agent_service
+from app.api.dependencies import get_agent_use_cases
 from app.core.security.auth import get_current_user
-from app.domain.agents.models import Agent
-from app.domain.agents.service import _build_agent_response
+from app.application.use_cases.agent_use_cases import _build_agent_response
+from app.infrastructure.database.models.agents_models import Agent
 from app.main import app
 
 
@@ -40,7 +40,7 @@ def test_create_agent_route(client: TestClient) -> None:
     mock_service.create_agent = AsyncMock(return_value=agent)
 
     app.dependency_overrides[get_current_user] = lambda: user_id
-    app.dependency_overrides[get_agent_service] = lambda: mock_service
+    app.dependency_overrides[get_agent_use_cases] = lambda: mock_service
 
     response = client.post(
         "/api/v1/agents",
@@ -59,7 +59,7 @@ def test_get_agents_route(client: TestClient) -> None:
     mock_service.list_agents = AsyncMock(return_value=[])
 
     app.dependency_overrides[get_current_user] = lambda: user_id
-    app.dependency_overrides[get_agent_service] = lambda: mock_service
+    app.dependency_overrides[get_agent_use_cases] = lambda: mock_service
 
     response = client.get("/api/v1/agents", headers={"Authorization": "Bearer fake_token"})
 
@@ -70,35 +70,35 @@ def test_get_agents_route(client: TestClient) -> None:
 def test_build_agent_response_without_avatar() -> None:
     """Test that agent response is built correctly without an avatar_url field."""
     now = datetime.now()
-    agent = MagicMock()
-    agent.pk = uuid4()
-    agent.user_id = uuid4()
-    agent.name = "Test Agent"
-    agent.personality = "Test Personality"
-    agent.description = "Test Description"
-    agent.system_prompt = "Test Prompt"
-    agent.status = "active"
-    agent.mood = "Neutral"
-    agent.goals = ["Goal 1", "Goal 2"]
-    agent.message_count = 0
-    agent.created_at = now
-    agent.updated_at = now
+    from app.domain.agents.entities import AgentEntity, CapabilityEntity, AgentIntegrationEntity
+    cap1 = CapabilityEntity(id="cap1", name="cap1", description="", icon="", status="active", created_at=now)
+    cap2 = CapabilityEntity(id="cap2", name="cap2", description="", icon="", status="active", created_at=now)
 
-    # Mock prefetched relations
-    cap1 = MagicMock()
-    cap1.pk = "cap1"
-    cap2 = MagicMock()
-    cap2.pk = "cap2"
+    integration_mock = AgentIntegrationEntity(
+        id=uuid4(),
+        agent_id=uuid4(),
+        integration_id="steam",
+        enabled=True,
+        config={"steam_id": "123"},
+        credentials={},
+    )
 
-    caps_mock = MagicMock()
-    caps_mock.related_objects = [cap1, cap2]
-    agent.capabilities = caps_mock
-
-    integration_mock = MagicMock()
-    integration_mock.integration_id = "steam"
-    integration_mock.enabled = True
-    integration_mock.config = {"steam_id": "123"}
-    agent.agent_integrations = [integration_mock]
+    agent = AgentEntity(
+        id=uuid4(),
+        user_id=uuid4(),
+        name="Test Agent",
+        personality="Test Personality",
+        description="Test Description",
+        system_prompt="Test Prompt",
+        status="active",
+        mood="Neutral",
+        goals=["Goal 1", "Goal 2"],
+        message_count=0,
+        created_at=now,
+        updated_at=now,
+        capabilities=[cap1, cap2],
+        agent_integrations=[integration_mock]
+    )
 
     response = _build_agent_response(agent)
 
@@ -117,14 +117,14 @@ def test_build_agent_response_without_avatar() -> None:
 
 @pytest.mark.asyncio
 async def test_agent_service_caching() -> None:
-    from app.domain.agents.models import Capability, Integration
-    from app.domain.agents.service import AgentService
+    from app.application.use_cases.agent_use_cases import AgentUseCases
+    from app.infrastructure.database.models.agents_models import Capability, Integration
 
     mock_repo = MagicMock()
     mock_repo.list_capabilities = AsyncMock(return_value=[Capability(id="cap1", name="Cap 1")])
     mock_repo.list_integrations = AsyncMock(return_value=[Integration(id="int1", type="Int 1")])
 
-    service = AgentService(repo=mock_repo)
+    service = AgentUseCases(repo=mock_repo)
 
     # First call: hits repo
     caps1 = await service.list_capabilities()
