@@ -1,18 +1,17 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { View, FlatList, Dimensions, Animated, StyleSheet } from 'react-native';
+import { View, FlatList, useWindowDimensions, Animated, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { ScalePressable } from '../../src/components/ScalePressable';
-import { useAppStore } from '../../src/store/useAppStore';
-import { useTheme } from '../../src/hooks/useTheme';
-
-const { width } = Dimensions.get('window');
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { useAppStore } from '@/store/useAppStore';
+import { useTheme } from '@/hooks/useTheme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function OnboardingScreen() {
+  const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -68,115 +67,25 @@ export default function OnboardingScreen() {
 
   const page = PAGES[currentIndex];
 
-  const styles = useMemo(() => StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: C.bg,
-    },
-    skipContainer: {
-      alignItems: 'flex-end',
-      paddingHorizontal: 20,
-      paddingTop: 8,
-      paddingBottom: 4,
-    },
-    skipText: {
-      fontSize: 15,
-      fontWeight: '500',
-    },
-    pageContainer: {
-      width,
-      paddingHorizontal: 32,
-      paddingTop: 16,
-    },
-    illustrationContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 40,
-    },
-    outerRing: {
-      width: '100%',
-      aspectRatio: 1,
-      maxWidth: 200,
-      borderRadius: 100,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    middleRing: {
-      width: '74%',
-      aspectRatio: 1,
-      borderRadius: 100,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    innerRing: {
-      width: '67%',
-      aspectRatio: 1,
-      borderRadius: 100,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    subtitle: {
-      fontWeight: '700',
-      letterSpacing: 1.4,
-      textTransform: 'uppercase',
-      marginBottom: 8,
-      textAlign: 'center',
-    },
-    title: {
-      textAlign: 'center',
-      marginBottom: 16,
-      fontSize: 32,
-      letterSpacing: -0.5,
-    },
-    description: {
-      textAlign: 'center',
-      lineHeight: 26,
-    },
-    list: {
-      flex: 1,
-    },
-    bottomControls: {
-      paddingHorizontal: 28,
-      paddingBottom: 24,
-      gap: 24,
-    },
-    dotsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-    },
-    dot: {
-      height: 8,
-      borderRadius: 4,
-    },
-    button: {
-      height: 56,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'row',
-      gap: 8,
-    },
-    buttonText: {
-      color: '#FFFFFF',
-      fontWeight: '700',
-      fontSize: 17,
-    },
-    pageCounter: {
-      textAlign: 'center',
-    },
-  }), [C, width]);
-
   const renderItem = ({ item }: { item: (typeof PAGES)[0] }) => (
-    <View style={styles.pageContainer}>
+    <View className="px-xxxl pt-lg" style={{ width }}>
       {/* Illustration */}
-      <View style={styles.illustrationContainer}>
+      <View className="items-center justify-center mb-huge">
         {/* Outer ring */}
-        <View style={[styles.outerRing, { backgroundColor: item.accentBg }]}>
+        <View
+          className="w-full max-w-[200px] aspect-square rounded-full items-center justify-center"
+          style={{ backgroundColor: item.accentBg }}
+        >
           {/* Middle ring */}
-          <View style={[styles.middleRing, { backgroundColor: `${item.accent}18` }]}>
+          <View
+            className="w-[74%] aspect-square rounded-full items-center justify-center"
+            style={{ backgroundColor: `${item.accent}18` }}
+          >
             {/* Inner circle */}
-            <View style={[styles.innerRing, { backgroundColor: `${item.accent}25` }]}>
+            <View
+              className="w-[67%] aspect-square rounded-full items-center justify-center"
+              style={{ backgroundColor: `${item.accent}25` }}
+            >
               <Ionicons name={item.icon} size={48} color={item.accent} />
             </View>
           </View>
@@ -184,24 +93,35 @@ export default function OnboardingScreen() {
       </View>
 
       {/* Text */}
-      <AppText variant="caption" style={[styles.subtitle, { color: item.accent }]}>
+      <AppText
+        variant="caption"
+        className="font-bold tracking-[1.4px] uppercase mb-sm text-center"
+        style={{ color: item.accent }}
+      >
         {item.subtitle}
       </AppText>
-      <AppText variant="h1" style={styles.title}>
+      <AppText
+        variant="h1"
+        className="text-center mb-lg text-[32px] tracking-[-0.5px]"
+      >
         {item.title}
       </AppText>
-      <AppText variant="body" color="muted" style={styles.description}>
+      <AppText
+        variant="body"
+        color="muted"
+        className="text-center leading-[26px]"
+      >
         {item.description}
       </AppText>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: C.bg }}>
       {/* Skip */}
-      <View style={styles.skipContainer}>
+      <View className="items-end px-xl pt-sm pb-xs">
         <ScalePressable onPress={finish} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
-          <AppText color="muted" style={styles.skipText}>
+          <AppText color="muted" className="text-[15px] font-medium">
             Skip
           </AppText>
         </ScalePressable>
@@ -224,23 +144,21 @@ export default function OnboardingScreen() {
           setCurrentIndex(index);
         }}
         keyExtractor={(_, i) => i.toString()}
-        style={styles.list}
+        className="flex-1"
       />
 
       {/* Bottom controls */}
-      <View style={styles.bottomControls}>
+      <View className="px-avatar pb-xxl gap-xxl">
         {/* Dot indicators */}
-        <View style={styles.dotsContainer}>
+        <View className="flex-row justify-center gap-sm">
           {PAGES.map((p, i) => (
             <View
               key={i}
-              style={[
-                styles.dot,
-                {
-                  width: i === currentIndex ? 28 : 8,
-                  backgroundColor: i === currentIndex ? page.accent : C.faint,
-                },
-              ]}
+              className="h-2 rounded-sm"
+              style={{
+                width: i === currentIndex ? 28 : 8,
+                backgroundColor: i === currentIndex ? page.accent : C.faint,
+              }}
             />
           ))}
         </View>
@@ -248,9 +166,10 @@ export default function OnboardingScreen() {
         {/* Next / Get Started */}
         <ScalePressable
           onPress={handleNext}
-          style={[styles.button, { backgroundColor: page.accent }]}
+          className="h-14 rounded-2xl items-center justify-center flex-row gap-sm"
+          style={{ backgroundColor: page.accent }}
         >
-          <AppText style={styles.buttonText}>
+          <AppText className="text-white font-bold text-[17px]">
             {currentIndex === PAGES.length - 1 ? 'Get Started' : 'Continue'}
           </AppText>
           <Ionicons
@@ -261,7 +180,7 @@ export default function OnboardingScreen() {
         </ScalePressable>
 
         {/* Page counter */}
-        <AppText variant="caption" color="muted" style={styles.pageCounter}>
+        <AppText variant="caption" color="muted" className="text-center">
           {currentIndex + 1} of {PAGES.length}
         </AppText>
       </View>

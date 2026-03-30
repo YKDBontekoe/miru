@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -10,42 +10,24 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { AppButton } from '../../src/components/AppButton';
-import { ScalePressable } from '../../src/components/ScalePressable';
-import { useAuthStore } from '../../src/store/useAuthStore';
-import { useTheme } from '../../src/hooks/useTheme';
+import { AppText } from '@/components/AppText';
+import { AppButton } from '@/components/AppButton';
+import { ScalePressable } from '@/components/ScalePressable';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useTheme } from '@/hooks/useTheme';
 
 type AuthMode = 'magic-link' | 'password' | 'passkey';
 
 function ErrorBanner({ message }: { message: string }) {
   const { C } = useTheme();
 
-  const styles = useMemo(() => StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      backgroundColor: C.dangerSurface,
-      borderColor: C.danger,
-      borderWidth: 1,
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: 12,
-    },
-    icon: {
-      marginTop: 1,
-    },
-    text: {
-      flex: 1,
-      marginLeft: 4,
-      color: C.danger,
-    }
-  }), [C]);
-
   return (
-    <View style={styles.container}>
-      <Ionicons name="alert-circle-outline" size={16} color={C.danger} style={styles.icon} />
-      <AppText variant="caption" style={styles.text}>
+    <View
+      className="flex-row items-start border rounded-lg p-md mb-md"
+      style={{ backgroundColor: C.dangerSurface, borderColor: C.danger }}
+    >
+      <Ionicons name="alert-circle-outline" size={16} color={C.danger} style={{ marginTop: 1 }} />
+      <AppText variant="caption" className="flex-1 ml-xs" style={{ color: C.danger }}>
         {message}
       </AppText>
     </View>
@@ -65,27 +47,14 @@ function ModeTab({
 }) {
   const { C } = useTheme();
 
-  const styles = useMemo(() => StyleSheet.create({
-    container: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 8,
-      gap: 4,
-      borderRadius: 6,
-      backgroundColor: active ? C.primary : 'transparent',
-    },
-    text: {
-      color: active ? '#FFFFFF' : C.muted,
-      fontWeight: active ? '600' : 'normal',
-    }
-  }), [C, active]);
-
   return (
-    <ScalePressable onPress={onPress} style={styles.container}>
+    <ScalePressable
+      onPress={onPress}
+      className="flex-1 flex-row items-center justify-center py-sm gap-xs rounded-md"
+      style={{ backgroundColor: active ? C.primary : 'transparent' }}
+    >
       <Ionicons name={icon as any} size={14} color={active ? '#FFFFFF' : C.muted} />
-      <AppText variant="caption" style={styles.text}>
+      <AppText variant="caption" style={{ color: active ? '#FFFFFF' : C.muted, fontWeight: active ? '600' : 'normal' }}>
         {label}
       </AppText>
     </ScalePressable>
@@ -102,6 +71,7 @@ export default function LoginScreen() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   const [focusedInput, setFocusedInput] = useState<'email' | 'password' | null>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const { signInWithMagicLink, signInWithPassword, signInWithPasskey } = useAuthStore();
   const { isDark, C } = useTheme();
@@ -168,160 +138,39 @@ export default function LoginScreen() {
     setMagicLinkSent(false);
   };
 
-  const styles = useMemo(() => StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: C.bg,
+  const formCardShadow = Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.05,
+      shadowRadius: 8,
     },
-    container: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
+    android: {
+      elevation: isDark ? 4 : 2,
     },
-    scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'center',
-    },
-    contentPadding: {
-      paddingHorizontal: 20,
-      paddingVertical: 20,
-    },
-    logoContainer: {
-      alignItems: 'center',
-      marginBottom: 32,
-    },
-    logoCircle: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: C.primarySurface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 16,
-    },
-    title: {
-      marginBottom: 4,
-    },
-    subtitle: {
-      textAlign: 'center',
-      lineHeight: 22,
-    },
-    modeSelector: {
-      flexDirection: 'row',
-      backgroundColor: C.surfaceHigh,
-      borderRadius: 8,
-      padding: 4,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: C.border,
-    },
-    formCard: {
-      backgroundColor: C.surfaceHigh,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: C.border,
-      padding: 16,
-      marginBottom: 16,
-      ...Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.3 : 0.05,
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: isDark ? 4 : 2,
-        },
-      }),
-    },
-    inputLabel: {
-      marginBottom: 6,
-      marginLeft: 4,
-    },
-    inputContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      height: 48,
-      backgroundColor: C.bg,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: C.border,
-      paddingHorizontal: 12,
-      marginBottom: 16, // tighter grouping
-    },
-    inputContainerFocused: {
-      borderColor: C.primary,
-      backgroundColor: C.surface,
-    },
-    textInput: {
-      flex: 1,
-      marginLeft: 8,
-      color: C.text,
-      fontSize: 15,
-      ...Platform.select({
-        web: {
-          outlineWidth: 0,
-        },
-      }),
-    },
-    passkeyHint: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      backgroundColor: C.primarySurface,
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: 16,
-    },
-    passkeyHintIcon: {
-      marginTop: 1,
-    },
-    passkeyHintText: {
-      flex: 1,
-      marginLeft: 4,
-      color: C.primary,
-      lineHeight: 18,
-    },
-    footerNote: {
-      textAlign: 'center',
-      lineHeight: 18,
-    },
-    magicLinkIconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: C.primarySurface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-    },
-    magicLinkTitle: {
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    magicLinkBody: {
-        textAlign: 'center',
-        marginBottom: 32,
-        lineHeight: 24,
-    },
-    magicLinkEmail: {
-        fontWeight: '600',
-    }
-  }), [C, isDark]);
+  });
+
+  const textInputPlatformStyles = Platform.select({
+    web: { outlineWidth: 0 },
+    default: {},
+  });
 
   if (magicLinkSent) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <View style={styles.magicLinkIconContainer}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: C.bg }}>
+        <View className="flex-1 justify-center items-center px-xl">
+          <View
+            className="w-16 h-16 rounded-full items-center justify-center mb-xl"
+            style={{ backgroundColor: C.primarySurface }}
+          >
             <Ionicons name="mail-outline" size={32} color={C.primary} />
           </View>
-          <AppText variant="h2" style={styles.magicLinkTitle}>
+          <AppText variant="h2" className="mb-sm text-center">
             Check your email
           </AppText>
-          <AppText variant="body" color="muted" style={styles.magicLinkBody}>
+          <AppText variant="body" color="muted" className="text-center mb-xxxl" style={{ lineHeight: 24 }}>
             We sent a magic link to{'\n'}
-            <AppText variant="body" style={styles.magicLinkEmail}>
+            <AppText variant="body" className="font-semibold">
               {email.trim()}
             </AppText>
             {'\n\n'}
@@ -341,25 +190,28 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: C.bg }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+        className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.contentPadding}>
+          <View className="px-xl py-xl">
             {/* Logo */}
-            <View style={styles.logoContainer}>
-              <View style={styles.logoCircle}>
+            <View className="items-center mb-xxxl">
+              <View
+                className="w-16 h-16 rounded-full items-center justify-center mb-lg"
+                style={{ backgroundColor: C.primarySurface }}
+              >
                 <Ionicons name="sparkles" size={28} color={C.primary} />
               </View>
-              <AppText variant="h1" style={styles.title}>
+              <AppText variant="h1" className="mb-xs">
                 Miru
               </AppText>
-              <AppText variant="body" color="muted" style={styles.subtitle}>
+              <AppText variant="body" color="muted" className="text-center" style={{ lineHeight: 22 }}>
                 {mode === 'magic-link' && 'Sign in with a one-time link sent to your email.'}
                 {mode === 'password' && 'Sign in with your email and password.'}
                 {mode === 'passkey' && 'Sign in with your biometrics or security key.'}
@@ -367,7 +219,10 @@ export default function LoginScreen() {
             </View>
 
             {/* Mode selector */}
-            <View style={styles.modeSelector}>
+            <View
+              className="flex-row rounded-lg p-xs mb-xl border"
+              style={{ backgroundColor: C.surfaceHigh, borderColor: C.border }}
+            >
               <ModeTab
                 label="Magic Link"
                 icon="mail-outline"
@@ -389,15 +244,25 @@ export default function LoginScreen() {
             </View>
 
             {/* Form card */}
-            <View style={styles.formCard}>
+            <View
+              className="rounded-xl border p-lg mb-lg"
+              style={[{ backgroundColor: C.surfaceHigh, borderColor: C.border }, formCardShadow]}
+            >
               {/* Email */}
-              <AppText variant="caption" color="muted" style={styles.inputLabel}>
+              <AppText variant="caption" color="muted" className="mb-xs ml-xs">
                 Email address
               </AppText>
-              <View style={[styles.inputContainer, focusedInput === 'email' && styles.inputContainerFocused]}>
+              <View
+                className="flex-row items-center h-[48px] rounded-lg border px-md mb-lg"
+                style={{
+                  backgroundColor: focusedInput === 'email' ? C.surface : C.bg,
+                  borderColor: focusedInput === 'email' ? C.primary : C.border,
+                }}
+              >
                 <Ionicons name="mail-outline" size={18} color={focusedInput === 'email' ? C.primary : C.muted} />
                 <TextInput
-                  style={styles.textInput}
+                  className="flex-1 ml-sm text-[15px]"
+                  style={[{ color: C.text }, textInputPlatformStyles]}
                   placeholder="you@example.com"
                   placeholderTextColor={C.muted}
                   value={email}
@@ -411,20 +276,34 @@ export default function LoginScreen() {
                   keyboardType="email-address"
                   autoComplete="email"
                   returnKeyType={mode === 'password' ? 'next' : 'done'}
-                  onSubmitEditing={mode === 'magic-link' ? handleMagicLink : undefined}
+                  onSubmitEditing={() => {
+                    if (mode === 'magic-link') {
+                      handleMagicLink();
+                    } else if (mode === 'password') {
+                      passwordRef.current?.focus();
+                    }
+                  }}
                 />
               </View>
 
               {/* Password field (password mode only) */}
               {mode === 'password' && (
                 <>
-                  <AppText variant="caption" color="muted" style={styles.inputLabel}>
+                  <AppText variant="caption" color="muted" className="mb-xs ml-xs">
                     Password
                   </AppText>
-                  <View style={[styles.inputContainer, focusedInput === 'password' && styles.inputContainerFocused]}>
+                  <View
+                    className="flex-row items-center h-[48px] rounded-lg border px-md mb-lg"
+                    style={{
+                      backgroundColor: focusedInput === 'password' ? C.surface : C.bg,
+                      borderColor: focusedInput === 'password' ? C.primary : C.border,
+                    }}
+                  >
                     <Ionicons name="lock-closed-outline" size={18} color={focusedInput === 'password' ? C.primary : C.muted} />
                     <TextInput
-                      style={styles.textInput}
+                      ref={passwordRef}
+                      className="flex-1 ml-sm text-[15px]"
+                      style={[{ color: C.text }, textInputPlatformStyles]}
                       placeholder="Enter your password"
                       placeholderTextColor={C.muted}
                       value={password}
@@ -439,7 +318,7 @@ export default function LoginScreen() {
                       returnKeyType="done"
                       onSubmitEditing={handlePassword}
                     />
-                    <ScalePressable onPress={() => setShowPassword((s) => !s)} style={{ padding: 4 }}>
+                    <ScalePressable onPress={() => setShowPassword((s) => !s)} className="p-xs">
                       <Ionicons
                         name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                         size={18}
@@ -452,14 +331,17 @@ export default function LoginScreen() {
 
               {/* Passkey hint */}
               {mode === 'passkey' && (
-                <View style={styles.passkeyHint}>
+                <View
+                  className="flex-row items-start rounded-lg p-md mb-lg"
+                  style={{ backgroundColor: C.primarySurface }}
+                >
                   <Ionicons
                     name="information-circle-outline"
                     size={16}
                     color={C.primary}
-                    style={styles.passkeyHintIcon}
+                    style={{ marginTop: 1 }}
                   />
-                  <AppText variant="caption" style={styles.passkeyHintText}>
+                  <AppText variant="caption" className="flex-1 ml-xs" style={{ color: C.primary, lineHeight: 18 }}>
                     Your device will prompt you to authenticate with Face ID, Touch ID, or a
                     security key.
                   </AppText>
@@ -490,7 +372,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Footer note */}
-            <AppText variant="caption" color="muted" style={styles.footerNote}>
+            <AppText variant="caption" color="muted" className="text-center" style={{ lineHeight: 18 }}>
               By signing in you agree to keep your account secure.{'\n'}
               Magic links expire after 1 hour.
             </AppText>
