@@ -331,14 +331,25 @@ class TestMemoryRepository:
         """match_memories uses raw SQL — mock the connection to verify call."""
         repo = MemoryRepository()
         mock_conn = AsyncMock()
-        mock_conn.execute_query_dict = AsyncMock(return_value=[])
+        mock_conn.execute_query_dict = AsyncMock(
+            return_value=[
+                {
+                    "id": "00000000-0000-0000-0000-000000000000",
+                    "content": "hi",
+                    "embedding": "[0.1]",
+                    "similarity": 0.9,
+                }
+            ]
+        )
         uid = uuid4()
         aid = uuid4()
         rid = uuid4()
         with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
             mock_tortoise.get_connection.return_value = mock_conn
             result = await repo.match_memories([0.1, 0.2], 0.5, 5, uid, aid, rid)
-        assert result == []
+        assert len(result) == 1
+        assert result[0].content == "hi"
+        assert not hasattr(result[0], "similarity")
         mock_conn.execute_query_dict.assert_awaited_once()
         call_args = mock_conn.execute_query_dict.call_args
         sql_query = call_args[0][0]
@@ -358,11 +369,22 @@ class TestMemoryRepository:
     async def test_search_fulltext_delegates_to_raw_sql(self) -> None:
         repo = MemoryRepository()
         mock_conn = AsyncMock()
-        mock_conn.execute_query_dict = AsyncMock(return_value=[])
+        mock_conn.execute_query_dict = AsyncMock(
+            return_value=[
+                {
+                    "id": "00000000-0000-0000-0000-000000000000",
+                    "content": "hi2",
+                    "embedding": "[0.2]",
+                    "similarity": 0.9,
+                }
+            ]
+        )
         with patch("app.infrastructure.repositories.memory_repo.Tortoise") as mock_tortoise:
             mock_tortoise.get_connection.return_value = mock_conn
             result = await repo.search_fulltext("hello world")
-        assert result == []
+        assert len(result) == 1
+        assert result[0].content == "hi2"
+        assert not hasattr(result[0], "similarity")
         mock_conn.execute_query_dict.assert_awaited_once()
 
 
