@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Modal,
-  ScrollView, FlatList,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Modal, ScrollView, FlatList, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
 import { AppText } from '../AppText';
@@ -143,7 +137,9 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       let errMsg = 'Failed to create persona. Please try again.';
 
       if (Array.isArray(detail)) {
-        errMsg = detail.map((d: any) => `${d.loc?.[d.loc.length - 1] ?? 'Field'}: ${d.msg}`).join('\n');
+        errMsg = detail
+          .map((d: any) => `${d.loc?.[d.loc.length - 1] ?? 'Field'}: ${d.msg}`)
+          .join('\n');
       } else if (typeof detail?.message === 'string') {
         errMsg = detail.message;
       } else if (typeof detail === 'string') {
@@ -390,10 +386,10 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 data={TONES}
-                keyExtractor={(item: {id: string}) => item.id}
+                keyExtractor={(item: { id: string }) => item.id}
                 style={{ marginBottom: 14 }}
                 contentContainerStyle={{ gap: 8 }}
-                renderItem={({ item: tone }: {item: any}) => {
+                renderItem={({ item: tone }: { item: any }) => {
                   const isSelected = selectedTone === tone.id;
                   return (
                     <ScalePressable

@@ -15,14 +15,12 @@ export interface Agent {
   created_at: string;
 }
 
-
 export enum MessageStatus {
   sent = 'sent',
   streaming = 'streaming',
   delivered = 'delivered',
   error = 'error',
 }
-
 
 export interface ChatMessage {
   id: string;

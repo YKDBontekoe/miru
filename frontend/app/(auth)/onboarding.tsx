@@ -20,35 +20,38 @@ export default function OnboardingScreen() {
 
   const { C, isDark } = useTheme();
 
-  const PAGES = useMemo(() => [
-    {
-      icon: 'sparkles' as IoniconsName,
-      accent: C.primary,
-      accentBg: C.primarySurface,
-      title: 'Meet Miru',
-      subtitle: 'Your personal AI companion',
-      description:
-        "Miru learns from every conversation, remembers what matters to you, and gets smarter over time \u2014 like a brilliant friend who's always there.",
-    },
-    {
-      icon: 'people' as IoniconsName,
-      accent: isDark ? '#A78BFA' : '#8B5CF6',
-      accentBg: isDark ? '#2E1065' : '#F5F3FF',
-      title: 'Multiple Personas',
-      subtitle: 'The right expert for every task',
-      description:
-        'Create AI agents with distinct personalities and expertise. A creative writer, a data analyst, a life coach — all working together for you.',
-    },
-    {
-      icon: 'shield-checkmark' as IoniconsName,
-      accent: C.success,
-      accentBg: C.successSurface,
-      title: 'Your Privacy First',
-      subtitle: 'You stay in control',
-      description:
-        'Your data is yours. Miru is built with privacy at the core — you decide what it remembers and what it forgets.',
-    },
-  ], [C, isDark]);
+  const PAGES = useMemo(
+    () => [
+      {
+        icon: 'sparkles' as IoniconsName,
+        accent: C.primary,
+        accentBg: C.primarySurface,
+        title: 'Meet Miru',
+        subtitle: 'Your personal AI companion',
+        description:
+          "Miru learns from every conversation, remembers what matters to you, and gets smarter over time \u2014 like a brilliant friend who's always there.",
+      },
+      {
+        icon: 'people' as IoniconsName,
+        accent: isDark ? '#A78BFA' : '#8B5CF6',
+        accentBg: isDark ? '#2E1065' : '#F5F3FF',
+        title: 'Multiple Personas',
+        subtitle: 'The right expert for every task',
+        description:
+          'Create AI agents with distinct personalities and expertise. A creative writer, a data analyst, a life coach — all working together for you.',
+      },
+      {
+        icon: 'shield-checkmark' as IoniconsName,
+        accent: C.success,
+        accentBg: C.successSurface,
+        title: 'Your Privacy First',
+        subtitle: 'You stay in control',
+        description:
+          'Your data is yours. Miru is built with privacy at the core — you decide what it remembers and what it forgets.',
+      },
+    ],
+    [C, isDark]
+  );
 
   const finish = () => {
     setOnboardingComplete(true);
@@ -100,17 +103,10 @@ export default function OnboardingScreen() {
       >
         {item.subtitle}
       </AppText>
-      <AppText
-        variant="h1"
-        className="text-center mb-lg text-[32px] tracking-[-0.5px]"
-      >
+      <AppText variant="h1" className="text-center mb-lg text-[32px] tracking-[-0.5px]">
         {item.title}
       </AppText>
-      <AppText
-        variant="body"
-        color="muted"
-        className="text-center leading-[26px]"
-      >
+      <AppText variant="body" color="muted" className="text-center leading-[26px]">
         {item.description}
       </AppText>
     </View>

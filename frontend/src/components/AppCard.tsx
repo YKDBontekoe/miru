@@ -27,13 +27,7 @@ interface TappableCardProps extends Omit<ViewProps, 'style'> {
   className: string;
 }
 
-const TappableCard = ({
-  children,
-  onTap,
-  cardStyle,
-  className,
-  ...props
-}: TappableCardProps) => {
+const TappableCard = ({ children, onTap, cardStyle, className, ...props }: TappableCardProps) => {
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {

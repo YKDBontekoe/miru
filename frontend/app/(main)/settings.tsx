@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -138,7 +139,13 @@ function SettingRow({
   );
 }
 
-const MemoryItem = React.memo(function MemoryItem({ memory, onDelete }: { memory: Memory; onDelete: () => void }) {
+const MemoryItem = React.memo(function MemoryItem({
+  memory,
+  onDelete,
+}: {
+  memory: Memory;
+  onDelete: () => void;
+}) {
   const { i18n } = useTranslation();
   const date = React.useMemo(() => {
     return new Intl.DateTimeFormat(i18n.language, {
@@ -296,27 +303,33 @@ export default function SettingsScreen() {
     loadMemories();
   }, [loadMemories]);
 
-  const handleDeleteMemory = React.useCallback((memory: Memory) => {
-    Alert.alert(
-      t('settings.actions.forget_memory_title'),
-      `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
-      [
-        { text: t('settings.actions.cancel'), style: 'cancel' },
-        {
-          text: t('settings.actions.forget'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await ApiService.deleteMemory(memory.id);
-              setMemories((prev) => prev.filter((m) => m.id !== memory.id));
-            } catch {
-              Alert.alert(t('settings.actions.error'), t('settings.actions.delete_memory_failed'));
-            }
+  const handleDeleteMemory = React.useCallback(
+    (memory: Memory) => {
+      Alert.alert(
+        t('settings.actions.forget_memory_title'),
+        `${t('settings.actions.forget_memory_confirm')}\n\n"${memory.content}"`,
+        [
+          { text: t('settings.actions.cancel'), style: 'cancel' },
+          {
+            text: t('settings.actions.forget'),
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await ApiService.deleteMemory(memory.id);
+                setMemories((prev) => prev.filter((m) => m.id !== memory.id));
+              } catch {
+                Alert.alert(
+                  t('settings.actions.error'),
+                  t('settings.actions.delete_memory_failed')
+                );
+              }
+            },
           },
-        },
-      ]
-    );
-  }, [t]);
+        ]
+      );
+    },
+    [t]
+  );
 
   const renderMemoryItem = React.useCallback(
     ({ item }: { item: Memory }) => (
@@ -345,7 +358,6 @@ export default function SettingsScreen() {
     );
   };
 
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 }}>
@@ -359,7 +371,10 @@ export default function SettingsScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 40 + (Platform.OS === 'ios' ? 32 : 16) + 64,
+        }}
       >
         {/* ── Account ─────────────────────────────── */}
         <SectionHeader title={t('settings.sections.account')} />

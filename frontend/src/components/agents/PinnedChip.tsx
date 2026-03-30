@@ -17,10 +17,7 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
   const color = getAgentColor(agent.name);
 
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{ alignItems: 'center', marginEnd: 14, width: 64 }}
-    >
+    <ScalePressable onPress={onPress} style={{ alignItems: 'center', marginEnd: 14, width: 64 }}>
       <View
         style={{
           width: 52,

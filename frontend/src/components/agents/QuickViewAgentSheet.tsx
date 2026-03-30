@@ -1,5 +1,5 @@
 import React from 'react';
-import { View,Pressable, Modal, Alert } from 'react-native';
+import { View, Pressable, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { AppText } from '../AppText';
