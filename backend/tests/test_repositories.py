@@ -175,6 +175,47 @@ class TestChatRepository:
         # Should not raise even if the room doesn't exist
         await repo.touch_room(uuid4())
 
+    @pytest.mark.asyncio
+    async def test_get_room_with_user_id(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        room = await repo.create_room("Get Room User", user_id)
+
+        result_owner = await repo.get_room(room.id, user_id=user_id)
+        assert result_owner is not None
+        assert result_owner.id == room.id
+
+        result_other = await repo.get_room(room.id, user_id=other_user_id)
+        assert result_other is None
+
+    @pytest.mark.asyncio
+    async def test_update_room_with_user_id(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        room = await repo.create_room("Update Room User", user_id)
+
+        result_other = await repo.update_room(room.id, "New Name Other", user_id=other_user_id)
+        assert result_other is None
+
+        result_owner = await repo.update_room(room.id, "New Name Owner", user_id=user_id)
+        assert result_owner is not None
+        assert result_owner.name == "New Name Owner"
+
+    @pytest.mark.asyncio
+    async def test_delete_room_with_user_id(self) -> None:
+        repo = ChatRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        room = await repo.create_room("Delete Room User", user_id)
+
+        result_other = await repo.delete_room(room.id, user_id=other_user_id)
+        assert result_other is False
+
+        result_owner = await repo.delete_room(room.id, user_id=user_id)
+        assert result_owner is True
+
 
 # ---------------------------------------------------------------------------
 # MemoryRepository
@@ -382,4 +423,17 @@ class TestAuthRepository:
             "sign_count": 0,
         }
         result = await repo.create_passkey(row)
-        assert isinstance(result, PasskeyRecord)
+
+    @pytest.mark.asyncio
+    async def test_delete_memory_with_user_id(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        memory = Memory(content="To delete with user", user_id=user_id, embedding=[0.0])
+        await repo.insert_memory(memory)
+
+        result_other = await repo.delete_memory(memory.id, user_id=other_user_id)
+        assert result_other is False
+
+        result_owner = await repo.delete_memory(memory.id, user_id=user_id)
+        assert result_owner is True

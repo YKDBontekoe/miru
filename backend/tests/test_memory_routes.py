@@ -361,3 +361,18 @@ def test_upload_document_too_large(client: TestClient) -> None:
 
     assert response.status_code == 413
     assert "File too large" in response.json()["detail"]
+
+
+from unittest.mock import patch
+
+
+@pytest.mark.asyncio
+async def test_delete_memory_endpoint_with_user_id(
+    client: TestClient, authed_headers: dict
+) -> None:
+    memory_id = uuid4()
+    with patch("app.domain.memory.service.MemoryService.delete_memory") as mock_delete:
+        mock_delete.return_value = True
+        response = client.delete(f"/api/v1/memory/{memory_id}", headers=authed_headers)
+        assert response.status_code == 200
+        assert mock_delete.called
