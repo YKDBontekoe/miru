@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncGenerator
 from unittest.mock import patch
 
 import pytest
@@ -24,9 +25,6 @@ from app.domain.agents.models import Agent, Capability, Integration
 from app.main import app
 
 pytestmark = pytest.mark.asyncio
-
-
-from collections.abc import AsyncGenerator
 
 
 @pytest_asyncio.fixture
