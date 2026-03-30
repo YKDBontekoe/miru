@@ -1,6 +1,16 @@
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Memory collections table
+CREATE TABLE IF NOT EXISTS memory_collections (
+    id          UUID         PRIMARY KEY,
+    user_id     UUID         NOT NULL,
+    name        VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
 -- Memories table: stores user memories with embeddings.
 -- Embedding dimension is 1536 to match openai/text-embedding-3-small via OpenRouter.
 CREATE TABLE IF NOT EXISTS memories (
@@ -14,7 +24,7 @@ CREATE TABLE IF NOT EXISTS memories (
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     deleted_at  TIMESTAMPTZ,
-    collection_id UUID
+    collection_id UUID REFERENCES memory_collections(id) ON DELETE SET NULL
 );
 
 -- IVFFlat index for fast approximate nearest-neighbour search
