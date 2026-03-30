@@ -120,6 +120,3 @@ def test_message_update_blank_content_rejected(bad_content: str) -> None:
 
     with pytest.raises(ValidationError):
         MessageUpdate(content=bad_content)
-
-
-from unittest.mock import patch

@@ -422,7 +422,7 @@ class TestAuthRepository:
             "public_key": "pubkey",
             "sign_count": 0,
         }
-        result = await repo.create_passkey(row)
+        await repo.create_passkey(row)
 
     @pytest.mark.asyncio
     async def test_delete_memory_with_user_id(self) -> None:

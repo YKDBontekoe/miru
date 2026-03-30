@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -361,9 +361,6 @@ def test_upload_document_too_large(client: TestClient) -> None:
 
     assert response.status_code == 413
     assert "File too large" in response.json()["detail"]
-
-
-from unittest.mock import patch
 
 
 @pytest.mark.asyncio
