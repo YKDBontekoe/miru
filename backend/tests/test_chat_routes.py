@@ -124,16 +124,15 @@ def test_message_update_blank_content_rejected(bad_content: str) -> None:
 
 def test_get_room_agents_endpoint_404(client: TestClient, authed_headers: dict) -> None:
     room_id = uuid4()
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     mock_service = AsyncMock(spec=ChatService)
     mock_service.list_room_agents.return_value = None
     app.dependency_overrides[get_chat_service] = lambda: mock_service
 
     try:
-        response = client.get(
-            f"/api/v1/rooms/{room_id}/agents",
-            headers=authed_headers
-        )
+        response = client.get(f"/api/v1/rooms/{room_id}/agents", headers=authed_headers)
         assert response.status_code == 404
         assert mock_service.list_room_agents.called
     finally:
@@ -142,16 +141,15 @@ def test_get_room_agents_endpoint_404(client: TestClient, authed_headers: dict) 
 
 def test_get_room_messages_endpoint_404(client: TestClient, authed_headers: dict) -> None:
     room_id = uuid4()
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
 
     mock_service = AsyncMock(spec=ChatService)
     mock_service.get_room_messages.return_value = None
     app.dependency_overrides[get_chat_service] = lambda: mock_service
 
     try:
-        response = client.get(
-            f"/api/v1/rooms/{room_id}/messages",
-            headers=authed_headers
-        )
+        response = client.get(f"/api/v1/rooms/{room_id}/messages", headers=authed_headers)
         assert response.status_code == 404
         assert mock_service.get_room_messages.called
     finally:
