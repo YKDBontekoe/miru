@@ -72,16 +72,16 @@
     },
     "chat_modal": {
       "title": "New Chat",
-      "placeholder": "Chat name\u2026",
+      "placeholder": "Chat name…",
       "name_required": "Name required",
       "please_enter_name": "Please enter a name for this chat.",
       "error": "Error",
       "failed_to_create": "Failed to create chat. Please try again."
     },
     "tasks": {
-      "all_done": "Tasks \u00b7 All done!",
+      "all_done": "Tasks · All done!",
       "caught_up": "You're all caught up!",
-      "open_count": "Tasks \u00b7 {{count}} open"
+      "open_count": "Tasks · {{count}} open"
     },
     "empty": {
       "title": "Welcome to Miru",
@@ -170,7 +170,7 @@
     "are_you_sure": "Are you sure?",
     "save_note": "Save Note",
     "add_task": "Add Task",
-    "title": "Title",
+    "title": "Workspace",
     "content": "Content",
     "note_placeholder": "e.g. Discussed AI agents...",
     "task_placeholder": "e.g. Review PR...",
@@ -184,6 +184,25 @@
     "due_date": "Due {{date}}",
     "note_title_placeholder": "Note title",
     "note_content_placeholder": "Write your note here...",
-    "task_content_placeholder": "What needs to be done?"
+    "task_content_placeholder": "What needs to be done?",
+    "header": {
+      "subtitle": {
+        "empty": "You're all caught up for today.",
+        "pending": "You have {{count}} tasks pending."
+      }
+    },
+    "search": "Search notes & tasks...",
+    "all": "All",
+    "no_matches": "No matches found",
+    "workspace_clear": "Your workspace is clear",
+    "try_adjust_search": "Try adjusting your search terms.",
+    "capture_thoughts": "Capture your thoughts and track what needs to get done.",
+    "newNote": "New Note",
+    "new_note": "New Note",
+    "title_label": "Title",
+    "content_label": "Content",
+    "new_task": "New Task",
+    "task_label": "Task",
+    "new_task_action": "New Task"
   }
 }
