@@ -764,5 +764,6 @@ async def test_get_room_messages_ownership(chat_service: ChatService) -> None:
         ChatMessageEntity(id=uuid4(), room_id=room_id, user_id=user_id, content="test")
     ]
     result_success = await chat_service.get_room_messages(room_id, user_id)
+    assert result_success is not None
     assert len(result_success) == 1
     assert result_success[0].content == "test"
