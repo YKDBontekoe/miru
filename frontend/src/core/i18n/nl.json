@@ -72,16 +72,16 @@
     },
     "chat_modal": {
       "title": "Nieuwe chat",
-      "placeholder": "Chatnaam\u2026",
+      "placeholder": "Chatnaam…",
       "name_required": "Naam vereist",
       "please_enter_name": "Voer een naam in voor deze chat.",
       "error": "Fout",
       "failed_to_create": "Aanmaken van chat mislukt. Probeer opnieuw."
     },
     "tasks": {
-      "all_done": "Taken \u00b7 Alles klaar!",
+      "all_done": "Taken · Alles klaar!",
       "caught_up": "Je bent helemaal bijgewerkt!",
-      "open_count": "Taken \u00b7 {{count}} open"
+      "open_count": "Taken · {{count}} open"
     },
     "empty": {
       "title": "Welkom bij Miru",
@@ -170,7 +170,7 @@
     "are_you_sure": "Weet je het zeker?",
     "save_note": "Notitie opslaan",
     "add_task": "Taak toevoegen",
-    "title": "Titel",
+    "title": "Werkruimte",
     "content": "Inhoud",
     "note_placeholder": "bijv. Besproken AI-agenten...",
     "task_placeholder": "bijv. PR reviewen...",
@@ -184,6 +184,25 @@
     "due_date": "Uiterlijk {{date}}",
     "note_title_placeholder": "Notitietitel",
     "note_content_placeholder": "Schrijf hier je notitie...",
-    "task_content_placeholder": "Wat moet er gedaan worden?"
+    "task_content_placeholder": "Wat moet er gedaan worden?",
+    "header": {
+      "subtitle": {
+        "empty": "Je bent helemaal bijgewerkt voor vandaag.",
+        "pending": "Je hebt {{count}} openstaande taken."
+      }
+    },
+    "search": "Zoek notities & taken...",
+    "all": "Alles",
+    "no_matches": "Geen overeenkomsten gevonden",
+    "workspace_clear": "Je werkruimte is leeg",
+    "try_adjust_search": "Probeer je zoektermen aan te passen.",
+    "capture_thoughts": "Leg je gedachten vast en houd bij wat er gedaan moet worden.",
+    "newNote": "Nieuwe Notitie",
+    "new_note": "Nieuwe Notitie",
+    "title_label": "Titel",
+    "content_label": "Inhoud",
+    "new_task": "Nieuwe Taak",
+    "task_label": "Taak",
+    "new_task_action": "Nieuwe Taak"
   }
 }
