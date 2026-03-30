@@ -78,6 +78,13 @@ jobs:
           PRODUCTION_SUPABASE_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
 
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
       - name: Install dependencies
         run: npm ci
       - name: Build Web

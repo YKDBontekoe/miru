@@ -28,6 +28,8 @@ on:
         type: string
         required: true
     secrets:
+      EXPO_TOKEN:
+        required: false
       SUPABASE_URL:
         required: false
       SUPABASE_ANON_KEY:
@@ -52,6 +54,13 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: 'npm'
           cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
