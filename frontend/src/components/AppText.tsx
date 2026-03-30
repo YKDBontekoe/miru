@@ -5,7 +5,7 @@ import { theme } from '../core/theme';
 
 export interface AppTextProps extends TextProps {
   variant?: keyof typeof theme.typography;
-  color?: 'primary' | 'muted' | 'disabled' | 'brand';
+  color?: 'primary' | 'muted' | 'disabled' | 'brand' | 'white';
   className?: string;
   style?: TextProps['style'];
 }
@@ -49,6 +49,8 @@ export function AppText({
         };
       case 'brand':
         return { color: theme.colors.primary.DEFAULT };
+      case 'white':
+        return { color: theme.colors.white };
       case 'primary':
       default:
         return { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light };

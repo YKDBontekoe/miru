@@ -169,7 +169,7 @@ export default function OnboardingScreen() {
           className="h-14 rounded-2xl items-center justify-center flex-row gap-sm"
           style={{ backgroundColor: page.accent }}
         >
-          <AppText className="text-white font-bold text-[17px]">
+          <AppText color="white" className="font-bold text-[17px]">
             {currentIndex === PAGES.length - 1 ? 'Get Started' : 'Continue'}
           </AppText>
           <Ionicons
