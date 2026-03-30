@@ -202,9 +202,13 @@ async def test_agent_creation_fails_when_db_down(
     }
 
     # Act
-    with patch(
-        "app.domain.agents.models.Agent.create", side_effect=DBConnectionError("Connection lost")
-    ), pytest.raises(DBConnectionError):
+    with (
+        patch(
+            "app.domain.agents.models.Agent.create",
+            side_effect=DBConnectionError("Connection lost"),
+        ),
+        pytest.raises(DBConnectionError),
+    ):
         # The FastAPI app might or might not handle DBConnectionError globally.
         # Usually it raises a 500, or in tests the exception bubbles up.
         await async_client.post("/api/v1/agents", headers=authed_headers, json=payload)
