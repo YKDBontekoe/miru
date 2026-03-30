@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   FlatList,
-  TouchableOpacity,
   RefreshControl,
   Modal,
   TextInput,
@@ -20,6 +19,8 @@ import { useAgentStore } from '../../src/store/useAgentStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { Agent, ChatRoom, Task } from '../../src/core/models';
+import { ScalePressable } from '@/components/ScalePressable';
+import { SkeletonAgentCard } from '@/components/SkeletonCard';
 
 // ─── Palette — white + blue only ─────────────────────────────────────────────
 const C = {
@@ -120,7 +121,7 @@ function SectionHeader({
         {title}
       </AppText>
       {actionLabel && onAction && (
-        <TouchableOpacity
+        <ScalePressable
           onPress={onAction}
           style={{
             borderRadius: 8,
@@ -134,7 +135,7 @@ function SectionHeader({
           <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
             {actionLabel}
           </AppText>
-        </TouchableOpacity>
+        </ScalePressable>
       )}
     </View>
   );
@@ -151,9 +152,8 @@ function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onPress}
-      activeOpacity={0.7}
       style={{ width: '48%', marginBottom: 10 }}
     >
       <View
@@ -187,7 +187,7 @@ function QuickAction({
           {label}
         </AppText>
       </View>
-    </TouchableOpacity>
+    </ScalePressable>
   );
 }
 
@@ -214,9 +214,8 @@ const RecentChatRow = React.memo(function RecentChatRow({
   }, [t, room.updated_at]);
 
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onPress}
-      activeOpacity={0.7}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -252,7 +251,7 @@ const RecentChatRow = React.memo(function RecentChatRow({
         </AppText>
         <Ionicons name="chevron-forward" size={13} color={C.faint} />
       </View>
-    </TouchableOpacity>
+    </ScalePressable>
   );
 });
 
@@ -268,9 +267,8 @@ const TaskRow = React.memo(function TaskRow({
 }) {
   const { i18n } = useTranslation();
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onToggle}
-      activeOpacity={0.7}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -324,16 +322,15 @@ const TaskRow = React.memo(function TaskRow({
           </AppText>
         </View>
       )}
-    </TouchableOpacity>
+    </ScalePressable>
   );
 });
 
 // ─── Agent chip ───────────────────────────────────────────────────────────────
 const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onPress}
-      activeOpacity={0.7}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -381,7 +378,7 @@ const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Age
           </AppText>
         </View>
       )}
-    </TouchableOpacity>
+    </ScalePressable>
   );
 });
 
@@ -451,7 +448,7 @@ function NewChatModal({
             <AppText variant="h2" style={{ color: C.text }}>
               {t('home.chat_modal.title')}
             </AppText>
-            <TouchableOpacity
+            <ScalePressable
               onPress={onClose}
               style={{
                 width: 30,
@@ -463,7 +460,7 @@ function NewChatModal({
               }}
             >
               <Ionicons name="close" size={17} color={C.muted} />
-            </TouchableOpacity>
+            </ScalePressable>
           </View>
           <TextInput
             value={name}
@@ -483,7 +480,7 @@ function NewChatModal({
               marginBottom: 14,
             }}
           />
-          <TouchableOpacity
+          <ScalePressable
             onPress={handleCreate}
             disabled={isSaving}
             style={{
@@ -505,7 +502,7 @@ function NewChatModal({
                 {t('home.actions.create')}
               </AppText>
             )}
-          </TouchableOpacity>
+          </ScalePressable>
         </View>
       </View>
     </Modal>
@@ -594,10 +591,19 @@ export default function HomeScreen() {
 
   if (isLoadingRooms && rooms.length === 0) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <ActivityIndicator size="large" color={C.primary} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <View style={{ width: 120, height: 24, backgroundColor: C.surfaceHigh, borderRadius: 12, marginBottom: 8 }} />
+            <View style={{ width: 180, height: 28, backgroundColor: C.surfaceHigh, borderRadius: 14 }} />
+          </View>
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surfaceHigh }} />
+        </View>
+        <View style={{ paddingHorizontal: 20 }}>
+          <SkeletonAgentCard index={0} />
+          <SkeletonAgentCard index={1} />
+          <SkeletonAgentCard index={2} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -662,9 +668,8 @@ export default function HomeScreen() {
             </View>
 
             {/* Avatar — clean circle, initials only */}
-            <TouchableOpacity
+            <ScalePressable
               onPress={() => router.push('/(main)/settings')}
-              activeOpacity={0.75}
               style={{
                 width: 46,
                 height: 46,
@@ -684,7 +689,7 @@ export default function HomeScreen() {
               >
                 {initials}
               </AppText>
-            </TouchableOpacity>
+            </ScalePressable>
           </View>
 
           {/* Stats bar */}
@@ -882,7 +887,7 @@ export default function HomeScreen() {
               >
                 {t('home.empty.desc')}
               </AppText>
-              <TouchableOpacity
+              <ScalePressable
                 onPress={() => setShowNewChat(true)}
                 style={{
                   flexDirection: 'row',
@@ -902,7 +907,7 @@ export default function HomeScreen() {
                 <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
                   {t('home.actions.start_chat')}
                 </AppText>
-              </TouchableOpacity>
+              </ScalePressable>
             </View>
           )}
         </View>

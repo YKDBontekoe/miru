@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  TouchableOpacity,
   Modal,
   ScrollView,
   TextInput,
@@ -14,13 +13,13 @@ import { useRouter } from 'expo-router';
 import { AppText } from '../AppText';
 import { AgentAvatar } from '../AgentAvatar';
 import { XPBar } from '../XPBar';
-import { ScalePressable } from '../ScalePressable';
 import { useTheme } from '../../hooks/useTheme';
 import { useAgentStore } from '../../store/useAgentStore';
 import { useChatStore } from '../../store/useChatStore';
 import { haptic } from '../../utils/haptics';
 import { Agent } from '../../core/models';
 import { getAgentColor, getMoodEmoji, MILESTONES } from './agentUtils';
+import { ScalePressable } from '@/components/ScalePressable';
 
 interface AgentDetailSheetProps {
   agent: Agent | null;
@@ -257,7 +256,7 @@ export function AgentDetailSheet({
 
               <View style={{ gap: 8, marginStart: 8 }}>
                 {!isEditing && (
-                  <TouchableOpacity
+                  <ScalePressable
                     onPress={() => {
                       haptic.light();
                       setIsEditing(true);
@@ -274,9 +273,9 @@ export function AgentDetailSheet({
                     }}
                   >
                     <Ionicons name="pencil" size={14} color={C.muted} />
-                  </TouchableOpacity>
+                  </ScalePressable>
                 )}
-                <TouchableOpacity
+                <ScalePressable
                   onPress={isEditing ? cancelEdit : onClose}
                   style={{
                     width: 32,
@@ -290,7 +289,7 @@ export function AgentDetailSheet({
                   }}
                 >
                   <Ionicons name="close" size={16} color={C.muted} />
-                </TouchableOpacity>
+                </ScalePressable>
               </View>
             </View>
           </View>
@@ -344,7 +343,7 @@ export function AgentDetailSheet({
                     onSubmitEditing={addGoal}
                     returnKeyType="done"
                   />
-                  <TouchableOpacity
+                  <ScalePressable
                     onPress={addGoal}
                     style={{
                       width: 40,
@@ -357,14 +356,14 @@ export function AgentDetailSheet({
                     }}
                   >
                     <Ionicons name="add" size={20} color={C.primary} />
-                  </TouchableOpacity>
+                  </ScalePressable>
                 </View>
                 {editGoals.length > 0 && (
                   <View
                     style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}
                   >
                     {editGoals.map((g, i) => (
-                      <TouchableOpacity
+                      <ScalePressable
                         key={i}
                         onPress={() => setEditGoals((gs) => gs.filter((_, idx) => idx !== i))}
                         style={{
@@ -381,12 +380,12 @@ export function AgentDetailSheet({
                       >
                         <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
                         <Ionicons name="close" size={11} color={C.primary} />
-                      </TouchableOpacity>
+                      </ScalePressable>
                     ))}
                   </View>
                 )}
 
-                <TouchableOpacity
+                <ScalePressable
                   onPress={handleSaveEdit}
                   disabled={isSaving}
                   style={{
@@ -404,7 +403,7 @@ export function AgentDetailSheet({
                       Save Changes
                     </AppText>
                   )}
-                </TouchableOpacity>
+                </ScalePressable>
 
                 <View
                   style={{
@@ -428,7 +427,7 @@ export function AgentDetailSheet({
                   >
                     Danger Zone
                   </AppText>
-                  <TouchableOpacity
+                  <ScalePressable
                     onPress={() => {
                       haptic.heavy();
                       Alert.alert(
@@ -465,7 +464,7 @@ export function AgentDetailSheet({
                     <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>
                       Archive Persona
                     </AppText>
-                  </TouchableOpacity>
+                  </ScalePressable>
                 </View>
               </Animated.View>
             ) : (

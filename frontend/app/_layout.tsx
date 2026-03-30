@@ -10,9 +10,10 @@ import { useAuthStore } from '../src/store/useAuthStore';
 import { useAppStore } from '../src/store/useAppStore';
 import { waitForBackend } from '../src/core/api/client';
 import { BackendSplash } from '../src/components/BackendSplash';
-import { View, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { AppText } from '../src/components/AppText';
 import { Ionicons } from '@expo/vector-icons';
+import { ScalePressable } from '@/components/ScalePressable';
 
 export default function RootLayout() {
   const { initialize, user, isLoading } = useAuthStore();
@@ -123,13 +124,13 @@ export default function RootLayout() {
           We're having trouble waking up the AI servers. They might be resting or temporarily
           unavailable.
         </AppText>
-        <TouchableOpacity
+        <ScalePressable
           onPress={checkBackend}
           className="bg-blue-600 px-6 py-3.5 rounded-2xl flex-row items-center gap-2"
         >
           <Ionicons name="refresh" size={20} color="#FFFFFF" />
           <AppText className="text-white font-semibold text-base">Try Again</AppText>
-        </TouchableOpacity>
+        </ScalePressable>
       </View>
     );
   }

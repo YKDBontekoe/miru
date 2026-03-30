@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  TouchableOpacity,
   RefreshControl,
   Modal,
   TextInput,
@@ -18,6 +17,8 @@ import { useChatStore } from '../../src/store/useChatStore';
 import { ApiService } from '../../src/core/api/ApiService';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { ChatRoom, Agent } from '../../src/core/models';
+import { ScalePressable } from '@/components/ScalePressable';
+import { SkeletonAgentCard } from '@/components/SkeletonCard';
 
 // ─── Light mode palette ───────────────────────────────────────────────────────
 const C = {
@@ -43,9 +44,8 @@ function getAgentColor(name: string) {
 function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   const color = getAgentColor(agent.name);
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onPress}
-      activeOpacity={0.75}
       style={{ width: 72, alignItems: 'center', marginEnd: 12 }}
     >
       <View
@@ -72,7 +72,7 @@ function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
       >
         {agent.name}
       </AppText>
-    </TouchableOpacity>
+    </ScalePressable>
   );
 }
 
@@ -95,9 +95,8 @@ function RoomCard({
   };
 
   return (
-    <TouchableOpacity
+    <ScalePressable
       onPress={onPress}
-      activeOpacity={0.75}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -134,7 +133,7 @@ function RoomCard({
         </View>
       </View>
       <Ionicons name="chevron-forward" size={18} color={C.faint} />
-    </TouchableOpacity>
+    </ScalePressable>
   );
 }
 
@@ -168,9 +167,8 @@ function CreateRoomModal({
       const color = getAgentColor(agent.name);
       const selected = selectedAgentIds.includes(agent.id);
       return (
-        <TouchableOpacity
+        <ScalePressable
           onPress={() => toggleAgent(agent.id)}
-          activeOpacity={0.8}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -204,7 +202,7 @@ function CreateRoomModal({
             </AppText>
           </View>
           {selected && <Ionicons name="checkmark-circle" size={20} color={color} />}
-        </TouchableOpacity>
+        </ScalePressable>
       );
     },
     [selectedAgentIds, toggleAgent]
@@ -259,9 +257,9 @@ function CreateRoomModal({
             <AppText variant="h2" style={{ color: C.text }}>
               New Chat
             </AppText>
-            <TouchableOpacity onPress={onClose}>
+            <ScalePressable onPress={onClose}>
               <Ionicons name="close-circle" size={26} color={C.faint} />
-            </TouchableOpacity>
+            </ScalePressable>
           </View>
 
           <AppText
@@ -316,7 +314,7 @@ function CreateRoomModal({
             </>
           )}
 
-          <TouchableOpacity
+          <ScalePressable
             onPress={handleCreate}
             disabled={isSaving}
             style={{
@@ -334,7 +332,7 @@ function CreateRoomModal({
                 Create Chat
               </AppText>
             )}
-          </TouchableOpacity>
+          </ScalePressable>
         </View>
       </View>
     </Modal>
@@ -414,7 +412,7 @@ export default function ChatListScreen() {
         <AppText variant="h1" style={{ fontSize: 28, fontWeight: '700', color: C.text }}>
           {t('chat.title', 'Miru')}
         </AppText>
-        <TouchableOpacity
+        <ScalePressable
           onPress={() => setShowCreateModal(true)}
           style={{
             width: 36,
@@ -426,7 +424,7 @@ export default function ChatListScreen() {
           }}
         >
           <Ionicons name="add" size={22} color="white" />
-        </TouchableOpacity>
+        </ScalePressable>
       </View>
 
       <FlatList
@@ -528,7 +526,7 @@ export default function ChatListScreen() {
                   'Create a chat and start collaborating with your AI personas.'
                 )}
               </AppText>
-              <TouchableOpacity
+              <ScalePressable
                 onPress={() => setShowCreateModal(true)}
                 style={{
                   flexDirection: 'row',
@@ -543,9 +541,15 @@ export default function ChatListScreen() {
                 <AppText style={{ color: 'white', fontWeight: '700' }}>
                   {t('chat.new_chat', 'New Chat')}
                 </AppText>
-              </TouchableOpacity>
+              </ScalePressable>
             </View>
-          ) : null
+          ) : (
+            <View style={{ gap: 12, marginTop: 12 }}>
+               <SkeletonAgentCard index={0} />
+               <SkeletonAgentCard index={1} />
+               <SkeletonAgentCard index={2} />
+            </View>
+          )
         }
       />
 

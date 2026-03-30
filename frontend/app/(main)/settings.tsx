@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   ScrollView,
-  TouchableOpacity,
   Switch,
   Alert,
   ActivityIndicator,
@@ -18,6 +17,7 @@ import { useAuthStore } from '../../src/store/useAuthStore';
 import { useAppStore } from '../../src/store/useAppStore';
 import { ApiService } from '../../src/core/api/ApiService';
 import { Memory } from '../../src/core/models';
+import { ScalePressable } from '@/components/ScalePressable';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -77,8 +77,8 @@ function SettingRow({
   rightElement?: React.ReactNode;
   destructive?: boolean;
 }) {
-  const Wrapper = onPress ? TouchableOpacity : View;
-  const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
+  const Wrapper = onPress ? ScalePressable : View;
+  const wrapperProps = onPress ? { onPress } : {};
 
   return (
     <Wrapper
@@ -175,13 +175,13 @@ const MemoryItem = React.memo(function MemoryItem({ memory, onDelete }: { memory
           {date}
         </AppText>
       </View>
-      <TouchableOpacity
+      <ScalePressable
         onPress={onDelete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={{ marginStart: 8 }}
       >
         <Ionicons name="close" size={16} color={C.faint} />
-      </TouchableOpacity>
+      </ScalePressable>
     </View>
   );
 });
@@ -221,17 +221,16 @@ function LanguagePickerModal({
             <AppText variant="h2" style={{ color: C.text }}>
               {t('settings.items.language')}
             </AppText>
-            <TouchableOpacity onPress={onClose}>
+            <ScalePressable onPress={onClose}>
               <Ionicons name="close-circle" size={26} color={C.faint} />
-            </TouchableOpacity>
+            </ScalePressable>
           </View>
           {SUPPORTED_LANGUAGES.map((lang) => {
             const isSelected = currentLang.startsWith(lang.code);
             return (
-              <TouchableOpacity
+              <ScalePressable
                 key={lang.code}
                 onPress={() => onSelect(lang.code)}
-                activeOpacity={0.75}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -258,7 +257,7 @@ function LanguagePickerModal({
                   </AppText>
                 </View>
                 {isSelected && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
-              </TouchableOpacity>
+              </ScalePressable>
             );
           })}
         </View>
@@ -451,14 +450,14 @@ export default function SettingsScreen() {
               scrollEnabled={false}
               renderItem={renderMemoryItem}
               ListFooterComponent={
-                <TouchableOpacity
+                <ScalePressable
                   onPress={loadMemories}
                   style={{ alignItems: 'center', paddingVertical: 8 }}
                 >
                   <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
                     {t('settings.actions.refresh')}
                   </AppText>
-                </TouchableOpacity>
+                </ScalePressable>
               }
             />
           )}
