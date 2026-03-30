@@ -7,9 +7,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.api.dependencies import get_agent_service
+from app.api.dependencies import get_agent_use_cases
+from app.application.use_cases.agent_use_cases import AgentUseCases  # noqa: TCH001
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.agents.models import Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerate,
@@ -20,7 +20,6 @@ from app.domain.agents.schemas import (
     CapabilityResponse,
     IntegrationResponse,
 )
-from app.domain.agents.service import AgentService  # noqa: TCH001
 
 router = APIRouter(tags=["Agents"])
 
@@ -39,10 +38,10 @@ router = APIRouter(tags=["Agents"])
 async def create_agent(
     agent_data: AgentCreate,
     user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
 ) -> AgentResponse:
     """Create a new agent."""
-    return await service.create_agent(agent_data, user_id)
+    return await use_cases.create_agent(agent_data, user_id)
 
 
 @router.get(
@@ -57,10 +56,10 @@ async def create_agent(
 )
 async def list_agents(
     user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
 ) -> list[AgentResponse]:
     """List all agents for the current user."""
-    return await service.list_agents(user_id)
+    return await use_cases.list_agents(user_id)
 
 
 @router.get(
@@ -75,10 +74,21 @@ async def list_agents(
 )
 async def list_capabilities(
     _user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Capability]:
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
+) -> list[CapabilityResponse]:
     """List all available capabilities."""
-    return await service.list_capabilities()
+    caps = await use_cases.list_capabilities()
+    return [
+        CapabilityResponse(
+            id=c.id,
+            name=c.name,
+            description=c.description,
+            icon=c.icon,
+            status=c.status,
+            created_at=c.created_at,
+        )
+        for c in caps
+    ]
 
 
 @router.get(
@@ -93,10 +103,22 @@ async def list_capabilities(
 )
 async def list_integrations(
     _user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Integration]:
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
+) -> list[IntegrationResponse]:
     """List all available integrations."""
-    return await service.list_integrations()
+    ints = await use_cases.list_integrations()
+    return [
+        IntegrationResponse(
+            id=i.id,
+            display_name=i.display_name,
+            description=i.description,
+            icon=i.icon,
+            status=i.status,
+            config_schema=i.config_schema,
+            created_at=i.created_at,
+        )
+        for i in ints
+    ]
 
 
 @router.get(
@@ -112,12 +134,12 @@ async def list_integrations(
 )
 async def list_templates(
     _user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
 ) -> list[AgentTemplateResponse]:
     """List available persona templates (paginated)."""
-    return await service.list_templates(skip=skip, limit=limit)
+    return await use_cases.list_templates(skip=skip, limit=limit)
 
 
 @router.post(
@@ -134,10 +156,10 @@ async def list_templates(
 async def generate_agent(
     data: AgentGenerate,
     _user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
 ) -> AgentGenerationResponse:
     """Use AI to generate an agent persona."""
-    return await service.generate_agent_profile(data.keywords)
+    return await use_cases.generate_agent_profile(data.keywords)
 
 
 @router.patch(
@@ -156,10 +178,10 @@ async def update_agent(
     agent_id: UUID,
     data: AgentUpdate,
     user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
 ) -> AgentResponse:
     """Update an existing agent."""
-    result = await service.update_agent(agent_id, user_id, data)
+    result = await use_cases.update_agent(agent_id, user_id, data)
     if not result:
         raise HTTPException(
             status_code=404,
@@ -194,10 +216,10 @@ async def update_agent(
 async def delete_agent(
     agent_id: UUID,
     user_id: CurrentUser,
-    service: Annotated[AgentService, Depends(get_agent_service)],
+    use_cases: Annotated[AgentUseCases, Depends(get_agent_use_cases)],
 ) -> dict[str, str]:
     """Delete an agent."""
-    success = await service.delete_agent(agent_id, user_id)
+    success = await use_cases.delete_agent(agent_id, user_id)
     if not success:
         raise HTTPException(
             status_code=404,

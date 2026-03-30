@@ -8,8 +8,17 @@ from uuid import UUID
 
 from tortoise.transactions import in_transaction
 
-from app.domain.agents.models import (
+from app.application.interfaces.agent_repository import AgentRepositoryInterface
+from app.domain.agents.entities import (
+    AgentEntity,
+    AgentTemplateEntity,
+    CapabilityEntity,
+    IntegrationEntity,
+)
+from app.infrastructure.database.mappers.agent_mapper import AgentMapper
+from app.infrastructure.database.models.agents_models import (
     Agent,
+    AgentIntegration,
     AgentTemplate,
     Capability,
     Integration,
@@ -17,49 +26,121 @@ from app.domain.agents.models import (
 )
 
 
-class AgentRepository:
+class AgentRepository(AgentRepositoryInterface):
     def __init__(self) -> None:
         # Tortoise ORM models don't need a session passed in
         pass
 
-    async def list_capabilities(self) -> list[Capability]:
+    async def list_capabilities(self) -> list[CapabilityEntity]:
         """List all available capabilities."""
-        return await Capability.filter(status="active").all()
+        models = await Capability.filter(status="active").all()
+        return [AgentMapper.to_capability_entity(m) for m in models]
 
-    async def list_integrations(self) -> list[Integration]:
+    async def list_integrations(self) -> list[IntegrationEntity]:
         """List all available integrations."""
-        return await Integration.exclude(status="disabled").all()
+        models = await Integration.exclude(status="disabled").all()
+        return [AgentMapper.to_integration_entity(m) for m in models]
 
-    async def get_by_id(self, agent_id: UUID | str) -> Agent | None:
+    async def get_by_id(self, agent_id: UUID | str) -> AgentEntity | None:
         """Fetch a single agent by ID, with capabilities prefetched."""
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
-        return await Agent.get_or_none(id=agent_id).prefetch_related(
+        model = await Agent.get_or_none(id=agent_id).prefetch_related(
             "capabilities", "agent_integrations__integration"
         )
+        return AgentMapper.to_agent_entity(model) if model else None
 
-    async def list_by_user(self, user_id: UUID | str) -> list[Agent]:
+    async def list_by_user(self, user_id: UUID | str) -> list[AgentEntity]:
         """List all agents for a user, excluding soft-deleted ones."""
         if isinstance(user_id, str):
             user_id = UUID(user_id)
-        return (
+        models = (
             await Agent.filter(user_id=user_id, deleted_at__isnull=True)
             .prefetch_related("capabilities", "agent_integrations__integration")
             .all()
         )
+        return [AgentMapper.to_agent_entity(m) for m in models]
 
-    async def list_templates(self, skip: int = 0, limit: int = 100) -> list[AgentTemplate]:
+    async def list_templates(self, skip: int = 0, limit: int = 100) -> list[AgentTemplateEntity]:
         """List agent templates (paginated)."""
-        return await AgentTemplate.all().offset(skip).limit(limit)
+        models = await AgentTemplate.all().offset(skip).limit(limit)
+        return [AgentMapper.to_template_entity(m) for m in models]
 
-    async def create(self, agent: Agent) -> Agent:
+    async def create_agent(
+        self,
+        user_id: UUID | str,
+        name: str,
+        personality: str,
+        description: str | None,
+        goals: list[str] | None,
+        system_prompt: str | None,
+    ) -> AgentEntity:
         """Create a new agent."""
-        await agent.save()
-        return agent
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        agent = await Agent.create(
+            user_id=user_id,
+            name=name,
+            personality=personality,
+            description=description,
+            goals=goals or [],
+            system_prompt=system_prompt,
+        )
+        # Refetch to ensure all relations are available even if empty
+        refetched = await Agent.get(id=agent.pk).prefetch_related(
+            "capabilities", "agent_integrations__integration"
+        )
+        return AgentMapper.to_agent_entity(refetched)
+
+    async def set_capabilities(self, agent_id: UUID | str, capability_ids: list[str]) -> None:
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
+        if agent:
+            caps = await Capability.filter(id__in=capability_ids)
+            await agent.capabilities.clear()
+            if caps:
+                await agent.capabilities.add(*caps)
+
+    async def get_capability_ids(self, agent_id: UUID | str) -> list[str]:
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
+        if not agent:
+            return []
+        return [str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)]
+
+    async def set_integrations(
+        self,
+        agent_id: UUID | str,
+        integration_ids: list[str],
+        integration_configs: dict,
+    ) -> None:
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
+        if not agent:
+            return
+        await AgentIntegration.filter(agent=agent).delete()
+        if integration_ids:
+            integrations = await Integration.filter(id__in=integration_ids)
+            agent_integrations = [
+                AgentIntegration(
+                    agent=agent,
+                    integration=integration,
+                    config=integration_configs.get(str(integration.id), {}),
+                    enabled=True,
+                )
+                for integration in integrations
+            ]
+            if agent_integrations:
+                await AgentIntegration.bulk_create(agent_integrations)
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
-        agent = await self.get_by_id(agent_id)
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
         if agent:
             agent.mood = mood
             await agent.save()
@@ -70,7 +151,7 @@ class AgentRepository:
 
     async def update_agent(
         self, agent_id: UUID | str, user_id: UUID | str, **fields: object
-    ) -> Agent | None:
+    ) -> AgentEntity | None:
         """Update an agent's fields. Only updates the owner's agent."""
         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
         if unknown:
@@ -87,7 +168,8 @@ class AgentRepository:
                 if value is not None:
                     setattr(agent, key, value)
             await agent.save()
-        return agent
+            return AgentMapper.to_agent_entity(agent)
+        return None
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:
         """Soft-delete an agent by setting deleted_at. Only deletes the owner's agent."""
@@ -104,7 +186,9 @@ class AgentRepository:
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""
-        agent = await self.get_by_id(agent_id)
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        agent = await Agent.get_or_none(id=agent_id)
         if agent:
             agent.message_count += 1
             await agent.save()

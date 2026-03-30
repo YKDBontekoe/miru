@@ -7,10 +7,10 @@ from uuid import uuid4
 
 import pytest
 
-from app.domain.agents.models import Agent
 from app.domain.auth.schemas import PasskeyRecord
 from app.domain.chat.entities import ChatMessageEntity
 from app.domain.memory.models import Memory
+from app.infrastructure.database.models.agents_models import Agent
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -62,8 +62,14 @@ class TestAgentRepository:
     async def test_create_returns_agent(self) -> None:
         repo = AgentRepository()
         user_id = uuid4()
-        agent = Agent(name="Test", user_id=user_id, personality="Friendly", system_prompt="Hi")
-        created = await repo.create(agent)
+        created = await repo.create_agent(
+            user_id=user_id,
+            name="Test",
+            personality="Friendly",
+            description=None,
+            goals=None,
+            system_prompt="Hi",
+        )
         assert created.name == "Test"
         assert created.id is not None
 

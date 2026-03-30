@@ -1,11 +1,14 @@
-"""Agent service for business logic."""
-
-from __future__ import annotations
+"""Agent application use cases orchestrating domain entities and infrastructure."""
 
 import logging
-from typing import TYPE_CHECKING
+from uuid import UUID
 
-from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.application.interfaces.agent_repository import AgentRepositoryInterface
+from app.domain.agents.entities import (
+    AgentEntity,
+    CapabilityEntity,
+    IntegrationEntity,
+)
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -16,31 +19,18 @@ from app.domain.agents.schemas import (
 )
 from app.infrastructure.external.openrouter import structured_completion
 
-if TYPE_CHECKING:
-    from uuid import UUID
-
-    from openai.types.chat import ChatCompletionMessageParam
-
-    from app.infrastructure.repositories.agent_repo import AgentRepository
-
 logger = logging.getLogger(__name__)
 
 
-def _build_agent_response(agent: Agent) -> AgentResponse:
-    """Construct an AgentResponse from a prefetched Agent ORM instance.
-
-    Assumes ``capabilities`` and ``agent_integrations__integration`` have been
-    prefetched on the agent before calling this function.
-    """
-    cap_ids: list[str] = [cap.pk for cap in agent.capabilities.related_objects]
-    integration_ids: list[str] = [
-        ai.integration_id for ai in agent.agent_integrations if ai.enabled
-    ]
-    integration_configs: dict = {
+def _build_agent_response(agent: AgentEntity) -> AgentResponse:
+    """Construct an AgentResponse from a pure AgentEntity."""
+    cap_ids = [cap.id for cap in agent.capabilities]
+    integration_ids = [ai.integration_id for ai in agent.agent_integrations if ai.enabled]
+    integration_configs = {
         ai.integration_id: ai.config for ai in agent.agent_integrations if ai.enabled and ai.config
     }
     return AgentResponse(
-        id=agent.pk,
+        id=agent.id,
         name=agent.name,
         personality=agent.personality,
         description=agent.description,
@@ -57,24 +47,18 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
     )
 
 
-class AgentService:
-    def __init__(self, repo: AgentRepository):
+class AgentUseCases:
+    def __init__(self, repo: AgentRepositoryInterface):
         self.repo = repo
-        self._cached_capabilities: list[Capability] | None = None
-        self._cached_integrations: list[Integration] | None = None
+        self._cached_capabilities: list[CapabilityEntity] | None = None
+        self._cached_integrations: list[IntegrationEntity] | None = None
 
-    async def list_capabilities(self) -> list[Capability]:
-        """List all capabilities from the database."""
-        # Justification: Cache capabilities per-request to avoid redundant DB queries
-        # when building prompts for multiple agents or repeatedly verifying capabilities.
+    async def list_capabilities(self) -> list[CapabilityEntity]:
         if self._cached_capabilities is None:
             self._cached_capabilities = await self.repo.list_capabilities()
         return self._cached_capabilities
 
-    async def list_integrations(self) -> list[Integration]:
-        """List all integrations from the database."""
-        # Justification: Cache integrations per-request to avoid redundant DB queries
-        # when building agents.
+    async def list_integrations(self) -> list[IntegrationEntity]:
         if self._cached_integrations is None:
             self._cached_integrations = await self.repo.list_integrations()
         return self._cached_integrations
@@ -87,7 +71,6 @@ class AgentService:
         goals: list[str] | None = None,
         capability_ids: list[str] | None = None,
     ) -> str:
-        """Build a rich system prompt from agent profile fields."""
         sections = [
             f"You are {name}.",
             (
@@ -114,7 +97,6 @@ class AgentService:
         return "\n".join(sections)
 
     async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
-        """Onboard a new agent with a built system prompt."""
         system_prompt = agent_data.system_prompt or await self.build_system_prompt(
             name=agent_data.name,
             personality=agent_data.personality,
@@ -123,7 +105,7 @@ class AgentService:
             capability_ids=agent_data.capabilities,
         )
 
-        agent = await Agent.create(
+        agent = await self.repo.create_agent(
             user_id=user_id,
             name=agent_data.name,
             personality=agent_data.personality,
@@ -133,34 +115,23 @@ class AgentService:
         )
 
         if agent_data.capabilities:
-            caps = await Capability.filter(id__in=agent_data.capabilities)
-            await agent.capabilities.add(*caps)
+            await self.repo.set_capabilities(agent.id, agent_data.capabilities)
 
         if agent_data.integrations:
-            for integration_id in agent_data.integrations:
-                integration = await Integration.get_or_none(id=integration_id)
-                if integration:
-                    config = agent_data.integration_configs.get(integration_id, {})
-                    await AgentIntegration.create(
-                        agent=agent,
-                        integration=integration,
-                        config=config,
-                        enabled=True,
-                    )
+            await self.repo.set_integrations(
+                agent.id, agent_data.integrations, agent_data.integration_configs
+            )
 
-        # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
+        refetched = await self.repo.get_by_id(agent.id)
         assert refetched is not None
         return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
-        """List all agents for a user."""
         agents = await self.repo.list_by_user(user_id)
         return [_build_agent_response(a) for a in agents]
 
     async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
-        """Use Instructor to generate a validated agent profile."""
-        messages: list[ChatCompletionMessageParam] = [
+        messages = [
             {
                 "role": "system",
                 "content": (
@@ -179,49 +150,24 @@ class AgentService:
     async def update_agent(
         self, agent_id: UUID | str, user_id: UUID, data: AgentUpdate
     ) -> AgentResponse | None:
-        """Update an agent's profile fields and rebuild system prompt in one write.
-
-        If ``capabilities`` or ``integrations`` are supplied the M2M relations are
-        replaced and the system prompt is rebuilt to reflect the new configuration.
-        """
         agent = await self.repo.get_by_id(agent_id)
         if not agent or str(agent.user_id) != str(user_id):
             return None
 
         fields = data.model_dump(exclude_none=True)
 
-        # --- capabilities ---
-        new_capability_ids: list[str] | None = fields.pop("capabilities", None)
+        new_capability_ids = fields.pop("capabilities", None)
         if new_capability_ids is not None:
-            caps = await Capability.filter(id__in=new_capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
+            await self.repo.set_capabilities(agent_id, new_capability_ids)
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
-            ]
+            effective_cap_ids = await self.repo.get_capability_ids(agent_id)
 
-        # --- integrations ---
-        new_integration_ids: list[str] | None = fields.pop("integrations", None)
-        new_integration_configs: dict = fields.pop("integration_configs", None) or {}
+        new_integration_ids = fields.pop("integrations", None)
+        new_integration_configs = fields.pop("integration_configs", None) or {}
         if new_integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=new_integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=new_integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            await self.repo.set_integrations(agent_id, new_integration_ids, new_integration_configs)
 
-        # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
         personality = fields.get("personality", agent.personality)
         description = fields.get("description", agent.description)
@@ -242,13 +188,21 @@ class AgentService:
         return _build_agent_response(updated)
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID) -> bool:
-        """Soft-delete an agent owned by user_id."""
         return await self.repo.delete_agent(agent_id, user_id)
 
     async def list_templates(self, skip: int = 0, limit: int = 100) -> list[AgentTemplateResponse]:
-        """Return available agent persona templates (paginated)."""
         templates = await self.repo.list_templates(skip=skip, limit=limit)
-        return [AgentTemplateResponse.model_validate(t) for t in templates]
+        return [
+            AgentTemplateResponse(
+                id=t.id,
+                name=t.name,
+                description=t.description,
+                personality=t.personality,
+                goals=t.goals,
+                created_at=t.created_at,
+            )
+            for t in templates
+        ]
 
     _VALID_MOODS = (
         "Neutral",
@@ -264,7 +218,6 @@ class AgentService:
     )
 
     async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
-        """Infer agent mood from recent conversation history and persist it."""
         if not recent_history.strip():
             return
         mood_list = ", ".join(self._VALID_MOODS)

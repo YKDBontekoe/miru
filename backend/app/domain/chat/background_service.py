@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from app.domain.agents.models import Agent
-    from app.domain.agents.service import AgentService
+    from app.application.use_cases.agent_use_cases import AgentUseCases
+    from app.infrastructure.database.models.agents_models import Agent
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -24,7 +24,7 @@ class ChatBackgroundService:
         self,
         agent_repo: AgentRepository,
         memory_repo: MemoryRepository,
-        agent_service: AgentService,
+        agent_service: AgentUseCases,
         chat_repo: Any,
     ):
         self.agent_repo = agent_repo

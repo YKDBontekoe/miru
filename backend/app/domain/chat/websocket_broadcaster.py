@@ -12,7 +12,7 @@ from uuid import UUID
 from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agents_models import Agent
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
 
