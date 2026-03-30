@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View,Modal, FlatList } from 'react-native';
+import { View, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeInDown } from 'react-native-reanimated';
 import { AppText } from '../AppText';

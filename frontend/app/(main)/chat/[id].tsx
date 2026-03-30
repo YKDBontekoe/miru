@@ -73,8 +73,14 @@ export default function ChatRoomScreen() {
 
   const room = React.useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
   const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
-  const currentActivity = React.useMemo(() => (roomId ? agentActivity[roomId] : null), [agentActivity, roomId]);
-  const agentMap = React.useMemo(() => Object.fromEntries(roomAgents.map((a) => [a.id, a])), [roomAgents]);
+  const currentActivity = React.useMemo(
+    () => (roomId ? agentActivity[roomId] : null),
+    [agentActivity, roomId]
+  );
+  const agentMap = React.useMemo(
+    () => Object.fromEntries(roomAgents.map((a) => [a.id, a])),
+    [roomAgents]
+  );
 
   const availableAgents = React.useMemo(() => {
     return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));

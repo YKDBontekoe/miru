@@ -53,7 +53,10 @@ function ModeTab({
       style={{ backgroundColor: active ? C.primary : 'transparent' }}
     >
       <Ionicons name={icon as any} size={14} color={active ? '#FFFFFF' : C.muted} />
-      <AppText variant="caption" style={{ color: active ? '#FFFFFF' : C.muted, fontWeight: active ? '600' : 'normal' }}>
+      <AppText
+        variant="caption"
+        style={{ color: active ? '#FFFFFF' : C.muted, fontWeight: active ? '600' : 'normal' }}
+      >
         {label}
       </AppText>
     </ScalePressable>
@@ -167,7 +170,12 @@ export default function LoginScreen() {
           <AppText variant="h2" className="mb-sm text-center">
             Check your email
           </AppText>
-          <AppText variant="body" color="muted" className="text-center mb-xxxl" style={{ lineHeight: 24 }}>
+          <AppText
+            variant="body"
+            color="muted"
+            className="text-center mb-xxxl"
+            style={{ lineHeight: 24 }}
+          >
             We sent a magic link to{'\n'}
             <AppText variant="body" className="font-semibold">
               {email.trim()}
@@ -210,7 +218,12 @@ export default function LoginScreen() {
               <AppText variant="h1" className="mb-xs">
                 Miru
               </AppText>
-              <AppText variant="body" color="muted" className="text-center" style={{ lineHeight: 22 }}>
+              <AppText
+                variant="body"
+                color="muted"
+                className="text-center"
+                style={{ lineHeight: 22 }}
+              >
                 {mode === 'magic-link' && 'Sign in with a one-time link sent to your email.'}
                 {mode === 'password' && 'Sign in with your email and password.'}
                 {mode === 'passkey' && 'Sign in with your biometrics or security key.'}
@@ -258,7 +271,11 @@ export default function LoginScreen() {
                   borderColor: focusedInput === 'email' ? C.primary : C.border,
                 }}
               >
-                <Ionicons name="mail-outline" size={18} color={focusedInput === 'email' ? C.primary : C.muted} />
+                <Ionicons
+                  name="mail-outline"
+                  size={18}
+                  color={focusedInput === 'email' ? C.primary : C.muted}
+                />
                 <TextInput
                   className="flex-1 ml-sm text-[15px]"
                   style={[{ color: C.text }, textInputPlatformStyles]}
@@ -298,7 +315,11 @@ export default function LoginScreen() {
                       borderColor: focusedInput === 'password' ? C.primary : C.border,
                     }}
                   >
-                    <Ionicons name="lock-closed-outline" size={18} color={focusedInput === 'password' ? C.primary : C.muted} />
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={18}
+                      color={focusedInput === 'password' ? C.primary : C.muted}
+                    />
                     <TextInput
                       ref={passwordRef}
                       className="flex-1 ml-sm text-[15px]"
@@ -340,7 +361,11 @@ export default function LoginScreen() {
                     color={C.primary}
                     style={{ marginTop: 1 }}
                   />
-                  <AppText variant="caption" className="flex-1 ml-xs" style={{ color: C.primary, lineHeight: 18 }}>
+                  <AppText
+                    variant="caption"
+                    className="flex-1 ml-xs"
+                    style={{ color: C.primary, lineHeight: 18 }}
+                  >
                     Your device will prompt you to authenticate with Face ID, Touch ID, or a
                     security key.
                   </AppText>
@@ -371,7 +396,12 @@ export default function LoginScreen() {
             </View>
 
             {/* Footer note */}
-            <AppText variant="caption" color="muted" className="text-center" style={{ lineHeight: 18 }}>
+            <AppText
+              variant="caption"
+              color="muted"
+              className="text-center"
+              style={{ lineHeight: 18 }}
+            >
               By signing in you agree to keep your account secure.{'\n'}
               Magic links expire after 1 hour.
             </AppText>

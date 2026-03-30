@@ -21,65 +21,69 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
   const { t, i18n } = useTranslation();
   const { C } = useTheme();
 
-  const styles = React.useMemo(() => StyleSheet.create({
-    taskCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: C.surface,
-      borderRadius: R.xl,
-      padding: S.lg,
-      marginBottom: S.md,
-      borderWidth: 1,
-      borderColor: C.border,
-      ...Platform.select({
-        ios: theme.elevation.sm as any,
-        android: { elevation: 1 },
-        default: { elevation: 1 },
+  const styles = React.useMemo(
+    () =>
+      StyleSheet.create({
+        taskCard: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: C.surface,
+          borderRadius: R.xl,
+          padding: S.lg,
+          marginBottom: S.md,
+          borderWidth: 1,
+          borderColor: C.border,
+          ...Platform.select({
+            ios: theme.elevation.sm as any,
+            android: { elevation: 1 },
+            default: { elevation: 1 },
+          }),
+        },
+        taskCardCompleted: {
+          backgroundColor: C.successSurface,
+          borderColor: C.success,
+        },
+        taskToggle: {
+          marginRight: S.md,
+        },
+        taskCheckbox: {
+          width: 24,
+          height: 24,
+          borderRadius: R.sm,
+          borderWidth: 2,
+          borderColor: C.faint,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.colors.transparent,
+        },
+        taskCheckboxActive: {
+          borderColor: C.success,
+          backgroundColor: C.success,
+        },
+        taskBody: {
+          flex: 1,
+        },
+        taskTitle: {
+          fontSize: 16,
+          fontWeight: '600',
+          color: C.text,
+        },
+        taskTitleCompleted: {
+          textDecorationLine: 'line-through',
+          color: C.muted,
+        },
+        taskDueDate: {
+          color: C.primary,
+          fontWeight: '600',
+          marginTop: 4,
+          fontSize: 12,
+        },
+        deleteIcon: {
+          padding: S.xs,
+        },
       }),
-    },
-    taskCardCompleted: {
-      backgroundColor: C.successSurface,
-      borderColor: C.success,
-    },
-    taskToggle: {
-      marginRight: S.md,
-    },
-    taskCheckbox: {
-      width: 24,
-      height: 24,
-      borderRadius: R.sm,
-      borderWidth: 2,
-      borderColor: C.faint,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.transparent,
-    },
-    taskCheckboxActive: {
-      borderColor: C.success,
-      backgroundColor: C.success,
-    },
-    taskBody: {
-      flex: 1,
-    },
-    taskTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: C.text,
-    },
-    taskTitleCompleted: {
-      textDecorationLine: 'line-through',
-      color: C.muted,
-    },
-    taskDueDate: {
-      color: C.primary,
-      fontWeight: '600',
-      marginTop: 4,
-      fontSize: 12,
-    },
-    deleteIcon: {
-      padding: S.xs,
-    },
-  }), [C]);
+    [C]
+  );
 
   return (
     <View style={[styles.taskCard, task.completed && styles.taskCardCompleted]}>

@@ -22,56 +22,60 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
     day: 'numeric',
   }).format(new Date(note.created_at));
 
-  const styles = React.useMemo(() => StyleSheet.create({
-    card: {
-      backgroundColor: C.surface,
-      borderRadius: theme.borderRadius.xl,
-      padding: theme.spacing.lg,
-      marginBottom: theme.spacing.md,
-      borderWidth: 1,
-      borderColor: C.border,
-      ...Platform.select({
-        ios: theme.elevation.sm as any,
-        android: { elevation: 1 },
-        default: { elevation: 1 },
+  const styles = React.useMemo(
+    () =>
+      StyleSheet.create({
+        card: {
+          backgroundColor: C.surface,
+          borderRadius: theme.borderRadius.xl,
+          padding: theme.spacing.lg,
+          marginBottom: theme.spacing.md,
+          borderWidth: 1,
+          borderColor: C.border,
+          ...Platform.select({
+            ios: theme.elevation.sm as any,
+            android: { elevation: 1 },
+            default: { elevation: 1 },
+          }),
+        },
+        headerRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: theme.spacing.xs,
+        },
+        title: {
+          fontSize: 16,
+          fontWeight: 'bold',
+          color: C.text,
+          flex: 1,
+          marginRight: theme.spacing.sm,
+        },
+        deleteIconWrapper: {
+          padding: theme.spacing.xs,
+        },
+        content: {
+          color: C.muted,
+          marginTop: theme.spacing.xs,
+          lineHeight: 20,
+          marginBottom: theme.spacing.md,
+        },
+        footerRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: theme.spacing.xs,
+        },
+        dateText: {
+          color: C.faint,
+          fontSize: 11,
+          fontWeight: '500',
+        },
+        timeIcon: {
+          marginRight: 4,
+        },
       }),
-    },
-    headerRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: theme.spacing.xs,
-    },
-    title: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: C.text,
-      flex: 1,
-      marginRight: theme.spacing.sm,
-    },
-    deleteIconWrapper: {
-      padding: theme.spacing.xs,
-    },
-    content: {
-      color: C.muted,
-      marginTop: theme.spacing.xs,
-      lineHeight: 20,
-      marginBottom: theme.spacing.md,
-    },
-    footerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: theme.spacing.xs,
-    },
-    dateText: {
-      color: C.faint,
-      fontSize: 11,
-      fontWeight: '500',
-    },
-    timeIcon: {
-      marginRight: 4,
-    },
-  }), [C]);
+    [C]
+  );
 
   return (
     <View style={styles.card}>

@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -152,10 +153,7 @@ function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{ width: '48%', marginBottom: 10 }}
-    >
+    <ScalePressable onPress={onPress} style={{ width: '48%', marginBottom: 10 }}>
       <View
         style={{
           backgroundColor: C.primaryFaint,
@@ -327,7 +325,13 @@ const TaskRow = React.memo(function TaskRow({
 });
 
 // ─── Agent chip ───────────────────────────────────────────────────────────────
-const AgentChip = React.memo(function AgentChip({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+const AgentChip = React.memo(function AgentChip({
+  agent,
+  onPress,
+}: {
+  agent: Agent;
+  onPress: () => void;
+}) {
   return (
     <ScalePressable
       onPress={onPress}
@@ -545,10 +549,7 @@ export default function HomeScreen() {
     (id: string) => router.push(`/(main)/chat/${id}`),
     [router]
   );
-  const handleAgentPress = React.useCallback(
-    () => router.push('/(main)/agents'),
-    [router]
-  );
+  const handleAgentPress = React.useCallback(() => router.push('/(main)/agents'), [router]);
 
   const renderRecentChatRow = React.useCallback(
     ({ item, index }: { item: ChatRoom; index: number }) => (
@@ -573,9 +574,7 @@ export default function HomeScreen() {
   );
 
   const renderAgentChip = React.useCallback(
-    ({ item }: { item: Agent }) => (
-      <AgentChip agent={item} onPress={handleAgentPress} />
-    ),
+    ({ item }: { item: Agent }) => <AgentChip agent={item} onPress={handleAgentPress} />,
     [handleAgentPress]
   );
 
@@ -592,12 +591,33 @@ export default function HomeScreen() {
   if (isLoadingRooms && rooms.length === 0) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View
+          style={{
+            paddingHorizontal: 20,
+            paddingTop: 10,
+            paddingBottom: 24,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <View>
-            <View style={{ width: 120, height: 24, backgroundColor: C.surfaceHigh, borderRadius: 12, marginBottom: 8 }} />
-            <View style={{ width: 180, height: 28, backgroundColor: C.surfaceHigh, borderRadius: 14 }} />
+            <View
+              style={{
+                width: 120,
+                height: 24,
+                backgroundColor: C.surfaceHigh,
+                borderRadius: 12,
+                marginBottom: 8,
+              }}
+            />
+            <View
+              style={{ width: 180, height: 28, backgroundColor: C.surfaceHigh, borderRadius: 14 }}
+            />
           </View>
-          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surfaceHigh }} />
+          <View
+            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surfaceHigh }}
+          />
         </View>
         <View style={{ paddingHorizontal: 20 }}>
           <SkeletonAgentCard index={0} />
@@ -621,7 +641,7 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
         }
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 64 }}
       >
         {/* ── Header ──────────────────────────────────────────────────── */}
         <View

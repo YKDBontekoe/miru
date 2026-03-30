@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -44,10 +45,7 @@ function getAgentColor(name: string) {
 function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   const color = getAgentColor(agent.name);
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{ width: 72, alignItems: 'center', marginEnd: 12 }}
-    >
+    <ScalePressable onPress={onPress} style={{ width: 72, alignItems: 'center', marginEnd: 12 }}>
       <View
         style={{
           width: 52,
@@ -432,7 +430,10 @@ export default function ChatListScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderRoomItem}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 20 }}
+        contentContainerStyle={{
+          paddingBottom: 24 + (Platform.OS === 'ios' ? 32 : 16) + 64,
+          paddingHorizontal: 20,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={isLoadingRooms}
@@ -545,9 +546,9 @@ export default function ChatListScreen() {
             </View>
           ) : (
             <View style={{ gap: 12, marginTop: 12 }}>
-               <SkeletonAgentCard index={0} />
-               <SkeletonAgentCard index={1} />
-               <SkeletonAgentCard index={2} />
+              <SkeletonAgentCard index={0} />
+              <SkeletonAgentCard index={1} />
+              <SkeletonAgentCard index={2} />
             </View>
           )
         }

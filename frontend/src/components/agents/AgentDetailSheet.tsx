@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Modal,
-  ScrollView,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Modal, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';

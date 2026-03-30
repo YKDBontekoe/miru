@@ -406,7 +406,11 @@ export default function AgentsScreen() {
           data={filteredAgents}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 48, paddingTop: 6 }}
+          contentContainerStyle={{
+            paddingHorizontal: 15,
+            paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 64,
+            paddingTop: 6,
+          }}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={fetchAgents} tintColor={C.primary} />
           }
@@ -424,7 +428,10 @@ export default function AgentsScreen() {
           key="list"
           data={filteredAgents}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 64,
+          }}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={fetchAgents} tintColor={C.primary} />
           }

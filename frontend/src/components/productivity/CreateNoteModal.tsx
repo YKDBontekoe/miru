@@ -61,73 +61,77 @@ export function CreateNoteModal({ visible, onClose, onCreated }: Props) {
     }
   };
 
-  const styles = React.useMemo(() => StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'flex-end',
-      backgroundColor: C.backdrop,
-    },
-    modalContent: {
-      backgroundColor: C.surface,
-      borderTopLeftRadius: R.xxl,
-      borderTopRightRadius: R.xxl,
-      padding: S.xxl,
-      paddingBottom: Platform.OS === 'ios' ? 40 : S.xxl,
-      ...theme.elevation.lg,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: S.xl,
-    },
-    modalTitle: {
-      color: C.text,
-    },
-    closeButton: {
-      padding: S.xs,
-    },
-    inputLabel: {
-      color: C.muted,
-      marginBottom: S.sm,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      fontWeight: '600',
-    },
-    textInput: {
-      backgroundColor: C.surfaceHigh,
-      borderRadius: R.lg,
-      borderWidth: 1,
-      borderColor: C.border,
-      paddingHorizontal: S.lg,
-      paddingVertical: S.md,
-      color: C.text,
-      fontSize: 16,
-      marginBottom: S.xl,
-    },
-    textArea: {
-      minHeight: 120,
-      textAlignVertical: 'top',
-      paddingTop: S.md,
-    },
-    primaryButton: {
-      backgroundColor: C.primary,
-      borderRadius: R.xl,
-      paddingVertical: S.lg,
-      alignItems: 'center',
-      marginTop: S.sm,
-      ...theme.elevation.md,
-    },
-    primaryButtonDisabled: {
-      backgroundColor: C.primarySurface,
-      ...theme.elevation.none,
-    },
-    primaryButtonText: {
-      color: theme.colors.white,
-      fontWeight: '700',
-      fontSize: 16,
-    },
-  }), [C]);
+  const styles = React.useMemo(
+    () =>
+      StyleSheet.create({
+        modalOverlay: {
+          flex: 1,
+          justifyContent: 'flex-end',
+          backgroundColor: C.backdrop,
+        },
+        modalContent: {
+          backgroundColor: C.surface,
+          borderTopLeftRadius: R.xxl,
+          borderTopRightRadius: R.xxl,
+          padding: S.xxl,
+          paddingBottom: Platform.OS === 'ios' ? 40 : S.xxl,
+          ...theme.elevation.lg,
+        },
+        modalHeader: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: S.xl,
+        },
+        modalTitle: {
+          color: C.text,
+        },
+        closeButton: {
+          padding: S.xs,
+        },
+        inputLabel: {
+          color: C.muted,
+          marginBottom: S.sm,
+          textTransform: 'uppercase',
+          letterSpacing: 1,
+          fontWeight: '600',
+        },
+        textInput: {
+          backgroundColor: C.surfaceHigh,
+          borderRadius: R.lg,
+          borderWidth: 1,
+          borderColor: C.border,
+          paddingHorizontal: S.lg,
+          paddingVertical: S.md,
+          color: C.text,
+          fontSize: 16,
+          marginBottom: S.xl,
+        },
+        textArea: {
+          minHeight: 120,
+          textAlignVertical: 'top',
+          paddingTop: S.md,
+        },
+        primaryButton: {
+          backgroundColor: C.primary,
+          borderRadius: R.xl,
+          paddingVertical: S.lg,
+          alignItems: 'center',
+          marginTop: S.sm,
+          ...theme.elevation.md,
+        },
+        primaryButtonDisabled: {
+          backgroundColor: C.primarySurface,
+          ...theme.elevation.none,
+        },
+        primaryButtonText: {
+          color: theme.colors.white,
+          fontWeight: '700',
+          fontSize: 16,
+        },
+      }),
+    [C]
+  );
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
