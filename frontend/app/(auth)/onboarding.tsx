@@ -10,7 +10,23 @@ import { useTheme } from '@/hooks/useTheme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
+
+// Helper to determine text color based on background color luminance
+function getContrastingColor(hex: string) {
+  // Remove hash if present
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.5 ? '#12121A' : '#FFFFFF';
+}
+
 export default function OnboardingScreen() {
+
   const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -66,6 +82,7 @@ export default function OnboardingScreen() {
   };
 
   const page = PAGES[currentIndex];
+  const ctaForegroundColor = getContrastingColor(page.accent);
 
   const renderItem = ({ item }: { item: (typeof PAGES)[0] }) => (
     <View className="px-xxxl pt-lg" style={{ width }}>
@@ -169,13 +186,13 @@ export default function OnboardingScreen() {
           className="h-14 rounded-2xl items-center justify-center flex-row gap-sm"
           style={{ backgroundColor: page.accent }}
         >
-          <AppText color="white" className="font-bold text-[17px]">
+          <AppText style={{ color: ctaForegroundColor }} className="font-bold text-[17px]">
             {currentIndex === PAGES.length - 1 ? 'Get Started' : 'Continue'}
           </AppText>
           <Ionicons
             name={currentIndex === PAGES.length - 1 ? 'sparkles' : 'arrow-forward'}
             size={18}
-            color="#FFFFFF"
+            color={ctaForegroundColor}
           />
         </ScalePressable>
 

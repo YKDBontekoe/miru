@@ -20,7 +20,7 @@ export interface AppTextProps extends TextProps {
  * @param props.variant - The typography variant from the theme (e.g., 'body', 'h1', 'label').
  *                        Defaults to 'body'.
  * @param props.color - The semantic text color to apply ('primary', 'muted', 'disabled',
- *                      or 'brand').
+ *                      'brand', or 'white').
  * @param props.className - Optional NativeWind class string for additional styling.
  * @param props.style - Optional React Native Text style overrides.
  */
