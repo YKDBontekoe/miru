@@ -28,6 +28,8 @@ on:
         type: string
         required: true
     secrets:
+      EXPO_TOKEN:
+        required: false
       SUPABASE_URL:
         required: false
       SUPABASE_ANON_KEY:

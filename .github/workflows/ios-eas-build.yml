@@ -46,8 +46,9 @@ jobs:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_KEY }}
           EXPO_PUBLIC_API_URL: ${{ vars.PRODUCTION_URL }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           eas update \
             --branch development \
-            --message "${{ github.event.head_commit.message }}" \
+            --message "$COMMIT_MESSAGE" \
             --non-interactive
