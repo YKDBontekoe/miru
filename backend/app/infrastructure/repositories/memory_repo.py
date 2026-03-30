@@ -19,9 +19,12 @@ class MemoryRepository:
         await memory.save()
         return memory
 
-    async def delete_memory(self, memory_id: UUID) -> bool:
-        """Delete a memory."""
-        memory = await Memory.get_or_none(id=memory_id)
+    async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
+        """Delete a memory. Optionally enforce ownership."""
+        filters: dict = {"id": memory_id}
+        if user_id is not None:
+            filters["user_id"] = user_id
+        memory = await Memory.get_or_none(**filters)
         if memory:
             await memory.delete()
             return True

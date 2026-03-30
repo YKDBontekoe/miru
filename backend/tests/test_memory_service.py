@@ -44,3 +44,22 @@ async def test_store_document_memory_empty(mock_extract_text: MagicMock) -> None
     memory_ids = await service.store_document_memory(file_obj, "empty.pdf", "application/pdf")
 
     assert len(memory_ids) == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_memory_ownership() -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+    memory_id = uuid4()
+    user_id = uuid4()
+
+    mock_repo.delete_memory.return_value = True
+    result = await service.delete_memory(memory_id, user_id)
+    assert result is True
+    mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)
+
+    mock_repo.delete_memory.reset_mock()
+    mock_repo.delete_memory.return_value = False
+    result_fail = await service.delete_memory(memory_id, user_id)
+    assert result_fail is False
+    mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)

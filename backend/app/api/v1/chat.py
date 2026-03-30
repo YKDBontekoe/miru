@@ -131,10 +131,10 @@ async def run_crew(
 async def update_room(
     room_id: UUID,
     data: RoomUpdate,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    room = await service.update_room(room_id, data.name)
+    room = await service.update_room(room_id, data.name, user_id=user_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     return room
@@ -153,10 +153,10 @@ async def update_room(
 )
 async def delete_room(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    success = await service.delete_room(room_id)
+    success = await service.delete_room(room_id, user_id=user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Room not found")
     return {"status": "ok"}
@@ -175,10 +175,12 @@ async def delete_room(
 async def add_agent_to_room(
     room_id: UUID,
     data: AddAgentToRoom,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    await service.add_agent_to_room(room_id, data.agent_id)
+    success = await service.add_agent_to_room(room_id, data.agent_id, user_id=user_id)
+    if success is None:
+        raise HTTPException(status_code=404, detail="Room not found")
     return {"status": "ok"}
 
 
@@ -190,15 +192,18 @@ async def add_agent_to_room(
     responses={
         200: {"description": "Room agents retrieved successfully."},
         401: {"description": "Authentication required"},
+        404: {"description": "Chat room not found"},
         422: {"description": "Validation Error"},
     },
 )
 async def get_room_agents(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    agents = await service.list_room_agents(room_id)
+    agents = await service.list_room_agents(room_id, user_id=user_id)
+    if agents is None:
+        raise HTTPException(status_code=404, detail="Chat room not found")
     return [AgentResponse.model_validate(a) for a in agents]
 
 
@@ -216,10 +221,10 @@ async def get_room_agents(
 async def remove_agent_from_room(
     room_id: UUID,
     agent_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    success = await service.remove_agent_from_room(room_id, agent_id)
+    success = await service.remove_agent_from_room(room_id, agent_id, user_id=user_id)
     if not success:
         raise HTTPException(
             status_code=404,
@@ -242,12 +247,17 @@ async def remove_agent_from_room(
 )
 async def get_room_messages(
     room_id: UUID,
-    _user_id: CurrentUser,
+    user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(room_id, limit=limit, before_id=before_id)
+    messages = await service.get_room_messages(
+        room_id, user_id=user_id, limit=limit, before_id=before_id
+    )
+    if messages is None:
+        raise HTTPException(status_code=404, detail="Chat room not found")
+    return messages
 
 
 @router.patch(
