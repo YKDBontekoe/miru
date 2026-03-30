@@ -740,7 +740,7 @@ async def test_list_room_agents_ownership(chat_service: ChatService) -> None:
 
     chat_service.chat_repo.room_belongs_to_user.return_value = False  # type: ignore
     result = await chat_service.list_room_agents(room_id, user_id)
-    assert result == []
+    assert result is None
 
     chat_service.chat_repo.room_belongs_to_user.return_value = True  # type: ignore
     chat_service.chat_repo.list_room_agents.return_value = ["agent"]  # type: ignore
@@ -755,7 +755,7 @@ async def test_get_room_messages_ownership(chat_service: ChatService) -> None:
 
     chat_service.chat_repo.room_belongs_to_user.return_value = False  # type: ignore
     result = await chat_service.get_room_messages(room_id, user_id)
-    assert result == []
+    assert result is None
 
     chat_service.chat_repo.room_belongs_to_user.return_value = True  # type: ignore
     from app.domain.chat.entities import ChatMessageEntity

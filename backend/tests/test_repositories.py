@@ -114,6 +114,20 @@ class TestChatRepository:
         assert result is False
 
     @pytest.mark.asyncio
+    async def test_delete_memory_with_user_id(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+        other_user_id = uuid4()
+        memory = Memory(content="To delete with user", user_id=user_id, embedding=[0.0])
+        await repo.insert_memory(memory)
+
+        result_other = await repo.delete_memory(memory.id, user_id=other_user_id)
+        assert result_other is False
+
+        result_owner = await repo.delete_memory(memory.id, user_id=user_id)
+        assert result_owner is True
+
+    @pytest.mark.asyncio
     async def test_create_and_delete_room(self) -> None:
         repo = ChatRepository()
         user_id = uuid4()
@@ -413,7 +427,7 @@ class TestAuthRepository:
         db.table.assert_called_with("passkeys")
 
     @pytest.mark.asyncio
-    async def test_create_passkey_returns_record(self) -> None:
+    async def test_create_passkey_does_not_raise(self) -> None:
         db = self._make_db()
         repo = AuthRepository(db)
         row = {
@@ -423,17 +437,3 @@ class TestAuthRepository:
             "sign_count": 0,
         }
         await repo.create_passkey(row)
-
-    @pytest.mark.asyncio
-    async def test_delete_memory_with_user_id(self) -> None:
-        repo = MemoryRepository()
-        user_id = uuid4()
-        other_user_id = uuid4()
-        memory = Memory(content="To delete with user", user_id=user_id, embedding=[0.0])
-        await repo.insert_memory(memory)
-
-        result_other = await repo.delete_memory(memory.id, user_id=other_user_id)
-        assert result_other is False
-
-        result_owner = await repo.delete_memory(memory.id, user_id=user_id)
-        assert result_owner is True

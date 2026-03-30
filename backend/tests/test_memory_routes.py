@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from collections.abc import Generator
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -363,13 +365,14 @@ def test_upload_document_too_large(client: TestClient) -> None:
     assert "File too large" in response.json()["detail"]
 
 
-@pytest.mark.asyncio
-async def test_delete_memory_endpoint_with_user_id(
-    client: TestClient, authed_headers: dict
+def test_delete_memory_endpoint_with_user_id(
+    client: TestClient, authed_headers: dict, test_user_id: UUID
 ) -> None:
     memory_id = uuid4()
-    with patch("app.domain.memory.service.MemoryService.delete_memory") as mock_delete:
+    with patch(
+        "app.domain.memory.service.MemoryService.delete_memory", new_callable=AsyncMock
+    ) as mock_delete:
         mock_delete.return_value = True
         response = client.delete(f"/api/v1/memory/{memory_id}", headers=authed_headers)
         assert response.status_code == 200
-        assert mock_delete.called
+        mock_delete.assert_awaited_once_with(memory_id, user_id=UUID(str(test_user_id)))

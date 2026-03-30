@@ -58,6 +58,8 @@ async def test_delete_memory_ownership() -> None:
     assert result is True
     mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)
 
+    mock_repo.delete_memory.reset_mock()
     mock_repo.delete_memory.return_value = False
     result_fail = await service.delete_memory(memory_id, user_id)
     assert result_fail is False
+    mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)

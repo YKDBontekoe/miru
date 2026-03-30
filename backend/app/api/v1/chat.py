@@ -192,6 +192,7 @@ async def add_agent_to_room(
     responses={
         200: {"description": "Room agents retrieved successfully."},
         401: {"description": "Authentication required"},
+        404: {"description": "Chat room not found"},
         422: {"description": "Validation Error"},
     },
 )
@@ -201,6 +202,8 @@ async def get_room_agents(
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
     agents = await service.list_room_agents(room_id, user_id=user_id)
+    if agents is None:
+        raise HTTPException(status_code=404, detail="Chat room not found")
     return [AgentResponse.model_validate(a) for a in agents]
 
 
@@ -249,9 +252,12 @@ async def get_room_messages(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
-    return await service.get_room_messages(
+    messages = await service.get_room_messages(
         room_id, user_id=user_id, limit=limit, before_id=before_id
     )
+    if messages is None:
+        raise HTTPException(status_code=404, detail="Chat room not found")
+    return messages
 
 
 @router.patch(

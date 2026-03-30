@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from tortoise.expressions import Q
@@ -55,7 +56,7 @@ class ChatRepository:
 
     async def get_room(self, room_id: UUID, user_id: UUID | None = None) -> ChatRoomEntity | None:
         """Fetch a single room. Optionally enforce ownership."""
-        filters: dict = {"id": room_id}
+        filters: dict[str, Any] = {"id": room_id}
         if user_id is not None:
             filters["user_id"] = user_id
         room = await ChatRoom.get_or_none(**filters)
@@ -65,7 +66,7 @@ class ChatRepository:
         self, room_id: UUID, name: str, user_id: UUID | None = None
     ) -> ChatRoomEntity | None:
         """Update a room's name. Optionally enforce ownership."""
-        filters: dict = {"id": room_id}
+        filters: dict[str, Any] = {"id": room_id}
         if user_id is not None:
             filters["user_id"] = user_id
         room = await ChatRoom.get_or_none(**filters)
@@ -77,7 +78,7 @@ class ChatRepository:
 
     async def delete_room(self, room_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a room. Optionally enforce ownership."""
-        filters: dict = {"id": room_id}
+        filters: dict[str, Any] = {"id": room_id}
         if user_id is not None:
             filters["user_id"] = user_id
         room = await ChatRoom.get_or_none(**filters)
@@ -134,7 +135,7 @@ class ChatRepository:
         When *user_id* is provided the message must belong to that user (i.e. it
         is a user-authored message, not an agent reply).
         """
-        filters: dict = {"id": message_id, "deleted_at__isnull": True}
+        filters: dict[str, Any] = {"id": message_id, "deleted_at__isnull": True}
         if user_id is not None:
             filters["user_id"] = user_id
         msg = await ChatMessage.get_or_none(**filters)
@@ -149,7 +150,7 @@ class ChatRepository:
 
         When *user_id* is provided the message must belong to that user.
         """
-        filters: dict = {"id": message_id, "deleted_at__isnull": True}
+        filters: dict[str, Any] = {"id": message_id, "deleted_at__isnull": True}
         if user_id is not None:
             filters["user_id"] = user_id
         msg = await ChatMessage.get_or_none(**filters)

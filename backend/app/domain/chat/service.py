@@ -92,16 +92,16 @@ class ChatService:
             return False
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent] | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
-            return []
+            return None
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(
         self, room_id: UUID, user_id: UUID, limit: int = 50, before_id: UUID | None = None
-    ) -> list[ChatMessageResponse]:
+    ) -> list[ChatMessageResponse] | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
-            return []
+            return None
         msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, before_id=before_id)
         return [
             ChatMessageResponse(
@@ -232,6 +232,10 @@ class ChatService:
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         if not await self.user_in_room(user_id, room_id):
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": "Unauthorized or room not found."}},
+            )
             return
 
         # 1. Fetch room agents first so we can attach names to history entries.
