@@ -19,7 +19,7 @@ import { useChatStore } from '../../store/useChatStore';
 import { haptic } from '../../utils/haptics';
 import { Agent } from '../../core/models';
 import { getAgentColor, getMoodEmoji, MILESTONES } from './agentUtils';
-import { ScalePressable } from '../ScalePressable';
+import { ScalePressable } from '@/components/ScalePressable';
 
 interface AgentDetailSheetProps {
   agent: Agent | null;

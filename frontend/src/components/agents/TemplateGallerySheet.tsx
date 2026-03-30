@@ -9,7 +9,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
 import { getAgentColor } from './agentUtils';
 import { haptic } from '../../utils/haptics';
-import { ScalePressable } from '../ScalePressable';
+import { ScalePressable } from '@/components/ScalePressable';
 
 interface TemplateGallerySheetProps {
   visible: boolean;

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { Agent } from '../../core/models';
-import { ScalePressable } from '../ScalePressable';
+import { ScalePressable } from '@/components/ScalePressable';
 
 const C = {
   surface: '#FFFFFF',

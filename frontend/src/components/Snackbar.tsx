@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +7,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { AppText } from './AppText';
-import { ScalePressable } from './ScalePressable';
+import { ScalePressable } from '@/components/ScalePressable';
 
 interface SnackbarProps {
   visible: boolean;

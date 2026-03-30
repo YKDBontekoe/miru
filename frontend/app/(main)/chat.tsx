@@ -543,7 +543,13 @@ export default function ChatListScreen() {
                 </AppText>
               </ScalePressable>
             </View>
-          ) : null
+          ) : (
+            <View style={{ gap: 12, marginTop: 12 }}>
+               <SkeletonAgentCard index={0} />
+               <SkeletonAgentCard index={1} />
+               <SkeletonAgentCard index={2} />
+            </View>
+          )
         }
       />
 

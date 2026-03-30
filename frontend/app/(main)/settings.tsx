@@ -78,7 +78,7 @@ function SettingRow({
   destructive?: boolean;
 }) {
   const Wrapper = onPress ? ScalePressable : View;
-  const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
+  const wrapperProps = onPress ? { onPress } : {};
 
   return (
     <Wrapper

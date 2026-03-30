@@ -5,7 +5,7 @@ import { AppText } from '../AppText';
 import { useTheme } from '../../hooks/useTheme';
 import { getAgentColor } from './agentUtils';
 import { Agent } from '../../core/models';
-import { ScalePressable } from '../ScalePressable';
+import { ScalePressable } from '@/components/ScalePressable';
 
 interface PinnedChipProps {
   agent: Agent;
