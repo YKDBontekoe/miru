@@ -122,8 +122,8 @@ class MemoryService:
 
         return memory_ids
 
-    async def delete_memory(self, memory_id: UUID) -> bool:
-        return await self.repo.delete_memory(memory_id)
+    async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
+        return await self.repo.delete_memory(memory_id, user_id=user_id)
 
     async def get_memory_graph(self, user_id: UUID) -> dict[str, Any]:
         """Fetch all memories and their relationships for the graph view."""

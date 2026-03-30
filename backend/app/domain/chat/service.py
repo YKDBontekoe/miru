@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
-    from app.domain.chat.entities import ChatMessageEntity
+    from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -69,29 +69,39 @@ class ChatService:
             for r in rooms
         ]
 
-    async def update_room(self, room_id: UUID, name: str) -> RoomResponse | None:
-        room = await self.chat_repo.update_room(room_id, name)
+    async def update_room(self, room_id: UUID, name: str, user_id: UUID) -> RoomResponse | None:
+        room = await self.chat_repo.update_room(room_id, name, user_id=user_id)
         if room:
             return RoomResponse(
                 id=room.id, name=room.name, created_at=room.created_at, updated_at=room.updated_at
             )
         return None
 
-    async def delete_room(self, room_id: UUID) -> bool:
-        return await self.chat_repo.delete_room(room_id)
+    async def delete_room(self, room_id: UUID, user_id: UUID) -> bool:
+        return await self.chat_repo.delete_room(room_id, user_id=user_id)
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> None:
-        await self.chat_repo.add_agent_to_room(room_id, agent_id)
+    async def add_agent_to_room(
+        self, room_id: UUID, agent_id: UUID, user_id: UUID
+    ) -> ChatRoomAgentEntity | None:
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            return None
+        return await self.chat_repo.add_agent_to_room(room_id, agent_id)
 
-    async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
+    async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> bool:
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            return False
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent]:
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            return []
         return await self.chat_repo.list_room_agents(room_id)
 
     async def get_room_messages(
-        self, room_id: UUID, limit: int = 50, before_id: UUID | None = None
+        self, room_id: UUID, user_id: UUID, limit: int = 50, before_id: UUID | None = None
     ) -> list[ChatMessageResponse]:
+        if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
+            return []
         msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, before_id=before_id)
         return [
             ChatMessageResponse(
@@ -220,6 +230,9 @@ class ChatService:
     ) -> None:
         """Process a room message and push all updates via the WebSocket hub."""
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+
+        if not await self.user_in_room(user_id, room_id):
+            return
 
         # 1. Fetch room agents first so we can attach names to history entries.
         room_agents = await self.chat_repo.list_room_agents(room_id)
