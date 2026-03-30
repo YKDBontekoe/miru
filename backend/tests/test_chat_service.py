@@ -767,3 +767,21 @@ async def test_get_room_messages_ownership(chat_service: ChatService) -> None:
     assert result_success is not None
     assert len(result_success) == 1
     assert result_success[0].content == "test"
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    user_message = "hello"
+
+    chat_service.chat_repo.room_belongs_to_user.return_value = False  # type: ignore
+
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        # Mock the broadcast method as async
+        mock_hub.broadcast_to_room = AsyncMock()
+        await chat_service.run_room_chat_ws(room_id, user_message, user_id)
+
+        mock_hub.broadcast_to_room.assert_awaited_once_with(
+            room_id,
+            {"type": "error", "data": {"message": "Unauthorized or room not found."}}
+        )
