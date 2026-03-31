@@ -66,6 +66,7 @@ async def test_update_agent_success():
         integration_configs={"slack": {"token": "456"}},
     )
     response = await service.update_agent(str(initial_agent.id), user_id, update_data)
+    assert response is not None
     assert response.name == "Updated Agent"
 
 
@@ -149,6 +150,7 @@ async def test_update_agent_no_capabilities_update():
     initial_agent = await service.create_agent(agent_data, user_id)
     update_data = AgentUpdate(name="Updated Agent")
     response = await service.update_agent(str(initial_agent.id), user_id, update_data)
+    assert response is not None
     assert response.name == "Updated Agent"
 
 
