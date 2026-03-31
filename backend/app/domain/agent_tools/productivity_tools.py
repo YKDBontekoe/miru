@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app.domain.agent_tools.productivity import (
     CreateEventInput,
     CreateEventTool,
