@@ -21,6 +21,16 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.domain.chat.language import resolve_language
+from app.domain.chat.prompts import (
+    HISTORY_PREFIX,
+    MEMORY_PREFIX,
+    MULTI_AGENT_EXPECTED_OUTPUT,
+    MULTI_AGENT_PROMPT,
+    SINGLE_AGENT_EXPECTED_OUTPUT,
+    SINGLE_AGENT_PROMPT,
+    SUMMARY_PREFIX,
+)
 from app.infrastructure.external.discord_tool import (
     DiscordGetServerInfoTool,
     DiscordSendMessageTool,
@@ -38,141 +48,6 @@ if TYPE_CHECKING:
     from app.domain.agents.models import Agent
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Language mapping
-# ---------------------------------------------------------------------------
-
-_LANG_MAP: dict[str, str] = {
-    "af": "Afrikaans",
-    "sq": "Albanian",
-    "ar": "Arabic",
-    "hy": "Armenian",
-    "az": "Azerbaijani",
-    "eu": "Basque",
-    "be": "Belarusian",
-    "bn": "Bengali",
-    "bs": "Bosnian",
-    "bg": "Bulgarian",
-    "ca": "Catalan",
-    "zh": "Chinese",
-    "zh-cn": "Chinese (Simplified)",
-    "zh-tw": "Chinese (Traditional)",
-    "hr": "Croatian",
-    "cs": "Czech",
-    "da": "Danish",
-    "nl": "Dutch",
-    "en": "English",
-    "et": "Estonian",
-    "fi": "Finnish",
-    "fr": "French",
-    "gl": "Galician",
-    "ka": "Georgian",
-    "de": "German",
-    "el": "Greek",
-    "gu": "Gujarati",
-    "he": "Hebrew",
-    "hi": "Hindi",
-    "hu": "Hungarian",
-    "is": "Icelandic",
-    "id": "Indonesian",
-    "ga": "Irish",
-    "it": "Italian",
-    "ja": "Japanese",
-    "kn": "Kannada",
-    "kk": "Kazakh",
-    "ko": "Korean",
-    "lv": "Latvian",
-    "lt": "Lithuanian",
-    "mk": "Macedonian",
-    "ms": "Malay",
-    "ml": "Malayalam",
-    "mt": "Maltese",
-    "mr": "Marathi",
-    "ne": "Nepali",
-    "nb": "Norwegian",
-    "pl": "Polish",
-    "pt": "Portuguese",
-    "pt-br": "Portuguese (Brazil)",
-    "pt-pt": "Portuguese (Portugal)",
-    "ro": "Romanian",
-    "ru": "Russian",
-    "sr": "Serbian",
-    "sk": "Slovak",
-    "sl": "Slovenian",
-    "es": "Spanish",
-    "sw": "Swahili",
-    "sv": "Swedish",
-    "tl": "Filipino",
-    "ta": "Tamil",
-    "te": "Telugu",
-    "th": "Thai",
-    "tr": "Turkish",
-    "uk": "Ukrainian",
-    "ur": "Urdu",
-    "uz": "Uzbek",
-    "vi": "Vietnamese",
-    "cy": "Welsh",
-}
-
-
-def _resolve_language(code: str) -> str:
-    """Map a BCP-47 locale code to a human-readable language name.
-
-    Falls back to the base language (stripping the region tag), then to the
-    raw code if no mapping exists.
-    """
-    key = code.lower()
-    return _LANG_MAP.get(key) or _LANG_MAP.get(key.split("-")[0]) or code
-
-
-# ---------------------------------------------------------------------------
-# Prompt templates
-# ---------------------------------------------------------------------------
-
-_HISTORY_PREFIX = (
-    "Recent conversation history (for context only — do not repeat it):\n{history}\n\n"
-)
-
-_MEMORY_PREFIX = (
-    "Relevant memories from past conversations (background context — do not repeat verbatim):\n"
-    "{memories}\n\n"
-)
-
-_SUMMARY_PREFIX = "Summary of the older parts of this conversation:\n{summary}\n\n"
-
-MULTI_AGENT_PROMPT = (
-    "{summary_section}"
-    "{memory_section}"
-    "{history_section}"
-    "User said: {user_message}. "
-    "You are managing a group chat with specialized agents. "
-    "Delegate ONLY to agents whose expertise is directly relevant to the user's request — "
-    "do NOT force every agent to respond. "
-    "Agents should reply naturally and concisely, like a real person in a chat, "
-    "without introducing themselves or listing their capabilities. "
-    "Agents MAY respond to each other's points if it adds value. "
-    "If an agent has nothing useful to add, they should stay silent. "
-    "Return a transcript of only the agents who actually responded, "
-    "formatted as 'AgentName: message' with one blank line between agents.{locale_instruction}"
-)
-
-SINGLE_AGENT_PROMPT = (
-    "{summary_section}"
-    "{memory_section}"
-    "{history_section}"
-    "User said: {user_message}. "
-    "Respond naturally and helpfully as yourself. "
-    "Do not introduce yourself or list your capabilities — just answer directly.{locale_instruction}"
-)
-
-MULTI_AGENT_EXPECTED_OUTPUT = (
-    "A chat transcript with only the relevant agents responding. "
-    "Format: 'AgentName: message' with one blank line between agents. "
-    "Agents should be concise and natural, not self-promotional."
-)
-
-SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message."
 
 
 class _OpenRouterLLM(LLM):
@@ -348,15 +223,15 @@ class CrewOrchestrator:
         )
 
         locale_instruction = (
-            f" Ensure you respond in {_resolve_language(accept_language)}."
+            f" Ensure you respond in {resolve_language(accept_language)}."
             if accept_language
             else ""
         )
 
         history_text = CrewOrchestrator.format_history(conversation_history)
-        history_section = _HISTORY_PREFIX.format(history=history_text) if history_text else ""
-        memory_section = _MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
-        summary_section = _SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
+        history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
+        memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
+        summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
 
         kwargs = {}
         if step_callback:
