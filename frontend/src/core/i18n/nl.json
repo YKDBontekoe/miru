@@ -119,7 +119,17 @@
     "no_agents_create": "Nog geen agenten. Maak er een aan in het tabblad Agenten.",
     "message_placeholder": "Bericht aan {{name}}...",
     "room_agents_status_one": "{{names}} is in deze kamer.",
-    "room_agents_status_other": "{{names}} zijn in deze kamer."
+    "room_agents_status_other": "{{names}} zijn in deze kamer.",
+    "in_this_chat": "In deze chat",
+    "add_more": "Meer toevoegen",
+    "remove": "Verwijderen",
+    "add": "Toevoegen",
+    "room_agent_count": "{{count}} actief",
+    "avatar_hint": "tik op een avatar om te beheren",
+    "agents_ready_one": "{{names}} staat klaar om te helpen.",
+    "agents_ready_other": "{{names}} staan klaar om te helpen.",
+    "no_more_agents_to_add": "Al je agenten zitten al in deze chat.",
+    "manage_agents": "Agenten beheren"
   },
   "agent": {
     "name": "Naam",

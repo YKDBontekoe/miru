@@ -16,6 +16,8 @@ import i18n from 'i18next';
 import { AppText } from '../../src/components/AppText';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useAppStore } from '../../src/store/useAppStore';
+import { useChatStore } from '../../src/store/useChatStore';
+import { useAgentStore } from '../../src/store/useAgentStore';
 import { ApiService } from '../../src/core/api/ApiService';
 import { Memory } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
@@ -58,6 +60,125 @@ function SectionHeader({ title }: { title: string }) {
     >
       {title}
     </AppText>
+  );
+}
+
+function StatItem({
+  label,
+  value,
+  icon,
+  color,
+}: {
+  label: string;
+  value: number;
+  icon: IoniconsName;
+  color: string;
+}) {
+  return (
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+        <Ionicons name={icon} size={14} color={color} style={{ marginEnd: 5 }} />
+        <AppText style={{ fontSize: 18, fontWeight: '800', color: C.text }}>{value}</AppText>
+      </View>
+      <AppText
+        style={{
+          fontSize: 11,
+          fontWeight: '600',
+          color: C.muted,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}
+      >
+        {label}
+      </AppText>
+    </View>
+  );
+}
+
+function ProfileHero({
+  user,
+  stats,
+}: {
+  user: any;
+  stats: { agents: number; chats: number; memories: number };
+}) {
+  const { t } = useTranslation();
+  const initials = (user?.email?.[0] || 'M').toUpperCase();
+  const displayName = user?.email?.split('@')[0] || t('settings.items.signed_in');
+
+  return (
+    <View
+      style={{
+        backgroundColor: C.surface,
+        borderRadius: 24,
+        padding: 24,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: C.border,
+        shadowColor: C.primary,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+        elevation: 5,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+        <View
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: C.primarySurface,
+            borderWidth: 2,
+            borderColor: `${C.primary}30`,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginEnd: 16,
+          }}
+        >
+          <AppText style={{ color: C.primary, fontSize: 24, fontWeight: '800' }}>
+            {initials}
+          </AppText>
+        </View>
+        <View style={{ flex: 1 }}>
+          <AppText style={{ fontSize: 20, fontWeight: '800', color: C.text }}>
+            {displayName}
+          </AppText>
+          <AppText variant="caption" style={{ color: C.muted, marginTop: 2 }}>
+            {user?.email || 'user@miru.ai'}
+          </AppText>
+        </View>
+      </View>
+
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          borderTopWidth: 1,
+          borderTopColor: C.surfaceHigh,
+          paddingTop: 20,
+        }}
+      >
+        <StatItem
+          label={t('chat.personas', 'Personas')}
+          value={stats.agents}
+          icon="people"
+          color="#8B5CF6"
+        />
+        <StatItem
+          label={t('chat.chats', 'Chats')}
+          value={stats.chats}
+          icon="chatbubbles"
+          color={C.primary}
+        />
+        <StatItem
+          label={t('settings.items.personal_memories', 'Memories')}
+          value={stats.memories}
+          icon="sparkles"
+          color="#F59E0B"
+        />
+      </View>
+    </View>
   );
 }
 
@@ -215,8 +336,19 @@ function LanguagePickerModal({
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
             padding: 24,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
           }}
         >
+          <View
+            style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: '#D0D5EE',
+              alignSelf: 'center',
+              marginBottom: 20,
+            }}
+          />
           <View
             style={{
               flexDirection: 'row',
@@ -277,6 +409,9 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { signOut, user } = useAuthStore();
   const { language, setLanguage } = useAppStore();
+  const { rooms, fetchRooms } = useChatStore();
+  const { agents, fetchAgents } = useAgentStore();
+
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoadingMemories, setIsLoadingMemories] = useState(false);
   const [privacyMode, setPrivacyMode] = useState(false);
@@ -301,7 +436,9 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadMemories();
-  }, [loadMemories]);
+    fetchRooms();
+    fetchAgents();
+  }, [loadMemories, fetchRooms, fetchAgents]);
 
   const handleDeleteMemory = React.useCallback(
     (memory: Memory) => {
@@ -376,50 +513,14 @@ export default function SettingsScreen() {
           paddingBottom: 40 + (Platform.OS === 'ios' ? 32 : 16) + 64,
         }}
       >
-        {/* ── Account ─────────────────────────────── */}
-        <SectionHeader title={t('settings.sections.account')} />
-
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: C.border,
-            flexDirection: 'row',
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.03,
-            shadowRadius: 3,
-            elevation: 1,
+        <ProfileHero
+          user={user}
+          stats={{
+            agents: agents.length,
+            chats: rooms.length,
+            memories: memories.length,
           }}
-        >
-          <View
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              backgroundColor: C.primarySurface,
-              borderWidth: 1,
-              borderColor: `${C.primary}25`,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginEnd: 14,
-            }}
-          >
-            <Ionicons name="person" size={22} color={C.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <AppText style={{ fontWeight: '600', fontSize: 15, color: C.text }} numberOfLines={1}>
-              {user?.email ?? t('settings.items.signed_in')}
-            </AppText>
-            <AppText variant="caption" style={{ color: C.muted, fontSize: 12 }}>
-              {t('settings.items.signed_in_with_magic_link')}
-            </AppText>
-          </View>
-        </View>
+        />
 
         <SettingRow
           icon="log-out-outline"

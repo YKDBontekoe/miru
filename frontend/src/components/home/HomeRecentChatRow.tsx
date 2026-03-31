@@ -5,10 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { ChatRoom } from '../../core/models';
+import { getAgentColor } from '../agents/agentUtils';
 
 const C = {
-  primaryFaint: '#EEF4FF',
-  primary: '#2563EB',
   text: '#0A0E2E',
   muted: '#606490',
   faint: '#B4BBDE',
@@ -23,6 +22,7 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
 }) {
   const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
+  const roomColor = getAgentColor(room.name);
 
   const relativeTimeStr = React.useMemo(() => {
     const diff = Math.max(0, Date.now() - new Date(room.updated_at).getTime());
@@ -48,13 +48,15 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
           width: 42,
           height: 42,
           borderRadius: 14,
-          backgroundColor: C.primaryFaint,
+          backgroundColor: `${roomColor}18`,
+          borderWidth: 1.5,
+          borderColor: `${roomColor}30`,
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
         }}
       >
-        <AppText style={{ color: C.primary, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
+        <AppText style={{ color: roomColor, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
       </View>
       <View style={{ flex: 1, marginRight: 8 }}>
         <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>

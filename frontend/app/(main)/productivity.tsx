@@ -6,13 +6,13 @@ import {
   TextInput,
   Alert,
   StyleSheet,
-  Pressable,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { theme } from '../../src/core/theme';
 
@@ -28,10 +28,80 @@ const R = theme.borderRadius;
 
 type RenderItemData = {
   date?: number;
-  type: 'note' | 'task';
-  item: Note | Task;
+  type: 'note' | 'task' | 'header';
+  item?: Note | Task;
   id: string;
+  title?: string;
+  count?: number;
+  progress?: number;
 };
+
+function ProductivitySectionHeader({
+  title,
+  count,
+  progress,
+}: {
+  title: string;
+  count: number;
+  progress?: number;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 24,
+        marginBottom: 12,
+        paddingHorizontal: 4,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <AppText
+          style={{ fontSize: 16, fontWeight: '800', color: T.onSurface.light, marginEnd: 8 }}
+        >
+          {title}
+        </AppText>
+        <View
+          style={{
+            backgroundColor: T.primary.surfaceLight,
+            borderRadius: 10,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+          }}
+        >
+          <AppText style={{ fontSize: 12, fontWeight: '700', color: T.primary.DEFAULT }}>
+            {count}
+          </AppText>
+        </View>
+      </View>
+      {progress !== undefined && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View
+            style={{
+              width: 60,
+              height: 6,
+              backgroundColor: T.border.light,
+              borderRadius: 3,
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                width: `${progress}%`,
+                height: '100%',
+                backgroundColor: progress === 100 ? '#059669' : T.primary.DEFAULT,
+              }}
+            />
+          </View>
+          <AppText style={{ fontSize: 10, fontWeight: '700', color: T.onSurface.mutedLight }}>
+            {Math.round(progress)}%
+          </AppText>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function ProductivityScreen() {
   const { t } = useTranslation();
@@ -90,31 +160,63 @@ export default function ProductivityScreen() {
   }, [tasks, searchQuery]);
 
   const pendingTasksCount = useMemo(() => tasks.filter((t) => !t.completed).length, [tasks]);
+  const completedTasksCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
+  const taskCompletionPct = tasks.length > 0 ? (completedTasksCount / tasks.length) * 100 : 0;
 
   // Combine items for 'all' tab
   const mixedData = useMemo(() => {
     const arr: RenderItemData[] = [];
-    filteredNotes.forEach((n) =>
+
+    if (filteredNotes.length > 0) {
       arr.push({
-        type: 'note',
-        item: n,
-        id: `note-${n.id}`,
-        date: new Date(n.created_at).getTime(),
-      })
-    );
-    filteredTasks.forEach((t) =>
+        type: 'header',
+        id: 'header-notes',
+        title: t('productivity.notes') || 'Notes',
+        count: filteredNotes.length,
+      });
+      filteredNotes.forEach((n) =>
+        arr.push({
+          type: 'note',
+          item: n,
+          id: `note-${n.id}`,
+          date: new Date(n.created_at).getTime(),
+        })
+      );
+    }
+
+    if (filteredTasks.length > 0) {
       arr.push({
-        type: 'task',
-        item: t,
-        id: `task-${t.id}`,
-        date: new Date(t.created_at).getTime(),
-      })
-    );
-    return arr.sort((a, b) => (b.date || 0) - (a.date || 0)); // Sort newest first
-  }, [filteredNotes, filteredTasks]);
+        type: 'header',
+        id: 'header-tasks',
+        title: t('productivity.tasks') || 'Tasks',
+        count: filteredTasks.length,
+        progress:
+          tasks.length > 0 ? (tasks.filter((tk) => tk.completed).length / tasks.length) * 100 : 0,
+      });
+      filteredTasks.forEach((tk) =>
+        arr.push({
+          type: 'task',
+          item: tk,
+          id: `task-${tk.id}`,
+          date: new Date(tk.created_at).getTime(),
+        })
+      );
+    }
+
+    return arr;
+  }, [filteredNotes, filteredTasks, tasks, t]);
 
   const renderItem = useCallback(
     ({ item }: { item: RenderItemData }) => {
+      if (item.type === 'header') {
+        return (
+          <ProductivitySectionHeader
+            title={item.title!}
+            count={item.count!}
+            progress={item.progress}
+          />
+        );
+      }
       if (item.type === 'note') {
         const note = item.item as Note;
         return <NoteCard note={note} onDelete={() => confirmDelete(() => deleteNote(note.id))} />;
@@ -143,7 +245,7 @@ export default function ProductivityScreen() {
       {/* ── Header Area ──────────────────────────────────────────────────────── */}
       <View style={styles.headerContainer}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={{ flex: 1, paddingRight: 12 }}>
             <AppText variant="h1" style={styles.headerTitle}>
               {t('productivity.title') || 'Workspace'}
             </AppText>
@@ -153,21 +255,62 @@ export default function ProductivityScreen() {
                 : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
                   `You have ${pendingTasksCount} tasks pending.`}
             </AppText>
+            {/* Task completion progress bar */}
+            {tasks.length > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    height: 5,
+                    backgroundColor: T.border.light,
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <View
+                    style={{
+                      width: `${taskCompletionPct}%`,
+                      height: 5,
+                      backgroundColor: pendingTasksCount === 0 ? '#059669' : T.primary.DEFAULT,
+                      borderRadius: 3,
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    backgroundColor: pendingTasksCount === 0 ? '#ECFDF5' : T.primary.surfaceLight,
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '700',
+                      color: pendingTasksCount === 0 ? '#059669' : T.primary.DEFAULT,
+                    }}
+                  >
+                    {completedTasksCount}/{tasks.length}
+                  </AppText>
+                </View>
+              </View>
+            )}
           </View>
 
           <View style={styles.headerActions}>
-            <Pressable
+            <ScalePressable
               onPress={() => setShowCreateNote(true)}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              style={[styles.iconButton, { backgroundColor: '#FFFBEB' }]}
             >
-              <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
-            </Pressable>
-            <Pressable
+              <Ionicons name="document-text" size={20} color="#D97706" />
+            </ScalePressable>
+            <ScalePressable
               onPress={() => setShowCreateTask(true)}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              style={[styles.iconButton, { backgroundColor: '#ECFDF5' }]}
             >
-              <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
-            </Pressable>
+              <Ionicons name="checkbox" size={20} color="#059669" />
+            </ScalePressable>
           </View>
         </View>
 
@@ -193,14 +336,10 @@ export default function ProductivityScreen() {
       {/* ── Tab Switcher ─────────────────────────────────────────────────────── */}
       <View style={styles.tabsContainer}>
         {(['all', 'notes', 'tasks'] as const).map((tab) => (
-          <Pressable
+          <ScalePressable
             key={tab}
             onPress={() => setActiveTab(tab)}
-            style={({ pressed }) => [
-              styles.tabButton,
-              activeTab === tab && styles.tabButtonActive,
-              pressed && activeTab !== tab && { opacity: 0.6 },
-            ]}
+            style={[styles.tabButton, activeTab === tab && styles.tabButtonActive]}
           >
             <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
               {tab === 'all'
@@ -209,7 +348,7 @@ export default function ProductivityScreen() {
                   ? t('productivity.notes') || 'Notes'
                   : t('productivity.tasks') || 'Tasks'}
             </AppText>
-          </Pressable>
+          </ScalePressable>
         ))}
       </View>
 
@@ -261,24 +400,20 @@ export default function ProductivityScreen() {
             {!searchQuery && (
               <View style={styles.emptyActions}>
                 {(activeTab === 'all' || activeTab === 'notes') && (
-                  <Pressable
+                  <ScalePressable
                     onPress={() => setShowCreateNote(true)}
-                    style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+                    style={styles.emptyButton}
                   >
                     <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
                     <AppText style={styles.emptyButtonText}>
-                      {t('productivity.newNote') || 'New Note'}
+                      {t('productivity.new_note') || 'New Note'}
                     </AppText>
-                  </Pressable>
+                  </ScalePressable>
                 )}
                 {(activeTab === 'all' || activeTab === 'tasks') && (
-                  <Pressable
+                  <ScalePressable
                     onPress={() => setShowCreateTask(true)}
-                    style={({ pressed }) => [
-                      styles.emptyButton,
-                      activeTab === 'all' && styles.emptyButtonSecondary,
-                      pressed && { opacity: 0.8 },
-                    ]}
+                    style={[styles.emptyButton, activeTab === 'all' && styles.emptyButtonSecondary]}
                   >
                     <Ionicons
                       name="add"
@@ -293,9 +428,9 @@ export default function ProductivityScreen() {
                           : styles.emptyButtonText
                       }
                     >
-                      New Task
+                      {t('productivity.new_task_action') || 'New Task'}
                     </AppText>
-                  </Pressable>
+                  </ScalePressable>
                 )}
               </View>
             )}

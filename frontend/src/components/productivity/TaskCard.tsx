@@ -17,6 +17,18 @@ interface Props {
   onDelete: () => void;
 }
 
+function getDueDateColor(dueDateStr: string, completed: boolean): string {
+  if (completed) return '#059669';
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const due = new Date(dueDateStr);
+  due.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor((due.getTime() - now.getTime()) / 86400000);
+  if (diffDays < 0) return '#DC2626'; // overdue → red
+  if (diffDays <= 2) return '#D97706'; // due soon → amber
+  return '#2563EB'; // normal → blue
+}
+
 export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
   const { t, i18n } = useTranslation();
   const { C } = useTheme();
@@ -73,7 +85,6 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
           color: C.muted,
         },
         taskDueDate: {
-          color: C.primary,
           fontWeight: '600',
           marginTop: 4,
           fontSize: 12,
@@ -97,7 +108,10 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
           {task.title}
         </AppText>
         {task.due_date && (
-          <AppText variant="caption" style={styles.taskDueDate}>
+          <AppText
+            variant="caption"
+            style={[styles.taskDueDate, { color: getDueDateColor(task.due_date, task.completed) }]}
+          >
             {t('productivity.due_date', {
               date: new Intl.DateTimeFormat(i18n.language, {
                 month: 'short',

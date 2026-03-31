@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 
@@ -37,10 +38,14 @@ export function HomeSectionHeader({
         {title}
       </AppText>
       {actionLabel && onAction && (
-        <ScalePressable onPress={onAction}>
+        <ScalePressable
+          onPress={onAction}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+        >
           <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
             {actionLabel}
           </AppText>
+          <Ionicons name="chevron-forward" size={13} color={C.primary} />
         </ScalePressable>
       )}
     </View>

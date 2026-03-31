@@ -44,28 +44,32 @@ function getAgentColor(name: string) {
 function AgentPill({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   const color = getAgentColor(agent.name);
   return (
-    <ScalePressable onPress={onPress} style={{ width: 72, alignItems: 'center', marginEnd: 12 }}>
+    <ScalePressable onPress={onPress} style={{ width: 68, alignItems: 'center', marginEnd: 14 }}>
       <View
         style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          backgroundColor: `${color}18`,
+          width: 54,
+          height: 54,
+          borderRadius: 18,
+          backgroundColor: `${color}14`,
           borderWidth: 1.5,
-          borderColor: `${color}40`,
+          borderColor: `${color}35`,
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 6,
+          shadowColor: color,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 2,
         }}
       >
-        <AppText style={{ color, fontSize: 20, fontWeight: '700' }}>
+        <AppText style={{ color, fontSize: 22, fontWeight: '800' }}>
           {agent.name[0].toUpperCase()}
         </AppText>
       </View>
       <AppText
-        variant="caption"
         numberOfLines={1}
-        style={{ textAlign: 'center', fontSize: 11, color: C.muted }}
+        style={{ textAlign: 'center', fontSize: 11, fontWeight: '600', color: C.muted }}
       >
         {agent.name}
       </AppText>
@@ -84,6 +88,8 @@ function RoomCard({
 }) {
   const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
+  const roomColor = getAgentColor(room.name);
+
   const memberLabel = () => {
     if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
     if (agents.length === 1) return `You + ${agents[0].name}`;
@@ -101,28 +107,32 @@ function RoomCard({
         borderRadius: 20,
         padding: 14,
         marginBottom: 10,
-        shadowColor: '#2563EB',
+        shadowColor: roomColor,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.08,
         shadowRadius: 14,
         elevation: 2,
       }}
     >
+      {/* Colored avatar using room name hash */}
       <View
         style={{
-          width: 48,
-          height: 48,
-          borderRadius: 14,
-          backgroundColor: C.primarySurface,
+          width: 50,
+          height: 50,
+          borderRadius: 16,
+          backgroundColor: `${roomColor}18`,
+          borderWidth: 1.5,
+          borderColor: `${roomColor}30`,
           alignItems: 'center',
           justifyContent: 'center',
           marginEnd: 14,
         }}
       >
-        <AppText style={{ color: C.primary, fontSize: 20, fontWeight: '700' }}>{initial}</AppText>
+        <AppText style={{ color: roomColor, fontSize: 20, fontWeight: '800' }}>{initial}</AppText>
       </View>
+
       <View style={{ flex: 1 }}>
-        <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 }}>
+        <AppText style={{ fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 4 }}>
           {room.name}
         </AppText>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -132,7 +142,38 @@ function RoomCard({
           </AppText>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={C.faint} />
+
+      {/* Stacked agent initials */}
+      {agents.length > 0 && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginEnd: 8 }}>
+          {agents.slice(0, 2).map((a, i) => {
+            const ac = getAgentColor(a.name);
+            return (
+              <View
+                key={a.id}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 11,
+                  backgroundColor: `${ac}22`,
+                  borderWidth: 1.5,
+                  borderColor: C.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginStart: i === 0 ? 0 : -6,
+                  zIndex: 2 - i,
+                }}
+              >
+                <AppText style={{ color: ac, fontSize: 9, fontWeight: '700' }}>
+                  {a.name[0].toUpperCase()}
+                </AppText>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      <Ionicons name="chevron-forward" size={16} color={C.faint} />
     </ScalePressable>
   );
 }
@@ -241,9 +282,21 @@ function CreateRoomModal({
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
             padding: 24,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
             maxHeight: '82%',
           }}
         >
+          {/* Drag handle */}
+          <View
+            style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: '#D0D5EE',
+              alignSelf: 'center',
+              marginBottom: 20,
+            }}
+          />
           <View
             style={{
               flexDirection: 'row',
@@ -253,7 +306,7 @@ function CreateRoomModal({
             }}
           >
             <AppText variant="h2" style={{ color: C.text }}>
-              New Chat
+              {t('chat.new_chat', 'New Chat')}
             </AppText>
             <ScalePressable onPress={onClose}>
               <Ionicons name="close-circle" size={26} color={C.faint} />
@@ -269,12 +322,12 @@ function CreateRoomModal({
               letterSpacing: 1,
             }}
           >
-            Chat Name
+            {t('chat.chat_name_label', 'Chat Name')}
           </AppText>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="e.g. Gaming Session"
+            placeholder={t('chat.chat_name_placeholder', 'e.g. Gaming Session')}
             placeholderTextColor={C.faint}
             style={{
               backgroundColor: C.surfaceHigh,
@@ -298,7 +351,7 @@ function CreateRoomModal({
                   letterSpacing: 1,
                 }}
               >
-                Add Agents
+                {t('chat.add_agents', 'Add Agents')}
               </AppText>
               <FlatList
                 data={agents}
@@ -330,7 +383,7 @@ function CreateRoomModal({
               <ActivityIndicator color="white" />
             ) : (
               <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-                Create Chat
+                {t('chat.create_chat', 'Create Chat')}
               </AppText>
             )}
           </ScalePressable>

@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
+import { getAgentColor } from '@/components/agents/agentUtils';
 
 export const HomeAgentChip = React.memo(function HomeAgentChip({
   agent,
@@ -11,24 +12,56 @@ export const HomeAgentChip = React.memo(function HomeAgentChip({
   agent: Agent;
   onPress: () => void;
 }) {
+  const color = getAgentColor(agent.name);
+  const bgColor = `${color}14`;
+  const avatarBg = `${color}28`;
+
   return (
     <ScalePressable
       onPress={onPress}
-      className="flex-row items-center bg-primaryFaint rounded-[22px] py-2 px-3 mr-2 mb-2"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: bgColor,
+        borderRadius: 22,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        marginRight: 8,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: `${color}22`,
+      }}
     >
       <View
-        className="w-[26px] h-[26px] rounded-[13px] bg-primaryLight items-center justify-center mr-[7px]"
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          backgroundColor: avatarBg,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 7,
+        }}
       >
-        <AppText className="text-primary text-[12px] font-bold">
+        <AppText style={{ color, fontSize: 12, fontWeight: '700' }}>
           {agent.name?.[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
-      <AppText className="text-[13px] font-semibold text-text">{agent.name}</AppText>
+      <AppText style={{ fontSize: 13, fontWeight: '600', color: '#0A0E2E' }}>{agent.name}</AppText>
       {agent.message_count > 0 && (
         <View
-          className="bg-primary rounded-[9px] min-w-[18px] h-[18px] px-1.5 items-center justify-center ml-[7px]"
+          style={{
+            backgroundColor: color,
+            borderRadius: 9,
+            minWidth: 18,
+            height: 18,
+            paddingHorizontal: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: 7,
+          }}
         >
-          <AppText className="text-[10px] text-white font-bold">
+          <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
             {agent.message_count}
           </AppText>
         </View>
