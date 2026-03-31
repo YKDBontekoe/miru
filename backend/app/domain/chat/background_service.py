@@ -6,8 +6,12 @@ import logging
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from pydantic import BaseModel
+
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from openai.types.chat import ChatCompletionMessageParam
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
@@ -15,6 +19,12 @@ if TYPE_CHECKING:
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 logger = logging.getLogger(__name__)
+
+
+class RoomSummaryResponse(BaseModel):
+    """Structured response model for room summaries."""
+
+    summary: str
 
 
 class ChatBackgroundService:
@@ -110,7 +120,7 @@ class ChatBackgroundService:
         if not self.chat_repo:
             return
 
-        from app.infrastructure.external.openrouter import chat_completion
+        from app.infrastructure.external.openrouter import structured_completion
 
         try:
             # Check if history is getting long enough to warrant a summary
@@ -128,17 +138,27 @@ class ChatBackgroundService:
                 lines.append(f"{name}: {entry.get('content')}")
             transcript = "\n".join(lines)
 
-            # Build the prompt
+            # Build the prompt messages
             current_summary = room.summary or "No previous summary."
-            prompt = (
-                "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
-                "Below is the current summary of the older parts of the conversation, followed by the latest messages.\n\n"
-                f"CURRENT SUMMARY:\n{current_summary}\n\n"
-                f"LATEST MESSAGES:\n{transcript}\n\n"
-                "Please generate a new, comprehensive but concise summary of the ENTIRE conversation (merging the current summary with the new messages). "
-                "Focus on the main topics discussed, user preferences revealed, and any ongoing tasks or context the agents need to remember. "
-                "Return ONLY the summary text, nothing else."
-            )
+
+            messages: list[ChatCompletionMessageParam] = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
+                        "Please generate a new, comprehensive but concise summary of the ENTIRE conversation (merging the current summary with the new messages). "
+                        "Focus on the main topics discussed, user preferences revealed, and any ongoing tasks or context the agents need to remember."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"CURRENT SUMMARY:\n{current_summary}",
+                },
+                {
+                    "role": "user",
+                    "content": f"LATEST MESSAGES:\n{transcript}",
+                },
+            ]
 
             # Call LLM
 
@@ -151,12 +171,13 @@ class ChatBackgroundService:
             except Exception:
                 pass
 
-            new_summary = await chat_completion(
+            response = await structured_completion(
                 model=model_name,  # Use a fast/cheap model for summarization
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
+                response_model=RoomSummaryResponse,
             )
 
-            new_summary = new_summary.strip()
+            new_summary = response.summary.strip()
 
             if new_summary:
                 await self.chat_repo.update_room_summary(room_id, new_summary)
