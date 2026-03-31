@@ -64,7 +64,7 @@ export function HomeNewChatModal({
               width: 40,
               height: 4,
               borderRadius: 2,
-              backgroundColor: '#D0D5EE',
+              backgroundColor: C.surfaceHigh,
               alignSelf: 'center',
               marginBottom: 20,
             }}
@@ -81,10 +81,7 @@ export function HomeNewChatModal({
               {t('home.chat_modal.title')}
             </AppText>
             <ScalePressable
-              onPress={() => {
-                setName('');
-                onClose();
-              }}
+              onPress={() => { setName(""); onClose(); }}
               style={{
                 width: 30,
                 height: 30,

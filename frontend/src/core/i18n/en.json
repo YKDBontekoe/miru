@@ -119,17 +119,7 @@
     "no_agents_create": "No agents yet. Create one in the Agents tab.",
     "message_placeholder": "Message {{name}}...",
     "room_agents_status_one": "{{names}} is in this room.",
-    "room_agents_status_other": "{{names}} are in this room.",
-    "in_this_chat": "In this chat",
-    "add_more": "Add more",
-    "remove": "Remove",
-    "add": "Add",
-    "room_agent_count": "{{count}} active",
-    "avatar_hint": "tap an avatar to manage",
-    "agents_ready_one": "{{names}} is ready to help.",
-    "agents_ready_other": "{{names}} are ready to help.",
-    "no_more_agents_to_add": "All your agents are already in this chat.",
-    "manage_agents": "Manage Agents"
+    "room_agents_status_other": "{{names}} are in this room."
   },
   "agent": {
     "name": "Name",

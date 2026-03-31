@@ -24,7 +24,6 @@ import { ApiService } from '../../../src/core/api/ApiService';
 import { Agent } from '../../../src/core/models';
 import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
 import { ScalePressable } from '@/components/ScalePressable';
-import { formatMessageDate } from '../../../src/utils/date';
 
 const C = {
   bg: '#F8F8FC',
@@ -37,35 +36,6 @@ const C = {
   primary: '#2563EB',
   primarySurface: '#EFF6FF',
 };
-
-function DateSeparator({ date }: { date: string }) {
-  return (
-    <View style={{ alignItems: 'center', marginVertical: 20 }}>
-      <View
-        style={{
-          backgroundColor: C.surfaceHigh,
-          paddingHorizontal: 12,
-          paddingVertical: 4,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: C.border,
-        }}
-      >
-        <AppText
-          style={{
-            color: C.muted,
-            fontSize: 11,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-          }}
-        >
-          {date}
-        </AppText>
-      </View>
-    </View>
-  );
-}
 
 function getAgentColor(name: string) {
   const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
@@ -102,25 +72,7 @@ export default function ChatRoomScreen() {
   const messageCount = useRef(0);
 
   const room = React.useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
-  const roomMessages = React.useMemo(() => {
-    const raw = messages[roomId ?? ''] ?? [];
-    if (raw.length === 0) return [];
-
-    const withSeparators: any[] = [];
-    let lastDate = '';
-
-    raw.forEach((msg) => {
-      const dateStr = formatMessageDate(msg.created_at);
-      if (dateStr !== lastDate) {
-        withSeparators.push({ id: `sep-${msg.id}`, isSeparator: true, date: dateStr });
-        lastDate = dateStr;
-      }
-      withSeparators.push(msg);
-    });
-
-    return withSeparators;
-  }, [messages, roomId]);
-
+  const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
   const currentActivity = React.useMemo(
     () => (roomId ? agentActivity[roomId] : null),
     [agentActivity, roomId]
@@ -133,8 +85,6 @@ export default function ChatRoomScreen() {
   const availableAgents = React.useMemo(() => {
     return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));
   }, [agents, roomAgents]);
-
-  const roomColor = React.useMemo(() => (room ? getAgentColor(room.name) : C.primary), [room]);
 
   // Connect hub and join room when screen mounts
   useEffect(() => {
@@ -219,49 +169,39 @@ export default function ChatRoomScreen() {
           flexDirection: 'row',
           alignItems: 'center',
           paddingHorizontal: 12,
-          paddingVertical: 12,
+          paddingVertical: 10,
           borderBottomWidth: 1,
-          borderBottomColor: `${roomColor}18`,
-          backgroundColor: `${roomColor}06`,
-          gap: 10,
+          borderBottomColor: C.border,
+          backgroundColor: C.surface,
+          gap: 8,
         }}
       >
         <ScalePressable
           onPress={() => router.back()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: C.surface,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: C.border,
-          }}
         >
-          <Ionicons name="chevron-back" size={18} color={C.text} />
+          <Ionicons name="chevron-back" size={26} color={C.text} />
         </ScalePressable>
 
         <View
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 14,
-            backgroundColor: `${roomColor}18`,
-            borderWidth: 1.5,
-            borderColor: `${roomColor}35`,
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: C.primarySurface,
+            borderWidth: 1,
+            borderColor: `${C.primary}25`,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <AppText style={{ color: roomColor, fontWeight: '800', fontSize: 17 }}>
+          <AppText style={{ color: C.primary, fontWeight: '700', fontSize: 16 }}>
             {room?.name[0]?.toUpperCase() ?? '?'}
           </AppText>
         </View>
 
         <View style={{ flex: 1 }}>
-          <AppText style={{ fontSize: 16, fontWeight: '700', color: C.text }} numberOfLines={1}>
+          <AppText style={{ fontSize: 16, fontWeight: '600', color: C.text }} numberOfLines={1}>
             {room?.name ?? 'Chat'}
           </AppText>
           {roomAgents.length > 0 && (
@@ -325,17 +265,17 @@ export default function ChatRoomScreen() {
         <ScalePressable
           onPress={() => setIsModalVisible(true)}
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: `${roomColor}14`,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: C.surfaceHigh,
             borderWidth: 1,
-            borderColor: `${roomColor}30`,
+            borderColor: C.border,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="person-add-outline" size={16} color={roomColor} />
+          <Ionicons name="person-add-outline" size={16} color={C.primary} />
         </ScalePressable>
       </View>
 
@@ -390,20 +330,12 @@ export default function ChatRoomScreen() {
                 </AppText>
                 <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
                   {roomAgents.length > 0
-                    ? t(
-                        roomAgents.length === 1
-                          ? 'chat.agents_ready_one'
-                          : 'chat.agents_ready_other',
-                        { names: roomAgents.map((a) => a.name).join(', ') }
-                      )
-                    : t('chat.add_agent_to_start')}
+                    ? `${roomAgents.map((a) => a.name).join(', ')} ${roomAgents.length === 1 ? 'is' : 'are'} ready to help.`
+                    : 'Add an agent to get started.'}
                 </AppText>
               </View>
             }
             renderItem={({ item }) => {
-              if (item.isSeparator) {
-                return <DateSeparator date={item.date} />;
-              }
               const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
               const isLastUserMsg =
                 !item.user_id &&
@@ -492,18 +424,12 @@ export default function ChatRoomScreen() {
               </View>
               {roomAgents.length > 0 && (
                 <AppText style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>
-                  {t('chat.room_agent_count', '{{count}} active', { count: roomAgents.length })}
-                  {' · '}
-                  {t('chat.avatar_hint', 'tap an avatar in the header to manage')}
+                  {roomAgents.length} active · tap an avatar in the header to manage
                 </AppText>
               )}
             </View>
 
-            <ScrollView
-              style={{ paddingHorizontal: 20 }}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 40 : 16 }}
-            >
+            <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
               {/* In Room section */}
               {roomAgents.length > 0 && (
                 <FlatList
@@ -521,7 +447,7 @@ export default function ChatRoomScreen() {
                         marginBottom: 8,
                       }}
                     >
-                      {t('chat.in_this_chat', 'In this chat')}
+                      In this chat
                     </AppText>
                   }
                   renderItem={({ item: agent }) => {
@@ -576,7 +502,7 @@ export default function ChatRoomScreen() {
                         >
                           <Ionicons name="remove" size={13} color="#EF4444" />
                           <AppText style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
-                            {t('chat.remove', 'Remove')}
+                            Remove
                           </AppText>
                         </ScalePressable>
                       </View>
@@ -602,7 +528,7 @@ export default function ChatRoomScreen() {
                         marginTop: 8,
                       }}
                     >
-                      {t('chat.add_more', 'Add more')}
+                      Add more
                     </AppText>
                   ) : null
                 }
@@ -628,7 +554,7 @@ export default function ChatRoomScreen() {
                         style={{ marginBottom: 12 }}
                       />
                       <AppText style={{ textAlign: 'center', color: C.muted }}>
-                        {t('chat.no_more_agents_to_add')}
+                        {t('chat.no_more_agents_to_add', 'No more agents to add.')}
                       </AppText>
                     </View>
                   ) : null
@@ -685,7 +611,7 @@ export default function ChatRoomScreen() {
                       >
                         <Ionicons name="add" size={13} color={C.primary} />
                         <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
-                          {t('chat.add', 'Add')}
+                          Add
                         </AppText>
                       </ScalePressable>
                     </View>

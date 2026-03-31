@@ -2,7 +2,6 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useProductivityStore } from '../../src/store/useProductivityStore';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -27,8 +26,6 @@ function TabIcon({
 }
 
 export default function MainLayout() {
-  const pendingTaskCount = useProductivityStore((s) => s.tasks.filter((t) => !t.completed).length);
-
   return (
     <Tabs
       screenOptions={{
@@ -119,14 +116,6 @@ export default function MainLayout() {
         name="productivity"
         options={{
           title: 'Productivity',
-          tabBarBadge: pendingTaskCount > 0 ? pendingTaskCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: '#059669',
-            fontSize: 10,
-            minWidth: 16,
-            height: 16,
-            lineHeight: 16,
-          },
           tabBarIcon: ({ color, focused, size }) => (
             <TabIcon
               name="checkmark-circle-outline"
