@@ -132,10 +132,20 @@ def get_openrouter_client() -> OpenRouterClient:
 
 
 async def chat_completion(
-    messages: list[ChatCompletionMessageParam], model: str | None = None
+    messages: list[ChatCompletionMessageParam],
+    model: str | None = None,
+    accept_language: str | None = None,
 ) -> str:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
+    if accept_language:
+        messages = [
+            {
+                "role": "system",
+                "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
+            },
+            *messages,
+        ]
     try:
         return await client.chat_completion(messages, chosen_model)
     except Exception as e:
@@ -154,10 +164,20 @@ async def chat_completion(
 
 
 async def stream_chat(
-    messages: list[ChatCompletionMessageParam], model: str | None = None
+    messages: list[ChatCompletionMessageParam],
+    model: str | None = None,
+    accept_language: str | None = None,
 ) -> typing.AsyncIterator[typing.Any]:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
+    if accept_language:
+        messages = [
+            {
+                "role": "system",
+                "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
+            },
+            *messages,
+        ]
     return await client.stream_chat(messages, chosen_model)
 
 
@@ -165,9 +185,18 @@ async def structured_completion(
     messages: list[ChatCompletionMessageParam],
     response_model: type[T],
     model: str | None = None,
+    accept_language: str | None = None,
 ) -> T:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
+    if accept_language:
+        messages = [
+            {
+                "role": "system",
+                "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
+            },
+            *messages,
+        ]
     try:
         return await client.structured_completion(messages, chosen_model, response_model)
     except Exception as e:

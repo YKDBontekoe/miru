@@ -51,12 +51,12 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
           backgroundColor: C.primaryFaint,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 12,
+          marginEnd: 12,
         }}
       >
         <AppText style={{ color: C.primary, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
       </View>
-      <View style={{ flex: 1, marginRight: 8 }}>
+      <View style={{ flex: 1, marginEnd: 8 }}>
         <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
           {room.name}
         </AppText>

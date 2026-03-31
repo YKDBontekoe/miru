@@ -1,4 +1,11 @@
 {
+  "splash": {
+    "waking_up": "Waking up the AI...",
+    "brewing": "Brewing digital coffee...",
+    "connecting": "Connecting to the mainframe...",
+    "aligning": "Aligning neural weights...",
+    "almost_ready": "Almost ready..."
+  },
   "navigation": {
     "home": "Home",
     "chat": "Chat",

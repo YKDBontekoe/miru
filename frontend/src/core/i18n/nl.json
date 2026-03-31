@@ -1,4 +1,11 @@
 {
+  "splash": {
+    "waking_up": "AI wordt wakker...",
+    "brewing": "Digitale koffie zetten...",
+    "connecting": "Verbinding maken met de mainframe...",
+    "aligning": "Neurale gewichten afstemmen...",
+    "almost_ready": "Bijna klaar..."
+  },
   "navigation": {
     "home": "Home",
     "chat": "Chat",

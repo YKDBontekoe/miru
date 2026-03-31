@@ -51,7 +51,7 @@ export function AgentDetailHeader({
           size={64}
           color={displayColor}
         />
-        <View className="flex-1 ml-3.5">
+        <View className="flex-1 ms-3.5">
           {isEditing ? (
             <TextInput
               value={editName}
@@ -98,7 +98,7 @@ export function AgentDetailHeader({
           </View>
         </View>
 
-        <View className="gap-2 ml-2">
+        <View className="gap-2 ms-2">
           {!isEditing && (
             <ScalePressable
               onPress={onEditToggle}

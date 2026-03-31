@@ -9,17 +9,19 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from './AppText';
 
-const MESSAGES = [
-  'Waking up the AI...',
-  'Brewing digital coffee...',
-  'Connecting to the mainframe...',
-  'Aligning neural weights...',
-  'Almost ready...',
-];
-
 export function BackendSplash() {
+  const { t } = useTranslation();
+
+  const MESSAGES = [
+    t('splash.waking_up', 'Waking up the AI...'),
+    t('splash.brewing', 'Brewing digital coffee...'),
+    t('splash.connecting', 'Connecting to the mainframe...'),
+    t('splash.aligning', 'Aligning neural weights...'),
+    t('splash.almost_ready', 'Almost ready...'),
+  ];
   const [messageIndex, setMessageIndex] = useState(0);
 
   // Rotate messages
@@ -28,7 +30,7 @@ export function BackendSplash() {
       setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
     }, 2500);
     return () => clearInterval(interval);
-  }, []);
+  }, [MESSAGES.length]);
 
   // Pulsing background
   const scale = useSharedValue(1);
@@ -98,7 +100,7 @@ export function BackendSplash() {
             Miru
           </AppText>
           <View className="flex-row items-center justify-center">
-            <ActivityIndicator size="small" color="#2563EB" className="mr-2" />
+            <ActivityIndicator size="small" color="#2563EB" className="me-2" />
             <Animated.View key={messageIndex}>
               <AppText color="muted" className="text-base font-medium">
                 {MESSAGES[messageIndex]}
