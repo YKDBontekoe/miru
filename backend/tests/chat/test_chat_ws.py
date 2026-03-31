@@ -246,7 +246,7 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
     room_id = uuid4()
     user_id = uuid4()
     user_message = "hello"
-    chat_service.chat_repo.room_belongs_to_user.return_value = False
+    typing.cast("AsyncMock", chat_service.chat_repo.room_belongs_to_user).return_value = False
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
         await chat_service.run_room_chat_ws(room_id, user_message, user_id)

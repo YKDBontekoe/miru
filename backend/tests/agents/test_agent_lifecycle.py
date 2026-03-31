@@ -34,6 +34,7 @@ async def test_create_agent_with_relations():
         integration_configs={"discord": {"token": "123"}},
     )
     response = await service.create_agent(agent_data, user_id)
+    assert response is not None
     assert response.name == "Test Agent"
 
 
