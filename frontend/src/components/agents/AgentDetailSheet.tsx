@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Modal, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
@@ -22,6 +22,169 @@ interface AgentDetailSheetProps {
   onUpdated: (updated: Agent) => void;
 }
 
+const EditGoalItem = React.memo(function EditGoalItem({
+  goal,
+  index,
+  onRemove,
+  primaryColor,
+}: {
+  goal: string;
+  index: number;
+  onRemove: (idx: number) => void;
+  primaryColor: string;
+}) {
+  return (
+    <ScalePressable
+      onPress={() => onRemove(index)}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: `${primaryColor}12`,
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1,
+        borderColor: `${primaryColor}25`,
+        marginRight: 8,
+        marginBottom: 8,
+      }}
+    >
+      <AppText style={{ color: primaryColor, fontSize: 12 }}>{goal}</AppText>
+      <Ionicons name="close" size={11} color={primaryColor} />
+    </ScalePressable>
+  );
+});
+
+const StatItem = React.memo(function StatItem({
+  stat,
+  isLast,
+  displayColor,
+  C,
+}: {
+  stat: { value: number; label: string };
+  isLast: boolean;
+  displayColor: string;
+  C: any;
+}) {
+  return (
+    <React.Fragment>
+      <View style={{ flex: 1, alignItems: 'center' }}>
+        <AppText style={{ color: displayColor, fontWeight: '800', fontSize: 22 }}>
+          {stat.value}
+        </AppText>
+        <AppText style={{ color: C.muted, fontSize: 11, marginTop: 1 }}>{stat.label}</AppText>
+      </View>
+      {!isLast && <View style={{ width: 1, backgroundColor: C.border, marginVertical: 4 }} />}
+    </React.Fragment>
+  );
+});
+
+const MilestoneItem = React.memo(function MilestoneItem({
+  milestone,
+  agentMessageCount,
+  displayColor,
+  C,
+}: {
+  milestone: any;
+  agentMessageCount: number;
+  displayColor: string;
+  C: any;
+}) {
+  const earned = agentMessageCount >= milestone.threshold;
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: earned ? `${displayColor}15` : C.surfaceMid,
+        borderRadius: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: earned ? `${displayColor}30` : C.border,
+        opacity: earned ? 1 : 0.55,
+        marginRight: 7,
+        marginBottom: 7,
+      }}
+    >
+      <AppText style={{ fontSize: 12 }}>{milestone.icon}</AppText>
+      <AppText
+        style={{
+          fontSize: 11,
+          color: earned ? displayColor : C.faint,
+          fontWeight: earned ? '600' : '400',
+        }}
+      >
+        {milestone.label}
+      </AppText>
+    </View>
+  );
+});
+
+const GoalDisplayItem = React.memo(function GoalDisplayItem({
+  goal,
+  index,
+  displayColor,
+  C,
+}: {
+  goal: string;
+  index: number;
+  displayColor: string;
+  C: any;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
+      <View
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: `${displayColor}18`,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginEnd: 10,
+          marginTop: 1,
+          flexShrink: 0,
+        }}
+      >
+        <AppText style={{ color: displayColor, fontSize: 10, fontWeight: '700' }}>
+          {index + 1}
+        </AppText>
+      </View>
+      <AppText style={{ flex: 1, lineHeight: 21, color: C.text, fontSize: 14 }}>{goal}</AppText>
+    </View>
+  );
+});
+
+const IntegrationItem = React.memo(function IntegrationItem({
+  integration,
+  C,
+}: {
+  integration: string;
+  C: any;
+}) {
+  return (
+    <View
+      style={{
+        backgroundColor: C.surfaceHigh,
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1,
+        borderColor: C.border,
+        marginRight: 8,
+        marginBottom: 8,
+      }}
+    >
+      <AppText style={{ fontSize: 12, textTransform: 'capitalize', color: C.text }}>
+        {integration}
+      </AppText>
+    </View>
+  );
+});
+
 export function AgentDetailSheet({
   agent,
   visible,
@@ -43,6 +206,25 @@ export function AgentDetailSheet({
   const [isSaving, setIsSaving] = useState(false);
   const [isStartingChat, setIsStartingChat] = useState(false);
 
+  const handleRemoveEditGoal = useCallback(
+    (idx: number) => setEditGoals((gs) => gs.filter((_, i) => i !== idx)),
+    []
+  );
+
+  const level = Math.floor((agent?.message_count ?? 0) / 10) + 1;
+
+  const stats = useMemo(
+    () => [
+      { value: agent?.message_count ?? 0, label: 'Messages' },
+      { value: level, label: 'Level' },
+      { value: agent?.integrations?.length ?? 0, label: 'Skills' },
+    ],
+    [agent?.message_count, level, agent?.integrations?.length]
+  );
+
+  const color = getAgentColor(agent?.name ?? '');
+  const displayColor = isEditing ? getAgentColor(editName || (agent?.name ?? '')) : color;
+
   useEffect(() => {
     if (agent) {
       setEditName(agent.name);
@@ -56,9 +238,6 @@ export function AgentDetailSheet({
 
   if (!agent) return null;
 
-  const color = getAgentColor(agent.name);
-  const displayColor = isEditing ? getAgentColor(editName || agent.name) : color;
-  const level = Math.floor(agent.message_count / 10) + 1;
   const xpProgress = (agent.message_count % 10) / 10;
   const moodEmoji = getMoodEmoji(agent.mood);
 
@@ -132,6 +311,7 @@ export function AgentDetailSheet({
     setEditGoals(agent.goals ?? []);
     setIsEditing(false);
   };
+
 
   const input = {
     backgroundColor: C.surfaceHigh,
@@ -352,28 +532,9 @@ export function AgentDetailSheet({
                   </ScalePressable>
                 </View>
                 {editGoals.length > 0 && (
-                  <View
-                    style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}
-                  >
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                     {editGoals.map((g, i) => (
-                      <ScalePressable
-                        key={i}
-                        onPress={() => setEditGoals((gs) => gs.filter((_, idx) => idx !== i))}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 5,
-                          backgroundColor: `${C.primary}12`,
-                          borderRadius: 20,
-                          paddingHorizontal: 10,
-                          paddingVertical: 5,
-                          borderWidth: 1,
-                          borderColor: `${C.primary}25`,
-                        }}
-                      >
-                        <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
-                        <Ionicons name="close" size={11} color={C.primary} />
-                      </ScalePressable>
+                      <EditGoalItem key={g} goal={g} index={i} onRemove={handleRemoveEditGoal} primaryColor={C.primary} />
                     ))}
                   </View>
                 )}
@@ -510,24 +671,8 @@ export function AgentDetailSheet({
                     borderColor: C.border,
                   }}
                 >
-                  {[
-                    { value: agent.message_count, label: 'Messages' },
-                    { value: level, label: 'Level' },
-                    { value: agent.integrations?.length ?? 0, label: 'Skills' },
-                  ].map((stat, i, arr) => (
-                    <React.Fragment key={stat.label}>
-                      <View style={{ flex: 1, alignItems: 'center' }}>
-                        <AppText style={{ color: displayColor, fontWeight: '800', fontSize: 22 }}>
-                          {stat.value}
-                        </AppText>
-                        <AppText style={{ color: C.muted, fontSize: 11, marginTop: 1 }}>
-                          {stat.label}
-                        </AppText>
-                      </View>
-                      {i < arr.length - 1 && (
-                        <View style={{ width: 1, backgroundColor: C.border, marginVertical: 4 }} />
-                      )}
-                    </React.Fragment>
+                  {stats.map((stat, i) => (
+                    <StatItem key={stat.label} stat={stat} isLast={i === stats.length - 1} displayColor={displayColor} C={C} />
                   ))}
                 </View>
 
@@ -583,38 +728,16 @@ export function AgentDetailSheet({
                   </View>
 
                   {/* Milestone badges */}
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                    {MILESTONES.map((m) => {
-                      const earned = agent.message_count >= m.threshold;
-                      return (
-                        <View
-                          key={m.threshold}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 4,
-                            backgroundColor: earned ? `${displayColor}15` : C.surfaceMid,
-                            borderRadius: 10,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderWidth: 1,
-                            borderColor: earned ? `${displayColor}30` : C.border,
-                            opacity: earned ? 1 : 0.55,
-                          }}
-                        >
-                          <AppText style={{ fontSize: 12 }}>{m.icon}</AppText>
-                          <AppText
-                            style={{
-                              fontSize: 11,
-                              color: earned ? displayColor : C.faint,
-                              fontWeight: earned ? '600' : '400',
-                            }}
-                          >
-                            {m.label}
-                          </AppText>
-                        </View>
-                      );
-                    })}
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 8 }}>
+                    {MILESTONES.map((m) => (
+                      <MilestoneItem
+                        key={m.threshold}
+                        milestone={m}
+                        agentMessageCount={agent?.message_count ?? 0}
+                        displayColor={displayColor}
+                        C={C}
+                      />
+                    ))}
                   </View>
 
                   {nextMilestone && (
@@ -645,32 +768,8 @@ export function AgentDetailSheet({
                 {agent.goals?.length > 0 && (
                   <View style={{ marginBottom: 16 }}>
                     <AppText style={label}>Goals</AppText>
-                    {agent.goals.map((goal, i) => (
-                      <View
-                        key={i}
-                        style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}
-                      >
-                        <View
-                          style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: 10,
-                            backgroundColor: `${displayColor}18`,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginEnd: 10,
-                            marginTop: 1,
-                            flexShrink: 0,
-                          }}
-                        >
-                          <AppText style={{ color: displayColor, fontSize: 10, fontWeight: '700' }}>
-                            {i + 1}
-                          </AppText>
-                        </View>
-                        <AppText style={{ flex: 1, lineHeight: 21, color: C.text, fontSize: 14 }}>
-                          {goal}
-                        </AppText>
-                      </View>
+                    {agent.goals.map((goal, index) => (
+                      <GoalDisplayItem key={goal} goal={goal} index={index} displayColor={displayColor} C={C} />
                     ))}
                   </View>
                 )}
@@ -678,25 +777,9 @@ export function AgentDetailSheet({
                 {agent.integrations?.length > 0 && (
                   <View style={{ marginBottom: 16 }}>
                     <AppText style={label}>Integrations</AppText>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      {agent.integrations.map((ig, i) => (
-                        <View
-                          key={i}
-                          style={{
-                            backgroundColor: C.surfaceHigh,
-                            borderRadius: 8,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                            borderWidth: 1,
-                            borderColor: C.border,
-                          }}
-                        >
-                          <AppText
-                            style={{ fontSize: 12, textTransform: 'capitalize', color: C.text }}
-                          >
-                            {ig}
-                          </AppText>
-                        </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                      {agent.integrations.map((integration) => (
+                        <IntegrationItem key={integration} integration={integration} C={C} />
                       ))}
                     </View>
                   </View>

@@ -324,6 +324,50 @@ const TaskRow = React.memo(function TaskRow({
   );
 });
 
+// ─── Stat item ────────────────────────────────────────────────────────────────
+const StatItem = React.memo(function StatItem({
+  stat,
+  isLast,
+}: {
+  stat: { value: number; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] };
+  isLast: boolean;
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 14,
+        borderRightWidth: isLast ? 0 : 1,
+        borderRightColor: C.border,
+      }}
+    >
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          backgroundColor: C.primaryLight,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 6,
+        }}
+      >
+        <Ionicons name={stat.icon} size={15} color={C.primary} />
+      </View>
+      <AppText style={{ fontSize: 20, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}>
+        {stat.value}
+      </AppText>
+      <AppText
+        style={{ fontSize: 11, color: C.muted, fontWeight: '500', marginTop: 2 }}
+        numberOfLines={1}
+      >
+        {stat.label}
+      </AppText>
+    </View>
+  );
+});
+
 // ─── Agent chip ───────────────────────────────────────────────────────────────
 const AgentChip = React.memo(function AgentChip({
   agent,
@@ -588,6 +632,12 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const stats = React.useMemo(() => [
+    { value: rooms.length, label: t('home.actions.chats'), icon: 'chatbubbles' as const },
+    { value: agents.length, label: t('home.actions.agents'), icon: 'people' as const },
+    { value: completedCount, label: t('home.actions.done'), icon: 'checkmark-circle' as const },
+  ], [rooms.length, agents.length, completedCount, t]);
+
   if (isLoadingRooms && rooms.length === 0) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -627,12 +677,6 @@ export default function HomeScreen() {
       </SafeAreaView>
     );
   }
-
-  const stats = [
-    { value: rooms.length, label: t('home.actions.chats'), icon: 'chatbubbles' as const },
-    { value: agents.length, label: t('home.actions.agents'), icon: 'people' as const },
-    { value: completedCount, label: t('home.actions.done'), icon: 'checkmark-circle' as const },
-  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -724,41 +768,7 @@ export default function HomeScreen() {
             }}
           >
             {stats.map((stat, i) => (
-              <View
-                key={stat.label}
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  paddingVertical: 14,
-                  borderRightWidth: i < stats.length - 1 ? 1 : 0,
-                  borderRightColor: C.border,
-                }}
-              >
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
-                    backgroundColor: C.primaryLight,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 6,
-                  }}
-                >
-                  <Ionicons name={stat.icon} size={15} color={C.primary} />
-                </View>
-                <AppText
-                  style={{ fontSize: 20, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
-                >
-                  {stat.value}
-                </AppText>
-                <AppText
-                  style={{ fontSize: 11, color: C.muted, fontWeight: '500', marginTop: 2 }}
-                  numberOfLines={1}
-                >
-                  {stat.label}
-                </AppText>
-              </View>
+              <StatItem key={stat.label} stat={stat} isLast={i === stats.length - 1} />
             ))}
           </View>
         </View>

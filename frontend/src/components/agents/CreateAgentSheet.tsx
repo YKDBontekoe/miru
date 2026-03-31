@@ -25,6 +25,40 @@ interface CreateAgentSheetProps {
   prefill?: Prefill;
 }
 
+const GoalItem = React.memo(function GoalItem({
+  goal,
+  index,
+  onRemove,
+  primaryColor,
+}: {
+  goal: string;
+  index: number;
+  onRemove: (idx: number) => void;
+  primaryColor: string;
+}) {
+  return (
+    <ScalePressable
+      onPress={() => onRemove(index)}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: `${primaryColor}12`,
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1,
+        borderColor: `${primaryColor}25`,
+        marginRight: 8,
+        marginBottom: 8,
+      }}
+    >
+      <AppText style={{ color: primaryColor, fontSize: 12 }}>{goal}</AppText>
+      <Ionicons name="close" size={11} color={primaryColor} />
+    </ScalePressable>
+  );
+});
+
 export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: CreateAgentSheetProps) {
   const { C } = useTheme();
   const { createAgent, generateAgent } = useAgentStore();
@@ -159,6 +193,11 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     setGoals(t.goals ?? []);
     setWasGenerated(true);
   };
+
+  const handleRemoveGoal = React.useCallback(
+    (idx: number) => setGoals((gs) => gs.filter((_, i) => i !== idx)),
+    []
+  );
 
   const input = {
     backgroundColor: C.surfaceHigh,
@@ -496,24 +535,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}
                 >
                   {goals.map((g, i) => (
-                    <ScalePressable
-                      key={i}
-                      onPress={() => setGoals((gs) => gs.filter((_, idx) => idx !== i))}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 5,
-                        backgroundColor: `${C.primary}12`,
-                        borderRadius: 20,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderWidth: 1,
-                        borderColor: `${C.primary}25`,
-                      }}
-                    >
-                      <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
-                      <Ionicons name="close" size={11} color={C.primary} />
-                    </ScalePressable>
+                    <GoalItem key={g} goal={g} index={i} onRemove={handleRemoveGoal} primaryColor={C.primary} />
                   ))}
                 </Animated.View>
               )}
