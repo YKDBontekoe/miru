@@ -87,8 +87,10 @@ class ChatRepository:
             return True
         return False
 
-    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID) -> ChatRoomAgentEntity:
-        """Associate an agent with a room."""
+    async def add_agent_to_room(self, room_id: UUID, agent_id: UUID, user_id: UUID | None = None) -> ChatRoomAgentEntity | None:
+        """Associate an agent with a room. Optionally enforce ownership."""
+        if user_id is not None and not await self.room_belongs_to_user(room_id, user_id):
+            return None
         assoc = await ChatRoomAgent.create(room_id=room_id, agent_id=agent_id)
         return ChatRoomAgentEntity(
             room_id=assoc.room_id,
@@ -96,25 +98,31 @@ class ChatRepository:
             created_at=assoc.created_at,
         )
 
-    async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID) -> bool:
-        """Remove an agent from a room."""
+    async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID, user_id: UUID | None = None) -> bool:
+        """Remove an agent from a room. Optionally enforce ownership."""
+        if user_id is not None and not await self.room_belongs_to_user(room_id, user_id):
+            return False
         deleted_count = await ChatRoomAgent.filter(room_id=room_id, agent_id=agent_id).delete()
         return deleted_count > 0
 
-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
-        """Fetch all agents associated with a room, with integrations prefetched."""
+    async def list_room_agents(self, room_id: UUID, user_id: UUID | None = None) -> list[Agent] | None:
+        """Fetch all agents associated with a room, with integrations prefetched. Optionally enforce ownership."""
+        if user_id is not None and not await self.room_belongs_to_user(room_id, user_id):
+            return None
         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
             "agent__capabilities", "agent__agent_integrations__integration"
         )
         return [assoc.agent for assoc in assocs]
 
     async def get_room_messages(
-        self, room_id: UUID, limit: int = 50, before_id: UUID | None = None
-    ) -> list[ChatMessageEntity]:
+        self, room_id: UUID, limit: int = 50, before_id: UUID | None = None, user_id: UUID | None = None
+    ) -> list[ChatMessageEntity] | None:
         """Fetch the most recent *limit* non-deleted messages in a room, in ascending order.
-
+        Optionally enforce ownership.
         Pass *before_id* as a cursor to page backwards through older messages.
         """
+        if user_id is not None and not await self.room_belongs_to_user(room_id, user_id):
+            return None
         q = ChatMessage.filter(room_id=room_id, deleted_at__isnull=True)
         if before_id is not None:
             anchor = await ChatMessage.get_or_none(id=before_id, room_id=room_id)
@@ -164,8 +172,10 @@ class ChatRepository:
         """Return True if the room exists and is owned by *user_id*."""
         return await ChatRoom.filter(id=room_id, user_id=user_id).exists()
 
-    async def save_message(self, message: ChatMessageEntity) -> ChatMessageEntity:
-        """Save a new message or update an existing one."""
+    async def save_message(self, message: ChatMessageEntity, user_id: UUID | None = None) -> ChatMessageEntity | None:
+        """Save a new message or update an existing one. Optionally enforce ownership."""
+        if user_id is not None and not await self.room_belongs_to_user(message.room_id, user_id):
+            return None
         if message.id:
             # Check if it exists
             msg_model = await ChatMessage.get_or_none(id=message.id)
@@ -188,14 +198,18 @@ class ChatRepository:
         )
         return _map_message_to_entity(msg_model)
 
-    async def touch_room(self, room_id: UUID) -> None:
+    async def touch_room(self, room_id: UUID, user_id: UUID | None = None) -> None:
         """Bump updated_at on a room so recent-chat sorting reflects new messages."""
+        if user_id is not None and not await self.room_belongs_to_user(room_id, user_id):
+            return
         room = await ChatRoom.get_or_none(id=room_id)
         if room:
             await room.save()  # auto_now=True on updated_at refreshes the timestamp
 
-    async def update_room_summary(self, room_id: UUID, summary: str) -> bool:
+    async def update_room_summary(self, room_id: UUID, summary: str, user_id: UUID | None = None) -> bool:
         """Update a room's summary."""
+        if user_id is not None and not await self.room_belongs_to_user(room_id, user_id):
+            return False
         room = await ChatRoom.get_or_none(id=room_id)
         if not room:
             return False

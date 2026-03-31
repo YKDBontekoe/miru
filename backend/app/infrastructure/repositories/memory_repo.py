@@ -79,8 +79,8 @@ class MemoryRepository:
             source_id=from_id, target_id=to_id, relationship_type=rel_type
         )
 
-    async def find_related(self, memory_id: UUID, rel_type: str | None = None) -> list[Memory]:
-        """Find related memories."""
+    async def find_related(self, memory_id: UUID, rel_type: str | None = None, user_id: UUID | None = None) -> list[Memory]:
+        """Find related memories. Optionally enforce ownership."""
         q = MemoryRelationship.filter(Q(source_id=memory_id) | Q(target_id=memory_id))
         if rel_type:
             q = q.filter(relationship_type=rel_type)
@@ -99,14 +99,21 @@ class MemoryRepository:
         if not related_ids:
             return []
 
-        return await Memory.filter(id__in=list(related_ids)).all()
+        filters: dict = {"id__in": list(related_ids)}
+        if user_id is not None:
+            filters["user_id"] = user_id
+        return await Memory.filter(**filters).all()
 
-    async def search_fulltext(self, query: str) -> list[Memory]:
+    async def search_fulltext(self, query: str, user_id: UUID | None = None) -> list[Memory]:
         """Full-text search for memories using PostgreSQL fts."""
         # Tortoise doesn't support fts natively well, so we use raw SQL
         conn = Tortoise.get_connection("default")
-        sql = "SELECT * FROM memories WHERE fts @@ plainto_tsquery('english', $1) LIMIT 10"
-        records = await conn.execute_query_dict(sql, [query])
+        if user_id is not None:
+            sql = "SELECT * FROM memories WHERE fts @@ plainto_tsquery('english', $1) AND user_id = $2::uuid LIMIT 10"
+            records = await conn.execute_query_dict(sql, [query, str(user_id)])
+        else:
+            sql = "SELECT * FROM memories WHERE fts @@ plainto_tsquery('english', $1) LIMIT 10"
+            records = await conn.execute_query_dict(sql, [query])
         return [Memory(**row) for row in records]
 
     async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[MemoryRelationship]:

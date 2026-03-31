@@ -32,7 +32,7 @@ async def test_update_mood_success():
         await service.update_mood(agent_id, "User said something nice")
 
         mock_completion.assert_called_once()
-        repo.update_mood.assert_called_once_with(agent_id, "Happy")
+        repo.update_mood.assert_called_once_with(agent_id, "Happy", user_id=None)
 
 
 @pytest.mark.asyncio
@@ -49,7 +49,7 @@ async def test_update_mood_invalid_mood():
         await service.update_mood(agent_id, "User said something weird")
 
         mock_completion.assert_called_once()
-        repo.update_mood.assert_called_once_with(agent_id, "Neutral")
+        repo.update_mood.assert_called_once_with(agent_id, "Neutral", user_id=None)
 
 
 @pytest.mark.asyncio

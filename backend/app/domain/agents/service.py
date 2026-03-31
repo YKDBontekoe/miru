@@ -184,8 +184,8 @@ class AgentService:
         If ``capabilities`` or ``integrations`` are supplied the M2M relations are
         replaced and the system prompt is rebuilt to reflect the new configuration.
         """
-        agent = await self.repo.get_by_id(agent_id)
-        if not agent or str(agent.user_id) != str(user_id):
+        agent = await self.repo.get_by_id(agent_id, user_id=user_id)
+        if not agent:
             return None
 
         fields = data.model_dump(exclude_none=True)
@@ -263,7 +263,7 @@ class AgentService:
         "Creative",
     )
 
-    async def update_mood(self, agent_id: UUID | str, recent_history: str) -> None:
+    async def update_mood(self, agent_id: UUID | str, recent_history: str, user_id: UUID | None = None) -> None:
         """Infer agent mood from recent conversation history and persist it."""
         if not recent_history.strip():
             return
@@ -289,4 +289,4 @@ class AgentService:
         except Exception:
             logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
             return
-        await self.repo.update_mood(agent_id, mood)
+        await self.repo.update_mood(agent_id, mood, user_id=user_id)

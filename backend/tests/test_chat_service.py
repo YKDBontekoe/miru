@@ -550,7 +550,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
         typing.cast("AsyncMock", chat_service.chat_repo.touch_room).assert_called_once_with(room_id)
         typing.cast(
             "AsyncMock", chat_service.agent_repo.increment_message_count
-        ).assert_called_once_with(room_agents[0].id)
+        ).assert_called_once_with(room_agents[0].id, user_id=room_agents[0].user_id)
         assert mock_hub.broadcast_to_room.call_count == 1
         # Only the agent that actually responded is returned
         assert len(responded) == 1
