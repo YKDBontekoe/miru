@@ -32,10 +32,10 @@ class ChatBackgroundService:
         self.agent_service = agent_service
         self.chat_repo = chat_repo
 
-    async def update_mood_background(self, agent_id: UUID, recent_context: str) -> None:
+    async def update_mood_background(self, agent_id: UUID, recent_context: str, user_id: UUID | None = None) -> None:
         """Infer and persist an agent's mood from the recent conversation turn."""
         try:
-            await self.agent_service.update_mood(agent_id, recent_context)
+            await self.agent_service.update_mood(agent_id, recent_context, user_id=user_id)
         except Exception:
             logger.warning("Background mood update failed for agent %s", agent_id, exc_info=True)
 
@@ -104,7 +104,7 @@ class ChatBackgroundService:
             logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
 
     async def update_room_summary_background(
-        self, room_id: UUID, conversation_history: list[dict]
+        self, room_id: UUID, conversation_history: list[dict], user_id: UUID | None = None
     ) -> None:
         """Summarize the conversation history and update the room summary."""
         if not self.chat_repo:

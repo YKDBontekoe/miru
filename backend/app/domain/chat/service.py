@@ -85,24 +85,26 @@ class ChatService:
     ) -> ChatRoomAgentEntity | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             return None
-        return await self.chat_repo.add_agent_to_room(room_id, agent_id)
+        return await self.chat_repo.add_agent_to_room(room_id, agent_id, user_id=user_id)
 
     async def remove_agent_from_room(self, room_id: UUID, agent_id: UUID, user_id: UUID) -> bool:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             return False
-        return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
+        return await self.chat_repo.remove_agent_from_room(room_id, agent_id, user_id=user_id)
 
     async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent] | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             return None
-        return await self.chat_repo.list_room_agents(room_id)
+        return await self.chat_repo.list_room_agents(room_id, user_id=user_id)
 
     async def get_room_messages(
         self, room_id: UUID, user_id: UUID, limit: int = 50, before_id: UUID | None = None
     ) -> list[ChatMessageResponse] | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             return None
-        msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, before_id=before_id)
+        msgs = await self.chat_repo.get_room_messages(room_id, limit=limit, before_id=before_id, user_id=user_id)
+        if msgs is None:
+            return None
         return [
             ChatMessageResponse(
                 id=m.id,
@@ -239,12 +241,18 @@ class ChatService:
             return
 
         # 1. Fetch room agents first so we can attach names to history entries.
-        room_agents = await self.chat_repo.list_room_agents(room_id)
+        room_agents = await self.chat_repo.list_room_agents(room_id, user_id=user_id)
+        if room_agents is None:
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {"type": "error", "data": {"message": "Unauthorized or room not found."}},
+            )
+            return
 
         # 2. Build conversation history with real agent names before saving the new message.
         prior_messages = await self.chat_repo.get_room_messages(
-            room_id, limit=CONVERSATION_HISTORY_LIMIT
-        )
+            room_id, limit=CONVERSATION_HISTORY_LIMIT, user_id=user_id
+        ) or []
         agent_by_id: dict[UUID, str] = {a.id: a.name for a in room_agents}
         conversation_history = self._build_history(prior_messages, agent_by_id)
 
@@ -324,7 +332,7 @@ class ChatService:
 
             for agent in responded_agents:
                 asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_mood_background(agent.id, recent_context)
+                    self.bg_service.update_mood_background(agent.id, recent_context, user_id=user_id)
                 )
                 asyncio.create_task(  # noqa: RUF006
                     self.bg_service.update_affinity_background(user_id, agent.id)
@@ -339,7 +347,7 @@ class ChatService:
             # Fire background task to update room summary if conversation gets long
             if len(conversation_history) >= CONVERSATION_HISTORY_LIMIT - 5:
                 asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_room_summary_background(room_id, conversation_history)
+                    self.bg_service.update_room_summary_background(room_id, conversation_history, user_id=user_id)
                 )
 
         except Exception:

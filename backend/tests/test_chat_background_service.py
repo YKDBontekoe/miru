@@ -24,7 +24,7 @@ async def test_update_mood_background_success(background_service: ChatBackground
 
     await background_service.update_mood_background(agent_id, recent_context)
     background_service.agent_service.update_mood.assert_called_once_with(  # type: ignore
-        agent_id, recent_context
+        agent_id, recent_context, user_id=None
     )
 
 

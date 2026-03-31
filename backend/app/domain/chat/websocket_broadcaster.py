@@ -241,7 +241,7 @@ class ChatWebSocketBroadcaster:
         # Only increment message_count for agents that actually responded.
         for agent in responded:
             try:
-                await self.agent_repo.increment_message_count(agent.id)
+                await self.agent_repo.increment_message_count(agent.id, user_id=agent.user_id)
             except BaseORMException:
                 logger.warning("Failed to increment message_count for agent %s", agent.id)
 
