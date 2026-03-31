@@ -56,6 +56,22 @@ const EditGoalItem = React.memo(function EditGoalItem({
   );
 });
 
+interface ThemeColors {
+  text: string;
+  muted: string;
+  faint: string;
+  border: string;
+  primary: string;
+  surfaceMid: string;
+  surfaceHigh: string;
+}
+
+interface Milestone {
+  threshold: number;
+  label: string;
+  icon: string;
+}
+
 const StatItem = React.memo(function StatItem({
   stat,
   isLast,
@@ -65,7 +81,7 @@ const StatItem = React.memo(function StatItem({
   stat: { value: number; label: string };
   isLast: boolean;
   displayColor: string;
-  C: any;
+  C: ThemeColors;
 }) {
   return (
     <React.Fragment>
@@ -86,10 +102,10 @@ const MilestoneItem = React.memo(function MilestoneItem({
   displayColor,
   C,
 }: {
-  milestone: any;
+  milestone: Milestone;
   agentMessageCount: number;
   displayColor: string;
-  C: any;
+  C: ThemeColors;
 }) {
   const earned = agentMessageCount >= milestone.threshold;
   return (
@@ -132,7 +148,7 @@ const GoalDisplayItem = React.memo(function GoalDisplayItem({
   goal: string;
   index: number;
   displayColor: string;
-  C: any;
+  C: ThemeColors;
 }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -163,7 +179,7 @@ const IntegrationItem = React.memo(function IntegrationItem({
   C,
 }: {
   integration: string;
-  C: any;
+  C: ThemeColors;
 }) {
   return (
     <View
@@ -349,7 +365,6 @@ export function AgentDetailSheet({
           <View style={{ alignItems: 'center', paddingTop: 12 }}>
             <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
           </View>
-
           {/* Hero header */}
           <View
             style={{
@@ -534,7 +549,13 @@ export function AgentDetailSheet({
                 {editGoals.length > 0 && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                     {editGoals.map((g, i) => (
-                      <EditGoalItem key={g} goal={g} index={i} onRemove={handleRemoveEditGoal} primaryColor={C.primary} />
+                      <EditGoalItem
+                        key={g}
+                        goal={g}
+                        index={i}
+                        onRemove={handleRemoveEditGoal}
+                        primaryColor={C.primary}
+                      />
                     ))}
                   </View>
                 )}
@@ -672,7 +693,13 @@ export function AgentDetailSheet({
                   }}
                 >
                   {stats.map((stat, i) => (
-                    <StatItem key={stat.label} stat={stat} isLast={i === stats.length - 1} displayColor={displayColor} C={C} />
+                    <StatItem
+                      key={stat.label}
+                      stat={stat}
+                      isLast={i === stats.length - 1}
+                      displayColor={displayColor}
+                      C={C}
+                    />
                   ))}
                 </View>
 
@@ -733,7 +760,7 @@ export function AgentDetailSheet({
                       <MilestoneItem
                         key={m.threshold}
                         milestone={m}
-                        agentMessageCount={agent?.message_count ?? 0}
+                        agentMessageCount={agent.message_count}
                         displayColor={displayColor}
                         C={C}
                       />
@@ -769,7 +796,13 @@ export function AgentDetailSheet({
                   <View style={{ marginBottom: 16 }}>
                     <AppText style={label}>Goals</AppText>
                     {agent.goals.map((goal, index) => (
-                      <GoalDisplayItem key={goal} goal={goal} index={index} displayColor={displayColor} C={C} />
+                      <GoalDisplayItem
+                        key={goal}
+                        goal={goal}
+                        index={index}
+                        displayColor={displayColor}
+                        C={C}
+                      />
                     ))}
                   </View>
                 )}

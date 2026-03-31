@@ -535,7 +535,13 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                   style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}
                 >
                   {goals.map((g, i) => (
-                    <GoalItem key={g} goal={g} index={i} onRemove={handleRemoveGoal} primaryColor={C.primary} />
+                    <GoalItem
+                      key={g}
+                      goal={g}
+                      index={i}
+                      onRemove={handleRemoveGoal}
+                      primaryColor={C.primary}
+                    />
                   ))}
                 </Animated.View>
               )}
