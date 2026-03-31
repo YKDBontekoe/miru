@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Documentation
+
 - **API**: Flagged undocumented `websocket_chat_hub` endpoint in `backend/app/api/v1/websocket.py` to ensure it is added to OpenAPI schema in future work.
 - **Architecture**: Updated `AGENTS.md` and `README.md` to accurately reflect the correct project layer structures (e.g. `use_cases/`, `entities.py`, `interfaces/` in productivity domain) and the `CodeRabbit` AI integration prompt discrepancies.
 - **Components**: Added JSDoc blocks to `AgentAvatar` and `BackendSplash` components, and improved the `useAgentStore` hook description to clarify its optimistic update strategies.

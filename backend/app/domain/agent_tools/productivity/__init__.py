@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .events_tools import (
     CreateEventInput,
     CreateEventTool,

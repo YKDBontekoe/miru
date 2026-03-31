@@ -138,7 +138,7 @@ See [`backend/.env.example`](backend/.env.example) for the full list. Key variab
 | `DATABASE_URL` | Yes | Direct PostgreSQL connection string |
 | `WEBAUTHN_RP_ID` | Yes | Passkey relying party ID (`localhost` for dev) |
 | `WEBAUTHN_RP_NAME` | Yes | Human-readable name for passkeys (e.g., Miru) |
-| `WEBAUTHN_EXPECTED_ORIGIN` | Yes | Allowed origin for WebAuthn (e.g., http://localhost) |
+| `WEBAUTHN_EXPECTED_ORIGIN` | Yes | Comma-separated allowed origins (e.g., http://localhost) |
 | `TAVILY_API_KEY` | No | Tavily API key for agent web search |
 
 ## Project Structure
