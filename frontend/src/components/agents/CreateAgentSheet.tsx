@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { View, Modal, ScrollView, FlatList, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Modal, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { TemplateGallerySheet } from './TemplateGallerySheet';
-import { useTheme } from '../../hooks/useTheme';
-import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
-import { haptic } from '../../utils/haptics';
-import { TONES, SURPRISE_KEYWORDS, getTonePrefix } from './agentUtils';
-import { ScalePressable } from '../ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { useAgentStore, AgentTemplate } from '@/store/useAgentStore';
+import { haptic } from '@/utils/haptics';
+import { SURPRISE_KEYWORDS, getTonePrefix } from '@/components/agents/agentUtils';
+import { ScalePressable } from '@/components/ScalePressable';
+import { CreateAgentForm } from '@/components/agents/create';
 
 interface Prefill {
   name?: string;
   personality?: string;
   description?: string;
   goals?: string[];
+  isGenerated?: boolean;
 }
 
 interface CreateAgentSheetProps {
@@ -33,11 +35,11 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   const [personality, setPersonality] = useState('');
   const [description, setDescription] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
-  const [goalInput, setGoalInput] = useState('');
   const [selectedTone, setSelectedTone] = useState('');
   const [keywords, setKeywords] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const isGeneratingRef = useRef(false);
   const [wasGenerated, setWasGenerated] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -47,106 +49,82 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     setPersonality('');
     setDescription('');
     setGoals([]);
-    setGoalInput('');
-    setKeywords('');
     setSelectedTone('');
-    setWasGenerated(false);
+    setKeywords('');
     setErrorMsg('');
+    setWasGenerated(false);
   };
 
-  // Apply prefill when sheet becomes visible with pre-filled data
   useEffect(() => {
     if (visible && prefill) {
       if (prefill.name) setName(prefill.name);
       if (prefill.personality) setPersonality(prefill.personality);
       if (prefill.description) setDescription(prefill.description);
       if (prefill.goals) setGoals(prefill.goals);
-      if (prefill.name || prefill.personality) setWasGenerated(true);
+      setWasGenerated(Boolean(prefill.isGenerated));
+    } else if (!visible) {
+      reset();
     }
   }, [visible, prefill]);
 
-  const handleGenerate = async (kw?: string) => {
-    setErrorMsg('');
-    const words = kw ?? keywords.trim();
-    if (!words) {
-      setErrorMsg('Enter a description to generate from.');
-      return;
-    }
+  const handleSurprise = () => {
+    haptic.selection();
+    const randomKW = SURPRISE_KEYWORDS[Math.floor(Math.random() * SURPRISE_KEYWORDS.length)];
+    setKeywords(randomKW);
+  };
+
+  const handleGenerate = async () => {
+    if (!keywords.trim() || isGeneratingRef.current) return;
+    haptic.light();
     setIsGenerating(true);
-    haptic.medium();
+    isGeneratingRef.current = true;
+    setErrorMsg('');
     try {
-      const result = await generateAgent(words);
-      setName(result.name);
-      setPersonality(result.personality);
-      setDescription(result.description ?? '');
-      setGoals(result.goals ?? []);
+      const prompt = keywords.trim();
+      const generated = await generateAgent(prompt);
+      setName(generated.name);
+      setPersonality(generated.personality);
+      setDescription(generated.description ?? '');
+      setGoals(generated.goals ?? []);
       setWasGenerated(true);
       haptic.success();
-    } catch {
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Failed to generate persona.');
       haptic.error();
-      setErrorMsg('Could not generate persona. Try again.');
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const handleSurprise = () => {
-    const kw = SURPRISE_KEYWORDS[Math.floor(Math.random() * SURPRISE_KEYWORDS.length)];
-    setKeywords(kw);
-    handleGenerate(kw);
-  };
-
-  const addGoal = () => {
-    const g = goalInput.trim();
-    if (g && !goals.includes(g)) {
-      setGoals((prev) => [...prev, g]);
-      setGoalInput('');
+      isGeneratingRef.current = false;
     }
   };
 
   const handleSave = async () => {
-    if (isSaving) return;
-    setErrorMsg('');
-
-    const trimmedName = name.trim();
-    const trimmedPersonality = personality.trim();
-
-    if (!trimmedName || !trimmedPersonality) {
+    if (!name.trim() || !personality.trim()) {
       setErrorMsg('Name and personality are required.');
+      haptic.error();
       return;
     }
-
+    setErrorMsg('');
+    haptic.light();
     setIsSaving(true);
-    haptic.medium();
     try {
-      const tonePrefix = getTonePrefix(selectedTone);
+      const finalPersonality = selectedTone
+        ? `${getTonePrefix(selectedTone)} ${personality.trim()}`
+        : personality.trim();
+
       await createAgent({
-        name: trimmedName,
-        personality: (tonePrefix + trimmedPersonality).trim(),
+        name: name.trim(),
+        personality: finalPersonality,
         description: description.trim() || undefined,
-        goals: goals.filter(Boolean),
+        goals: goals.length > 0 ? goals : undefined,
       });
+
       haptic.success();
-      reset();
       onCreated();
+      reset();
       onClose();
-    } catch (err: any) {
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Failed to create persona.');
       haptic.error();
-      // Handle potential 409 or 422 errors from backend
-      const detail = err.response?.data?.detail;
-      let errMsg = 'Failed to create persona. Please try again.';
-
-      if (Array.isArray(detail)) {
-        errMsg = detail
-          .map((d: any) => `${d.loc?.[d.loc.length - 1] ?? 'Field'}: ${d.msg}`)
-          .join('\n');
-      } else if (typeof detail?.message === 'string') {
-        errMsg = detail.message;
-      } else if (typeof detail === 'string') {
-        errMsg = detail;
-      }
-
-      setErrorMsg(errMsg);
     } finally {
       setIsSaving(false);
     }
@@ -158,26 +136,6 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     setDescription(t.description ?? '');
     setGoals(t.goals ?? []);
     setWasGenerated(true);
-  };
-
-  const input = {
-    backgroundColor: C.surfaceHigh,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: C.text,
-    fontSize: 15,
-    marginBottom: 14,
-  };
-  const label = {
-    color: C.muted,
-    marginBottom: 6,
-    fontSize: 11,
-    fontWeight: '600' as const,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.8,
   };
 
   return (
@@ -349,200 +307,21 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
                 </Animated.View>
               )}
 
-              {!!errorMsg && (
-                <Animated.View
-                  entering={FadeIn.duration(200)}
-                  style={{
-                    backgroundColor: `${C.danger}15`,
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 16,
-                    borderWidth: 1,
-                    borderColor: `${C.danger}30`,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <Ionicons name="alert-circle" size={16} color={C.danger} />
-                  <AppText style={{ color: C.danger, fontSize: 13, flex: 1 }}>{errorMsg}</AppText>
-                </Animated.View>
-              )}
-
-              <AppText style={label}>Name</AppText>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Persona name"
-                placeholderTextColor={C.faint}
-                style={input}
+              <CreateAgentForm
+                name={name}
+                setName={setName}
+                selectedTone={selectedTone}
+                setSelectedTone={setSelectedTone}
+                personality={personality}
+                setPersonality={setPersonality}
+                description={description}
+                setDescription={setDescription}
+                goals={goals}
+                setGoals={setGoals}
+                isSaving={isSaving}
+                onSave={handleSave}
+                errorMsg={errorMsg}
               />
-
-              {/* Tone selector */}
-              <AppText style={label}>
-                Tone <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
-              </AppText>
-              <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                data={TONES}
-                keyExtractor={(item: { id: string }) => item.id}
-                style={{ marginBottom: 14 }}
-                contentContainerStyle={{ gap: 8 }}
-                renderItem={({ item: tone }: { item: any }) => {
-                  const isSelected = selectedTone === tone.id;
-                  return (
-                    <ScalePressable
-                      key={tone.id}
-                      onPress={() => {
-                        haptic.selection();
-                        setSelectedTone(isSelected ? '' : tone.id);
-                      }}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderRadius: 20,
-                        backgroundColor: isSelected ? C.primary : C.surfaceHigh,
-                        borderWidth: 1,
-                        borderColor: isSelected ? C.primary : C.border,
-                      }}
-                    >
-                      <AppText style={{ fontSize: 13 }}>{tone.icon}</AppText>
-                      <AppText
-                        style={{
-                          fontSize: 13,
-                          fontWeight: '600',
-                          color: isSelected ? 'white' : C.text,
-                        }}
-                      >
-                        {tone.label}
-                      </AppText>
-                    </ScalePressable>
-                  );
-                }}
-              />
-
-              <AppText style={label}>Personality</AppText>
-              <TextInput
-                value={personality}
-                onChangeText={setPersonality}
-                placeholder="How does this persona think and communicate?"
-                placeholderTextColor={C.faint}
-                multiline
-                numberOfLines={4}
-                style={[input, { minHeight: 90, textAlignVertical: 'top' }]}
-              />
-
-              <AppText style={label}>
-                Description{' '}
-                <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
-              </AppText>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="A short bio or backstory…"
-                placeholderTextColor={C.faint}
-                multiline
-                numberOfLines={2}
-                style={[input, { minHeight: 60, textAlignVertical: 'top' }]}
-              />
-
-              {/* Goals */}
-              <AppText style={label}>
-                Goals{' '}
-                <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
-              </AppText>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-                <TextInput
-                  value={goalInput}
-                  onChangeText={setGoalInput}
-                  placeholder="Add a goal and press +"
-                  placeholderTextColor={C.faint}
-                  style={{
-                    flex: 1,
-                    backgroundColor: C.surfaceHigh,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: C.border,
-                    paddingHorizontal: 12,
-                    paddingVertical: 9,
-                    color: C.text,
-                    fontSize: 14,
-                  }}
-                  onSubmitEditing={addGoal}
-                  returnKeyType="done"
-                />
-                <ScalePressable
-                  onPress={addGoal}
-                  style={{
-                    width: 40,
-                    backgroundColor: `${C.primary}15`,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: `${C.primary}30`,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Ionicons name="add" size={20} color={C.primary} />
-                </ScalePressable>
-              </View>
-              {goals.length > 0 && (
-                <Animated.View
-                  entering={FadeIn.duration(250)}
-                  style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}
-                >
-                  {goals.map((g, i) => (
-                    <ScalePressable
-                      key={i}
-                      onPress={() => setGoals((gs) => gs.filter((_, idx) => idx !== i))}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 5,
-                        backgroundColor: `${C.primary}12`,
-                        borderRadius: 20,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderWidth: 1,
-                        borderColor: `${C.primary}25`,
-                      }}
-                    >
-                      <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
-                      <Ionicons name="close" size={11} color={C.primary} />
-                    </ScalePressable>
-                  ))}
-                </Animated.View>
-              )}
-
-              <ScalePressable onPress={handleSave} disabled={isSaving || !name.trim()}>
-                <View
-                  style={{
-                    backgroundColor: !name.trim() || isSaving ? C.faint : C.primary,
-                    borderRadius: 16,
-                    paddingVertical: 15,
-                    alignItems: 'center',
-                    marginTop: 4,
-                    marginBottom: 40,
-                    shadowColor: C.primary,
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: name.trim() && !isSaving ? 0.25 : 0,
-                    shadowRadius: 8,
-                    elevation: name.trim() && !isSaving ? 3 : 0,
-                  }}
-                >
-                  {isSaving ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-                      Create Persona
-                    </AppText>
-                  )}
-                </View>
-              </ScalePressable>
             </ScrollView>
           </Animated.View>
         </View>

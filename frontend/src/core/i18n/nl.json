@@ -121,6 +121,27 @@
     "room_agents_status_one": "{{names}} is in deze kamer.",
     "room_agents_status_other": "{{names}} zijn in deze kamer."
   },
+  "agent": {
+    "name": "Naam",
+    "name_placeholder": "Persona naam",
+    "tone": "Toon",
+    "optional": "optioneel",
+    "tones": {
+      "professional": "Professioneel",
+      "casual": "Informeel",
+      "enthusiastic": "Enthousiast",
+      "empathetic": "Empathisch",
+      "sarcastic": "Sarcastisch",
+      "analytical": "Analytisch"
+    },
+    "personality": "Persoonlijkheid",
+    "personality_placeholder": "Hoe denkt en communiceert deze persona?",
+    "description": "Beschrijving",
+    "description_placeholder": "Een korte bio of achtergrondverhaal…",
+    "goals": "Doelen",
+    "goals_placeholder": "Voeg een doel toe…",
+    "create_persona": "Maak Persona"
+  },
   "agents": {
     "title": "Agenten",
     "subtitle": "Jouw AI-personacollectie",

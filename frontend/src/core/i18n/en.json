@@ -121,6 +121,27 @@
     "room_agents_status_one": "{{names}} is in this room.",
     "room_agents_status_other": "{{names}} are in this room."
   },
+  "agent": {
+    "name": "Name",
+    "name_placeholder": "Persona name",
+    "tone": "Tone",
+    "optional": "optional",
+    "tones": {
+      "professional": "Professional",
+      "casual": "Casual",
+      "enthusiastic": "Enthusiastic",
+      "empathetic": "Empathetic",
+      "sarcastic": "Sarcastic",
+      "analytical": "Analytical"
+    },
+    "personality": "Personality",
+    "personality_placeholder": "How does this persona think and communicate?",
+    "description": "Description",
+    "description_placeholder": "A short bio or backstory…",
+    "goals": "Goals",
+    "goals_placeholder": "Add a goal…",
+    "create_persona": "Create Persona"
+  },
   "agents": {
     "title": "Agents",
     "subtitle": "Your AI persona collection",

@@ -4,10 +4,6 @@ import {
   ScrollView,
   FlatList,
   RefreshControl,
-  Modal,
-  TextInput,
-  Alert,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +18,16 @@ import { useAuthStore } from '../../src/store/useAuthStore';
 import { Agent, ChatRoom, Task } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
+
+import {
+  HomeCard,
+  HomeSectionHeader,
+  HomeQuickAction,
+  HomeRecentChatRow,
+  HomeTaskRow,
+  HomeAgentChip,
+  HomeNewChatModal,
+} from '@/components/home';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -68,426 +74,6 @@ function formatDate(): string {
   }).format(new Date());
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 24,
-        padding: 20,
-        marginBottom: 12,
-        shadowColor: '#2563EB',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.07,
-        shadowRadius: 20,
-        elevation: 3,
-      }}
-    >
-      {children}
-    </View>
-  );
-}
-
-// ─── Section header ───────────────────────────────────────────────────────────
-function SectionHeader({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-      }}
-    >
-      <AppText
-        style={{
-          fontSize: 15,
-          fontWeight: '700',
-          color: C.text,
-          letterSpacing: -0.2,
-        }}
-      >
-        {title}
-      </AppText>
-      {actionLabel && onAction && (
-        <ScalePressable onPress={onAction}>
-          <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
-            {actionLabel}
-          </AppText>
-        </ScalePressable>
-      )}
-    </View>
-  );
-}
-
-// ─── Quick-action tile ────────────────────────────────────────────────────────
-function QuickAction({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <ScalePressable onPress={onPress} style={{ width: '48%', marginBottom: 10 }}>
-      <View
-        style={{
-          backgroundColor: C.primaryFaint,
-          borderRadius: 20,
-          paddingVertical: 20,
-          paddingHorizontal: 12,
-          alignItems: 'center',
-        }}
-      >
-        <View
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 15,
-            backgroundColor: C.primaryLight,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 10,
-          }}
-        >
-          <Ionicons name={icon} size={22} color={C.primary} />
-        </View>
-        <AppText
-          style={{ fontSize: 13, fontWeight: '600', color: C.text, textAlign: 'center' }}
-          numberOfLines={1}
-        >
-          {label}
-        </AppText>
-      </View>
-    </ScalePressable>
-  );
-}
-
-// ─── Recent chat row ──────────────────────────────────────────────────────────
-const RecentChatRow = React.memo(function RecentChatRow({
-  room,
-  onPress,
-  isLast,
-}: {
-  room: ChatRoom;
-  onPress: () => void;
-  isLast: boolean;
-}) {
-  const { t } = useTranslation();
-  const initial = room.name[0]?.toUpperCase() ?? '?';
-
-  const relativeTimeStr = React.useMemo(() => {
-    const diff = Date.now() - new Date(room.updated_at).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return t('home.time.minutes_ago_one', { count: mins });
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return t('home.time.hours_ago_one', { count: hrs });
-    return t('home.time.days_ago_one', { count: Math.floor(hrs / 24) });
-  }, [t, room.updated_at]);
-
-  return (
-    <ScalePressable
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-      }}
-    >
-      <View
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 14,
-          backgroundColor: C.primaryFaint,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-        }}
-      >
-        <AppText style={{ color: C.primary, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
-      </View>
-      <View style={{ flex: 1, marginRight: 8 }}>
-        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
-          {room.name}
-        </AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 2 }} numberOfLines={1}>
-          {t('home.actions.tap_to_continue')}
-        </AppText>
-      </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>
-          {relativeTimeStr}
-        </AppText>
-        <Ionicons name="chevron-forward" size={13} color={C.faint} />
-      </View>
-    </ScalePressable>
-  );
-});
-
-// ─── Task row ─────────────────────────────────────────────────────────────────
-const TaskRow = React.memo(function TaskRow({
-  task,
-  onToggle,
-  isLast,
-}: {
-  task: Task;
-  onToggle: () => void;
-  isLast: boolean;
-}) {
-  const { i18n } = useTranslation();
-  return (
-    <ScalePressable
-      onPress={onToggle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-      }}
-    >
-      <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: task.completed ? C.primary : C.faint,
-          backgroundColor: task.completed ? C.primary : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-        }}
-      >
-        {task.completed && <Ionicons name="checkmark" size={13} color="white" />}
-      </View>
-      <AppText
-        style={{
-          flex: 1,
-          fontSize: 14,
-          color: task.completed ? C.faint : C.text,
-          textDecorationLine: task.completed ? 'line-through' : 'none',
-        }}
-        numberOfLines={1}
-      >
-        {task.title}
-      </AppText>
-      {task.due_date && (
-        <View
-          style={{
-            backgroundColor: C.primaryFaint,
-            borderRadius: 8,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            marginLeft: 8,
-          }}
-        >
-          <AppText style={{ fontSize: 11, color: C.primary, fontWeight: '600' }}>
-            {new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
-              new Date(task.due_date)
-            )}
-          </AppText>
-        </View>
-      )}
-    </ScalePressable>
-  );
-});
-
-// ─── Agent chip ───────────────────────────────────────────────────────────────
-const AgentChip = React.memo(function AgentChip({
-  agent,
-  onPress,
-}: {
-  agent: Agent;
-  onPress: () => void;
-}) {
-  return (
-    <ScalePressable
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.primaryFaint,
-        borderRadius: 22,
-        paddingVertical: 7,
-        paddingHorizontal: 12,
-        marginRight: 8,
-        marginBottom: 8,
-      }}
-    >
-      <View
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 13,
-          backgroundColor: C.primaryLight,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 7,
-        }}
-      >
-        <AppText style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>
-          {agent.name[0].toUpperCase()}
-        </AppText>
-      </View>
-      <AppText style={{ fontSize: 13, fontWeight: '600', color: C.text }}>{agent.name}</AppText>
-      {agent.message_count > 0 && (
-        <View
-          style={{
-            backgroundColor: C.primary,
-            borderRadius: 9,
-            minWidth: 18,
-            height: 18,
-            paddingHorizontal: 5,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginLeft: 7,
-          }}
-        >
-          <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
-            {agent.message_count}
-          </AppText>
-        </View>
-      )}
-    </ScalePressable>
-  );
-});
-
-// ─── New-chat modal ───────────────────────────────────────────────────────────
-function NewChatModal({
-  visible,
-  onClose,
-  onCreated,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const { createRoom } = useChatStore();
-
-  const handleCreate = async () => {
-    if (!name.trim()) {
-      Alert.alert(t('home.chat_modal.name_required'), t('home.chat_modal.please_enter_name'));
-      return;
-    }
-    setIsSaving(true);
-    try {
-      await createRoom(name.trim());
-      setName('');
-      onCreated();
-      onClose();
-    } catch {
-      Alert.alert(t('home.chat_modal.error'), t('home.chat_modal.failed_to_create'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(10,15,46,0.4)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            paddingBottom: 40,
-          }}
-        >
-          <View
-            style={{
-              width: 40,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: C.surfaceHigh,
-              alignSelf: 'center',
-              marginBottom: 20,
-            }}
-          />
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 18,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
-              {t('home.chat_modal.title')}
-            </AppText>
-            <ScalePressable
-              onPress={onClose}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 15,
-                backgroundColor: C.surfaceHigh,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="close" size={17} color={C.muted} />
-            </ScalePressable>
-          </View>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t('home.chat_modal.placeholder')}
-            placeholderTextColor={C.faint}
-            autoFocus
-            style={{
-              backgroundColor: C.surfaceHigh,
-              borderRadius: 16,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: C.text,
-              fontSize: 16,
-              marginBottom: 14,
-            }}
-          />
-          <ScalePressable
-            onPress={handleCreate}
-            disabled={isSaving}
-            style={{
-              backgroundColor: isSaving ? `${C.primary}70` : C.primary,
-              borderRadius: 14,
-              paddingVertical: 15,
-              alignItems: 'center',
-              shadowColor: C.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.22,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-                {t('home.actions.create')}
-              </AppText>
-            )}
-          </ScalePressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -528,9 +114,9 @@ export default function HomeScreen() {
 
   const renderRecentChatRow = React.useCallback(
     ({ item, index }: { item: ChatRoom; index: number }) => (
-      <RecentChatRow
+      <HomeRecentChatRow
         room={item}
-        isLast={index === recentRooms.length - 1}
+
         onPress={() => handleRecentRoomPress(item.id)}
       />
     ),
@@ -539,9 +125,9 @@ export default function HomeScreen() {
 
   const renderTaskRow = React.useCallback(
     ({ item, index }: { item: Task; index: number }) => (
-      <TaskRow
+      <HomeTaskRow
         task={item}
-        isLast={index === pendingTasks.length - 1}
+
         onToggle={() => toggleTask(item.id)}
       />
     ),
@@ -549,7 +135,7 @@ export default function HomeScreen() {
   );
 
   const renderAgentChip = React.useCallback(
-    ({ item }: { item: Agent }) => <AgentChip agent={item} onPress={handleAgentPress} />,
+    ({ item }: { item: Agent }) => <HomeAgentChip agent={item} onPress={handleAgentPress} />,
     [handleAgentPress]
   );
 
@@ -733,38 +319,38 @@ export default function HomeScreen() {
         {/* ── Body ────────────────────────────────────────────────────── */}
         <View style={{ paddingHorizontal: 16 }}>
           {/* Quick actions */}
-          <Card>
-            <SectionHeader title={t('home.sections.quick_actions')} />
+          <HomeCard>
+            <HomeSectionHeader title={t('home.sections.quick_actions')} />
             <View
               style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}
             >
-              <QuickAction
+              <HomeQuickAction
                 icon="chatbubble-ellipses"
                 label={t('home.actions.new_chat')}
                 onPress={() => setShowNewChat(true)}
               />
-              <QuickAction
+              <HomeQuickAction
                 icon="person-add"
                 label={t('home.actions.new_agent')}
                 onPress={() => router.push('/(main)/agents')}
               />
-              <QuickAction
+              <HomeQuickAction
                 icon="document-text"
                 label={t('home.actions.new_note')}
                 onPress={() => router.push('/(main)/productivity')}
               />
-              <QuickAction
+              <HomeQuickAction
                 icon="checkbox"
                 label={t('home.actions.new_task')}
                 onPress={() => router.push('/(main)/productivity')}
               />
             </View>
-          </Card>
+          </HomeCard>
 
           {/* Recent chats */}
           {recentRooms.length > 0 && (
-            <Card>
-              <SectionHeader
+            <HomeCard>
+              <HomeSectionHeader
                 title={t('home.sections.recent_chats')}
                 actionLabel={t('home.actions.see_all')}
                 onAction={() => router.push('/(main)/chat')}
@@ -775,13 +361,13 @@ export default function HomeScreen() {
                 scrollEnabled={false}
                 renderItem={renderRecentChatRow}
               />
-            </Card>
+            </HomeCard>
           )}
 
           {/* Tasks */}
           {tasks.length > 0 && (
-            <Card>
-              <SectionHeader
+            <HomeCard>
+              <HomeSectionHeader
                 title={
                   pendingTasks.length > 0
                     ? t('home.tasks.open_count', { count: pendingTasks.length })
@@ -810,13 +396,13 @@ export default function HomeScreen() {
                   renderItem={renderTaskRow}
                 />
               )}
-            </Card>
+            </HomeCard>
           )}
 
           {/* Agents */}
           {topAgents.length > 0 && (
-            <Card>
-              <SectionHeader
+            <HomeCard>
+              <HomeSectionHeader
                 title={t('home.sections.your_agents')}
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
@@ -829,7 +415,7 @@ export default function HomeScreen() {
                 columnWrapperStyle={{ flexWrap: 'wrap' }}
                 renderItem={renderAgentChip}
               />
-            </Card>
+            </HomeCard>
           )}
 
           {/* Empty state */}
@@ -898,7 +484,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <NewChatModal
+      <HomeNewChatModal
         visible={showNewChat}
         onClose={() => setShowNewChat(false)}
         onCreated={fetchRooms}
