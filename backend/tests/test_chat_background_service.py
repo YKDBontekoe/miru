@@ -146,14 +146,16 @@ async def test_update_room_summary_background_success(
     mock_room.summary = "old summary"
     background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
 
+    from app.domain.chat.background_service import RoomSummaryResponse
+
     with patch(
-        "app.infrastructure.external.openrouter.chat_completion", new_callable=AsyncMock
-    ) as mock_chat_completion:
-        mock_chat_completion.return_value = "new updated summary"
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        mock_structured_completion.return_value = RoomSummaryResponse(summary="new updated summary")
 
         await background_service.update_room_summary_background(room_id, history)
 
-        mock_chat_completion.assert_called_once()
+        mock_structured_completion.assert_called_once()
         background_service.chat_repo.update_room_summary.assert_called_once_with(
             room_id, "new updated summary"
         )
@@ -171,9 +173,9 @@ async def test_update_room_summary_background_exception(
     background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
 
     with patch(
-        "app.infrastructure.external.openrouter.chat_completion", new_callable=AsyncMock
-    ) as mock_chat_completion:
-        mock_chat_completion.side_effect = Exception("error")
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        mock_structured_completion.side_effect = Exception("error")
 
         with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
             await background_service.update_room_summary_background(room_id, history)
