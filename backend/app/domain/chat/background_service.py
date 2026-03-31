@@ -11,6 +11,8 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from openai.types.chat import ChatCompletionMessageParam
+
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
     from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -139,7 +141,7 @@ class ChatBackgroundService:
             # Build the prompt messages
             current_summary = room.summary or "No previous summary."
 
-            messages: list[dict[str, str]] = [
+            messages: list[ChatCompletionMessageParam] = [
                 {
                     "role": "system",
                     "content": (
@@ -171,7 +173,7 @@ class ChatBackgroundService:
 
             response = await structured_completion(
                 model=model_name,  # Use a fast/cheap model for summarization
-                messages=messages,  # type: ignore[arg-type]
+                messages=messages,
                 response_model=RoomSummaryResponse,
             )
 
