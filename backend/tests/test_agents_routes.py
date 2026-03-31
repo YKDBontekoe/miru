@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,12 +22,12 @@ def client() -> Generator[TestClient]:
 
 def test_create_agent_route(client: TestClient) -> None:
     mock_service = MagicMock()
-    user_id = uuid4()
+    user_id = UUID("12345678-1234-5678-1234-567812345678")
 
     # Create Agent instance carefully (Tortoise M2M handling)
-    now = datetime.now()
+    now = datetime(2025, 1, 1, 12, 0)
     agent = Agent(
-        id=uuid4(),
+        id=UUID("12345678-1234-5678-1234-567812345678"),
         user_id=user_id,
         name="Bot",
         personality="Friendly",
@@ -54,7 +54,7 @@ def test_create_agent_route(client: TestClient) -> None:
 
 def test_get_agents_route(client: TestClient) -> None:
     mock_service = MagicMock()
-    user_id = uuid4()
+    user_id = UUID("12345678-1234-5678-1234-567812345678")
 
     mock_service.list_agents = AsyncMock(return_value=[])
 
@@ -69,10 +69,10 @@ def test_get_agents_route(client: TestClient) -> None:
 
 def test_build_agent_response_without_avatar() -> None:
     """Test that agent response is built correctly without an avatar_url field."""
-    now = datetime.now()
+    now = datetime(2025, 1, 1, 12, 0)
     agent = MagicMock()
-    agent.pk = uuid4()
-    agent.user_id = uuid4()
+    agent.pk = UUID("12345678-1234-5678-1234-567812345678")
+    agent.user_id = UUID("12345678-1234-5678-1234-567812345678")
     agent.name = "Test Agent"
     agent.personality = "Test Personality"
     agent.description = "Test Description"
@@ -144,3 +144,64 @@ async def test_agent_service_caching() -> None:
     # Call count should still be 1
     mock_repo.list_capabilities.assert_called_once()
     mock_repo.list_integrations.assert_called_once()
+
+
+def test_create_agent_route_contract(client: TestClient) -> None:
+    """Contract test validating AgentResponse schema from API."""
+    from app.domain.agents.schemas import AgentResponse
+
+    mock_service = MagicMock()
+    user_id = UUID("12345678-1234-5678-1234-567812345678")
+    agent_id = UUID("12345678-1234-5678-1234-567812345678")
+
+    now = datetime(2025, 1, 1, 12, 0)
+
+    # We construct a pure AgentResponse to simulate what the service would return
+    agent_response = AgentResponse(
+        id=agent_id,
+        name="Contract Bot",
+        personality="Contract Personality",
+        description="A bot to test contracts",
+        system_prompt="You are a Contract Bot.",
+        status="active",
+        mood="Neutral",
+        goals=["Goal A"],
+        capabilities=["web_search"],
+        integrations=["discord"],
+        integration_configs={"discord": {"token": "x"}},
+        message_count=5,
+        created_at=now,
+        updated_at=now,
+    )
+
+    # The endpoint returns what the service returns
+    mock_service.create_agent = AsyncMock(return_value=agent_response)
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/agents",
+        headers={"Authorization": "Bearer fake_token"},
+        json={
+            "name": "Contract Bot",
+            "personality": "Contract Personality",
+            "capabilities": ["web_search"],
+            "integrations": ["discord"],
+            "integration_configs": {"discord": {"token": "x"}},
+        },
+    )
+
+    assert response.status_code == 200
+
+    # Contract validation: Does the JSON returned strictly conform to the expected Pydantic schema?
+    # This acts as our contract test boundary check
+    parsed_response = AgentResponse.model_validate(response.json())
+
+    assert parsed_response.id == agent_id
+    assert parsed_response.name == "Contract Bot"
+    assert parsed_response.capabilities == ["web_search"]
+    assert parsed_response.integrations == ["discord"]
+    assert parsed_response.integration_configs == {"discord": {"token": "x"}}
+    assert parsed_response.message_count == 5
+    # Just asserting it passes validation successfully is the primary goal
