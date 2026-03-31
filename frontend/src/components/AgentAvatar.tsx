@@ -8,6 +8,13 @@ interface AgentAvatarProps {
   color: string;
 }
 
+/**
+ * Renders a circular avatar displaying the first letter of an agent's name.
+ *
+ * @param props.name - The name of the agent (used for the initial letter).
+ * @param props.size - The diameter of the avatar in pixels (defaults to 52).
+ * @param props.color - The hex color used for the text and border styling.
+ */
 export function AgentAvatar({ name, size = 52, color }: AgentAvatarProps) {
   return (
     <View

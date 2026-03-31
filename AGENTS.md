@@ -71,6 +71,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
+<!-- DOCS(miru-agent): prompt mismatch -->
 **Note on Prompt:** Jules is instructed to strictly follow project architecture (Domain logic in `backend/app/domain/`, routes in `backend/app/api/v1/`, frontend in `frontend/app/` and `frontend/src/`), code style (100-char lines, type hints, specific import orders, `str | None` not `Optional[str]`), and test requirements (mock all external services including Supabase, OpenRouter, Neo4j, CrewAI in tests — never call real APIs).
 
 ### 2. CodeRabbit
@@ -101,23 +102,28 @@ backend/
         schemas.py   # Profile, Passkey Pydantic schemas
         service.py
       chat/
-        models.py    # ChatRoom, ChatMessage Tortoise ORM models
-        schemas.py   # ChatRoom, ChatMessage Pydantic schemas
+        dtos.py      # ChatRoom, ChatMessage Pydantic schemas
+        entities.py  # ChatRoom, ChatMessage pure python entities
         service.py
+        crew_orchestrator.py # Multi-agent execution
       memory/
         models.py    # Memory, MemoryGraphNode/Edge Tortoise ORM models
         schemas.py   # Memory, MemoryGraphNode/Edge Pydantic schemas
         service.py
+        graph_service.py # Graph logic
+        document_service.py # Document processing logic
       notifications/
         api/         # Push notification endpoints
-        service.py   # Token registration service
+        services.py  # Token registration service
       productivity/
         models.py    # Task, Note, CalendarEvent Tortoise ORM models
         schemas.py   # Task, Note, CalendarEvent Pydantic schemas
-        service.py
+        entities.py  # Pure python domain entities
+        interfaces/  # Interface boundaries for dependencies
+        use_cases/   # Application logic orchestrating productivity domain
       agent_tools/
         models.py    # AgentTool, AgentToolLink Tortoise ORM models
-        schemas.py   # AgentTool, AgentToolLink Pydantic schemas
+        productivity/ # Productivity-specific tool integrations
     infrastructure/
       database/
         base.py      # SupabaseModel — abstract Tortoise base with sql_policies/indexes/functions
@@ -182,7 +188,7 @@ Application code is organised into bounded-context packages under `app/domain/`.
 - **`app/api/v1/`** — Route handlers, one file per domain area, all mounted under `/api/v1` in `main.py`.
 - **`app/domain/**/models.py`** — Tortoise ORM models for each domain (agents, auth, chat, memory, agent_tools).
 - **`app/domain/**/schemas.py`** — Pydantic schemas corresponding to the ORM models to maintain clean separation of concerns.
-- **`app/domain/**/service.py`** — Business logic and database operations for each domain.
+- **`app/domain/**/service.py`** (or **`app/domain/**/use_cases/`**) — Business logic and database operations for each domain.
 - **`app/infrastructure/external/openrouter.py`** — All LLM and embedding calls go through here. Models are configurable via env vars (`EMBEDDING_MODEL`, `DEFAULT_CHAT_MODEL`).
 - **`app/core/security/auth.py`** — JWT validation (supports HS256 and ES256/RS256 via JWKS). The `get_current_user()` FastAPI dependency is defined here.
 - **`app/infrastructure/database/base.py`** — `SupabaseModel`, the abstract Tortoise base that carries `sql_policies`, `sql_indexes`, and `sql_functions` for the migration generator.
