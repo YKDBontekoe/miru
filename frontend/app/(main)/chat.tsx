@@ -21,18 +21,17 @@ import { ChatRoom, Agent } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
 
-// ─── Light mode palette ───────────────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  bg: '#F8F8FC',
+  bg: '#F4F6FF',
   surface: '#FFFFFF',
-  surfaceHigh: '#F0F0F6',
-  border: '#E0E0EC',
-  borderLight: '#EBEBF5',
-  text: '#12121A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
+  surfaceHigh: '#EEF2FF',
+  border: '#E6EAFF',
+  text: '#0A0E2E',
+  muted: '#606490',
+  faint: '#B4BBDE',
   primary: '#2563EB',
-  primarySurface: '#EFF6FF',
+  primarySurface: '#EEF4FF',
 };
 
 function getAgentColor(name: string) {
@@ -99,11 +98,14 @@ function RoomCard({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: C.surface,
-        borderRadius: 16,
+        borderRadius: 20,
         padding: 14,
         marginBottom: 10,
-        borderWidth: 1,
-        borderColor: C.border,
+        shadowColor: '#2563EB',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 14,
+        elevation: 2,
       }}
     >
       <View
@@ -170,12 +172,10 @@ function CreateRoomModal({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: selected ? `${color}10` : C.surfaceHigh,
-            borderRadius: 12,
+            backgroundColor: selected ? `${color}12` : C.surfaceHigh,
+            borderRadius: 16,
             padding: 12,
             marginBottom: 8,
-            borderWidth: 1,
-            borderColor: selected ? `${color}40` : C.border,
           }}
         >
           <View
@@ -278,9 +278,7 @@ function CreateRoomModal({
             placeholderTextColor={C.faint}
             style={{
               backgroundColor: C.surfaceHigh,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: C.border,
+              borderRadius: 16,
               paddingHorizontal: 14,
               paddingVertical: 12,
               color: C.text,
@@ -317,10 +315,15 @@ function CreateRoomModal({
             disabled={isSaving}
             style={{
               backgroundColor: isSaving ? `${C.primary}80` : C.primary,
-              borderRadius: 14,
-              paddingVertical: 14,
+              borderRadius: 18,
+              paddingVertical: 15,
               alignItems: 'center',
               marginTop: 20,
+              shadowColor: C.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 10,
+              elevation: 4,
             }}
           >
             {isSaving ? (
@@ -474,15 +477,7 @@ export default function ChatListScreen() {
               </View>
             )}
 
-            {agents.length > 0 && (
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: C.borderLight,
-                  marginBottom: 20,
-                }}
-              />
-            )}
+            {agents.length > 0 && <View style={{ marginBottom: 20 }} />}
 
             <AppText
               variant="caption"
@@ -500,13 +495,11 @@ export default function ChatListScreen() {
                 style={{
                   width: 72,
                   height: 72,
-                  borderRadius: 36,
+                  borderRadius: 24,
                   backgroundColor: C.surfaceHigh,
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: C.border,
                 }}
               >
                 <Ionicons name="chatbubbles-outline" size={32} color={C.faint} />

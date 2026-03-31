@@ -62,13 +62,14 @@ export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
     <View
       style={{
         backgroundColor: C.surface,
-        borderRadius: 18,
+        borderRadius: 20,
         marginBottom: 10,
-        borderWidth: 1,
-        borderColor: C.border,
-        borderLeftWidth: 3,
-        borderLeftColor: C.faint,
         padding: 16,
+        shadowColor: '#2563EB',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 2,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>

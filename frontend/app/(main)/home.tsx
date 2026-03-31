@@ -23,19 +23,19 @@ import { Agent, ChatRoom, Task } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
 
-// ─── Palette — white + blue only ─────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  bg: '#F4F7FF', // very light blue-white page bg
+  bg: '#F4F6FF',
   surface: '#FFFFFF',
-  surfaceHigh: '#EEF3FF', // light blue tint for inputs / secondary surfaces
-  border: '#DDE5FF', // soft blue border
-  text: '#0A0F2E', // near-black with blue undertone
-  muted: '#6370A0', // muted blue-grey
-  faint: '#B0BAD8', // very faint blue-grey
+  surfaceHigh: '#EEF2FF',
+  border: '#E6EAFF',
+  text: '#0A0E2E',
+  muted: '#606490',
+  faint: '#B4BBDE',
   primary: '#2563EB',
-  primaryMid: '#3B82F6', // slightly lighter blue
-  primaryLight: '#DBEAFE', // very light blue surface
-  primaryFaint: '#EFF6FF', // near-white blue
+  primaryMid: '#3B82F6',
+  primaryLight: '#DBEAFE',
+  primaryFaint: '#EEF4FF',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -74,16 +74,14 @@ function Card({ children }: { children: React.ReactNode }) {
     <View
       style={{
         backgroundColor: C.surface,
-        borderRadius: 20,
-        padding: 18,
-        borderWidth: 1,
-        borderColor: C.border,
+        borderRadius: 24,
+        padding: 20,
         marginBottom: 12,
         shadowColor: '#2563EB',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.07,
+        shadowRadius: 20,
+        elevation: 3,
       }}
     >
       {children}
@@ -107,33 +105,22 @@ function SectionHeader({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 14,
+        marginBottom: 16,
       }}
     >
       <AppText
         style={{
-          fontSize: 11,
+          fontSize: 15,
           fontWeight: '700',
-          color: C.muted,
-          textTransform: 'uppercase',
-          letterSpacing: 1.2,
+          color: C.text,
+          letterSpacing: -0.2,
         }}
       >
         {title}
       </AppText>
       {actionLabel && onAction && (
-        <ScalePressable
-          onPress={onAction}
-          style={{
-            borderRadius: 8,
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            backgroundColor: C.primaryFaint,
-            borderWidth: 1,
-            borderColor: C.primaryLight,
-          }}
-        >
-          <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
+        <ScalePressable onPress={onAction}>
+          <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
             {actionLabel}
           </AppText>
         </ScalePressable>
@@ -157,26 +144,24 @@ function QuickAction({
       <View
         style={{
           backgroundColor: C.primaryFaint,
-          borderRadius: 18,
-          paddingVertical: 18,
+          borderRadius: 20,
+          paddingVertical: 20,
           paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: C.primaryLight,
           alignItems: 'center',
         }}
       >
         <View
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
+            width: 46,
+            height: 46,
+            borderRadius: 15,
             backgroundColor: C.primaryLight,
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 10,
           }}
         >
-          <Ionicons name={icon} size={21} color={C.primary} />
+          <Ionicons name={icon} size={22} color={C.primary} />
         </View>
         <AppText
           style={{ fontSize: 13, fontWeight: '600', color: C.text, textAlign: 'center' }}
@@ -217,9 +202,7 @@ const RecentChatRow = React.memo(function RecentChatRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 11,
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: C.border,
+        paddingVertical: 10,
       }}
     >
       <View
@@ -227,7 +210,7 @@ const RecentChatRow = React.memo(function RecentChatRow({
           width: 42,
           height: 42,
           borderRadius: 14,
-          backgroundColor: C.primaryLight,
+          backgroundColor: C.primaryFaint,
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: 12,
@@ -270,9 +253,7 @@ const TaskRow = React.memo(function TaskRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 11,
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: C.border,
+        paddingVertical: 10,
       }}
     >
       <View
@@ -309,8 +290,6 @@ const TaskRow = React.memo(function TaskRow({
             paddingHorizontal: 8,
             paddingVertical: 3,
             marginLeft: 8,
-            borderWidth: 1,
-            borderColor: C.primaryLight,
           }}
         >
           <AppText style={{ fontSize: 11, color: C.primary, fontWeight: '600' }}>
@@ -342,8 +321,6 @@ const AgentChip = React.memo(function AgentChip({
         borderRadius: 22,
         paddingVertical: 7,
         paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: C.primaryLight,
         marginRight: 8,
         marginBottom: 8,
       }}
@@ -433,10 +410,10 @@ function NewChatModal({
         >
           <View
             style={{
-              width: 36,
+              width: 40,
               height: 4,
               borderRadius: 2,
-              backgroundColor: C.border,
+              backgroundColor: C.surfaceHigh,
               alignSelf: 'center',
               marginBottom: 20,
             }}
@@ -474,9 +451,7 @@ function NewChatModal({
             autoFocus
             style={{
               backgroundColor: C.surfaceHigh,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: C.border,
+              borderRadius: 16,
               paddingHorizontal: 16,
               paddingVertical: 14,
               color: C.text,
@@ -646,13 +621,9 @@ export default function HomeScreen() {
         {/* ── Header ──────────────────────────────────────────────────── */}
         <View
           style={{
-            backgroundColor: C.surface,
             paddingHorizontal: 20,
             paddingTop: 20,
-            paddingBottom: 20,
-            borderBottomWidth: 1,
-            borderBottomColor: C.border,
-            marginBottom: 14,
+            paddingBottom: 16,
           }}
         >
           {/* Greeting row */}
@@ -713,42 +684,38 @@ export default function HomeScreen() {
           </View>
 
           {/* Stats bar */}
-          <View
-            style={{
-              flexDirection: 'row',
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: C.border,
-              overflow: 'hidden',
-              backgroundColor: C.bg,
-            }}
-          >
-            {stats.map((stat, i) => (
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            {stats.map((stat) => (
               <View
                 key={stat.label}
                 style={{
                   flex: 1,
                   alignItems: 'center',
+                  backgroundColor: C.surface,
+                  borderRadius: 20,
                   paddingVertical: 14,
-                  borderRightWidth: i < stats.length - 1 ? 1 : 0,
-                  borderRightColor: C.border,
+                  shadowColor: '#2563EB',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 12,
+                  elevation: 2,
                 }}
               >
                 <View
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
-                    backgroundColor: C.primaryLight,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 11,
+                    backgroundColor: C.primaryFaint,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: 6,
+                    marginBottom: 7,
                   }}
                 >
-                  <Ionicons name={stat.icon} size={15} color={C.primary} />
+                  <Ionicons name={stat.icon} size={16} color={C.primary} />
                 </View>
                 <AppText
-                  style={{ fontSize: 20, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
+                  style={{ fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
                 >
                   {stat.value}
                 </AppText>
@@ -764,7 +731,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Body ────────────────────────────────────────────────────── */}
-        <View style={{ paddingHorizontal: 14 }}>
+        <View style={{ paddingHorizontal: 16 }}>
           {/* Quick actions */}
           <Card>
             <SectionHeader title={t('home.sections.quick_actions')} />
@@ -872,13 +839,11 @@ export default function HomeScreen() {
                 style={{
                   width: 88,
                   height: 88,
-                  borderRadius: 44,
-                  backgroundColor: C.primaryLight,
+                  borderRadius: 28,
+                  backgroundColor: C.primaryFaint,
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 18,
-                  borderWidth: 1,
-                  borderColor: `${C.primary}20`,
                 }}
               >
                 <Ionicons name="sparkles" size={38} color={C.primary} />

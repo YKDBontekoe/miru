@@ -41,13 +41,13 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   const styles = StyleSheet.create({
     cardContainer: {
       backgroundColor: C.surface,
-      borderRadius: theme.borderRadius.lg,
+      borderRadius: 20,
       marginBottom: theme.spacing.md,
-      borderWidth: 1,
-      borderColor: C.border,
-      borderStartWidth: 3,
-      borderStartColor: color,
-      overflow: 'hidden',
+      shadowColor: '#2563EB',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      elevation: 2,
     },
     innerContainer: {
       flexDirection: 'row',
@@ -86,10 +86,10 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       marginTop: theme.spacing.sm,
     },
     levelBadge: {
-      backgroundColor: `${color}18`,
-      borderRadius: theme.borderRadius.xs,
+      backgroundColor: `${color}15`,
+      borderRadius: theme.borderRadius.sm,
       paddingHorizontal: theme.spacing.sm,
-      paddingVertical: 1,
+      paddingVertical: 2,
     },
     levelText: {
       color,
@@ -183,12 +183,15 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
     },
     cardContainer: {
       backgroundColor: C.surface,
-      borderRadius: theme.borderRadius.lg,
+      borderRadius: 20,
       margin: theme.spacing.xs,
-      borderWidth: 1,
-      borderColor: C.border,
       padding: theme.spacing.lg,
       alignItems: 'center',
+      shadowColor: '#2563EB',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 14,
+      elevation: 2,
     },
     avatarWrapper: {
       position: 'relative',

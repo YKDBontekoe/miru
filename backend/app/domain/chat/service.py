@@ -11,10 +11,7 @@ import openai
 from app.core.config import get_settings
 from app.domain.chat.background_service import ChatBackgroundService
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
-from app.domain.chat.dtos import (
-    ChatMessageResponse,
-    RoomResponse,
-)
+from app.domain.chat.dtos import ChatMessageResponse, RoomResponse
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 from app.infrastructure.external.openrouter import stream_chat
 
