@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Modal, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { TemplateGallerySheet } from './TemplateGallerySheet';
-import { useTheme } from '../../hooks/useTheme';
-import { useAgentStore, AgentTemplate } from '../../store/useAgentStore';
-import { haptic } from '../../utils/haptics';
-import { SURPRISE_KEYWORDS, getTonePrefix } from './agentUtils';
-import { ScalePressable } from '../ScalePressable';
-import { CreateAgentForm } from './create';
+import { useTheme } from '@/hooks/useTheme';
+import { useAgentStore, AgentTemplate } from '@/store/useAgentStore';
+import { haptic } from '@/utils/haptics';
+import { SURPRISE_KEYWORDS, getTonePrefix } from '@/components/agents/agentUtils';
+import { ScalePressable } from '@/components/ScalePressable';
+import { CreateAgentForm } from '@/components/agents/create';
 
 interface Prefill {
   name?: string;
   personality?: string;
   description?: string;
   goals?: string[];
+  isGenerated?: boolean;
 }
 
 interface CreateAgentSheetProps {
@@ -38,6 +39,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   const [keywords, setKeywords] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const isGeneratingRef = useRef(false);
   const [wasGenerated, setWasGenerated] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -59,7 +61,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       if (prefill.personality) setPersonality(prefill.personality);
       if (prefill.description) setDescription(prefill.description);
       if (prefill.goals) setGoals(prefill.goals);
-      setWasGenerated(true);
+      setWasGenerated(Boolean(prefill.isGenerated));
     } else if (!visible) {
       reset();
     }
@@ -72,9 +74,10 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   };
 
   const handleGenerate = async () => {
-    if (!keywords.trim()) return;
+    if (!keywords.trim() || isGeneratingRef.current) return;
     haptic.light();
     setIsGenerating(true);
+    isGeneratingRef.current = true;
     setErrorMsg('');
     try {
       const prompt = keywords.trim();
@@ -90,6 +93,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       haptic.error();
     } finally {
       setIsGenerating(false);
+      isGeneratingRef.current = false;
     }
   };
 

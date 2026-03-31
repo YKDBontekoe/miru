@@ -17,22 +17,21 @@ const C = {
 export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   room,
   onPress,
-  isLast,
 }: {
   room: ChatRoom;
   onPress: () => void;
-  isLast: boolean;
 }) {
   const { t } = useTranslation();
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
   const relativeTimeStr = React.useMemo(() => {
-    const diff = Date.now() - new Date(room.updated_at).getTime();
+    const diff = Math.max(0, Date.now() - new Date(room.updated_at).getTime());
     const mins = Math.floor(diff / 60000);
-    if (mins < 60) return t('home.time.minutes_ago_one', { count: mins });
+    if (mins === 0) return t('home.time.just_now', 'just now');
+    if (mins < 60) return t('home.time.minutes_ago', { count: mins });
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return t('home.time.hours_ago_one', { count: hrs });
-    return t('home.time.days_ago_one', { count: Math.floor(hrs / 24) });
+    if (hrs < 24) return t('home.time.hours_ago', { count: hrs });
+    return t('home.time.days_ago', { count: Math.floor(hrs / 24) });
   }, [t, room.updated_at]);
 
   return (

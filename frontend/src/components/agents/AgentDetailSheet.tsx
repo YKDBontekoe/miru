@@ -50,7 +50,7 @@ export function AgentDetailSheet({
 
   if (!agent) return null;
 
-  const displayColor = getAgentColor(agent.id);
+  const displayColor = getAgentColor(agent.name);
   const moodEmoji = getMoodEmoji(agent.mood);
 
   const level = Math.floor(agent.message_count / 10) + 1;
@@ -105,7 +105,7 @@ export function AgentDetailSheet({
     }
   };
 
-  let affinityPct = Math.min((agent.message_count / 100) * 100, 100);
+  let affinityPct = Math.min(Number(agent.message_count), 100);
   let affinityLabel = 'Acquaintance';
   if (agent.message_count > 100) affinityLabel = 'Trusted Friend';
   else if (agent.message_count > 50) affinityLabel = 'Good Friend';

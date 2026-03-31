@@ -116,7 +116,7 @@ export default function HomeScreen() {
     ({ item, index }: { item: ChatRoom; index: number }) => (
       <HomeRecentChatRow
         room={item}
-        isLast={index === recentRooms.length - 1}
+
         onPress={() => handleRecentRoomPress(item.id)}
       />
     ),
@@ -127,7 +127,7 @@ export default function HomeScreen() {
     ({ item, index }: { item: Task; index: number }) => (
       <HomeTaskRow
         task={item}
-        isLast={index === pendingTasks.length - 1}
+
         onToggle={() => toggleTask(item.id)}
       />
     ),

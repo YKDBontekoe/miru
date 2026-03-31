@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { View, TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { View, TextInput, FlatList, ActivityIndicator, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../AppText';
 import { ScalePressable } from '../../ScalePressable';
 import { useTheme } from '../../../hooks/useTheme';
 import { haptic } from '../../../utils/haptics';
 import { TONES } from '../agentUtils';
+
+type Tone = (typeof TONES)[number];
 
 interface CreateAgentFormProps {
   name: string;
@@ -40,6 +43,7 @@ export function CreateAgentForm({
   errorMsg,
 }: CreateAgentFormProps) {
   const { C } = useTheme();
+  const { t } = useTranslation();
   const [goalInput, setGoalInput] = useState('');
 
   const addGoal = () => {
@@ -50,7 +54,7 @@ export function CreateAgentForm({
     }
   };
 
-  const input: any = {
+  const input: StyleProp<ViewStyle | TextStyle> = {
     backgroundColor: C.surfaceHigh,
     borderRadius: 12,
     borderWidth: 1,
@@ -62,7 +66,7 @@ export function CreateAgentForm({
     marginBottom: 14,
   };
 
-  const label: any = {
+  const label: StyleProp<TextStyle> = {
     color: C.muted,
     marginBottom: 6,
     fontSize: 11,
@@ -93,26 +97,26 @@ export function CreateAgentForm({
         </Animated.View>
       )}
 
-      <AppText style={label}>Name</AppText>
+      <AppText style={label}>{t('agent.name')}</AppText>
       <TextInput
         value={name}
         onChangeText={setName}
-        placeholder="Persona name"
+        placeholder={t('agent.name_placeholder')}
         placeholderTextColor={C.faint}
         style={input}
       />
 
       <AppText style={label}>
-        Tone <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
+        {t('agent.tone')} <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
       </AppText>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
         data={TONES}
-        keyExtractor={(item: { id: string }) => item.id}
+        keyExtractor={(item: Tone) => item.id}
         style={{ marginBottom: 14 }}
         contentContainerStyle={{ gap: 8 }}
-        renderItem={({ item: tone }: { item: any }) => {
+        renderItem={({ item: tone }: { item: Tone }) => {
           const isSelected = selectedTone === tone.id;
           return (
             <ScalePressable
@@ -141,46 +145,45 @@ export function CreateAgentForm({
                   color: isSelected ? 'white' : C.text,
                 }}
               >
-                {tone.label}
+                {t(`agent.tones.${tone.id}`, tone.label)}
               </AppText>
             </ScalePressable>
           );
         }}
       />
 
-      <AppText style={label}>Personality</AppText>
+      <AppText style={label}>{t('agent.personality')}</AppText>
       <TextInput
         value={personality}
         onChangeText={setPersonality}
-        placeholder="How does this persona think and communicate?"
+        placeholder={t('agent.personality_placeholder')}
         placeholderTextColor={C.faint}
         multiline
         numberOfLines={4}
-        style={[input, { minHeight: 90, textAlignVertical: 'top' }]}
+        style={[input as any, { minHeight: 90, textAlignVertical: 'top' }]}
       />
 
       <AppText style={label}>
-        Description{' '}
-        <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
+        {t('agent.description')} <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
       </AppText>
       <TextInput
         value={description}
         onChangeText={setDescription}
-        placeholder="A short bio or backstory…"
+        placeholder={t('agent.description_placeholder')}
         placeholderTextColor={C.faint}
         multiline
         numberOfLines={2}
-        style={[input, { minHeight: 60, textAlignVertical: 'top' }]}
+        style={[input as any, { minHeight: 60, textAlignVertical: 'top' }]}
       />
 
       <AppText style={label}>
-        Goals <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
+        {t('agent.goals')} <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
       </AppText>
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
         <TextInput
           value={goalInput}
           onChangeText={setGoalInput}
-          placeholder="Add a goal…"
+          placeholder={t('agent.goals_placeholder')}
           placeholderTextColor={C.faint}
           style={{
             flex: 1,
@@ -261,7 +264,7 @@ export function CreateAgentForm({
           <>
             <Ionicons name="checkmark-circle" size={20} color="white" />
             <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
-              Create Persona
+              {t('agent.create_persona')}
             </AppText>
           </>
         )}

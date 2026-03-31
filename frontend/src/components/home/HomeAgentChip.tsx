@@ -1,15 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
-import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
-import { Agent } from '../../core/models';
-
-const C = {
-  primaryFaint: '#EEF4FF',
-  primaryLight: '#DBEAFE',
-  primary: '#2563EB',
-  text: '#0A0E2E',
-};
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { Agent } from '@/core/models';
 
 export const HomeAgentChip = React.memo(function HomeAgentChip({
   agent,
@@ -21,47 +14,21 @@ export const HomeAgentChip = React.memo(function HomeAgentChip({
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: C.primaryFaint,
-        borderRadius: 22,
-        paddingVertical: 7,
-        paddingHorizontal: 12,
-        marginRight: 8,
-        marginBottom: 8,
-      }}
+      className="flex-row items-center bg-primaryFaint rounded-[22px] py-2 px-3 mr-2 mb-2"
     >
       <View
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 13,
-          backgroundColor: C.primaryLight,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 7,
-        }}
+        className="w-[26px] h-[26px] rounded-[13px] bg-primaryLight items-center justify-center mr-[7px]"
       >
-        <AppText style={{ color: C.primary, fontSize: 12, fontWeight: '700' }}>
-          {agent.name[0].toUpperCase()}
+        <AppText className="text-primary text-[12px] font-bold">
+          {agent.name?.[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
-      <AppText style={{ fontSize: 13, fontWeight: '600', color: C.text }}>{agent.name}</AppText>
+      <AppText className="text-[13px] font-semibold text-text">{agent.name}</AppText>
       {agent.message_count > 0 && (
         <View
-          style={{
-            backgroundColor: C.primary,
-            borderRadius: 9,
-            minWidth: 18,
-            height: 18,
-            paddingHorizontal: 5,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginLeft: 7,
-          }}
+          className="bg-primary rounded-[9px] min-w-[18px] h-[18px] px-1.5 items-center justify-center ml-[7px]"
         >
-          <AppText style={{ fontSize: 10, color: 'white', fontWeight: '700' }}>
+          <AppText className="text-[10px] text-white font-bold">
             {agent.message_count}
           </AppText>
         </View>

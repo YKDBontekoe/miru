@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { AppText } from '../../AppText';
-import { ScalePressable } from '../../ScalePressable';
-import { useTheme } from '../../../hooks/useTheme';
-import { haptic } from '../../../utils/haptics';
-import { Agent } from '../../../core/models';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { haptic } from '@/utils/haptics';
+import { Agent } from '@/core/models';
 
 interface AgentDetailEditFormProps {
   agent: Agent;
@@ -19,7 +19,7 @@ interface AgentDetailEditFormProps {
   isSaving: boolean;
   onSave: () => void;
   onClose: () => void;
-  onDeleted: (agent: Agent) => void;
+  onDeleted: (agent: Agent) => Promise<void> | void;
 }
 
 export function AgentDetailEditForm({
@@ -46,109 +46,66 @@ export function AgentDetailEditForm({
     }
   };
 
-  const label: any = {
-    color: C.muted,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-    marginTop: 14,
-  };
-
-  const input: any = {
-    backgroundColor: C.surfaceHigh,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: C.text,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: C.border,
-  };
-
   return (
     <Animated.View entering={FadeIn.duration(200)}>
-      <AppText style={label}>Personality</AppText>
+      <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
+        Personality
+      </AppText>
       <TextInput
         value={editPersonality}
         onChangeText={setEditPersonality}
         multiline
         numberOfLines={4}
-        style={[input, { minHeight: 90, textAlignVertical: 'top' }]}
+        className="bg-surfaceHigh rounded-xl px-4 py-3 text-text text-[15px] border border-border min-h-[90px]"
+        style={{ textAlignVertical: 'top' }}
         placeholder="How does this persona think and communicate?"
         placeholderTextColor={C.faint}
       />
 
-      <AppText style={label}>
+      <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
         Description{' '}
-        <AppText style={{ color: C.faint, textTransform: 'none' }}>(optional)</AppText>
+        <AppText className="text-faint normal-case">(optional)</AppText>
       </AppText>
       <TextInput
         value={editDescription}
         onChangeText={setEditDescription}
         multiline
         numberOfLines={2}
-        style={[input, { minHeight: 60, textAlignVertical: 'top' }]}
+        className="bg-surfaceHigh rounded-xl px-4 py-3 text-text text-[15px] border border-border min-h-[60px]"
+        style={{ textAlignVertical: 'top' }}
         placeholder="A short bio…"
         placeholderTextColor={C.faint}
       />
 
-      <AppText style={label}>Goals</AppText>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+      <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
+        Goals
+      </AppText>
+      <View className="flex-row gap-2 mb-2.5">
         <TextInput
           value={goalInput}
           onChangeText={setGoalInput}
           placeholder="Add a goal…"
           placeholderTextColor={C.faint}
-          style={{
-            flex: 1,
-            backgroundColor: C.surfaceHigh,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: C.border,
-            paddingHorizontal: 12,
-            paddingVertical: 9,
-            color: C.text,
-            fontSize: 14,
-          }}
+          className="flex-1 bg-surfaceHigh rounded-lg border border-border px-3 py-2 text-text text-sm"
           onSubmitEditing={addGoal}
           returnKeyType="done"
         />
         <ScalePressable
           onPress={addGoal}
-          style={{
-            width: 40,
-            backgroundColor: `${C.primary}15`,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: `${C.primary}30`,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="w-10 rounded-lg border items-center justify-center bg-primary/15 border-primary/30"
         >
           <Ionicons name="add" size={20} color={C.primary} />
         </ScalePressable>
       </View>
       {editGoals.length > 0 && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+        <View className="flex-row flex-wrap gap-2 mb-3.5">
           {editGoals.map((g, i) => (
             <ScalePressable
               key={i}
               onPress={() => setEditGoals((gs) => gs.filter((_, idx) => idx !== i))}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 5,
-                backgroundColor: `${C.primary}12`,
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderWidth: 1,
-                borderColor: `${C.primary}25`,
-              }}
+              className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
             >
-              <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
+              <AppText className="text-primary text-xs">{g}</AppText>
               <Ionicons name="close" size={11} color={C.primary} />
             </ScalePressable>
           ))}
@@ -158,42 +115,22 @@ export function AgentDetailEditForm({
       <ScalePressable
         onPress={onSave}
         disabled={isSaving}
-        style={{
-          backgroundColor: isSaving ? `${C.primary}70` : C.primary,
-          borderRadius: 14,
-          paddingVertical: 14,
-          alignItems: 'center',
-          marginBottom: 14,
-        }}
+        className={`rounded-xl py-3.5 items-center mb-3.5 ${isSaving ? 'bg-primary/70' : 'bg-primary'}`}
       >
         {isSaving ? (
           <ActivityIndicator color="white" />
         ) : (
-          <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+          <AppText className="text-white font-bold text-[15px]">
             Save Changes
           </AppText>
         )}
       </ScalePressable>
 
       <View
-        style={{
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: `${C.danger}28`,
-          backgroundColor: C.dangerSurface,
-          padding: 14,
-          marginBottom: 40,
-        }}
+        className="rounded-xl border p-3.5 mb-10 bg-dangerSurface border-danger/25"
       >
         <AppText
-          style={{
-            color: C.danger,
-            fontSize: 11,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.8,
-            marginBottom: 10,
-          }}
+          className="text-danger text-xs font-bold uppercase tracking-wider mb-2.5"
         >
           Danger Zone
         </AppText>
@@ -208,30 +145,27 @@ export function AgentDetailEditForm({
                 {
                   text: 'Archive',
                   style: 'destructive',
-                  onPress: () => {
-                    onClose();
-                    onDeleted(agent);
+                  onPress: async () => {
+                    try {
+                      await onDeleted(agent);
+                      onClose();
+                    } catch (e: any) {
+                      Alert.alert(`Failed to archive ${agent.name}`, e.message);
+                    }
                   },
                 },
               ]
             );
           }}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: C.danger,
-            borderRadius: 10,
-            paddingVertical: 10,
-          }}
+          className="flex-row items-center justify-center bg-danger rounded-lg py-2.5"
         >
           <Ionicons
             name="archive-outline"
             size={15}
             color="white"
-            style={{ marginEnd: 6 }}
+            className="mr-1.5"
           />
-          <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>
+          <AppText className="text-white font-bold text-sm">
             Archive Persona
           </AppText>
         </ScalePressable>

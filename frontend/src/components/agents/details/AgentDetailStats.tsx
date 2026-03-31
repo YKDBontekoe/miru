@@ -1,8 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
-import { AppText } from '../../AppText';
-import { useTheme } from '../../../hooks/useTheme';
-import { Agent } from '../../../core/models';
+import { useTranslation } from 'react-i18next';
+import { AppText } from '@/components/AppText';
+import { useTheme } from '@/hooks/useTheme';
+import { Agent } from '@/core/models';
 
 interface AgentDetailStatsProps {
   agent: Agent;
@@ -12,35 +13,28 @@ interface AgentDetailStatsProps {
 
 export function AgentDetailStats({ agent, level, displayColor }: AgentDetailStatsProps) {
   const { C } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View
-      style={{
-        flexDirection: 'row',
-        backgroundColor: C.surfaceHigh,
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 18,
-        borderWidth: 1,
-        borderColor: C.border,
-      }}
+      className="flex-row bg-surfaceHigh rounded-2xl p-4 mb-4 border border-border"
     >
       {[
-        { value: agent.message_count, label: 'Messages' },
-        { value: level, label: 'Level' },
-        { value: agent.integrations?.length ?? 0, label: 'Skills' },
+        { value: agent.message_count, label: t('agents.stats.messages', 'Messages') },
+        { value: level, label: t('agents.stats.level', 'Level') },
+        { value: agent.integrations?.length ?? 0, label: t('agents.stats.skills', 'Skills') },
       ].map((stat, i, arr) => (
         <React.Fragment key={stat.label}>
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <AppText style={{ color: displayColor, fontWeight: '800', fontSize: 22 }}>
+          <View className="flex-1 items-center">
+            <AppText className="font-extrabold text-[22px]" style={{ color: displayColor }}>
               {stat.value}
             </AppText>
-            <AppText style={{ color: C.muted, fontSize: 11, marginTop: 1 }}>
+            <AppText className="text-muted text-[11px] mt-0.5">
               {stat.label}
             </AppText>
           </View>
           {i < arr.length - 1 && (
-            <View style={{ width: 1, backgroundColor: C.border, marginVertical: 4 }} />
+            <View className="w-[1px] bg-border my-1" />
           )}
         </React.Fragment>
       ))}
