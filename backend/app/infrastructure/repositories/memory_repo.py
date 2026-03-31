@@ -66,6 +66,8 @@ class MemoryRepository:
         records = await conn.execute_query_dict(
             query, [vector_str, threshold, count, p_user_id, p_agent_id, p_room_id]
         )
+        for row in records:
+            row.pop("similarity", None)
         return [Memory(**row) for row in records]
 
     async def create_relationship(
@@ -107,6 +109,8 @@ class MemoryRepository:
         conn = Tortoise.get_connection("default")
         sql = "SELECT * FROM memories WHERE fts @@ plainto_tsquery('english', $1) LIMIT 10"
         records = await conn.execute_query_dict(sql, [query])
+        for row in records:
+            row.pop("similarity", None)
         return [Memory(**row) for row in records]
 
     async def get_relationships_subgraph(self, memory_ids: list[UUID]) -> list[MemoryRelationship]:
