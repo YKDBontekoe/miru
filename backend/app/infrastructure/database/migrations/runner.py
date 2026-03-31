@@ -37,7 +37,7 @@ COMMENT ON TABLE public.schema_migrations IS
 
 def _get_db_url() -> str:
     db_url = os.environ.get("DATABASE_URL", "")
-    if not db_url or db_url == ENV_STUBS["DATABASE_URL"]:
+    if not db_url or db_url == ENV_STUBS.get("DATABASE_URL"):
         print("ERROR: DATABASE_URL is not set. Export it or add it to backend/.env")
         sys.exit(1)
     return db_url
@@ -45,7 +45,7 @@ def _get_db_url() -> str:
 
 def _psql_run(db_url: str, sql: str) -> None:
     result = subprocess.run(
-        ["psql", db_url, "-c", sql],
+        ["psql", db_url, "-v", "ON_ERROR_STOP=1", "-c", sql],
         capture_output=True,
         text=True,
     )
@@ -56,7 +56,7 @@ def _psql_run(db_url: str, sql: str) -> None:
 
 def _psql_run_file(db_url: str, path: Path) -> None:
     result = subprocess.run(
-        ["psql", db_url, "-f", str(path)],
+        ["psql", db_url, "-v", "ON_ERROR_STOP=1", "-f", str(path)],
         capture_output=True,
         text=True,
     )
@@ -65,47 +65,30 @@ def _psql_run_file(db_url: str, path: Path) -> None:
         sys.exit(result.returncode)
 
 
-def _get_applied_migrations(db_url: str) -> set[str]:
+def _get_applied_migrations(db_url: str, table_name: str = "public.schema_migrations") -> set[str]:
     result = subprocess.run(
         [
             "psql",
             db_url,
+            "-v",
+            "ON_ERROR_STOP=1",
             "--no-align",
             "--tuples-only",
             "-c",
-            "SELECT name FROM public.schema_migrations ORDER BY name;",
+            f"SELECT name FROM {table_name} ORDER BY name;",
         ],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        return set()
-    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
-
-
-def _record_migration(db_url: str, name: str, checksum: str) -> None:
-    sql = (
-        "INSERT INTO public.schema_migrations (name, checksum) "
-        "VALUES (:'migration_name', :'migration_checksum') "
-        "ON CONFLICT (name) DO NOTHING;"
-    )
-    result = subprocess.run(
-        [
-            "psql",
-            db_url,
-            "--set",
-            f"migration_name={name}",
-            "--set",
-            f"migration_checksum={checksum}",
-            "-c",
-            sql,
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
+        # If the error is just that the table doesn't exist yet, we can safely return empty.
+        if "does not exist" in result.stderr:
+            return set()
+        # Otherwise, hard fail.
+        print(f"ERROR: Failed to fetch applied migrations from {table_name}:")
         print(result.stderr)
         sys.exit(result.returncode)
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
 async def cmd_check() -> None:
@@ -144,7 +127,18 @@ def cmd_migrate() -> None:
     print("Ensuring schema_migrations tracking table exists...")
     _psql_run(db_url, CREATE_TRACKING_TABLE_SQL)
 
-    applied = _get_applied_migrations(db_url)
+    # Cross-check with supabase_migrations if it exists to prevent mixed workflows.
+    public_applied = _get_applied_migrations(db_url, "public.schema_migrations")
+    supabase_applied = _get_applied_migrations(db_url, "supabase_migrations.schema_migrations")
+
+    if supabase_applied and public_applied:
+        print("ERROR: Mixed migration workflows detected!")
+        print("You have migrations tracked in both public.schema_migrations (manage.py)")
+        print("and supabase_migrations.schema_migrations (Supabase CLI).")
+        print("Please standardize on a single migration runner to avoid database gaps/conflicts.")
+        sys.exit(1)
+
+    applied = public_applied
 
     pending = [f for f in sql_files if f.name not in applied]
     if not pending:
@@ -158,9 +152,26 @@ def cmd_migrate() -> None:
 
     for sql_file in pending:
         print(f"Applying: {sql_file.name}")
-        _psql_run_file(db_url, sql_file)
         checksum = _file_checksum(sql_file)
-        _record_migration(db_url, sql_file.name, checksum)
+        migration_sql = sql_file.read_text(encoding="utf-8")
+
+        # Apply atomic transaction wrapping migration body + insert query
+        # Ensures that a transient runner error won't apply DDL without recording it,
+        # and checking if the row already exists locks against double-runs.
+        atomic_sql = f"""
+BEGIN;
+SELECT 1 FROM public.schema_migrations WHERE name = '{sql_file.name}' FOR UPDATE;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM public.schema_migrations WHERE name = '{sql_file.name}') THEN
+        RAISE EXCEPTION 'Migration already applied: {sql_file.name}';
+    END IF;
+END $$;
+{migration_sql}
+INSERT INTO public.schema_migrations (name, checksum) VALUES ('{sql_file.name}', '{checksum}');
+COMMIT;
+"""
+        _psql_run(db_url, atomic_sql)
         print("  ✓ applied and recorded")
 
     print()

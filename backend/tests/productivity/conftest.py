@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from collections.abc import AsyncGenerator, Generator
 
@@ -15,10 +17,22 @@ async def clear_productivity_db() -> AsyncGenerator[None]:
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
+    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
+
+    await Agent.all().delete()
+    await ChatRoom.all().delete()
+    await ChatMessage.all().delete()
     yield
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
+    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
+
+    await Agent.all().delete()
+    await ChatRoom.all().delete()
+    await ChatMessage.all().delete()
 
 
 @pytest.fixture

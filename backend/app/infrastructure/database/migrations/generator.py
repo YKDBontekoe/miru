@@ -261,22 +261,30 @@ def _build_incremental_sql(
         lines += schema_lines
 
     new_functions = [f for f in functions if f not in prev_functions]
-    if new_functions:
+    removed_functions = [f for f in prev_functions if f not in functions]
+    if new_functions or removed_functions:
         lines += [
             "",
             "-- Functions & Triggers --------------------------------------------------",
             "",
         ]
         lines += [_idempotent_function_stmt(stmt) for stmt in new_functions]
+        for stmt in removed_functions:
+            lines.append(f"-- Removed function/trigger: {stmt.strip()[:60]}...")
+            lines.append("-- DROP FUNCTION/TRIGGER IF EXISTS ... ; -- fill in manually")
 
     new_policies = [p for p in policies if p not in prev_policies]
-    if new_policies:
+    removed_policies = [p for p in prev_policies if p not in policies]
+    if new_policies or removed_policies:
         lines += [
             "",
             "-- Row Level Security ----------------------------------------------------",
             "",
         ]
         lines += [_idempotent_policy_stmt(stmt) for stmt in new_policies]
+        for stmt in removed_policies:
+            lines.append(f"-- Removed policy: {stmt.strip()[:60]}...")
+            lines.append("-- DROP POLICY IF EXISTS ... ; -- fill in manually")
 
     prev_extra_set = set(prev_indexes)
     curr_extra_set = set(indexes)
@@ -299,7 +307,15 @@ def _build_incremental_sql(
         ]
         lines += extra_index_lines
 
-    if not schema_lines and not new_extra and not removed_extra:
+    if (
+        not schema_lines
+        and not new_extra
+        and not removed_extra
+        and not new_policies
+        and not removed_policies
+        and not new_functions
+        and not removed_functions
+    ):
         lines += [
             "",
             "-- No structural schema changes detected.",

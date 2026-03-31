@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 
 import pytest
@@ -148,3 +150,45 @@ async def test_list_events_with_relations(async_client, mock_user_id, override_g
     response = await async_client.get("/api/v1/productivity/events")
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_update_event_not_found_or_forbidden(
+    async_client, another_user_id, override_get_current_user
+):
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=another_user_id,
+        title="Not my event",
+        start_time=now,
+        end_time=now + timedelta(hours=1),
+    )
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}", json={"title": "Trying to update"}
+    )
+    assert response.status_code == 404
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{uuid.uuid4()}", json={"title": "Does not exist"}
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_event_not_found_or_forbidden(
+    async_client, another_user_id, override_get_current_user
+):
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=another_user_id,
+        title="Not my event",
+        start_time=now,
+        end_time=now + timedelta(hours=1),
+    )
+    response = await async_client.delete(f"/api/v1/productivity/events/{event.id}")
+    assert response.status_code == 404
+    response = await async_client.delete(f"/api/v1/productivity/events/{uuid.uuid4()}")
+    assert response.status_code == 404

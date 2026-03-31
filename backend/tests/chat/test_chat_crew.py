@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -8,23 +10,7 @@ from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.service import ChatService
 
 
-@pytest.fixture
-def chat_service() -> ChatService:
-    chat_repo = AsyncMock()
-
-    async def mock_save_message(msg: typing.Any) -> typing.Any:
-        msg.id = msg.id or uuid4()
-        return msg
-
-    chat_repo.save_message = AsyncMock(side_effect=mock_save_message)
-    agent_repo = AsyncMock()
-    memory_repo = AsyncMock()
-    agent_service = AsyncMock()
-    bg_service = AsyncMock()
-    return ChatService(chat_repo, agent_repo, memory_repo, agent_service, bg_service)
-
-
-def test_get_agent_tools(chat_service: typing.Any) -> None:
+def test_get_agent_tools() -> None:
     agent1 = MagicMock()
     agent1.id = uuid4()
     agent1.agent_integrations = []
@@ -34,7 +20,7 @@ def test_get_agent_tools(chat_service: typing.Any) -> None:
     assert "ListTasksTool" in tool_types
 
 
-def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
+def test_get_agent_tools_disabled_integration() -> None:
     agent = MagicMock()
     agent.id = uuid4()
     mock_ai = MagicMock()
@@ -48,7 +34,7 @@ def test_get_agent_tools_disabled_integration(chat_service: typing.Any) -> None:
     assert "ListTasksTool" in tool_types
 
 
-def test_get_agent_tools_steam_missing_id(chat_service: typing.Any) -> None:
+def test_get_agent_tools_steam_missing_id() -> None:
     agent = MagicMock()
     agent.id = uuid4()
     mock_ai = MagicMock()
