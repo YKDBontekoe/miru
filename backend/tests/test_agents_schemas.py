@@ -14,7 +14,6 @@ def test_extract_capabilities_related_objects():
 
     class RelatedObjectsMock:
         related_objects: list[MagicMock] = [cap_mock]
-        related_objects = [cap_mock]
 
     data: dict = {
         "id": agent_id,
@@ -89,8 +88,7 @@ def test_extract_integrations_related_objects_no_integration_id():
     int_mock.enabled = True
 
     class RelatedObjectsMock:
-        related_objects: list[MagicMock] = [cap_mock]
-        related_objects = [int_mock]
+        related_objects: list[MagicMock] = [int_mock]
 
     data: dict = {
         "id": agent_id,
