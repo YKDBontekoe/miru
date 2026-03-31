@@ -13,9 +13,10 @@ def test_extract_capabilities_related_objects():
     cap_mock.pk = "cap_id_1"
 
     class RelatedObjectsMock:
+        related_objects: list[MagicMock] = [cap_mock]
         related_objects = [cap_mock]
 
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
@@ -37,7 +38,7 @@ def test_extract_capabilities_related_objects():
 def test_extract_capabilities_plain_list():
     # Test extract_capabilities with a plain list instead of Tortoise related_objects
     agent_id = UUID("12345678-1234-5678-1234-567812345678")
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
@@ -59,7 +60,7 @@ def test_extract_capabilities_plain_list():
 def test_extract_capabilities_empty():
     # Test extract_capabilities with a falsy value
     agent_id = UUID("12345678-1234-5678-1234-567812345678")
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
@@ -88,9 +89,10 @@ def test_extract_integrations_related_objects_no_integration_id():
     int_mock.enabled = True
 
     class RelatedObjectsMock:
+        related_objects: list[MagicMock] = [cap_mock]
         related_objects = [int_mock]
 
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
@@ -119,7 +121,7 @@ def test_extract_integrations_iterable_no_id():
             return str(self.val)
 
     agent_id = UUID("12345678-1234-5678-1234-567812345678")
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
@@ -147,7 +149,7 @@ def test_extract_integrations_iterable_with_id():
             self.enabled = enabled
 
     agent_id = UUID("12345678-1234-5678-1234-567812345678")
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
@@ -170,7 +172,7 @@ def test_extract_integrations_iterable_with_id():
 def test_extract_integrations_empty():
     # Test extract_integrations with a falsy value
     agent_id = UUID("12345678-1234-5678-1234-567812345678")
-    data = {
+    data: dict = {
         "id": agent_id,
         "name": "Test",
         "personality": "Friendly",
