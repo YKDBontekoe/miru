@@ -19,6 +19,12 @@ const MESSAGES = [
   'Almost ready...',
 ];
 
+/**
+ * A full-screen splash component shown while the application connects
+ * to the backend or completes initial loading tasks.
+ *
+ * Features pulsing animations and cycling loading messages.
+ */
 export function BackendSplash() {
   const [messageIndex, setMessageIndex] = useState(0);
 

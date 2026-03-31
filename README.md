@@ -137,6 +137,8 @@ See [`backend/.env.example`](backend/.env.example) for the full list. Key variab
 | `SUPABASE_JWT_SECRET` | Yes | JWT secret for token validation |
 | `DATABASE_URL` | Yes | Direct PostgreSQL connection string |
 | `WEBAUTHN_RP_ID` | Yes | Passkey relying party ID (`localhost` for dev) |
+| `WEBAUTHN_RP_NAME` | Yes | Human-readable name for passkeys (e.g., Miru) |
+| `WEBAUTHN_EXPECTED_ORIGIN` | Yes | Allowed origin for WebAuthn (e.g., http://localhost) |
 | `TAVILY_API_KEY` | No | Tavily API key for agent web search |
 
 ## Project Structure
@@ -150,13 +152,13 @@ miru/
 │   │   │   ├── config.py        # pydantic-settings configuration
 │   │   │   └── security/auth.py # Supabase JWT validation, get_current_user()
 │   │   ├── domain/              # Bounded contexts
+│   │   │   ├── agent_tools/     # Extensible agent tool system
 │   │   │   ├── agents/          # Agent models, service, schemas
 │   │   │   ├── auth/            # Profile, Passkey models, service
 │   │   │   ├── chat/            # ChatRoom, ChatMessage, streaming
 │   │   │   ├── memory/          # Memory, graph nodes/edges, embeddings
-│   │   │   ├── productivity/    # Tasks, Notes, Calendar Events
 │   │   │   ├── notifications/   # Push notification service
-│   │   │   └── agent_tools/     # Extensible agent tool system
+│   │   │   └── productivity/    # Tasks, Notes, Calendar Events
 │   │   ├── api/v1/              # Route handlers per domain
 │   │   └── infrastructure/      # Database, external services, repositories
 │   │       ├── database/        # Supabase client, Tortoise ORM config

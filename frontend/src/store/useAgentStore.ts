@@ -69,6 +69,17 @@ interface AgentState {
   setViewMode: (mode: 'list' | 'grid') => void;
 }
 
+/**
+ * Zustand store for managing Agent entities and their UI state.
+ *
+ * State includes:
+ * - `agents`: List of loaded Agent entities.
+ * - `pinnedIds`: Persisted list of agent IDs pinned to the top.
+ * - `viewMode`: Persisted UI preference for list vs grid layout.
+ *
+ * It provides optimistic updates for creation and deletion to ensure the UI
+ * responds instantly while the server request completes in the background.
+ */
 export const useAgentStore = create<AgentState>((set, get) => ({
   agents: [],
   isLoading: false,
