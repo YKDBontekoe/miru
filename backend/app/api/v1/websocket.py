@@ -93,7 +93,6 @@ async def _handle_send_message(
 # ---------------------------------------------------------------------------
 # WebSocket endpoint
 # ---------------------------------------------------------------------------
-# DOCS(miru-agent): undocumented endpoint
 @router.websocket("/ws/chat")
 async def websocket_chat_hub(
     websocket: WebSocket,
@@ -102,7 +101,13 @@ async def websocket_chat_hub(
         None, description="Preferred language", pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$"
     ),
 ) -> None:
-    """Main WebSocket endpoint — acts as a SignalR hub for chat rooms."""
+    """
+    Main WebSocket endpoint — acts as a SignalR hub for chat rooms.
+
+    Connect to `/api/v1/ws/chat?token=<jwt>` to establish a real-time messaging connection.
+    This endpoint allows clients to join/leave rooms and send messages within those rooms.
+    Authentication is required via a Supabase JWT passed as a query parameter.
+    """
     user_id = await _verify_token(token)
     try:
         if user_id is None:

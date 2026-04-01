@@ -11,7 +11,6 @@
 - Automatically retrieves relevant memories based on cosine similarity (HNSW-indexed)
 - Remembers facts, preferences, and past discussions
 - Memory collections for grouping related memories
-- Knowledge graph with entities and relationships stored in PostgreSQL
 
 **AI-Powered Agents**
 - Create custom AI personas with unique personalities, goals, and capabilities
@@ -76,6 +75,8 @@
 │  • Sentry — Error tracking                                       │
 │  • Tavily — Web search for agents                                │
 │  • Steam Web API — Gaming integration                            │
+│  • Discord Web API — Social integration                          │
+│  • Spotify Web API — Music integration                           │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -207,7 +208,7 @@ All routes are under `/api/v1` and require a Supabase JWT Bearer token (except h
 | `/api/v1/crew` | CrewAI multi-agent orchestration |
 | `/api/v1/memory` | Memory storage and retrieval |
 | `/api/v1/productivity` | Tasks, Notes, Calendar Events |
-| `/api/v1/integrations` | Steam integration |
+| `/api/v1/integrations` | External integrations |
 | `/api/v1/notifications` | Push notification registration |
 
 Interactive API docs are available at `http://localhost:8000/docs` when the backend is running.
