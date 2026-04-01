@@ -24,8 +24,8 @@ import { ApiService } from '../../../src/core/api/ApiService';
 import { Agent } from '../../../src/core/models';
 import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
 import { ScalePressable } from '@/components/ScalePressable';
-import { ChatRoomHeader } from '../../../src/components/chat/ChatRoomHeader';
-import { ManageAgentsModal } from '../../../src/components/chat/ManageAgentsModal';
+import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
+import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
 
 const C = {
   bg: '#F8F8FC',

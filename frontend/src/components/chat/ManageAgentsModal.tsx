@@ -3,9 +3,9 @@ import { View, Modal, ScrollView, FlatList } from 'react-native';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../components/AppText';
+import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
-import { Agent } from '../../core/models';
+import { Agent } from '@/core/models';
 
 const C = {
   bg: '#F8F8FC',
@@ -30,7 +30,7 @@ interface ManageAgentsModalProps {
   getAgentColor: (name: string) => string;
 }
 
-export function ManageAgentsModal({
+export const ManageAgentsModal = ({
   isVisible,
   onClose,
   roomAgents,
@@ -39,58 +39,45 @@ export function ManageAgentsModal({
   onAddAgent,
   onRemoveAgent,
   getAgentColor,
-}: ManageAgentsModalProps) {
+}: ManageAgentsModalProps) => {
   const { t } = useTranslation();
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+      <View className="flex-1 justify-end bg-[rgba(0,0,0,0.4)]">
         <Animated.View
           entering={SlideInUp.springify().damping(22)}
           exiting={SlideOutDown.duration(200)}
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 32,
-            borderTopRightRadius: 32,
-            maxHeight: '72%',
-          }}
+          className="bg-white rounded-t-[32px] max-h-[72%]"
         >
-          <View style={{ alignItems: 'center', paddingTop: 12, marginBottom: 2 }}>
-            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
+          <View className="items-center pt-3 mb-0.5">
+            <View className="w-9 h-1 rounded-sm bg-[#C0C0D0]" />
           </View>
-          <View style={{ paddingHorizontal: 20, paddingVertical: 14 }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <AppText style={{ fontSize: 18, fontWeight: '700', color: C.text }}>
+          <View className="px-5 py-3.5">
+            <View className="flex-row justify-between items-center">
+              <AppText className="text-lg font-bold text-[#12121A]">
                 {t('chat.manage_agents', 'Manage Agents')}
               </AppText>
               <ScalePressable
                 onPress={onClose}
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  backgroundColor: C.surfaceHigh,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                className="w-[30px] h-[30px] rounded-[15px] bg-[#F0F0F6] items-center justify-center"
+                accessibilityRole="button"
+                accessibilityLabel={t('common.close', 'Close')}
               >
                 <Ionicons name="close" size={16} color={C.muted} />
               </ScalePressable>
             </View>
             {roomAgents.length > 0 && (
-              <AppText style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>
-                {roomAgents.length} active · tap an avatar in the header to manage
+              <AppText className="text-[#6E6E80] text-xs mt-[3px]">
+                {t('manageAgents.activeHelper', {
+                  defaultValue: '{{count}} active · tap an avatar in the header to manage',
+                  count: roomAgents.length,
+                })}
               </AppText>
             )}
           </View>
 
-          <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+          <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
             {/* In Room section */}
             {roomAgents.length > 0 && (
               <FlatList
@@ -98,72 +85,43 @@ export function ManageAgentsModal({
                 keyExtractor={(item) => `in-${item.id}`}
                 scrollEnabled={false}
                 ListHeaderComponent={
-                  <AppText
-                    style={{
-                      color: C.muted,
-                      fontSize: 11,
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.8,
-                      marginBottom: 8,
-                    }}
-                  >
-                    In this chat
+                  <AppText className="text-[#6E6E80] text-[11px] font-bold uppercase tracking-[0.8px] mb-2">
+                    {t('manageAgents.inThisChat', 'In this chat')}
                   </AppText>
                 }
                 renderItem={({ item: agent }) => {
                   const color = getAgentColor(agent.name);
                   return (
                     <View
+                      className="flex-row items-center rounded-[14px] p-3 mb-2 border"
                       style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
                         backgroundColor: `${color}08`,
-                        borderRadius: 14,
-                        padding: 12,
-                        marginBottom: 8,
-                        borderWidth: 1,
                         borderColor: `${color}25`,
                       }}
                     >
                       <View
-                        style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: 19,
-                          backgroundColor: `${color}18`,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginEnd: 12,
-                        }}
+                        className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
+                        style={{ backgroundColor: `${color}18` }}
                       >
-                        <AppText style={{ color, fontWeight: '700', fontSize: 15 }}>
-                          {agent.name[0].toUpperCase()}
+                        <AppText style={{ color }} className="font-bold text-[15px]">
+                          {(agent.name?.charAt(0) || '?').toUpperCase()}
                         </AppText>
                       </View>
-                      <View style={{ flex: 1 }}>
-                        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
+                      <View className="flex-1">
+                        <AppText className="text-[14px] font-semibold text-[#12121A]">
                           {agent.name}
                         </AppText>
-                        <AppText style={{ fontSize: 11, color: C.muted }} numberOfLines={1}>
+                        <AppText className="text-[11px] text-[#6E6E80]" numberOfLines={1}>
                           {agent.personality}
                         </AppText>
                       </View>
                       <ScalePressable
                         onPress={() => onRemoveAgent(agent.id)}
-                        style={{
-                          backgroundColor: '#FEE2E2',
-                          borderRadius: 8,
-                          paddingHorizontal: 10,
-                          paddingVertical: 5,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
+                        className="bg-[#FEE2E2] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
                       >
                         <Ionicons name="remove" size={13} color="#EF4444" />
-                        <AppText style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
-                          Remove
+                        <AppText className="text-[#EF4444] text-xs font-semibold">
+                          {t('manageAgents.remove', 'Remove')}
                         </AppText>
                       </ScalePressable>
                     </View>
@@ -178,43 +136,23 @@ export function ManageAgentsModal({
               scrollEnabled={false}
               ListHeaderComponent={
                 availableAgents.length > 0 && roomAgents.length > 0 ? (
-                  <AppText
-                    style={{
-                      color: C.muted,
-                      fontSize: 11,
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.8,
-                      marginBottom: 8,
-                      marginTop: 8,
-                    }}
-                  >
-                    Add more
+                  <AppText className="text-[#6E6E80] text-[11px] font-bold uppercase tracking-[0.8px] mb-2 mt-2">
+                    {t('manageAgents.addMore', 'Add more')}
                   </AppText>
                 ) : null
               }
               ListEmptyComponent={
                 agents.length === 0 ? (
-                  <View style={{ alignItems: 'center', paddingVertical: 36 }}>
-                    <Ionicons
-                      name="people-outline"
-                      size={36}
-                      color={C.faint}
-                      style={{ marginBottom: 12 }}
-                    />
-                    <AppText style={{ textAlign: 'center', color: C.muted }}>
+                  <View className="items-center py-9">
+                    <Ionicons name="people-outline" size={36} color={C.faint} className="mb-3" />
+                    <AppText className="text-center text-[#6E6E80]">
                       {t('chat.no_agents_create')}
                     </AppText>
                   </View>
                 ) : availableAgents.length === 0 && agents.length > 0 ? (
-                  <View style={{ alignItems: 'center', paddingVertical: 36 }}>
-                    <Ionicons
-                      name="people-outline"
-                      size={36}
-                      color={C.faint}
-                      style={{ marginBottom: 12 }}
-                    />
-                    <AppText style={{ textAlign: 'center', color: C.muted }}>
+                  <View className="items-center py-9">
+                    <Ionicons name="people-outline" size={36} color={C.faint} className="mb-3" />
+                    <AppText className="text-center text-[#6E6E80]">
                       {t('chat.no_more_agents_to_add', 'No more agents to add.')}
                     </AppText>
                   </View>
@@ -223,66 +161,40 @@ export function ManageAgentsModal({
               renderItem={({ item: agent }) => {
                 const color = getAgentColor(agent.name);
                 return (
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: C.surface,
-                      borderRadius: 14,
-                      padding: 12,
-                      marginBottom: 8,
-                      borderWidth: 1,
-                      borderColor: C.border,
-                    }}
-                  >
+                  <View className="flex-row items-center bg-white rounded-[14px] p-3 mb-2 border border-[#E0E0EC]">
                     <View
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 19,
-                        backgroundColor: `${color}18`,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginEnd: 12,
-                      }}
+                      className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
+                      style={{ backgroundColor: `${color}18` }}
                     >
-                      <AppText style={{ color, fontWeight: '700', fontSize: 15 }}>
-                        {agent.name[0].toUpperCase()}
+                      <AppText style={{ color }} className="font-bold text-[15px]">
+                        {(agent.name?.charAt(0) || '?').toUpperCase()}
                       </AppText>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }}>
+                    <View className="flex-1">
+                      <AppText className="text-[14px] font-semibold text-[#12121A]">
                         {agent.name}
                       </AppText>
-                      <AppText style={{ fontSize: 11, color: C.muted }} numberOfLines={1}>
+                      <AppText className="text-[11px] text-[#6E6E80]" numberOfLines={1}>
                         {agent.personality}
                       </AppText>
                     </View>
                     <ScalePressable
                       onPress={() => onAddAgent(agent.id)}
-                      style={{
-                        backgroundColor: C.primarySurface,
-                        borderRadius: 8,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
+                      className="bg-[#EFF6FF] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
                     >
                       <Ionicons name="add" size={13} color={C.primary} />
-                      <AppText style={{ fontSize: 12, color: C.primary, fontWeight: '600' }}>
-                        Add
+                      <AppText className="text-[12px] text-[#2563EB] font-semibold">
+                        {t('manageAgents.add', 'Add')}
                       </AppText>
                     </ScalePressable>
                   </View>
                 );
               }}
             />
-            <View style={{ height: 40 }} />
+            <View className="h-10" />
           </ScrollView>
         </Animated.View>
       </View>
     </Modal>
   );
-}
+};
