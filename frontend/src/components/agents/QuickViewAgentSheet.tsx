@@ -1,18 +1,12 @@
 import React from 'react';
-import { View, Pressable, Modal, Alert } from 'react-native';
+import { View, Pressable, Modal, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { Agent } from '../../core/models';
 import { ScalePressable } from '@/components/ScalePressable';
-
-const C = {
-  surface: '#FFFFFF',
-  text: '#12121A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
-  primary: '#2563EB',
-};
+import { theme } from '../../core/theme';
 
 interface QuickViewAgentSheetProps {
   agent: Agent;
@@ -31,6 +25,8 @@ export function QuickViewAgentSheet({
   roomAgents,
   getAgentColor,
 }: QuickViewAgentSheetProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const color = getAgentColor(agent.name);
   const level = Math.floor(agent.message_count / 10) + 1;
   const isInRoom = roomAgents.some((a) => a.id === agent.id);
@@ -54,61 +50,67 @@ export function QuickViewAgentSheet({
   };
 
   return (
-    <Modal visible animationType="none" transparent>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}
-        onPress={onClose}
-      >
+    <Modal visible animationType="none" transparent onRequestClose={onClose}>
+      <Pressable style={styles.overlay} onPress={onClose}>
         <Animated.View
           entering={SlideInUp.duration(300)}
           exiting={SlideOutDown.duration(180)}
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-          }}
+          style={[
+            styles.sheetContainer,
+            { backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light },
+          ]}
           onStartShouldSetResponder={() => true}
         >
           {/* Drag handle */}
-          <View style={{ alignItems: 'center', marginBottom: 16 }}>
-            <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
+          <View style={styles.dragHandleContainer}>
+            <View
+              style={[
+                styles.dragHandle,
+                {
+                  backgroundColor: isDark
+                    ? theme.colors.surface.highestDark
+                    : theme.colors.surface.highestLight,
+                },
+              ]}
+            />
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+          <View style={styles.headerRow}>
             <View
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 26,
-                backgroundColor: `${color}18`,
-                borderWidth: 2,
-                borderColor: `${color}40`,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginEnd: 14,
-              }}
+              style={[
+                styles.avatarContainer,
+                {
+                  backgroundColor: `${color}18`,
+                  borderColor: `${color}40`,
+                },
+              ]}
             >
-              <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
+              <AppText variant="h2" style={{ color, fontWeight: '700' }}>
                 {agent.name[0]?.toUpperCase() ?? '?'}
               </AppText>
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText style={{ fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 2 }}>
+            <View style={styles.headerTextContainer}>
+              <AppText
+                variant="h3"
+                style={[
+                  styles.agentName,
+                  { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
+                ]}
+              >
                 {agent.name}
               </AppText>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View
+              <View style={styles.statsRow}>
+                <View style={[styles.levelBadge, { backgroundColor: `${color}18` }]}>
+                  <AppText variant="caption" style={{ color, fontWeight: '700' }}>
+                    Lv {level}
+                  </AppText>
+                </View>
+                <AppText
+                  variant="caption"
                   style={{
-                    backgroundColor: `${color}18`,
-                    borderRadius: 6,
-                    paddingHorizontal: 7,
-                    paddingVertical: 2,
+                    color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
                   }}
                 >
-                  <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>Lv {level}</AppText>
-                </View>
-                <AppText style={{ color: C.muted, fontSize: 12 }}>
                   {agent.message_count} messages
                 </AppText>
               </View>
@@ -116,7 +118,11 @@ export function QuickViewAgentSheet({
           </View>
 
           <AppText
-            style={{ color: C.muted, fontSize: 13, lineHeight: 19, marginBottom: 18 }}
+            variant="bodySm"
+            style={[
+              styles.personalityText,
+              { color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight },
+            ]}
             numberOfLines={3}
           >
             {agent.personality}
@@ -125,48 +131,42 @@ export function QuickViewAgentSheet({
           {isInRoom ? (
             <ScalePressable
               onPress={handleRemove}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#FEF2F2',
-                borderRadius: 14,
-                paddingVertical: 13,
-                borderWidth: 1,
-                borderColor: '#FECACA',
-                marginBottom: 36,
-              }}
+              style={[
+                styles.actionButton,
+                styles.removeButton,
+                {
+                  backgroundColor: isDark
+                    ? theme.colors.status.errorSurfaceDark
+                    : theme.colors.status.errorSurfaceLight,
+                  borderColor: theme.colors.status.error,
+                },
+              ]}
             >
               <Ionicons
                 name="person-remove-outline"
                 size={16}
-                color="#EF4444"
-                style={{ marginEnd: 7 }}
+                color={theme.colors.status.error}
+                style={styles.actionIcon}
               />
-              <AppText style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>
+              <AppText style={[styles.actionText, { color: theme.colors.status.error }]}>
                 Remove from Chat
               </AppText>
             </ScalePressable>
           ) : (
             <ScalePressable
               onPress={handleAdd}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: C.primary,
-                borderRadius: 14,
-                paddingVertical: 13,
-                marginBottom: 36,
-              }}
+              style={[
+                styles.actionButton,
+                { backgroundColor: theme.colors.primary.DEFAULT },
+              ]}
             >
               <Ionicons
                 name="person-add-outline"
                 size={16}
-                color="white"
-                style={{ marginEnd: 7 }}
+                color={theme.colors.white}
+                style={styles.actionIcon}
               />
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+              <AppText style={[styles.actionText, { color: theme.colors.white }]}>
                 Add to Chat
               </AppText>
             </ScalePressable>
@@ -176,3 +176,78 @@ export function QuickViewAgentSheet({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)', // Keeps a subtle dark overlay even in light mode
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: theme.spacing.xxl,
+  },
+  dragHandleContainer: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  dragHandle: {
+    width: 32,
+    height: 4,
+    borderRadius: theme.borderRadius.xs,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  avatarContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: theme.spacing.md,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  agentName: {
+    fontWeight: '700',
+    marginBottom: theme.spacing.xxs,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  levelBadge: {
+    borderRadius: theme.borderRadius.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  personalityText: {
+    lineHeight: 19,
+    marginBottom: theme.spacing.xl,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 13,
+    marginBottom: theme.spacing.xxxl,
+  },
+  removeButton: {
+    borderWidth: 1,
+  },
+  actionIcon: {
+    marginEnd: theme.spacing.sm,
+  },
+  actionText: {
+    fontWeight: '700',
+    fontSize: 15, // Maintaining custom bold action text size
+  },
+});

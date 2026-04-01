@@ -1,15 +1,10 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-
-const C = {
-  primaryFaint: '#EEF4FF',
-  primaryLight: '#DBEAFE',
-  primary: '#2563EB',
-  text: '#0A0E2E',
-};
+import { theme } from '../../core/theme';
 
 export function HomeQuickAction({
   icon,
@@ -20,32 +15,43 @@ export function HomeQuickAction({
   label: string;
   onPress: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <ScalePressable onPress={onPress} style={{ width: '48%', marginBottom: 10 }}>
+    <ScalePressable onPress={onPress} style={styles.container}>
       <View
-        style={{
-          backgroundColor: C.primaryFaint,
-          borderRadius: 20,
-          paddingVertical: 20,
-          paddingHorizontal: 12,
-          alignItems: 'center',
-        }}
+        style={[
+          styles.card,
+          {
+            backgroundColor: isDark
+              ? `${theme.colors.primary.DEFAULT}15`
+              : theme.colors.primary.surfaceLight,
+          },
+        ]}
       >
         <View
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 15,
-            backgroundColor: C.primaryLight,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 10,
-          }}
+          style={[
+            styles.iconContainer,
+            {
+              backgroundColor: isDark
+                ? `${theme.colors.primary.DEFAULT}30`
+                : theme.colors.primary.light,
+            },
+          ]}
         >
-          <Ionicons name={icon} size={22} color={C.primary} />
+          <Ionicons
+            name={icon}
+            size={22}
+            color={isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT}
+          />
         </View>
         <AppText
-          style={{ fontSize: 13, fontWeight: '600', color: C.text, textAlign: 'center' }}
+          variant="bodySm"
+          style={[
+            styles.label,
+            { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
+          ]}
           numberOfLines={1}
         >
           {label}
@@ -54,3 +60,28 @@ export function HomeQuickAction({
     </ScalePressable>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: '48%',
+    marginBottom: theme.spacing.md,
+  },
+  card: {
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.md,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  label: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});

@@ -1,12 +1,9 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-
-const C = {
-  text: '#0A0E2E',
-  primary: '#2563EB',
-};
+import { theme } from '../../core/theme';
 
 export function HomeSectionHeader({
   title,
@@ -17,28 +14,26 @@ export function HomeSectionHeader({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-      }}
-    >
+    <View style={styles.container}>
       <AppText
-        style={{
-          fontSize: 15,
-          fontWeight: '700',
-          color: C.text,
-          letterSpacing: -0.2,
-        }}
+        variant="h3"
+        style={[
+          styles.title,
+          { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
+        ]}
       >
         {title}
       </AppText>
       {actionLabel && onAction && (
         <ScalePressable onPress={onAction}>
-          <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
+          <AppText
+            variant="bodySm"
+            style={[styles.action, { color: theme.colors.primary.DEFAULT }]}
+          >
             {actionLabel}
           </AppText>
         </ScalePressable>
@@ -46,3 +41,21 @@ export function HomeSectionHeader({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  title: {
+    fontSize: 15, // Keep slightly smaller than default h3 for this section header context
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  action: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+});

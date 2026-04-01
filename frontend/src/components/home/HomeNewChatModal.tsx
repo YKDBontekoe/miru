@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
-import { View, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Modal, TextInput, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { useChatStore } from '../../store/useChatStore';
-
-const C = {
-  surface: '#FFFFFF',
-  surfaceHigh: '#EEF2FF',
-  primary: '#2563EB',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-};
+import { theme } from '../../core/theme';
 
 export function HomeNewChatModal({
   visible,
@@ -28,6 +21,8 @@ export function HomeNewChatModal({
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { createRoom } = useChatStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -48,87 +43,72 @@ export function HomeNewChatModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(10,15,46,0.4)' }}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
         <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            paddingBottom: 40,
-          }}
+          style={[
+            styles.modalContainer,
+            { backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light },
+          ]}
         >
           <View
-            style={{
-              width: 40,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: C.surfaceHigh,
-              alignSelf: 'center',
-              marginBottom: 20,
-            }}
+            style={[
+              styles.dragHandle,
+              { backgroundColor: isDark ? theme.colors.surface.highestDark : theme.colors.surface.highestLight },
+            ]}
           />
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 18,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
+          <View style={styles.header}>
+            <AppText
+              variant="h2"
+              style={{ color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light }}
+            >
               {t('home.chat_modal.title')}
             </AppText>
             <ScalePressable
-              onPress={() => { setName(""); onClose(); }}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 15,
-                backgroundColor: C.surfaceHigh,
-                alignItems: 'center',
-                justifyContent: 'center',
+              onPress={() => {
+                setName('');
+                onClose();
               }}
+              style={[
+                styles.closeButton,
+                { backgroundColor: isDark ? theme.colors.surface.highestDark : theme.colors.surface.highestLight },
+              ]}
             >
-              <Ionicons name="close" size={17} color={C.muted} />
+              <Ionicons
+                name="close"
+                size={17}
+                color={isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight}
+              />
             </ScalePressable>
           </View>
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder={t('home.chat_modal.placeholder')}
-            placeholderTextColor={C.faint}
+            placeholderTextColor={
+              isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight
+            }
             autoFocus
-            style={{
-              backgroundColor: C.surfaceHigh,
-              borderRadius: 16,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: C.text,
-              fontSize: 16,
-              marginBottom: 14,
-            }}
+            style={[
+              styles.input,
+              {
+                backgroundColor: isDark ? theme.colors.surface.highestDark : theme.colors.surface.highestLight,
+                color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+              },
+            ]}
           />
           <ScalePressable
             onPress={handleCreate}
             disabled={isSaving}
-            style={{
-              backgroundColor: isSaving ? `${C.primary}70` : C.primary,
-              borderRadius: 14,
-              paddingVertical: 15,
-              alignItems: 'center',
-              shadowColor: C.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.22,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
+            style={[
+              styles.createButton,
+              { backgroundColor: isSaving ? `${theme.colors.primary.DEFAULT}70` : theme.colors.primary.DEFAULT },
+            ]}
           >
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
+              <AppText variant="body" style={styles.createButtonText}>
                 {t('home.actions.create')}
               </AppText>
             )}
@@ -138,3 +118,55 @@ export function HomeNewChatModal({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(10,15,46,0.4)', // Keep existing subtle dark overlay
+  },
+  modalContainer: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: theme.spacing.xxl,
+    paddingBottom: theme.spacing.huge,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: theme.borderRadius.sm,
+    alignSelf: 'center',
+    marginBottom: theme.spacing.xl,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  input: {
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 14,
+    fontSize: theme.typography.body.fontSize,
+    marginBottom: theme.spacing.md,
+  },
+  createButton: {
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 15,
+    alignItems: 'center',
+    ...theme.elevation.md,
+    shadowColor: theme.colors.primary.DEFAULT,
+  },
+  createButtonText: {
+    color: theme.colors.white,
+    fontWeight: '700',
+  },
+});
