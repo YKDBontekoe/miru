@@ -55,7 +55,6 @@ async def test_create_agent_success_and_verify_side_effect(
 
     # Assert Side-Effect (Database query)
     db_agent = await Agent.get(id=data["id"])
-    assert db_agent is not None
     assert db_agent.user_id == UUID(test_user_id)
     assert db_agent.name == "Integration Bot"
     assert db_agent.system_prompt == "You are a bot."
@@ -101,15 +100,15 @@ async def test_create_agent_chaos_malformed_json(
     assert response.status_code == 422
 
 
-async def test_persona_creation_fails_when_integration_is_invalid(
-    authed_headers: dict[str, str], test_user_id: str
+async def test_persona_creation_succeeds_and_invalid_integration_is_skipped(
+    authed_headers: dict[str, str],
 ) -> None:
     """1. Target: POST /api/v1/agents
     2. Test Code: this file.
     3. Coverage Explanation: A chaos/failure case ensuring that creating an agent with an invalid or
-    unrecognized integration ID does not crash the server but behaves correctly (either creates without it
-    or ignores it depending on logic). Actually we'll test that the integration is simply not linked since the
-    get_or_none handles it gracefully.
+    unrecognized integration ID does not crash the server but creates the agent normally while
+    skipping the unrecognized integration. We assert a 200 response and that the integration linking
+    is gracefully skipped as per the service logic.
     """
     # Act
     payload = {"name": "Conflict Bot", "personality": "P", "integrations": ["does_not_exist"]}
