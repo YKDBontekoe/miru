@@ -4,10 +4,13 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.domain.memory.graph_service import (GraphEntity,
-                                             GraphExtractionSchema,
-                                             GraphExtractionService,
-                                             GraphRelationship)
+
+from app.domain.memory.graph_service import (
+    GraphEntity,
+    GraphExtractionSchema,
+    GraphExtractionService,
+    GraphRelationship,
+)
 
 
 @pytest.mark.asyncio

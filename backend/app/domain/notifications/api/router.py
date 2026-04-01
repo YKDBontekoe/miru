@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from app.core.security.auth import CurrentUser
-from app.domain.notifications.services import NotificationService
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
+
+from app.core.security.auth import CurrentUser
+from app.domain.notifications.services import NotificationService
 
 router = APIRouter(tags=["notifications"])
 

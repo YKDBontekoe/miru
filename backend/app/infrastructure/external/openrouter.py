@@ -8,10 +8,10 @@ import typing
 from typing import TYPE_CHECKING, TypeVar
 
 import openai
-from app.core.config import get_settings
 from pydantic import BaseModel
-from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
-                      wait_exponential)
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 

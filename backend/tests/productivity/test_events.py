@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+
 from app.domain.productivity.models import CalendarEvent
 
 
@@ -11,8 +12,7 @@ async def test_create_event(async_client, mock_user_id, override_get_current_use
     from datetime import UTC, datetime, timedelta
 
     from app.domain.agents.models import Agent
-    from app.infrastructure.database.models.chat_models import (ChatMessage,
-                                                                ChatRoom)
+    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     now = datetime.now(UTC)
     agent = await Agent.create(
@@ -125,8 +125,7 @@ async def test_list_events_with_relations(async_client, mock_user_id, override_g
     from datetime import UTC, datetime, timedelta
 
     from app.domain.agents.models import Agent
-    from app.infrastructure.database.models.chat_models import (ChatMessage,
-                                                                ChatRoom)
+    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     now = datetime.now(UTC)
     agent = await Agent.create(

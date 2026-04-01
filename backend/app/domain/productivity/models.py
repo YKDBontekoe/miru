@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app.infrastructure.database.base import SupabaseModel
 from tortoise import fields
+
+from app.infrastructure.database.base import SupabaseModel
 
 if TYPE_CHECKING:
     from app.domain.agents.models import Agent

@@ -34,8 +34,7 @@ class ChatWebSocketBroadcaster:
         client_temp_id: str | None = None,
     ) -> ChatMessageEntity:
         """Persist the user message and broadcast to room members."""
-        from app.infrastructure.websocket.manager import \
-            chat_hub  # noqa: PLC0415
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         user_msg = ChatMessageEntity(
             id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
@@ -66,8 +65,7 @@ class ChatWebSocketBroadcaster:
 
     async def broadcast_thinking_status(self, room_id: UUID, agent_names: list[str]) -> None:
         """Broadcast thinking status to all room members."""
-        from app.infrastructure.websocket.manager import \
-            chat_hub  # noqa: PLC0415
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         await chat_hub.broadcast_to_room(
             room_id,
@@ -84,8 +82,7 @@ class ChatWebSocketBroadcaster:
 
     def create_step_callback(self, room_id: UUID, agent_names: list[str]) -> Callable[[Any], None]:
         """Create a callback for CrewAI to broadcast live activity."""
-        from app.infrastructure.websocket.manager import \
-            chat_hub  # noqa: PLC0415
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         loop = asyncio.get_running_loop()
 
@@ -193,9 +190,9 @@ class ChatWebSocketBroadcaster:
         Returns the list of agents who actually produced a response segment so
         that the caller can run per-agent post-processing (mood, affinity, etc.).
         """
-        from app.infrastructure.websocket.manager import \
-            chat_hub  # noqa: PLC0415
         from tortoise.exceptions import BaseORMException
+
+        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         agent_by_name = {a.name.lower(): a for a in room_agents}
         segments = self.parse_transcript(result_text, agent_names)

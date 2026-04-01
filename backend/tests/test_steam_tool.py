@@ -4,8 +4,8 @@ import typing
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from app.infrastructure.external.steam_tool import (SteamOwnedGamesTool,
-                                                    SteamPlayerSummaryTool)
+
+from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
 
 
 @pytest.fixture

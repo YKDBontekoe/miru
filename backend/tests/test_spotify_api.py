@@ -5,9 +5,12 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from app.infrastructure.external.spotify import (get_currently_playing,
-                                                 get_recently_played,
-                                                 search_spotify)
+
+from app.infrastructure.external.spotify import (
+    get_currently_playing,
+    get_recently_played,
+    search_spotify,
+)
 
 
 @pytest.fixture

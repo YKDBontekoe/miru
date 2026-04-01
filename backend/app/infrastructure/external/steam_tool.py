@@ -6,10 +6,10 @@ import asyncio
 import json
 
 import nest_asyncio
-from app.infrastructure.external.steam import (get_owned_games,
-                                               get_player_summaries)
 from crewai.tools import BaseTool
 from pydantic import Field
+
+from app.infrastructure.external.steam import get_owned_games, get_player_summaries
 
 
 class SteamPlayerSummaryTool(BaseTool):

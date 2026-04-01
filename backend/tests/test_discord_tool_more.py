@@ -6,8 +6,11 @@ import typing
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from app.infrastructure.external.discord_tool import (DiscordGetServerInfoTool,
-                                                      DiscordSendMessageTool)
+
+from app.infrastructure.external.discord_tool import (
+    DiscordGetServerInfoTool,
+    DiscordSendMessageTool,
+)
 
 
 @pytest.fixture

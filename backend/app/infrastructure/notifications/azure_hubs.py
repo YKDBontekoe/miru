@@ -5,9 +5,9 @@ import json
 import logging
 from typing import Any, cast
 
+from notificationhubs_rest_python.NotificationHub import AzureNotification, AzureNotificationHub
+
 from app.core.config import get_settings
-from notificationhubs_rest_python.NotificationHub import (AzureNotification,
-                                                          AzureNotificationHub)
 
 logger = logging.getLogger(__name__)
 

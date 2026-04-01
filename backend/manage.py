@@ -21,10 +21,12 @@ from app.infrastructure.database.migrations.constants import apply_env_stubs
 apply_env_stubs()
 
 # fmt: off
-from app.infrastructure.database.migrations.generator import \
-    cmd_makemigrations  # noqa: E402
+from app.infrastructure.database.migrations.generator import cmd_makemigrations  # noqa: E402
 from app.infrastructure.database.migrations.runner import (  # noqa: E402
-    cmd_check, cmd_migrate, cmd_status)
+    cmd_check,
+    cmd_migrate,
+    cmd_status,
+)
 
 # fmt: on
 

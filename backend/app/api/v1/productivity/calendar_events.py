@@ -6,15 +6,20 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.dependencies import get_productivity_use_case
-from app.domain.productivity.schemas import (CalendarEventCreate,
-                                             CalendarEventResponse,
-                                             CalendarEventUpdate)
+from app.domain.productivity.schemas import (
+    CalendarEventCreate,
+    CalendarEventResponse,
+    CalendarEventUpdate,
+)
 from app.domain.productivity.use_cases.manage_productivity import (
-    CalendarEventNotFoundError, InvalidTimeRangeError,
-    ManageProductivityUseCase)
-from fastapi import APIRouter, Depends, HTTPException, Query
+    CalendarEventNotFoundError,
+    InvalidTimeRangeError,
+    ManageProductivityUseCase,
+)
 
 logger = logging.getLogger(__name__)
 

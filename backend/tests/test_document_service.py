@@ -58,6 +58,7 @@ def test_extract_text_txt_latin1() -> None:
 
 def test_chunk_text_zero_chunk_size() -> None:
     import pytest
+
     from app.domain.memory.document_service import DocumentService
 
     with pytest.raises(ValueError, match="chunk_size must be greater than 0"):
@@ -66,6 +67,7 @@ def test_chunk_text_zero_chunk_size() -> None:
 
 def test_chunk_text_negative_overlap() -> None:
     import pytest
+
     from app.domain.memory.document_service import DocumentService
 
     with pytest.raises(ValueError, match="overlap must be non-negative"):

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from app.domain.memory.models import Memory, MemoryRelationship
 from tortoise import Tortoise
 from tortoise.expressions import Q
+
+from app.domain.memory.models import Memory, MemoryRelationship
 
 
 class MemoryRepository:

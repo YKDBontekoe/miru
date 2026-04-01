@@ -5,10 +5,8 @@ from __future__ import annotations
 from typing import Protocol
 from uuid import UUID
 
-from app.domain.productivity.entities import (CalendarEventEntity, NoteEntity,
-                                              TaskEntity)
-from app.domain.productivity.schemas import (CalendarEventCreate, NoteCreate,
-                                             TaskCreate)
+from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
+from app.domain.productivity.schemas import CalendarEventCreate, NoteCreate, TaskCreate
 
 
 class IProductivityRepository(Protocol):

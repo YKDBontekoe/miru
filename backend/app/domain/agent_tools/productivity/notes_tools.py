@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from app.domain.productivity.dependencies import get_productivity_use_case
-from app.domain.productivity.schemas import NoteCreate
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from app.domain.productivity.dependencies import get_productivity_use_case
+from app.domain.productivity.schemas import NoteCreate
 
 logger = logging.getLogger(__name__)
 

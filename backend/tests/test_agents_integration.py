@@ -6,9 +6,10 @@ from typing import Any
 from uuid import UUID
 
 import pytest
+from httpx import ASGITransport, AsyncClient
+
 from app.domain.agents.models import Agent, Capability, Integration
 from app.main import app
-from httpx import ASGITransport, AsyncClient
 
 pytestmark = pytest.mark.asyncio
 

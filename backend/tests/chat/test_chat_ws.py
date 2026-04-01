@@ -5,8 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from app.domain.chat.service import ChatService
 from tortoise.exceptions import BaseORMException
+
+from app.domain.chat.service import ChatService
 
 
 @pytest.mark.asyncio

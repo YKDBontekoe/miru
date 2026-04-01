@@ -5,8 +5,9 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from app.domain.chat.service import ChatService
 from starlette.websockets import WebSocketDisconnect
+
+from app.domain.chat.service import ChatService
 
 if typing.TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -102,8 +103,9 @@ def test_websocket_endpoint_runtime_error_during_connect() -> None:
     import uuid
     from unittest.mock import AsyncMock, patch
 
-    from app.api.v1.websocket import websocket_chat_hub
     from fastapi import WebSocket
+
+    from app.api.v1.websocket import websocket_chat_hub
 
     user_id = uuid.uuid4()
     mock_ws = AsyncMock(spec=WebSocket)
@@ -125,8 +127,9 @@ def test_websocket_endpoint_runtime_error_during_connect() -> None:
 def test_websocket_endpoint_runtime_error_during_close() -> None:
     from unittest.mock import AsyncMock, patch
 
-    from app.api.v1.websocket import websocket_chat_hub
     from fastapi import WebSocket
+
+    from app.api.v1.websocket import websocket_chat_hub
 
     mock_ws = AsyncMock(spec=WebSocket)
     mock_ws.close.side_effect = RuntimeError(
