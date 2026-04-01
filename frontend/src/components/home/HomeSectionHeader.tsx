@@ -1,12 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-
-const C = {
-  text: '#0A0E2E',
-  primary: '#2563EB',
-};
 
 export function HomeSectionHeader({
   title,
@@ -17,28 +13,23 @@ export function HomeSectionHeader({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-      }}
-    >
+    <View className="flex-row justify-between items-center mb-6">
       <AppText
-        style={{
-          fontSize: 15,
-          fontWeight: '700',
-          color: C.text,
-          letterSpacing: -0.2,
-        }}
+        variant="h3"
+        className={isDark ? 'text-onSurface-dark' : 'text-onSurface-light'}
       >
         {title}
       </AppText>
       {actionLabel && onAction && (
         <ScalePressable onPress={onAction}>
-          <AppText style={{ fontSize: 13, color: C.primary, fontWeight: '600' }}>
+          <AppText
+            variant="bodySm"
+            className="text-primary-DEFAULT"
+          >
             {actionLabel}
           </AppText>
         </ScalePressable>

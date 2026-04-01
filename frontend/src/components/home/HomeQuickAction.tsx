@@ -1,15 +1,10 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-
-const C = {
-  primaryFaint: '#EEF4FF',
-  primaryLight: '#DBEAFE',
-  primary: '#2563EB',
-  text: '#0A0E2E',
-};
+import { theme } from '@/core/theme';
 
 export function HomeQuickAction({
   icon,
@@ -20,32 +15,32 @@ export function HomeQuickAction({
   label: string;
   onPress: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <ScalePressable onPress={onPress} style={{ width: '48%', marginBottom: 10 }}>
+    <ScalePressable onPress={onPress} className="w-[48%] mb-4">
       <View
-        style={{
-          backgroundColor: C.primaryFaint,
-          borderRadius: 20,
-          paddingVertical: 20,
-          paddingHorizontal: 12,
-          alignItems: 'center',
-        }}
+        className={`rounded-2xl py-6 px-4 items-center ${
+          isDark ? 'bg-primary-DEFAULT/15' : 'bg-primary-surfaceLight'
+        }`}
       >
         <View
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 15,
-            backgroundColor: C.primaryLight,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 10,
-          }}
+          className={`w-[46px] h-[46px] rounded-xl items-center justify-center mb-4 ${
+            isDark ? 'bg-primary-DEFAULT/30' : 'bg-primary-light'
+          }`}
         >
-          <Ionicons name={icon} size={22} color={C.primary} />
+          <Ionicons
+            name={icon}
+            size={22}
+            color={isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT}
+          />
         </View>
         <AppText
-          style={{ fontSize: 13, fontWeight: '600', color: C.text, textAlign: 'center' }}
+          variant="bodySm"
+          className={`font-semibold text-center ${
+            isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+          }`}
           numberOfLines={1}
         >
           {label}

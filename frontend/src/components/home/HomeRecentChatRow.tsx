@@ -2,17 +2,11 @@ import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-import { ChatRoom } from '../../core/models';
-
-const C = {
-  primaryFaint: '#EEF4FF',
-  primary: '#2563EB',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-};
+import { ChatRoom } from '@/core/models';
+import { theme } from '@/core/theme';
 
 export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   room,
@@ -22,6 +16,8 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
   const relativeTimeStr = React.useMemo(() => {
@@ -35,40 +31,52 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   }, [t, room.updated_at]);
 
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-      }}
-    >
+    <ScalePressable onPress={onPress} className="flex-row items-center py-4">
       <View
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 14,
-          backgroundColor: C.primaryFaint,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-        }}
+        className={`w-[42px] h-[42px] rounded-md items-center justify-center me-4 ${
+          isDark ? 'bg-primary-DEFAULT/20' : 'bg-primary-surfaceLight'
+        }`}
       >
-        <AppText style={{ color: C.primary, fontSize: 15, fontWeight: '700' }}>{initial}</AppText>
+        <AppText
+          className={`text-[15px] font-bold ${
+            isDark ? 'text-primary-light' : 'text-primary-DEFAULT'
+          }`}
+        >
+          {initial}
+        </AppText>
       </View>
-      <View style={{ flex: 1, marginRight: 8 }}>
-        <AppText style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
+      <View className="flex-1 me-3">
+        <AppText
+          variant="bodySm"
+          className={`font-semibold mb-1 ${
+            isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+          }`}
+          numberOfLines={1}
+        >
           {room.name}
         </AppText>
-        <AppText style={{ fontSize: 12, color: C.muted, marginTop: 2 }} numberOfLines={1}>
+        <AppText
+          variant="caption"
+          className={isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'}
+          numberOfLines={1}
+        >
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>
+      <View className="items-end">
+        <AppText
+          variant="caption"
+          className={`mb-1 ${
+            isDark ? 'text-onSurface-disabledDark' : 'text-onSurface-disabledLight'
+          }`}
+        >
           {relativeTimeStr}
         </AppText>
-        <Ionicons name="chevron-forward" size={13} color={C.faint} />
+        <Ionicons
+          name="chevron-forward"
+          size={13}
+          color={isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight}
+        />
       </View>
     </ScalePressable>
   );

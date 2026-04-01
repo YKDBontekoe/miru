@@ -1,10 +1,16 @@
 import React from 'react';
 import { View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 
 export function HomeCard({ children }: { children: React.ReactNode }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <View
-      className="bg-surface rounded-2xl p-5 mb-3 shadow-lg shadow-[#2563EB]/10 elevation-3"
+      className={`rounded-3xl p-6 mb-4 shadow-md shadow-primary-DEFAULT ${
+        isDark ? 'bg-surface-dark' : 'bg-surface-light'
+      }`}
     >
       {children}
     </View>

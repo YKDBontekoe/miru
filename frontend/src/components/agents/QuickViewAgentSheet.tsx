@@ -2,17 +2,11 @@ import React from 'react';
 import { View, Pressable, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
-import { Agent } from '../../core/models';
+import { Agent } from '@/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
-
-const C = {
-  surface: '#FFFFFF',
-  text: '#12121A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
-  primary: '#2563EB',
-};
+import { theme } from '@/core/theme';
 
 interface QuickViewAgentSheetProps {
   agent: Agent;
@@ -31,6 +25,8 @@ export function QuickViewAgentSheet({
   roomAgents,
   getAgentColor,
 }: QuickViewAgentSheetProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const color = getAgentColor(agent.name);
   const level = Math.floor(agent.message_count / 10) + 1;
   const isInRoom = roomAgents.some((a) => a.id === agent.id);
@@ -54,61 +50,61 @@ export function QuickViewAgentSheet({
   };
 
   return (
-    <Modal visible animationType="none" transparent>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}
-        onPress={onClose}
-      >
+    <Modal visible animationType="none" transparent onRequestClose={onClose}>
+      <Pressable className="flex-1 justify-end bg-black/30" onPress={onClose}>
         <Animated.View
           entering={SlideInUp.duration(300)}
           exiting={SlideOutDown.duration(180)}
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-          }}
+          className={`rounded-t-[28px] p-8 ${
+            isDark ? 'bg-surface-dark' : 'bg-surface-light'
+          }`}
           onStartShouldSetResponder={() => true}
         >
           {/* Drag handle */}
-          <View style={{ alignItems: 'center', marginBottom: 16 }}>
-            <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
+          <View className="items-center mb-6">
+            <View
+              className={`w-8 h-1 rounded-sm ${
+                isDark ? 'bg-surface-highestDark' : 'bg-surface-highestLight'
+              }`}
+            />
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+          <View className="flex-row items-center mb-6">
             <View
+              className="w-[52px] h-[52px] rounded-full border-2 items-center justify-center me-4"
               style={{
-                width: 52,
-                height: 52,
-                borderRadius: 26,
                 backgroundColor: `${color}18`,
-                borderWidth: 2,
                 borderColor: `${color}40`,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginEnd: 14,
               }}
             >
-              <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
+              <AppText variant="h2" style={{ color, fontWeight: '700' }}>
                 {agent.name[0]?.toUpperCase() ?? '?'}
               </AppText>
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText style={{ fontSize: 18, fontWeight: '700', color: C.text, marginBottom: 2 }}>
+            <View className="flex-1">
+              <AppText
+                variant="h3"
+                className={`font-bold mb-1 ${
+                  isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+                }`}
+              >
                 {agent.name}
               </AppText>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View className="flex-row items-center gap-3">
                 <View
-                  style={{
-                    backgroundColor: `${color}18`,
-                    borderRadius: 6,
-                    paddingHorizontal: 7,
-                    paddingVertical: 2,
-                  }}
+                  className="rounded px-2 py-0.5"
+                  style={{ backgroundColor: `${color}18` }}
                 >
-                  <AppText style={{ color, fontSize: 11, fontWeight: '700' }}>Lv {level}</AppText>
+                  <AppText variant="caption" style={{ color, fontWeight: '700' }}>
+                    Lv {level}
+                  </AppText>
                 </View>
-                <AppText style={{ color: C.muted, fontSize: 12 }}>
+                <AppText
+                  variant="caption"
+                  className={
+                    isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'
+                  }
+                >
                   {agent.message_count} messages
                 </AppText>
               </View>
@@ -116,7 +112,10 @@ export function QuickViewAgentSheet({
           </View>
 
           <AppText
-            style={{ color: C.muted, fontSize: 13, lineHeight: 19, marginBottom: 18 }}
+            variant="bodySm"
+            className={`leading-5 mb-8 ${
+              isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'
+            }`}
             numberOfLines={3}
           >
             {agent.personality}
@@ -125,48 +124,39 @@ export function QuickViewAgentSheet({
           {isInRoom ? (
             <ScalePressable
               onPress={handleRemove}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#FEF2F2',
-                borderRadius: 14,
-                paddingVertical: 13,
-                borderWidth: 1,
-                borderColor: '#FECACA',
-                marginBottom: 36,
-              }}
+              className={`flex-row items-center justify-center rounded-md py-3.5 mb-10 border ${
+                isDark
+                  ? 'bg-status-errorSurfaceDark border-status-error'
+                  : 'bg-status-errorSurfaceLight border-status-error'
+              }`}
             >
               <Ionicons
                 name="person-remove-outline"
                 size={16}
-                color="#EF4444"
-                style={{ marginEnd: 7 }}
+                color={theme.colors.status.error}
+                className="me-3"
               />
-              <AppText style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>
+              <AppText
+                className="font-bold text-[15px]"
+                style={{ color: theme.colors.status.error }}
+              >
                 Remove from Chat
               </AppText>
             </ScalePressable>
           ) : (
             <ScalePressable
               onPress={handleAdd}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: C.primary,
-                borderRadius: 14,
-                paddingVertical: 13,
-                marginBottom: 36,
-              }}
+              className="flex-row items-center justify-center rounded-md py-3.5 mb-10 bg-primary-DEFAULT"
             >
               <Ionicons
                 name="person-add-outline"
                 size={16}
-                color="white"
-                style={{ marginEnd: 7 }}
+                color={theme.colors.white}
+                className="me-3"
               />
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+              <AppText
+                className="font-bold text-[15px] text-white"
+              >
                 Add to Chat
               </AppText>
             </ScalePressable>

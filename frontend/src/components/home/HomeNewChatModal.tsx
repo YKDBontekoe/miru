@@ -2,18 +2,11 @@ import React, { useState } from 'react';
 import { View, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { useChatStore } from '../../store/useChatStore';
-
-const C = {
-  surface: '#FFFFFF',
-  surfaceHigh: '#EEF2FF',
-  primary: '#2563EB',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-};
+import { theme } from '@/core/theme';
 
 export function HomeNewChatModal({
   visible,
@@ -28,6 +21,8 @@ export function HomeNewChatModal({
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { createRoom } = useChatStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -48,87 +43,64 @@ export function HomeNewChatModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(10,15,46,0.4)' }}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View className="flex-1 justify-end bg-[#0A0F2E66]">
         <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            paddingBottom: 40,
-          }}
+          className={`rounded-t-[28px] p-6 pb-12 ${
+            isDark ? 'bg-surface-dark' : 'bg-surface-light'
+          }`}
         >
           <View
-            style={{
-              width: 40,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: C.surfaceHigh,
-              alignSelf: 'center',
-              marginBottom: 20,
-            }}
+            className={`w-10 h-1 rounded-sm self-center mb-6 ${
+              isDark ? 'bg-surface-highestDark' : 'bg-surface-highestLight'
+            }`}
           />
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 18,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
+          <View className="flex-row justify-between items-center mb-6">
+            <AppText
+              variant="h2"
+              className={isDark ? 'text-onSurface-dark' : 'text-onSurface-light'}
+            >
               {t('home.chat_modal.title')}
             </AppText>
             <ScalePressable
-              onPress={() => { setName(""); onClose(); }}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 15,
-                backgroundColor: C.surfaceHigh,
-                alignItems: 'center',
-                justifyContent: 'center',
+              onPress={() => {
+                setName('');
+                onClose();
               }}
+              className={`w-[30px] h-[30px] rounded-[15px] items-center justify-center ${
+                isDark ? 'bg-surface-highestDark' : 'bg-surface-highestLight'
+              }`}
             >
-              <Ionicons name="close" size={17} color={C.muted} />
+              <Ionicons
+                name="close"
+                size={17}
+                color={isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight}
+              />
             </ScalePressable>
           </View>
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder={t('home.chat_modal.placeholder')}
-            placeholderTextColor={C.faint}
+            placeholderTextColor={
+              isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight
+            }
             autoFocus
-            style={{
-              backgroundColor: C.surfaceHigh,
-              borderRadius: 16,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: C.text,
-              fontSize: 16,
-              marginBottom: 14,
-            }}
+            className={`rounded-lg px-6 py-3.5 text-base mb-4 ${
+              isDark ? 'bg-surface-highestDark text-onSurface-dark' : 'bg-surface-highestLight text-onSurface-light'
+            }`}
           />
           <ScalePressable
             onPress={handleCreate}
             disabled={isSaving}
-            style={{
-              backgroundColor: isSaving ? `${C.primary}70` : C.primary,
-              borderRadius: 14,
-              paddingVertical: 15,
-              alignItems: 'center',
-              shadowColor: C.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.22,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
+            className={`rounded-md py-4 items-center shadow-sm shadow-primary-DEFAULT ${
+              isSaving ? 'bg-primary-DEFAULT/70' : 'bg-primary-DEFAULT'
+            }`}
           >
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>
+              <AppText variant="body" className="text-white font-bold">
                 {t('home.actions.create')}
               </AppText>
             )}
