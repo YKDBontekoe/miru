@@ -188,15 +188,15 @@ class ChatRepository:
         )
         return _map_message_to_entity(msg_model)
 
-    async def touch_room(self, room_id: UUID) -> None:
+    async def touch_room(self, room_id: UUID, user_id: UUID) -> None:
         """Bump updated_at on a room so recent-chat sorting reflects new messages."""
-        room = await ChatRoom.get_or_none(id=room_id)
+        room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
         if room:
             await room.save()  # auto_now=True on updated_at refreshes the timestamp
 
-    async def update_room_summary(self, room_id: UUID, summary: str) -> bool:
+    async def update_room_summary(self, room_id: UUID, summary: str, user_id: UUID) -> bool:
         """Update a room's summary."""
-        room = await ChatRoom.get_or_none(id=room_id)
+        room = await ChatRoom.get_or_none(id=room_id, user_id=user_id)
         if not room:
             return False
         room.summary = summary

@@ -180,7 +180,7 @@ class ChatBackgroundService:
             new_summary = response.summary.strip()
 
             if new_summary:
-                await self.chat_repo.update_room_summary(room_id, new_summary)
+                await self.chat_repo.update_room_summary(room_id, new_summary, room.user_id)
                 logger.info("Successfully updated summary for room %s", room_id)
 
         except Exception:

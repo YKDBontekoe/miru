@@ -178,7 +178,7 @@ class TestChatRepository:
         user_id = uuid4()
         room = await repo.create_room("Touch Room", user_id)
         original_updated_at = room.updated_at
-        await repo.touch_room(room.id)
+        await repo.touch_room(room.id, user_id)
         refreshed = await repo.get_room(room.id)
         assert refreshed is not None
         assert refreshed.updated_at >= original_updated_at
@@ -187,7 +187,7 @@ class TestChatRepository:
     async def test_touch_room_noop_for_unknown(self) -> None:
         repo = ChatRepository()
         # Should not raise even if the room doesn't exist
-        await repo.touch_room(uuid4())
+        await repo.touch_room(uuid4(), uuid4())
 
     @pytest.mark.asyncio
     async def test_get_room_with_user_id(self) -> None:

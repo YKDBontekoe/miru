@@ -147,8 +147,9 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
         typing.cast(
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
+        user_id = uuid4()
         responded = await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, user_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
         assert len(responded) == 1
 
@@ -161,9 +162,10 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")
     )
+    user_id = uuid4()
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, user_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
         )
 
 

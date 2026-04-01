@@ -299,7 +299,7 @@ class ChatService:
 
             # 6. Persist + broadcast — returns only the agents that actually responded.
             responded_agents = await self.ws_broadcaster.persist_and_broadcast_agent_response(
-                room_id, room_agents, result_text, agent_names
+                room_id, user_id, room_agents, result_text, agent_names
             )
 
             await chat_hub.broadcast_to_room(

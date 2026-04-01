@@ -41,7 +41,15 @@
         {
           "ios": {
             "deploymentTarget": "15.1",
-            "useFrameworks": "static"
+            "useFrameworks": "static",
+            "infoPlist": {
+              "NSAppTransportSecurity": {
+                "NSAllowsArbitraryLoads": false
+              }
+            }
+          },
+          "android": {
+            "usesCleartextTraffic": false
           }
         }
       ]
