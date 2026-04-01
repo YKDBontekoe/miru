@@ -4,13 +4,13 @@ This document provides essential information for AI agents working on the Miru c
 
 ## Project Overview
 
-Miru is a personal AI assistant with a **FastAPI backend** (Python) and **React Native frontend** (TypeScript/Expo). It uses Supabase (PostgreSQL + pgvector) as the primary database, Neo4j for memory graph relationships, and OpenRouter for LLM and embeddings.
+Miru is a personal AI assistant with a **FastAPI backend** (Python) and **React Native frontend** (TypeScript/Expo). It uses Supabase (PostgreSQL + pgvector) as the primary database, and OpenRouter for LLM and embeddings.
 
 **Key Technologies:**
-- **Backend:** FastAPI, Supabase Python SDK, Neo4j, CrewAI, PyJWT, Sentry, webauthn
+- **Backend:** FastAPI, Supabase Python SDK, CrewAI, PyJWT, Sentry, webauthn
 - **Frontend:** React Native, TypeScript, Expo Router, Zustand, NativeWind, @supabase/supabase-js
 - **AI:** OpenRouter (LLM + embeddings)
-- **Database:** Supabase (PostgreSQL + pgvector), Neo4j
+- **Database:** Supabase (PostgreSQL + pgvector)
 
 ---
 
@@ -71,8 +71,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
-<!-- DOCS(miru-agent): prompt mismatch -->
-**Note on Prompt:** Jules is instructed to strictly follow project architecture (Domain logic in `backend/app/domain/`, routes in `backend/app/api/v1/`, frontend in `frontend/app/` and `frontend/src/`), code style (100-char lines, type hints, specific import orders, `str | None` not `Optional[str]`), and test requirements (mock all external services including Supabase, OpenRouter, Neo4j, CrewAI in tests — never call real APIs).
+**Note on Prompt:** Jules is instructed to strictly follow project architecture and code style: 100-char lines, type hints/explicit types, double quotes for Python, single quotes for TypeScript, specific import orders (`stdlib` → `third-party` → `first-party`), use `str | None` not `Optional[str]`, use `const` for components/internal functions, include `from __future__ import annotations`, log errors with context (`logger.exception()`), and structure domains in `backend/app/domain/<domain>/` and routes in `backend/app/api/v1/`.
 
 ### 2. CodeRabbit
 
@@ -209,8 +208,6 @@ The frontend is a **React Native (Expo) application** using **TypeScript**. It f
 
 **Supabase (primary):** Accessed via the Supabase Python SDK — not asyncpg directly. All queries use the fluent client API (`.table("x").select(...).eq(...).execute()`). Vector similarity search uses the `match_memories` Supabase RPC function. Row Level Security (RLS) is enabled on all tables. Schema is managed via raw SQL files in `supabase/migrations/` and applied through the Supabase CLI (`supabase db push`).
 
-**Neo4j (graph layer):** Accessed via the async `neo4j` driver. Stores `Memory` nodes and relationships (`RELATED_TO`, `SIMILAR_TO`). Failures are caught and logged — Neo4j being unavailable is non-fatal.
-
 **Migration system:** Schema changes flow through a custom code-first pipeline:
 1. Edit Tortoise ORM models in `app/domain/**/models.py` (including `sql_policies`, `sql_indexes`, `sql_functions` on `Meta`).
 2. Run `python manage.py makemigrations <name>` to generate an incremental SQL diff in `supabase/migrations/`.
@@ -267,14 +264,14 @@ The CI pipeline (`database-migrations.yml`) validates and applies migrations aut
 - Backend: 75%+ coverage; 90%+ on critical paths
 - Frontend: 70%+ coverage
 - Run tests before committing
-- Mock all external services (Supabase, OpenRouter, Neo4j, CrewAI) — never call real APIs in tests
+- Mock all external services (Supabase, OpenRouter, CrewAI) — never call real APIs in tests
 - Write regression tests for every bug fix
 
 ### Backend
 - Use `pytest` with `pytest-asyncio` (`asyncio_mode = "strict"`) for async tests
 - Use fixtures in `conftest.py` for `TestClient`, auth headers, and JWT helpers
 - Structure tests as Arrange / Act / Assert
-- Use `unittest.mock.patch` to mock Supabase, OpenRouter, Neo4j, and CrewAI
+- Use `unittest.mock.patch` to mock Supabase, OpenRouter, and CrewAI
 - Test both the happy path and error/edge cases
 - Route tests use `fastapi.testclient.TestClient` (synchronous)
 
@@ -306,7 +303,6 @@ The CI pipeline (`database-migrations.yml`) validates and applies migrations aut
 ### Backend
 - All I/O must be `async` — never block the event loop
 - Paginate all list endpoints; never return unbounded result sets
-- Neo4j failures must not block the request — wrap graph writes in try/except
 - Use `hnsw` index on `memories.embedding` for pgvector cosine similarity (already in migrations — do not add a duplicate)
 - Stream LLM responses via `stream_chat()` — do not buffer full responses in memory
 
@@ -409,9 +405,6 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 SUPABASE_JWT_SECRET=your_jwt_secret_here
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_password_here
 WEBAUTHN_RP_ID=localhost
 WEBAUTHN_RP_NAME=Miru
 WEBAUTHN_EXPECTED_ORIGIN=http://localhost
