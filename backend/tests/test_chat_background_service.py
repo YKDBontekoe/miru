@@ -157,7 +157,7 @@ async def test_update_room_summary_background_success(
 
         mock_structured_completion.assert_called_once()
         background_service.chat_repo.update_room_summary.assert_called_once_with(
-                room_id, "new updated summary", mock_room.user_id
+            room_id, "new updated summary", mock_room.user_id
         )
 
 
