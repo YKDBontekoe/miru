@@ -96,6 +96,9 @@
       "days_ago_other": "{{count}}d ago"
     }
   },
+  "common": {
+    "close": "Close"
+  },
   "chat": {
     "title": "Miru",
     "personas": "Personas",
@@ -119,7 +122,16 @@
     "no_agents_create": "No agents yet. Create one in the Agents tab.",
     "message_placeholder": "Message {{name}}...",
     "room_agents_status_one": "{{names}} is in this room.",
-    "room_agents_status_other": "{{names}} are in this room."
+    "room_agents_status_other": "{{names}} are in this room.",
+    "manage_agents": "Manage Agents",
+    "no_more_agents_to_add": "No more agents to add."
+  },
+  "manageAgents": {
+    "activeHelper": "{{count}} active · tap an avatar in the header to manage",
+    "inThisChat": "In this chat",
+    "addMore": "Add more",
+    "remove": "Remove",
+    "add": "Add"
   },
   "agent": {
     "name": "Name",

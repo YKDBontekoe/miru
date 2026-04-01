@@ -96,6 +96,9 @@
       "days_ago_other": "{{count}}d geleden"
     }
   },
+  "common": {
+    "close": "Sluiten"
+  },
   "chat": {
     "title": "Miru",
     "personas": "Persona's",
@@ -119,7 +122,16 @@
     "no_agents_create": "Nog geen agenten. Maak er een aan in het tabblad Agenten.",
     "message_placeholder": "Bericht aan {{name}}...",
     "room_agents_status_one": "{{names}} is in deze kamer.",
-    "room_agents_status_other": "{{names}} zijn in deze kamer."
+    "room_agents_status_other": "{{names}} zijn in deze kamer.",
+    "manage_agents": "Agenten beheren",
+    "no_more_agents_to_add": "Geen agenten meer om toe te voegen."
+  },
+  "manageAgents": {
+    "activeHelper": "{{count}} actief · tik op een avatar in de koptekst om te beheren",
+    "inThisChat": "In deze chat",
+    "addMore": "Meer toevoegen",
+    "remove": "Verwijderen",
+    "add": "Toevoegen"
   },
   "agent": {
     "name": "Naam",
