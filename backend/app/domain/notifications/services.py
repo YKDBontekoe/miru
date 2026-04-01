@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 
+from app.infrastructure.notifications.azure_hubs import \
+    AzureNotificationHubClient
 from fastapi import Depends
-
-from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
 
 logger = logging.getLogger(__name__)
 

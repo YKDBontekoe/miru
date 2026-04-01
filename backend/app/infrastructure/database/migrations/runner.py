@@ -7,18 +7,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from app.infrastructure.database.migrations.constants import (
-    CHECKSUM_FILE,
-    ENV_STUBS,
-    MIGRATIONS_DIR,
-)
+from app.infrastructure.database.migrations.constants import (CHECKSUM_FILE,
+                                                              ENV_STUBS,
+                                                              MIGRATIONS_DIR)
 from app.infrastructure.database.migrations.generator import (
-    _collect_extras,
-    _content_checksum,
-    _file_checksum,
-    _generate_schema_sql,
-    _read_checksum,
-)
+    _collect_extras, _content_checksum, _file_checksum, _generate_schema_sql,
+    _read_checksum)
 
 # ---------------------------------------------------------------------------
 # Tracking table DDL — created once by ``migrate`` if it doesn't exist

@@ -8,17 +8,14 @@ import logging
 import typing
 
 import nest_asyncio
+from app.infrastructure.external.spotify import (add_tracks_to_playlist,
+                                                 create_playlist,
+                                                 get_currently_playing,
+                                                 get_recently_played,
+                                                 get_recommendations,
+                                                 search_spotify)
 from crewai.tools import BaseTool
 from pydantic import Field
-
-from app.infrastructure.external.spotify import (
-    add_tracks_to_playlist,
-    create_playlist,
-    get_currently_playing,
-    get_recently_played,
-    get_recommendations,
-    search_spotify,
-)
 
 
 def _run_async_in_sync(coro: typing.Coroutine[typing.Any, typing.Any, typing.Any]) -> typing.Any:

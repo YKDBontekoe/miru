@@ -6,7 +6,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (AliasChoices, BaseModel, ConfigDict, Field,
+                      field_validator, model_validator)
 
 
 def extract_uuid_from_relation(v: Any) -> UUID | None:

@@ -5,22 +5,15 @@ from __future__ import annotations
 from typing import Annotated, Any
 from uuid import UUID  # noqa: TCH003
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from fastapi.responses import StreamingResponse
-
 from app.api.dependencies import get_chat_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.schemas import AgentResponse
-from app.domain.chat.dtos import (
-    AddAgentToRoom,
-    ChatMessageResponse,
-    ChatRequest,
-    MessageUpdate,
-    RoomCreate,
-    RoomResponse,
-    RoomUpdate,
-)
+from app.domain.chat.dtos import (AddAgentToRoom, ChatMessageResponse,
+                                  ChatRequest, MessageUpdate, RoomCreate,
+                                  RoomResponse, RoomUpdate)
 from app.domain.chat.service import ChatService  # noqa: TCH001
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi.responses import StreamingResponse
 
 router = APIRouter(tags=["Chat"])
 

@@ -5,11 +5,10 @@ from collections.abc import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-
 from app.core.security.auth import get_current_user
 from app.domain.productivity.models import CalendarEvent, Note, Task
 from app.main import app
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -18,7 +17,8 @@ async def clear_productivity_db() -> AsyncGenerator[None]:
     await Note.all().delete()
     await CalendarEvent.all().delete()
     from app.domain.agents.models import Agent
-    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
+    from app.infrastructure.database.models.chat_models import (ChatMessage,
+                                                                ChatRoom)
 
     await Agent.all().delete()
     await ChatRoom.all().delete()
@@ -28,7 +28,8 @@ async def clear_productivity_db() -> AsyncGenerator[None]:
     await Note.all().delete()
     await CalendarEvent.all().delete()
     from app.domain.agents.models import Agent
-    from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
+    from app.infrastructure.database.models.chat_models import (ChatMessage,
+                                                                ChatRoom)
 
     await Agent.all().delete()
     await ChatRoom.all().delete()

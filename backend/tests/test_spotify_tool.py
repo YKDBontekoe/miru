@@ -7,12 +7,8 @@ import typing
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from app.infrastructure.external.spotify_tool import (
-    SpotifyCurrentlyPlayingTool,
-    SpotifyRecentlyPlayedTool,
-    SpotifySearchTool,
-)
+    SpotifyCurrentlyPlayingTool, SpotifyRecentlyPlayedTool, SpotifySearchTool)
 
 
 @pytest.fixture

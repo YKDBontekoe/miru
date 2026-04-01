@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
-from app.infrastructure.repositories.productivity_repo import ProductivityRepository
+from app.domain.productivity.use_cases.manage_productivity import \
+    ManageProductivityUseCase
+from app.infrastructure.repositories.productivity_repo import \
+    ProductivityRepository
 
 
 def get_productivity_use_case() -> ManageProductivityUseCase:

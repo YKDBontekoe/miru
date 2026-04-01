@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from app.api.dependencies import get_chat_service
 from app.core.security.auth import get_current_user
 from app.domain.chat.dtos import MessageUpdate

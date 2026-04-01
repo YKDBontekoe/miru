@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from tortoise import fields
-
 from app.infrastructure.database.base import SupabaseModel
+from tortoise import fields
 
 
 class Agent(SupabaseModel):

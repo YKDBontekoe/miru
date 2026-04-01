@@ -6,13 +6,10 @@ from unittest.mock import patch
 
 import httpx
 import pytest
-
 from app.infrastructure.external.discord import get_server_info, send_message
-from app.infrastructure.external.spotify import (
-    get_currently_playing,
-    get_recently_played,
-    search_spotify,
-)
+from app.infrastructure.external.spotify import (get_currently_playing,
+                                                 get_recently_played,
+                                                 search_spotify)
 
 
 @pytest.fixture

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
-from fastapi.testclient import TestClient
-
 from app.core.security.auth import get_current_user
 from app.domain.notifications.services import NotificationService
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

@@ -4,7 +4,6 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from app.domain.agents.schemas import AgentGenerationResponse, MoodResponse
 from app.domain.agents.service import AgentService
 
