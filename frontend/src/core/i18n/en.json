@@ -97,7 +97,9 @@
     }
   },
   "common": {
-    "close": "Close"
+    "close": "Close",
+    "email_address": "Email address",
+    "password": "Password"
   },
   "chat": {
     "title": "Miru",
@@ -175,6 +177,14 @@
       "integrations": "Integrations",
       "level": "Level {{level}}"
     },
+    "created": "Created",
+    "start_chat": "Start Chat",
+    "relationship": "Relationship",
+    "personality_label": "Personality",
+    "about_label": "About",
+    "goals_label": "Goals",
+    "integrations_label": "Integrations",
+    "archive_persona": "Archive Persona",
     "create_modal": {
       "title": "New Agent",
       "subtitle": "Powered by Miru AI",

@@ -5,23 +5,18 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
-from app.domain.agents.schemas import (
-    AgentCreate,
-    AgentGenerationResponse,
-    AgentResponse,
-    AgentTemplateResponse,
-    AgentUpdate,
-    MoodResponse,
-)
+from app.domain.agents.models import (Agent, AgentIntegration, Capability,
+                                      Integration)
+from app.domain.agents.schemas import (AgentCreate, AgentGenerationResponse,
+                                       AgentResponse, AgentTemplateResponse,
+                                       AgentUpdate, MoodResponse)
 from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from openai.types.chat import ChatCompletionMessageParam
-
     from app.infrastructure.repositories.agent_repo import AgentRepository
+    from openai.types.chat import ChatCompletionMessageParam
 
 logger = logging.getLogger(__name__)
 

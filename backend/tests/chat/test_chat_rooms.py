@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from app.domain.chat.entities import ChatMessageEntity, ChatRoomEntity
 from app.domain.chat.service import ChatService
 

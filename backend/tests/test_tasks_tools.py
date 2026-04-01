@@ -5,12 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-
-from app.domain.agent_tools.productivity.tasks_tools import (
-    CreateTaskTool,
-    ListTasksTool,
-    UpdateTaskTool,
-)
+from app.domain.agent_tools.productivity.tasks_tools import (CreateTaskTool,
+                                                             ListTasksTool,
+                                                             UpdateTaskTool)
 from app.domain.productivity.models import Task
 
 

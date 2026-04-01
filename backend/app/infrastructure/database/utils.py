@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 
 import asyncpg.exceptions
 from fastapi import HTTPException
-from tortoise.exceptions import DBConnectionError, IntegrityError, OperationalError
+from tortoise.exceptions import (DBConnectionError, IntegrityError,
+                                 OperationalError)
 
 logger = logging.getLogger(__name__)
 

@@ -4,12 +4,9 @@ import typing
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from app.infrastructure.external.steam import (
-    get_owned_games,
-    get_player_summaries,
-    resolve_vanity_url,
-)
+from app.infrastructure.external.steam import (get_owned_games,
+                                               get_player_summaries,
+                                               resolve_vanity_url)
 
 
 @pytest.fixture

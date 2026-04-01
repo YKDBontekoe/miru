@@ -3,9 +3,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-
 from app.domain.notifications.services import NotificationService
-from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
+from app.infrastructure.notifications.azure_hubs import \
+    AzureNotificationHubClient
 
 
 @pytest.fixture

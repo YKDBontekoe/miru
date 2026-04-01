@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from tortoise.exceptions import IntegrityError
-
 from app.infrastructure.database.utils import handle_db_errors
+from tortoise.exceptions import IntegrityError
 
 
 @pytest.mark.asyncio

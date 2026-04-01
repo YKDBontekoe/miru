@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
 from app.domain.memory.models import MemoryGraphEdge, MemoryGraphNode
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,8 @@ class GraphExtractionService:
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
         try:
-            from app.infrastructure.external.openrouter import structured_completion
+            from app.infrastructure.external.openrouter import \
+                structured_completion
 
             # Using gpt-4o-mini for fast/cheap structured extraction
             return await structured_completion(

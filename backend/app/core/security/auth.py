@@ -5,11 +5,10 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
 from app.api.dependencies import get_auth_service
 from app.domain.auth.service import AuthService  # noqa: TCH001
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 # HTTPBearer extracts the Bearer token from the Authorization header.
 _bearer = HTTPBearer(auto_error=True)

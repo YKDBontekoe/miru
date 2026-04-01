@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/core/i18n';
 import { AppText } from '../../src/components/AppText';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
@@ -67,7 +68,7 @@ function getInitials(email?: string): string {
 }
 
 function formatDate(): string {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(i18n.language, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -221,7 +222,7 @@ export default function HomeScreen() {
               marginBottom: 20,
             }}
           >
-            <View style={{ flex: 1, paddingRight: 16 }}>
+            <View style={{ flex: 1, paddingEnd: 16 }}>
               <AppText style={{ fontSize: 13, color: C.muted, fontWeight: '500', marginBottom: 4 }}>
                 {greeting}
               </AppText>
@@ -474,7 +475,7 @@ export default function HomeScreen() {
                   elevation: 5,
                 }}
               >
-                <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
+                <Ionicons name="add" size={19} color="white" style={{ marginEnd: 7 }} />
                 <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
                   {t('home.actions.start_chat')}
                 </AppText>
