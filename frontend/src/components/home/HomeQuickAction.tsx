@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-import { theme } from '../../core/theme';
+import { theme } from '@/core/theme';
 
 export function HomeQuickAction({
   icon,
@@ -19,26 +19,16 @@ export function HomeQuickAction({
   const isDark = colorScheme === 'dark';
 
   return (
-    <ScalePressable onPress={onPress} style={styles.container}>
+    <ScalePressable onPress={onPress} className="w-[48%] mb-4">
       <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: isDark
-              ? `${theme.colors.primary.DEFAULT}15`
-              : theme.colors.primary.surfaceLight,
-          },
-        ]}
+        className={`rounded-2xl py-6 px-4 items-center ${
+          isDark ? 'bg-primary-DEFAULT/15' : 'bg-primary-surfaceLight'
+        }`}
       >
         <View
-          style={[
-            styles.iconContainer,
-            {
-              backgroundColor: isDark
-                ? `${theme.colors.primary.DEFAULT}30`
-                : theme.colors.primary.light,
-            },
-          ]}
+          className={`w-[46px] h-[46px] rounded-xl items-center justify-center mb-4 ${
+            isDark ? 'bg-primary-DEFAULT/30' : 'bg-primary-light'
+          }`}
         >
           <Ionicons
             name={icon}
@@ -48,10 +38,9 @@ export function HomeQuickAction({
         </View>
         <AppText
           variant="bodySm"
-          style={[
-            styles.label,
-            { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
-          ]}
+          className={`font-semibold text-center ${
+            isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+          }`}
           numberOfLines={1}
         >
           {label}
@@ -60,28 +49,3 @@ export function HomeQuickAction({
     </ScalePressable>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: '48%',
-    marginBottom: theme.spacing.md,
-  },
-  card: {
-    borderRadius: theme.borderRadius.xl,
-    paddingVertical: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.md,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: theme.borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  label: {
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});

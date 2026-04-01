@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Pressable, Modal, Alert, StyleSheet } from 'react-native';
+import { View, Pressable, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
-import { Agent } from '../../core/models';
+import { Agent } from '@/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
-import { theme } from '../../core/theme';
+import { theme } from '@/core/theme';
 
 interface QuickViewAgentSheetProps {
   agent: Agent;
@@ -51,65 +51,59 @@ export function QuickViewAgentSheet({
 
   return (
     <Modal visible animationType="none" transparent onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable className="flex-1 justify-end bg-black/30" onPress={onClose}>
         <Animated.View
           entering={SlideInUp.duration(300)}
           exiting={SlideOutDown.duration(180)}
-          style={[
-            styles.sheetContainer,
-            { backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light },
-          ]}
+          className={`rounded-t-[28px] p-8 ${
+            isDark ? 'bg-surface-dark' : 'bg-surface-light'
+          }`}
           onStartShouldSetResponder={() => true}
         >
           {/* Drag handle */}
-          <View style={styles.dragHandleContainer}>
+          <View className="items-center mb-6">
             <View
-              style={[
-                styles.dragHandle,
-                {
-                  backgroundColor: isDark
-                    ? theme.colors.surface.highestDark
-                    : theme.colors.surface.highestLight,
-                },
-              ]}
+              className={`w-8 h-1 rounded-sm ${
+                isDark ? 'bg-surface-highestDark' : 'bg-surface-highestLight'
+              }`}
             />
           </View>
 
-          <View style={styles.headerRow}>
+          <View className="flex-row items-center mb-6">
             <View
-              style={[
-                styles.avatarContainer,
-                {
-                  backgroundColor: `${color}18`,
-                  borderColor: `${color}40`,
-                },
-              ]}
+              className="w-[52px] h-[52px] rounded-full border-2 items-center justify-center me-4"
+              style={{
+                backgroundColor: `${color}18`,
+                borderColor: `${color}40`,
+              }}
             >
               <AppText variant="h2" style={{ color, fontWeight: '700' }}>
                 {agent.name[0]?.toUpperCase() ?? '?'}
               </AppText>
             </View>
-            <View style={styles.headerTextContainer}>
+            <View className="flex-1">
               <AppText
                 variant="h3"
-                style={[
-                  styles.agentName,
-                  { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
-                ]}
+                className={`font-bold mb-1 ${
+                  isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+                }`}
               >
                 {agent.name}
               </AppText>
-              <View style={styles.statsRow}>
-                <View style={[styles.levelBadge, { backgroundColor: `${color}18` }]}>
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="rounded px-2 py-0.5"
+                  style={{ backgroundColor: `${color}18` }}
+                >
                   <AppText variant="caption" style={{ color, fontWeight: '700' }}>
                     Lv {level}
                   </AppText>
                 </View>
                 <AppText
                   variant="caption"
-                  style={{
-                    color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
-                  }}
+                  className={
+                    isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'
+                  }
                 >
                   {agent.message_count} messages
                 </AppText>
@@ -119,10 +113,9 @@ export function QuickViewAgentSheet({
 
           <AppText
             variant="bodySm"
-            style={[
-              styles.personalityText,
-              { color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight },
-            ]}
+            className={`leading-5 mb-8 ${
+              isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'
+            }`}
             numberOfLines={3}
           >
             {agent.personality}
@@ -131,42 +124,39 @@ export function QuickViewAgentSheet({
           {isInRoom ? (
             <ScalePressable
               onPress={handleRemove}
-              style={[
-                styles.actionButton,
-                styles.removeButton,
-                {
-                  backgroundColor: isDark
-                    ? theme.colors.status.errorSurfaceDark
-                    : theme.colors.status.errorSurfaceLight,
-                  borderColor: theme.colors.status.error,
-                },
-              ]}
+              className={`flex-row items-center justify-center rounded-md py-3.5 mb-10 border ${
+                isDark
+                  ? 'bg-status-errorSurfaceDark border-status-error'
+                  : 'bg-status-errorSurfaceLight border-status-error'
+              }`}
             >
               <Ionicons
                 name="person-remove-outline"
                 size={16}
                 color={theme.colors.status.error}
-                style={styles.actionIcon}
+                className="me-3"
               />
-              <AppText style={[styles.actionText, { color: theme.colors.status.error }]}>
+              <AppText
+                className="font-bold text-[15px]"
+                style={{ color: theme.colors.status.error }}
+              >
                 Remove from Chat
               </AppText>
             </ScalePressable>
           ) : (
             <ScalePressable
               onPress={handleAdd}
-              style={[
-                styles.actionButton,
-                { backgroundColor: theme.colors.primary.DEFAULT },
-              ]}
+              className="flex-row items-center justify-center rounded-md py-3.5 mb-10 bg-primary-DEFAULT"
             >
               <Ionicons
                 name="person-add-outline"
                 size={16}
                 color={theme.colors.white}
-                style={styles.actionIcon}
+                className="me-3"
               />
-              <AppText style={[styles.actionText, { color: theme.colors.white }]}>
+              <AppText
+                className="font-bold text-[15px] text-white"
+              >
                 Add to Chat
               </AppText>
             </ScalePressable>
@@ -176,78 +166,3 @@ export function QuickViewAgentSheet({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)', // Keeps a subtle dark overlay even in light mode
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: theme.spacing.xxl,
-  },
-  dragHandleContainer: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  dragHandle: {
-    width: 32,
-    height: 4,
-    borderRadius: theme.borderRadius.xs,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  avatarContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginEnd: theme.spacing.md,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  agentName: {
-    fontWeight: '700',
-    marginBottom: theme.spacing.xxs,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  levelBadge: {
-    borderRadius: theme.borderRadius.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  personalityText: {
-    lineHeight: 19,
-    marginBottom: theme.spacing.xl,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: 13,
-    marginBottom: theme.spacing.xxxl,
-  },
-  removeButton: {
-    borderWidth: 1,
-  },
-  actionIcon: {
-    marginEnd: theme.spacing.sm,
-  },
-  actionText: {
-    fontWeight: '700',
-    fontSize: 15, // Maintaining custom bold action text size
-  },
-});

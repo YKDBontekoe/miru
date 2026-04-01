@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-import { theme } from '../../core/theme';
 
 export function HomeSectionHeader({
   title,
@@ -18,13 +17,10 @@ export function HomeSectionHeader({
   const isDark = colorScheme === 'dark';
 
   return (
-    <View style={styles.container}>
+    <View className="flex-row justify-between items-center mb-6">
       <AppText
         variant="h3"
-        style={[
-          styles.title,
-          { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
-        ]}
+        className={isDark ? 'text-onSurface-dark' : 'text-onSurface-light'}
       >
         {title}
       </AppText>
@@ -32,7 +28,7 @@ export function HomeSectionHeader({
         <ScalePressable onPress={onAction}>
           <AppText
             variant="bodySm"
-            style={[styles.action, { color: theme.colors.primary.DEFAULT }]}
+            className="text-primary-DEFAULT"
           >
             {actionLabel}
           </AppText>
@@ -41,21 +37,3 @@ export function HomeSectionHeader({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  title: {
-    fontSize: 15, // Keep slightly smaller than default h3 for this section header context
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  action: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-});

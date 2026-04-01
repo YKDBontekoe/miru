@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import { theme } from '../../core/theme';
 
 export function HomeCard({ children }: { children: React.ReactNode }) {
   const { colorScheme } = useColorScheme();
@@ -9,33 +8,11 @@ export function HomeCard({ children }: { children: React.ReactNode }) {
 
   return (
     <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light,
-          shadowColor: theme.colors.primary.DEFAULT,
-        },
-      ]}
+      className={`rounded-3xl p-6 mb-4 shadow-md shadow-primary-DEFAULT ${
+        isDark ? 'bg-surface-dark' : 'bg-surface-light'
+      }`}
     >
       {children}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    marginBottom: theme.spacing.md,
-    ...Platform.select({
-      ios: theme.elevation.md,
-      android: {
-        elevation: theme.elevation.md.elevation,
-        shadowColor: 'transparent',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0,
-        shadowRadius: 0,
-      },
-    }),
-  },
-});

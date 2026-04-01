@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-import { ChatRoom } from '../../core/models';
-import { theme } from '../../core/theme';
+import { ChatRoom } from '@/core/models';
+import { theme } from '@/core/theme';
 
 export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   room,
@@ -31,52 +31,44 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   }, [t, room.updated_at]);
 
   return (
-    <ScalePressable onPress={onPress} style={styles.container}>
+    <ScalePressable onPress={onPress} className="flex-row items-center py-4">
       <View
-        style={[
-          styles.iconContainer,
-          {
-            backgroundColor: isDark
-              ? `${theme.colors.primary.DEFAULT}20` // 20% opacity for dark mode
-              : theme.colors.primary.surfaceLight,
-          },
-        ]}
+        className={`w-[42px] h-[42px] rounded-md items-center justify-center me-4 ${
+          isDark ? 'bg-primary-DEFAULT/20' : 'bg-primary-surfaceLight'
+        }`}
       >
         <AppText
-          style={[
-            styles.iconText,
-            { color: isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT },
-          ]}
+          className={`text-[15px] font-bold ${
+            isDark ? 'text-primary-light' : 'text-primary-DEFAULT'
+          }`}
         >
           {initial}
         </AppText>
       </View>
-      <View style={styles.textContainer}>
+      <View className="flex-1 me-3">
         <AppText
           variant="bodySm"
-          style={[
-            styles.title,
-            { color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light },
-          ]}
+          className={`font-semibold mb-1 ${
+            isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+          }`}
           numberOfLines={1}
         >
           {room.name}
         </AppText>
         <AppText
           variant="caption"
-          style={{ color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight }}
+          className={isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'}
           numberOfLines={1}
         >
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={styles.metaContainer}>
+      <View className="items-end">
         <AppText
           variant="caption"
-          style={[
-            styles.timeText,
-            { color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight },
-          ]}
+          className={`mb-1 ${
+            isDark ? 'text-onSurface-disabledDark' : 'text-onSurface-disabledLight'
+          }`}
         >
           {relativeTimeStr}
         </AppText>
@@ -88,38 +80,4 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
       </View>
     </ScalePressable>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.md,
-  },
-  iconContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginEnd: theme.spacing.md,
-  },
-  iconText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  textContainer: {
-    flex: 1,
-    marginEnd: theme.spacing.sm,
-  },
-  title: {
-    fontWeight: '600',
-    marginBottom: theme.spacing.xxs,
-  },
-  metaContainer: {
-    alignItems: 'flex-end',
-  },
-  timeText: {
-    marginBottom: theme.spacing.xs,
-  },
 });
