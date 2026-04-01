@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.infrastructure.external.steam import (get_player_summaries,
-                                               resolve_vanity_url)
 from fastapi import APIRouter, HTTPException
+
+from app.core.security.auth import CurrentUser  # noqa: TCH001
+from app.infrastructure.external.steam import get_player_summaries, resolve_vanity_url
 
 router = APIRouter(tags=["Integrations"])
 

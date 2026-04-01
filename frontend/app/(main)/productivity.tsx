@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     borderColor: T.border.light,
   },
   searchIcon: {
-    marginEnd: S.sm,
+    marginRight: S.sm,
   },
   searchInput: {
     flex: 1,

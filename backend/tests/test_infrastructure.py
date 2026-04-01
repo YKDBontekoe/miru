@@ -78,8 +78,7 @@ async def test_structured_completion_delegates_to_client() -> None:
             return_value=MagicMock(default_chat_model="test-model", openrouter_api_key="k"),
         ),
     ):
-        from app.infrastructure.external.openrouter import \
-            structured_completion
+        from app.infrastructure.external.openrouter import structured_completion
 
         result = await structured_completion([{"role": "user", "content": "Hi"}], MyModel)
     assert result.value == "ok"
@@ -92,8 +91,7 @@ async def test_structured_completion_delegates_to_client() -> None:
 
 @pytest.mark.asyncio
 async def test_client_chat_completion_delegates_to_structured() -> None:
-    from app.infrastructure.external.openrouter import (ChatResponse,
-                                                        OpenRouterClient)
+    from app.infrastructure.external.openrouter import ChatResponse, OpenRouterClient
 
     client = OpenRouterClient.__new__(OpenRouterClient)
     client.structured_completion = AsyncMock(  # type: ignore[method-assign]

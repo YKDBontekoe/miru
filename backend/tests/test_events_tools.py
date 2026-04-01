@@ -6,10 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from app.domain.agent_tools.productivity.events_tools import (CreateEventTool,
-                                                              DeleteEventTool,
-                                                              ListEventsTool,
-                                                              UpdateEventTool)
+
+from app.domain.agent_tools.productivity.events_tools import (
+    CreateEventTool,
+    DeleteEventTool,
+    ListEventsTool,
+    UpdateEventTool,
+)
 from app.domain.productivity.models import CalendarEvent
 
 

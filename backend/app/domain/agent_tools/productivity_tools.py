@@ -1,21 +1,25 @@
 from __future__ import annotations
 
-from app.domain.agent_tools.productivity import (CreateEventInput,
-                                                 CreateEventTool,
-                                                 CreateNoteInput,
-                                                 CreateNoteTool,
-                                                 CreateTaskInput,
-                                                 CreateTaskTool,
-                                                 DeleteEventInput,
-                                                 DeleteEventTool,
-                                                 ListEventsInput,
-                                                 ListEventsTool,
-                                                 ListNotesInput, ListNotesTool,
-                                                 ListTasksInput, ListTasksTool,
-                                                 UpdateEventInput,
-                                                 UpdateEventTool,
-                                                 UpdateTaskInput,
-                                                 UpdateTaskTool)
+from app.domain.agent_tools.productivity import (
+    CreateEventInput,
+    CreateEventTool,
+    CreateNoteInput,
+    CreateNoteTool,
+    CreateTaskInput,
+    CreateTaskTool,
+    DeleteEventInput,
+    DeleteEventTool,
+    ListEventsInput,
+    ListEventsTool,
+    ListNotesInput,
+    ListNotesTool,
+    ListTasksInput,
+    ListTasksTool,
+    UpdateEventInput,
+    UpdateEventTool,
+    UpdateTaskInput,
+    UpdateTaskTool,
+)
 
 __all__ = [
     "CreateEventInput",

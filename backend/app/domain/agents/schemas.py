@@ -6,8 +6,7 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import (BaseModel, ConfigDict, Field, StringConstraints,
-                      field_validator)
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 
 class CapabilityResponse(BaseModel):

@@ -97,9 +97,7 @@
     }
   },
   "common": {
-    "close": "Sluiten",
-    "email_address": "E-mailadres",
-    "password": "Wachtwoord"
+    "close": "Sluiten"
   },
   "chat": {
     "title": "Miru",
@@ -177,14 +175,6 @@
       "integrations": "Integraties",
       "level": "Niveau {{level}}"
     },
-    "created": "Aangemaakt",
-    "start_chat": "Chat starten",
-    "relationship": "Relatie",
-    "personality_label": "Persoonlijkheid",
-    "about_label": "Over",
-    "goals_label": "Doelen",
-    "integrations_label": "Integraties",
-    "archive_persona": "Persona archiveren",
     "create_modal": {
       "title": "Nieuwe agent",
       "subtitle": "Aangedreven door Miru AI",

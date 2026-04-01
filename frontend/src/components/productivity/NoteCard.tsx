@@ -49,7 +49,7 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
           fontWeight: 'bold',
           color: C.text,
           flex: 1,
-          marginEnd: theme.spacing.sm,
+          marginRight: theme.spacing.sm,
         },
         deleteIconWrapper: {
           padding: theme.spacing.xs,
@@ -71,7 +71,7 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
           fontWeight: '500',
         },
         timeIcon: {
-          marginEnd: 4,
+          marginRight: 4,
         },
       }),
     [C]

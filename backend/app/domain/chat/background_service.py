@@ -11,11 +11,12 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from openai.types.chat import ChatCompletionMessageParam
+
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
-    from openai.types.chat import ChatCompletionMessageParam
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +71,7 @@ class ChatBackgroundService:
         agent_names: list[str],
     ) -> None:
         """Embed and store the conversation turn as memories for future retrieval."""
-        from app.domain.chat.websocket_broadcaster import \
-            ChatWebSocketBroadcaster
+        from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
         from app.domain.memory.models import Memory
         from app.infrastructure.external.openrouter import embed
 
@@ -120,8 +120,7 @@ class ChatBackgroundService:
         if not self.chat_repo:
             return
 
-        from app.infrastructure.external.openrouter import \
-            structured_completion
+        from app.infrastructure.external.openrouter import structured_completion
 
         try:
             # Check if history is getting long enough to warrant a summary

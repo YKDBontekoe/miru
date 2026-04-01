@@ -163,7 +163,7 @@ export function AgentDetailEditForm({
             name="archive-outline"
             size={15}
             color="white"
-            className="me-1.5"
+            className="mr-1.5"
           />
           <AppText className="text-white font-bold text-sm">
             Archive Persona

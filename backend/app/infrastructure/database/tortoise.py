@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import urllib.parse
 
-from app.core.config import get_settings
 from tortoise import Tortoise
+
+from app.core.config import get_settings
 
 raw_url = get_settings().database_url or ""
 if raw_url.startswith("postgresql://"):

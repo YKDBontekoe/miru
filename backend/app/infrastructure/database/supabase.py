@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Any
 
-from app.core.config import get_settings
 from fastapi import Depends
+
+from app.core.config import get_settings
 
 if TYPE_CHECKING:
     from supabase import Client

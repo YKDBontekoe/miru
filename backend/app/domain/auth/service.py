@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 import jwt
+
 from app.core.config import get_settings
 from app.domain.auth.schemas import JWTPayload
 

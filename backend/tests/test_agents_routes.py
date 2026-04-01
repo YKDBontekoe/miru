@@ -4,12 +4,13 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import get_current_user
 from app.domain.agents.models import Agent
 from app.domain.agents.service import _build_agent_response
 from app.main import app
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture

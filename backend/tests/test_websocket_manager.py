@@ -4,6 +4,7 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.infrastructure.websocket.manager import ChatHub
 
 

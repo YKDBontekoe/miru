@@ -104,7 +104,7 @@ export function BackendSplash() {
             Miru
           </AppText>
           <View className="flex-row items-center justify-center">
-            <ActivityIndicator size="small" color="#2563EB" className="me-2" />
+            <ActivityIndicator size="small" color="#2563EB" className="mr-2" />
             <Animated.View key={messageIndex}>
               <AppText color="muted" className="text-base font-medium">
                 {MESSAGES[messageIndex]}

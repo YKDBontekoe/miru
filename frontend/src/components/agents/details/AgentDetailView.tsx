@@ -7,9 +7,7 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { useTheme } from '@/hooks/useTheme';
 import { Agent } from '@/core/models';
 import { MILESTONES } from '@/components/agents/agentUtils';
-import { useTranslation } from 'react-i18next';
 import { AgentDetailStats } from './AgentDetailStats';
-import i18n from '@/core/i18n';
 
 interface AgentDetailViewProps {
   agent: Agent;
@@ -33,7 +31,6 @@ export function AgentDetailView({
   onStartChat,
 }: AgentDetailViewProps) {
   const { C } = useTheme();
-  const { t } = useTranslation();
 
   return (
     <Animated.View entering={FadeIn.duration(200)}>
@@ -55,10 +52,10 @@ export function AgentDetailView({
                 name="chatbubble-ellipses"
                 size={17}
                 color="white"
-                className="me-2"
+                className="mr-2"
               />
               <AppText className="text-white font-bold text-base">
-                {t('agents.start_chat')}
+                Start Chat
               </AppText>
             </>
           )}
@@ -72,7 +69,7 @@ export function AgentDetailView({
         className="bg-surfaceHigh rounded-2xl p-3.5 mb-4 border border-border"
       >
         <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-          {t('agents.relationship')}
+          Relationship
         </AppText>
         <View
           className="flex-row items-center gap-2.5 mb-2.5"
@@ -136,7 +133,7 @@ export function AgentDetailView({
       {/* Personality */}
       <View className="mb-4">
         <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-          {t('agents.personality_label')}
+          Personality
         </AppText>
         <AppText className="leading-6 text-text text-[15px]">
           {agent.personality}
@@ -146,7 +143,7 @@ export function AgentDetailView({
       {agent.description ? (
         <View className="mb-4">
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-            {t('agents.about_label')}
+            About
           </AppText>
           <AppText className="leading-6 text-text text-[15px]">
             {agent.description}
@@ -157,7 +154,7 @@ export function AgentDetailView({
       {agent.goals && agent.goals.length > 0 && (
         <View className="mb-4">
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-            {t('agents.goals_label')}
+            Goals
           </AppText>
           {agent.goals.map((goal, i) => (
             <View
@@ -165,7 +162,7 @@ export function AgentDetailView({
               className="flex-row items-start mb-2"
             >
               <View
-                className="w-5 h-5 rounded-full items-center justify-center me-2.5 mt-0.5 shrink-0"
+                className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
                 style={{ backgroundColor: `${displayColor}18` }}
               >
                 <AppText className="text-[10px] font-bold" style={{ color: displayColor }}>
@@ -183,7 +180,7 @@ export function AgentDetailView({
       {agent.integrations && agent.integrations.length > 0 && (
         <View className="mb-4">
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-            {t('agents.integrations_label')}
+            Integrations
           </AppText>
           <View className="flex-row flex-wrap gap-2">
             {agent.integrations.map((ig, i) => (
@@ -205,8 +202,8 @@ export function AgentDetailView({
       <AppText
         className="text-faint text-[11px] text-center mt-1 mb-10"
       >
-        {t('agents.created')}{' '}
-        {new Date(agent.created_at).toLocaleDateString(i18n.language, {
+        Created{' '}
+        {new Date(agent.created_at).toLocaleDateString(undefined, {
           month: 'long',
           day: 'numeric',
           year: 'numeric',
