@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Modal, ScrollView, FlatList } from 'react-native';
+import { View, Modal, SectionList } from 'react-native';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,7 +43,7 @@ export const ManageAgentsModal = ({
   const { t } = useTranslation();
 
   return (
-    <Modal visible={isVisible} animationType="slide" transparent>
+    <Modal visible={isVisible} animationType="slide" transparent onRequestClose={onClose}>
       <View className="flex-1 justify-end bg-[rgba(0,0,0,0.4)]">
         <Animated.View
           entering={SlideInUp.springify().damping(22)}
@@ -77,91 +77,76 @@ export const ManageAgentsModal = ({
             )}
           </View>
 
-          <ScrollView className="px-5" showsVerticalScrollIndicator={false}>
-            {/* In Room section */}
-            {roomAgents.length > 0 && (
-              <FlatList
-                data={roomAgents}
-                keyExtractor={(item) => `in-${item.id}`}
-                scrollEnabled={false}
-                ListHeaderComponent={
-                  <AppText className="text-[#6E6E80] text-[11px] font-bold uppercase tracking-[0.8px] mb-2">
-                    {t('manageAgents.inThisChat', 'In this chat')}
-                  </AppText>
-                }
-                renderItem={({ item: agent }) => {
-                  const color = getAgentColor(agent.name);
-                  return (
-                    <View
-                      className="flex-row items-center rounded-[14px] p-3 mb-2 border"
-                      style={{
-                        backgroundColor: `${color}08`,
-                        borderColor: `${color}25`,
-                      }}
-                    >
-                      <View
-                        className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
-                        style={{ backgroundColor: `${color}18` }}
-                      >
-                        <AppText style={{ color }} className="font-bold text-[15px]">
-                          {(agent.name?.charAt(0) || '?').toUpperCase()}
-                        </AppText>
-                      </View>
-                      <View className="flex-1">
-                        <AppText className="text-[14px] font-semibold text-[#12121A]">
-                          {agent.name}
-                        </AppText>
-                        <AppText className="text-[11px] text-[#6E6E80]" numberOfLines={1}>
-                          {agent.personality}
-                        </AppText>
-                      </View>
-                      <ScalePressable
-                        onPress={() => onRemoveAgent(agent.id)}
-                        className="bg-[#FEE2E2] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
-                      >
-                        <Ionicons name="remove" size={13} color="#EF4444" />
-                        <AppText className="text-[#EF4444] text-xs font-semibold">
-                          {t('manageAgents.remove', 'Remove')}
-                        </AppText>
-                      </ScalePressable>
-                    </View>
-                  );
-                }}
-              />
-            )}
-
-            <FlatList
-              data={availableAgents}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              ListHeaderComponent={
-                availableAgents.length > 0 && roomAgents.length > 0 ? (
-                  <AppText className="text-[#6E6E80] text-[11px] font-bold uppercase tracking-[0.8px] mb-2 mt-2">
-                    {t('manageAgents.addMore', 'Add more')}
-                  </AppText>
-                ) : null
-              }
-              ListEmptyComponent={
+          <SectionList
+            className="px-5"
+            showsVerticalScrollIndicator={false}
+            sections={[
+              ...(roomAgents.length > 0
+                ? [
+                    {
+                      title: t('manageAgents.inThisChat', 'In this chat'),
+                      data: roomAgents,
+                      type: 'in-room',
+                    },
+                  ]
+                : []),
+              {
+                title:
+                  availableAgents.length > 0 && roomAgents.length > 0
+                    ? t('manageAgents.addMore', 'Add more')
+                    : undefined,
+                data: availableAgents,
+                type: 'available',
+              },
+            ]}
+            keyExtractor={(item) => item.id}
+            renderSectionHeader={({ section: { title, type } }) => {
+              if (!title && type === 'available' && availableAgents.length === 0) return null;
+              if (!title) return null;
+              return (
+                <AppText
+                  className={`text-[#6E6E80] text-[11px] font-bold uppercase tracking-[0.8px] mb-2 ${
+                    type === 'available' && roomAgents.length > 0 ? 'mt-2' : ''
+                  }`}
+                >
+                  {title}
+                </AppText>
+              );
+            }}
+            ListFooterComponent={
+              availableAgents.length === 0 ? (
                 agents.length === 0 ? (
                   <View className="items-center py-9">
                     <Ionicons name="people-outline" size={36} color={C.faint} className="mb-3" />
                     <AppText className="text-center text-[#6E6E80]">
-                      {t('chat.no_agents_create')}
+                      {t('chat.no_agents_create', 'No agents created yet.')}
                     </AppText>
                   </View>
-                ) : availableAgents.length === 0 && agents.length > 0 ? (
+                ) : (
                   <View className="items-center py-9">
                     <Ionicons name="people-outline" size={36} color={C.faint} className="mb-3" />
                     <AppText className="text-center text-[#6E6E80]">
                       {t('chat.no_more_agents_to_add', 'No more agents to add.')}
                     </AppText>
                   </View>
-                ) : null
-              }
-              renderItem={({ item: agent }) => {
-                const color = getAgentColor(agent.name);
+                )
+              ) : (
+                <View className="h-10" />
+              )
+            }
+            renderItem={({ item: agent, section }) => {
+              const color = getAgentColor(agent.name);
+              const isInRoom = section.type === 'in-room';
+
+              if (isInRoom) {
                 return (
-                  <View className="flex-row items-center bg-white rounded-[14px] p-3 mb-2 border border-[#E0E0EC]">
+                  <View
+                    className="flex-row items-center rounded-[14px] p-3 mb-2 border"
+                    style={{
+                      backgroundColor: `${color}08`,
+                      borderColor: `${color}25`,
+                    }}
+                  >
                     <View
                       className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
                       style={{ backgroundColor: `${color}18` }}
@@ -179,20 +164,49 @@ export const ManageAgentsModal = ({
                       </AppText>
                     </View>
                     <ScalePressable
-                      onPress={() => onAddAgent(agent.id)}
-                      className="bg-[#EFF6FF] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
+                      onPress={() => onRemoveAgent(agent.id)}
+                      className="bg-[#FEE2E2] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
                     >
-                      <Ionicons name="add" size={13} color={C.primary} />
-                      <AppText className="text-[12px] text-[#2563EB] font-semibold">
-                        {t('manageAgents.add', 'Add')}
+                      <Ionicons name="remove" size={13} color="#EF4444" />
+                      <AppText className="text-[#EF4444] text-xs font-semibold">
+                        {t('manageAgents.remove', 'Remove')}
                       </AppText>
                     </ScalePressable>
                   </View>
                 );
-              }}
-            />
-            <View className="h-10" />
-          </ScrollView>
+              }
+
+              return (
+                <View className="flex-row items-center bg-white rounded-[14px] p-3 mb-2 border border-[#E0E0EC]">
+                  <View
+                    className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
+                    style={{ backgroundColor: `${color}18` }}
+                  >
+                    <AppText style={{ color }} className="font-bold text-[15px]">
+                      {(agent.name?.charAt(0) || '?').toUpperCase()}
+                    </AppText>
+                  </View>
+                  <View className="flex-1">
+                    <AppText className="text-[14px] font-semibold text-[#12121A]">
+                      {agent.name}
+                    </AppText>
+                    <AppText className="text-[11px] text-[#6E6E80]" numberOfLines={1}>
+                      {agent.personality}
+                    </AppText>
+                  </View>
+                  <ScalePressable
+                    onPress={() => onAddAgent(agent.id)}
+                    className="bg-[#EFF6FF] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
+                  >
+                    <Ionicons name="add" size={13} color={C.primary} />
+                    <AppText className="text-[12px] text-[#2563EB] font-semibold">
+                      {t('manageAgents.add', 'Add')}
+                    </AppText>
+                  </ScalePressable>
+                </View>
+              );
+            }}
+          />
         </Animated.View>
       </View>
     </Modal>
