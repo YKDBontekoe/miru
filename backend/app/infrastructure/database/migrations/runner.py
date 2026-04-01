@@ -163,9 +163,12 @@ def cmd_migrate() -> None:
         # Apply atomic transaction wrapping migration body + insert query
         # Ensures that a transient runner error won't apply DDL without recording it,
         # and checking if the row already exists locks against double-runs.
+        safe_name = sql_file.name.replace("'", "''")
+        safe_checksum = checksum.replace("'", "''")
+
         atomic_sql = f"""
-\\set file_name '{sql_file.name}'
-\\set file_checksum '{checksum}'
+\\set file_name '{safe_name}'
+\\set file_checksum '{safe_checksum}'
 BEGIN;
 SELECT 1 FROM public.schema_migrations WHERE name = :'file_name' FOR UPDATE;
 DO $$
