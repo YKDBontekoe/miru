@@ -34,6 +34,15 @@ class PasskeyRecord(BaseModel):
     last_used_at: datetime | None = None
     created_at: datetime
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PasskeyPaginatedResponse(BaseModel):
+    """Paginated passkeys response."""
+
+    passkeys: list[PasskeyRecord]
+    next_cursor: str | None = None
+
 
 class PasskeyRegisterOptionsRequest(BaseModel):
     device_name: str | None = None

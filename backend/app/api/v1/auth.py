@@ -11,6 +11,7 @@ from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.auth.schemas import (
     PasskeyLoginOptionsRequest,
     PasskeyLoginVerifyRequest,
+    PasskeyPaginatedResponse,
     PasskeyRecord,
     PasskeyRegisterOptionsRequest,
     PasskeyRegisterVerifyRequest,
@@ -99,7 +100,7 @@ async def verify_login(
 
 @router.get(
     "/passkey/list",
-    response_model=dict[str, list[PasskeyRecord]],
+    response_model=PasskeyPaginatedResponse,
     summary="List passkeys",
     description="List all passkeys for the current user. Requires authentication.",
     responses={
@@ -110,10 +111,14 @@ async def verify_login(
 async def list_passkeys(
     user_id: CurrentUser,
     service: Annotated[AuthService, Depends(get_auth_service)],
-) -> dict[str, list[PasskeyRecord]]:
+    limit: int = 50,
+    cursor: str | None = None,
+) -> PasskeyPaginatedResponse:
     """List all passkeys for the current user."""
-    passkeys = await service.repo.get_passkeys_by_user(user_id)
-    return {"passkeys": passkeys}
+    limit = min(max(1, limit), 100)  # Enforce max limit of 100
+    passkey_entities, next_cursor = await service.list_passkeys(user_id, limit=limit, cursor=cursor)
+    passkeys = [PasskeyRecord.model_validate(p) for p in passkey_entities]
+    return PasskeyPaginatedResponse(passkeys=passkeys, next_cursor=next_cursor)
 
 
 @router.delete(
