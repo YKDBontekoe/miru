@@ -27,6 +27,37 @@ interface CreateAgentFormProps {
   errorMsg: string;
 }
 
+/**
+ * Performance Log: Inline mapped items inside ScrollView lists cause constant memory reallocation and render cycles.
+ * Optimized Code: Extracted GoalInputItem into a standalone React.memo component.
+ * Complexity Delta: Eliminates anonymous function re-creation inside render on every keystroke.
+ */
+const GoalInputItem = React.memo(({ goal, index, onRemove, C }: any) => {
+  const handleRemove = React.useCallback(() => {
+    onRemove(index);
+  }, [onRemove, index]);
+
+  return (
+    <ScalePressable
+      onPress={handleRemove}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: `${C.primary}12`,
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1,
+        borderColor: `${C.primary}25`,
+      }}
+    >
+      <AppText style={{ color: C.primary, fontSize: 12 }}>{goal}</AppText>
+      <Ionicons name="close" size={11} color={C.primary} />
+    </ScalePressable>
+  );
+});
+
 export function CreateAgentForm({
   name,
   setName,
@@ -53,6 +84,10 @@ export function CreateAgentForm({
       setGoalInput('');
     }
   };
+
+  const handleRemoveGoal = React.useCallback((idx: number) => {
+    setGoals((gs) => gs.filter((_, currentIdx) => currentIdx !== idx));
+  }, [setGoals]);
 
   const input: StyleProp<ViewStyle | TextStyle> = {
     backgroundColor: C.surfaceHigh,
@@ -217,24 +252,13 @@ export function CreateAgentForm({
       {goals.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
           {goals.map((g, i) => (
-            <ScalePressable
+            <GoalInputItem
               key={i}
-              onPress={() => setGoals((gs) => gs.filter((_, idx) => idx !== i))}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 5,
-                backgroundColor: `${C.primary}12`,
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderWidth: 1,
-                borderColor: `${C.primary}25`,
-              }}
-            >
-              <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
-              <Ionicons name="close" size={11} color={C.primary} />
-            </ScalePressable>
+              goal={g}
+              index={i}
+              onRemove={handleRemoveGoal}
+              C={C}
+            />
           ))}
         </View>
       )}

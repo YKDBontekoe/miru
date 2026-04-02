@@ -26,6 +26,35 @@ interface ChatRoomHeaderProps {
   getAgentColor: (name: string) => string;
 }
 
+/**
+ * Performance Log: Rendering mapped items directly in the tree causes unnecessary memory churn and re-renders.
+ * Optimized Code: Extracted AgentAvatar as a standalone React.memo component.
+ * Complexity Delta: Reduced component re-creation and render cycles inside ChatRoomHeader.
+ */
+const AgentAvatar = React.memo(({ agent, index, color, onQuickViewAgent }: any) => {
+  // Use useCallback so the inline function doesn't trigger parent re-renders if this was lifted higher,
+  // but here we just avoid anonymous functions in the render output of the memoized component.
+  const handlePress = React.useCallback(() => {
+    onQuickViewAgent(agent);
+  }, [onQuickViewAgent, agent]);
+
+  return (
+    <ScalePressable
+      onPress={handlePress}
+      className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center"
+      style={{
+        backgroundColor: `${color}22`,
+        marginStart: index === 0 ? 0 : -9,
+        zIndex: 3 - index,
+      }}
+    >
+      <AppText style={{ color }} className="text-[11px] font-bold">
+        {(agent.name?.charAt(0) || '?').toUpperCase()}
+      </AppText>
+    </ScalePressable>
+  );
+});
+
 export const ChatRoomHeader = ({
   room,
   roomAgents,
@@ -68,20 +97,13 @@ export const ChatRoomHeader = ({
           {roomAgents.slice(0, 3).map((agent, i) => {
             const color = getAgentColor(agent.name);
             return (
-              <ScalePressable
+              <AgentAvatar
                 key={agent.id}
-                onPress={() => onQuickViewAgent(agent)}
-                className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center"
-                style={{
-                  backgroundColor: `${color}22`,
-                  marginStart: i === 0 ? 0 : -9,
-                  zIndex: 3 - i,
-                }}
-              >
-                <AppText style={{ color }} className="text-[11px] font-bold">
-                  {(agent.name?.charAt(0) || '?').toUpperCase()}
-                </AppText>
-              </ScalePressable>
+                agent={agent}
+                index={i}
+                color={color}
+                onQuickViewAgent={onQuickViewAgent}
+              />
             );
           })}
           {roomAgents.length > 3 && (

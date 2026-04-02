@@ -20,6 +20,57 @@ interface AgentDetailViewProps {
   onStartChat: () => void;
 }
 
+/**
+ * Performance Log: Inline mapped elements within the main ScrollView cause inline render re-creation (memory churn).
+ * Optimized Code: Extracted MilestoneItem, GoalItem, and IntegrationItem as standalone React.memo components.
+ * Complexity Delta: Reduced memory churn and component re-render overhead inside the parent.
+ */
+const MilestoneItem = React.memo(({ m, earned, displayColor, C }: any) => (
+  <View
+    key={m.threshold}
+    className={`flex-row items-center gap-1 rounded-lg px-2 py-1 border ${earned ? '' : 'bg-surfaceMid border-border opacity-55'}`}
+    style={earned ? {
+      backgroundColor: `${displayColor}15`,
+      borderColor: `${displayColor}30`,
+    } : undefined}
+  >
+    <AppText className="text-xs">{m.icon}</AppText>
+    <AppText
+      className="text-[11px]"
+      style={{
+        color: earned ? displayColor : C.faint,
+        fontWeight: earned ? '600' : '400',
+      }}
+    >
+      {m.label}
+    </AppText>
+  </View>
+));
+
+const GoalItem = React.memo(({ goal, index, displayColor }: { goal: string; index: number; displayColor: string }) => (
+  <View className="flex-row items-start mb-2">
+    <View
+      className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
+      style={{ backgroundColor: `${displayColor}18` }}
+    >
+      <AppText className="text-[10px] font-bold" style={{ color: displayColor }}>
+        {index + 1}
+      </AppText>
+    </View>
+    <AppText className="flex-1 leading-5 text-text text-sm">
+      {goal}
+    </AppText>
+  </View>
+));
+
+const IntegrationItem = React.memo(({ ig }: { ig: string }) => (
+  <View className="bg-surfaceHigh rounded-lg px-2.5 py-1 border border-border">
+    <AppText className="text-xs capitalize text-text">
+      {ig}
+    </AppText>
+  </View>
+));
+
 export function AgentDetailView({
   agent,
   level,
@@ -99,25 +150,13 @@ export function AgentDetailView({
           {MILESTONES.map((m) => {
             const earned = agent.message_count >= m.threshold;
             return (
-              <View
+              <MilestoneItem
                 key={m.threshold}
-                className={`flex-row items-center gap-1 rounded-lg px-2 py-1 border ${earned ? '' : 'bg-surfaceMid border-border opacity-55'}`}
-                style={earned ? {
-                  backgroundColor: `${displayColor}15`,
-                  borderColor: `${displayColor}30`,
-                } : undefined}
-              >
-                <AppText className="text-xs">{m.icon}</AppText>
-                <AppText
-                  className="text-[11px]"
-                  style={{
-                    color: earned ? displayColor : C.faint,
-                    fontWeight: earned ? '600' : '400',
-                  }}
-                >
-                  {m.label}
-                </AppText>
-              </View>
+                m={m}
+                earned={earned}
+                displayColor={displayColor}
+                C={C}
+              />
             );
           })}
         </View>
@@ -157,22 +196,12 @@ export function AgentDetailView({
             Goals
           </AppText>
           {agent.goals.map((goal, i) => (
-            <View
-              key={i}
-              className="flex-row items-start mb-2"
-            >
-              <View
-                className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
-                style={{ backgroundColor: `${displayColor}18` }}
-              >
-                <AppText className="text-[10px] font-bold" style={{ color: displayColor }}>
-                  {i + 1}
-                </AppText>
-              </View>
-              <AppText className="flex-1 leading-5 text-text text-sm">
-                {goal}
-              </AppText>
-            </View>
+            <GoalItem
+              key={`${goal}-${i}`}
+              goal={goal}
+              index={i}
+              displayColor={displayColor}
+            />
           ))}
         </View>
       )}
@@ -184,16 +213,7 @@ export function AgentDetailView({
           </AppText>
           <View className="flex-row flex-wrap gap-2">
             {agent.integrations.map((ig, i) => (
-              <View
-                key={i}
-                className="bg-surfaceHigh rounded-lg px-2.5 py-1 border border-border"
-              >
-                <AppText
-                  className="text-xs capitalize text-text"
-                >
-                  {ig}
-                </AppText>
-              </View>
+              <IntegrationItem key={`${ig}-${i}`} ig={ig} />
             ))}
           </View>
         </View>
