@@ -10,7 +10,6 @@ import { useTheme } from '@/hooks/useTheme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-
 // Helper to determine text color based on background color luminance
 function getContrastingColor(hex: string) {
   // Remove hash if present
@@ -26,7 +25,6 @@ function getContrastingColor(hex: string) {
 }
 
 export default function OnboardingScreen() {
-
   const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);

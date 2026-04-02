@@ -55,9 +55,7 @@ export function QuickViewAgentSheet({
         <Animated.View
           entering={SlideInUp.duration(300)}
           exiting={SlideOutDown.duration(180)}
-          className={`rounded-t-[28px] p-8 ${
-            isDark ? 'bg-surface-dark' : 'bg-surface-light'
-          }`}
+          className={`rounded-t-[28px] p-8 ${isDark ? 'bg-surface-dark' : 'bg-surface-light'}`}
           onStartShouldSetResponder={() => true}
         >
           {/* Drag handle */}
@@ -91,19 +89,14 @@ export function QuickViewAgentSheet({
                 {agent.name}
               </AppText>
               <View className="flex-row items-center gap-3">
-                <View
-                  className="rounded px-2 py-0.5"
-                  style={{ backgroundColor: `${color}18` }}
-                >
+                <View className="rounded px-2 py-0.5" style={{ backgroundColor: `${color}18` }}>
                   <AppText variant="caption" style={{ color, fontWeight: '700' }}>
                     Lv {level}
                   </AppText>
                 </View>
                 <AppText
                   variant="caption"
-                  className={
-                    isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'
-                  }
+                  className={isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'}
                 >
                   {agent.message_count} messages
                 </AppText>
@@ -154,11 +147,7 @@ export function QuickViewAgentSheet({
                 color={theme.colors.white}
                 className="me-3"
               />
-              <AppText
-                className="font-bold text-[15px] text-white"
-              >
-                Add to Chat
-              </AppText>
+              <AppText className="font-bold text-[15px] text-white">Add to Chat</AppText>
             </ScalePressable>
           )}
         </Animated.View>

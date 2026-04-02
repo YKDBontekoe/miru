@@ -48,15 +48,8 @@ export function AgentDetailView({
             <ActivityIndicator color="white" size="small" />
           ) : (
             <>
-              <Ionicons
-                name="chatbubble-ellipses"
-                size={17}
-                color="white"
-                className="mr-2"
-              />
-              <AppText className="text-white font-bold text-base">
-                Start Chat
-              </AppText>
+              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="mr-2" />
+              <AppText className="text-white font-bold text-base">Start Chat</AppText>
             </>
           )}
         </View>
@@ -65,15 +58,11 @@ export function AgentDetailView({
       <AgentDetailStats agent={agent} level={level} displayColor={displayColor} />
 
       {/* Relationship / Affinity */}
-      <View
-        className="bg-surfaceHigh rounded-2xl p-3.5 mb-4 border border-border"
-      >
+      <View className="bg-surfaceHigh rounded-2xl p-3.5 mb-4 border border-border">
         <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
           Relationship
         </AppText>
-        <View
-          className="flex-row items-center gap-2.5 mb-2.5"
-        >
+        <View className="flex-row items-center gap-2.5 mb-2.5">
           <View
             className="flex-1 h-1.5 rounded-full overflow-hidden"
             style={{ backgroundColor: `${displayColor}20` }}
@@ -102,10 +91,14 @@ export function AgentDetailView({
               <View
                 key={m.threshold}
                 className={`flex-row items-center gap-1 rounded-lg px-2 py-1 border ${earned ? '' : 'bg-surfaceMid border-border opacity-55'}`}
-                style={earned ? {
-                  backgroundColor: `${displayColor}15`,
-                  borderColor: `${displayColor}30`,
-                } : undefined}
+                style={
+                  earned
+                    ? {
+                        backgroundColor: `${displayColor}15`,
+                        borderColor: `${displayColor}30`,
+                      }
+                    : undefined
+                }
               >
                 <AppText className="text-xs">{m.icon}</AppText>
                 <AppText
@@ -124,8 +117,8 @@ export function AgentDetailView({
 
         {nextMilestone && (
           <AppText className="text-faint text-[11px] mt-2">
-            Next: {nextMilestone.icon} {nextMilestone.label} at {nextMilestone.threshold}{' '}
-            messages ({nextMilestone.threshold - agent.message_count} to go)
+            Next: {nextMilestone.icon} {nextMilestone.label} at {nextMilestone.threshold} messages (
+            {nextMilestone.threshold - agent.message_count} to go)
           </AppText>
         )}
       </View>
@@ -135,9 +128,7 @@ export function AgentDetailView({
         <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
           Personality
         </AppText>
-        <AppText className="leading-6 text-text text-[15px]">
-          {agent.personality}
-        </AppText>
+        <AppText className="leading-6 text-text text-[15px]">{agent.personality}</AppText>
       </View>
 
       {agent.description ? (
@@ -145,9 +136,7 @@ export function AgentDetailView({
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
             About
           </AppText>
-          <AppText className="leading-6 text-text text-[15px]">
-            {agent.description}
-          </AppText>
+          <AppText className="leading-6 text-text text-[15px]">{agent.description}</AppText>
         </View>
       ) : null}
 
@@ -157,10 +146,7 @@ export function AgentDetailView({
             Goals
           </AppText>
           {agent.goals.map((goal, i) => (
-            <View
-              key={i}
-              className="flex-row items-start mb-2"
-            >
+            <View key={i} className="flex-row items-start mb-2">
               <View
                 className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
                 style={{ backgroundColor: `${displayColor}18` }}
@@ -169,9 +155,7 @@ export function AgentDetailView({
                   {i + 1}
                 </AppText>
               </View>
-              <AppText className="flex-1 leading-5 text-text text-sm">
-                {goal}
-              </AppText>
+              <AppText className="flex-1 leading-5 text-text text-sm">{goal}</AppText>
             </View>
           ))}
         </View>
@@ -184,24 +168,15 @@ export function AgentDetailView({
           </AppText>
           <View className="flex-row flex-wrap gap-2">
             {agent.integrations.map((ig, i) => (
-              <View
-                key={i}
-                className="bg-surfaceHigh rounded-lg px-2.5 py-1 border border-border"
-              >
-                <AppText
-                  className="text-xs capitalize text-text"
-                >
-                  {ig}
-                </AppText>
+              <View key={i} className="bg-surfaceHigh rounded-lg px-2.5 py-1 border border-border">
+                <AppText className="text-xs capitalize text-text">{ig}</AppText>
               </View>
             ))}
           </View>
         </View>
       )}
 
-      <AppText
-        className="text-faint text-[11px] text-center mt-1 mb-10"
-      >
+      <AppText className="text-faint text-[11px] text-center mt-1 mb-10">
         Created{' '}
         {new Date(agent.created_at).toLocaleDateString(undefined, {
           month: 'long',

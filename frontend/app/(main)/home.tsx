@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  ScrollView,
-  FlatList,
-  RefreshControl,
-  Platform,
-} from 'react-native';
+import { View, ScrollView, FlatList, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,22 +108,14 @@ export default function HomeScreen() {
 
   const renderRecentChatRow = React.useCallback(
     ({ item, index }: { item: ChatRoom; index: number }) => (
-      <HomeRecentChatRow
-        room={item}
-
-        onPress={() => handleRecentRoomPress(item.id)}
-      />
+      <HomeRecentChatRow room={item} onPress={() => handleRecentRoomPress(item.id)} />
     ),
     [recentRooms.length, handleRecentRoomPress]
   );
 
   const renderTaskRow = React.useCallback(
     ({ item, index }: { item: Task; index: number }) => (
-      <HomeTaskRow
-        task={item}
-
-        onToggle={() => toggleTask(item.id)}
-      />
+      <HomeTaskRow task={item} onToggle={() => toggleTask(item.id)} />
     ),
     [pendingTasks.length, toggleTask]
   );

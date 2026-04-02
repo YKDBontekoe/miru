@@ -16,9 +16,7 @@ export function AgentDetailStats({ agent, level, displayColor }: AgentDetailStat
   const { t } = useTranslation();
 
   return (
-    <View
-      className="flex-row bg-surfaceHigh rounded-2xl p-4 mb-4 border border-border"
-    >
+    <View className="flex-row bg-surfaceHigh rounded-2xl p-4 mb-4 border border-border">
       {[
         { value: agent.message_count, label: t('agents.stats.messages', 'Messages') },
         { value: level, label: t('agents.stats.level', 'Level') },
@@ -29,13 +27,9 @@ export function AgentDetailStats({ agent, level, displayColor }: AgentDetailStat
             <AppText className="font-extrabold text-[22px]" style={{ color: displayColor }}>
               {stat.value}
             </AppText>
-            <AppText className="text-muted text-[11px] mt-0.5">
-              {stat.label}
-            </AppText>
+            <AppText className="text-muted text-[11px] mt-0.5">{stat.label}</AppText>
           </View>
-          {i < arr.length - 1 && (
-            <View className="w-[1px] bg-border my-1" />
-          )}
+          {i < arr.length - 1 && <View className="w-[1px] bg-border my-1" />}
         </React.Fragment>
       ))}
     </View>

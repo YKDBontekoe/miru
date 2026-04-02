@@ -19,15 +19,14 @@ export const HomeTaskRow = React.memo(function HomeTaskRow({
   if (task.due_date) {
     const due = new Date(task.due_date);
     if (!isNaN(due.getTime())) {
-      dateText = new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(due);
+      dateText = new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
+        due
+      );
     }
   }
 
   return (
-    <ScalePressable
-      onPress={onToggle}
-      className="flex-row items-center py-2"
-    >
+    <ScalePressable onPress={onToggle} className="flex-row items-center py-2">
       <View
         className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${task.completed ? 'border-primary bg-primary' : 'border-faint bg-transparent'}`}
       >
@@ -40,12 +39,8 @@ export const HomeTaskRow = React.memo(function HomeTaskRow({
         {task.title}
       </AppText>
       {!!dateText && (
-        <View
-          className="bg-primaryFaint rounded-md px-2 py-1 ml-2"
-        >
-          <AppText className="text-xs text-primary font-semibold">
-            {dateText}
-          </AppText>
+        <View className="bg-primaryFaint rounded-md px-2 py-1 ml-2">
+          <AppText className="text-xs text-primary font-semibold">{dateText}</AppText>
         </View>
       )}
     </ScalePressable>

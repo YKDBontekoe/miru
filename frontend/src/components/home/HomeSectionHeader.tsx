@@ -18,18 +18,12 @@ export function HomeSectionHeader({
 
   return (
     <View className="flex-row justify-between items-center mb-6">
-      <AppText
-        variant="h3"
-        className={isDark ? 'text-onSurface-dark' : 'text-onSurface-light'}
-      >
+      <AppText variant="h3" className={isDark ? 'text-onSurface-dark' : 'text-onSurface-light'}>
         {title}
       </AppText>
       {actionLabel && onAction && (
         <ScalePressable onPress={onAction}>
-          <AppText
-            variant="bodySm"
-            className="text-primary-DEFAULT"
-          >
+          <AppText variant="bodySm" className="text-primary-DEFAULT">
             {actionLabel}
           </AppText>
         </ScalePressable>

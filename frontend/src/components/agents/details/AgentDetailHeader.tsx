@@ -63,15 +63,9 @@ export function AgentDetailHeader({
             />
           ) : (
             <>
-              <AppText
-                className="text-[22px] font-bold text-text mb-0.5"
-              >
-                {agent.name}
-              </AppText>
+              <AppText className="text-[22px] font-bold text-text mb-0.5">{agent.name}</AppText>
               {agent.mood && (
-                <View
-                  className="flex-row items-center gap-1.5 mb-1.5"
-                >
+                <View className="flex-row items-center gap-1.5 mb-1.5">
                   <AppText className="text-sm">{moodEmoji}</AppText>
                   <AppText className="text-xs font-semibold" style={{ color: displayColor }}>
                     {agent.mood}
@@ -92,9 +86,7 @@ export function AgentDetailHeader({
               </AppText>
             </View>
             <XPBar progress={xpProgress} color={displayColor} />
-            <AppText className="text-faint text-[10px]">
-              {agent.message_count % 10}/10
-            </AppText>
+            <AppText className="text-faint text-[10px]">{agent.message_count % 10}/10</AppText>
           </View>
         </View>
 

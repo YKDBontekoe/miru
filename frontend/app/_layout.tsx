@@ -129,7 +129,9 @@ export default function RootLayout() {
           className="bg-blue-600 px-6 py-3.5 rounded-2xl flex-row items-center gap-2"
         >
           <Ionicons name="refresh" size={20} color="#FFFFFF" />
-          <AppText color="white" className="font-semibold text-base">Try Again</AppText>
+          <AppText color="white" className="font-semibold text-base">
+            Try Again
+          </AppText>
         </ScalePressable>
       </View>
     );
