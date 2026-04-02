@@ -16,7 +16,10 @@ export const HomeAgentChip = React.memo(function HomeAgentChip({
       onPress={onPress}
       className="flex-row items-center bg-primaryFaint rounded-[22px] py-2 px-3 mr-2 mb-2"
     >
-      <View className="w-[26px] h-[26px] rounded-[13px] bg-primaryLight items-center justify-center mr-[7px]">
+      <View
+        className="w-[26px] h-[26px] rounded-[13px] bg-primaryLight items-center
+                   justify-center mr-[7px]"
+      >
         <AppText className="text-primary text-[12px] font-bold">
           {agent.name?.[0]?.toUpperCase() ?? '?'}
         </AppText>

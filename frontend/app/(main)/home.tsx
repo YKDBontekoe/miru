@@ -110,14 +110,14 @@ export default function HomeScreen() {
     ({ item, index }: { item: ChatRoom; index: number }) => (
       <HomeRecentChatRow room={item} onPress={() => handleRecentRoomPress(item.id)} />
     ),
-    [recentRooms.length, handleRecentRoomPress]
+    [handleRecentRoomPress]
   );
 
   const renderTaskRow = React.useCallback(
     ({ item, index }: { item: Task; index: number }) => (
       <HomeTaskRow task={item} onToggle={() => toggleTask(item.id)} />
     ),
-    [pendingTasks.length, toggleTask]
+    [toggleTask]
   );
 
   const renderAgentChip = React.useCallback(
