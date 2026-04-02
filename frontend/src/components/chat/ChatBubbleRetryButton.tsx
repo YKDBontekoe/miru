@@ -1,10 +1,10 @@
 import React from 'react';
-import { StyleSheet, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -34,24 +34,12 @@ export const ChatBubbleRetryButton = ({ onRetry }: ChatBubbleRetryButtonProps) =
       onPress={onRetry}
       onPressIn={handleRetryPressIn}
       onPressOut={handleRetryPressOut}
-      style={[styles.retryButton, retryAnimatedStyle]}
+      style={retryAnimatedStyle}
+      className="flex-row items-center gap-1"
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
       <Ionicons name="refresh-outline" size={13} color={theme.colors.primary.DEFAULT} />
-      <AppText style={styles.retryText}>{t('chat.retry')}</AppText>
+      <AppText className="text-primary text-[12px] font-semibold">{t('chat.retry')}</AppText>
     </AnimatedPressable>
   );
 };
-
-const styles = StyleSheet.create({
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-  },
-  retryText: {
-    color: theme.colors.primary.DEFAULT,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-});

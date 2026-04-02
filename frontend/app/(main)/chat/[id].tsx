@@ -9,19 +9,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChatBubble } from '../../../src/components/ChatBubble';
-import { ChatInputBar } from '../../../src/components/ChatInputBar';
-import { AgentActivityIndicator } from '../../../src/components/AgentActivityIndicator';
-import { useChatStore } from '../../../src/store/useChatStore';
-import { useAgentStore } from '../../../src/store/useAgentStore';
-import { ApiService } from '../../../src/core/api/ApiService';
-import { Agent } from '../../../src/core/models';
-import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
+import { ChatBubble } from '@/components/ChatBubble';
+import { ChatInputBar } from '@/components/ChatInputBar';
+import { AgentActivityIndicator } from '@/components/AgentActivityIndicator';
+import { useChatStore } from '@/store/useChatStore';
+import { useAgentStore } from '@/store/useAgentStore';
+import { ApiService } from '@/core/api/ApiService';
+import { Agent } from '@/core/models';
+import { QuickViewAgentSheet } from '@/components/agents/QuickViewAgentSheet';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
 import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
-import { ChatRoomEmptyState } from '../../../src/components/chat/ChatRoomEmptyState';
-import { useChatRoomSetup } from '../../../src/hooks/useChatRoomSetup';
-import { getAgentColor } from '../../../src/utils/chatUtils';
+import { ChatRoomEmptyState } from '@/components/chat/ChatRoomEmptyState';
+import { useChatRoomSetup } from '@/hooks/useChatRoomSetup';
+import { getAgentColor } from '@/utils/chatUtils';
 
 const C = {
   bg: '#F8F8FC',
@@ -117,7 +117,7 @@ export default function ChatRoomScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-bg" edges={['top', 'left', 'right']}>
       <ChatRoomHeader
         room={room}
         roomAgents={roomAgents}
@@ -130,11 +130,11 @@ export default function ChatRoomScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
-        style={{ flex: 1 }}
+        className="flex-1"
       >
         {/* Message list */}
         {isLoadingMessages && roomMessages.length === 0 ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View className="flex-1 items-center justify-center">
             <ActivityIndicator size="large" color={C.primary} />
           </View>
         ) : (
@@ -142,12 +142,7 @@ export default function ChatRoomScreen() {
             ref={flatListRef}
             data={roomMessages}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{
-              paddingHorizontal: 16,
-              paddingTop: 16,
-              paddingBottom: 8,
-              flexGrow: 1,
-            }}
+            contentContainerClassName="px-4 pt-4 pb-2 grow"
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={<ChatRoomEmptyState roomAgents={roomAgents} />}
             renderItem={({ item }) => {

@@ -1,3 +1,4 @@
+# Test Plan
 1.  **Decompose & Decouple `ChatBubble` (frontend/src/components/ChatBubble.tsx)**:
     -   *Issue*: The `ChatBubble` component is a "God Widget" (over 250 lines). It mixes Markdown styling rules, date formatting logic, agent color generation, error/retry state rendering, user vs. agent branching logic, and animation logic directly inside the main file.
     -   *Action*:
@@ -18,7 +19,7 @@
     -   Ensure UI renders cleanly without breaking behavior (Behavioral Integrity).
     -   Follow standard formatting (100 char limit).
 
-4.  **Complete pre commit steps**:
-    -   Complete pre commit steps to make sure proper testing, verifications, reviews and reflections are done.
+4.  **Complete pre-commit steps**:
+    -   Complete pre-commit steps to make sure proper testing, verifications, reviews and reflections are done.
 
 5.  **Submit the change**.
