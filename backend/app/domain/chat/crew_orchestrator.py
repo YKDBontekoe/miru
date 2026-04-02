@@ -293,8 +293,9 @@ class CrewOrchestrator:
                 await asyncio.sleep(2)
 
         # CrewAI returns `CrewOutput` which may not always have typed pydantic attrs in older versions
-        pydantic_output = getattr(result, "pydantic", None)
-        if result and pydantic_output:
+        raw_result = cast("Any", result)
+        pydantic_output = getattr(raw_result, "pydantic", None)
+        if raw_result and pydantic_output:
             return cast("Any", pydantic_output).model_dump_json()
 
         # Fallback if somehow CrewAI failed to populate the pydantic attribute
