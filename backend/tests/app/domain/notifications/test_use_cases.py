@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-import pytest
 from typing import Any
 
+import pytest
+
+from app.domain.notifications.interfaces.notification_client import INotificationClient
 from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
 
 
-class MockNotificationClient:
+class MockNotificationClient(INotificationClient):
     def __init__(self) -> None:
         self.payload: str | dict[str, Any] | None = None
         self.tags: list[str] | None = None
 
-    async def send_notification(self, payload: str | dict[str, Any], tags: list[str] | None = None) -> None:
+    async def send_notification(
+        self, payload: str | dict[str, Any], tags: list[str] | None = None
+    ) -> None:
         self.payload = payload
         self.tags = tags
 
@@ -50,7 +54,9 @@ async def test_send_notification_empty_user_id() -> None:
 @pytest.mark.asyncio
 async def test_send_notification_client_failure() -> None:
     class FailingMockNotificationClient(MockNotificationClient):
-        async def send_notification(self, payload: str | dict[str, Any], tags: list[str] | None = None) -> None:
+        async def send_notification(
+            self, payload: str | dict[str, Any], tags: list[str] | None = None
+        ) -> None:
             raise RuntimeError("send failed")
 
     client = FailingMockNotificationClient()
