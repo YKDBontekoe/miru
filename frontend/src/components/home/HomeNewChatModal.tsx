@@ -74,7 +74,9 @@ export function HomeNewChatModal({
               <Ionicons
                 name="close"
                 size={17}
-                color={isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight}
+                color={
+                  isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight
+                }
               />
             </ScalePressable>
           </View>
@@ -87,7 +89,9 @@ export function HomeNewChatModal({
             }
             autoFocus
             className={`rounded-lg px-6 py-3.5 text-base mb-4 ${
-              isDark ? 'bg-surface-highestDark text-onSurface-dark' : 'bg-surface-highestLight text-onSurface-light'
+              isDark
+                ? 'bg-surface-highestDark text-onSurface-dark'
+                : 'bg-surface-highestLight text-onSurface-light'
             }`}
           />
           <ScalePressable

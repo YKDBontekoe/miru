@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, TextInput, FlatList, ActivityIndicator, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import {
+  View,
+  TextInput,
+  FlatList,
+  ActivityIndicator,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -114,7 +122,8 @@ export function CreateAgentForm({
       />
 
       <AppText style={label}>
-        {t('agent.tone')} <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
+        {t('agent.tone')}{' '}
+        <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
       </AppText>
       <FlatList
         horizontal
@@ -172,7 +181,8 @@ export function CreateAgentForm({
       />
 
       <AppText style={label}>
-        {t('agent.description')} <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
+        {t('agent.description')}{' '}
+        <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
       </AppText>
       <TextInput
         value={description}
@@ -186,7 +196,8 @@ export function CreateAgentForm({
       />
 
       <AppText style={label}>
-        {t('agent.goals')} <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
+        {t('agent.goals')}{' '}
+        <AppText style={{ color: C.faint, textTransform: 'none' }}>({t('agent.optional')})</AppText>
       </AppText>
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
         <TextInput

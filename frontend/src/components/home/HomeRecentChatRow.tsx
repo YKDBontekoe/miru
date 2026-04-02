@@ -75,7 +75,9 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
         <Ionicons
           name="chevron-forward"
           size={13}
-          color={isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight}
+          color={
+            isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight
+          }
         />
       </View>
     </ScalePressable>

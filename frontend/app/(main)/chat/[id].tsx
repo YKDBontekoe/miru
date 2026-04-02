@@ -5,16 +5,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   View,
-  Modal,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
-import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../../src/components/AppText';
 import { ChatBubble } from '../../../src/components/ChatBubble';
 import { ChatInputBar } from '../../../src/components/ChatInputBar';
 import { AgentActivityIndicator } from '../../../src/components/AgentActivityIndicator';
@@ -23,55 +17,41 @@ import { useAgentStore } from '../../../src/store/useAgentStore';
 import { ApiService } from '../../../src/core/api/ApiService';
 import { Agent } from '../../../src/core/models';
 import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
-import { ScalePressable } from '@/components/ScalePressable';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
 import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
+import { ChatRoomEmptyState } from '../../../src/components/chat/ChatRoomEmptyState';
+import { useChatRoomSetup } from '../../../src/hooks/useChatRoomSetup';
+import { getAgentColor } from '../../../src/utils/chatUtils';
 
 const C = {
   bg: '#F8F8FC',
-  surface: '#FFFFFF',
-  surfaceHigh: '#F0F0F6',
-  border: '#E0E0EC',
-  text: '#12121A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
   primary: '#2563EB',
-  primarySurface: '#EFF6FF',
 };
 
-function getAgentColor(name: string) {
-  const palette = ['#3B82F6', '#14B8A6', '#EC4899', '#8B5CF6', '#F59E0B', '#10B981'];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return palette[Math.abs(hash) % palette.length];
-}
-
 export default function ChatRoomScreen() {
-  const { t } = useTranslation();
   const { id: roomId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+
   const {
     messages,
     agentActivity,
-    fetchMessages,
     sendMessage,
     stopStreaming,
     isStreaming,
     isLoadingMessages,
     rooms,
     addAgentToRoom,
-    connectHub,
-    disconnectHub,
-    joinRoom,
-    leaveRoom,
   } = useChatStore();
-  const { agents, fetchAgents } = useAgentStore();
+
+  const { agents } = useAgentStore();
   const [inputText, setInputText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [roomAgents, setRoomAgents] = useState<Agent[]>([]);
   const [quickViewAgent, setQuickViewAgent] = useState<Agent | null>(null);
+
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
+
+  const { roomAgents, setRoomAgents } = useChatRoomSetup(roomId);
 
   const room = React.useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
   const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
@@ -87,33 +67,6 @@ export default function ChatRoomScreen() {
   const availableAgents = React.useMemo(() => {
     return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));
   }, [agents, roomAgents]);
-
-  // Connect hub and join room when screen mounts
-  useEffect(() => {
-    if (!roomId) return;
-
-    fetchMessages(roomId);
-    fetchAgents();
-    ApiService.getRoomAgents(roomId)
-      .then(setRoomAgents)
-      .catch(() => {});
-
-    connectHub()
-      .then(() => {
-        joinRoom(roomId);
-      })
-      .catch(() => {
-        useChatStore.setState({
-          hubError: 'Failed to connect to chat. Please go back and try again.',
-        });
-      });
-
-    return () => {
-      if (roomId) leaveRoom(roomId);
-      disconnectHub();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
 
   // Scroll to end only when the list grows (new message added)
   useEffect(() => {
@@ -196,40 +149,7 @@ export default function ChatRoomScreen() {
               flexGrow: 1,
             }}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 64,
-                }}
-              >
-                <View
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 32,
-                    backgroundColor: C.primarySurface,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 16,
-                  }}
-                >
-                  <Ionicons name="chatbubble-ellipses-outline" size={30} color={C.primary} />
-                </View>
-                <AppText
-                  style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}
-                >
-                  {t('chat.start_conversation')}
-                </AppText>
-                <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
-                  {roomAgents.length > 0
-                    ? `${roomAgents.map((a) => a.name).join(', ')} ${roomAgents.length === 1 ? 'is' : 'are'} ready to help.`
-                    : 'Add an agent to get started.'}
-                </AppText>
-              </View>
-            }
+            ListEmptyComponent={<ChatRoomEmptyState roomAgents={roomAgents} />}
             renderItem={({ item }) => {
               const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
               const isLastUserMsg =

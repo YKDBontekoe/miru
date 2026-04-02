@@ -63,8 +63,7 @@ export function AgentDetailEditForm({
       />
 
       <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-        Description{' '}
-        <AppText className="text-faint normal-case">(optional)</AppText>
+        Description <AppText className="text-faint normal-case">(optional)</AppText>
       </AppText>
       <TextInput
         value={editDescription}
@@ -120,18 +119,12 @@ export function AgentDetailEditForm({
         {isSaving ? (
           <ActivityIndicator color="white" />
         ) : (
-          <AppText className="text-white font-bold text-[15px]">
-            Save Changes
-          </AppText>
+          <AppText className="text-white font-bold text-[15px]">Save Changes</AppText>
         )}
       </ScalePressable>
 
-      <View
-        className="rounded-xl border p-3.5 mb-10 bg-dangerSurface border-danger/25"
-      >
-        <AppText
-          className="text-danger text-xs font-bold uppercase tracking-wider mb-2.5"
-        >
+      <View className="rounded-xl border p-3.5 mb-10 bg-dangerSurface border-danger/25">
+        <AppText className="text-danger text-xs font-bold uppercase tracking-wider mb-2.5">
           Danger Zone
         </AppText>
         <ScalePressable
@@ -159,15 +152,8 @@ export function AgentDetailEditForm({
           }}
           className="flex-row items-center justify-center bg-danger rounded-lg py-2.5"
         >
-          <Ionicons
-            name="archive-outline"
-            size={15}
-            color="white"
-            className="mr-1.5"
-          />
-          <AppText className="text-white font-bold text-sm">
-            Archive Persona
-          </AppText>
+          <Ionicons name="archive-outline" size={15} color="white" className="mr-1.5" />
+          <AppText className="text-white font-bold text-sm">Archive Persona</AppText>
         </ScalePressable>
       </View>
     </Animated.View>
