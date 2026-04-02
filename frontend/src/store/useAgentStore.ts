@@ -127,9 +127,25 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         agents: state.agents.map((a) => (a.id === tempId ? realAgent : a)),
       }));
       return realAgent;
-    } catch (error) {
+    } catch (error: any) {
       // Rollback optimistic update
       set((state) => ({ agents: state.agents.filter((a) => a.id !== tempId) }));
+
+      // Extract specific backend error message if available, otherwise rethrow
+      if (error.response && error.response.data && error.response.data.detail) {
+        let errorMsg = 'Failed to create persona.';
+        const detail = error.response.data.detail;
+        if (Array.isArray(detail)) {
+            // Pydantic validation error array
+            errorMsg = detail.map((err: any) => `${err.loc[err.loc.length - 1]}: ${err.msg}`).join(', ');
+        } else if (typeof detail === 'string') {
+            errorMsg = detail;
+        } else if (detail.message) {
+            errorMsg = detail.message;
+        }
+        throw new Error(errorMsg);
+      }
+
       throw error;
     }
   },
