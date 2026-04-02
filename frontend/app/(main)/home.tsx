@@ -116,24 +116,20 @@ export default function HomeScreen() {
     ({ item, index }: { item: ChatRoom; index: number }) => (
       <HomeRecentChatRow
         room={item}
-
         onPress={() => handleRecentRoomPress(item.id)}
       />
     ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [handleRecentRoomPress, recentRooms.length]
+    [handleRecentRoomPress]
   );
 
   const renderTaskRow = React.useCallback(
     ({ item, index }: { item: Task; index: number }) => (
       <HomeTaskRow
         task={item}
-
         onToggle={() => toggleTask(item.id)}
       />
     ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [toggleTask, pendingTasks.length]
+    [toggleTask]
   );
 
   const renderAgentChip = React.useCallback(

@@ -20,14 +20,20 @@ interface AgentDetailViewProps {
   onStartChat: () => void;
 }
 
+interface MilestoneItemProps {
+  m: { threshold: number; icon: string; label: string };
+  earned: boolean;
+  displayColor: string;
+  faintColor: string;
+}
+
 /**
  * Performance Log: Inline mapped elements within the main ScrollView cause inline render re-creation (memory churn).
  * Optimized Code: Extracted MilestoneItem, GoalItem, and IntegrationItem as standalone React.memo components.
  * Complexity Delta: Reduced memory churn and component re-render overhead inside the parent.
  */
-const MilestoneItem = React.memo(({ m, earned, displayColor, C }: any) => (
+const MilestoneItem = React.memo(({ m, earned, displayColor, faintColor }: MilestoneItemProps) => (
   <View
-    key={m.threshold}
     className={`flex-row items-center gap-1 rounded-lg px-2 py-1 border ${earned ? '' : 'bg-surfaceMid border-border opacity-55'}`}
     style={earned ? {
       backgroundColor: `${displayColor}15`,
@@ -38,7 +44,7 @@ const MilestoneItem = React.memo(({ m, earned, displayColor, C }: any) => (
     <AppText
       className="text-[11px]"
       style={{
-        color: earned ? displayColor : C.faint,
+        color: earned ? displayColor : faintColor,
         fontWeight: earned ? '600' : '400',
       }}
     >
@@ -158,7 +164,7 @@ export function AgentDetailView({
                 m={m}
                 earned={earned}
                 displayColor={displayColor}
-                C={C}
+                faintColor={C.faint}
               />
             );
           })}

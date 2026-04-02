@@ -26,12 +26,19 @@ interface ChatRoomHeaderProps {
   getAgentColor: (name: string) => string;
 }
 
+interface AgentAvatarProps {
+  agent: Agent;
+  index: number;
+  color?: string;
+  onQuickViewAgent: (agent: Agent) => void;
+}
+
 /**
  * Performance Log: Rendering mapped items directly in the tree causes unnecessary memory churn and re-renders.
  * Optimized Code: Extracted AgentAvatar as a standalone React.memo component.
  * Complexity Delta: Reduced component re-creation and render cycles inside ChatRoomHeader.
  */
-const AgentAvatar = React.memo(({ agent, index, color, onQuickViewAgent }: any) => {
+const AgentAvatar: React.FC<AgentAvatarProps> = React.memo(({ agent, index, color, onQuickViewAgent }: AgentAvatarProps) => {
   // Use useCallback so the inline function doesn't trigger parent re-renders if this was lifted higher,
   // but here we just avoid anonymous functions in the render output of the memoized component.
   const handlePress = React.useCallback(() => {

@@ -27,12 +27,19 @@ interface CreateAgentFormProps {
   errorMsg: string;
 }
 
+interface GoalInputItemProps {
+  goal: string;
+  index: number;
+  onRemove: (i: number) => void;
+  primaryColor: string;
+}
+
 /**
  * Performance Log: Inline mapped items inside ScrollView lists cause constant memory reallocation and render cycles.
  * Optimized Code: Extracted GoalInputItem into a standalone React.memo component.
  * Complexity Delta: Eliminates anonymous function re-creation inside render on every keystroke.
  */
-const GoalInputItem = React.memo(({ goal, index, onRemove, C }: any) => {
+const GoalInputItem = React.memo(({ goal, index, onRemove, primaryColor }: GoalInputItemProps) => {
   const handleRemove = React.useCallback(() => {
     onRemove(index);
   }, [onRemove, index]);
@@ -44,16 +51,16 @@ const GoalInputItem = React.memo(({ goal, index, onRemove, C }: any) => {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        backgroundColor: `${C.primary}12`,
+        backgroundColor: `${primaryColor}12`,
         borderRadius: 20,
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderWidth: 1,
-        borderColor: `${C.primary}25`,
+        borderColor: `${primaryColor}25`,
       }}
     >
-      <AppText style={{ color: C.primary, fontSize: 12 }}>{goal}</AppText>
-      <Ionicons name="close" size={11} color={C.primary} />
+      <AppText style={{ color: primaryColor, fontSize: 12 }}>{goal}</AppText>
+      <Ionicons name="close" size={11} color={primaryColor} />
     </ScalePressable>
   );
 });
@@ -258,7 +265,7 @@ export function CreateAgentForm({
               goal={g}
               index={i}
               onRemove={handleRemoveGoal}
-              C={C}
+              primaryColor={C.primary}
             />
           ))}
         </View>

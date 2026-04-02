@@ -4,6 +4,7 @@ import logging
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from tortoise.exceptions import IntegrityError, OperationalError, ValidationError
 
 from app.domain.memory.models import MemoryGraphEdge, MemoryGraphNode
 
@@ -88,7 +89,10 @@ class GraphExtractionService:
                 key = entity.name.lower()
                 if key in existing_node_map:
                     node = existing_node_map[key]
-                    if entity.description not in str(node.description):
+                    # Normalized exact equality dedupe check
+                    norm_entity_desc = " ".join(entity.description.strip().lower().split())
+                    norm_node_desc = " ".join(str(node.description).strip().lower().split())
+                    if norm_entity_desc != norm_node_desc and norm_entity_desc not in norm_node_desc:
                         node.description = f"{node.description}\n{entity.description}".strip()
                         nodes_to_update.append(node)
                     node_map[key] = node
@@ -103,7 +107,7 @@ class GraphExtractionService:
                     node_map[key] = new_node
 
             if nodes_to_create:
-                await MemoryGraphNode.bulk_create(nodes_to_create)
+                await MemoryGraphNode.bulk_create(nodes_to_create, ignore_conflicts=True)
                 # Bulk create doesn't populate IDs securely for all backends, but Tortoise returns them in PostgreSQL.
                 # Just in case, re-fetch to ensure we have valid objects for edge mapping
                 new_names = [n.name for n in nodes_to_create]
@@ -123,13 +127,11 @@ class GraphExtractionService:
 
             # Gather valid source/target pairs
             valid_rels = []
-            edge_queries = []
             for rel in extraction.relationships:
                 source_node = node_map.get(rel.source.lower())
                 target_node = node_map.get(rel.target.lower())
                 if source_node and target_node:
                     valid_rels.append((source_node, target_node, rel))
-                    edge_queries.append(f"{source_node.id}_{target_node.id}_{rel.relationship}")
 
             if not valid_rels:
                 return
@@ -171,10 +173,10 @@ class GraphExtractionService:
                     existing_edge_map[key] = new_edge
 
             if edges_to_create:
-                await MemoryGraphEdge.bulk_create(edges_to_create)
+                await MemoryGraphEdge.bulk_create(edges_to_create, ignore_conflicts=True)
 
             if edges_to_update:
                 await MemoryGraphEdge.bulk_update(edges_to_update, fields=["weight"])
 
-        except Exception:
+        except (IntegrityError, OperationalError, ValidationError):
             logger.warning("Failed to store graph elements", exc_info=True)
