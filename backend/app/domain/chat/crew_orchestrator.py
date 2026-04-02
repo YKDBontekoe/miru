@@ -31,6 +31,7 @@ from app.domain.chat.prompts import (
     SINGLE_AGENT_PROMPT,
     SUMMARY_PREFIX,
 )
+from app.domain.chat.schemas import AgentTranscript, SingleAgentResponse
 from app.infrastructure.external.discord_tool import (
     DiscordGetServerInfoTool,
     DiscordSendMessageTool,
@@ -248,6 +249,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=AgentTranscript,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -266,6 +268,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=SingleAgentResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +292,8 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
+        if result and hasattr(result, "pydantic") and result.pydantic:
+            return result.pydantic.model_dump_json()
+
+        # Fallback if somehow CrewAI failed to populate the pydantic attribute
         return str(result)

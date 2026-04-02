@@ -19,7 +19,7 @@ MULTI_AGENT_PROMPT = (
     "{summary_section}"
     "{memory_section}"
     "{history_section}"
-    "User said: {user_message}. "
+    "User said:\n<user_input>\n{user_message}\n</user_input>\n"
     "You are managing a group chat with specialized agents. "
     "Delegate ONLY to agents whose expertise is directly relevant to the user's request — "
     "do NOT force every agent to respond. "
@@ -35,7 +35,7 @@ SINGLE_AGENT_PROMPT = (
     "{summary_section}"
     "{memory_section}"
     "{history_section}"
-    "User said: {user_message}. "
+    "User said:\n<user_input>\n{user_message}\n</user_input>\n"
     "Respond naturally and helpfully as yourself. "
     "Do not introduce yourself or list your capabilities — just answer directly.{locale_instruction}"
 )

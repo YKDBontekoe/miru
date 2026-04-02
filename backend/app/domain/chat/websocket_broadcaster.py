@@ -136,44 +136,45 @@ class ChatWebSocketBroadcaster:
 
     @staticmethod
     def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
-        """Parse a multi-agent transcript into (agent_name, message) pairs.
+        """Parse the JSON output of the LLM into (agent_name, message) pairs.
 
-        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
-        Falls back to a single unnamed entry when the format cannot be parsed.
+        If the JSON fails to parse, falls back to returning the raw text as a single entry.
         """
+        import json
+        from pydantic import ValidationError
+
+        from app.domain.chat.schemas import AgentTranscript, SingleAgentResponse
+
+        if not result_text.strip():
+            return []
+
         if not agent_names or len(agent_names) == 1:
+            try:
+                data = json.loads(result_text)
+                single_resp = SingleAgentResponse.model_validate(data)
+                return [("", single_resp.message.strip())]
+            except (json.JSONDecodeError, ValidationError):
+                return [("", result_text.strip())]
+
+        try:
+            data = json.loads(result_text)
+            transcript = AgentTranscript.model_validate(data)
+
+            # Filter segments to only include known agents (case-insensitive matching)
+            name_set = {n.lower() for n in agent_names}
+            segments: list[tuple[str, str]] = []
+
+            for resp in transcript.responses:
+                agent_name = resp.agent_name.strip()
+                message = resp.message.strip()
+                if agent_name.lower() in name_set and message:
+                    segments.append((agent_name, message))
+
+            return segments if segments else [("", result_text.strip())]
+
+        except (json.JSONDecodeError, ValidationError):
+            # Fallback if the output isn't proper JSON for some reason
             return [("", result_text.strip())]
-
-        # Build a set of known names (case-insensitive) for matching
-        name_set = {n.lower() for n in agent_names}
-        segments: list[tuple[str, str]] = []
-        current_name = ""
-        current_lines: list[str] = []
-
-        for line in result_text.splitlines():
-            # Detect "AgentName: ..." prefix
-            colon_pos = line.find(":")
-            if colon_pos > 0:
-                candidate = line[:colon_pos].strip()
-                if candidate.lower() in name_set:
-                    # Save previous segment
-                    if current_lines or current_name:
-                        segments.append((current_name, "\n".join(current_lines).strip()))
-                    current_name = candidate
-                    current_lines = [line[colon_pos + 1 :].strip()]
-                    continue
-            current_lines.append(line)
-
-        if current_lines or current_name:
-            segments.append((current_name, "\n".join(current_lines).strip()))
-
-        # Drop empty segments
-        segments = [(n, m) for n, m in segments if m]
-        return (
-            segments
-            if segments
-            else ([] if not result_text.strip() else [("", result_text.strip())])
-        )
 
     async def persist_and_broadcast_agent_response(
         self,
