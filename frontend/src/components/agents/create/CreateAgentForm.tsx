@@ -7,7 +7,7 @@ import { AppText } from '../../AppText';
 import { ScalePressable } from '../../ScalePressable';
 import { useTheme } from '../../../hooks/useTheme';
 import { haptic } from '../../../utils/haptics';
-import { TONES } from '../agentUtils';
+import { TONES, getTonePrefix } from '../agentUtils';
 
 type Tone = (typeof TONES)[number];
 
@@ -56,6 +56,9 @@ export function CreateAgentForm({
 
   const handleNameChange = (val: string) => setName(val.trimStart());
   const handlePersonalityChange = (val: string) => setPersonality(val.trimStart());
+
+  const tonePrefix = selectedTone ? `${getTonePrefix(selectedTone)} ` : '';
+  const maxPersonalityLen = 1000 - tonePrefix.length;
 
   const input: StyleProp<ViewStyle | TextStyle> = {
     backgroundColor: C.surfaceHigh,
@@ -163,7 +166,7 @@ export function CreateAgentForm({
         placeholder={t('agent.personality_placeholder')}
         placeholderTextColor={C.faint}
         multiline
-        maxLength={1000}
+        maxLength={maxPersonalityLen}
         numberOfLines={4}
         style={[input as any, { minHeight: 90, textAlignVertical: 'top' }]}
       />
@@ -177,6 +180,7 @@ export function CreateAgentForm({
         placeholder={t('agent.description_placeholder')}
         placeholderTextColor={C.faint}
         multiline
+        maxLength={500}
         numberOfLines={2}
         style={[input as any, { minHeight: 60, textAlignVertical: 'top' }]}
       />
@@ -190,6 +194,7 @@ export function CreateAgentForm({
           onChangeText={setGoalInput}
           placeholder={t('agent.goals_placeholder')}
           placeholderTextColor={C.faint}
+          maxLength={200}
           style={{
             flex: 1,
             backgroundColor: C.surfaceHigh,
