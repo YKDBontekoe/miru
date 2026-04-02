@@ -175,7 +175,7 @@ async def test_standalone_embed_cache_eviction() -> None:
     openrouter._EMBEDDING_CACHE.clear()
 
     original_max = openrouter._MAX_EMBEDDING_CACHE_SIZE
-    openrouter._MAX_EMBEDDING_CACHE_SIZE = 2
+    openrouter._MAX_EMBEDDING_CACHE_SIZE = 2  # type: ignore[assignment]
 
     try:
         with (

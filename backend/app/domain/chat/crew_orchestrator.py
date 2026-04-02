@@ -72,12 +72,12 @@ class CrewOrchestrator:
     def get_crew_llm() -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return _OpenRouterLLM(
+        return cast("_OpenRouterLLM", _OpenRouterLLM(
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
             additional_drop_params=["tool_choice"],
-        )
+        ))
 
     @staticmethod
     def get_agent_tools(agent: Agent, user_id: UUID, origin_message_id: UUID | None = None) -> list:
@@ -292,8 +292,10 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        if result and hasattr(result, "pydantic") and result.pydantic:
-            return result.pydantic.model_dump_json()
+        # CrewAI returns `CrewOutput` which may not always have typed pydantic attrs in older versions
+        pydantic_output = getattr(result, "pydantic", None)
+        if result and pydantic_output:
+            return cast("Any", pydantic_output).model_dump_json()
 
         # Fallback if somehow CrewAI failed to populate the pydantic attribute
         return str(result)
