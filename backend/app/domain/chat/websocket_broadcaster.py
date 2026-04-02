@@ -141,6 +141,7 @@ class ChatWebSocketBroadcaster:
         If the JSON fails to parse, falls back to returning the raw text as a single entry.
         """
         import json
+
         from pydantic import ValidationError
 
         from app.domain.chat.schemas import AgentTranscript, SingleAgentResponse
