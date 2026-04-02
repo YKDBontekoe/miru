@@ -119,7 +119,7 @@ class GraphExtractionService:
 
             # 2. Upsert Edges
             if not extraction.relationships:
-                return
+                return  # No edges to process
 
             # Gather valid source/target pairs
             valid_rels = []
