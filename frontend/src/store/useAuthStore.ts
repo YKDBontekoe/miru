@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../core/services/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { apiClient } from '../core/api/client';
+import { useMemoryStore } from '@/store/useMemoryStore';
 
 interface AuthState {
   user: User | null;
@@ -96,6 +97,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    useMemoryStore.setState({ memories: [] });
     set({ user: null, session: null });
   },
 }));

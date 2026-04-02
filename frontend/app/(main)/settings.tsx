@@ -16,7 +16,7 @@ import i18n from 'i18next';
 import { AppText } from '../../src/components/AppText';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useAppStore } from '../../src/store/useAppStore';
-import { useMemoryStore } from '../../src/store/useMemoryStore';
+import { useMemoryStore } from '@/store/useMemoryStore';
 import { Memory } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 
