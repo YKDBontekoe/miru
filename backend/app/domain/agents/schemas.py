@@ -55,8 +55,8 @@ class AgentBase(BaseModel):
     """Shared fields for Agent schemas."""
 
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
-    personality: str = Field(max_length=1000)
-    description: str | None = Field(default=None, max_length=500)
+    personality: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    description: Annotated[str | None, StringConstraints(strip_whitespace=True, max_length=500)] = None
     system_prompt: str | None = Field(default=None)
     status: str = Field(default="active")
     mood: str = Field(default="Neutral")
@@ -65,7 +65,7 @@ class AgentBase(BaseModel):
 class AgentCreate(AgentBase):
     """Schema for creating a new agent."""
 
-    goals: list[str] = Field(default_factory=list)
+    goals: list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]] = Field(default_factory=list)
     capabilities: list[str] = Field(default_factory=list)
     integrations: list[str] = Field(default_factory=list)
     integration_configs: dict = Field(default_factory=dict)
@@ -130,9 +130,9 @@ class AgentUpdate(BaseModel):
     name: Annotated[
         str | None, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
     ] = None
-    personality: str | None = Field(default=None, max_length=1000)
-    description: str | None = Field(default=None, max_length=500)
-    goals: list[str] | None = None
+    personality: Annotated[str | None, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)] = None
+    description: Annotated[str | None, StringConstraints(strip_whitespace=True, max_length=500)] = None
+    goals: list[Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]] | None = None
     capabilities: list[str] | None = None
     integrations: list[str] | None = None
     integration_configs: dict[str, Any] | None = None

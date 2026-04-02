@@ -54,6 +54,9 @@ export function CreateAgentForm({
     }
   };
 
+  const handleNameChange = (val: string) => setName(val.trimStart());
+  const handlePersonalityChange = (val: string) => setPersonality(val.trimStart());
+
   const input: StyleProp<ViewStyle | TextStyle> = {
     backgroundColor: C.surfaceHigh,
     borderRadius: 12,
@@ -100,10 +103,11 @@ export function CreateAgentForm({
       <AppText style={label}>{t('agent.name')}</AppText>
       <TextInput
         value={name}
-        onChangeText={setName}
+        onChangeText={handleNameChange}
         placeholder={t('agent.name_placeholder')}
         placeholderTextColor={C.faint}
         style={input}
+        maxLength={100}
       />
 
       <AppText style={label}>
@@ -155,10 +159,11 @@ export function CreateAgentForm({
       <AppText style={label}>{t('agent.personality')}</AppText>
       <TextInput
         value={personality}
-        onChangeText={setPersonality}
+        onChangeText={handlePersonalityChange}
         placeholder={t('agent.personality_placeholder')}
         placeholderTextColor={C.faint}
         multiline
+        maxLength={1000}
         numberOfLines={4}
         style={[input as any, { minHeight: 90, textAlignVertical: 'top' }]}
       />
