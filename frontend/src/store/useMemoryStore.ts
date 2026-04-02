@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { ApiService } from '../core/api/ApiService';
-import { Memory } from '../core/models';
+import { ApiService } from '@/core/api/ApiService';
+import { Memory } from '@/core/models';
 
 interface MemoryState {
   memories: Memory[];
@@ -36,8 +36,13 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
   },
 
   deleteMemory: async (id) => {
-    // Save previous state for rollback
-    const previousMemories = get().memories;
+    // Capture only the removed item for rollback
+    const removedMemory = get().memories.find((m) => m.id === id);
+
+    if (!removedMemory) {
+      // No memory found, nothing to delete
+      return;
+    }
 
     // Optimistically remove
     set((state) => ({ memories: state.memories.filter((m) => m.id !== id) }));
@@ -45,8 +50,14 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     try {
       await ApiService.deleteMemory(id);
     } catch (error) {
-      // Rollback optimistic update
-      set({ memories: previousMemories });
+      // Single-item rollback: Re-insert only if it's not already present
+      set((state) => {
+        const isPresent = state.memories.some((m) => m.id === id);
+        if (!isPresent) {
+          return { memories: [...state.memories, removedMemory] };
+        }
+        return { memories: state.memories };
+      });
       throw error;
     }
   },
