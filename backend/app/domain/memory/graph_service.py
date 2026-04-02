@@ -92,7 +92,10 @@ class GraphExtractionService:
                     # Normalized exact equality dedupe check
                     norm_entity_desc = " ".join(entity.description.strip().lower().split())
                     norm_node_desc = " ".join(str(node.description).strip().lower().split())
-                    if norm_entity_desc != norm_node_desc and norm_entity_desc not in norm_node_desc:
+                    if (
+                        norm_entity_desc != norm_node_desc
+                        and norm_entity_desc not in norm_node_desc
+                    ):
                         node.description = f"{node.description}\n{entity.description}".strip()
                         nodes_to_update.append(node)
                     node_map[key] = node
