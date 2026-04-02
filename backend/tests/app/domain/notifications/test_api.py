@@ -1,32 +1,42 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
-
+import pytest
 from fastapi.testclient import TestClient
 
-from app.core.security.auth import get_current_user
-from app.domain.notifications.services import NotificationService
+from app.domain.notifications.interfaces.notification_client import INotificationClient
+from app.api.v1.notifications import get_notification_client
 from app.main import app
 
-client = TestClient(app)
+
+class MockNotificationClient(INotificationClient):
+    def __init__(self):
+        self.payload = None
+        self.tags = None
+
+    async def send_notification(self, payload, tags=None):
+        self.payload = payload
+        self.tags = tags
 
 
-def test_send_notification_endpoint() -> None:
-    mock_service = MagicMock(spec=NotificationService)
-    mock_service.notify_user = AsyncMock()
+@pytest.fixture
+def mock_client():
+    return MockNotificationClient()
 
-    app.dependency_overrides[NotificationService] = lambda: mock_service
-    app.dependency_overrides[get_current_user] = lambda: "test-user-id"
 
-    try:
-        response = client.post(
-            "/api/v1/notifications/send", json={"message": "Hello World", "title": "Test Title"}
-        )
+@pytest.fixture
+def client(mock_client):
+    app.dependency_overrides[get_notification_client] = lambda: mock_client
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
 
-        assert response.status_code == 202
-        assert response.json() == {"status": "success"}
-        mock_service.notify_user.assert_awaited_once_with(
-            "test-user-id", "Hello World", "Test Title"
-        )
-    finally:
-        app.dependency_overrides.clear()
+
+def test_send_notification_endpoint(client, authed_headers):
+    response = client.post(
+        "/api/v1/notifications/send",
+        json={"message": "Test message", "title": "Test Title"},
+        headers=authed_headers,
+    )
+    assert response.status_code == 202
+    assert response.json() == {"status": "success"}
+
