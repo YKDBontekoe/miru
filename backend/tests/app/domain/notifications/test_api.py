@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app.domain.notifications.interfaces.notification_client import INotificationClient
 from app.api.v1.notifications import get_notification_client
+from app.domain.notifications.interfaces.notification_client import INotificationClient
 from app.main import app
 
 
@@ -39,4 +39,3 @@ def test_send_notification_endpoint(client, authed_headers):
     )
     assert response.status_code == 202
     assert response.json() == {"status": "success"}
-
