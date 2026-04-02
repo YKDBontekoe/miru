@@ -16,7 +16,7 @@ import i18n from 'i18next';
 import { AppText } from '../../src/components/AppText';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useAppStore } from '../../src/store/useAppStore';
-import { ApiService } from '../../src/core/api/ApiService';
+import { useMemoryStore } from '../../src/store/useMemoryStore';
 import { Memory } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 
@@ -277,8 +277,7 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { signOut, user } = useAuthStore();
   const { language, setLanguage } = useAppStore();
-  const [memories, setMemories] = useState<Memory[]>([]);
-  const [isLoadingMemories, setIsLoadingMemories] = useState(false);
+  const { memories, isLoading: isLoadingMemories, fetchMemories, deleteMemory } = useMemoryStore();
   const [privacyMode, setPrivacyMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
@@ -287,21 +286,9 @@ export default function SettingsScreen() {
   const currentLangLabel =
     SUPPORTED_LANGUAGES.find((l) => currentLang.startsWith(l.code))?.nativeLabel ?? 'English';
 
-  const loadMemories = React.useCallback(async () => {
-    setIsLoadingMemories(true);
-    try {
-      const data = await ApiService.getMemories();
-      setMemories(data);
-    } catch {
-      /* Non-fatal */
-    } finally {
-      setIsLoadingMemories(false);
-    }
-  }, []);
-
   useEffect(() => {
-    loadMemories();
-  }, [loadMemories]);
+    fetchMemories();
+  }, [fetchMemories]);
 
   const handleDeleteMemory = React.useCallback(
     (memory: Memory) => {
@@ -315,8 +302,7 @@ export default function SettingsScreen() {
             style: 'destructive',
             onPress: async () => {
               try {
-                await ApiService.deleteMemory(memory.id);
-                setMemories((prev) => prev.filter((m) => m.id !== memory.id));
+                await deleteMemory(memory.id);
               } catch {
                 Alert.alert(
                   t('settings.actions.error'),
@@ -328,7 +314,7 @@ export default function SettingsScreen() {
         ]
       );
     },
-    [t]
+    [t, deleteMemory]
   );
 
   const renderMemoryItem = React.useCallback(
@@ -466,7 +452,7 @@ export default function SettingsScreen() {
               renderItem={renderMemoryItem}
               ListFooterComponent={
                 <ScalePressable
-                  onPress={loadMemories}
+                  onPress={fetchMemories}
                   style={{ alignItems: 'center', paddingVertical: 8 }}
                 >
                   <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
