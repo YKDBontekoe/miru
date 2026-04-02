@@ -159,7 +159,7 @@ miru/
 │   │   │   ├── chat/            # ChatRoom, ChatMessage, streaming
 │   │   │   ├── memory/          # Memory, graph nodes/edges, embeddings
 │   │   │   ├── notifications/   # Push notification service
-│   │   │   └── productivity/    # Tasks, Notes, Calendar Events
+│   │   │   └── productivity/    # Tasks, Notes, Calendar Events (entities, interfaces, use_cases, models, schemas)
 │   │   ├── api/v1/              # Route handlers per domain
 │   │   └── infrastructure/      # Database, external services, repositories
 │   │       ├── database/        # Supabase client, Tortoise ORM config

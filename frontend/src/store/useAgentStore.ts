@@ -43,6 +43,10 @@ interface AgentState {
   isLoadingTemplates: boolean;
 
   fetchAgents: () => Promise<void>;
+  /**
+   * Creates a new Agent.
+   * Optimistically updates local state with a temporary ID, replacing it with the real Agent on success.
+   */
   createAgent: (data: Partial<Agent>) => Promise<Agent>;
   generateAgent: (keywords: string) => Promise<{
     name: string;
@@ -54,11 +58,19 @@ interface AgentState {
     id: string,
     data: Partial<Pick<Agent, 'name' | 'personality' | 'description' | 'goals'>>
   ) => Promise<Agent>;
-  /** Removes from local state immediately (optimistic). Call confirmDelete after undo window. */
+  /**
+   * Removes from local state immediately (optimistic update).
+   * Call confirmDelete after undo window to permanently delete.
+   */
   deleteAgent: (id: string) => void;
-  /** Calls the server to permanently delete. Call only after undo window expires. */
+  /**
+   * Calls the server to permanently delete.
+   * Call only after undo window expires.
+   */
   confirmDelete: (id: string) => Promise<void>;
-  /** Restores an agent that was optimistically removed (for undo). */
+  /**
+   * Restores an agent that was optimistically removed (for undo).
+   */
   restoreAgent: (agent: Agent) => void;
   /** Creates a copy of an existing agent with "(copy)" appended to the name. */
   duplicateAgent: (id: string) => Promise<Agent>;

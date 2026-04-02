@@ -39,6 +39,7 @@ async def list_rooms(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[RoomResponse]:
+    # DOCS(miru-agent): undocumented endpoint
     return await service.list_rooms(user_id)
 
 
@@ -58,6 +59,7 @@ async def create_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
+    # DOCS(miru-agent): undocumented endpoint
     return await service.create_room(data.name, user_id)
 
 
@@ -134,6 +136,7 @@ async def update_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
+    # DOCS(miru-agent): undocumented endpoint
     room = await service.update_room(room_id, data.name, user_id=user_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -156,6 +159,7 @@ async def delete_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    # DOCS(miru-agent): undocumented endpoint
     success = await service.delete_room(room_id, user_id=user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -178,6 +182,7 @@ async def add_agent_to_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    # DOCS(miru-agent): undocumented endpoint
     success = await service.add_agent_to_room(room_id, data.agent_id, user_id=user_id)
     if success is None:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -201,6 +206,7 @@ async def get_room_agents(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
+    # DOCS(miru-agent): undocumented endpoint
     agents = await service.list_room_agents(room_id, user_id=user_id)
     if agents is None:
         raise HTTPException(status_code=404, detail="Chat room not found")
@@ -224,6 +230,7 @@ async def remove_agent_from_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    # DOCS(miru-agent): undocumented endpoint
     success = await service.remove_agent_from_room(room_id, agent_id, user_id=user_id)
     if not success:
         raise HTTPException(
@@ -252,6 +259,7 @@ async def get_room_messages(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
+    # DOCS(miru-agent): undocumented endpoint
     messages = await service.get_room_messages(
         room_id, user_id=user_id, limit=limit, before_id=before_id
     )
@@ -279,6 +287,7 @@ async def update_message(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> ChatMessageResponse:
+    # DOCS(miru-agent): undocumented endpoint
     msg = await service.update_message(message_id, data.content, user_id=user_id)
     if not msg:
         raise HTTPException(
@@ -305,6 +314,7 @@ async def delete_message(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
+    # DOCS(miru-agent): undocumented endpoint
     success = await service.delete_message(message_id, user_id=user_id)
     if not success:
         raise HTTPException(
