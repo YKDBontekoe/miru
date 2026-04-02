@@ -5,11 +5,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   View,
-  Modal,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -23,7 +20,6 @@ import { useAgentStore } from '../../../src/store/useAgentStore';
 import { ApiService } from '../../../src/core/api/ApiService';
 import { Agent } from '../../../src/core/models';
 import { QuickViewAgentSheet } from '../../../src/components/agents/QuickViewAgentSheet';
-import { ScalePressable } from '@/components/ScalePressable';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
 import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
 

@@ -57,6 +57,7 @@ const GoalInputItem = React.memo(({ goal, index, onRemove, C }: any) => {
     </ScalePressable>
   );
 });
+GoalInputItem.displayName = 'GoalInputItem';
 
 export function CreateAgentForm({
   name,

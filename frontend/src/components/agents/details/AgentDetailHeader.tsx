@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, StyleProp, TextStyle } from 'react-native';
+import { View, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { AgentAvatar } from '@/components/AgentAvatar';

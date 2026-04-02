@@ -54,6 +54,7 @@ const AgentAvatar = React.memo(({ agent, index, color, onQuickViewAgent }: any) 
     </ScalePressable>
   );
 });
+AgentAvatar.displayName = 'AgentAvatar';
 
 export const ChatRoomHeader = ({
   room,

@@ -120,7 +120,8 @@ export default function HomeScreen() {
         onPress={() => handleRecentRoomPress(item.id)}
       />
     ),
-    [recentRooms.length, handleRecentRoomPress]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [handleRecentRoomPress, recentRooms.length]
   );
 
   const renderTaskRow = React.useCallback(
@@ -131,7 +132,8 @@ export default function HomeScreen() {
         onToggle={() => toggleTask(item.id)}
       />
     ),
-    [pendingTasks.length, toggleTask]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [toggleTask, pendingTasks.length]
   );
 
   const renderAgentChip = React.useCallback(

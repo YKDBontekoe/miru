@@ -46,6 +46,7 @@ const MilestoneItem = React.memo(({ m, earned, displayColor, C }: any) => (
     </AppText>
   </View>
 ));
+MilestoneItem.displayName = 'MilestoneItem';
 
 const GoalItem = React.memo(({ goal, index, displayColor }: { goal: string; index: number; displayColor: string }) => (
   <View className="flex-row items-start mb-2">
@@ -62,6 +63,7 @@ const GoalItem = React.memo(({ goal, index, displayColor }: { goal: string; inde
     </AppText>
   </View>
 ));
+GoalItem.displayName = 'GoalItem';
 
 const IntegrationItem = React.memo(({ ig }: { ig: string }) => (
   <View className="bg-surfaceHigh rounded-lg px-2.5 py-1 border border-border">
@@ -70,6 +72,7 @@ const IntegrationItem = React.memo(({ ig }: { ig: string }) => (
     </AppText>
   </View>
 ));
+IntegrationItem.displayName = 'IntegrationItem';
 
 export function AgentDetailView({
   agent,

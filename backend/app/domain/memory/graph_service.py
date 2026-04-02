@@ -107,7 +107,9 @@ class GraphExtractionService:
                 # Bulk create doesn't populate IDs securely for all backends, but Tortoise returns them in PostgreSQL.
                 # Just in case, re-fetch to ensure we have valid objects for edge mapping
                 new_names = [n.name for n in nodes_to_create]
-                created_nodes = await MemoryGraphNode.filter(user_id=user_id, name__in=new_names).all()
+                created_nodes = await MemoryGraphNode.filter(
+                    user_id=user_id, name__in=new_names
+                ).all()
                 for n in created_nodes:
                     node_map[n.name.lower()] = n
                     existing_node_map[n.name.lower()] = n
@@ -141,12 +143,11 @@ class GraphExtractionService:
             existing_edges = await MemoryGraphEdge.filter(
                 source_node_id__in=source_ids,
                 target_node_id__in=target_ids,
-                relationship__in=rel_types
+                relationship__in=rel_types,
             ).all()
 
             existing_edge_map = {
-                f"{e.source_node_id}_{e.target_node_id}_{e.relationship}": e
-                for e in existing_edges
+                f"{e.source_node_id}_{e.target_node_id}_{e.relationship}": e for e in existing_edges
             }
 
             edges_to_create = []
@@ -163,7 +164,7 @@ class GraphExtractionService:
                         source_node=source_node,
                         target_node=target_node,
                         relationship=rel.relationship,
-                        weight=rel.weight
+                        weight=rel.weight,
                     )
                     edges_to_create.append(new_edge)
                     existing_edge_map[key] = new_edge

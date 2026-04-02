@@ -90,18 +90,26 @@ async def test_process_and_store_graph_success() -> None:
 
         with (
             patch("app.domain.memory.models.MemoryGraphNode.filter") as mock_node_filter,
-            patch("app.domain.memory.models.MemoryGraphNode.bulk_create", new_callable=AsyncMock) as mock_node_bulk_create,
-            patch("app.domain.memory.models.MemoryGraphNode.bulk_update", new_callable=AsyncMock) as mock_node_bulk_update,
+            patch(
+                "app.domain.memory.models.MemoryGraphNode.bulk_create", new_callable=AsyncMock
+            ) as mock_node_bulk_create,
+            patch(
+                "app.domain.memory.models.MemoryGraphNode.bulk_update", new_callable=AsyncMock
+            ) as mock_node_bulk_update,
             patch("app.domain.memory.models.MemoryGraphEdge.filter") as mock_edge_filter,
-            patch("app.domain.memory.models.MemoryGraphEdge.bulk_create", new_callable=AsyncMock) as mock_edge_bulk_create,
-            patch("app.domain.memory.models.MemoryGraphEdge.bulk_update", new_callable=AsyncMock) as mock_edge_bulk_update,
+            patch(
+                "app.domain.memory.models.MemoryGraphEdge.bulk_create", new_callable=AsyncMock
+            ) as mock_edge_bulk_create,
+            patch(
+                "app.domain.memory.models.MemoryGraphEdge.bulk_update", new_callable=AsyncMock
+            ) as mock_edge_bulk_update,
         ):
             # Setup node fetch to return Alice as existing, Bob as missing so Alice gets an update
             # because description differs if we test it right
             mock_node_filter_query = AsyncMock()
             mock_node_filter_query.all.side_effect = [
                 [mock_node_alice],  # First fetch (existing nodes)
-                [mock_node_bob]     # Second fetch (refetch after create)
+                [mock_node_bob],  # Second fetch (refetch after create)
             ]
             mock_node_filter.return_value = mock_node_filter_query
 
