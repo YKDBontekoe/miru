@@ -127,10 +127,31 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         agents: state.agents.map((a) => (a.id === tempId ? realAgent : a)),
       }));
       return realAgent;
-    } catch (error) {
+    } catch (error: any) {
       // Rollback optimistic update
       set((state) => ({ agents: state.agents.filter((a) => a.id !== tempId) }));
-      throw error;
+
+      let userMessage = 'Unable to create persona, please try again.';
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+
+        // Log the raw detail to console/telemetry instead of leaking to UI
+        console.error('Agent creation failed with backend detail:', detail);
+
+        if (Array.isArray(detail)) {
+          // Pydantic validation error array
+          userMessage = 'Please ensure all required fields are correctly formatted.';
+        } else {
+          // Instead of passing arbitrary strings or message objects straight to the UI,
+          // stick to the generalized friendly string. If there are known specific error
+          // codes, we would switch on them here.
+          userMessage = 'Unable to create persona, please try again.';
+        }
+      } else {
+        console.error('Agent creation failed:', error);
+      }
+
+      throw new Error(userMessage);
     }
   },
 

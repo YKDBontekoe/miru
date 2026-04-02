@@ -3,11 +3,11 @@ import { View, TextInput, FlatList, ActivityIndicator, StyleProp, ViewStyle, Tex
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../../AppText';
-import { ScalePressable } from '../../ScalePressable';
-import { useTheme } from '../../../hooks/useTheme';
-import { haptic } from '../../../utils/haptics';
-import { TONES } from '../agentUtils';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { haptic } from '@/utils/haptics';
+import { TONES, getTonePrefix } from '@/components/agents/agentUtils';
 
 type Tone = (typeof TONES)[number];
 
@@ -53,6 +53,12 @@ export function CreateAgentForm({
       setGoalInput('');
     }
   };
+
+  const handleNameChange = (val: string) => setName(val.trimStart());
+  const handlePersonalityChange = (val: string) => setPersonality(val.trimStart());
+
+  const tonePrefix = selectedTone ? getTonePrefix(selectedTone) : '';
+  const maxPersonalityLen = 1000 - tonePrefix.length;
 
   const input: StyleProp<ViewStyle | TextStyle> = {
     backgroundColor: C.surfaceHigh,
@@ -100,10 +106,11 @@ export function CreateAgentForm({
       <AppText style={label}>{t('agent.name')}</AppText>
       <TextInput
         value={name}
-        onChangeText={setName}
+        onChangeText={handleNameChange}
         placeholder={t('agent.name_placeholder')}
         placeholderTextColor={C.faint}
         style={input}
+        maxLength={100}
       />
 
       <AppText style={label}>
@@ -155,10 +162,11 @@ export function CreateAgentForm({
       <AppText style={label}>{t('agent.personality')}</AppText>
       <TextInput
         value={personality}
-        onChangeText={setPersonality}
+        onChangeText={handlePersonalityChange}
         placeholder={t('agent.personality_placeholder')}
         placeholderTextColor={C.faint}
         multiline
+        maxLength={maxPersonalityLen}
         numberOfLines={4}
         style={[input as any, { minHeight: 90, textAlignVertical: 'top' }]}
       />
@@ -172,6 +180,7 @@ export function CreateAgentForm({
         placeholder={t('agent.description_placeholder')}
         placeholderTextColor={C.faint}
         multiline
+        maxLength={500}
         numberOfLines={2}
         style={[input as any, { minHeight: 60, textAlignVertical: 'top' }]}
       />
@@ -185,6 +194,7 @@ export function CreateAgentForm({
           onChangeText={setGoalInput}
           placeholder={t('agent.goals_placeholder')}
           placeholderTextColor={C.faint}
+          maxLength={200}
           style={{
             flex: 1,
             backgroundColor: C.surfaceHigh,

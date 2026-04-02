@@ -43,6 +43,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   const [wasGenerated, setWasGenerated] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successVisible, setSuccessVisible] = useState(false);
 
   const reset = () => {
     setName('');
@@ -97,6 +98,21 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     }
   };
 
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (successVisible) {
+      timeoutId = setTimeout(() => {
+        setSuccessVisible(false);
+        onCreated();
+        reset();
+        onClose();
+      }, 1500);
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [successVisible, onCreated, onClose]);
+
   const handleSave = async () => {
     if (!name.trim() || !personality.trim()) {
       setErrorMsg('Name and personality are required.');
@@ -119,9 +135,7 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
       });
 
       haptic.success();
-      onCreated();
-      reset();
-      onClose();
+      setSuccessVisible(true);
     } catch (e: any) {
       setErrorMsg(e.message || 'Failed to create persona.');
       haptic.error();
@@ -324,6 +338,21 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
               />
             </ScrollView>
           </Animated.View>
+
+          {successVisible && (
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              justifyContent: 'center', alignItems: 'center',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1000
+            }}>
+              <View style={{ backgroundColor: C.surface, padding: 20, borderRadius: 16, alignItems: 'center' }}>
+                 <Ionicons name="checkmark-circle" size={48} color={C.success} />
+                 <AppText style={{ marginTop: 12, fontSize: 18, fontWeight: 'bold', color: C.text }}>Persona Created</AppText>
+              </View>
+            </View>
+          )}
         </View>
       </Modal>
 
