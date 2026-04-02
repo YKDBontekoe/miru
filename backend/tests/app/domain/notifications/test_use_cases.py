@@ -6,11 +6,11 @@ from app.domain.notifications.use_cases.send_notification import SendNotificatio
 
 
 class MockNotificationClient:
-    def __init__(self):
-        self.payload = None
-        self.tags = None
+    def __init__(self) -> None:
+        self.payload: dict | None = None
+        self.tags: list[str] | None = None
 
-    async def send_notification(self, payload, tags=None):
+    async def send_notification(self, payload: dict, tags: list[str] | None = None) -> None:
         self.payload = payload
         self.tags = tags
 
@@ -44,3 +44,16 @@ async def test_send_notification_empty_user_id() -> None:
 
     with pytest.raises(ValueError, match="user_id cannot be empty"):
         await use_case.execute(user_id="", message="Hello World")
+
+
+@pytest.mark.asyncio
+async def test_send_notification_client_failure() -> None:
+    class FailingMockNotificationClient(MockNotificationClient):
+        async def send_notification(self, payload: dict, tags: list[str] | None = None) -> None:
+            raise RuntimeError("send failed")
+
+    client = FailingMockNotificationClient()
+    use_case = SendNotificationUseCase(notification_client=client)
+
+    with pytest.raises(RuntimeError, match="send failed"):
+        await use_case.execute(user_id="user123", message="Hello World")

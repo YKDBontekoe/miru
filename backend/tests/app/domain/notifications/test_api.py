@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -9,11 +12,11 @@ from app.main import app
 
 
 class MockNotificationClient(INotificationClient):
-    def __init__(self):
-        self.payload = None
-        self.tags = None
+    def __init__(self) -> None:
+        self.payload: Any | None = None
+        self.tags: Sequence[str] | None = None
 
-    async def send_notification(self, payload, tags=None):
+    async def send_notification(self, payload: Any, tags: Sequence[str] | None = None) -> None:
         self.payload = payload
         self.tags = tags
 
