@@ -8,7 +8,14 @@ logger = logging.getLogger(__name__)
 
 
 def sanitize_user_id(user_id: str) -> str:
-    """Helper method to sanitize user ID before logging."""
+    """Sanitize user ID before logging.
+
+    Args:
+        user_id (str): The user ID, potentially containing newlines or CRs.
+
+    Returns:
+        str: The sanitized user ID with newlines/CRs removed and truncated to 256 chars.
+    """
     return user_id.replace("\n", "").replace("\r", "")[:256]
 
 
@@ -33,12 +40,13 @@ class SendNotificationUseCase:
         Raises:
             ValueError: If user_id is empty.
         """
-        if not user_id:
+        trimmed_user_id = user_id.strip()
+        if not trimmed_user_id:
             raise ValueError("user_id cannot be empty")
 
         payload = {"message": message, "title": title}
-        tags = [f"user:{user_id}"]
+        tags = [f"user:{trimmed_user_id}"]
 
-        safe_user_id = sanitize_user_id(user_id)
+        safe_user_id = sanitize_user_id(trimmed_user_id)
         logger.info(f"Sending notification to user {safe_user_id}")
         await self.notification_client.send_notification(payload, tags)

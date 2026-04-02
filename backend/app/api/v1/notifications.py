@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.security.auth import CurrentUser
 from app.domain.notifications.interfaces.notification_client import INotificationClient
@@ -12,14 +12,26 @@ router = APIRouter(tags=["notifications"])
 
 
 def get_notification_client() -> INotificationClient:
-    """Dependency provider for notification client."""
+    """Dependency provider for the notification client.
+
+    Returns:
+        INotificationClient: A concrete implementation of the notification client,
+        such as AzureNotificationHubClient.
+    """
     return AzureNotificationHubClient()
 
 
 def get_send_notification_use_case(
     client: INotificationClient = Depends(get_notification_client),
 ) -> SendNotificationUseCase:
-    """Dependency provider for the send notification use case."""
+    """Dependency provider for the send notification use case.
+
+    Args:
+        client: The notification client implementation injected via Depends.
+
+    Returns:
+        SendNotificationUseCase: The use case configured with the provided client.
+    """
     return SendNotificationUseCase(notification_client=client)
 
 
@@ -51,5 +63,11 @@ async def send_notification(
     Returns:
         dict[str, str]: A dictionary indicating the async job has successfully started.
     """
-    await use_case.execute(str(user_id), request.message, request.title)
+    try:
+        await use_case.execute(str(user_id), request.message, request.title)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "invalid_user_id", "message": str(e)},
+        ) from e
     return {"status": "success"}
