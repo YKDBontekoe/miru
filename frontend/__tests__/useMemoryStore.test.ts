@@ -19,9 +19,8 @@ describe('useMemoryStore', () => {
   const mockMemory: Memory = {
     id: 'mem-123',
     content: 'User likes red',
-    category: 'preference',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    metadata: {},
   };
 
   it('fetchMemories updates state with fetched memories', async () => {
