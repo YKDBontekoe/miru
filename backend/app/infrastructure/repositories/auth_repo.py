@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, cast
 
 from app.domain.auth.entities import Passkey
 from app.domain.auth.interfaces import AuthRepositoryProtocol
@@ -27,8 +27,12 @@ class AuthRepository(AuthRepositoryProtocol):
             sign_count=record.get("sign_count", 0),
             device_name=record.get("device_name"),
             transports=record.get("transports", []),
-            last_used_at=datetime.fromisoformat(record["last_used_at"]) if record.get("last_used_at") else None,
-            created_at=datetime.fromisoformat(record["created_at"]) if record.get("created_at") else None,
+            last_used_at=datetime.fromisoformat(record["last_used_at"])
+            if record.get("last_used_at")
+            else None,
+            created_at=datetime.fromisoformat(record["created_at"])
+            if record.get("created_at")
+            else None,
         )
 
     async def get_passkeys_by_user(self, user_id: str | UUID) -> list[Passkey]:

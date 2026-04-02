@@ -8,7 +8,6 @@ from uuid import uuid4
 import pytest
 
 from app.domain.agents.models import Agent
-from app.domain.auth.schemas import PasskeyRecord
 from app.domain.chat.entities import ChatMessageEntity
 from app.domain.memory.models import Memory
 from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -426,6 +425,7 @@ class TestAuthRepository:
     @pytest.mark.asyncio
     async def test_get_passkeys_by_user_returns_records(self) -> None:
         from app.domain.auth.entities import Passkey
+
         uid = str(uuid4())
         row = {
             "id": str(uuid4()),
