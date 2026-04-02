@@ -9,6 +9,7 @@ from uuid import UUID
 import jwt
 
 from app.core.config import get_settings
+from app.domain.auth.entities import Passkey
 from app.domain.auth.schemas import JWTPayload
 
 if TYPE_CHECKING:
@@ -18,9 +19,15 @@ logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    def __init__(self, repo: AuthRepositoryProtocol):
+    def __init__(self, repo: AuthRepositoryProtocol) -> None:
         self.repo = repo
         self._jwks_client: jwt.PyJWKClient | None = None
+
+    async def list_passkeys(
+        self, user_id: str | UUID, limit: int = 50, cursor: str | None = None
+    ) -> tuple[list[Passkey], str | None]:
+        """Fetch a paginated list of passkeys for a user."""
+        return await self.repo.get_passkeys_by_user(user_id, limit=limit, cursor=cursor)
 
     def _get_jwks_client(self) -> jwt.PyJWKClient:
         if self._jwks_client is None:

@@ -419,7 +419,7 @@ class TestAuthRepository:
     async def test_get_passkeys_by_user_empty(self) -> None:
         db = self._make_db(data=[])
         repo = AuthRepository(db)
-        result = await repo.get_passkeys_by_user(str(uuid4()))
+        result, cursor = await repo.get_passkeys_by_user(str(uuid4()))
         assert result == []
 
     @pytest.mark.asyncio
@@ -437,8 +437,17 @@ class TestAuthRepository:
             "last_used_at": None,
         }
         db = self._make_db(data=[row])
+        # Force the mock execute() to return the row since the query builder chain
+        # might not be perfectly mocked for order/limit chaining
+        db.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value.data = [
+            row
+        ]
+        db.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.lt.return_value.execute.return_value.data = [
+            row
+        ]
+
         repo = AuthRepository(db)
-        result = await repo.get_passkeys_by_user(uid)
+        result, cursor = await repo.get_passkeys_by_user(uid)
         assert len(result) == 1
         assert isinstance(result[0], Passkey)
 
@@ -451,12 +460,25 @@ class TestAuthRepository:
 
     @pytest.mark.asyncio
     async def test_create_passkey_does_not_raise(self) -> None:
-        db = self._make_db()
+        import uuid
+
+        from app.domain.auth.entities import PasskeyCreate
+
+        db = self._make_db(
+            data=[
+                {
+                    "id": str(uuid.uuid4()),
+                    "user_id": str(uuid.uuid4()),
+                    "credential_id": "cred123",
+                    "public_key": "pubkey",
+                    "sign_count": 0,
+                    "created_at": "2024-01-01T00:00:00",
+                    "last_used_at": None,
+                }
+            ]
+        )
         repo = AuthRepository(db)
-        row = {
-            "user_id": str(uuid4()),
-            "credential_id": "cred123",
-            "public_key": "pubkey",
-            "sign_count": 0,
-        }
-        await repo.create_passkey(row)
+        input_data = PasskeyCreate(
+            user_id=uuid.uuid4(), credential_id="cred123", public_key="pubkey"
+        )
+        await repo.create_passkey(input_data)

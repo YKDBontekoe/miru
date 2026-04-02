@@ -36,3 +36,14 @@ class Passkey:
     transports: list[str] = field(default_factory=list)
     last_used_at: datetime | None = None
     created_at: datetime | None = None
+
+
+@dataclass
+class PasskeyCreate:
+    """Input DTO for creating a passkey."""
+
+    user_id: UUID
+    credential_id: str
+    public_key: str
+    device_name: str | None = None
+    transports: list[str] | None = None
