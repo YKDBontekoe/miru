@@ -147,7 +147,8 @@ class GraphExtractionService:
             ).all()
 
             existing_edge_map = {
-                f"{e.source_node_id}_{e.target_node_id}_{e.relationship}": e for e in existing_edges
+                f"{getattr(e, 'source_node_id')}_{getattr(e, 'target_node_id')}_{e.relationship}": e  # noqa: B009
+                for e in existing_edges
             }
 
             edges_to_create = []
