@@ -37,7 +37,7 @@ SNAPSHOT_FILE = MIGRATIONS_DIR / ".schema_snapshot"
 # ---------------------------------------------------------------------------
 ALL_MODEL_MODULES = [
     "app.domain.agents.models",
-    "app.domain.auth.models",
+    "app.infrastructure.database.models.auth_models",
     "app.infrastructure.database.models.chat_models",
     "app.domain.memory.models",
     "app.domain.agent_tools.models",

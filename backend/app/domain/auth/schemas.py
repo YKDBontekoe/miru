@@ -32,7 +32,9 @@ class PasskeyRecord(BaseModel):
     device_name: str | None = None
     transports: list[str] = Field(default_factory=list)
     last_used_at: datetime | None = None
-    created_at: datetime
+    created_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PasskeyRegisterOptionsRequest(BaseModel):

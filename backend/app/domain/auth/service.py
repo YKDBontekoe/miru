@@ -12,13 +12,13 @@ from app.core.config import get_settings
 from app.domain.auth.schemas import JWTPayload
 
 if TYPE_CHECKING:
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.domain.auth.interfaces import AuthRepositoryProtocol
 
 logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    def __init__(self, repo: AuthRepository):
+    def __init__(self, repo: AuthRepositoryProtocol):
         self.repo = repo
         self._jwks_client: jwt.PyJWKClient | None = None
 

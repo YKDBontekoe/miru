@@ -1,4 +1,4 @@
-"""Auth domain models using Tortoise ORM and Pydantic schemas."""
+"""Auth models for database via Tortoise ORM."""
 
 from __future__ import annotations
 

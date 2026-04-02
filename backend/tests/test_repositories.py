@@ -425,6 +425,7 @@ class TestAuthRepository:
 
     @pytest.mark.asyncio
     async def test_get_passkeys_by_user_returns_records(self) -> None:
+        from app.domain.auth.entities import Passkey
         uid = str(uuid4())
         row = {
             "id": str(uuid4()),
@@ -439,7 +440,7 @@ class TestAuthRepository:
         repo = AuthRepository(db)
         result = await repo.get_passkeys_by_user(uid)
         assert len(result) == 1
-        assert isinstance(result[0], PasskeyRecord)
+        assert isinstance(result[0], Passkey)
 
     @pytest.mark.asyncio
     async def test_update_sign_count_calls_db(self) -> None:

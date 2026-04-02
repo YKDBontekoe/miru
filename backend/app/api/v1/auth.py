@@ -112,7 +112,8 @@ async def list_passkeys(
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, list[PasskeyRecord]]:
     """List all passkeys for the current user."""
-    passkeys = await service.repo.get_passkeys_by_user(user_id)
+    passkey_entities = await service.repo.get_passkeys_by_user(user_id)
+    passkeys = [PasskeyRecord.model_validate(p) for p in passkey_entities]
     return {"passkeys": passkeys}
 
 
