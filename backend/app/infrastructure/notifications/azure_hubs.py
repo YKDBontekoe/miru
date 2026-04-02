@@ -8,11 +8,12 @@ from typing import Any, cast
 from notificationhubs_rest_python.NotificationHub import AzureNotification, AzureNotificationHub
 
 from app.core.config import get_settings
+from app.domain.notifications.interfaces.notification_client import INotificationClient
 
 logger = logging.getLogger(__name__)
 
 
-class AzureNotificationHubClient:
+class AzureNotificationHubClient(INotificationClient):
     """Client wrapper for Azure Notification Hubs REST API."""
 
     def __init__(self) -> None:

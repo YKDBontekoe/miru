@@ -14,10 +14,10 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.integrations import router as integrations_router
 from app.api.v1.memory import router as memory_router
+from app.api.v1.notifications import router as notifications_router
 from app.api.v1.productivity import router as productivity_router
 from app.api.v1.websocket import router as websocket_router
 from app.core.config import get_settings
-from app.domain.notifications.api.router import router as notifications_router
 from app.infrastructure.database.tortoise import close_db, init_db
 
 if TYPE_CHECKING:

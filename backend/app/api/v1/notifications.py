@@ -1,24 +1,26 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel
 
 from app.core.security.auth import CurrentUser
-from app.domain.notifications.services import NotificationService
+from app.domain.notifications.interfaces.notification_client import INotificationClient
+from app.domain.notifications.schemas import NotificationRequest
+from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
+from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
 
 router = APIRouter(tags=["notifications"])
 
 
-class NotificationRequest(BaseModel):
-    """Request model for sending a notification.
+def get_notification_client() -> INotificationClient:
+    """Dependency provider for notification client."""
+    return AzureNotificationHubClient()
 
-    Attributes:
-        message (str): The body of the notification message.
-        title (str): The title of the notification. Defaults to 'New Notification'.
-    """
 
-    message: str
-    title: str = "New Notification"
+def get_send_notification_use_case(
+    client: INotificationClient = Depends(get_notification_client),
+) -> SendNotificationUseCase:
+    """Dependency provider for the send notification use case."""
+    return SendNotificationUseCase(notification_client=client)
 
 
 @router.post(
@@ -35,7 +37,7 @@ class NotificationRequest(BaseModel):
 async def send_notification(
     request: NotificationRequest,
     user_id: CurrentUser,
-    service: NotificationService = Depends(NotificationService),
+    use_case: SendNotificationUseCase = Depends(get_send_notification_use_case),
 ) -> dict[str, str]:
     """
     Test endpoint to send a notification to the current user.
@@ -44,10 +46,10 @@ async def send_notification(
     Args:
         request (NotificationRequest): The HTTP request body containing message payload.
         user_id (CurrentUser): String identifier of the current authenticated user.
-        service (NotificationService): The notification service dependency instance.
+        use_case (SendNotificationUseCase): The send notification use case.
 
     Returns:
         dict[str, str]: A dictionary indicating the async job has successfully started.
     """
-    await service.notify_user(str(user_id), request.message, request.title)
+    await use_case.execute(str(user_id), request.message, request.title)
     return {"status": "success"}
