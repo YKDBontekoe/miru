@@ -63,6 +63,11 @@ async def test_create_task_tool_success(mock_service: MagicMock) -> None:
     result = await tool._run(title="New Task", description="Some desc")
 
     assert f"Successfully created task 'New Task' with ID {task_id}." in result
+    call_args = mock_service.return_value.create_task.await_args
+    assert call_args is not None
+    created_task_data = call_args.kwargs["task_data"]
+    assert created_task_data.title == "New Task"
+    assert created_task_data.description == "Some desc"
 
 
 @pytest.mark.asyncio
@@ -80,9 +85,16 @@ async def test_update_task_tool_success(mock_service: MagicMock) -> None:
     mock_service.return_value.update_task = AsyncMock(return_value=mock_task)
 
     tool = UpdateTaskTool(user_id=uuid4())
-    result = await tool._run(task_id=task_id, is_completed=True, title="Updated Task")
+    result = await tool._run(
+        task_id=task_id, is_completed=True, title="Updated Task"
+    )
 
     assert f"Successfully updated task '{mock_task.title}' with ID {task_id}." in result
+    call_args = mock_service.return_value.update_task.await_args
+    assert call_args is not None
+    update_data = call_args.kwargs["update_data"]
+    assert update_data.title == "Updated Task"
+    assert update_data.is_completed is True
 
 
 @pytest.mark.asyncio

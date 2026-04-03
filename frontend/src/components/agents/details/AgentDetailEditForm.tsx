@@ -6,6 +6,7 @@ import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { useTheme } from '@/hooks/useTheme';
 import { haptic } from '@/utils/haptics';
+import { useTranslation } from 'react-i18next';
 import { Agent } from '@/core/models';
 
 const EditGoalBadge = React.memo(
@@ -49,6 +50,7 @@ export function AgentDetailEditForm({
   onDeleted,
 }: AgentDetailEditFormProps) {
   const { C } = useTheme();
+  const { t } = useTranslation();
   const [goalInput, setGoalInput] = useState('');
 
   const addGoal = () => {
@@ -66,7 +68,7 @@ export function AgentDetailEditForm({
   return (
     <Animated.View entering={FadeIn.duration(200)}>
       <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-        Personality
+        {t('agents.edit.personality_label')}
       </AppText>
       <TextInput
         value={editPersonality}
@@ -75,12 +77,12 @@ export function AgentDetailEditForm({
         numberOfLines={4}
         className="bg-surfaceHigh rounded-xl px-4 py-3 text-text text-[15px] border border-border min-h-[90px]"
         style={{ textAlignVertical: 'top' }}
-        placeholder="How does this persona think and communicate?"
+        placeholder={t('agents.edit.personality_placeholder')}
         placeholderTextColor={C.faint}
       />
 
       <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-        Description <AppText className="text-faint normal-case">(optional)</AppText>
+        {t('agents.edit.description_label')} <AppText className="text-faint normal-case">({t('agents.edit.optional')})</AppText>
       </AppText>
       <TextInput
         value={editDescription}
@@ -89,18 +91,18 @@ export function AgentDetailEditForm({
         numberOfLines={2}
         className="bg-surfaceHigh rounded-xl px-4 py-3 text-text text-[15px] border border-border min-h-[60px]"
         style={{ textAlignVertical: 'top' }}
-        placeholder="A short bio…"
+        placeholder={t('agents.edit.description_placeholder')}
         placeholderTextColor={C.faint}
       />
 
       <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-        Goals
+        {t('agents.edit.goals_label')}
       </AppText>
       <View className="flex-row gap-2 mb-2.5">
         <TextInput
           value={goalInput}
           onChangeText={setGoalInput}
-          placeholder="Add a goal…"
+          placeholder={t('agents.edit.goal_placeholder')}
           placeholderTextColor={C.faint}
           className="flex-1 bg-surfaceHigh rounded-lg border border-border px-3 py-2 text-text text-sm"
           onSubmitEditing={addGoal}
@@ -135,31 +137,31 @@ export function AgentDetailEditForm({
         {isSaving ? (
           <ActivityIndicator color="white" />
         ) : (
-          <AppText className="text-white font-bold text-[15px]">Save Changes</AppText>
+          <AppText className="text-white font-bold text-[15px]">{t('agents.edit.save_changes')}</AppText>
         )}
       </ScalePressable>
 
       <View className="rounded-xl border p-3.5 mb-10 bg-dangerSurface border-danger/25">
         <AppText className="text-danger text-xs font-bold uppercase tracking-wider mb-2.5">
-          Danger Zone
+          {t('agents.edit.danger_zone')}
         </AppText>
         <ScalePressable
           onPress={() => {
             haptic.heavy();
             Alert.alert(
-              `Archive "${agent.name}"?`,
-              'This persona will be archived and hidden from your list.',
+              t('agents.edit.archive_confirm_title', { name: agent.name }),
+              t('agents.edit.archive_confirm_desc'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: 'Archive',
+                  text: t('agents.edit.archive_action'),
                   style: 'destructive',
                   onPress: async () => {
                     try {
                       await onDeleted(agent);
                       onClose();
                     } catch (e: any) {
-                      Alert.alert(`Failed to archive ${agent.name}`, e.message);
+                      Alert.alert(t('agents.edit.archive_error', { name: agent.name }), e.message);
                     }
                   },
                 },
@@ -169,7 +171,7 @@ export function AgentDetailEditForm({
           className="flex-row items-center justify-center bg-danger rounded-lg py-2.5"
         >
           <Ionicons name="archive-outline" size={15} color="white" className="me-1.5" />
-          <AppText className="text-white font-bold text-sm">Archive Persona</AppText>
+          <AppText className="text-white font-bold text-sm">{t('agents.edit.archive_persona')}</AppText>
         </ScalePressable>
       </View>
     </Animated.View>

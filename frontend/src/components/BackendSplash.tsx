@@ -9,15 +9,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from './AppText';
-
-const MESSAGES = [
-  'Waking up the AI...',
-  'Brewing digital coffee...',
-  'Connecting to the mainframe...',
-  'Aligning neural weights...',
-  'Almost ready...',
-];
 
 /**
  * A full-screen splash component shown while the application connects
@@ -26,15 +19,18 @@ const MESSAGES = [
  * Features pulsing animations and cycling loading messages.
  */
 export function BackendSplash() {
+  const { t } = useTranslation();
   const [messageIndex, setMessageIndex] = useState(0);
+
+  const messages: string[] = t('common.splash.messages', { returnObjects: true }) as string[];
 
   // Rotate messages
   useEffect(() => {
     const interval = setInterval(() => {
-      setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
+      setMessageIndex((prev) => (prev + 1) % (messages?.length || 1));
     }, 2500);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages?.length]);
 
   // Pulsing background
   const scale = useSharedValue(1);
@@ -107,7 +103,7 @@ export function BackendSplash() {
             <ActivityIndicator size="small" color="#2563EB" className="me-2" />
             <Animated.View key={messageIndex}>
               <AppText color="muted" className="text-base font-medium">
-                {MESSAGES[messageIndex]}
+                {messages?.[messageIndex] || 'Loading...'}
               </AppText>
             </Animated.View>
           </View>

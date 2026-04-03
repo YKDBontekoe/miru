@@ -97,7 +97,16 @@
     }
   },
   "common": {
-    "close": "Close"
+    "close": "Close",
+    "splash": {
+      "messages": [
+        "Waking up the AI...",
+        "Brewing digital coffee...",
+        "Connecting to the mainframe...",
+        "Aligning neural weights...",
+        "Almost ready..."
+      ]
+    }
   },
   "chat": {
     "title": "Miru",
@@ -174,6 +183,22 @@
       "goals": "Goals",
       "integrations": "Integrations",
       "level": "Level {{level}}"
+    },
+    "edit": {
+      "personality_label": "Personality",
+      "personality_placeholder": "How does this persona think and communicate?",
+      "description_label": "Description",
+      "description_placeholder": "A short bio…",
+      "optional": "optional",
+      "goals_label": "Goals",
+      "goal_placeholder": "Add a goal…",
+      "save_changes": "Save Changes",
+      "danger_zone": "Danger Zone",
+      "archive_persona": "Archive Persona",
+      "archive_confirm_title": "Archive \"{{name}}\"?",
+      "archive_confirm_desc": "This persona will be archived and hidden from your list.",
+      "archive_action": "Archive",
+      "archive_error": "Failed to archive {{name}}"
     },
     "create_modal": {
       "title": "New Agent",
