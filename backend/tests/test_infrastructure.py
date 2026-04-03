@@ -40,7 +40,7 @@ async def test_chat_completion_uses_explicit_model() -> None:
         result = await chat_completion([{"role": "user", "content": "Hi"}], model="custom/model")
     assert result == "World!"
     mock_client.chat_completion.assert_awaited_once_with(
-            [{"role": "user", "content": "Hi"}], "custom/model", None
+        [{"role": "user", "content": "Hi"}], "custom/model", None
     )
 
 
