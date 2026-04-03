@@ -1,3 +1,4 @@
+import i18n from '@/core/i18n';
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,6 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { Agent } from '@/core/models';
 import { MILESTONES } from '@/components/agents/agentUtils';
 import { AgentDetailStats } from './AgentDetailStats';
@@ -57,7 +59,7 @@ const GoalItem = React.memo(
   ({ goal, index, displayColor }: { goal: string; index: number; displayColor: string }) => (
     <View className="flex-row items-start mb-2">
       <View
-        className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
+        className="w-5 h-5 rounded-full items-center justify-center me-2.5 mt-0.5 shrink-0"
         style={{ backgroundColor: `${displayColor}18` }}
       >
         <AppText className="text-[10px] font-bold" style={{ color: displayColor }}>
@@ -98,6 +100,7 @@ export function AgentDetailView({
   isStartingChat,
   onStartChat,
 }: AgentDetailViewProps) {
+  const { t } = useTranslation();
   const { C } = useTheme();
 
   return (
@@ -116,8 +119,8 @@ export function AgentDetailView({
             <ActivityIndicator color="white" size="small" />
           ) : (
             <>
-              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="mr-2" />
-              <AppText className="text-white font-bold text-base">Start Chat</AppText>
+              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="me-2" />
+              <AppText className="text-white font-bold text-base">{t('home.actions.start_chat')}</AppText>
             </>
           )}
         </View>
@@ -128,8 +131,7 @@ export function AgentDetailView({
       {/* Relationship / Affinity */}
       <View className="bg-surfaceHigh rounded-2xl p-3.5 mb-4 border border-border">
         <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-          Relationship
-        </AppText>
+          {t('agent.relationship', 'Relationship')}</AppText>
         <View className="flex-row items-center gap-2.5 mb-2.5">
           <View
             className="flex-1 h-1.5 rounded-full overflow-hidden"
@@ -166,8 +168,12 @@ export function AgentDetailView({
 
         {nextMilestone && (
           <AppText className="text-faint text-[11px] mt-2">
-            Next: {nextMilestone.icon} {nextMilestone.label} at {nextMilestone.threshold} messages (
-            {nextMilestone.threshold - agent.message_count} to go)
+            {t('agents.labels.next_milestone', 'Next: {{icon}} {{label}} at {{threshold}} messages ({{remaining}} to go)', {
+              icon: nextMilestone.icon,
+              label: nextMilestone.label,
+              threshold: nextMilestone.threshold,
+              remaining: nextMilestone.threshold - agent.message_count
+            })}
           </AppText>
         )}
       </View>
@@ -175,16 +181,14 @@ export function AgentDetailView({
       {/* Personality */}
       <View className="mb-4">
         <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-          Personality
-        </AppText>
+          {t('agents.labels.personality')}</AppText>
         <AppText className="leading-6 text-text text-[15px]">{agent.personality}</AppText>
       </View>
 
       {agent.description ? (
         <View className="mb-4">
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-            About
-          </AppText>
+            {t('agents.labels.about')}</AppText>
           <AppText className="leading-6 text-text text-[15px]">{agent.description}</AppText>
         </View>
       ) : null}
@@ -192,8 +196,7 @@ export function AgentDetailView({
       {agent.goals && agent.goals.length > 0 && (
         <View className="mb-4">
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-            Goals
-          </AppText>
+            {t('agents.labels.goals')}</AppText>
           {agent.goals.map((goal, i) => (
             <GoalItem key={goal} goal={goal} index={i} displayColor={displayColor} />
           ))}
@@ -203,8 +206,7 @@ export function AgentDetailView({
       {agent.integrations && agent.integrations.length > 0 && (
         <View className="mb-4">
           <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
-            Integrations
-          </AppText>
+            {t('agents.labels.integrations')}</AppText>
           <View className="flex-row flex-wrap gap-2">
             {agent.integrations.map((ig) => (
               <IntegrationBadge key={ig} integration={ig} />
@@ -214,8 +216,8 @@ export function AgentDetailView({
       )}
 
       <AppText className="text-faint text-[11px] text-center mt-1 mb-10">
-        Created{' '}
-        {new Date(agent.created_at).toLocaleDateString(undefined, {
+        {t('agents.labels.created', 'Created')}{' '}
+        {new Date(agent.created_at).toLocaleDateString(i18n.language, {
           month: 'long',
           day: 'numeric',
           year: 'numeric',
