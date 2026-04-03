@@ -40,8 +40,8 @@ async def test_chat_completion_uses_explicit_model() -> None:
         result = await chat_completion([{"role": "user", "content": "Hi"}], model="custom/model")
     assert result == "World!"
     mock_client.chat_completion.assert_awaited_once_with(
-            [{"role": "user", "content": "Hi"}], "custom/model"
-        )
+        [{"role": "user", "content": "Hi"}], "custom/model", accept_language=None
+    )
 
 
 @pytest.mark.asyncio
@@ -101,8 +101,8 @@ async def test_client_chat_completion_delegates_to_structured() -> None:
     result = await client.chat_completion([{"role": "user", "content": "Hi"}], "model")
     assert result == "hello from structured"
     client.structured_completion.assert_called_once_with(
-            [{"role": "user", "content": "Hi"}], "model", ChatResponse
-        )
+        [{"role": "user", "content": "Hi"}], "model", ChatResponse, accept_language=None
+    )
 
 
 @pytest.mark.asyncio
@@ -421,6 +421,7 @@ def test_sentry_init_called_when_dsn_set() -> None:
     assert call_kwargs["environment"] == "production"
     assert call_kwargs["release"] == "v1.0.0"
 
+
 @pytest.mark.asyncio
 async def test_chat_completion_with_language() -> None:
     mock_client = AsyncMock()
@@ -428,11 +429,14 @@ async def test_chat_completion_with_language() -> None:
     with patch("app.infrastructure.external.openrouter._client", mock_client):
         from app.infrastructure.external.openrouter import chat_completion
 
-        result = await chat_completion([{"role": "user", "content": "Hi"}], model="custom/model", accept_language="es")
+        result = await chat_completion(
+            [{"role": "user", "content": "Hi"}], model="custom/model", accept_language="es"
+        )
     assert result == "World!"
     mock_client.chat_completion.assert_awaited_once_with(
         [{"role": "user", "content": "Hi"}], "custom/model", accept_language="es"
     )
+
 
 @pytest.mark.asyncio
 async def test_stream_chat_with_language() -> None:
@@ -444,13 +448,22 @@ async def test_stream_chat_with_language() -> None:
     client.openai_client.chat.completions = MagicMock()
     client.openai_client.chat.completions.create = AsyncMock(return_value=["test"])
 
-    result = await client.stream_chat([{"role": "user", "content": "Hi"}], "model", accept_language="es")
+    result = await client.stream_chat(
+        [{"role": "user", "content": "Hi"}], "model", accept_language="es"
+    )
     assert result == ["test"]
     client.openai_client.chat.completions.create.assert_awaited_once_with(
         model="model",
-        messages=[{'role': 'system', 'content': 'Please respond in the locale corresponding to the Accept-Language header: es.'}, {'role': 'user', 'content': 'Hi'}],
-        stream=True
+        messages=[
+            {
+                "role": "system",
+                "content": "Please respond in the locale corresponding to the Accept-Language header: es.",
+            },
+            {"role": "user", "content": "Hi"},
+        ],
+        stream=True,
     )
+
 
 @pytest.mark.asyncio
 async def test_structured_completion_with_language() -> None:
@@ -460,15 +473,26 @@ async def test_structured_completion_with_language() -> None:
     client.instructor_client = MagicMock()
     client.instructor_client.chat = MagicMock()
     client.instructor_client.chat.completions = MagicMock()
-    client.instructor_client.chat.completions.create = AsyncMock(return_value=ChatResponse(message="test"))
+    client.instructor_client.chat.completions.create = AsyncMock(
+        return_value=ChatResponse(message="test")
+    )
 
-    result = await client.structured_completion([{"role": "user", "content": "Hi"}], "model", ChatResponse, accept_language="fr")
+    result = await client.structured_completion(
+        [{"role": "user", "content": "Hi"}], "model", ChatResponse, accept_language="fr"
+    )
     assert result.message == "test"
     client.instructor_client.chat.completions.create.assert_awaited_once_with(
         model="model",
-        messages=[{'role': 'system', 'content': 'Please respond in the locale corresponding to the Accept-Language header: fr.'}, {'role': 'user', 'content': 'Hi'}],
-        response_model=ChatResponse
+        messages=[
+            {
+                "role": "system",
+                "content": "Please respond in the locale corresponding to the Accept-Language header: fr.",
+            },
+            {"role": "user", "content": "Hi"},
+        ],
+        response_model=ChatResponse,
     )
+
 
 @pytest.mark.asyncio
 async def test_wrapper_stream_chat_success() -> None:
@@ -477,22 +501,35 @@ async def test_wrapper_stream_chat_success() -> None:
     with patch("app.infrastructure.external.openrouter._client", mock_client):
         from app.infrastructure.external.openrouter import stream_chat
 
-        result = await stream_chat([{"role": "user", "content": "Hi"}], model="custom/model", accept_language="es")
+        result = await stream_chat(
+            [{"role": "user", "content": "Hi"}], model="custom/model", accept_language="es"
+        )
     assert result == ["test_chunk"]
     mock_client.stream_chat.assert_awaited_once_with(
         [{"role": "user", "content": "Hi"}], "custom/model", accept_language="es"
     )
 
+
 @pytest.mark.asyncio
 async def test_wrapper_structured_completion_fallback() -> None:
     from app.infrastructure.external.openrouter import ChatResponse
+
     mock_client = AsyncMock()
-    mock_client.structured_completion = AsyncMock(side_effect=[Exception("Error"), ChatResponse(message="fallback_test")])
-    with patch("app.infrastructure.external.openrouter._client", mock_client):
-        with patch("app.infrastructure.external.openrouter.get_settings") as mock_settings:
-            mock_settings.return_value = MagicMock(default_chat_model="default-model", fallback_chat_model="fallback-model")
-            from app.infrastructure.external.openrouter import structured_completion
-            result = await structured_completion([{"role": "user", "content": "Hi"}], ChatResponse, accept_language="es")
+    mock_client.structured_completion = AsyncMock(
+        side_effect=[Exception("Error"), ChatResponse(message="fallback_test")]
+    )
+    with (
+        patch("app.infrastructure.external.openrouter._client", mock_client),
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="default-model", fallback_chat_model="fallback-model"
+        )
+        from app.infrastructure.external.openrouter import structured_completion
+
+        result = await structured_completion(
+            [{"role": "user", "content": "Hi"}], ChatResponse, accept_language="es"
+        )
 
     assert result.message == "fallback_test"
     mock_client.structured_completion.assert_any_call(
