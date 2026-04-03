@@ -6,6 +6,7 @@ from uuid import UUID
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from app.domain.agent_tools.productivity.utils import handle_tool_error
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.schemas import TaskCreate, TaskUpdate
 from app.domain.productivity.use_cases.manage_productivity import TaskNotFoundError
@@ -34,23 +35,20 @@ class ListTasksTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error("Error fetching tasks.")
     async def _run(self) -> str:
-        try:
-            tasks = await get_productivity_use_case().list_tasks(user_id=self.user_id)
+        tasks = await get_productivity_use_case().list_tasks(user_id=self.user_id)
 
-            if not tasks:
-                return "No tasks found."
+        if not tasks:
+            return "No tasks found."
 
-            result = "Tasks:\n"
-            for t in tasks:
-                status = "Completed" if t.is_completed else "Pending"
-                result += f"- [{t.id}] {t.title} ({status})\n"
-                if t.description:
-                    result += f"  Description: {t.description}\n"
-            return result
-        except Exception:
-            logger.exception("Error in ListTasksTool")
-            return "Error fetching tasks."
+        result = "Tasks:\n"
+        for t in tasks:
+            status = "Completed" if t.is_completed else "Pending"
+            result += f"- [{t.id}] {t.title} ({status})\n"
+            if t.description:
+                result += f"  Description: {t.description}\n"
+        return result
 
 
 class CreateTaskInput(BaseModel):
@@ -75,17 +73,14 @@ class CreateTaskTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error("Error creating task.")
     async def _run(self, title: str, description: str | None = None) -> str:
-        try:
-            task_data = TaskCreate(title=title, description=description, is_completed=False)
-            task = await get_productivity_use_case().create_task(
-                user_id=self.user_id, task_data=task_data
-            )
+        task_data = TaskCreate(title=title, description=description, is_completed=False)
+        task = await get_productivity_use_case().create_task(
+            user_id=self.user_id, task_data=task_data
+        )
 
-            return f"Successfully created task '{task.title}' with ID {task.id}."
-        except Exception:
-            logger.exception("Error in CreateTaskTool")
-            return "Error creating task."
+        return f"Successfully created task '{task.title}' with ID {task.id}."
 
 
 class UpdateTaskInput(BaseModel):
@@ -111,19 +106,16 @@ class UpdateTaskTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error("Error updating task.", reraise=(TaskNotFoundError,))
     async def _run(
         self, task_id: UUID, is_completed: bool | None = None, title: str | None = None
     ) -> str:
-        try:
-            update_data = TaskUpdate(is_completed=is_completed, title=title)
-            task = await get_productivity_use_case().update_task(
-                user_id=self.user_id, task_id=task_id, update_data=update_data
-            )
+        update_data = TaskUpdate(is_completed=is_completed, title=title)
+        task = await get_productivity_use_case().update_task(
+            user_id=self.user_id, task_id=task_id, update_data=update_data
+        )
 
-            status = "Completed" if task.is_completed else "Pending"
-            return f"Successfully updated task '{task.title}' with ID {task.id}. Status is now: {status}."
-        except TaskNotFoundError:
-            raise
-        except Exception:
-            logger.exception("Error in UpdateTaskTool")
-            return "Error updating task."
+        status = "Completed" if task.is_completed else "Pending"
+        return (
+            f"Successfully updated task '{task.title}' with ID {task.id}. Status is now: {status}."
+        )
