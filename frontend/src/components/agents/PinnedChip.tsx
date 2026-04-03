@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../AppText';
 import { getAgentColor } from './agentUtils';
 import { Agent } from '../../core/models';
+import { useTheme } from '../../hooks/useTheme';
 import { ScalePressable } from '@/components/ScalePressable';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 interface PinnedChipProps {
   agent: Agent;
@@ -14,6 +14,7 @@ interface PinnedChipProps {
 
 export function PinnedChip({ agent, onPress }: PinnedChipProps) {
   const color = getAgentColor(agent.name);
+  const { C } = useTheme();
 
   return (
     <ScalePressable onPress={onPress} style={{ alignItems: 'center', marginEnd: 14, width: 64 }}>
@@ -45,14 +46,14 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 1.5,
-            borderColor: DESIGN_TOKENS.colors.surface,
+            borderColor: C.surface,
           }}
         >
           <Ionicons name="star" size={7} color="white" />
         </View>
       </View>
       <AppText
-        style={{ fontSize: 11, color: DESIGN_TOKENS.colors.muted, textAlign: 'center' }}
+        style={{ fontSize: 11, color: C.muted, textAlign: 'center' }}
         numberOfLines={1}
       >
         {agent.name}

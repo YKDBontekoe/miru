@@ -31,8 +31,8 @@ function normalizeTask(raw: TaskApiRecord): Task {
 
 export const ApiService = {
   // --- Memories API ---
-  async getMemories(): Promise<Memory[]> {
-    const response = await apiClient.get<{ memories: Memory[] }>('memory');
+  async getMemories(signal?: AbortSignal): Promise<Memory[]> {
+    const response = await apiClient.get<{ memories: Memory[] }>('memory', { signal });
     return response.data.memories;
   },
 
@@ -121,8 +121,8 @@ export const ApiService = {
   },
 
   // --- Productivity: Notes ---
-  async getNotes(): Promise<Note[]> {
-    const response = await apiClient.get<Note[]>('productivity/notes');
+  async getNotes(signal?: AbortSignal): Promise<Note[]> {
+    const response = await apiClient.get<Note[]>('productivity/notes', { signal });
     return response.data;
   },
 
@@ -144,8 +144,8 @@ export const ApiService = {
   },
 
   // --- Productivity: Tasks ---
-  async getTasks(): Promise<Task[]> {
-    const response = await apiClient.get<TaskApiRecord[]>('productivity/tasks');
+  async getTasks(signal?: AbortSignal): Promise<Task[]> {
+    const response = await apiClient.get<TaskApiRecord[]>('productivity/tasks', { signal });
     return response.data.map(normalizeTask);
   },
 
@@ -173,8 +173,8 @@ export const ApiService = {
   },
 
   // --- Productivity: Calendar Events ---
-  async getEvents(): Promise<CalendarEvent[]> {
-    const response = await apiClient.get<CalendarEvent[]>('productivity/events');
+  async getEvents(signal?: AbortSignal): Promise<CalendarEvent[]> {
+    const response = await apiClient.get<CalendarEvent[]>('productivity/events', { signal });
     return response.data;
   },
 };

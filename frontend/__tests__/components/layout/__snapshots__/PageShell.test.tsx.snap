@@ -2,6 +2,7 @@
 
 exports[`PageShell renders shell and section primitives consistently 1`] = `
 <RNCSafeAreaView
+  className="flex-1"
   edges={
     {
       "bottom": "additive",
@@ -13,38 +14,20 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
   style={
     {
       "backgroundColor": "#F2F7F2",
-      "flex": 1,
     }
   }
 >
   <View
-    style={
-      {
-        "paddingBottom": 10,
-        "paddingHorizontal": 16,
-        "paddingTop": 12,
-      }
-    }
+    className="px-4 pt-3 pb-2.5"
   >
     <View
-      style={
-        {
-          "alignItems": "center",
-          "flexDirection": "row",
-          "justifyContent": "space-between",
-        }
-      }
+      className="flex-row justify-between items-center"
     >
       <View
-        style={
-          {
-            "flex": 1,
-            "paddingRight": 8,
-          }
-        }
+        className="flex-1 pe-2"
       >
         <Text
-          className=""
+          className="text-[28px] font-extrabold"
           style={
             [
               {
@@ -58,8 +41,6 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
               },
               {
                 "color": "#13251C",
-                "fontSize": 28,
-                "fontWeight": "800",
               },
             ]
           }
@@ -67,7 +48,7 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
           Workspace
         </Text>
         <Text
-          className=""
+          className="mt-0.5 text-[13px]"
           style={
             [
               {
@@ -81,8 +62,6 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
               },
               {
                 "color": "#5A7467",
-                "fontSize": 13,
-                "marginTop": 2,
               },
             ]
           }
@@ -93,25 +72,25 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
     </View>
   </View>
   <RCTScrollView
+    className="px-4"
     contentContainerStyle={
-      {
-        "paddingBottom": 136,
-        "paddingHorizontal": 16,
-      }
+      [
+        {
+          "paddingBottom": 136,
+        },
+        undefined,
+      ]
     }
     showsVerticalScrollIndicator={false}
   >
     <View>
       <View
+        className="rounded-3xl border p-4 mb-3.5"
         style={
           [
             {
               "backgroundColor": "#FFFFFF",
               "borderColor": "#DDE8E0",
-              "borderRadius": 24,
-              "borderWidth": 1,
-              "marginBottom": 14,
-              "padding": 16,
               "shadowColor": "#0D3C30",
               "shadowOffset": {
                 "height": 8,
@@ -125,17 +104,10 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
         }
       >
         <View
-          style={
-            {
-              "alignItems": "center",
-              "flexDirection": "row",
-              "justifyContent": "space-between",
-              "marginBottom": 12,
-            }
-          }
+          className="flex-row items-center justify-between mb-3"
         >
           <Text
-            className=""
+            className="font-bold"
             style={
               [
                 {
@@ -149,7 +121,6 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
                 },
                 {
                   "color": "#13251C",
-                  "fontWeight": "700",
                 },
               ]
             }

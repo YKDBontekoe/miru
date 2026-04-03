@@ -8,7 +8,7 @@ interface MemoryState {
   isLoading: boolean;
   error: string | null;
 
-  fetchMemories: () => Promise<void>;
+  fetchMemories: (signal?: AbortSignal) => Promise<void>;
   /** Removes from local state immediately (optimistic). Call confirmDelete after undo window if needed, or delete immediately on server. */
   deleteMemory: (id: string) => Promise<void>;
 }
@@ -27,12 +27,16 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchMemories: async () => {
+  fetchMemories: async (signal?: AbortSignal) => {
     set({ isLoading: true, error: null });
     try {
-      const memories = await ApiService.getMemories();
+      const memories = await ApiService.getMemories(signal);
       set({ memories, isLoading: false });
     } catch (error: unknown) {
+      if (signal?.aborted) {
+        set({ isLoading: false });
+        return;
+      }
       set({
         isLoading: false,
         error: getApiErrorMessage(error, 'Unable to load memories right now.'),

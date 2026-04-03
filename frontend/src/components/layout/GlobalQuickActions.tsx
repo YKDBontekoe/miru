@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
@@ -14,6 +15,7 @@ type QuickAction = {
 };
 
 export function GlobalQuickActions() {
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
@@ -23,24 +25,29 @@ export function GlobalQuickActions() {
       {
         key: 'chat',
         icon: 'chatbubble-ellipses',
-        label: 'New Chat',
+        label: t('quickActions.newChat'),
         route: '/(main)/chat?openCreate=1',
       },
-      { key: 'agent', icon: 'people', label: 'New Agent', route: '/(main)/agents?openCreate=1' },
+      {
+        key: 'agent',
+        icon: 'people',
+        label: t('quickActions.newAgent'),
+        route: '/(main)/agents?openCreate=1',
+      },
       {
         key: 'task',
         icon: 'checkbox',
-        label: 'New Task',
+        label: t('quickActions.newTask'),
         route: '/(main)/productivity?openCreateTask=1',
       },
       {
         key: 'note',
         icon: 'document-text',
-        label: 'New Note',
+        label: t('quickActions.newNote'),
         route: '/(main)/productivity?openCreateNote=1',
       },
     ],
-    []
+    [t]
   );
 
   if (pathname?.includes('/chat/')) {
@@ -91,7 +98,7 @@ export function GlobalQuickActions() {
             }}
           >
             <AppText variant="h3" style={{ color: DESIGN_TOKENS.colors.text, marginBottom: 10 }}>
-              Quick actions
+              {t('quickActions.title')}
             </AppText>
             {actions.map((action) => (
               <ScalePressable

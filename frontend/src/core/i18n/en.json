@@ -42,7 +42,37 @@
       "forget_memory_confirm": "Should Miru forget this?",
       "forget_memory_desc": "Are you sure you want to forget \"{{content}}\"?",
       "error": "Error",
-      "delete_memory_failed": "Failed to delete memory."
+      "delete_memory_failed": "Failed to delete memory.",
+      "done": "Done",
+      "exportError": "Could not export your data right now.",
+      "removedAllData": "All personal data has been removed.",
+      "removeDataFailed": "Some data could not be removed."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "follow_system": "Follow system",
+      "auto": "Auto",
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "data": "Data",
+    "deleteAllTitle": "Delete all app data?",
+    "deleteAllMessage": "This will delete all memories, notes, and tasks from your account.",
+    "dailySummary": {
+      "title": "Daily summary",
+      "desc": "Morning overview of tasks and events"
+    },
+    "mentions": {
+      "title": "Mentions and replies",
+      "desc": "Get notified when agents call out your name"
+    },
+    "export": {
+      "title": "Export my data",
+      "desc": "Download memories, notes, and tasks as JSON"
+    },
+    "deleteAll": {
+      "title": "Delete all personal data",
+      "desc": "Remove memories, notes, and tasks permanently"
     }
   },
   "home": {
@@ -118,6 +148,13 @@
   },
   "common": {
     "close": "Close"
+  },
+  "quickActions": {
+    "title": "Quick actions",
+    "newChat": "New Chat",
+    "newAgent": "New Agent",
+    "newTask": "New Task",
+    "newNote": "New Note"
   },
   "chat": {
     "title": "Miru",

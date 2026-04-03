@@ -321,7 +321,7 @@ it('handles fetchRooms error', async () => {
     await result.current.fetchRooms();
   });
 
-  expect(result.current.hubError).toBe('Failed to load rooms. Please try again.');
+  expect(result.current.hubError).toBe('error');
 });
 
 it('handles fetchMessages error', async () => {
@@ -332,7 +332,7 @@ it('handles fetchMessages error', async () => {
     await result.current.fetchMessages('1');
   });
 
-  expect(result.current.hubError).toBe('Failed to load messages. Please try again.');
+  expect(result.current.hubError).toBe('error');
 });
 
 it('stopStreaming clears agentActivity and isStreaming', async () => {

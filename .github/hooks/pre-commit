@@ -1,90 +1,68 @@
 #!/bin/bash
-# Pre-commit hook for Miru project
+# Pre-commit hook aligned with CI lint steps
+
+set -u
 
 echo "Running pre-commit checks..."
-
-# Store the exit code
 EXIT_CODE=0
-
-# Use absolute path to the project root
 ROOT_DIR=$(git rev-parse --show-toplevel)
 
-# Backend checks
 if [ -d "$ROOT_DIR/backend" ]; then
-    echo "Checking backend..."
-    cd "$ROOT_DIR/backend"
-    
-    # Check if venv exists
-    if [ -f ".venv/bin/activate" ]; then
-        # Use venv binaries directly
-        VENV_BIN=".venv/bin/"
+  echo "Checking backend (CI parity: ruff + format + ty)..."
+  cd "$ROOT_DIR/backend"
+
+  if command -v uv >/dev/null 2>&1; then
+    if ! uv run ruff check .; then
+      EXIT_CODE=1
+    fi
+    if ! uv run ruff format --check .; then
+      EXIT_CODE=1
+    fi
+    if ! uv run ty check .; then
+      EXIT_CODE=1
+    fi
+  else
+    if [ -f ".venv/bin/ruff" ] && [ -f ".venv/bin/ty" ]; then
+      if ! .venv/bin/ruff check .; then
+        EXIT_CODE=1
+      fi
+      if ! .venv/bin/ruff format --check .; then
+        EXIT_CODE=1
+      fi
+      if ! .venv/bin/ty check .; then
+        EXIT_CODE=1
+      fi
     else
-        VENV_BIN=""
+      echo "Backend tooling missing. Install uv or backend/.venv first."
+      EXIT_CODE=1
     fi
+  fi
 
-    # Run ruff
-    echo "Running ruff..."
-    if ! ${VENV_BIN}ruff check .; then
-        echo "Ruff found issues. Run 'ruff check --fix .' to auto-fix."
-        EXIT_CODE=1
-    fi
-    
-    # Run ruff format check (matches CI which uses ruff format, not black)
-    echo "Running ruff format check..."
-    if ! ${VENV_BIN}ruff format --check .; then
-        echo "Ruff formatting issues found. Run 'ruff format .' to fix."
-        EXIT_CODE=1
-    fi
-    
-    # Run isort check
-    echo "Running isort check..."
-    if ! ${VENV_BIN}isort --check-only .; then
-        echo "Isort sorting issues found. Run 'isort .' to fix."
-        EXIT_CODE=1
-    fi
-
-    # Run mypy
-    echo "Running mypy..."
-    if ! ${VENV_BIN}mypy --ignore-missing-imports app/; then
-        echo "MyPy found type issues."
-        EXIT_CODE=1
-    fi
-    
-    cd "$ROOT_DIR"
+  cd "$ROOT_DIR"
 fi
 
-# Frontend checks
 if [ -d "$ROOT_DIR/frontend" ]; then
-    echo "Checking frontend..."
-    cd "$ROOT_DIR/frontend"
-    
-    # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        echo "Installing frontend dependencies for pre-commit checks..."
-        npm ci
-    fi
+  echo "Checking frontend (CI parity: type-check then lint)..."
+  cd "$ROOT_DIR/frontend"
 
-    # Run lint-staged (much faster than full lint)
-    echo "Running lint-staged..."
-    if ! npx lint-staged; then
-        echo "Frontend linting issues found."
-        EXIT_CODE=1
-    fi
+  if [ ! -d "node_modules" ]; then
+    npm install --legacy-peer-deps
+  fi
 
-    # Run type-check
-    echo "Running type-check..."
-    if ! npm run type-check; then
-        echo "Frontend type-check failed."
-        EXIT_CODE=1
-    fi
-    
-    cd "$ROOT_DIR"
+  if ! npm run type-check; then
+    EXIT_CODE=1
+  fi
+  if ! npm run lint; then
+    EXIT_CODE=1
+  fi
+
+  cd "$ROOT_DIR"
 fi
 
-if [ $EXIT_CODE -ne 0 ]; then
-    echo "Pre-commit checks failed. Please fix the issues above."
-    exit 1
-else
-    echo "All pre-commit checks passed!"
-    exit 0
+if [ "$EXIT_CODE" -ne 0 ]; then
+  echo "Pre-commit checks failed."
+  exit 1
 fi
+
+echo "All pre-commit checks passed!"
+exit 0

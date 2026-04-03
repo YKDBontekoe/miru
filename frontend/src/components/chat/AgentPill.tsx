@@ -4,11 +4,7 @@ import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { getAgentColor } from '@/utils/colors';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
-
-const C = {
-  muted: DESIGN_TOKENS.colors.muted,
-};
+import { useTheme } from '@/hooks/useTheme';
 
 export interface AgentPillProps {
   /** The agent data to display. */
@@ -23,6 +19,7 @@ export interface AgentPillProps {
  */
 export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
   const color = getAgentColor(agent.name);
+  const { C } = useTheme();
   const initial = agent?.name ? agent.name[0].toUpperCase() : '?';
 
   return (

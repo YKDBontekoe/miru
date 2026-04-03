@@ -34,12 +34,12 @@ const C = {
   border: DESIGN_TOKENS.colors.border,
   text: DESIGN_TOKENS.colors.text,
   muted: DESIGN_TOKENS.colors.muted,
-  faint: '#97AEA3',
+  faint: DESIGN_TOKENS.colors.faint,
   primary: DESIGN_TOKENS.colors.primary,
   primarySurface: DESIGN_TOKENS.colors.primarySoft,
-  destructive: '#B23A3A',
-  destructiveSurface: '#FCEEEE',
-  destructiveBorder: '#F4D1D1',
+  destructive: DESIGN_TOKENS.colors.destructive,
+  destructiveSurface: DESIGN_TOKENS.colors.destructiveSurface,
+  destructiveBorder: DESIGN_TOKENS.colors.destructiveBorder,
 };
 
 const SUPPORTED_LANGUAGES = [
@@ -299,9 +299,18 @@ export default function SettingsScreen() {
     SUPPORTED_LANGUAGES.find((l) => currentLang.startsWith(l.code))?.nativeLabel ?? 'English';
 
   useEffect(() => {
-    fetchMemories();
-    fetchNotes();
-    fetchTasks();
+    const controller = new AbortController();
+    const loadData = async () => {
+      await Promise.all([
+        fetchMemories(controller.signal),
+        fetchNotes(controller.signal),
+        fetchTasks(controller.signal),
+      ]);
+    };
+    loadData().catch(() => {});
+    return () => {
+      controller.abort();
+    };
   }, [fetchMemories, fetchNotes, fetchTasks]);
 
   const handleDeleteMemory = React.useCallback(
@@ -377,14 +386,14 @@ export default function SettingsScreen() {
         message: JSON.stringify(payload, null, 2),
       });
     } catch {
-      Alert.alert(t('settings.actions.error'), 'Could not export your data right now.');
+      Alert.alert(t('settings.actions.error'), t('settings.actions.exportError'));
     }
   };
 
   const handleDeleteAllData = () => {
     Alert.alert(
-      'Delete all app data?',
-      'This will delete all memories, notes, and tasks from your account.',
+      t('settings.deleteAllTitle'),
+      t('settings.deleteAllMessage'),
       [
         { text: t('settings.actions.cancel'), style: 'cancel' },
         {
@@ -392,15 +401,34 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await Promise.all([
+              const results = await Promise.allSettled([
                 ...memories.map((memory) => deleteMemory(memory.id)),
                 ...notes.map((note) => deleteNote(note.id)),
                 ...tasks.map((task) => deleteTask(task.id)),
               ]);
               await Promise.all([fetchMemories(), fetchNotes(), fetchTasks()]);
-              Alert.alert('Done', 'All personal data has been removed.');
+              const failed = results
+                .map((result, index) => ({ result, index }))
+                .filter((entry) => entry.result.status === 'rejected')
+                .map((entry) => {
+                  const memoryCount = memories.length;
+                  const noteCount = notes.length;
+                  if (entry.index < memoryCount) return memories[entry.index]?.id ?? 'memory';
+                  if (entry.index < memoryCount + noteCount) {
+                    return notes[entry.index - memoryCount]?.id ?? 'note';
+                  }
+                  return tasks[entry.index - memoryCount - noteCount]?.id ?? 'task';
+                });
+              if (failed.length === 0) {
+                Alert.alert(t('settings.actions.done'), t('settings.actions.removedAllData'));
+                return;
+              }
+              Alert.alert(
+                t('settings.actions.error'),
+                `${t('settings.actions.removeDataFailed')} (${failed.length})\n${failed.join(', ')}`
+              );
             } catch {
-              Alert.alert(t('settings.actions.error'), 'Failed to remove all data. Please retry.');
+              Alert.alert(t('settings.actions.error'), t('settings.actions.removeDataFailed'));
             }
           },
         },
@@ -516,7 +544,9 @@ export default function SettingsScreen() {
               renderItem={renderMemoryItem}
               ListFooterComponent={
                 <ScalePressable
-                  onPress={fetchMemories}
+                  onPress={() => {
+                    fetchMemories().catch(() => {});
+                  }}
                   style={{ alignItems: 'center', paddingVertical: 8 }}
                 >
                   <AppText style={{ color: C.primary, fontSize: 13, fontWeight: '600' }}>
@@ -556,13 +586,13 @@ export default function SettingsScreen() {
           <SettingRow
             icon="contrast-outline"
             iconColor={C.primary}
-            title="Appearance"
+            title={t('settings.appearance.title')}
             subtitle={
               appearanceMode === 'system'
-                ? 'Follow system'
+                ? t('settings.appearance.follow_system')
                 : appearanceMode === 'dark'
-                  ? 'Dark'
-                  : 'Light'
+                  ? t('settings.appearance.dark')
+                  : t('settings.appearance.light')
             }
             rightElement={
               <View style={{ flexDirection: 'row' }}>
@@ -587,7 +617,11 @@ export default function SettingsScreen() {
                         fontWeight: '700',
                       }}
                     >
-                      {mode === 'system' ? 'Auto' : mode === 'dark' ? 'Dark' : 'Light'}
+                      {mode === 'system'
+                        ? t('settings.appearance.auto')
+                        : mode === 'dark'
+                          ? t('settings.appearance.dark')
+                          : t('settings.appearance.light')}
                     </AppText>
                   </ScalePressable>
                 ))}
@@ -611,8 +645,8 @@ export default function SettingsScreen() {
           <SettingRow
             icon="calendar-outline"
             iconColor={C.primary}
-            title="Daily summary"
-            subtitle="Morning overview of tasks and events"
+            title={t('settings.dailySummary.title')}
+            subtitle={t('settings.dailySummary.desc')}
             rightElement={
               <Switch
                 value={notifications.dailySummary}
@@ -625,8 +659,8 @@ export default function SettingsScreen() {
           <SettingRow
             icon="at-outline"
             iconColor={C.primary}
-            title="Mentions and replies"
-            subtitle="Get notified when agents call out your name"
+            title={t('settings.mentions.title')}
+            subtitle={t('settings.mentions.desc')}
             rightElement={
               <Switch
                 value={notifications.mentions}
@@ -639,18 +673,18 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ marginTop: 16 }}>
-          <SectionHeader title="Data" />
+          <SectionHeader title={t('settings.data')} />
           <SettingRow
             icon="download-outline"
             iconColor={C.primary}
-            title="Export my data"
-            subtitle="Download memories, notes, and tasks as JSON"
+            title={t('settings.export.title')}
+            subtitle={t('settings.export.desc')}
             onPress={handleExportData}
           />
           <SettingRow
             icon="trash-outline"
-            title="Delete all personal data"
-            subtitle="Remove memories, notes, and tasks permanently"
+            title={t('settings.deleteAll.title')}
+            subtitle={t('settings.deleteAll.desc')}
             onPress={handleDeleteAllData}
             destructive
           />

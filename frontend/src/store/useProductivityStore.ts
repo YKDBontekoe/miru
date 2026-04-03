@@ -9,9 +9,9 @@ interface ProductivityState {
   events: CalendarEvent[];
   isLoading: boolean;
   error: string | null;
-  fetchNotes: () => Promise<void>;
-  fetchTasks: () => Promise<void>;
-  fetchEvents: () => Promise<void>;
+  fetchNotes: (signal?: AbortSignal) => Promise<void>;
+  fetchTasks: (signal?: AbortSignal) => Promise<void>;
+  fetchEvents: (signal?: AbortSignal) => Promise<void>;
   createNote: (title: string, content: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   createTask: (title: string, dueDate?: string | null) => Promise<void>;
@@ -37,32 +37,44 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchNotes: async () => {
+  fetchNotes: async (signal?: AbortSignal) => {
     set({ isLoading: true, error: null });
     try {
-      const notes = await ApiService.getNotes();
+      const notes = await ApiService.getNotes(signal);
       set({ notes, isLoading: false });
     } catch (error: unknown) {
+      if (signal?.aborted) {
+        set({ isLoading: false });
+        return;
+      }
       set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load notes.') });
     }
   },
 
-  fetchTasks: async () => {
+  fetchTasks: async (signal?: AbortSignal) => {
     set({ isLoading: true, error: null });
     try {
-      const tasks = await ApiService.getTasks();
+      const tasks = await ApiService.getTasks(signal);
       set({ tasks, isLoading: false });
     } catch (error: unknown) {
+      if (signal?.aborted) {
+        set({ isLoading: false });
+        return;
+      }
       set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load tasks.') });
     }
   },
 
-  fetchEvents: async () => {
+  fetchEvents: async (signal?: AbortSignal) => {
     set({ isLoading: true, error: null });
     try {
-      const events = await ApiService.getEvents();
+      const events = await ApiService.getEvents(signal);
       set({ events, isLoading: false });
     } catch (error: unknown) {
+      if (signal?.aborted) {
+        set({ isLoading: false });
+        return;
+      }
       set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load events.') });
     }
   },

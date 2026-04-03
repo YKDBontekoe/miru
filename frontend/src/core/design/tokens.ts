@@ -16,6 +16,7 @@ export const DESIGN_TOKENS = {
     deep: HOME_CORE_COLORS.deep,
     destructive: '#B23A3A',
     destructiveSoft: '#FCEEEE',
+    destructiveSurface: '#FCEEEE',
     destructiveBorder: '#F4D1D1',
     white: '#FFFFFF',
     transparent: 'transparent',

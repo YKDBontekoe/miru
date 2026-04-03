@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Never
+
 from fastapi import HTTPException
 
 
@@ -10,7 +12,7 @@ def raise_api_error(
     error: str,
     message: str,
     details: dict[str, object] | None = None,
-) -> None:
+) -> Never:
     """Raise an HTTPException with a consistent machine-readable payload."""
     detail: dict[str, object] = {"error": error, "message": message}
     if details:
