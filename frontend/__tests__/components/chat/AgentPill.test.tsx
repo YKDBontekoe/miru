@@ -15,7 +15,7 @@ const mockAgent = {
   goals: [],
   created_at: '',
   updated_at: '',
-};
+} as any;
 
 describe('AgentPill', () => {
   it('renders correctly with agent name', () => {

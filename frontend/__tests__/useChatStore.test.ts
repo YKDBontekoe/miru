@@ -257,7 +257,7 @@ it('can create a room', async () => {
 });
 
 it('can delete a room and rollback state', async () => {
-  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01' };
+  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01', updated_at: '2023-01-01' };
   (ApiService.deleteRoom as jest.Mock).mockResolvedValue(undefined);
 
   useChatStore.setState({
@@ -281,7 +281,7 @@ it('can delete a room and rollback state', async () => {
 });
 
 it('deletes a room even if API throws', async () => {
-  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01' };
+  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01', updated_at: '2023-01-01' };
   (ApiService.deleteRoom as jest.Mock).mockRejectedValue(new Error('API error'));
 
   useChatStore.setState({

@@ -14,7 +14,7 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-const mockRoom = { id: 'r1', name: 'Test Room', created_at: '' };
+const mockRoom = { id: 'r1', name: 'Test Room', created_at: '', updated_at: '' };
 const agent1 = { id: 'a1', name: 'Agent1' } as any;
 const agent2 = { id: 'a2', name: 'Agent2' } as any;
 const agent3 = { id: 'a3', name: 'Agent3' } as any;
