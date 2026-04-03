@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
@@ -20,12 +21,29 @@ import { TaskCard } from '../../src/components/productivity/TaskCard';
 import { theme } from '../../src/core/theme';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
-const T = theme.colors;
+const T = {
+  background: { light: DESIGN_TOKENS.colors.pageBg },
+  surface: { light: DESIGN_TOKENS.colors.surface, highLight: DESIGN_TOKENS.colors.surfaceSoft },
+  border: { light: DESIGN_TOKENS.colors.border },
+  onSurface: {
+    light: DESIGN_TOKENS.colors.text,
+    mutedLight: DESIGN_TOKENS.colors.muted,
+    disabledLight: '#97AEA3',
+  },
+  primary: {
+    DEFAULT: DESIGN_TOKENS.colors.primary,
+    surfaceLight: DESIGN_TOKENS.colors.primarySoft,
+  },
+  white: '#FFFFFF',
+  transparent: 'transparent',
+};
 const S = theme.spacing;
 const R = theme.borderRadius;
 
 type Tab = 'today' | 'all' | 'notes' | 'tasks';
+type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
 
 type RenderItemData = {
   date?: number;
@@ -36,10 +54,16 @@ type RenderItemData = {
 
 export default function ProductivityScreen() {
   const { t, i18n } = useTranslation();
+  const { openCreateTask, openCreateNote } = useLocalSearchParams<{
+    openCreateTask?: string;
+    openCreateNote?: string;
+  }>();
   const [activeTab, setActiveTab] = useState<Tab>('today');
+  const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
+  const [todayPlan, setTodayPlan] = useState<string | null>(null);
 
   const {
     notes,
@@ -59,6 +83,18 @@ export default function ProductivityScreen() {
     fetchTasks();
     fetchEvents();
   }, [fetchEvents, fetchNotes, fetchTasks]);
+
+  useEffect(() => {
+    if (openCreateTask === '1' || openCreateTask === 'true') {
+      setShowCreateTask(true);
+    }
+  }, [openCreateTask]);
+
+  useEffect(() => {
+    if (openCreateNote === '1' || openCreateNote === 'true') {
+      setShowCreateNote(true);
+    }
+  }, [openCreateNote]);
 
   const handleRefresh = useCallback(() => {
     fetchNotes();
@@ -116,6 +152,50 @@ export default function ProductivityScreen() {
     () => filteredTasks.filter((task) => !task.completed).length,
     [filteredTasks]
   );
+
+  const getTaskPriority = useCallback((task: Task): Exclude<TaskPriority, 'all'> => {
+    if (!task.due_date) return 'no_due';
+    const now = new Date();
+    const due = new Date(task.due_date);
+    if (isNaN(due.getTime())) return 'no_due';
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(dayStart);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (due < dayStart) return 'overdue';
+    if (due >= dayStart && due < tomorrow) return 'today';
+    return 'upcoming';
+  }, []);
+
+  const taskPriorityCounts = useMemo(() => {
+    const counts: Record<TaskPriority, number> = {
+      all: 0,
+      overdue: 0,
+      today: 0,
+      upcoming: 0,
+      no_due: 0,
+    };
+    filteredTasks
+      .filter((task) => !task.completed)
+      .forEach((task) => {
+        counts.all += 1;
+        counts[getTaskPriority(task)] += 1;
+      });
+    return counts;
+  }, [filteredTasks, getTaskPriority]);
+
+  const prioritizedTasks = useMemo(() => {
+    const tasksToRank = filteredTasks.filter((task) => !task.completed);
+    const pool =
+      taskPriority === 'all'
+        ? tasksToRank
+        : tasksToRank.filter((task) => getTaskPriority(task) === taskPriority);
+    return [...pool].sort((a, b) => {
+      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      return aDue - bDue;
+    });
+  }, [filteredTasks, getTaskPriority, taskPriority]);
 
   const mixedData = useMemo(() => {
     const data: RenderItemData[] = [];
@@ -194,7 +274,46 @@ export default function ProductivityScreen() {
         ? mixedData
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
-          : filteredTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+
+  const generateTodayPlan = useCallback(() => {
+    const now = new Date();
+    const nextTasks = prioritizedTasks.slice(0, 3);
+    const nextEvents = [...filteredEvents]
+      .filter((event) => new Date(event.end_time) >= now)
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+      .slice(0, 3);
+
+    const lines: string[] = [];
+    if (taskPriorityCounts.overdue > 0) {
+      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+    } else {
+      lines.push('1) No overdue tasks: start with highest-impact open work.');
+    }
+
+    if (nextTasks.length > 0) {
+      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+    } else {
+      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+    }
+
+    if (nextEvents.length > 0) {
+      const eventLine = nextEvents
+        .map((event) =>
+          new Intl.DateTimeFormat(i18n.language, {
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date(event.start_time))
+        )
+        .join(', ');
+      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+    } else {
+      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+    }
+
+    setTodayPlan(lines.join('\n'));
+    setActiveTab('today');
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
 
   const renderItem = useCallback(
     ({ item }: { item: RenderItemData }) => {
@@ -255,6 +374,12 @@ export default function ProductivityScreen() {
 
           <View style={styles.headerActions}>
             <Pressable
+              onPress={generateTodayPlan}
+              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            >
+              <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
+            </Pressable>
+            <Pressable
               onPress={() => setShowCreateNote(true)}
               style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
             >
@@ -300,7 +425,7 @@ export default function ProductivityScreen() {
           >
             <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
               {tab === 'today'
-                ? 'Today'
+                ? t('productivity.today')
                 : tab === 'all'
                   ? t('productivity.all') || 'All'
                   : tab === 'notes'
@@ -310,6 +435,56 @@ export default function ProductivityScreen() {
           </Pressable>
         ))}
       </View>
+
+      {(activeTab === 'tasks' || activeTab === 'today') && (
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginHorizontal: S.xl,
+            marginBottom: S.sm,
+          }}
+        >
+          {(
+            [
+              { key: 'all', label: `All (${taskPriorityCounts.all})` },
+              { key: 'overdue', label: `Overdue (${taskPriorityCounts.overdue})` },
+              { key: 'today', label: `Today (${taskPriorityCounts.today})` },
+              { key: 'upcoming', label: `Upcoming (${taskPriorityCounts.upcoming})` },
+              { key: 'no_due', label: `No due (${taskPriorityCounts.no_due})` },
+            ] as const
+          ).map((option) => (
+            <Pressable
+              key={option.key}
+              onPress={() => setTaskPriority(option.key)}
+              style={({ pressed }) => [
+                {
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
+                  backgroundColor:
+                    taskPriority === option.key ? T.primary.surfaceLight : T.surface.light,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  marginRight: 8,
+                  marginBottom: 8,
+                },
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <AppText
+                variant="caption"
+                style={{
+                  color: taskPriority === option.key ? T.primary.DEFAULT : T.onSurface.mutedLight,
+                  fontWeight: '700',
+                }}
+              >
+                {option.label}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <FlatList
         data={dataToRender}
@@ -324,6 +499,38 @@ export default function ProductivityScreen() {
           />
         }
         renderItem={renderItem}
+        ListHeaderComponent={
+          activeTab === 'today' && todayPlan ? (
+            <View
+              style={{
+                borderRadius: R.xl,
+                backgroundColor: T.primary.surfaceLight,
+                borderWidth: 1,
+                borderColor: T.border.light,
+                padding: S.lg,
+                marginBottom: S.md,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
+                  Today plan
+                </AppText>
+                <Pressable onPress={() => setTodayPlan(null)}>
+                  <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
+                </Pressable>
+              </View>
+              <AppText style={{ color: T.onSurface.mutedLight, marginTop: 8, lineHeight: 20 }}>
+                {todayPlan}
+              </AppText>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
@@ -349,14 +556,14 @@ export default function ProductivityScreen() {
                   : activeTab === 'tasks'
                     ? t('productivity.no_tasks') || 'No Tasks'
                     : activeTab === 'today'
-                      ? 'Nothing urgent today'
+                      ? t('productivity.nothing_urgent_today')
                       : t('productivity.workspace_clear') || 'Your workspace is clear'}
             </AppText>
             <AppText style={styles.emptySubtitle}>
               {searchQuery
                 ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
                 : activeTab === 'today'
-                  ? 'You have no overdue tasks, due tasks, or upcoming events this week.'
+                  ? t('productivity.today_empty_detail')
                   : t('productivity.capture_thoughts') ||
                     'Capture your thoughts and track what needs to get done.'}
             </AppText>

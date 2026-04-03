@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  RefreshControl,
-  FlatList,
-  Platform,
-} from 'react-native';
+import { View, RefreshControl, FlatList, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
@@ -19,21 +14,23 @@ import { SkeletonAgentCard } from '@/components/SkeletonCard';
 import { AgentPill } from '@/components/chat/AgentPill';
 import { RoomCard } from '@/components/chat/RoomCard';
 import { CreateRoomModal } from '@/components/chat/CreateRoomModal';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  bg: '#F4F6FF',
-  surface: '#FFFFFF',
-  surfaceHigh: '#EEF2FF',
-  border: '#E6EAFF',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-  primary: '#2563EB',
-  primarySurface: '#EEF4FF',
+  bg: DESIGN_TOKENS.colors.pageBg,
+  surface: DESIGN_TOKENS.colors.surface,
+  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+  border: DESIGN_TOKENS.colors.border,
+  text: DESIGN_TOKENS.colors.text,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: '#97AEA3',
+  primary: DESIGN_TOKENS.colors.primary,
+  primarySurface: DESIGN_TOKENS.colors.primarySoft,
 };
 
 export default function ChatListScreen() {
+  const { openCreate } = useLocalSearchParams<{ openCreate?: string }>();
   const { t } = useTranslation();
   const router = useRouter();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -45,6 +42,12 @@ export default function ChatListScreen() {
     fetchRooms();
     fetchAgents();
   }, [fetchRooms, fetchAgents]);
+
+  useEffect(() => {
+    if (openCreate === '1' || openCreate === 'true') {
+      setShowCreateModal(true);
+    }
+  }, [openCreate]);
 
   useEffect(() => {
     if (rooms.length === 0) return;

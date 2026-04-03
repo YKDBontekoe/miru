@@ -6,16 +6,23 @@ import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { Note } from '../../core/models';
 import { theme } from '../../core/theme';
-import { useTheme } from '../../hooks/useTheme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 interface Props {
   note: Note;
   onDelete: () => void;
 }
 
+const C = {
+  surface: DESIGN_TOKENS.colors.surface,
+  border: DESIGN_TOKENS.colors.border,
+  text: DESIGN_TOKENS.colors.text,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: '#97AEA3',
+};
+
 export const NoteCard = React.memo(({ note, onDelete }: Props) => {
   const { i18n } = useTranslation();
-  const { C } = useTheme();
 
   const date = new Intl.DateTimeFormat(i18n.language, {
     month: 'short',
@@ -74,7 +81,7 @@ export const NoteCard = React.memo(({ note, onDelete }: Props) => {
           marginRight: 4,
         },
       }),
-    [C]
+    []
   );
 
   return (

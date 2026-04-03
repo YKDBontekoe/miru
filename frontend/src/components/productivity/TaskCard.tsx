@@ -6,10 +6,20 @@ import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { Task } from '../../core/models';
 import { theme } from '../../core/theme';
-import { useTheme } from '../../hooks/useTheme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const S = theme.spacing;
 const R = theme.borderRadius;
+const C = {
+  surface: DESIGN_TOKENS.colors.surface,
+  successSurface: DESIGN_TOKENS.colors.primarySoft,
+  success: DESIGN_TOKENS.colors.primary,
+  border: DESIGN_TOKENS.colors.border,
+  text: DESIGN_TOKENS.colors.text,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: '#97AEA3',
+  primary: DESIGN_TOKENS.colors.primary,
+};
 
 interface Props {
   task: Task;
@@ -19,7 +29,6 @@ interface Props {
 
 export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
   const { t, i18n } = useTranslation();
-  const { C } = useTheme();
 
   const styles = React.useMemo(
     () =>
@@ -82,7 +91,7 @@ export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
           padding: S.xs,
         },
       }),
-    [C]
+    []
   );
 
   return (

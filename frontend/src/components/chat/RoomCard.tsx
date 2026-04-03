@@ -5,14 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { ChatRoom, Agent } from '@/core/models';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
-  surface: '#FFFFFF',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-  primary: '#2563EB',
-  primarySurface: '#EEF4FF',
+  surface: DESIGN_TOKENS.colors.surface,
+  text: DESIGN_TOKENS.colors.text,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: '#97AEA3',
+  primary: DESIGN_TOKENS.colors.primary,
+  primarySurface: DESIGN_TOKENS.colors.primarySoft,
 };
 
 export interface RoomCardProps {
@@ -32,18 +33,25 @@ export const RoomCard = React.memo(({ room, agents, onPress }: RoomCardProps) =>
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const memberLabel = () => {
     if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
-    if (agents.length === 1) return t('chat.you_and_one', 'You + {{name}}', { name: agents[0].name });
-    if (agents.length === 2) return t('chat.you_and_two', 'You, {{name1}} & {{name2}}', { name1: agents[0].name, name2: agents[1].name });
+    if (agents.length === 1)
+      return t('chat.you_and_one', 'You + {{name}}', { name: agents[0].name });
+    if (agents.length === 2)
+      return t('chat.you_and_two', 'You, {{name1}} & {{name2}}', {
+        name1: agents[0].name,
+        name2: agents[1].name,
+      });
     return t('chat.you_plus_n_agents', 'You + {{count}} agents', { count: agents.length });
   };
 
   return (
     <ScalePressable
       onPress={onPress}
-      className="flex-row items-center rounded-[20px] p-[14px] mb-[10px] shadow-sm shadow-blue-600/[0.06]"
+      className="flex-row items-center rounded-[20px] p-[14px] mb-[10px]"
       style={{
         backgroundColor: C.surface,
-        elevation: 2,
+        borderWidth: 1,
+        borderColor: DESIGN_TOKENS.colors.border,
+        ...DESIGN_TOKENS.shadow,
       }}
     >
       <View

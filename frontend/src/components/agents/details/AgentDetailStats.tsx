@@ -2,7 +2,6 @@ import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
-import { useTheme } from '@/hooks/useTheme';
 import { Agent } from '@/core/models';
 
 interface AgentDetailStatsProps {
@@ -12,7 +11,6 @@ interface AgentDetailStatsProps {
 }
 
 export function AgentDetailStats({ agent, level, displayColor }: AgentDetailStatsProps) {
-  const { C } = useTheme();
   const { t } = useTranslation();
 
   return (

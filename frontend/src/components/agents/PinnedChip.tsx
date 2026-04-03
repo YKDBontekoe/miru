@@ -2,10 +2,10 @@ import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../AppText';
-import { useTheme } from '../../hooks/useTheme';
 import { getAgentColor } from './agentUtils';
 import { Agent } from '../../core/models';
 import { ScalePressable } from '@/components/ScalePressable';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 interface PinnedChipProps {
   agent: Agent;
@@ -13,7 +13,6 @@ interface PinnedChipProps {
 }
 
 export function PinnedChip({ agent, onPress }: PinnedChipProps) {
-  const { C } = useTheme();
   const color = getAgentColor(agent.name);
 
   return (
@@ -46,13 +45,16 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 1.5,
-            borderColor: C.surface,
+            borderColor: DESIGN_TOKENS.colors.surface,
           }}
         >
           <Ionicons name="star" size={7} color="white" />
         </View>
       </View>
-      <AppText style={{ fontSize: 11, color: C.muted, textAlign: 'center' }} numberOfLines={1}>
+      <AppText
+        style={{ fontSize: 11, color: DESIGN_TOKENS.colors.muted, textAlign: 'center' }}
+        numberOfLines={1}
+      >
         {agent.name}
       </AppText>
     </ScalePressable>

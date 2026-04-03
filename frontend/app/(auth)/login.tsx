@@ -1,12 +1,5 @@
-import React, { useState, useMemo, useRef } from 'react';
-import {
-  View,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';

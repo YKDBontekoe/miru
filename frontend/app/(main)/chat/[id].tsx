@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ChatInputBar } from '@/components/ChatInputBar';
@@ -25,13 +26,22 @@ import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
 import { ChatRoomEmptyState } from '@/components/chat/ChatRoomEmptyState';
 import { useChatRoomSetup } from '@/hooks/useChatRoomSetup';
 import { getAgentColor } from '@/utils/chatUtils';
+import { SecureLocalStorage } from '@/core/services/storage';
 
 const C = {
   bg: '#F8F8FC',
   primary: '#2563EB',
+  primarySoft: '#EFF6FF',
+  text: '#0F3D31',
 };
 
+interface RoomShortcut {
+  text: string;
+  pinned: boolean;
+}
+
 export default function ChatRoomScreen() {
+  const { t } = useTranslation();
   const { id: roomId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -50,6 +60,7 @@ export default function ChatRoomScreen() {
   const [inputText, setInputText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [quickViewAgent, setQuickViewAgent] = useState<Agent | null>(null);
+  const [shortcuts, setShortcuts] = useState<RoomShortcut[]>([]);
 
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
@@ -115,18 +126,83 @@ export default function ChatRoomScreen() {
       await ApiService.removeAgentFromRoom(roomId, agentId);
       setRoomAgents((prev) => prev.filter((a) => a.id !== agentId));
     } catch {
-      Alert.alert('Error', 'Could not remove agent from chat. Please try again.');
+      Alert.alert(t('chat.error'), t('chat.remove_agent_failed'));
     }
   };
 
-  const quickActions = React.useMemo(
+  const defaultQuickActions = React.useMemo(
     () => [
-      'Plan my day from my open tasks and events.',
-      'Extract action items from this chat.',
-      'Schedule my most important task this week.',
-      'What are my top 3 priorities today?',
+      t('chat.quick_actions.plan_day', {
+        defaultValue: 'Plan my day from my open tasks and events.',
+      }),
+      t('chat.quick_actions.extract_actions', {
+        defaultValue: 'Extract action items from this chat.',
+      }),
+      t('chat.quick_actions.schedule_week', {
+        defaultValue: 'Schedule my most important task this week.',
+      }),
+      t('chat.quick_actions.top_priorities', {
+        defaultValue: 'What are my top 3 priorities today?',
+      }),
     ],
-    []
+    [t]
+  );
+
+  useEffect(() => {
+    if (!roomId) return;
+    const key = `miru:room-shortcuts:${roomId}`;
+    let mounted = true;
+    const loadShortcuts = async () => {
+      try {
+        const rawResult = SecureLocalStorage.getItem(key);
+        const raw =
+          typeof rawResult === 'string' || rawResult === null ? rawResult : await rawResult;
+        if (!raw) {
+          if (mounted) {
+            setShortcuts(defaultQuickActions.map((text) => ({ text, pinned: false })));
+          }
+          return;
+        }
+        try {
+          const parsed = JSON.parse(raw) as RoomShortcut[];
+          const withDefaults = [...parsed];
+          defaultQuickActions.forEach((text) => {
+            if (!withDefaults.some((entry) => entry.text === text)) {
+              withDefaults.push({ text, pinned: false });
+            }
+          });
+          if (mounted) {
+            setShortcuts(withDefaults);
+          }
+        } catch {
+          if (mounted) {
+            setShortcuts(defaultQuickActions.map((text) => ({ text, pinned: false })));
+          }
+        }
+      } catch {
+        if (mounted) {
+          setShortcuts(defaultQuickActions.map((text) => ({ text, pinned: false })));
+        }
+      }
+    };
+    loadShortcuts();
+    return () => {
+      mounted = false;
+    };
+  }, [roomId, defaultQuickActions]);
+
+  const persistShortcuts = useCallback(
+    async (next: RoomShortcut[]) => {
+      if (!roomId) return;
+      const key = `miru:room-shortcuts:${roomId}`;
+      await SecureLocalStorage.setItem(key, JSON.stringify(next));
+    },
+    [roomId]
+  );
+
+  const quickActions = React.useMemo(
+    () => [...shortcuts].sort((a, b) => Number(b.pinned) - Number(a.pinned)),
+    [shortcuts]
   );
 
   const handleQuickAction = useCallback(
@@ -137,6 +213,32 @@ export default function ChatRoomScreen() {
     },
     [isStreaming, roomId, sendMessage]
   );
+
+  const togglePinnedShortcut = useCallback(
+    (text: string) => {
+      setShortcuts((prev) => {
+        const next = prev.map((entry) =>
+          entry.text === text ? { ...entry, pinned: !entry.pinned } : entry
+        );
+        persistShortcuts(next).catch(() => {});
+        return next;
+      });
+    },
+    [persistShortcuts]
+  );
+
+  const saveInputAsShortcut = useCallback(() => {
+    const normalized = inputText.trim();
+    if (!normalized) return;
+    setShortcuts((prev) => {
+      if (prev.some((entry) => entry.text.toLowerCase() === normalized.toLowerCase())) {
+        return prev;
+      }
+      const next = [{ text: normalized, pinned: true }, ...prev].slice(0, 12);
+      persistShortcuts(next).catch(() => {});
+      return next;
+    });
+  }, [inputText, persistShortcuts]);
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top', 'left', 'right']}>
@@ -205,14 +307,28 @@ export default function ChatRoomScreen() {
 
         <View className="px-4 pb-2">
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <Pressable
+              onPress={saveInputAsShortcut}
+              className="mr-2 rounded-full px-3 py-2"
+              style={{ backgroundColor: C.primarySoft }}
+              disabled={isStreaming || !inputText.trim()}
+            >
+              <AppText className="text-xs font-semibold" style={{ color: C.primary }}>
+                Save prompt
+              </AppText>
+            </Pressable>
             {quickActions.map((action) => (
               <Pressable
-                key={action}
-                onPress={() => handleQuickAction(action)}
+                key={action.text}
+                onPress={() => handleQuickAction(action.text)}
+                onLongPress={() => togglePinnedShortcut(action.text)}
                 className="mr-2 rounded-full bg-primaryFaint px-3 py-2"
                 disabled={isStreaming}
               >
-                <AppText className="text-xs font-semibold text-primary">{action}</AppText>
+                <AppText className="text-xs font-semibold text-primary">
+                  {action.pinned ? '★ ' : ''}
+                  {action.text}
+                </AppText>
               </Pressable>
             ))}
           </ScrollView>
@@ -224,7 +340,11 @@ export default function ChatRoomScreen() {
           onSend={handleSend}
           isStreaming={isStreaming}
           onStop={stopStreaming}
-          placeholder={roomAgents.length > 0 ? `Message ${roomAgents[0].name}...` : 'Message...'}
+          placeholder={
+            roomAgents.length > 0
+              ? t('chat.message_placeholder', { name: roomAgents[0].name })
+              : t('chat.message_default_placeholder', { defaultValue: 'Message...' })
+          }
         />
       </KeyboardAvoidingView>
 
