@@ -223,7 +223,7 @@ class CrewOrchestrator:
         )
 
         locale_instruction = (
-            f" Ensure you respond in {resolve_language(accept_language)}."
+            f"\n\nIMPORTANT: You must respond in the following language locale: {resolve_language(accept_language)}."
             if accept_language
             else ""
         )

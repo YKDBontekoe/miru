@@ -28,7 +28,7 @@ export const HomeTaskRow = React.memo(function HomeTaskRow({
   return (
     <ScalePressable onPress={onToggle} className="flex-row items-center py-2">
       <View
-        className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${task.completed ? 'border-primary bg-primary' : 'border-faint bg-transparent'}`}
+        className={`w-6 h-6 rounded-full border-2 items-center justify-center me-3 ${task.completed ? 'border-primary bg-primary' : 'border-faint bg-transparent'}`}
       >
         {task.completed && <Ionicons name="checkmark" size={13} color="white" />}
       </View>
@@ -39,7 +39,7 @@ export const HomeTaskRow = React.memo(function HomeTaskRow({
         {task.title}
       </AppText>
       {!!dateText && (
-        <View className="bg-primaryFaint rounded-md px-2 py-1 ml-2">
+        <View className="bg-primaryFaint rounded-md px-2 py-1 ms-2">
           <AppText className="text-xs text-primary font-semibold">{dateText}</AppText>
         </View>
       )}
