@@ -14,7 +14,7 @@ const C = {
   surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
   text: DESIGN_TOKENS.colors.text,
   muted: DESIGN_TOKENS.colors.muted,
-  faint: '#97AEA3',
+  faint: DESIGN_TOKENS.colors.faint,
   primary: DESIGN_TOKENS.colors.primary,
 };
 

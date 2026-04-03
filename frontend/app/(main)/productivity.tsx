@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
@@ -30,7 +30,7 @@ const T = {
   onSurface: {
     light: DESIGN_TOKENS.colors.text,
     mutedLight: DESIGN_TOKENS.colors.muted,
-    disabledLight: '#97AEA3',
+    disabledLight: DESIGN_TOKENS.colors.faint,
   },
   primary: {
     DEFAULT: DESIGN_TOKENS.colors.primary,
@@ -54,10 +54,11 @@ type RenderItemData = {
 
 export default function ProductivityScreen() {
   const { t, i18n } = useTranslation();
-  const { openCreateTask, openCreateNote } = useLocalSearchParams<{
-    openCreateTask?: string;
-    openCreateNote?: string;
-  }>();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
+  const openCreateTask = params.openCreateTask;
+  const openCreateNote = params.openCreateNote;
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,14 +88,26 @@ export default function ProductivityScreen() {
   useEffect(() => {
     if (openCreateTask === '1' || openCreateTask === 'true') {
       setShowCreateTask(true);
+      const nextParams = Object.fromEntries(
+        Object.entries(params).filter(
+          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
+        )
+      );
+      router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateTask]);
+  }, [openCreateTask, params, pathname, router]);
 
   useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
       setShowCreateNote(true);
+      const nextParams = Object.fromEntries(
+        Object.entries(params).filter(
+          ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
+        )
+      );
+      router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateNote]);
+  }, [openCreateNote, params, pathname, router]);
 
   const handleRefresh = useCallback(() => {
     fetchNotes();
@@ -269,7 +282,11 @@ export default function ProductivityScreen() {
 
   const dataToRender: RenderItemData[] =
     activeTab === 'today'
-      ? todayData
+      ? todayData.filter((entry) => {
+          if (entry.type !== 'task') return true;
+          if (taskPriority === 'all') return true;
+          return getTaskPriority(entry.item as Task) === taskPriority;
+        })
       : activeTab === 'all'
         ? mixedData
         : activeTab === 'notes'

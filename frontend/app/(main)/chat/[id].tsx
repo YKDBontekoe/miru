@@ -36,9 +36,17 @@ const C = {
 };
 
 interface RoomShortcut {
+  id: string;
   text: string;
   pinned: boolean;
 }
+
+const BUILT_IN_SHORTCUT_IDS = {
+  planDay: 'builtin.plan_day',
+  extractActions: 'builtin.extract_actions',
+  scheduleWeek: 'builtin.schedule_week',
+  topPriorities: 'builtin.top_priorities',
+} as const;
 
 export default function ChatRoomScreen() {
   const { t } = useTranslation();
@@ -130,20 +138,36 @@ export default function ChatRoomScreen() {
     }
   };
 
-  const defaultQuickActions = React.useMemo(
+  const defaultQuickActions = React.useMemo<RoomShortcut[]>(
     () => [
-      t('chat.quick_actions.plan_day', {
-        defaultValue: 'Plan my day from my open tasks and events.',
-      }),
-      t('chat.quick_actions.extract_actions', {
-        defaultValue: 'Extract action items from this chat.',
-      }),
-      t('chat.quick_actions.schedule_week', {
-        defaultValue: 'Schedule my most important task this week.',
-      }),
-      t('chat.quick_actions.top_priorities', {
-        defaultValue: 'What are my top 3 priorities today?',
-      }),
+      {
+        id: BUILT_IN_SHORTCUT_IDS.planDay,
+        text: t('chat.quick_actions.plan_day', {
+          defaultValue: 'Plan my day from my open tasks and events.',
+        }),
+        pinned: false,
+      },
+      {
+        id: BUILT_IN_SHORTCUT_IDS.extractActions,
+        text: t('chat.quick_actions.extract_actions', {
+          defaultValue: 'Extract action items from this chat.',
+        }),
+        pinned: false,
+      },
+      {
+        id: BUILT_IN_SHORTCUT_IDS.scheduleWeek,
+        text: t('chat.quick_actions.schedule_week', {
+          defaultValue: 'Schedule my most important task this week.',
+        }),
+        pinned: false,
+      },
+      {
+        id: BUILT_IN_SHORTCUT_IDS.topPriorities,
+        text: t('chat.quick_actions.top_priorities', {
+          defaultValue: 'What are my top 3 priorities today?',
+        }),
+        pinned: false,
+      },
     ],
     [t]
   );
@@ -159,29 +183,47 @@ export default function ChatRoomScreen() {
           typeof rawResult === 'string' || rawResult === null ? rawResult : await rawResult;
         if (!raw) {
           if (mounted) {
-            setShortcuts(defaultQuickActions.map((text) => ({ text, pinned: false })));
+            setShortcuts(defaultQuickActions);
           }
           return;
         }
         try {
-          const parsed = JSON.parse(raw) as RoomShortcut[];
-          const withDefaults = [...parsed];
-          defaultQuickActions.forEach((text) => {
-            if (!withDefaults.some((entry) => entry.text === text)) {
-              withDefaults.push({ text, pinned: false });
-            }
+          const parsed = JSON.parse(raw) as Partial<RoomShortcut>[];
+          const normalizedParsed = parsed
+            .map((entry, index) => {
+              const existingBuiltIn = defaultQuickActions.find((builtin) => builtin.text === entry.text);
+              const entryText = typeof entry.text === 'string' ? entry.text : '';
+              return {
+                id:
+                  typeof entry.id === 'string' && entry.id.length > 0
+                    ? entry.id
+                    : existingBuiltIn?.id ?? `custom.legacy.${index}`,
+                text: entryText,
+                pinned: Boolean(entry.pinned),
+              };
+            })
+            .filter((entry) => entry.text.length > 0);
+          const mergedById = new Map(normalizedParsed.map((entry) => [entry.id, entry]));
+          defaultQuickActions.forEach((entry) => {
+            const existing = mergedById.get(entry.id);
+            mergedById.set(entry.id, {
+              id: entry.id,
+              text: entry.text,
+              pinned: existing?.pinned ?? false,
+            });
           });
+          const withDefaults = Array.from(mergedById.values());
           if (mounted) {
             setShortcuts(withDefaults);
           }
         } catch {
           if (mounted) {
-            setShortcuts(defaultQuickActions.map((text) => ({ text, pinned: false })));
+            setShortcuts(defaultQuickActions);
           }
         }
       } catch {
         if (mounted) {
-          setShortcuts(defaultQuickActions.map((text) => ({ text, pinned: false })));
+          setShortcuts(defaultQuickActions);
         }
       }
     };
@@ -215,10 +257,10 @@ export default function ChatRoomScreen() {
   );
 
   const togglePinnedShortcut = useCallback(
-    (text: string) => {
+    (id: string) => {
       setShortcuts((prev) => {
         const next = prev.map((entry) =>
-          entry.text === text ? { ...entry, pinned: !entry.pinned } : entry
+          entry.id === id ? { ...entry, pinned: !entry.pinned } : entry
         );
         persistShortcuts(next).catch(() => {});
         return next;
@@ -234,7 +276,10 @@ export default function ChatRoomScreen() {
       if (prev.some((entry) => entry.text.toLowerCase() === normalized.toLowerCase())) {
         return prev;
       }
-      const next = [{ text: normalized, pinned: true }, ...prev].slice(0, 12);
+      const next = [{ id: `custom.${Date.now()}`, text: normalized, pinned: true }, ...prev].slice(
+        0,
+        12
+      );
       persistShortcuts(next).catch(() => {});
       return next;
     });
@@ -319,9 +364,9 @@ export default function ChatRoomScreen() {
             </Pressable>
             {quickActions.map((action) => (
               <Pressable
-                key={action.text}
+                key={action.id}
                 onPress={() => handleQuickAction(action.text)}
-                onLongPress={() => togglePinnedShortcut(action.text)}
+                onLongPress={() => togglePinnedShortcut(action.id)}
                 className="mr-2 rounded-full bg-primaryFaint px-3 py-2"
                 disabled={isStreaming}
               >

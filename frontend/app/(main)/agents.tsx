@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../../src/components/AppText';
 import { SkeletonAgentCard } from '../../src/components/SkeletonCard';
@@ -36,11 +36,13 @@ export default function AgentsScreen() {
     border: DESIGN_TOKENS.colors.border,
     text: DESIGN_TOKENS.colors.text,
     muted: DESIGN_TOKENS.colors.muted,
-    faint: '#97AEA3',
+    faint: DESIGN_TOKENS.colors.faint,
     primary: DESIGN_TOKENS.colors.primary,
   };
   const router = useRouter();
-  const { openCreate } = useLocalSearchParams<{ openCreate?: string }>();
+  const pathname = usePathname();
+  const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
+  const openCreate = params.openCreate;
   const {
     agents,
     fetchAgents,
@@ -84,8 +86,17 @@ export default function AgentsScreen() {
   useEffect(() => {
     if (openCreate === '1' || openCreate === 'true') {
       setShowCreateSheet(true);
+      const nextParams = Object.fromEntries(
+        Object.entries(params).filter(
+          ([key, value]) => key !== 'openCreate' && typeof value === 'string'
+        )
+      );
+      router.replace({
+        pathname,
+        params: nextParams,
+      });
     }
-  }, [openCreate]);
+  }, [openCreate, params, pathname, router]);
 
   // Debounce search to avoid filtering on every keystroke
   useEffect(() => {
@@ -131,15 +142,17 @@ export default function AgentsScreen() {
     templates.forEach((template) => {
       const haystack =
         `${template.name} ${template.description} ${template.goals.join(' ')}`.toLowerCase();
-      if (haystack.includes('plan') || haystack.includes('task') || haystack.includes('schedule')) {
+      const planningMatch =
+        haystack.includes('plan') || haystack.includes('task') || haystack.includes('schedule');
+      const creativeMatch =
+        haystack.includes('creative') || haystack.includes('writer') || haystack.includes('design');
+      if (planningMatch) {
         counts.planning += 1;
-      } else if (
-        haystack.includes('creative') ||
-        haystack.includes('writer') ||
-        haystack.includes('design')
-      ) {
+      }
+      if (creativeMatch) {
         counts.creative += 1;
-      } else {
+      }
+      if (!planningMatch && !creativeMatch) {
         counts.work += 1;
       }
     });

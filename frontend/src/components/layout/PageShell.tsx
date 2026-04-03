@@ -22,14 +22,11 @@ export const PageSectionCard = ({
 }) => {
   return (
     <View
+      className="rounded-3xl border p-4 mb-3.5"
       style={[
         {
           backgroundColor: DESIGN_TOKENS.colors.surface,
-          borderRadius: DESIGN_TOKENS.radius.xl,
-          borderWidth: 1,
           borderColor: DESIGN_TOKENS.colors.border,
-          padding: 16,
-          marginBottom: 14,
           ...DESIGN_TOKENS.shadow,
         },
         style,
@@ -48,15 +45,8 @@ export const PageSectionHeader = ({
   action?: React.ReactNode;
 }) => {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-      }}
-    >
-      <AppText variant="h3" style={{ color: DESIGN_TOKENS.colors.text, fontWeight: '700' }}>
+    <View className="flex-row items-center justify-between mb-3">
+      <AppText variant="h3" className="font-bold" style={{ color: DESIGN_TOKENS.colors.text }}>
         {title}
       </AppText>
       {action ?? null}
@@ -64,23 +54,20 @@ export const PageSectionHeader = ({
   );
 };
 
-function PageHeader({
+const PageHeader = ({
   title,
   subtitle,
   right,
-}: Pick<PageShellProps, 'title' | 'subtitle' | 'right'>) {
+}: Pick<PageShellProps, 'title' | 'subtitle' | 'right'>) => {
   return (
-    <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText
-            variant="h1"
-            style={{ color: DESIGN_TOKENS.colors.text, fontSize: 28, fontWeight: '800' }}
-          >
+    <View className="px-4 pt-3 pb-2.5">
+      <View className="flex-row justify-between items-center">
+        <View className="flex-1 pe-2">
+          <AppText variant="h1" className="text-[28px] font-extrabold" style={{ color: DESIGN_TOKENS.colors.text }}>
             {title}
           </AppText>
           {subtitle ? (
-            <AppText style={{ color: DESIGN_TOKENS.colors.muted, marginTop: 2, fontSize: 13 }}>
+            <AppText className="mt-0.5 text-[13px]" style={{ color: DESIGN_TOKENS.colors.muted }}>
               {subtitle}
             </AppText>
           ) : null}
@@ -89,7 +76,7 @@ function PageHeader({
       </View>
     </View>
   );
-}
+};
 
 export function PageShell({
   title,
@@ -99,23 +86,23 @@ export function PageShell({
   scroll = true,
   contentStyle,
 }: PageShellProps) {
+  const baseBottomPadding = 40 + (Platform.OS === 'ios' ? 32 : 16) + 64;
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: DESIGN_TOKENS.colors.pageBg }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: DESIGN_TOKENS.colors.pageBg }}>
       <PageHeader title={title} subtitle={subtitle} right={right} />
 
       {scroll ? (
         <ScrollView
+          className="px-4"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 40 + (Platform.OS === 'ios' ? 32 : 16) + 64,
-            ...(contentStyle ?? {}),
-          }}
+          contentContainerStyle={[{ paddingBottom: baseBottomPadding }, contentStyle]}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={[{ flex: 1, paddingHorizontal: 16 }, contentStyle]}>{children}</View>
+        <View className="flex-1 px-4" style={contentStyle}>
+          {children}
+        </View>
       )}
     </SafeAreaView>
   );

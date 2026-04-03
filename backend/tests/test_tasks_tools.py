@@ -65,7 +65,9 @@ async def test_create_task_tool_success(mock_service: MagicMock) -> None:
     result = await tool._run(title="New Task", description="Some desc", due_date=due_date)
 
     assert f"Successfully created task 'New Task' with ID {task_id}." in result
-    created_task_data = mock_service.return_value.create_task.await_args.kwargs["task_data"]
+    create_call = mock_service.return_value.create_task.await_args
+    assert create_call is not None
+    created_task_data = create_call.kwargs["task_data"]
     assert created_task_data.due_date == due_date
 
 
@@ -90,7 +92,9 @@ async def test_update_task_tool_success(mock_service: MagicMock) -> None:
     )
 
     assert f"Successfully updated task '{mock_task.title}' with ID {task_id}." in result
-    update_data = mock_service.return_value.update_task.await_args.kwargs["update_data"]
+    update_call = mock_service.return_value.update_task.await_args
+    assert update_call is not None
+    update_data = update_call.kwargs["update_data"]
     assert update_data.due_date == due_date
 
 

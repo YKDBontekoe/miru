@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, RefreshControl, FlatList, Platform } from 'react-native';
+import { View, RefreshControl, FlatList, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
@@ -24,13 +24,15 @@ const C = {
   border: DESIGN_TOKENS.colors.border,
   text: DESIGN_TOKENS.colors.text,
   muted: DESIGN_TOKENS.colors.muted,
-  faint: '#97AEA3',
+  faint: DESIGN_TOKENS.colors.faint,
   primary: DESIGN_TOKENS.colors.primary,
   primarySurface: DESIGN_TOKENS.colors.primarySoft,
 };
 
 export default function ChatListScreen() {
-  const { openCreate } = useLocalSearchParams<{ openCreate?: string }>();
+  const pathname = usePathname();
+  const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
+  const openCreate = params.openCreate;
   const { t } = useTranslation();
   const router = useRouter();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -46,8 +48,17 @@ export default function ChatListScreen() {
   useEffect(() => {
     if (openCreate === '1' || openCreate === 'true') {
       setShowCreateModal(true);
+      const nextParams = Object.fromEntries(
+        Object.entries(params).filter(
+          ([key, value]) => key !== 'openCreate' && typeof value === 'string'
+        )
+      );
+      router.replace({
+        pathname,
+        params: nextParams,
+      });
     }
-  }, [openCreate]);
+  }, [openCreate, params, pathname, router]);
 
   useEffect(() => {
     if (rooms.length === 0) return;
@@ -66,14 +77,17 @@ export default function ChatListScreen() {
           newRoomAgents[res.roomId] = res.agents;
         }
         setRoomAgents(newRoomAgents);
-      } catch {}
+      } catch (err) {
+        console.error('Failed to load room agents', { err, roomCount: rooms.length });
+        Alert.alert(t('chat.error'), t('chat.failed_to_load_agents'));
+      }
     };
 
     loadRoomAgents();
     return () => {
       isMounted = false;
     };
-  }, [rooms]);
+  }, [rooms, t]);
 
   const renderRoomItem = React.useCallback(
     ({ item: room }: { item: ChatRoom }) => (

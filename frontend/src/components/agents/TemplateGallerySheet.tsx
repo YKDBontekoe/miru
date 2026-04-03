@@ -63,13 +63,14 @@ export function TemplateGallerySheet({
           haystack.includes('design')
         );
       }
-      return !(
-        haystack.includes('plan') ||
-        haystack.includes('task') ||
-        haystack.includes('schedule') ||
-        haystack.includes('creative') ||
-        haystack.includes('writer') ||
-        haystack.includes('design')
+      return (
+        haystack.includes('work') ||
+        haystack.includes('job') ||
+        haystack.includes('office') ||
+        haystack.includes('productivity') ||
+        haystack.includes('business') ||
+        haystack.includes('task management') ||
+        haystack.includes('professional')
       );
     });
   }, [templates, category]);

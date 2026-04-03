@@ -17,6 +17,7 @@ describe('PageShell', () => {
     );
 
     expect(getByText('Workspace')).toBeTruthy();
+    expect(getByText('Consistency test')).toBeTruthy();
     expect(getByText('Section')).toBeTruthy();
     expect(toJSON()).toMatchSnapshot();
   });

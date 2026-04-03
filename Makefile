@@ -17,8 +17,9 @@ setup-backend:
 
 # Install pre-commit hooks
 setup-hooks:
-	cp .github/hooks/pre-commit .git/hooks/pre-commit
-	chmod +x .git/hooks/pre-commit
+	rm -f .git/hooks/pre-commit
+	ln -s ../../.github/hooks/pre-commit .git/hooks/pre-commit
+	chmod +x .github/hooks/pre-commit
 	@echo "Pre-commit hooks installed."
 
 # Run the FastAPI server (requires backend/.env to be present)

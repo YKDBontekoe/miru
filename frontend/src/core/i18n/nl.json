@@ -42,7 +42,37 @@
       "forget_memory_confirm": "Moet Miru dit vergeten?",
       "forget_memory_desc": "Weet je zeker dat je \"{{content}}\" wil vergeten?",
       "error": "Fout",
-      "delete_memory_failed": "Verwijderen van herinnering mislukt."
+      "delete_memory_failed": "Verwijderen van herinnering mislukt.",
+      "done": "Klaar",
+      "exportError": "Je gegevens kunnen nu niet worden geëxporteerd.",
+      "removedAllData": "Alle persoonlijke gegevens zijn verwijderd.",
+      "removeDataFailed": "Sommige gegevens konden niet worden verwijderd."
+    },
+    "appearance": {
+      "title": "Weergave",
+      "follow_system": "Volg systeem",
+      "auto": "Auto",
+      "dark": "Donker",
+      "light": "Licht"
+    },
+    "data": "Gegevens",
+    "deleteAllTitle": "Alle app-gegevens verwijderen?",
+    "deleteAllMessage": "Dit verwijdert alle herinneringen, notities en taken uit je account.",
+    "dailySummary": {
+      "title": "Dagelijkse samenvatting",
+      "desc": "Ochtendoverzicht van taken en gebeurtenissen"
+    },
+    "mentions": {
+      "title": "Vermeldingen en antwoorden",
+      "desc": "Ontvang meldingen wanneer agenten je naam noemen"
+    },
+    "export": {
+      "title": "Mijn gegevens exporteren",
+      "desc": "Download herinneringen, notities en taken als JSON"
+    },
+    "deleteAll": {
+      "title": "Alle persoonlijke gegevens verwijderen",
+      "desc": "Verwijder herinneringen, notities en taken permanent"
     }
   },
   "home": {
@@ -118,6 +148,13 @@
   },
   "common": {
     "close": "Sluiten"
+  },
+  "quickActions": {
+    "title": "Snelle acties",
+    "newChat": "Nieuwe chat",
+    "newAgent": "Nieuwe agent",
+    "newTask": "Nieuwe taak",
+    "newNote": "Nieuwe notitie"
   },
   "chat": {
     "title": "Miru",

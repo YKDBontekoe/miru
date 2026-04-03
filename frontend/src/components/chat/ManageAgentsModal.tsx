@@ -15,7 +15,7 @@ const C = {
   border: DESIGN_TOKENS.colors.border,
   text: DESIGN_TOKENS.colors.text,
   muted: DESIGN_TOKENS.colors.muted,
-  faint: '#97AEA3',
+  faint: DESIGN_TOKENS.colors.faint,
   primary: DESIGN_TOKENS.colors.primary,
   primarySurface: DESIGN_TOKENS.colors.primarySoft,
 };
@@ -169,10 +169,17 @@ export const ManageAgentsModal = ({
                     </View>
                     <ScalePressable
                       onPress={() => onRemoveAgent(agent.id)}
-                      className="bg-[#FEE2E2] rounded-lg px-2.5 py-1 flex-row items-center gap-1"
+                      className="rounded-lg px-2.5 py-1 flex-row items-center gap-1 border"
+                      style={{
+                        backgroundColor: DESIGN_TOKENS.colors.destructiveSoft,
+                        borderColor: DESIGN_TOKENS.colors.destructiveBorder,
+                      }}
                     >
-                      <Ionicons name="remove" size={13} color="#EF4444" />
-                      <AppText className="text-[#EF4444] text-xs font-semibold">
+                      <Ionicons name="remove" size={13} color={DESIGN_TOKENS.colors.destructive} />
+                      <AppText
+                        className="text-xs font-semibold"
+                        style={{ color: DESIGN_TOKENS.colors.destructive }}
+                      >
                         {t('manageAgents.remove', 'Remove')}
                       </AppText>
                     </ScalePressable>
