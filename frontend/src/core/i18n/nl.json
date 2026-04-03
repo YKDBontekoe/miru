@@ -54,7 +54,26 @@
     "sections": {
       "quick_actions": "Snelle acties",
       "your_agents": "Jouw agenten",
-      "recent_chats": "Recente chats"
+      "recent_chats": "Recente chats",
+      "focus_board": "Focusbord",
+      "today_timeline": "Vandaag tijdlijn"
+    },
+    "hero": {
+      "today_focus": "Focus vandaag",
+      "tasks_due_today_one": "{{count}} taak vandaag",
+      "tasks_due_today_other": "{{count}} taken vandaag",
+      "no_deadlines": "Geen deadlines vandaag",
+      "completion": "Voortgang",
+      "complete": "voltooid"
+    },
+    "focus": {
+      "completed_one": "{{count}} voltooid",
+      "completed_other": "{{count}} voltooid",
+      "remaining_one": "{{count}} open",
+      "remaining_other": "{{count}} open"
+    },
+    "events": {
+      "none": "Geen aankomende evenementen"
     },
     "actions": {
       "new_chat": "Nieuwe chat",
@@ -88,6 +107,7 @@
       "desc": "Maak een agent aan en start een chat om te beginnen."
     },
     "time": {
+      "just_now": "zojuist",
       "minutes_ago_one": "{{count}}m geleden",
       "minutes_ago_other": "{{count}}m geleden",
       "hours_ago_one": "{{count}}u geleden",

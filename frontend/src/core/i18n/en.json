@@ -54,7 +54,26 @@
     "sections": {
       "quick_actions": "Quick Actions",
       "your_agents": "Your Agents",
-      "recent_chats": "Recent Chats"
+      "recent_chats": "Recent Chats",
+      "focus_board": "Focus board",
+      "today_timeline": "Today timeline"
+    },
+    "hero": {
+      "today_focus": "Today focus",
+      "tasks_due_today_one": "{{count}} task due today",
+      "tasks_due_today_other": "{{count}} tasks due today",
+      "no_deadlines": "No deadlines today",
+      "completion": "Completion",
+      "complete": "complete"
+    },
+    "focus": {
+      "completed_one": "{{count}} completed",
+      "completed_other": "{{count}} completed",
+      "remaining_one": "{{count}} remaining",
+      "remaining_other": "{{count}} remaining"
+    },
+    "events": {
+      "none": "No upcoming events"
     },
     "actions": {
       "new_chat": "New Chat",
@@ -88,6 +107,7 @@
       "desc": "Create an agent and start a chat to get going."
     },
     "time": {
+      "just_now": "just now",
       "minutes_ago_one": "{{count}}m ago",
       "minutes_ago_other": "{{count}}m ago",
       "hours_ago_one": "{{count}}h ago",

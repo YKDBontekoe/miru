@@ -1,172 +1,106 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, FlatList, RefreshControl, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Platform, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
-import { useChatStore } from '../../src/store/useChatStore';
-import { useAgentStore } from '../../src/store/useAgentStore';
-import { useProductivityStore } from '../../src/store/useProductivityStore';
-import { useAuthStore } from '../../src/store/useAuthStore';
-import { Agent, ChatRoom, Task } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
-
 import {
-  HomeCard,
+  HomeActionTile,
+  HomeAgentBadge,
+  HomeChatRow,
+  HomeHeroCard,
   HomeSectionHeader,
-  HomeQuickAction,
-  HomeRecentChatRow,
+  HomeSurfaceCard,
   HomeTaskRow,
-  HomeAgentChip,
-  HomeNewChatModal,
-} from '@/components/home';
+} from '@/components/home/HomeDashboardParts';
+import { HomeNewChatModal } from '@/components/home';
+import { HOME_COLORS } from '@/components/home/homeTheme';
+import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
+import { useAgentStore } from '../../src/store/useAgentStore';
+import { useAuthStore } from '../../src/store/useAuthStore';
+import { useChatStore } from '../../src/store/useChatStore';
+import { useProductivityStore } from '../../src/store/useProductivityStore';
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
-const C = {
-  bg: '#F4F6FF',
-  surface: '#FFFFFF',
-  surfaceHigh: '#EEF2FF',
-  border: '#E6EAFF',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-  primary: '#2563EB',
-  primaryMid: '#3B82F6',
-  primaryLight: '#DBEAFE',
-  primaryFaint: '#EEF4FF',
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function getGreeting(hour: number, t: (k: string) => string): string {
-  if (hour < 12) return t('home.greeting.morning');
-  if (hour < 17) return t('home.greeting.afternoon');
-  return t('home.greeting.evening');
-}
-
-function getFirstName(email?: string): string {
-  if (!email) return 'there';
-  const local = email.split('@')[0];
-  const name = local.split(/[._0-9]/)[0];
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-function getInitials(email?: string): string {
-  if (!email) return '?';
-  const local = email.split('@')[0];
-  const parts = local.split(/[._]/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return local.slice(0, 2).toUpperCase();
-}
-
-function formatDate(): string {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date());
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
+
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
   const { agents, fetchAgents } = useAgentStore();
-  const { tasks, fetchTasks, toggleTask } = useProductivityStore();
-  const [showNewChat, setShowNewChat] = useState(false);
+  const { tasks, events, fetchTasks, fetchEvents, toggleTask } = useProductivityStore();
+
   const [refreshing, setRefreshing] = useState(false);
+  const [showNewChat, setShowNewChat] = useState(false);
 
   const hour = new Date().getHours();
   const greeting = getGreeting(hour, t);
   const firstName = getFirstName(user?.email);
   const initials = getInitials(user?.email);
 
-  const recentRooms = React.useMemo(() => {
-    return [...rooms]
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 3);
-  }, [rooms]);
+  const recentRooms = useMemo(
+    () =>
+      [...rooms]
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .slice(0, 3),
+    [rooms]
+  );
 
-  const { pendingTasks, completedCount } = React.useMemo(() => {
-    const pending = tasks.filter((task) => !task.completed);
-    return {
-      pendingTasks: pending.slice(0, 4),
-      completedCount: tasks.length - pending.length,
-    };
+  const sortedPendingTasks = useMemo(
+    () =>
+      [...tasks]
+        .filter((task) => !task.completed)
+        .sort((a, b) => {
+          if (!a.due_date && !b.due_date) return 0;
+          if (!a.due_date) return 1;
+          if (!b.due_date) return -1;
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+        }),
+    [tasks]
+  );
+
+  const todayTaskCount = useMemo(() => {
+    const now = new Date();
+    return tasks.filter((task) => {
+      if (!task.due_date || task.completed) return false;
+      const due = new Date(task.due_date);
+      return !isNaN(due.getTime()) && isSameDay(now, due);
+    }).length;
   }, [tasks]);
 
-  const topAgents = React.useMemo(() => agents.slice(0, 6), [agents]);
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    return [...events]
+      .filter((event) => {
+        const end = new Date(event.end_time);
+        const start = new Date(event.start_time);
+        if (isNaN(end.getTime()) || isNaN(start.getTime())) return false;
+        return end.getTime() >= Date.now() - 15 * 60 * 1000 && isSameDay(start, now);
+      })
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+      .slice(0, 3);
+  }, [events]);
 
-  const handleRecentRoomPress = React.useCallback(
-    (id: string) => router.push(`/(main)/chat/${id}`),
-    [router]
-  );
-  const handleAgentPress = React.useCallback(() => router.push('/(main)/agents'), [router]);
-
-  const renderRecentChatRow = React.useCallback(
-    ({ item, index }: { item: ChatRoom; index: number }) => (
-      <HomeRecentChatRow room={item} onPress={() => handleRecentRoomPress(item.id)} />
-    ),
-    [handleRecentRoomPress]
-  );
-
-  const renderTaskRow = React.useCallback(
-    ({ item, index }: { item: Task; index: number }) => (
-      <HomeTaskRow task={item} onToggle={() => toggleTask(item.id)} />
-    ),
-    [toggleTask]
-  );
-
-  const renderAgentChip = React.useCallback(
-    ({ item }: { item: Agent }) => <HomeAgentChip agent={item} onPress={handleAgentPress} />,
-    [handleAgentPress]
-  );
+  const completedCount = tasks.length - sortedPendingTasks.length;
+  const completionRate = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   useEffect(() => {
-    Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
-  }, [fetchRooms, fetchAgents, fetchTasks]);
+    Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
+  }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks()]);
+    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
     setRefreshing(false);
   };
 
   if (isLoadingRooms && rooms.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 10,
-            paddingBottom: 24,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <View>
-            <View
-              style={{
-                width: 120,
-                height: 24,
-                backgroundColor: C.surfaceHigh,
-                borderRadius: 12,
-                marginBottom: 8,
-              }}
-            />
-            <View
-              style={{ width: 180, height: 28, backgroundColor: C.surfaceHigh, borderRadius: 14 }}
-            />
-          </View>
-          <View
-            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surfaceHigh }}
-          />
-        </View>
-        <View style={{ paddingHorizontal: 20 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
           <SkeletonAgentCard index={0} />
           <SkeletonAgentCard index={1} />
           <SkeletonAgentCard index={2} />
@@ -175,298 +109,249 @@ export default function HomeScreen() {
     );
   }
 
-  const stats = [
-    { value: rooms.length, label: t('home.actions.chats'), icon: 'chatbubbles' as const },
-    { value: agents.length, label: t('home.actions.agents'), icon: 'people' as const },
-    { value: completedCount, label: t('home.actions.done'), icon: 'checkmark-circle' as const },
-  ];
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
         }
-        contentContainerStyle={{ paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 64 }}
+        contentContainerStyle={{
+          paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
+        }}
       >
-        {/* ── Header ──────────────────────────────────────────────────── */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 20,
-            paddingBottom: 16,
-          }}
-        >
-          {/* Greeting row */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              marginBottom: 20,
-            }}
-          >
-            <View style={{ flex: 1, paddingRight: 16 }}>
-              <AppText style={{ fontSize: 13, color: C.muted, fontWeight: '500', marginBottom: 4 }}>
-                {greeting}
-              </AppText>
-              <AppText
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-                numberOfLines={1}
-                style={{
-                  fontSize: 30,
-                  fontWeight: '800',
-                  color: C.text,
-                  letterSpacing: -1,
-                  lineHeight: 36,
-                }}
-              >
-                {firstName}
-              </AppText>
-              <AppText style={{ fontSize: 13, color: C.faint, marginTop: 5 }}>
-                {formatDate()}
-              </AppText>
-            </View>
+        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+          <HomeHeroCard
+            greeting={greeting}
+            firstName={firstName}
+            dateText={formatDate(new Date(), i18n.language)}
+            initials={initials}
+            todayTaskCount={todayTaskCount}
+            completionRate={completionRate}
+            onSettingsPress={() => router.push('/(main)/settings')}
+            t={t}
+          />
 
-            {/* Avatar — clean circle, initials only */}
-            <ScalePressable
-              onPress={() => router.push('/(main)/settings')}
-              style={{
-                width: 46,
-                height: 46,
-                borderRadius: 23,
-                backgroundColor: C.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: C.primary,
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.25,
-                shadowRadius: 6,
-                elevation: 4,
-              }}
-            >
-              <AppText
-                style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, letterSpacing: 0.5 }}
-              >
-                {initials}
-              </AppText>
-            </ScalePressable>
-          </View>
-
-          {/* Stats bar */}
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {stats.map((stat) => (
-              <View
-                key={stat.label}
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  backgroundColor: C.surface,
-                  borderRadius: 20,
-                  paddingVertical: 14,
-                  shadowColor: '#2563EB',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.06,
-                  shadowRadius: 12,
-                  elevation: 2,
-                }}
-              >
-                <View
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 11,
-                    backgroundColor: C.primaryFaint,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 7,
-                  }}
-                >
-                  <Ionicons name={stat.icon} size={16} color={C.primary} />
-                </View>
-                <AppText
-                  style={{ fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
-                >
-                  {stat.value}
-                </AppText>
-                <AppText
-                  style={{ fontSize: 11, color: C.muted, fontWeight: '500', marginTop: 2 }}
-                  numberOfLines={1}
-                >
-                  {stat.label}
-                </AppText>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* ── Body ────────────────────────────────────────────────────── */}
-        <View style={{ paddingHorizontal: 16 }}>
-          {/* Quick actions */}
-          <HomeCard>
-            <HomeSectionHeader title={t('home.sections.quick_actions')} />
-            <View
-              style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}
-            >
-              <HomeQuickAction
+          <HomeSurfaceCard>
+            <HomeSectionHeader
+              title={t('home.sections.quick_actions')}
+              actionLabel={t('home.actions.see_all')}
+              onAction={() => router.push('/(main)/productivity')}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <HomeActionTile
                 icon="chatbubble-ellipses"
                 label={t('home.actions.new_chat')}
                 onPress={() => setShowNewChat(true)}
               />
-              <HomeQuickAction
-                icon="person-add"
+              <HomeActionTile
+                icon="people"
                 label={t('home.actions.new_agent')}
                 onPress={() => router.push('/(main)/agents')}
               />
-              <HomeQuickAction
-                icon="document-text"
-                label={t('home.actions.new_note')}
-                onPress={() => router.push('/(main)/productivity')}
-              />
-              <HomeQuickAction
+              <HomeActionTile
                 icon="checkbox"
                 label={t('home.actions.new_task')}
                 onPress={() => router.push('/(main)/productivity')}
               />
+              <HomeActionTile
+                icon="document-text"
+                label={t('home.actions.new_note')}
+                onPress={() => router.push('/(main)/productivity')}
+              />
             </View>
-          </HomeCard>
+          </HomeSurfaceCard>
 
-          {/* Recent chats */}
-          {recentRooms.length > 0 && (
-            <HomeCard>
+          <HomeSurfaceCard>
+            <HomeSectionHeader
+              title={t('home.sections.focus_board', { defaultValue: 'Focus board' })}
+              actionLabel={t('home.actions.manage')}
+              onAction={() => router.push('/(main)/productivity')}
+            />
+            <View style={{ marginBottom: 10 }}>
+              <View
+                style={{
+                  height: 8,
+                  borderRadius: 8,
+                  backgroundColor: HOME_COLORS.softSurface,
+                  overflow: 'hidden',
+                  marginBottom: 10,
+                }}
+              >
+                <View
+                  style={{
+                    width: `${completionRate}%`,
+                    height: 8,
+                    borderRadius: 8,
+                    backgroundColor: HOME_COLORS.primary,
+                  }}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                  {t('home.focus.completed', { count: completedCount, defaultValue: '{{count}} completed' })}
+                </AppText>
+                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                  {t('home.focus.remaining', {
+                    count: sortedPendingTasks.length,
+                    defaultValue: '{{count}} remaining',
+                  })}
+                </AppText>
+              </View>
+            </View>
+
+            {sortedPendingTasks.length === 0 ? (
+              <View
+                style={{
+                  borderRadius: 16,
+                  backgroundColor: HOME_COLORS.primarySoft,
+                  padding: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons name="checkmark-circle" size={20} color={HOME_COLORS.primary} />
+                <AppText
+                  variant="bodySm"
+                  style={{ marginLeft: 8, color: HOME_COLORS.text, fontWeight: '600' }}
+                >
+                  {t('home.tasks.caught_up')}
+                </AppText>
+              </View>
+            ) : (
+              sortedPendingTasks
+                .slice(0, 4)
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+            )}
+          </HomeSurfaceCard>
+
+          <HomeSurfaceCard>
+            <HomeSectionHeader
+              title={t('home.sections.today_timeline', { defaultValue: 'Today timeline' })}
+              actionLabel={t('home.actions.see_all')}
+              onAction={() => router.push('/(main)/productivity')}
+            />
+            {upcomingEvents.length === 0 ? (
+              <View
+                style={{
+                  borderRadius: 16,
+                  backgroundColor: HOME_COLORS.accentSoft,
+                  padding: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons name="sunny" size={18} color={HOME_COLORS.accent} />
+                <AppText variant="bodySm" style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}>
+                  {t('home.events.none', { defaultValue: 'No upcoming events' })}
+                </AppText>
+              </View>
+            ) : (
+              upcomingEvents.map((event) => (
+                <View
+                  key={event.id}
+                  style={{
+                    borderRadius: 16,
+                    backgroundColor: HOME_COLORS.softSurface,
+                    padding: 12,
+                    marginBottom: 8,
+                  }}
+                >
+                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+                    {event.title}
+                  </AppText>
+                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+                    {formatTimeRange(event, i18n.language)}
+                    {event.location ? ` · ${event.location}` : ''}
+                  </AppText>
+                </View>
+              ))
+            )}
+          </HomeSurfaceCard>
+
+          {recentRooms.length > 0 ? (
+            <HomeSurfaceCard>
               <HomeSectionHeader
                 title={t('home.sections.recent_chats')}
                 actionLabel={t('home.actions.see_all')}
                 onAction={() => router.push('/(main)/chat')}
               />
-              <FlatList
-                data={recentRooms}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                renderItem={renderRecentChatRow}
-              />
-            </HomeCard>
-          )}
-
-          {/* Tasks */}
-          {tasks.length > 0 && (
-            <HomeCard>
-              <HomeSectionHeader
-                title={
-                  pendingTasks.length > 0
-                    ? t('home.tasks.open_count', { count: pendingTasks.length })
-                    : t('home.tasks.all_done')
-                }
-                actionLabel={t('home.actions.see_all')}
-                onAction={() => router.push('/(main)/productivity')}
-              />
-              {pendingTasks.length === 0 ? (
-                <View style={{ alignItems: 'center', paddingVertical: 14 }}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={32}
-                    color={C.primary}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <AppText style={{ color: C.muted, fontSize: 14 }}>
-                    {t('home.tasks.caught_up')}
-                  </AppText>
-                </View>
-              ) : (
-                <FlatList
-                  data={pendingTasks}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={false}
-                  renderItem={renderTaskRow}
+              {recentRooms.map((room) => (
+                <HomeChatRow
+                  key={room.id}
+                  room={room}
+                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
+                  t={t}
                 />
-              )}
-            </HomeCard>
-          )}
+              ))}
+            </HomeSurfaceCard>
+          ) : null}
 
-          {/* Agents */}
-          {topAgents.length > 0 && (
-            <HomeCard>
+          {agents.length > 0 ? (
+            <HomeSurfaceCard>
               <HomeSectionHeader
                 title={t('home.sections.your_agents')}
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <FlatList
-                data={topAgents}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                numColumns={2}
-                columnWrapperStyle={{ flexWrap: 'wrap' }}
-                renderItem={renderAgentChip}
-              />
-            </HomeCard>
-          )}
-
-          {/* Empty state */}
-          {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms && (
-            <View style={{ alignItems: 'center', paddingTop: 40, paddingBottom: 48 }}>
-              <View
-                style={{
-                  width: 88,
-                  height: 88,
-                  borderRadius: 28,
-                  backgroundColor: C.primaryFaint,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 18,
-                }}
-              >
-                <Ionicons name="sparkles" size={38} color={C.primary} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                {agents
+                  .slice(0, 4)
+                  .map((agent) => (
+                    <HomeAgentBadge
+                      key={agent.id}
+                      agent={agent}
+                      onPress={() => router.push('/(main)/agents')}
+                    />
+                  ))}
               </View>
-              <AppText
-                style={{
-                  fontSize: 20,
-                  fontWeight: '800',
-                  color: C.text,
-                  marginBottom: 8,
-                  textAlign: 'center',
-                  letterSpacing: -0.3,
-                }}
-              >
-                {t('home.empty.title')}
-              </AppText>
-              <AppText
-                style={{
-                  textAlign: 'center',
-                  color: C.muted,
-                  paddingHorizontal: 32,
-                  marginBottom: 28,
-                  lineHeight: 22,
-                  fontSize: 14,
-                }}
-              >
-                {t('home.empty.desc')}
-              </AppText>
-              <ScalePressable
-                onPress={() => setShowNewChat(true)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: C.primary,
-                  borderRadius: 16,
-                  paddingVertical: 14,
-                  paddingHorizontal: 26,
-                  shadowColor: C.primary,
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 10,
-                  elevation: 5,
-                }}
-              >
-                <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
-                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
-                  {t('home.actions.start_chat')}
+            </HomeSurfaceCard>
+          ) : null}
+
+          {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
+            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
+              <View style={{ alignItems: 'center', paddingVertical: 18 }}>
+                <View
+                  style={{
+                    width: 76,
+                    height: 76,
+                    borderRadius: 26,
+                    backgroundColor: HOME_COLORS.primarySoft,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: 14,
+                  }}
+                >
+                  <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
+                </View>
+                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                  {t('home.empty.title')}
                 </AppText>
-              </ScalePressable>
-            </View>
-          )}
+                <AppText
+                  variant="bodySm"
+                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
+                >
+                  {t('home.empty.desc')}
+                </AppText>
+                <ScalePressable
+                  onPress={() => setShowNewChat(true)}
+                  style={{
+                    borderRadius: 16,
+                    backgroundColor: HOME_COLORS.primary,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                    {t('home.actions.start_chat')}
+                  </AppText>
+                </ScalePressable>
+              </View>
+            </HomeSurfaceCard>
+          ) : null}
         </View>
       </ScrollView>
 
