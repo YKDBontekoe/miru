@@ -137,16 +137,18 @@ class AgentService:
             await agent.capabilities.add(*caps)
 
         if agent_data.integrations:
-            for integration_id in agent_data.integrations:
-                integration = await Integration.get_or_none(id=integration_id)
-                if integration:
-                    config = agent_data.integration_configs.get(integration_id, {})
-                    await AgentIntegration.create(
-                        agent=agent,
-                        integration=integration,
-                        config=config,
-                        enabled=True,
-                    )
+            integrations = await Integration.filter(id__in=agent_data.integrations)
+            agent_integrations = [
+                AgentIntegration(
+                    agent=agent,
+                    integration=integration,
+                    config=agent_data.integration_configs.get(str(integration.id), {}),
+                    enabled=True,
+                )
+                for integration in integrations
+            ]
+            if agent_integrations:
+                await AgentIntegration.bulk_create(agent_integrations)
 
         # Refetch with relations so the response is fully populated.
         refetched = await self.repo.get_by_id(agent.pk)

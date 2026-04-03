@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -7,6 +7,19 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { useTheme } from '@/hooks/useTheme';
 import { haptic } from '@/utils/haptics';
 import { Agent } from '@/core/models';
+
+const EditGoalBadge = React.memo(
+  ({ goal, index, onRemove, C }: { goal: string; index: number; onRemove: (index: number) => void; C: any }) => (
+    <ScalePressable
+      onPress={() => onRemove(index)}
+      className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
+    >
+      <AppText className="text-primary text-xs">{goal}</AppText>
+      <Ionicons name="close" size={11} color={C.primary} />
+    </ScalePressable>
+  )
+);
+EditGoalBadge.displayName = 'EditGoalBadge';
 
 interface AgentDetailEditFormProps {
   agent: Agent;
@@ -45,6 +58,10 @@ export function AgentDetailEditForm({
       setGoalInput('');
     }
   };
+
+  const removeGoal = useCallback((idx: number) => {
+    setEditGoals((gs) => gs.filter((_, gIdx) => gIdx !== idx));
+  }, [setEditGoals]);
 
   return (
     <Animated.View entering={FadeIn.duration(200)}>
@@ -99,14 +116,13 @@ export function AgentDetailEditForm({
       {editGoals.length > 0 && (
         <View className="flex-row flex-wrap gap-2 mb-3.5">
           {editGoals.map((g, i) => (
-            <ScalePressable
+            <EditGoalBadge
               key={i}
-              onPress={() => setEditGoals((gs) => gs.filter((_, idx) => idx !== i))}
-              className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
-            >
-              <AppText className="text-primary text-xs">{g}</AppText>
-              <Ionicons name="close" size={11} color={C.primary} />
-            </ScalePressable>
+              goal={g}
+              index={i}
+              onRemove={removeGoal}
+              C={C}
+            />
           ))}
         </View>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   TextInput,
@@ -16,6 +16,29 @@ import { ScalePressable } from '../../ScalePressable';
 import { useTheme } from '../../../hooks/useTheme';
 import { haptic } from '../../../utils/haptics';
 import { TONES, getTonePrefix } from '../agentUtils';
+
+const GoalBadge = React.memo(
+  ({ goal, index, onRemove, C }: { goal: string; index: number; onRemove: (index: number) => void; C: any }) => (
+    <ScalePressable
+      onPress={() => onRemove(index)}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        backgroundColor: `${C.primary}12`,
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1,
+        borderColor: `${C.primary}25`,
+      }}
+    >
+      <AppText style={{ color: C.primary, fontSize: 12 }}>{goal}</AppText>
+      <Ionicons name="close" size={11} color={C.primary} />
+    </ScalePressable>
+  )
+);
+GoalBadge.displayName = 'GoalBadge';
 
 type Tone = (typeof TONES)[number];
 
@@ -61,6 +84,10 @@ export function CreateAgentForm({
       setGoalInput('');
     }
   };
+
+  const removeGoal = useCallback((idx: number) => {
+    setGoals((gs) => gs.filter((_, gIdx) => gIdx !== idx));
+  }, [setGoals]);
 
   const handleNameChange = (val: string) => setName(val.trimStart());
   const handlePersonalityChange = (val: string) => setPersonality(val.trimStart());
@@ -238,24 +265,13 @@ export function CreateAgentForm({
       {goals.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
           {goals.map((g, i) => (
-            <ScalePressable
+            <GoalBadge
               key={i}
-              onPress={() => setGoals((gs) => gs.filter((_, idx) => idx !== i))}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 5,
-                backgroundColor: `${C.primary}12`,
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderWidth: 1,
-                borderColor: `${C.primary}25`,
-              }}
-            >
-              <AppText style={{ color: C.primary, fontSize: 12 }}>{g}</AppText>
-              <Ionicons name="close" size={11} color={C.primary} />
-            </ScalePressable>
+              goal={g}
+              index={i}
+              onRemove={removeGoal}
+              C={C}
+            />
           ))}
         </View>
       )}
