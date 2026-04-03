@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -17,7 +17,7 @@ export const ChatBubbleRetryButton = ({ onRetry }: ChatBubbleRetryButtonProps) =
   const retryScale = useSharedValue(1);
 
   const handleRetryPressIn = () => {
-    retryScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+    retryScale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
   };
 
   const handleRetryPressOut = () => {
@@ -34,12 +34,33 @@ export const ChatBubbleRetryButton = ({ onRetry }: ChatBubbleRetryButtonProps) =
       onPress={onRetry}
       onPressIn={handleRetryPressIn}
       onPressOut={handleRetryPressOut}
-      style={retryAnimatedStyle}
-      className="flex-row items-center gap-1"
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={[styles.container, retryAnimatedStyle]}
+      hitSlop={{
+        top: theme.spacing.md,
+        bottom: theme.spacing.md,
+        left: theme.spacing.md,
+        right: theme.spacing.md,
+      }}
     >
-      <Ionicons name="refresh-outline" size={13} color={theme.colors.primary.DEFAULT} />
-      <AppText className="text-primary text-[12px] font-semibold">{t('chat.retry')}</AppText>
+      <Ionicons
+        name="refresh-outline"
+        size={theme.spacing.lg}
+        color={theme.colors.primary.DEFAULT}
+      />
+      <AppText style={styles.text}>{t('chat.retry')}</AppText>
     </AnimatedPressable>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xxs,
+  },
+  text: {
+    ...theme.typography.caption,
+    color: theme.colors.primary.DEFAULT,
+    fontWeight: '600',
+  },
+});

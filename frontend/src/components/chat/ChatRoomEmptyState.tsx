@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { Agent } from '@/core/models';
@@ -12,18 +13,47 @@ interface ChatRoomEmptyStateProps {
 
 export const ChatRoomEmptyState = ({ roomAgents }: ChatRoomEmptyStateProps) => {
   const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
     <View style={styles.container}>
-      <View style={styles.iconContainer}>
+      <View
+        style={[
+          styles.iconContainer,
+          {
+            backgroundColor: isDark
+              ? theme.colors.surface.highestDark
+              : theme.colors.primary.surfaceLight,
+          },
+        ]}
+      >
         <Ionicons
           name="chatbubble-ellipses-outline"
-          size={30}
+          size={theme.spacing.xxxl}
           color={theme.colors.primary.DEFAULT}
         />
       </View>
-      <AppText style={styles.title}>{t('chat.start_conversation')}</AppText>
-      <AppText style={styles.subtitle}>
+      <AppText
+        style={[
+          styles.title,
+          {
+            color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+          },
+        ]}
+      >
+        {t('chat.start_conversation')}
+      </AppText>
+      <AppText
+        style={[
+          styles.subtitle,
+          {
+            color: isDark
+              ? theme.colors.onSurface.disabledDark
+              : theme.colors.onSurface.disabledLight,
+          },
+        ]}
+      >
         {roomAgents.length > 0
           ? t('chat.room_agents_status', {
               count: roomAgents.length,
@@ -40,26 +70,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 64,
+    paddingVertical: theme.spacing.colossal,
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: theme.colors.primary.surface,
+    width: theme.spacing.colossal,
+    height: theme.spacing.colossal,
+    borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,
   },
   title: {
-    color: theme.colors.onSurface.light,
-    fontWeight: '600',
-    fontSize: 16,
-    marginBottom: 6,
+    ...theme.typography.h3,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    color: theme.colors.onSurface.disabledLight,
+    ...theme.typography.bodySm,
     textAlign: 'center',
-    fontSize: 14,
+    paddingHorizontal: theme.spacing.xxl,
   },
 });
