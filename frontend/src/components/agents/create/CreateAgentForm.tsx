@@ -11,30 +11,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../../AppText';
-import { ScalePressable } from '../../ScalePressable';
-import { useTheme } from '../../../hooks/useTheme';
-import { haptic } from '../../../utils/haptics';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { haptic } from '@/utils/haptics';
 import { TONES, getTonePrefix } from '../agentUtils';
 
 const GoalBadge = React.memo(
-  ({ goal, index, onRemove, C }: { goal: string; index: number; onRemove: (index: number) => void; C: any }) => (
+  ({ goal, index, onRemove }: { goal: string; index: number; onRemove: (index: number) => void }) => (
     <ScalePressable
       onPress={() => onRemove(index)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 5,
-        backgroundColor: `${C.primary}12`,
-        borderRadius: 20,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderWidth: 1,
-        borderColor: `${C.primary}25`,
-      }}
+      className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
     >
-      <AppText style={{ color: C.primary, fontSize: 12 }}>{goal}</AppText>
-      <Ionicons name="close" size={11} color={C.primary} />
+      <AppText className="text-primary text-xs">{goal}</AppText>
+      <Ionicons name="close" size={11} className="text-primary" />
     </ScalePressable>
   )
 );
@@ -270,7 +260,6 @@ export function CreateAgentForm({
               goal={g}
               index={i}
               onRemove={removeGoal}
-              C={C}
             />
           ))}
         </View>
