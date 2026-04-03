@@ -9,6 +9,7 @@ jest.mock('../src/core/api/ApiService', () => ({
     getRooms: jest.fn(),
     getRoomMessages: jest.fn(),
     createRoom: jest.fn(),
+    deleteRoom: jest.fn(),
     addAgentToRoom: jest.fn(),
   },
 }));
@@ -253,6 +254,52 @@ it('can create a room', async () => {
 
   expect(room).toEqual(mockRoom);
   expect(result.current.rooms).toContainEqual(mockRoom);
+});
+
+it('can delete a room and rollback state', async () => {
+  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01' };
+  (ApiService.deleteRoom as jest.Mock).mockResolvedValue(undefined);
+
+  useChatStore.setState({
+    rooms: [mockRoom],
+    joinedRooms: { 'r1': true, 'r2': true },
+    agentActivity: { 'r1': { room_id: 'r1', agent_names: ['Agent'], activity: 'thinking', detail: '' }, 'r2': null },
+  });
+
+  const { result } = renderHook(() => useChatStore());
+
+  await act(async () => {
+    await result.current.deleteRoom('r1');
+  });
+
+  expect(ApiService.deleteRoom).toHaveBeenCalledWith('r1');
+  expect(result.current.rooms).not.toContainEqual(mockRoom);
+  expect(result.current.joinedRooms['r1']).toBeUndefined();
+  expect(result.current.agentActivity['r1']).toBeUndefined();
+  expect(result.current.joinedRooms['r2']).toBe(true);
+  expect(result.current.agentActivity['r2']).toBeNull();
+});
+
+it('deletes a room even if API throws', async () => {
+  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01' };
+  (ApiService.deleteRoom as jest.Mock).mockRejectedValue(new Error('API error'));
+
+  useChatStore.setState({
+    rooms: [mockRoom],
+    joinedRooms: { 'r1': true },
+    agentActivity: { 'r1': { room_id: 'r1', agent_names: ['Agent'], activity: 'thinking', detail: '' } },
+  });
+
+  const { result } = renderHook(() => useChatStore());
+
+  await act(async () => {
+    await result.current.deleteRoom('r1');
+  });
+
+  expect(ApiService.deleteRoom).toHaveBeenCalledWith('r1');
+  expect(result.current.rooms).not.toContainEqual(mockRoom);
+  expect(result.current.joinedRooms['r1']).toBeUndefined();
+  expect(result.current.agentActivity['r1']).toBeUndefined();
 });
 
 it('can add an agent to a room', async () => {
