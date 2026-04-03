@@ -80,19 +80,6 @@ class OpenRouterClient:
         )
         return response.data[0].embedding
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type(
-            (
-                openai.APIConnectionError,
-                openai.RateLimitError,
-                openai.InternalServerError,
-                openai.APITimeoutError,
-            )
-        ),
-        reraise=True,
-    )
     def _inject_locale_system_message(
         self, messages: list[ChatCompletionMessageParam], accept_language: str | None
     ) -> list[ChatCompletionMessageParam]:
@@ -106,6 +93,19 @@ class OpenRouterClient:
             ]
         return messages
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(
+            (
+                openai.APIConnectionError,
+                openai.RateLimitError,
+                openai.InternalServerError,
+                openai.APITimeoutError,
+            )
+        ),
+        reraise=True,
+    )
     async def stream_chat(
         self,
         messages: list[ChatCompletionMessageParam],
