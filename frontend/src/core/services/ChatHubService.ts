@@ -38,6 +38,11 @@ export interface HubMessageData {
   clientTempId?: string | null;
 }
 
+export interface HubErrorData {
+  message: string;
+  room_id?: string;
+}
+
 export type HubFrameType =
   | 'connected'
   | 'pong'
@@ -50,7 +55,7 @@ export interface HubFrame {
   type: HubFrameType;
   user_id?: string;
   room_id?: string;
-  data?: HubMessageData | AgentActivityData | { message: string };
+  data?: HubMessageData | AgentActivityData | HubErrorData;
 }
 
 // ---------------------------------------------------------------------------

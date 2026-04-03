@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ApiService } from '../core/api/ApiService';
+import { getApiErrorMessage } from '../core/api/errors';
 import { CalendarEvent, Note, Task } from '../core/models';
 
 interface ProductivityState {
@@ -7,12 +8,13 @@ interface ProductivityState {
   tasks: Task[];
   events: CalendarEvent[];
   isLoading: boolean;
+  error: string | null;
   fetchNotes: () => Promise<void>;
   fetchTasks: () => Promise<void>;
   fetchEvents: () => Promise<void>;
   createNote: (title: string, content: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
-  createTask: (title: string) => Promise<void>;
+  createTask: (title: string, dueDate?: string | null) => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 }
@@ -33,37 +35,35 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
   tasks: [],
   events: [],
   isLoading: false,
+  error: null,
 
   fetchNotes: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const notes = await ApiService.getNotes();
       set({ notes, isLoading: false });
-    } catch (error) {
-      console.error('Error fetching notes:', error);
-      set({ isLoading: false });
+    } catch (error: unknown) {
+      set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load notes.') });
     }
   },
 
   fetchTasks: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const tasks = await ApiService.getTasks();
       set({ tasks, isLoading: false });
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      set({ isLoading: false });
+    } catch (error: unknown) {
+      set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load tasks.') });
     }
   },
 
   fetchEvents: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const events = await ApiService.getEvents();
       set({ events, isLoading: false });
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      set({ isLoading: false });
+    } catch (error: unknown) {
+      set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load events.') });
     }
   },
 
@@ -77,8 +77,8 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
     set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
   },
 
-  createTask: async (title: string) => {
-    const task = await ApiService.createTask(title);
+  createTask: async (title: string, dueDate: string | null = null) => {
+    const task = await ApiService.createTask(title, dueDate);
     set((state) => ({ tasks: [task, ...state.tasks] }));
   },
 

@@ -6,8 +6,9 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.schemas import NoteCreate, NoteResponse, NoteUpdate
@@ -88,9 +89,7 @@ async def get_note(
         note = await use_case.get_note(user_id, note_id)
         return NoteResponse.model_validate(note)
     except NoteNotFoundError:
-        raise HTTPException(
-            status_code=404, detail={"error": "note_not_found", "message": "Note not found"}
-        ) from None
+        raise_api_error(status_code=404, error="note_not_found", message="Note not found.")
 
 
 @router.patch(
@@ -116,9 +115,7 @@ async def update_note(
         note = await use_case.update_note(user_id, note_id, note_data)
         return NoteResponse.model_validate(note)
     except NoteNotFoundError:
-        raise HTTPException(
-            status_code=404, detail={"error": "note_not_found", "message": "Note not found"}
-        ) from None
+        raise_api_error(status_code=404, error="note_not_found", message="Note not found.")
 
 
 @router.delete(
@@ -142,7 +139,4 @@ async def delete_note(
     try:
         await use_case.delete_note(user_id, note_id)
     except NoteNotFoundError:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": "note_not_found", "message": "Note not found"},
-        ) from None
+        raise_api_error(status_code=404, error="note_not_found", message="Note not found.")

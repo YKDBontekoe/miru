@@ -32,12 +32,24 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
   const { C } = useTheme();
 
   const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleClose = () => {
     setTitle('');
+    setDueDate('');
     setIsSaving(false);
     onClose();
+  };
+
+  const toIsoDate = (value: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = new Date(`${trimmed}T09:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.toISOString();
   };
 
   const handleSave = async () => {
@@ -45,10 +57,16 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
       Alert.alert(t('productivity.title_required'), t('productivity.enter_task_title'));
       return;
     }
+    const normalizedDueDate = toIsoDate(dueDate);
+    if (dueDate.trim() && !normalizedDueDate) {
+      Alert.alert(t('productivity.error'), t('productivity.invalid_due_date'));
+      return;
+    }
     setIsSaving(true);
     try {
-      await createTask(title.trim());
+      await createTask(title.trim(), normalizedDueDate);
       setTitle('');
+      setDueDate('');
       onCreated();
       onClose();
     } catch {
@@ -104,6 +122,24 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
           fontSize: 16,
           marginBottom: S.xl,
         },
+        dueDateRow: {
+          flexDirection: 'row',
+          gap: S.sm,
+          marginBottom: S.md,
+        },
+        quickDateButton: {
+          borderRadius: R.lg,
+          borderWidth: 1,
+          borderColor: C.border,
+          backgroundColor: C.surfaceHigh,
+          paddingHorizontal: S.md,
+          paddingVertical: S.sm,
+        },
+        quickDateButtonText: {
+          color: C.text,
+          fontWeight: '600',
+          fontSize: 12,
+        },
         primaryButton: {
           backgroundColor: C.primary,
           borderRadius: R.xl,
@@ -152,6 +188,40 @@ export function CreateTaskModal({ visible, onClose, onCreated }: Props) {
             style={styles.textInput}
             autoFocus
           />
+
+          <AppText variant="caption" style={styles.inputLabel}>
+            {t('productivity.due_date_label')}
+          </AppText>
+          <TextInput
+            value={dueDate}
+            onChangeText={setDueDate}
+            placeholder={t('productivity.due_date_placeholder')}
+            placeholderTextColor={C.faint}
+            style={styles.textInput}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.dueDateRow}>
+            <ScalePressable
+              onPress={() => setDueDate(new Date().toISOString().slice(0, 10))}
+              style={styles.quickDateButton}
+            >
+              <AppText style={styles.quickDateButtonText}>{t('productivity.today')}</AppText>
+            </ScalePressable>
+            <ScalePressable
+              onPress={() => {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                setDueDate(tomorrow.toISOString().slice(0, 10));
+              }}
+              style={styles.quickDateButton}
+            >
+              <AppText style={styles.quickDateButtonText}>{t('productivity.tomorrow')}</AppText>
+            </ScalePressable>
+            <ScalePressable onPress={() => setDueDate('')} style={styles.quickDateButton}>
+              <AppText style={styles.quickDateButtonText}>{t('productivity.clear')}</AppText>
+            </ScalePressable>
+          </View>
 
           <ScalePressable
             onPress={handleSave}

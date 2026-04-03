@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.api.dependencies import get_auth_service
+from app.api.errors import raise_api_error
 from app.domain.auth.service import AuthService  # noqa: TCH001
 
 # HTTPBearer extracts the Bearer token from the Authorization header.
@@ -22,12 +23,12 @@ async def get_current_user(
     """FastAPI dependency that validates the Bearer token and returns the user UUID."""
     try:
         payload = await auth_service.decode_jwt(credentials.credentials)
-    except Exception as exc:
-        raise HTTPException(
+    except Exception:
+        raise_api_error(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid authentication token: {exc}",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+            error="invalid_authentication_token",
+            message="Invalid authentication token.",
+        )
 
     # payload is now a JWTPayload model, use attribute access
     return payload.sub

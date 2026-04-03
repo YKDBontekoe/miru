@@ -355,5 +355,11 @@ class ChatService:
             )
             await chat_hub.broadcast_to_room(
                 room_id,
-                {"type": "error", "data": {"message": "Something went wrong, please try again."}},
+                {
+                    "type": "error",
+                    "data": {
+                        "message": "Something went wrong, please try again.",
+                        "room_id": str(room_id),
+                    },
+                },
             )

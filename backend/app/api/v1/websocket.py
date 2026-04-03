@@ -86,7 +86,13 @@ async def _handle_send_message(
         logger.exception("WS message processing failed  room=%s  user=%s", room_id, user_id)
         await chat_hub.send_to_user(
             user_id,
-            {"type": "error", "data": {"message": "Failed to process message. Please retry."}},
+            {
+                "type": "error",
+                "data": {
+                    "message": "Failed to process message. Please retry.",
+                    "room_id": str(room_id),
+                },
+            },
         )
 
 

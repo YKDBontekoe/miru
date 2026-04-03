@@ -9,6 +9,7 @@ import { supabase } from '../src/core/services/supabase';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { useAppStore } from '../src/store/useAppStore';
 import { waitForBackend } from '../src/core/api/client';
+import { getApiErrorMessage } from '../src/core/api/errors';
 import { BackendSplash } from '../src/components/BackendSplash';
 import { View } from 'react-native';
 import { AppText } from '../src/components/AppText';
@@ -36,10 +37,9 @@ export default function RootLayout() {
         setIsBackendReady(true);
         setIsCheckingBackend(false);
       }
-    } catch (error) {
-      console.error('Backend failed to wake up:', error);
+    } catch (error: unknown) {
       if (mountedRef.current) {
-        setBackendError(error instanceof Error ? error : new Error('Unknown error'));
+        setBackendError(new Error(getApiErrorMessage(error, 'Backend is unavailable.')));
         setIsBackendReady(false);
         setIsCheckingBackend(false);
       }

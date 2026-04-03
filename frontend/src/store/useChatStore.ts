@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ApiService } from '../core/api/ApiService';
+import { getApiErrorMessage } from '../core/api/errors';
 import { ChatMessage, ChatRoom, MessageStatus } from '../core/models';
 import { chatHub, AgentActivityData, HubMessageData } from '../core/services/ChatHubService';
 
@@ -39,6 +40,16 @@ interface ChatState {
 
 // Hub unsubscribe kept outside state so it doesn't trigger re-renders
 let _hubUnsub: (() => void) | null = null;
+const _pendingMessageTimeouts: Record<string, ReturnType<typeof setTimeout>> = {};
+const MESSAGE_ACK_TIMEOUT_MS = 20_000;
+
+function clearPendingTimeout(clientTempId: string): void {
+  const timeout = _pendingMessageTimeouts[clientTempId];
+  if (timeout) {
+    clearTimeout(timeout);
+    delete _pendingMessageTimeouts[clientTempId];
+  }
+}
 
 /**
  * Zustand store for managing global chat state.
@@ -93,6 +104,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // ---- Incoming message ----
       else if (frame.type === 'message' && frame.data) {
         const data = frame.data as HubMessageData;
+        if (data.clientTempId) {
+          clearPendingTimeout(data.clientTempId);
+        }
         const incomingMsg: ChatMessage = {
           id: data.id,
           room_id: data.room_id,
@@ -137,8 +151,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // ---- Hub error ----
       else if (frame.type === 'error' && frame.data) {
-        const errData = frame.data as { message: string };
-        set({ hubError: errData.message });
+        const errData = frame.data as { message: string; room_id?: string };
+        if (errData.room_id) {
+          set((state) => {
+            const list = [...(state.messages[errData.room_id ?? ''] ?? [])];
+            const pendingIndex = [...list].reverse().findIndex((m) => m.status === MessageStatus.streaming);
+            if (pendingIndex >= 0) {
+              const actualIndex = list.length - 1 - pendingIndex;
+              const pendingMessage = list[actualIndex];
+              clearPendingTimeout(pendingMessage.id);
+              list[actualIndex] = { ...pendingMessage, status: MessageStatus.error };
+            }
+            return {
+              messages: { ...state.messages, [errData.room_id ?? '']: list },
+              hubError: errData.message,
+              isStreaming: false,
+            };
+          });
+          return;
+        }
+        set({ hubError: errData.message, isStreaming: false });
       }
     });
   },
@@ -147,6 +179,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     _hubUnsub?.();
     _hubUnsub = null;
     chatHub.disconnect();
+    Object.keys(_pendingMessageTimeouts).forEach(clearPendingTimeout);
     // Clear stale UI state so nothing leaks after navigation
     set((state) => {
       const cleared: Record<string, null> = {};
@@ -176,8 +209,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const rooms = await ApiService.getRooms();
       set({ rooms, isLoadingRooms: false });
-    } catch {
-      set({ isLoadingRooms: false, hubError: 'Failed to load rooms. Please try again.' });
+    } catch (error: unknown) {
+      set({
+        isLoadingRooms: false,
+        hubError: getApiErrorMessage(error, 'Failed to load rooms. Please try again.'),
+      });
     }
   },
 
@@ -189,8 +225,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages: { ...state.messages, [roomId]: messages },
         isLoadingMessages: false,
       }));
-    } catch {
-      set({ isLoadingMessages: false, hubError: 'Failed to load messages. Please try again.' });
+    } catch (error: unknown) {
+      set({
+        isLoadingMessages: false,
+        hubError: getApiErrorMessage(error, 'Failed to load messages. Please try again.'),
+      });
     }
   },
 
@@ -214,7 +253,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       room_id: roomId,
       content,
       created_at: new Date().toISOString(),
-      status: MessageStatus.sent,
+      status: MessageStatus.streaming,
       user_id: 'me',
     };
 
@@ -235,8 +274,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     if (chatHub.isConnected) {
       chatHub.sendMessage(roomId, content, clientTempId);
+      _pendingMessageTimeouts[clientTempId] = setTimeout(() => {
+        set((state) => {
+          const list = [...(state.messages[roomId] ?? [])];
+          const idx = list.findIndex((m) => m.id === clientTempId);
+          if (idx < 0) {
+            return state;
+          }
+          list[idx] = { ...list[idx], status: MessageStatus.error };
+          return {
+            messages: { ...state.messages, [roomId]: list },
+            isStreaming: false,
+            hubError: 'Message delivery timed out. Please retry.',
+          };
+        });
+        clearPendingTimeout(clientTempId);
+      }, MESSAGE_ACK_TIMEOUT_MS);
     } else {
       // Fallback: mark as error so the user can retry
+      clearPendingTimeout(clientTempId);
       set((state) => {
         const list = [...(state.messages[roomId] ?? [])];
         const idx = list.findIndex((m) => m.id === clientTempId);
@@ -251,6 +307,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   stopStreaming: () => {
+    Object.keys(_pendingMessageTimeouts).forEach(clearPendingTimeout);
     set((state) => {
       const cleared: Record<string, null> = {};
       Object.keys(state.agentActivity).forEach((k) => (cleared[k] = null));
@@ -273,18 +330,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   deleteRoom: async (roomId) => {
-    // Note: Assuming there is an API for deleting room in the actual backend ApiService,
-    // though the current spec didn't strictly ask to build it, we must provide the state
-    // deletion for the rollback.
     try {
-        await ApiService.deleteRoom(roomId);
+      await ApiService.deleteRoom(roomId);
     } catch {
-       // if api fails, just proceed to local state rollback.
+      // If API fails, still proceed to local cleanup.
     }
     set((state) => ({
-      rooms: state.rooms.filter(r => r.id !== roomId),
-      joinedRooms: Object.fromEntries(Object.entries(state.joinedRooms).filter(([id]) => id !== roomId)),
-      agentActivity: Object.fromEntries(Object.entries(state.agentActivity).filter(([id]) => id !== roomId))
+      rooms: state.rooms.filter((r) => r.id !== roomId),
+      joinedRooms: Object.fromEntries(
+        Object.entries(state.joinedRooms).filter(([id]) => id !== roomId)
+      ),
+      agentActivity: Object.fromEntries(
+        Object.entries(state.agentActivity).filter(([id]) => id !== roomId)
+      ),
     }));
   },
 }));

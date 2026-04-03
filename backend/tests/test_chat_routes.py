@@ -23,7 +23,10 @@ def test_chat_route(client: TestClient) -> None:
     mock_service = AsyncMock(spec=ChatService)
 
     async def mock_stream(
-        message: str, user_id: typing.Any, accept_language: str | None = None, **kwargs: typing.Any
+        message: str,
+        user_id: object,
+        accept_language: str | None = None,
+        **kwargs: object,
     ) -> typing.AsyncGenerator[str, None]:
         assert accept_language == "fr-FR"
         yield "Hello"
@@ -86,7 +89,7 @@ def test_update_message_route_not_found(client: TestClient) -> None:
         )
         assert response.status_code == 404
         body = response.json()
-        assert body["detail"]["error"] == "MESSAGE_NOT_FOUND"
+        assert body["detail"]["error"] == "message_not_found"
     finally:
         app.dependency_overrides.clear()
 
@@ -108,7 +111,7 @@ def test_delete_message_route_not_found(client: TestClient) -> None:
         )
         assert response.status_code == 404
         body = response.json()
-        assert body["detail"]["error"] == "MESSAGE_NOT_FOUND"
+        assert body["detail"]["error"] == "message_not_found"
     finally:
         app.dependency_overrides.clear()
 
