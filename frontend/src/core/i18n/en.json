@@ -141,10 +141,21 @@
     "add_an_agent": "Add an Agent",
     "no_agents_create": "No agents yet. Create one in the Agents tab.",
     "message_placeholder": "Message {{name}}...",
+    "message_default_placeholder": "Message...",
     "room_agents_status_one": "{{names}} is in this room.",
     "room_agents_status_other": "{{names}} are in this room.",
     "manage_agents": "Manage Agents",
-    "no_more_agents_to_add": "No more agents to add."
+    "no_more_agents_to_add": "No more agents to add.",
+    "quick_actions": {
+      "plan_day": "Plan my day from my open tasks and events.",
+      "extract_actions": "Extract action items from this chat.",
+      "schedule_week": "Schedule my most important task this week.",
+      "top_priorities": "What are my top 3 priorities today?"
+    }
+    ,
+    "failed_to_connect": "Failed to connect to chat. Please go back and try again.",
+    "failed_to_load_agents": "Failed to load agents.",
+    "remove_agent_failed": "Could not remove agent from chat. Please try again."
   },
   "manageAgents": {
     "activeHelper": "{{count}} active · tap an avatar in the header to manage",
@@ -246,16 +257,25 @@
     },
     "search": "Search notes & tasks...",
     "all": "All",
+    "today": "Today",
     "no_matches": "No matches found",
     "workspace_clear": "Your workspace is clear",
     "try_adjust_search": "Try adjusting your search terms.",
     "capture_thoughts": "Capture your thoughts and track what needs to get done.",
+    "nothing_urgent_today": "Nothing urgent today",
+    "today_empty_detail": "You have no overdue tasks, due tasks, or upcoming events this week.",
     "newNote": "New Note",
     "new_note": "New Note",
     "title_label": "Title",
     "content_label": "Content",
     "new_task": "New Task",
     "task_label": "Task",
-    "new_task_action": "New Task"
+    "new_task_action": "New Task",
+    "due_date_label": "Due date",
+    "due_date_placeholder": "YYYY-MM-DD (optional)",
+    "invalid_due_date": "Use a valid date in YYYY-MM-DD format.",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "clear": "Clear"
   }
 }

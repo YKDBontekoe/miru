@@ -5,9 +5,10 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_agent_service
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import Capability, Integration
 from app.domain.agents.schemas import (
@@ -161,10 +162,7 @@ async def update_agent(
     """Update an existing agent."""
     result = await service.update_agent(agent_id, user_id, data)
     if not result:
-        raise HTTPException(
-            status_code=404,
-            detail={"message": "Agent not found", "error": "AGENT_NOT_FOUND"},
-        )
+        raise_api_error(status_code=404, error="agent_not_found", message="Agent not found.")
     return result
 
 
@@ -199,8 +197,5 @@ async def delete_agent(
     """Delete an agent."""
     success = await service.delete_agent(agent_id, user_id)
     if not success:
-        raise HTTPException(
-            status_code=404,
-            detail={"message": "Agent not found", "error": "AGENT_NOT_FOUND"},
-        )
+        raise_api_error(status_code=404, error="agent_not_found", message="Agent not found.")
     return {"status": "ok"}

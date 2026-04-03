@@ -6,8 +6,9 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.schemas import TaskCreate, TaskResponse, TaskUpdate
@@ -90,10 +91,7 @@ async def get_task(
         task = await use_case.get_task(user_id, task_id)
         return TaskResponse.model_validate(task)
     except TaskNotFoundError:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": "task_not_found", "message": "Task not found"},
-        ) from None
+        raise_api_error(status_code=404, error="task_not_found", message="Task not found.")
 
 
 @router.patch(
@@ -119,10 +117,7 @@ async def update_task(
         task = await use_case.update_task(user_id, task_id, task_data)
         return TaskResponse.model_validate(task)
     except TaskNotFoundError:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": "task_not_found", "message": "Task not found"},
-        ) from None
+        raise_api_error(status_code=404, error="task_not_found", message="Task not found.")
 
 
 @router.delete(
@@ -146,6 +141,4 @@ async def delete_task(
     try:
         await use_case.delete_task(user_id, task_id)
     except TaskNotFoundError:
-        raise HTTPException(
-            status_code=404, detail={"error": "task_not_found", "message": "Task not found"}
-        ) from None
+        raise_api_error(status_code=404, error="task_not_found", message="Task not found.")

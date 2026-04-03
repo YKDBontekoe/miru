@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { ApiService } from '@/core/api/ApiService';
+import { getApiErrorMessage } from '@/core/api/errors';
 import { Memory } from '@/core/models';
 
 interface MemoryState {
   memories: Memory[];
   isLoading: boolean;
+  error: string | null;
 
   fetchMemories: () => Promise<void>;
   /** Removes from local state immediately (optimistic). Call confirmDelete after undo window if needed, or delete immediately on server. */
@@ -23,15 +25,18 @@ interface MemoryState {
 export const useMemoryStore = create<MemoryState>((set, get) => ({
   memories: [],
   isLoading: false,
+  error: null,
 
   fetchMemories: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const memories = await ApiService.getMemories();
       set({ memories, isLoading: false });
-    } catch (error) {
-      console.error('Error fetching memories:', error);
-      set({ isLoading: false });
+    } catch (error: unknown) {
+      set({
+        isLoading: false,
+        error: getApiErrorMessage(error, 'Unable to load memories right now.'),
+      });
     }
   },
 

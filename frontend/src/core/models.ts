@@ -6,7 +6,7 @@ export interface Agent {
   goals: string[];
   capabilities: string[];
   integrations: string[];
-  integration_configs: Record<string, any>;
+  integration_configs: Record<string, unknown>;
   system_prompt?: string;
   status: string;
   mood: string;
@@ -43,7 +43,7 @@ export interface ChatRoom {
 export interface Memory {
   id: string;
   content: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 

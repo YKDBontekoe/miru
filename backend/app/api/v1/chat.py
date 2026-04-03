@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID  # noqa: TCH003
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import get_chat_service
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.schemas import AgentResponse
 from app.domain.chat.dtos import (
@@ -39,7 +40,6 @@ async def list_rooms(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[RoomResponse]:
-    # DOCS(miru-agent): undocumented endpoint
     return await service.list_rooms(user_id)
 
 
@@ -59,7 +59,6 @@ async def create_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    # DOCS(miru-agent): undocumented endpoint
     return await service.create_room(data.name, user_id)
 
 
@@ -85,7 +84,11 @@ async def chat(
     """General chat stream without a specified room."""
     message = request.message or request.content
     if not message:
-        raise HTTPException(status_code=400, detail="Message or content is required")
+        raise_api_error(
+            status_code=400,
+            error="message_required",
+            message="Message or content is required.",
+        )
     return StreamingResponse(
         service.stream_responses(message, user_id, accept_language),
         media_type="text/event-stream",
@@ -110,11 +113,15 @@ async def run_crew(
     accept_language: Annotated[
         str | None, Header(pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$")
     ] = None,
-) -> dict[str, Any]:
+) -> dict[str, str]:
     """Run a full CrewAI orchestration for a single task and return structured output."""
     message = request.message or request.content
     if not message:
-        raise HTTPException(status_code=400, detail="Message or content is required")
+        raise_api_error(
+            status_code=400,
+            error="message_required",
+            message="Message or content is required.",
+        )
     return await service.run_crew(message, user_id, accept_language=accept_language)
 
 
@@ -136,10 +143,9 @@ async def update_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    # DOCS(miru-agent): undocumented endpoint
     room = await service.update_room(room_id, data.name, user_id=user_id)
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise_api_error(status_code=404, error="room_not_found", message="Room not found.")
     return room
 
 
@@ -159,10 +165,9 @@ async def delete_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
     success = await service.delete_room(room_id, user_id=user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise_api_error(status_code=404, error="room_not_found", message="Room not found.")
     return {"status": "ok"}
 
 
@@ -182,10 +187,9 @@ async def add_agent_to_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
     success = await service.add_agent_to_room(room_id, data.agent_id, user_id=user_id)
     if success is None:
-        raise HTTPException(status_code=404, detail="Room not found")
+        raise_api_error(status_code=404, error="room_not_found", message="Room not found.")
     return {"status": "ok"}
 
 
@@ -206,10 +210,9 @@ async def get_room_agents(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    # DOCS(miru-agent): undocumented endpoint
     agents = await service.list_room_agents(room_id, user_id=user_id)
     if agents is None:
-        raise HTTPException(status_code=404, detail="Chat room not found")
+        raise_api_error(status_code=404, error="room_not_found", message="Chat room not found.")
     return [AgentResponse.model_validate(a) for a in agents]
 
 
@@ -230,12 +233,12 @@ async def remove_agent_from_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
     success = await service.remove_agent_from_room(room_id, agent_id, user_id=user_id)
     if not success:
-        raise HTTPException(
+        raise_api_error(
             status_code=404,
-            detail={"message": "Agent not found in room", "error": "AGENT_NOT_IN_ROOM"},
+            error="agent_not_in_room",
+            message="Agent not found in room.",
         )
     return {"status": "ok"}
 
@@ -259,12 +262,11 @@ async def get_room_messages(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
-    # DOCS(miru-agent): undocumented endpoint
     messages = await service.get_room_messages(
         room_id, user_id=user_id, limit=limit, before_id=before_id
     )
     if messages is None:
-        raise HTTPException(status_code=404, detail="Chat room not found")
+        raise_api_error(status_code=404, error="room_not_found", message="Chat room not found.")
     return messages
 
 
@@ -287,13 +289,9 @@ async def update_message(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> ChatMessageResponse:
-    # DOCS(miru-agent): undocumented endpoint
     msg = await service.update_message(message_id, data.content, user_id=user_id)
     if not msg:
-        raise HTTPException(
-            status_code=404,
-            detail={"message": "Message not found", "error": "MESSAGE_NOT_FOUND"},
-        )
+        raise_api_error(status_code=404, error="message_not_found", message="Message not found.")
     return msg
 
 
@@ -314,11 +312,7 @@ async def delete_message(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
     success = await service.delete_message(message_id, user_id=user_id)
     if not success:
-        raise HTTPException(
-            status_code=404,
-            detail={"message": "Message not found", "error": "MESSAGE_NOT_FOUND"},
-        )
+        raise_api_error(status_code=404, error="message_not_found", message="Message not found.")
     return {"status": "ok"}

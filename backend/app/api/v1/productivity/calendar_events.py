@@ -6,8 +6,9 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.schemas import (
@@ -51,9 +52,7 @@ async def create_event(
         event = await use_case.create_event(user_id, event_data)
         return CalendarEventResponse.model_validate(event)
     except InvalidTimeRangeError as e:
-        raise HTTPException(
-            status_code=400, detail={"error": "invalid_time_range", "message": str(e)}
-        ) from e
+        raise_api_error(status_code=400, error="invalid_time_range", message=str(e))
 
 
 @router.get(
@@ -99,10 +98,11 @@ async def get_event(
         event = await use_case.get_event(user_id, event_id)
         return CalendarEventResponse.model_validate(event)
     except CalendarEventNotFoundError:
-        raise HTTPException(
+        raise_api_error(
             status_code=404,
-            detail={"error": "calendar_event_not_found", "message": "Calendar event not found"},
-        ) from None
+            error="calendar_event_not_found",
+            message="Calendar event not found.",
+        )
 
 
 @router.patch(
@@ -129,14 +129,13 @@ async def update_event(
         event = await use_case.update_event(user_id, event_id, event_data)
         return CalendarEventResponse.model_validate(event)
     except CalendarEventNotFoundError:
-        raise HTTPException(
+        raise_api_error(
             status_code=404,
-            detail={"error": "calendar_event_not_found", "message": "Calendar event not found"},
-        ) from None
+            error="calendar_event_not_found",
+            message="Calendar event not found.",
+        )
     except InvalidTimeRangeError as e:
-        raise HTTPException(
-            status_code=400, detail={"error": "invalid_time_range", "message": str(e)}
-        ) from e
+        raise_api_error(status_code=400, error="invalid_time_range", message=str(e))
 
 
 @router.delete(
@@ -160,7 +159,8 @@ async def delete_event(
     try:
         await use_case.delete_event(user_id, event_id)
     except CalendarEventNotFoundError:
-        raise HTTPException(
+        raise_api_error(
             status_code=404,
-            detail={"error": "calendar_event_not_found", "message": "Calendar event not found"},
-        ) from None
+            error="calendar_event_not_found",
+            message="Calendar event not found.",
+        )

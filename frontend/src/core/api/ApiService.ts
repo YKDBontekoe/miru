@@ -1,4 +1,4 @@
-import { apiClient, streamChat } from './client';
+import { apiClient } from './client';
 import { Agent, CalendarEvent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
 
 type AgentTemplate = {
@@ -9,10 +9,24 @@ type AgentTemplate = {
   goals: string[];
 };
 
+interface TaskApiRecord {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string | null;
+  is_completed: boolean;
+  due_date?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
 // The backend Task schema uses is_completed; normalise to the frontend shape.
-function normalizeTask(raw: Record<string, unknown>): Task {
-  const { is_completed, ...rest } = raw as Record<string, unknown> & { is_completed?: boolean };
-  return { ...rest, completed: is_completed ?? false } as unknown as Task;
+function normalizeTask(raw: TaskApiRecord): Task {
+  const { is_completed, ...rest } = raw;
+  return {
+    ...rest,
+    completed: is_completed ?? false,
+  };
 }
 
 export const ApiService = {
@@ -131,12 +145,14 @@ export const ApiService = {
 
   // --- Productivity: Tasks ---
   async getTasks(): Promise<Task[]> {
-    const response = await apiClient.get<Record<string, unknown>[]>('productivity/tasks');
+    const response = await apiClient.get<TaskApiRecord[]>('productivity/tasks');
     return response.data.map(normalizeTask);
   },
 
-  async createTask(title: string): Promise<Task> {
-    const response = await apiClient.post<Record<string, unknown>>('productivity/tasks', { title });
+  async createTask(title: string, dueDate: string | null = null): Promise<Task> {
+    const payload: { title: string; due_date?: string | null } = { title };
+    if (dueDate !== null) payload.due_date = dueDate;
+    const response = await apiClient.post<TaskApiRecord>('productivity/tasks', payload);
     return normalizeTask(response.data);
   },
 
@@ -148,10 +164,7 @@ export const ApiService = {
     const { completed, ...rest } = data;
     const payload: Record<string, unknown> = { ...rest };
     if (completed !== undefined) payload.is_completed = completed;
-    const response = await apiClient.patch<Record<string, unknown>>(
-      `productivity/tasks/${id}`,
-      payload
-    );
+    const response = await apiClient.patch<TaskApiRecord>(`productivity/tasks/${id}`, payload);
     return normalizeTask(response.data);
   },
 
@@ -163,15 +176,5 @@ export const ApiService = {
   async getEvents(): Promise<CalendarEvent[]> {
     const response = await apiClient.get<CalendarEvent[]>('productivity/events');
     return response.data;
-  },
-
-  // Streaming Chat
-  streamRoomChat(
-    roomId: string,
-    content: string,
-    onChunk: (chunk: string) => void,
-    signal?: AbortSignal
-  ) {
-    return streamChat(`rooms/${roomId}/chat`, { content }, onChunk, signal);
   },
 };

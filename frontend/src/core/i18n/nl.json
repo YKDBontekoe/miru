@@ -141,10 +141,20 @@
     "add_an_agent": "Agent toevoegen",
     "no_agents_create": "Nog geen agenten. Maak er een aan in het tabblad Agenten.",
     "message_placeholder": "Bericht aan {{name}}...",
+    "message_default_placeholder": "Bericht...",
     "room_agents_status_one": "{{names}} is in deze kamer.",
     "room_agents_status_other": "{{names}} zijn in deze kamer.",
     "manage_agents": "Agenten beheren",
-    "no_more_agents_to_add": "Geen agenten meer om toe te voegen."
+    "no_more_agents_to_add": "Geen agenten meer om toe te voegen.",
+    "quick_actions": {
+      "plan_day": "Plan mijn dag op basis van open taken en events.",
+      "extract_actions": "Haal actiepunten uit deze chat.",
+      "schedule_week": "Plan mijn belangrijkste taak deze week.",
+      "top_priorities": "Wat zijn mijn top 3 prioriteiten vandaag?"
+    },
+    "failed_to_connect": "Verbinding met chat mislukt. Ga terug en probeer opnieuw.",
+    "failed_to_load_agents": "Laden van agenten mislukt.",
+    "remove_agent_failed": "Agent verwijderen uit chat mislukt. Probeer opnieuw."
   },
   "manageAgents": {
     "activeHelper": "{{count}} actief · tik op een avatar in de koptekst om te beheren",
@@ -246,16 +256,25 @@
     },
     "search": "Zoek notities & taken...",
     "all": "Alles",
+    "today": "Vandaag",
     "no_matches": "Geen overeenkomsten gevonden",
     "workspace_clear": "Je werkruimte is leeg",
     "try_adjust_search": "Probeer je zoektermen aan te passen.",
     "capture_thoughts": "Leg je gedachten vast en houd bij wat er gedaan moet worden.",
+    "nothing_urgent_today": "Niets urgents vandaag",
+    "today_empty_detail": "Je hebt deze week geen achterstallige, vervallende of geplande items.",
     "newNote": "Nieuwe Notitie",
     "new_note": "Nieuwe Notitie",
     "title_label": "Titel",
     "content_label": "Inhoud",
     "new_task": "Nieuwe Taak",
     "task_label": "Taak",
-    "new_task_action": "Nieuwe Taak"
+    "new_task_action": "Nieuwe Taak",
+    "due_date_label": "Vervaldatum",
+    "due_date_placeholder": "JJJJ-MM-DD (optioneel)",
+    "invalid_due_date": "Gebruik een geldige datum in JJJJ-MM-DD-formaat.",
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "clear": "Wissen"
   }
 }

@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useChatStore } from '@/store/useChatStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { ApiService } from '@/core/api/ApiService';
+import { getApiErrorMessage } from '@/core/api/errors';
 import { Agent } from '@/core/models';
 
 export function useChatRoomSetup(roomId: string | undefined) {
+  const { t } = useTranslation();
   const fetchMessages = useChatStore((s) => s.fetchMessages);
   const connectHub = useChatStore((s) => s.connectHub);
   const disconnectHub = useChatStore((s) => s.disconnectHub);
@@ -22,11 +25,12 @@ export function useChatRoomSetup(roomId: string | undefined) {
     setRoomAgentsError(null);
     ApiService.getRoomAgents(roomId)
       .then(setRoomAgents)
-      .catch((e) => {
-        console.error('Failed to load room agents:', e);
-        setRoomAgentsError('Failed to load agents.');
+      .catch((error: unknown) => {
+        setRoomAgentsError(
+          getApiErrorMessage(error, t('chat.failed_to_load_agents') || 'Failed to load agents.')
+        );
       });
-  }, [roomId]);
+  }, [roomId, t]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -45,7 +49,8 @@ export function useChatRoomSetup(roomId: string | undefined) {
       .catch(() => {
         if (currentRoomRef.current === roomId) {
           useChatStore.setState({
-            hubError: 'Failed to connect to chat. Please go back and try again.',
+            hubError:
+              t('chat.failed_to_connect') || 'Failed to connect to chat. Please go back and try again.',
           });
         }
       });
@@ -64,6 +69,7 @@ export function useChatRoomSetup(roomId: string | undefined) {
     leaveRoom,
     disconnectHub,
     refetchRoomAgents,
+    t,
   ]);
 
   return { roomAgents, setRoomAgents, roomAgentsError, refetchRoomAgents };

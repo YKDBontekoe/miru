@@ -10,6 +10,8 @@ import asyncpg.exceptions
 from fastapi import HTTPException
 from tortoise.exceptions import DBConnectionError, IntegrityError, OperationalError
 
+from app.api.errors import raise_api_error
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,13 +28,17 @@ async def handle_db_errors(action: str) -> AsyncGenerator[None, None]:
         raise
     except ValueError as e:
         logger.exception(f"Validation error while {action}")
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise_api_error(
+            status_code=400,
+            error="validation_error",
+            message=str(e),
+        )
     except (
         IntegrityError,
         OperationalError,
         DBConnectionError,
         asyncpg.exceptions.ConnectionDoesNotExistError,
-    ) as e:
+    ):
         logger.exception(f"Failed to {action}")
 
         parts = action.split(" ", 1)
@@ -53,10 +59,16 @@ async def handle_db_errors(action: str) -> AsyncGenerator[None, None]:
 
         action_ing = f"{gerund} {parts[1]}" if len(parts) > 1 else gerund
 
-        raise HTTPException(
-            status_code=500, detail=f"Database error occurred while {action_ing}"
-        ) from e
+        raise_api_error(
+            status_code=500,
+            error="database_error",
+            message=f"Database error occurred while {action_ing}",
+        )
     except Exception:
         method_name = action.replace(" ", "_")
         logger.exception(f"Unexpected error in {method_name}")
-        raise HTTPException(status_code=500, detail="Internal server error") from None
+        raise_api_error(
+            status_code=500,
+            error="internal_server_error",
+            message="Internal server error",
+        )

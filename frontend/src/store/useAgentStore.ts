@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { ApiService } from '../core/api/ApiService';
+import { getApiErrorMessage } from '../core/api/errors';
 import { Agent } from '../core/models';
 
 async function loadPinnedIds(): Promise<string[]> {
@@ -41,6 +42,7 @@ interface AgentState {
   viewMode: 'list' | 'grid';
   templates: AgentTemplate[];
   isLoadingTemplates: boolean;
+  error: string | null;
 
   fetchAgents: () => Promise<void>;
   /**
@@ -99,15 +101,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   viewMode: 'list',
   templates: [],
   isLoadingTemplates: false,
+  error: null,
 
   fetchAgents: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const agents = await ApiService.getAgents();
       set({ agents, isLoading: false });
-    } catch (error) {
-      console.error('Error fetching agents:', error);
-      set({ isLoading: false });
+    } catch (error: unknown) {
+      set({
+        isLoading: false,
+        error: getApiErrorMessage(error, 'Unable to load personas right now.'),
+      });
     }
   },
 
