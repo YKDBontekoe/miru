@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,38 +57,42 @@ export const AgentChatBubble = ({
   );
 
   return (
-    <View className="items-start mb-4 me-[52px]">
-      <View className="flex-row items-end">
+    <View style={styles.container}>
+      <View style={styles.row}>
         {/* Avatar */}
         <View
-          className="w-7 h-7 rounded-full border items-center justify-center me-3 mb-1 shrink-0"
-          style={
+          style={[
+            styles.avatar,
             isFailed
               ? {
                   backgroundColor: errorBubbleStyle.backgroundColor,
                   borderColor: errorBubbleStyle.borderColor,
                 }
-              : { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}35` }
-          }
+              : { backgroundColor: `${accentColor}18`, borderColor: `${accentColor}35` },
+          ]}
         >
           <AppText
-            className="text-[10px] font-bold"
-            style={isFailed ? { color: theme.colors.status.error } : { color: accentColor }}
+            style={[
+              styles.avatarText,
+              isFailed ? { color: theme.colors.status.error } : { color: accentColor },
+            ]}
           >
             {agentName ? agentName[0].toUpperCase() : 'A'}
           </AppText>
         </View>
 
-        <View className="flex-1">
+        <View style={styles.content}>
           {agentName && (
-            <AppText className="text-xs font-semibold mb-2" style={{ color: accentColor }}>
+            <AppText style={[styles.agentName, { color: accentColor }]}>
               {agentName}
             </AppText>
           )}
 
           <View
-            className="px-4 py-3 max-w-full border border-transparent rounded-2xl rounded-bl-sm"
-            style={isFailed ? errorBubbleStyle : agentBubbleStyle}
+            style={[
+              styles.bubble,
+              isFailed ? errorBubbleStyle : agentBubbleStyle,
+            ]}
           >
             {text === '' && isStreaming ? (
               <TypingIndicator dotColor={accentColor} />
@@ -99,9 +103,13 @@ export const AgentChatBubble = ({
 
           {/* Error / retry row */}
           {isFailed && (
-            <View className="flex-row items-center mt-2 gap-2">
+            <View style={styles.errorRow}>
               <Ionicons name="alert-circle-outline" size={13} color={theme.colors.status.error} />
-              <AppText className="text-status-error text-xs">{t('chat.failed_to_send')}</AppText>
+              <AppText
+                style={[styles.errorText, { color: theme.colors.status.error }]}
+              >
+                {t('chat.failed_to_send')}
+              </AppText>
               {onRetry && <ChatBubbleRetryButton onRetry={onRetry} />}
             </View>
           )}
@@ -110,12 +118,14 @@ export const AgentChatBubble = ({
 
       {timestamp && !isFailed && (
         <AppText
-          className="text-[10px] mt-2 ms-[40px]"
-          style={{
-            color: isDark
-              ? theme.colors.onSurface.disabledDark
-              : theme.colors.onSurface.disabledLight,
-          }}
+          style={[
+            styles.timestamp,
+            {
+              color: isDark
+                ? theme.colors.onSurface.disabledDark
+                : theme.colors.onSurface.disabledLight,
+            },
+          ]}
         >
           {formatTime(timestamp, i18n.language)}
         </AppText>
@@ -123,3 +133,60 @@ export const AgentChatBubble = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.lg,
+    marginEnd: theme.spacing.bubbleIndent,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  avatar: {
+    width: theme.spacing.avatar,
+    height: theme.spacing.avatar,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: theme.spacing.md,
+    marginBottom: theme.spacing.xxs,
+    flexShrink: 0,
+  },
+  avatarText: {
+    ...theme.typography.caption,
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+  },
+  agentName: {
+    ...theme.typography.caption,
+    fontWeight: '600',
+    marginBottom: theme.spacing.xs,
+  },
+  bubble: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    maxWidth: '100%',
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.xl,
+    borderBottomLeftRadius: theme.borderRadius.sm,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  errorText: {
+    ...theme.typography.caption,
+  },
+  timestamp: {
+    ...theme.typography.caption,
+    marginTop: theme.spacing.sm,
+    marginStart: theme.spacing.bubbleTimestampIndent,
+  },
+});
