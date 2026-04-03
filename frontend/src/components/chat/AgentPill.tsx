@@ -22,29 +22,26 @@ export interface AgentPillProps {
  */
 export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
   const color = getAgentColor(agent.name);
+  const initial = agent?.name ? agent.name[0].toUpperCase() : '?';
+
   return (
-    <ScalePressable onPress={onPress} style={{ width: 72, alignItems: 'center', marginEnd: 12 }}>
+    <ScalePressable onPress={onPress} className="w-[72px] items-center me-3">
       <View
+        className="w-[52px] h-[52px] rounded-full items-center justify-center mb-1.5 border-[1.5px]"
         style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
           backgroundColor: `${color}18`,
-          borderWidth: 1.5,
           borderColor: `${color}40`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 6,
         }}
       >
-        <AppText style={{ color, fontSize: 20, fontWeight: '700' }}>
-          {agent.name[0].toUpperCase()}
+        <AppText className="text-[20px] font-bold" style={{ color }}>
+          {initial}
         </AppText>
       </View>
       <AppText
         variant="caption"
         numberOfLines={1}
-        style={{ textAlign: 'center', fontSize: 11, color: C.muted }}
+        className="text-center text-[11px]"
+        style={{ color: C.muted }}
       >
         {agent.name}
       </AppText>
