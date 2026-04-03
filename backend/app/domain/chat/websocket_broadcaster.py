@@ -40,6 +40,7 @@ class ChatWebSocketBroadcaster:
             id=uuid.uuid4(), room_id=room_id, user_id=user_id, content=user_message
         )
         user_msg = await self.chat_repo.save_message(user_msg)
+        await self.chat_repo.touch_room(room_id, user_id)
 
         user_msg_data = {
             "id": str(user_msg.id),
@@ -178,6 +179,7 @@ class ChatWebSocketBroadcaster:
     async def persist_and_broadcast_agent_response(
         self,
         room_id: UUID,
+        user_id: UUID,
         room_agents: list[Agent],
         result_text: str,
         agent_names: list[str],
@@ -236,7 +238,7 @@ class ChatWebSocketBroadcaster:
                 },
             )
 
-        await self.chat_repo.touch_room(room_id)
+        await self.chat_repo.touch_room(room_id, user_id)
 
         # Only increment message_count for agents that actually responded.
         for agent in responded:

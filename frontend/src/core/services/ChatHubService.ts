@@ -58,13 +58,13 @@ export interface HubFrame {
 // ---------------------------------------------------------------------------
 
 const LOCAL_BACKEND_URL = Platform.select({
-  android: 'http://10.0.2.2:8000',
-  ios: 'http://localhost:8000',
-  default: 'http://localhost:8000',
+  android: 'https://10.0.2.2:8000',
+  ios: 'https://localhost:8000',
+  default: 'https://localhost:8000',
 });
 
 function toWsUrl(httpBase: string): string {
-  const base = httpBase.replace(/^http/, 'ws').replace(/\/+$/, '');
+  const base = httpBase.replace(/^https?/, 'wss').replace(/\/+$/, '');
   // Avoid doubling the /api/v1 segment when the baseUrl already includes it
   return base.endsWith('/api/v1') ? `${base}/ws/chat` : `${base}/api/v1/ws/chat`;
 }
