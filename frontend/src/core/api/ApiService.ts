@@ -67,6 +67,10 @@ export const ApiService = {
     return response.data;
   },
 
+  async deleteRoom(roomId: string): Promise<void> {
+    await apiClient.delete(`rooms/${roomId}`);
+  },
+
   async getRoomMessages(roomId: string): Promise<ChatMessage[]> {
     const response = await apiClient.get<ChatMessage[]>(`rooms/${roomId}/messages`);
     return response.data;

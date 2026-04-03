@@ -32,48 +32,35 @@ export const RoomCard = React.memo(({ room, agents, onPress }: RoomCardProps) =>
   const initial = room.name[0]?.toUpperCase() ?? '?';
   const memberLabel = () => {
     if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
-    if (agents.length === 1) return `You + ${agents[0].name}`;
-    if (agents.length === 2) return `You, ${agents[0].name} & ${agents[1].name}`;
-    return `You + ${agents.length} agents`;
+    if (agents.length === 1) return t('chat.you_and_one', 'You + {{name}}', { name: agents[0].name });
+    if (agents.length === 2) return t('chat.you_and_two', 'You, {{name1}} & {{name2}}', { name1: agents[0].name, name2: agents[1].name });
+    return t('chat.you_plus_n_agents', 'You + {{count}} agents', { count: agents.length });
   };
 
   return (
     <ScalePressable
       onPress={onPress}
+      className="flex-row items-center rounded-[20px] p-[14px] mb-[10px] shadow-sm shadow-blue-600/[0.06]"
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
         backgroundColor: C.surface,
-        borderRadius: 20,
-        padding: 14,
-        marginBottom: 10,
-        shadowColor: '#2563EB',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 14,
         elevation: 2,
       }}
     >
       <View
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 14,
-          backgroundColor: C.primarySurface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 14,
-        }}
+        className="w-12 h-12 rounded-[14px] items-center justify-center me-[14px]"
+        style={{ backgroundColor: C.primarySurface }}
       >
-        <AppText style={{ color: C.primary, fontSize: 20, fontWeight: '700' }}>{initial}</AppText>
+        <AppText className="text-[20px] font-bold" style={{ color: C.primary }}>
+          {initial}
+        </AppText>
       </View>
-      <View style={{ flex: 1 }}>
-        <AppText style={{ fontSize: 15, fontWeight: '600', color: C.text, marginBottom: 3 }}>
+      <View className="flex-1">
+        <AppText className="text-[15px] font-semibold mb-[3px]" style={{ color: C.text }}>
           {room.name}
         </AppText>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="people-outline" size={12} color={C.muted} style={{ marginEnd: 4 }} />
-          <AppText variant="caption" style={{ fontSize: 12, color: C.muted }}>
+        <View className="flex-row items-center">
+          <Ionicons name="people-outline" size={12} color={C.muted} className="me-1" />
+          <AppText variant="caption" className="text-[12px]" style={{ color: C.muted }}>
             {memberLabel()}
           </AppText>
         </View>
