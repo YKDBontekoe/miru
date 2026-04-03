@@ -398,7 +398,7 @@ export default function ProductivityScreen() {
                           : styles.emptyButtonText
                       }
                     >
-                      New Task
+                      {t('productivity.new_task_action') || 'New Task'}
                     </AppText>
                   </Pressable>
                 )}
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     borderColor: T.border.light,
   },
   searchIcon: {
-    marginRight: S.sm,
+    marginEnd: S.sm,
   },
   searchInput: {
     flex: 1,

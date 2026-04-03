@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from app.core.config import get_settings
+from app.domain.chat.language import resolve_language
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +47,16 @@ class OpenRouterClient:
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
 
-    async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
+    async def chat_completion(
+        self,
+        messages: list[ChatCompletionMessageParam],
+        model: str,
+        accept_language: str | None = None,
+    ) -> str:
         # Internally enforce strict JSON structured output even for generic strings
-        structured_resp = await self.structured_completion(messages, model, ChatResponse)
+        structured_resp = await self.structured_completion(
+            messages, model, ChatResponse, accept_language
+        )
         return structured_resp.message
 
     @retry(
@@ -72,6 +80,19 @@ class OpenRouterClient:
         )
         return response.data[0].embedding
 
+    def _inject_locale_system_message(
+        self, messages: list[ChatCompletionMessageParam], accept_language: str | None
+    ) -> list[ChatCompletionMessageParam]:
+        if accept_language:
+            return [
+                {
+                    "role": "system",
+                    "content": f"IMPORTANT: Please respond in the following language locale: {resolve_language(accept_language)}.",
+                },
+                *messages,
+            ]
+        return messages
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -86,8 +107,13 @@ class OpenRouterClient:
         reraise=True,
     )
     async def stream_chat(
-        self, messages: list[ChatCompletionMessageParam], model: str
+        self,
+        messages: list[ChatCompletionMessageParam],
+        model: str,
+        accept_language: str | None = None,
     ) -> typing.AsyncIterator[typing.Any]:
+        messages = self._inject_locale_system_message(messages, accept_language)
+
         return await self.openai_client.chat.completions.create(
             model=model,
             messages=messages,
@@ -112,7 +138,9 @@ class OpenRouterClient:
         messages: list[ChatCompletionMessageParam],
         model: str,
         response_model: type[T],
+        accept_language: str | None = None,
     ) -> T:
+        messages = self._inject_locale_system_message(messages, accept_language)
         return await self.instructor_client.chat.completions.create(
             model=model,
             messages=messages,
@@ -132,12 +160,14 @@ def get_openrouter_client() -> OpenRouterClient:
 
 
 async def chat_completion(
-    messages: list[ChatCompletionMessageParam], model: str | None = None
+    messages: list[ChatCompletionMessageParam],
+    model: str | None = None,
+    accept_language: str | None = None,
 ) -> str:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
     try:
-        return await client.chat_completion(messages, chosen_model)
+        return await client.chat_completion(messages, chosen_model, accept_language)
     except Exception as e:
         if isinstance(e, asyncio.CancelledError):
             raise
@@ -147,29 +177,34 @@ async def chat_completion(
                 "chat_completion failed with model %s, falling back to %s", chosen_model, fallback
             )
             try:
-                return await client.chat_completion(messages, fallback)
+                return await client.chat_completion(messages, fallback, accept_language)
             except Exception as fallback_e:
                 raise fallback_e from e
         raise
 
 
 async def stream_chat(
-    messages: list[ChatCompletionMessageParam], model: str | None = None
+    messages: list[ChatCompletionMessageParam],
+    model: str | None = None,
+    accept_language: str | None = None,
 ) -> typing.AsyncIterator[typing.Any]:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
-    return await client.stream_chat(messages, chosen_model)
+    return await client.stream_chat(messages, chosen_model, accept_language)
 
 
 async def structured_completion(
     messages: list[ChatCompletionMessageParam],
     response_model: type[T],
     model: str | None = None,
+    accept_language: str | None = None,
 ) -> T:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
     try:
-        return await client.structured_completion(messages, chosen_model, response_model)
+        return await client.structured_completion(
+            messages, chosen_model, response_model, accept_language
+        )
     except Exception as e:
         if isinstance(e, asyncio.CancelledError):
             raise
@@ -181,7 +216,9 @@ async def structured_completion(
                 fallback,
             )
             try:
-                return await client.structured_completion(messages, fallback, response_model)
+                return await client.structured_completion(
+                    messages, fallback, response_model, accept_language
+                )
             except Exception as fallback_e:
                 raise fallback_e from e
         raise

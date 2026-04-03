@@ -6,6 +6,7 @@ import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { useTheme } from '@/hooks/useTheme';
 import { Agent } from '@/core/models';
+import i18n from '@/core/i18n';
 import { MILESTONES } from '@/components/agents/agentUtils';
 import { AgentDetailStats } from './AgentDetailStats';
 
@@ -57,7 +58,7 @@ const GoalItem = React.memo(
   ({ goal, index, displayColor }: { goal: string; index: number; displayColor: string }) => (
     <View className="flex-row items-start mb-2">
       <View
-        className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
+        className="w-5 h-5 rounded-full items-center justify-center me-2.5 mt-0.5 shrink-0"
         style={{ backgroundColor: `${displayColor}18` }}
       >
         <AppText className="text-[10px] font-bold" style={{ color: displayColor }}>
@@ -116,7 +117,7 @@ export function AgentDetailView({
             <ActivityIndicator color="white" size="small" />
           ) : (
             <>
-              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="mr-2" />
+              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="me-2" />
               <AppText className="text-white font-bold text-base">Start Chat</AppText>
             </>
           )}
@@ -215,7 +216,7 @@ export function AgentDetailView({
 
       <AppText className="text-faint text-[11px] text-center mt-1 mb-10">
         Created{' '}
-        {new Date(agent.created_at).toLocaleDateString(undefined, {
+        {new Date(agent.created_at).toLocaleDateString(i18n.language, {
           month: 'long',
           day: 'numeric',
           year: 'numeric',

@@ -145,22 +145,12 @@ class ChatService:
         messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": agent.personality}
         ]
-        if accept_language:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
-                }
-            )
         messages.append({"role": "user", "content": user_message})
 
         try:
-            response = await stream_chat(
-                model=model_name,
-                messages=messages,
-            )
+            stream = await stream_chat(messages, model=model_name, accept_language=accept_language)
 
-            async for chunk in response:
+            async for chunk in stream:
                 if not chunk.choices:
                     continue
                 delta_content = chunk.choices[0].delta.content

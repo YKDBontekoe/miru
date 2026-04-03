@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
+import i18n from '@/core/i18n';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
@@ -60,8 +61,8 @@ function getInitials(email?: string): string {
   return local.slice(0, 2).toUpperCase();
 }
 
-function formatDate(): string {
-  return new Intl.DateTimeFormat(undefined, {
+function formatDate(language: string): string {
+  return new Intl.DateTimeFormat(language, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -207,7 +208,7 @@ export default function HomeScreen() {
               marginBottom: 20,
             }}
           >
-            <View style={{ flex: 1, paddingRight: 16 }}>
+            <View style={{ flex: 1, paddingEnd: 16 }}>
               <AppText style={{ fontSize: 13, color: C.muted, fontWeight: '500', marginBottom: 4 }}>
                 {greeting}
               </AppText>
@@ -226,7 +227,7 @@ export default function HomeScreen() {
                 {firstName}
               </AppText>
               <AppText style={{ fontSize: 13, color: C.faint, marginTop: 5 }}>
-                {formatDate()}
+                {formatDate(i18n.language)}
               </AppText>
             </View>
 
@@ -460,7 +461,7 @@ export default function HomeScreen() {
                   elevation: 5,
                 }}
               >
-                <Ionicons name="add" size={19} color="white" style={{ marginRight: 7 }} />
+                <Ionicons name="add" size={19} color="white" style={{ marginEnd: 7 }} />
                 <AppText style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
                   {t('home.actions.start_chat')}
                 </AppText>
