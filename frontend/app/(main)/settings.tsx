@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,25 +18,28 @@ import { AppText } from '../../src/components/AppText';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useAppStore } from '../../src/store/useAppStore';
 import { useMemoryStore } from '@/store/useMemoryStore';
+import { useProductivityStore } from '@/store/useProductivityStore';
+import { useChatStore } from '@/store/useChatStore';
 import { Memory } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  bg: '#F4F4F8',
-  surface: '#FFFFFF',
-  surfaceHigh: '#F0F0F6',
-  border: '#E4E4EF',
-  text: '#0F0F1A',
-  muted: '#6E6E80',
-  faint: '#C0C0D0',
-  primary: '#2563EB',
-  primarySurface: '#EFF6FF',
-  destructive: '#DC2626',
-  destructiveSurface: '#FEF2F2',
-  destructiveBorder: '#FECACA',
+  bg: DESIGN_TOKENS.colors.pageBg,
+  surface: DESIGN_TOKENS.colors.surface,
+  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+  border: DESIGN_TOKENS.colors.border,
+  text: DESIGN_TOKENS.colors.text,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: '#97AEA3',
+  primary: DESIGN_TOKENS.colors.primary,
+  primarySurface: DESIGN_TOKENS.colors.primarySoft,
+  destructive: '#B23A3A',
+  destructiveSurface: '#FCEEEE',
+  destructiveBorder: '#F4D1D1',
 };
 
 const SUPPORTED_LANGUAGES = [
@@ -276,10 +280,18 @@ function LanguagePickerModal({
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const { signOut, user } = useAuthStore();
-  const { language, setLanguage } = useAppStore();
+  const {
+    language,
+    setLanguage,
+    appearanceMode,
+    setAppearanceMode,
+    notifications,
+    setNotificationSetting,
+  } = useAppStore();
   const { memories, isLoading: isLoadingMemories, fetchMemories, deleteMemory } = useMemoryStore();
+  const { notes, tasks, fetchNotes, fetchTasks, deleteNote, deleteTask } = useProductivityStore();
+  const { rooms } = useChatStore();
   const [privacyMode, setPrivacyMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   const currentLang = language ?? i18n.language ?? 'en';
@@ -288,7 +300,9 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     fetchMemories();
-  }, [fetchMemories]);
+    fetchNotes();
+    fetchTasks();
+  }, [fetchMemories, fetchNotes, fetchTasks]);
 
   const handleDeleteMemory = React.useCallback(
     (memory: Memory) => {
@@ -340,6 +354,56 @@ export default function SettingsScreen() {
       [
         { text: t('settings.actions.cancel'), style: 'cancel' },
         { text: t('settings.items.sign_out'), style: 'destructive', onPress: () => signOut() },
+      ]
+    );
+  };
+
+  const handleExportData = async () => {
+    const payload = {
+      exported_at: new Date().toISOString(),
+      profile: { email: user?.email ?? null, language: currentLang, appearance: appearanceMode },
+      stats: {
+        memories: memories.length,
+        notes: notes.length,
+        tasks: tasks.length,
+        chats: rooms.length,
+      },
+      memories,
+      notes,
+      tasks,
+    };
+    try {
+      await Share.share({
+        message: JSON.stringify(payload, null, 2),
+      });
+    } catch {
+      Alert.alert(t('settings.actions.error'), 'Could not export your data right now.');
+    }
+  };
+
+  const handleDeleteAllData = () => {
+    Alert.alert(
+      'Delete all app data?',
+      'This will delete all memories, notes, and tasks from your account.',
+      [
+        { text: t('settings.actions.cancel'), style: 'cancel' },
+        {
+          text: t('settings.actions.delete') || 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await Promise.all([
+                ...memories.map((memory) => deleteMemory(memory.id)),
+                ...notes.map((note) => deleteNote(note.id)),
+                ...tasks.map((task) => deleteTask(task.id)),
+              ]);
+              await Promise.all([fetchMemories(), fetchNotes(), fetchTasks()]);
+              Alert.alert('Done', 'All personal data has been removed.');
+            } catch {
+              Alert.alert(t('settings.actions.error'), 'Failed to remove all data. Please retry.');
+            }
+          },
+        },
       ]
     );
   };
@@ -490,18 +554,105 @@ export default function SettingsScreen() {
             }
           />
           <SettingRow
+            icon="contrast-outline"
+            iconColor={C.primary}
+            title="Appearance"
+            subtitle={
+              appearanceMode === 'system'
+                ? 'Follow system'
+                : appearanceMode === 'dark'
+                  ? 'Dark'
+                  : 'Light'
+            }
+            rightElement={
+              <View style={{ flexDirection: 'row' }}>
+                {(['system', 'light', 'dark'] as const).map((mode) => (
+                  <ScalePressable
+                    key={mode}
+                    onPress={() => setAppearanceMode(mode)}
+                    style={{
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: appearanceMode === mode ? C.primary : C.border,
+                      backgroundColor: appearanceMode === mode ? C.primarySurface : C.surfaceHigh,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      marginLeft: 6,
+                    }}
+                  >
+                    <AppText
+                      variant="caption"
+                      style={{
+                        color: appearanceMode === mode ? C.primary : C.muted,
+                        fontWeight: '700',
+                      }}
+                    >
+                      {mode === 'system' ? 'Auto' : mode === 'dark' ? 'Dark' : 'Light'}
+                    </AppText>
+                  </ScalePressable>
+                ))}
+              </View>
+            }
+          />
+          <SettingRow
             icon="notifications-outline"
             iconColor="#F59E0B"
             title={t('settings.items.notifications')}
             subtitle={t('settings.items.notifications_desc')}
             rightElement={
               <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
+                value={notifications.longRunningTasks}
+                onValueChange={(value) => setNotificationSetting('longRunningTasks', value)}
                 trackColor={{ false: C.border, true: `${C.primary}40` }}
-                thumbColor={notificationsEnabled ? C.primary : C.faint}
+                thumbColor={notifications.longRunningTasks ? C.primary : C.faint}
               />
             }
+          />
+          <SettingRow
+            icon="calendar-outline"
+            iconColor={C.primary}
+            title="Daily summary"
+            subtitle="Morning overview of tasks and events"
+            rightElement={
+              <Switch
+                value={notifications.dailySummary}
+                onValueChange={(value) => setNotificationSetting('dailySummary', value)}
+                trackColor={{ false: C.border, true: `${C.primary}40` }}
+                thumbColor={notifications.dailySummary ? C.primary : C.faint}
+              />
+            }
+          />
+          <SettingRow
+            icon="at-outline"
+            iconColor={C.primary}
+            title="Mentions and replies"
+            subtitle="Get notified when agents call out your name"
+            rightElement={
+              <Switch
+                value={notifications.mentions}
+                onValueChange={(value) => setNotificationSetting('mentions', value)}
+                trackColor={{ false: C.border, true: `${C.primary}40` }}
+                thumbColor={notifications.mentions ? C.primary : C.faint}
+              />
+            }
+          />
+        </View>
+
+        <View style={{ marginTop: 16 }}>
+          <SectionHeader title="Data" />
+          <SettingRow
+            icon="download-outline"
+            iconColor={C.primary}
+            title="Export my data"
+            subtitle="Download memories, notes, and tasks as JSON"
+            onPress={handleExportData}
+          />
+          <SettingRow
+            icon="trash-outline"
+            title="Delete all personal data"
+            subtitle="Remove memories, notes, and tasks permanently"
+            onPress={handleDeleteAllData}
+            destructive
           />
         </View>
 

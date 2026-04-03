@@ -4,9 +4,10 @@ import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { getAgentColor } from '@/utils/colors';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
-  muted: '#606490',
+  muted: DESIGN_TOKENS.colors.muted,
 };
 
 export interface AgentPillProps {

@@ -7,14 +7,15 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { useChatStore } from '@/store/useChatStore';
 import { getAgentColor } from '@/utils/colors';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
-  surface: '#FFFFFF',
-  surfaceHigh: '#EEF2FF',
-  text: '#0A0E2E',
-  muted: '#606490',
-  faint: '#B4BBDE',
-  primary: '#2563EB',
+  surface: DESIGN_TOKENS.colors.surface,
+  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+  text: DESIGN_TOKENS.colors.text,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: '#97AEA3',
+  primary: DESIGN_TOKENS.colors.primary,
 };
 
 export interface CreateRoomModalProps {
@@ -106,7 +107,7 @@ export const CreateRoomModal = React.memo(
           // For now, simulating the intent.
           const { deleteRoom } = useChatStore.getState();
           if (deleteRoom) {
-             await deleteRoom(room.id);
+            await deleteRoom(room.id);
           }
           console.error('Failed to add agents to room, rolling back room creation', err);
           Alert.alert(
@@ -128,10 +129,7 @@ export const CreateRoomModal = React.memo(
     return (
       <Modal visible={visible} animationType="slide" transparent>
         <View className="flex-1 justify-end bg-black/35">
-          <View
-            className="rounded-t-[28px] p-6 max-h-[82%]"
-            style={{ backgroundColor: C.surface }}
-          >
+          <View className="rounded-t-[28px] p-6 max-h-[82%]" style={{ backgroundColor: C.surface }}>
             <View className="flex-row justify-between items-center mb-6">
               <AppText variant="h2" style={{ color: C.text }}>
                 {t('createRoom.title', 'New Chat')}
@@ -182,7 +180,7 @@ export const CreateRoomModal = React.memo(
             <ScalePressable
               onPress={handleCreate}
               disabled={isSaving}
-              className="rounded-2xl py-4 items-center mt-5 shadow-lg shadow-blue-600/25"
+              className="rounded-2xl py-4 items-center mt-5"
               style={{
                 backgroundColor: isSaving ? `${C.primary}80` : C.primary,
                 elevation: 4,

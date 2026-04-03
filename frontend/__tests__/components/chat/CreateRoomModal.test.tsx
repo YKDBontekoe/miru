@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { CreateRoomModal } from '../../../src/components/chat/CreateRoomModal';
 import { useChatStore } from '../../../src/store/useChatStore';
 
@@ -30,7 +30,12 @@ describe('CreateRoomModal', () => {
 
   it('renders correctly', () => {
     const { getByText, getByPlaceholderText } = render(
-      <CreateRoomModal visible={true} agents={[mockAgent1]} onClose={onCloseMock} onCreated={onCreatedMock} />
+      <CreateRoomModal
+        visible={true}
+        agents={[mockAgent1]}
+        onClose={onCloseMock}
+        onCreated={onCreatedMock}
+      />
     );
     expect(getByText('New Chat')).toBeTruthy();
     expect(getByPlaceholderText('e.g. Gaming Session')).toBeTruthy();
@@ -42,7 +47,12 @@ describe('CreateRoomModal', () => {
     addAgentToRoomMock.mockResolvedValue(undefined);
 
     const { getByText, getByPlaceholderText } = render(
-      <CreateRoomModal visible={true} agents={[mockAgent1, mockAgent2]} onClose={onCloseMock} onCreated={onCreatedMock} />
+      <CreateRoomModal
+        visible={true}
+        agents={[mockAgent1, mockAgent2]}
+        onClose={onCloseMock}
+        onCreated={onCreatedMock}
+      />
     );
 
     fireEvent.changeText(getByPlaceholderText('e.g. Gaming Session'), 'My Room');
@@ -78,7 +88,12 @@ describe('CreateRoomModal', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const { getByText, getByPlaceholderText } = render(
-      <CreateRoomModal visible={true} agents={[mockAgent1]} onClose={onCloseMock} onCreated={onCreatedMock} />
+      <CreateRoomModal
+        visible={true}
+        agents={[mockAgent1]}
+        onClose={onCloseMock}
+        onCreated={onCreatedMock}
+      />
     );
 
     fireEvent.changeText(getByPlaceholderText('e.g. Gaming Session'), 'My Room');

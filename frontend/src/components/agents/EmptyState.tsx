@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
-import { useTheme } from '../../hooks/useTheme';
 import { theme } from '../../core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export interface EmptyStateProps {
   searchQuery: string;
@@ -22,7 +22,14 @@ export interface EmptyStateProps {
  * @returns {JSX.Element} The rendered empty state view.
  */
 export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, onBrowse }) => {
-  const { C } = useTheme();
+  const C = {
+    surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+    border: DESIGN_TOKENS.colors.border,
+    text: DESIGN_TOKENS.colors.text,
+    muted: DESIGN_TOKENS.colors.muted,
+    faint: '#97AEA3',
+    primary: DESIGN_TOKENS.colors.primary,
+  };
 
   const styles = StyleSheet.create({
     searchContainer: {

@@ -15,12 +15,21 @@ interface TemplateGallerySheetProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (t: AgentTemplate) => void;
+  initialCategory?: 'all' | 'work' | 'planning' | 'creative';
 }
 
-export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGallerySheetProps) {
+export function TemplateGallerySheet({
+  visible,
+  onClose,
+  onSelect,
+  initialCategory = 'all',
+}: TemplateGallerySheetProps) {
   const { C } = useTheme();
   const { templates, isLoadingTemplates, fetchTemplates } = useAgentStore();
   const [hasError, setHasError] = useState(false);
+  const [category, setCategory] = useState<'all' | 'work' | 'planning' | 'creative'>(
+    initialCategory
+  );
 
   useEffect(() => {
     if (visible && templates.length === 0) {
@@ -29,7 +38,41 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
     }
   }, [visible, templates.length, fetchTemplates]);
 
+  useEffect(() => {
+    if (visible) {
+      setCategory(initialCategory);
+    }
+  }, [visible, initialCategory]);
+
   const skeletonData = useMemo(() => [0, 1, 2], []);
+
+  const filteredTemplates = useMemo(() => {
+    if (category === 'all') return templates;
+    return templates.filter((template) => {
+      const haystack =
+        `${template.name} ${template.description} ${template.goals.join(' ')}`.toLowerCase();
+      if (category === 'planning') {
+        return (
+          haystack.includes('plan') || haystack.includes('task') || haystack.includes('schedule')
+        );
+      }
+      if (category === 'creative') {
+        return (
+          haystack.includes('creative') ||
+          haystack.includes('writer') ||
+          haystack.includes('design')
+        );
+      }
+      return !(
+        haystack.includes('plan') ||
+        haystack.includes('task') ||
+        haystack.includes('schedule') ||
+        haystack.includes('creative') ||
+        haystack.includes('writer') ||
+        haystack.includes('design')
+      );
+    });
+  }, [templates, category]);
 
   const renderTemplateItem = React.useCallback(
     ({ item: template, index: i }: { item: AgentTemplate; index: number }) => {
@@ -159,9 +202,20 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
       );
     }
 
+    if (filteredTemplates.length === 0) {
+      return (
+        <View style={{ alignItems: 'center', paddingVertical: 28 }}>
+          <AppText style={{ color: C.text, fontWeight: '600', fontSize: 15, marginBottom: 4 }}>
+            No templates in this category
+          </AppText>
+          <AppText style={{ color: C.muted, fontSize: 13 }}>Try another category.</AppText>
+        </View>
+      );
+    }
+
     return (
       <FlatList
-        data={templates}
+        data={filteredTemplates}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
@@ -216,6 +270,45 @@ export function TemplateGallerySheet({ visible, onClose, onSelect }: TemplateGal
             >
               <Ionicons name="close" size={16} color={C.muted} />
             </ScalePressable>
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              paddingHorizontal: 22,
+              paddingBottom: 8,
+            }}
+          >
+            {(
+              [
+                { key: 'all', label: 'All' },
+                { key: 'work', label: 'Work' },
+                { key: 'planning', label: 'Planning' },
+                { key: 'creative', label: 'Creative' },
+              ] as const
+            ).map((option) => (
+              <ScalePressable
+                key={option.key}
+                onPress={() => setCategory(option.key)}
+                style={{
+                  borderRadius: 12,
+                  backgroundColor: category === option.key ? C.primary : C.surfaceHigh,
+                  borderWidth: 1,
+                  borderColor: category === option.key ? C.primary : C.border,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  marginRight: 8,
+                  marginBottom: 8,
+                }}
+              >
+                <AppText
+                  variant="caption"
+                  style={{ color: category === option.key ? 'white' : C.muted, fontWeight: '700' }}
+                >
+                  {option.label}
+                </AppText>
+              </ScalePressable>
+            ))}
           </View>
 
           {renderContent()}

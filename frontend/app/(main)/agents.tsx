@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../../src/components/AppText';
 import { SkeletonAgentCard } from '../../src/components/SkeletonCard';
@@ -23,14 +23,24 @@ import { AgentCard, AgentGridCard } from '../../src/components/agents/AgentCard'
 import { EmptyState } from '../../src/components/agents/EmptyState';
 import { useAgentStore, AgentTemplate } from '../../src/store/useAgentStore';
 import { useChatStore } from '../../src/store/useChatStore';
-import { useTheme } from '../../src/hooks/useTheme';
 import { haptic } from '../../src/utils/haptics';
 import { Agent } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export default function AgentsScreen() {
-  const { C } = useTheme();
+  const C = {
+    bg: DESIGN_TOKENS.colors.pageBg,
+    surface: DESIGN_TOKENS.colors.surface,
+    surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+    border: DESIGN_TOKENS.colors.border,
+    text: DESIGN_TOKENS.colors.text,
+    muted: DESIGN_TOKENS.colors.muted,
+    faint: '#97AEA3',
+    primary: DESIGN_TOKENS.colors.primary,
+  };
   const router = useRouter();
+  const { openCreate } = useLocalSearchParams<{ openCreate?: string }>();
   const {
     agents,
     fetchAgents,
@@ -43,6 +53,8 @@ export default function AgentsScreen() {
     confirmDelete,
     restoreAgent,
     duplicateAgent,
+    templates,
+    fetchTemplates,
   } = useAgentStore();
   const { createRoom, addAgentToRoom } = useChatStore();
 
@@ -52,6 +64,11 @@ export default function AgentsScreen() {
   const [createPrefill, setCreatePrefill] = useState<AgentTemplate | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [sortMode, setSortMode] = useState<'recent' | 'messages' | 'name'>('recent');
+  const [filterMode, setFilterMode] = useState<'all' | 'pinned' | 'active'>('all');
+  const [templateCategory, setTemplateCategory] = useState<
+    'all' | 'work' | 'planning' | 'creative'
+  >('all');
 
   // Undo-delete state
   const [snackbar, setSnackbar] = useState<{ visible: boolean; agent: Agent | null }>({
@@ -64,6 +81,12 @@ export default function AgentsScreen() {
     fetchAgents();
   }, [fetchAgents]);
 
+  useEffect(() => {
+    if (openCreate === '1' || openCreate === 'true') {
+      setShowCreateSheet(true);
+    }
+  }, [openCreate]);
+
   // Debounce search to avoid filtering on every keystroke
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(searchQuery), 250);
@@ -72,19 +95,67 @@ export default function AgentsScreen() {
 
   const filteredAgents = useMemo(() => {
     const q = debouncedQuery.toLowerCase().trim();
-    if (!q) return agents;
-    return agents.filter(
-      (a) =>
-        a.name.toLowerCase().includes(q) ||
-        a.personality.toLowerCase().includes(q) ||
-        (a.description ?? '').toLowerCase().includes(q)
-    );
-  }, [agents, debouncedQuery]);
+    const queried = !q
+      ? agents
+      : agents.filter(
+          (a) =>
+            a.name.toLowerCase().includes(q) ||
+            a.personality.toLowerCase().includes(q) ||
+            (a.description ?? '').toLowerCase().includes(q)
+        );
+    const filtered =
+      filterMode === 'all'
+        ? queried
+        : filterMode === 'pinned'
+          ? queried.filter((a) => pinnedIds.includes(a.id))
+          : queried.filter((a) => a.message_count > 0);
+
+    return [...filtered].sort((a, b) => {
+      if (sortMode === 'messages') {
+        return b.message_count - a.message_count;
+      }
+      if (sortMode === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [agents, debouncedQuery, filterMode, pinnedIds, sortMode]);
+
+  const categoryCount = useMemo(() => {
+    const counts: Record<'all' | 'work' | 'planning' | 'creative', number> = {
+      all: templates.length,
+      work: 0,
+      planning: 0,
+      creative: 0,
+    };
+    templates.forEach((template) => {
+      const haystack =
+        `${template.name} ${template.description} ${template.goals.join(' ')}`.toLowerCase();
+      if (haystack.includes('plan') || haystack.includes('task') || haystack.includes('schedule')) {
+        counts.planning += 1;
+      } else if (
+        haystack.includes('creative') ||
+        haystack.includes('writer') ||
+        haystack.includes('design')
+      ) {
+        counts.creative += 1;
+      } else {
+        counts.work += 1;
+      }
+    });
+    return counts;
+  }, [templates]);
 
   const pinnedAgents = useMemo(
     () => agents.filter((a) => pinnedIds.includes(a.id)),
     [agents, pinnedIds]
   );
+
+  useEffect(() => {
+    if (templates.length === 0) {
+      fetchTemplates().catch(() => {});
+    }
+  }, [templates.length, fetchTemplates]);
 
   const handleAgentUpdated = useCallback(
     (updated: Agent) => {
@@ -359,12 +430,119 @@ export default function AgentsScreen() {
                 </ScalePressable>
               )}
             </View>
+
+            <View style={{ flexDirection: 'row', marginTop: 10 }}>
+              {(
+                [
+                  { key: 'all', label: 'All' },
+                  { key: 'pinned', label: 'Pinned' },
+                  { key: 'active', label: 'Active' },
+                ] as const
+              ).map((option) => (
+                <ScalePressable
+                  key={option.key}
+                  onPress={() => setFilterMode(option.key)}
+                  style={{
+                    borderRadius: 12,
+                    backgroundColor: filterMode === option.key ? C.primary : C.surfaceHigh,
+                    borderWidth: 1,
+                    borderColor: filterMode === option.key ? C.primary : C.border,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    style={{
+                      color: filterMode === option.key ? 'white' : C.muted,
+                      fontWeight: '700',
+                    }}
+                  >
+                    {option.label}
+                  </AppText>
+                </ScalePressable>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'row', marginTop: 8 }}>
+              {(
+                [
+                  { key: 'recent', label: 'Recent' },
+                  { key: 'messages', label: 'Most used' },
+                  { key: 'name', label: 'A-Z' },
+                ] as const
+              ).map((option) => (
+                <ScalePressable
+                  key={option.key}
+                  onPress={() => setSortMode(option.key)}
+                  style={{
+                    borderRadius: 12,
+                    backgroundColor: sortMode === option.key ? C.primary : C.surface,
+                    borderWidth: 1,
+                    borderColor: sortMode === option.key ? C.primary : C.border,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    style={{
+                      color: sortMode === option.key ? 'white' : C.muted,
+                      fontWeight: '700',
+                    }}
+                  >
+                    {option.label}
+                  </AppText>
+                </ScalePressable>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
+              {(
+                [
+                  { key: 'all', label: `All templates (${categoryCount.all})` },
+                  { key: 'work', label: `Work (${categoryCount.work})` },
+                  { key: 'planning', label: `Planning (${categoryCount.planning})` },
+                  { key: 'creative', label: `Creative (${categoryCount.creative})` },
+                ] as const
+              ).map((option) => (
+                <ScalePressable
+                  key={option.key}
+                  onPress={() => {
+                    setTemplateCategory(option.key);
+                    setShowTemplates(true);
+                  }}
+                  style={{
+                    borderRadius: 12,
+                    backgroundColor: templateCategory === option.key ? C.primary : C.surface,
+                    borderWidth: 1,
+                    borderColor: templateCategory === option.key ? C.primary : C.border,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    marginRight: 8,
+                    marginBottom: 8,
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    style={{
+                      color: templateCategory === option.key ? 'white' : C.muted,
+                      fontWeight: '700',
+                    }}
+                  >
+                    {option.label}
+                  </AppText>
+                </ScalePressable>
+              ))}
+            </View>
           </Animated.View>
         )}
       </View>
 
       {/* ── Pinned strip ── */}
-      {pinnedAgents.length > 0 && !debouncedQuery && (
+      {pinnedAgents.length > 0 && !debouncedQuery && filterMode === 'all' && (
         <Animated.View entering={FadeIn.duration(300)} style={{ marginBottom: 6 }}>
           <View style={{ paddingHorizontal: 20, marginBottom: 6 }}>
             <AppText
@@ -459,6 +637,7 @@ export default function AgentsScreen() {
       <TemplateGallerySheet
         visible={showTemplates}
         onClose={() => setShowTemplates(false)}
+        initialCategory={templateCategory}
         onSelect={(t) => {
           setCreatePrefill(t);
           setShowTemplates(false);
