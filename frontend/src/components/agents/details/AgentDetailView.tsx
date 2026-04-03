@@ -9,17 +9,23 @@ import { Agent } from '@/core/models';
 import { MILESTONES } from '@/components/agents/agentUtils';
 import { AgentDetailStats } from './AgentDetailStats';
 
+interface MilestoneType {
+  icon: string;
+  label: string;
+  threshold: number;
+}
+
 const MilestoneBadge = React.memo(
   ({
     milestone,
     earned,
     displayColor,
-    C,
+    faintColor,
   }: {
-    milestone: any;
+    milestone: MilestoneType;
     earned: boolean;
     displayColor: string;
-    C: any;
+    faintColor: string;
   }) => (
     <View
       className={`flex-row items-center gap-1 rounded-lg px-2 py-1 border ${earned ? '' : 'bg-surfaceMid border-border opacity-55'}`}
@@ -36,7 +42,7 @@ const MilestoneBadge = React.memo(
       <AppText
         className="text-[11px]"
         style={{
-          color: earned ? displayColor : C.faint,
+          color: earned ? displayColor : faintColor,
           fontWeight: earned ? '600' : '400',
         }}
       >
@@ -153,7 +159,7 @@ export function AgentDetailView({
               milestone={m}
               earned={agent.message_count >= m.threshold}
               displayColor={displayColor}
-              C={C}
+              faintColor={C.faint}
             />
           ))}
         </View>
@@ -189,7 +195,7 @@ export function AgentDetailView({
             Goals
           </AppText>
           {agent.goals.map((goal, i) => (
-            <GoalItem key={i} goal={goal} index={i} displayColor={displayColor} />
+            <GoalItem key={goal} goal={goal} index={i} displayColor={displayColor} />
           ))}
         </View>
       )}
@@ -200,8 +206,8 @@ export function AgentDetailView({
             Integrations
           </AppText>
           <View className="flex-row flex-wrap gap-2">
-            {agent.integrations.map((ig, i) => (
-              <IntegrationBadge key={i} integration={ig} />
+            {agent.integrations.map((ig) => (
+              <IntegrationBadge key={ig} integration={ig} />
             ))}
           </View>
         </View>

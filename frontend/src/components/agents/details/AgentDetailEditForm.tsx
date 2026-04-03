@@ -9,13 +9,13 @@ import { haptic } from '@/utils/haptics';
 import { Agent } from '@/core/models';
 
 const EditGoalBadge = React.memo(
-  ({ goal, index, onRemove, C }: { goal: string; index: number; onRemove: (index: number) => void; C: any }) => (
+  ({ goal, index, onRemove, iconColor }: { goal: string; index: number; onRemove: (index: number) => void; iconColor?: string }) => (
     <ScalePressable
       onPress={() => onRemove(index)}
       className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
     >
       <AppText className="text-primary text-xs">{goal}</AppText>
-      <Ionicons name="close" size={11} color={C.primary} />
+      <Ionicons name="close" size={11} color={iconColor ?? '#000'} />
     </ScalePressable>
   )
 );
@@ -121,7 +121,7 @@ export function AgentDetailEditForm({
               goal={g}
               index={i}
               onRemove={removeGoal}
-              C={C}
+              iconColor={C.primary}
             />
           ))}
         </View>
