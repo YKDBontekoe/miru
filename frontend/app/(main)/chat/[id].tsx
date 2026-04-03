@@ -4,11 +4,14 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  ScrollView,
   View,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AppText } from '@/components/AppText';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ChatInputBar } from '@/components/ChatInputBar';
 import { AgentActivityIndicator } from '@/components/AgentActivityIndicator';
@@ -116,6 +119,25 @@ export default function ChatRoomScreen() {
     }
   };
 
+  const quickActions = React.useMemo(
+    () => [
+      'Plan my day from my open tasks and events.',
+      'Extract action items from this chat.',
+      'Schedule my most important task this week.',
+      'What are my top 3 priorities today?',
+    ],
+    []
+  );
+
+  const handleQuickAction = useCallback(
+    (prompt: string) => {
+      if (!roomId || isStreaming) return;
+      setInputText('');
+      sendMessage(roomId, prompt);
+    },
+    [isStreaming, roomId, sendMessage]
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={['top', 'left', 'right']}>
       <ChatRoomHeader
@@ -180,6 +202,21 @@ export default function ChatRoomScreen() {
             }
           />
         )}
+
+        <View className="px-4 pb-2">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {quickActions.map((action) => (
+              <Pressable
+                key={action}
+                onPress={() => handleQuickAction(action)}
+                className="mr-2 rounded-full bg-primaryFaint px-3 py-2"
+                disabled={isStreaming}
+              >
+                <AppText className="text-xs font-semibold text-primary">{action}</AppText>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
 
         <ChatInputBar
           value={inputText}

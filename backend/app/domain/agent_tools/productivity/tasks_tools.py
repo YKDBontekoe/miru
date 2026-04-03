@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from crewai.tools import BaseTool
@@ -56,6 +57,9 @@ class ListTasksTool(BaseTool):
 class CreateTaskInput(BaseModel):
     title: str = Field(..., description="The title of the task.")
     description: str | None = Field(None, description="An optional description for the task.")
+    due_date: datetime | None = Field(
+        None, description="Optional due date/time in ISO 8601 format."
+    )
 
 
 class CreateTaskTool(BaseTool):
@@ -75,9 +79,19 @@ class CreateTaskTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
-    async def _run(self, title: str, description: str | None = None) -> str:
+    async def _run(
+        self,
+        title: str,
+        description: str | None = None,
+        due_date: datetime | None = None,
+    ) -> str:
         try:
-            task_data = TaskCreate(title=title, description=description, is_completed=False)
+            task_data = TaskCreate(
+                title=title,
+                description=description,
+                is_completed=False,
+                due_date=due_date,
+            )
             task = await get_productivity_use_case().create_task(
                 user_id=self.user_id, task_data=task_data
             )
@@ -92,6 +106,9 @@ class UpdateTaskInput(BaseModel):
     task_id: UUID = Field(..., description="The ID of the task to update.")
     is_completed: bool | None = Field(None, description="Whether the task is completed or not.")
     title: str | None = Field(None, description="Optional new title.")
+    due_date: datetime | None = Field(
+        None, description="Optional due date/time in ISO 8601 format."
+    )
 
 
 class UpdateTaskTool(BaseTool):
@@ -112,10 +129,14 @@ class UpdateTaskTool(BaseTool):
     agent_id: UUID | None = None
 
     async def _run(
-        self, task_id: UUID, is_completed: bool | None = None, title: str | None = None
+        self,
+        task_id: UUID,
+        is_completed: bool | None = None,
+        title: str | None = None,
+        due_date: datetime | None = None,
     ) -> str:
         try:
-            update_data = TaskUpdate(is_completed=is_completed, title=title)
+            update_data = TaskUpdate(is_completed=is_completed, title=title, due_date=due_date)
             task = await get_productivity_use_case().update_task(
                 user_id=self.user_id, task_id=task_id, update_data=update_data
             )

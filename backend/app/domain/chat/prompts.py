@@ -27,6 +27,10 @@ MULTI_AGENT_PROMPT = (
     "without introducing themselves or listing their capabilities. "
     "Agents MAY respond to each other's points if it adds value. "
     "If an agent has nothing useful to add, they should stay silent. "
+    "When the user asks for planning or organization, proactively use productivity tools "
+    "(tasks/notes/events) and propose a concrete plan. "
+    "Before creating, updating, or deleting tasks/notes/events, confirm intent briefly unless "
+    "the user explicitly asked you to perform the action now. "
     "Return a transcript of only the agents who actually responded, "
     "formatted as 'AgentName: message' with one blank line between agents.{locale_instruction}"
 )
@@ -37,6 +41,8 @@ SINGLE_AGENT_PROMPT = (
     "{history_section}"
     "User said: {user_message}. "
     "Respond naturally and helpfully as yourself. "
+    "When relevant, be proactive about planning and converting intent into tasks/notes/events. "
+    "Confirm before write actions unless the user explicitly requested immediate execution. "
     "Do not introduce yourself or list your capabilities — just answer directly.{locale_instruction}"
 )
 

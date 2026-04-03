@@ -1,58 +1,70 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  FlatList,
-  RefreshControl,
-  TextInput,
   Alert,
-  StyleSheet,
-  Pressable,
+  FlatList,
   Platform,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
-import { useProductivityStore } from '../../src/store/useProductivityStore';
-import { theme } from '../../src/core/theme';
-
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { Note, Task } from '../../src/core/models';
+import { NoteCard } from '../../src/components/productivity/NoteCard';
+import { TaskCard } from '../../src/components/productivity/TaskCard';
+import { theme } from '../../src/core/theme';
+import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { useProductivityStore } from '../../src/store/useProductivityStore';
 
 const T = theme.colors;
 const S = theme.spacing;
 const R = theme.borderRadius;
 
+type Tab = 'today' | 'all' | 'notes' | 'tasks';
+
 type RenderItemData = {
   date?: number;
-  type: 'note' | 'task';
-  item: Note | Task;
+  type: 'note' | 'task' | 'event';
+  item: Note | Task | CalendarEvent;
   id: string;
 };
 
 export default function ProductivityScreen() {
-  const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'all' | 'notes' | 'tasks'>('all');
+  const { t, i18n } = useTranslation();
+  const [activeTab, setActiveTab] = useState<Tab>('today');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const { notes, tasks, fetchNotes, fetchTasks, isLoading, deleteNote, deleteTask, toggleTask } =
-    useProductivityStore();
-
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
+
+  const {
+    notes,
+    tasks,
+    events,
+    fetchNotes,
+    fetchTasks,
+    fetchEvents,
+    isLoading,
+    deleteNote,
+    deleteTask,
+    toggleTask,
+  } = useProductivityStore();
 
   useEffect(() => {
     fetchNotes();
     fetchTasks();
-  }, [fetchNotes, fetchTasks]);
+    fetchEvents();
+  }, [fetchEvents, fetchNotes, fetchTasks]);
 
   const handleRefresh = useCallback(() => {
     fetchNotes();
     fetchTasks();
-  }, [fetchNotes, fetchTasks]);
+    fetchEvents();
+  }, [fetchEvents, fetchNotes, fetchTasks]);
 
   const confirmDelete = useCallback(
     (action: () => Promise<void>) =>
@@ -60,10 +72,7 @@ export default function ProductivityScreen() {
         t('productivity.delete') || 'Delete',
         t('productivity.are_you_sure') || 'Are you sure?',
         [
-          {
-            text: t('settings.actions.cancel') || 'Cancel',
-            style: 'cancel',
-          },
+          { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
@@ -74,7 +83,6 @@ export default function ProductivityScreen() {
     [t]
   );
 
-  // Derived state for filtering
   const filteredNotes = useMemo(() => {
     if (!searchQuery) return notes;
     const lowerQ = searchQuery.toLowerCase();
@@ -86,32 +94,107 @@ export default function ProductivityScreen() {
   const filteredTasks = useMemo(() => {
     if (!searchQuery) return tasks;
     const lowerQ = searchQuery.toLowerCase();
-    return tasks.filter((t) => t.title.toLowerCase().includes(lowerQ));
-  }, [tasks, searchQuery]);
+    return tasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(lowerQ) ||
+        (task.description?.toLowerCase().includes(lowerQ) ?? false)
+    );
+  }, [searchQuery, tasks]);
 
-  const pendingTasksCount = useMemo(() => tasks.filter((t) => !t.completed).length, [tasks]);
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery) return events;
+    const lowerQ = searchQuery.toLowerCase();
+    return events.filter(
+      (event) =>
+        event.title.toLowerCase().includes(lowerQ) ||
+        (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
+        (event.location?.toLowerCase().includes(lowerQ) ?? false)
+    );
+  }, [events, searchQuery]);
 
-  // Combine items for 'all' tab
+  const pendingTasksCount = useMemo(
+    () => filteredTasks.filter((task) => !task.completed).length,
+    [filteredTasks]
+  );
+
   const mixedData = useMemo(() => {
-    const arr: RenderItemData[] = [];
-    filteredNotes.forEach((n) =>
-      arr.push({
+    const data: RenderItemData[] = [];
+    filteredNotes.forEach((note) => {
+      data.push({
         type: 'note',
-        item: n,
-        id: `note-${n.id}`,
-        date: new Date(n.created_at).getTime(),
-      })
-    );
-    filteredTasks.forEach((t) =>
-      arr.push({
+        item: note,
+        id: `note-${note.id}`,
+        date: new Date(note.created_at).getTime(),
+      });
+    });
+    filteredTasks.forEach((task) => {
+      data.push({
         type: 'task',
-        item: t,
-        id: `task-${t.id}`,
-        date: new Date(t.created_at).getTime(),
-      })
-    );
-    return arr.sort((a, b) => (b.date || 0) - (a.date || 0)); // Sort newest first
+        item: task,
+        id: `task-${task.id}`,
+        date: new Date(task.created_at).getTime(),
+      });
+    });
+    return data.sort((a, b) => (b.date || 0) - (a.date || 0));
   }, [filteredNotes, filteredTasks]);
+
+  const todayData = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const weekEnd = new Date(start);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const overdueTasks = filteredTasks.filter((task) => {
+      if (task.completed || !task.due_date) return false;
+      return new Date(task.due_date) < start;
+    });
+
+    const dueTodayTasks = filteredTasks.filter((task) => {
+      if (task.completed || !task.due_date) return false;
+      const dueDate = new Date(task.due_date);
+      return dueDate >= start && dueDate < end;
+    });
+
+    const upcomingEvents = filteredEvents.filter((event) => {
+      const startTime = new Date(event.start_time);
+      return startTime >= start && startTime < weekEnd;
+    });
+
+    const items: RenderItemData[] = [
+      ...overdueTasks.map((task) => ({
+        type: 'task' as const,
+        item: task,
+        id: `overdue-${task.id}`,
+        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
+      })),
+      ...dueTodayTasks.map((task) => ({
+        type: 'task' as const,
+        item: task,
+        id: `today-${task.id}`,
+        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
+      })),
+      ...upcomingEvents.map((event) => ({
+        type: 'event' as const,
+        item: event,
+        id: `event-${event.id}`,
+        date: new Date(event.start_time).getTime(),
+      })),
+    ];
+
+    return items.sort((a, b) => (a.date || 0) - (b.date || 0));
+  }, [filteredEvents, filteredTasks]);
+
+  const dataToRender: RenderItemData[] =
+    activeTab === 'today'
+      ? todayData
+      : activeTab === 'all'
+        ? mixedData
+        : activeTab === 'notes'
+          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
+          : filteredTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
 
   const renderItem = useCallback(
     ({ item }: { item: RenderItemData }) => {
@@ -119,6 +202,29 @@ export default function ProductivityScreen() {
         const note = item.item as Note;
         return <NoteCard note={note} onDelete={() => confirmDelete(() => deleteNote(note.id))} />;
       }
+      if (item.type === 'event') {
+        const event = item.item as CalendarEvent;
+        return (
+          <View style={styles.eventCard}>
+            <View style={styles.eventIcon}>
+              <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
+            </View>
+            <View style={styles.eventBody}>
+              <AppText style={styles.eventTitle}>{event.title}</AppText>
+              <AppText style={styles.eventMeta}>
+                {new Intl.DateTimeFormat(i18n.language, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: event.is_all_day ? undefined : '2-digit',
+                  minute: event.is_all_day ? undefined : '2-digit',
+                }).format(new Date(event.start_time))}
+              </AppText>
+            </View>
+          </View>
+        );
+      }
+
       const task = item.item as Task;
       return (
         <TaskCard
@@ -128,19 +234,11 @@ export default function ProductivityScreen() {
         />
       );
     },
-    [confirmDelete, deleteNote, deleteTask, toggleTask]
+    [confirmDelete, deleteNote, deleteTask, i18n.language, toggleTask]
   );
-
-  const dataToRender: RenderItemData[] =
-    activeTab === 'all'
-      ? mixedData
-      : activeTab === 'notes'
-        ? filteredNotes.map((n) => ({ type: 'note' as const, item: n, id: n.id }))
-        : filteredTasks.map((t) => ({ type: 'task' as const, item: t, id: t.id }));
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ── Header Area ──────────────────────────────────────────────────────── */}
       <View style={styles.headerContainer}>
         <View style={styles.headerRow}>
           <View>
@@ -171,7 +269,6 @@ export default function ProductivityScreen() {
           </View>
         </View>
 
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons
             name="search"
@@ -190,9 +287,8 @@ export default function ProductivityScreen() {
         </View>
       </View>
 
-      {/* ── Tab Switcher ─────────────────────────────────────────────────────── */}
       <View style={styles.tabsContainer}>
-        {(['all', 'notes', 'tasks'] as const).map((tab) => (
+        {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
           <Pressable
             key={tab}
             onPress={() => setActiveTab(tab)}
@@ -203,17 +299,18 @@ export default function ProductivityScreen() {
             ]}
           >
             <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'all'
-                ? t('productivity.all') || 'All'
-                : tab === 'notes'
-                  ? t('productivity.notes') || 'Notes'
-                  : t('productivity.tasks') || 'Tasks'}
+              {tab === 'today'
+                ? 'Today'
+                : tab === 'all'
+                  ? t('productivity.all') || 'All'
+                  : tab === 'notes'
+                    ? t('productivity.notes') || 'Notes'
+                    : t('productivity.tasks') || 'Tasks'}
             </AppText>
           </Pressable>
         ))}
       </View>
 
-      {/* ── Content List ─────────────────────────────────────────────────────── */}
       <FlatList
         data={dataToRender}
         keyExtractor={(item) => item.id}
@@ -236,7 +333,9 @@ export default function ProductivityScreen() {
                     ? 'document-text'
                     : activeTab === 'tasks'
                       ? 'checkbox'
-                      : 'planet'
+                      : activeTab === 'today'
+                        ? 'sunny-outline'
+                        : 'planet'
                 }
                 size={42}
                 color={T.primary.DEFAULT}
@@ -249,13 +348,17 @@ export default function ProductivityScreen() {
                   ? t('productivity.no_notes') || 'No Notes'
                   : activeTab === 'tasks'
                     ? t('productivity.no_tasks') || 'No Tasks'
-                    : t('productivity.workspace_clear') || 'Your workspace is clear'}
+                    : activeTab === 'today'
+                      ? 'Nothing urgent today'
+                      : t('productivity.workspace_clear') || 'Your workspace is clear'}
             </AppText>
             <AppText style={styles.emptySubtitle}>
               {searchQuery
                 ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-                : t('productivity.capture_thoughts') ||
-                  'Capture your thoughts and track what needs to get done.'}
+                : activeTab === 'today'
+                  ? 'You have no overdue tasks, due tasks, or upcoming events this week.'
+                  : t('productivity.capture_thoughts') ||
+                    'Capture your thoughts and track what needs to get done.'}
             </AppText>
 
             {!searchQuery && (
@@ -271,24 +374,26 @@ export default function ProductivityScreen() {
                     </AppText>
                   </Pressable>
                 )}
-                {(activeTab === 'all' || activeTab === 'tasks') && (
+                {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
                   <Pressable
                     onPress={() => setShowCreateTask(true)}
                     style={({ pressed }) => [
                       styles.emptyButton,
-                      activeTab === 'all' && styles.emptyButtonSecondary,
+                      (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
                       pressed && { opacity: 0.8 },
                     ]}
                   >
                     <Ionicons
                       name="add"
                       size={18}
-                      color={activeTab === 'all' ? T.primary.DEFAULT : T.white}
+                      color={
+                        activeTab === 'all' || activeTab === 'today' ? T.primary.DEFAULT : T.white
+                      }
                       style={{ marginEnd: 6 }}
                     />
                     <AppText
                       style={
-                        activeTab === 'all'
+                        activeTab === 'all' || activeTab === 'today'
                           ? styles.emptyButtonTextSecondary
                           : styles.emptyButtonText
                       }
@@ -414,8 +519,39 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     paddingTop: S.sm,
   },
-
-  // Empty State
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.surface.light,
+    borderWidth: 1,
+    borderColor: T.border.light,
+    borderRadius: R.xl,
+    padding: S.lg,
+    marginBottom: S.md,
+    ...theme.elevation.sm,
+  },
+  eventIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: R.lg,
+    backgroundColor: T.primary.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: S.md,
+  },
+  eventBody: {
+    flex: 1,
+  },
+  eventTitle: {
+    color: T.onSurface.light,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  eventMeta: {
+    color: T.onSurface.mutedLight,
+    marginTop: 2,
+    fontSize: 13,
+  },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: S.massive,

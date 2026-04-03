@@ -51,13 +51,30 @@ export interface Note {
   id: string;
   title: string;
   content: string;
+  is_pinned?: boolean;
+  origin_context?: string | null;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Task {
   id: string;
   title: string;
   completed: boolean;
+  description?: string | null;
   due_date?: string | null;
   created_at: string;
+  updated_at?: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  start_time: string;
+  end_time: string;
+  is_all_day: boolean;
+  location?: string | null;
+  created_at: string;
+  updated_at?: string;
 }

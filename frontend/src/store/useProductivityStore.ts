@@ -1,13 +1,15 @@
 import { create } from 'zustand';
 import { ApiService } from '../core/api/ApiService';
-import { Note, Task } from '../core/models';
+import { CalendarEvent, Note, Task } from '../core/models';
 
 interface ProductivityState {
   notes: Note[];
   tasks: Task[];
+  events: CalendarEvent[];
   isLoading: boolean;
   fetchNotes: () => Promise<void>;
   fetchTasks: () => Promise<void>;
+  fetchEvents: () => Promise<void>;
   createNote: (title: string, content: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   createTask: (title: string) => Promise<void>;
@@ -29,6 +31,7 @@ interface ProductivityState {
 export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
   tasks: [],
+  events: [],
   isLoading: false,
 
   fetchNotes: async () => {
@@ -49,6 +52,17 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
       set({ tasks, isLoading: false });
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      set({ isLoading: false });
+    }
+  },
+
+  fetchEvents: async () => {
+    set({ isLoading: true });
+    try {
+      const events = await ApiService.getEvents();
+      set({ events, isLoading: false });
+    } catch (error) {
+      console.error('Error fetching events:', error);
       set({ isLoading: false });
     }
   },

@@ -1,5 +1,5 @@
 import { apiClient, streamChat } from './client';
-import { Agent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
+import { Agent, CalendarEvent, ChatMessage, ChatRoom, Memory, Note, Task } from '../models';
 
 type AgentTemplate = {
   id: string;
@@ -121,6 +121,14 @@ export const ApiService = {
     await apiClient.delete(`productivity/notes/${id}`);
   },
 
+  async updateNote(
+    id: string,
+    data: Partial<{ title: string; content: string; is_pinned: boolean }>
+  ): Promise<Note> {
+    const response = await apiClient.patch<Note>(`productivity/notes/${id}`, data);
+    return response.data;
+  },
+
   // --- Productivity: Tasks ---
   async getTasks(): Promise<Task[]> {
     const response = await apiClient.get<Record<string, unknown>[]>('productivity/tasks');
@@ -149,6 +157,12 @@ export const ApiService = {
 
   async deleteTask(id: string): Promise<void> {
     await apiClient.delete(`productivity/tasks/${id}`);
+  },
+
+  // --- Productivity: Calendar Events ---
+  async getEvents(): Promise<CalendarEvent[]> {
+    const response = await apiClient.get<CalendarEvent[]>('productivity/events');
+    return response.data;
   },
 
   // Streaming Chat
