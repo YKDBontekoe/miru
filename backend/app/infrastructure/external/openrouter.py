@@ -93,20 +93,26 @@ class OpenRouterClient:
         ),
         reraise=True,
     )
-    async def stream_chat(
-        self,
-        messages: list[ChatCompletionMessageParam],
-        model: str,
-        accept_language: str | None = None,
-    ) -> typing.AsyncIterator[typing.Any]:
+    def _inject_locale_system_message(
+        self, messages: list[ChatCompletionMessageParam], accept_language: str | None
+    ) -> list[ChatCompletionMessageParam]:
         if accept_language:
-            messages = [
+            return [
                 {
                     "role": "system",
                     "content": f"IMPORTANT: Please respond in the following language locale: {resolve_language(accept_language)}.",
                 },
                 *messages,
             ]
+        return messages
+
+    async def stream_chat(
+        self,
+        messages: list[ChatCompletionMessageParam],
+        model: str,
+        accept_language: str | None = None,
+    ) -> typing.AsyncIterator[typing.Any]:
+        messages = self._inject_locale_system_message(messages, accept_language)
 
         return await self.openai_client.chat.completions.create(
             model=model,
@@ -134,14 +140,7 @@ class OpenRouterClient:
         response_model: type[T],
         accept_language: str | None = None,
     ) -> T:
-        if accept_language:
-            messages = [
-                {
-                    "role": "system",
-                    "content": f"IMPORTANT: Please respond in the following language locale: {resolve_language(accept_language)}.",
-                },
-                *messages,
-            ]
+        messages = self._inject_locale_system_message(messages, accept_language)
         return await self.instructor_client.chat.completions.create(
             model=model,
             messages=messages,

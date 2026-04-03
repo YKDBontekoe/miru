@@ -13,6 +13,7 @@ from app.infrastructure.external.openrouter import (
     embed,
     get_openrouter_client,
     structured_completion,
+    stream_chat,
 )
 
 
@@ -307,3 +308,60 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_openrouter_client_stream_chat_with_locale() -> None:
+    client = OpenRouterClient("test-key")
+    with patch.object(client.openai_client.chat.completions, "create", new_callable=AsyncMock) as mock_create:
+        # Mock create to return an async iterator
+        async def mock_stream():
+            yield "test"
+        mock_create.return_value = mock_stream()
+
+        await client.stream_chat([{"role": "user", "content": "hi"}], "test-model", "nl")
+
+        mock_create.assert_called_once()
+        kwargs = mock_create.call_args.kwargs
+        assert kwargs["model"] == "test-model"
+        assert kwargs["stream"] is True
+        messages = kwargs["messages"]
+        assert len(messages) == 2
+        assert messages[0]["role"] == "system"
+        assert "Dutch" in messages[0]["content"]
+        assert messages[1]["role"] == "user"
+
+@pytest.mark.asyncio
+async def test_openrouter_client_stream_chat_without_locale() -> None:
+    client = OpenRouterClient("test-key")
+    with patch.object(client.openai_client.chat.completions, "create", new_callable=AsyncMock) as mock_create:
+        async def mock_stream():
+            yield "test"
+        mock_create.return_value = mock_stream()
+
+        await client.stream_chat([{"role": "user", "content": "hi"}], "test-model")
+
+        mock_create.assert_called_once()
+        kwargs = mock_create.call_args.kwargs
+        assert kwargs["model"] == "test-model"
+        assert kwargs["stream"] is True
+        messages = kwargs["messages"]
+        assert len(messages) == 1
+        assert messages[0]["role"] == "user"
+        assert messages[0]["content"] == "hi"
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.stream_chat = AsyncMock()
+        mock_get_client.return_value = mock_client
+
+        await stream_chat([{"role": "user", "content": "hi"}], accept_language="es")
+
+        mock_client.stream_chat.assert_called_once_with(
+            [{"role": "user", "content": "hi"}], "default-model", "es"
+        )
