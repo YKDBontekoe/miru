@@ -233,10 +233,25 @@ class CrewOrchestrator:
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
 
+        sanitized_user_message = user_message.replace("<", "&lt;").replace(">", "&gt;")
+
         kwargs = {}
         if step_callback:
             kwargs["step_callback"] = step_callback
             kwargs["verbose"] = True
+
+        # We enforce a structured Pydantic schema for the output as required by the LLM Contract
+        from pydantic import BaseModel, Field
+
+        class AgentResponseSegment(BaseModel):
+            agent_name: str = Field(description="The name of the agent responding.")
+            message: str = Field(description="The response content.")
+
+        class MultiAgentCrewChatResponse(BaseModel):
+            responses: list[AgentResponseSegment]
+
+        class SingleAgentCrewChatResponse(BaseModel):
+            message: str
 
         if is_multi:
             task = Task(
@@ -244,10 +259,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=sanitized_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=MultiAgentCrewChatResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,10 +278,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=sanitized_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=SingleAgentCrewChatResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +306,17 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        # CrewAI returns a CrewOutput. Since we enforce output_pydantic, we extract the structured data via pydantic.
+        try:
+            pydantic_res = getattr(cast("Any", result), "pydantic", None)
+            if is_multi:
+                # Convert the structured MultiAgentCrewChatResponse back to the transcript format expected by downstream
+                # This prevents breaking the websocket broadcaster that expects the transcript format for parsing
+                transcript_lines = []
+                for resp in pydantic_res.responses:
+                    transcript_lines.append(f"{resp.agent_name}: {resp.message}")
+                return "\n\n".join(transcript_lines)
+            else:
+                return pydantic_res.message
+        except Exception:
+            return str(result)
