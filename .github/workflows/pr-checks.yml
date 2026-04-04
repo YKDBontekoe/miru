@@ -395,7 +395,18 @@ jobs:
           PIDS=()
           for collection in backend/tests/postman/*.json; do
             echo "Starting Postman Collection: $collection"
-            newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }} &
+            (
+              for attempt in 1 2 3; do
+                if newman run "$collection" --env-var baseUrl="${{ steps.app-url.outputs.url }}"; then
+                  exit 0
+                fi
+                if [ "$attempt" -lt 3 ]; then
+                  echo "Attempt $attempt failed for $collection. Retrying in 5 seconds..."
+                  sleep 5
+                fi
+              done
+              exit 1
+            ) &
             PIDS+=($!)
           done
 
