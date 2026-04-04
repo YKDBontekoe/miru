@@ -155,7 +155,7 @@ class ChatService:
         messages.append({"role": "user", "content": user_message})
 
         try:
-            response = await stream_chat(
+            response = stream_chat(
                 model=model_name,
                 messages=messages,
             )

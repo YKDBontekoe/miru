@@ -233,7 +233,7 @@ async def test_execute_crew_task_structured_output_single(monkeypatch: pytest.Mo
 
         import app.domain.chat.crew_orchestrator as orchestrator
 
-        task_mock = orchestrator.Task
+        task_mock = typing.cast("MagicMock", orchestrator.Task)
         task_kwargs = task_mock.call_args.kwargs
         assert task_kwargs.get("output_pydantic").__name__ == "SingleAgentCrewChatResponse"
         assert "&lt;/user_input&gt;" in task_kwargs.get("description", "")
@@ -295,7 +295,7 @@ async def test_execute_crew_task_structured_output_multi(monkeypatch: pytest.Mon
 
         import app.domain.chat.crew_orchestrator as orchestrator
 
-        task_mock = orchestrator.Task
+        task_mock = typing.cast("MagicMock", orchestrator.Task)
         task_kwargs = task_mock.call_args.kwargs
         assert task_kwargs.get("output_pydantic").__name__ == "MultiAgentCrewChatResponse"
         assert "&lt;/user_input&gt;" in task_kwargs.get("description", "")

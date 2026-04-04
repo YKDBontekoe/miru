@@ -16,8 +16,13 @@ async def test_stream_responses_timeout_error(chat_service: typing.Any) -> None:
     agent = MagicMock()
     agent.personality = "Helpful"
     chat_service.agent_repo.list_by_user.return_value = [agent]
-    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
-        mock_stream_chat.side_effect = TimeoutError("Connection timed out")
+
+    async def mock_async_generator_timeout(*args, **kwargs) -> typing.AsyncGenerator[typing.Any, None]:
+        raise TimeoutError("Connection timed out")
+        yield "never"
+
+    with patch("app.domain.chat.service.stream_chat") as mock_stream_chat:
+        mock_stream_chat.return_value = mock_async_generator_timeout()
         responses = []
         async for r in chat_service.stream_responses("Hi", user_id):
             responses.append(r)
@@ -33,9 +38,14 @@ async def test_stream_responses_api_connection_error(chat_service: typing.Any) -
     agent = MagicMock()
     agent.personality = "Helpful"
     chat_service.agent_repo.list_by_user.return_value = [agent]
-    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
+
+    async def mock_async_generator_error(*args, **kwargs) -> typing.AsyncGenerator[typing.Any, None]:
         request = httpx.Request("POST", "http://test")
-        mock_stream_chat.side_effect = openai.APIConnectionError(request=request)
+        raise openai.APIConnectionError(request=request)
+        yield "never"
+
+    with patch("app.domain.chat.service.stream_chat") as mock_stream_chat:
+        mock_stream_chat.return_value = mock_async_generator_error()
         responses = []
         async for r in chat_service.stream_responses("Hi", user_id):
             responses.append(r)
@@ -57,12 +67,12 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
     chunk3 = MagicMock()
     chunk3.choices = []
 
-    async def mock_async_generator() -> typing.AsyncGenerator[typing.Any, None]:
+    async def mock_async_generator(*args, **kwargs) -> typing.AsyncGenerator[typing.Any, None]:
         yield chunk1
         yield chunk3
         yield chunk2
 
-    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
+    with patch("app.domain.chat.service.stream_chat") as mock_stream_chat:
         mock_stream_chat.return_value = mock_async_generator()
         responses = []
         async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
