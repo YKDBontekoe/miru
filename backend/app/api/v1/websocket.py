@@ -27,37 +27,15 @@ import json
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
-from app.domain.agents.service import AgentService
+from app.api.dependencies import get_auth_service, get_chat_service
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
-from app.infrastructure.database.supabase import get_supabase
-from app.infrastructure.repositories.agent_repo import AgentRepository
-from app.infrastructure.repositories.auth_repo import AuthRepository
-from app.infrastructure.repositories.chat_repo import ChatRepository
-from app.infrastructure.repositories.memory_repo import MemoryRepository
 from app.infrastructure.websocket.manager import chat_hub
 
 router = APIRouter(tags=["WebSocket"])
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# JWT authentication — delegates to AuthService so algorithm/claims handling
-# stays centralised; uses a query-param token because WS upgrades cannot carry
-# a custom Authorization header from most clients.
-# ---------------------------------------------------------------------------
-
-
-async def _verify_token(token: str) -> UUID | None:
-    """Decode a Supabase JWT by delegating to AuthService.decode_jwt."""
-    try:
-        auth_service = AuthService(AuthRepository(get_supabase()))
-        payload = await auth_service.decode_jwt(token)
-        return payload.sub
-    except Exception:
-        logger.warning("WS auth rejected: invalid token")
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +84,8 @@ async def websocket_chat_hub(
     lang: str | None = Query(
         None, description="Preferred language", pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$"
     ),
+    auth_service: AuthService = Depends(get_auth_service),
+    chat_service: ChatService = Depends(get_chat_service),
 ) -> None:
     """
     Main WebSocket endpoint — acts as a SignalR hub for chat rooms.
@@ -114,7 +94,13 @@ async def websocket_chat_hub(
     This endpoint allows clients to join/leave rooms and send messages within those rooms.
     Authentication is required via a Supabase JWT passed as a query parameter.
     """
-    user_id = await _verify_token(token)
+    try:
+        payload = await auth_service.decode_jwt(token)
+        user_id = payload.sub
+    except Exception:
+        logger.warning("WS auth rejected: invalid token")
+        user_id = None
+
     try:
         if user_id is None:
             await websocket.close(code=4001, reason="Unauthorized")
@@ -122,14 +108,6 @@ async def websocket_chat_hub(
 
         await chat_hub.connect(websocket, user_id)
         await chat_hub.send_to_user(user_id, {"type": "connected", "user_id": str(user_id)})
-
-        agent_repo = AgentRepository()
-        service = ChatService(
-            chat_repo=ChatRepository(),
-            agent_repo=agent_repo,
-            memory_repo=MemoryRepository(),
-            agent_service=AgentService(repo=agent_repo),
-        )
 
         while True:
             raw = await websocket.receive_text()
@@ -207,7 +185,7 @@ async def websocket_chat_hub(
                     continue
 
                 # Authorisation: only the room owner may send messages to it
-                if not await service.user_in_room(user_id, room_id):
+                if not await chat_service.user_in_room(user_id, room_id):
                     await chat_hub.send_to_user(
                         user_id,
                         {
@@ -224,7 +202,9 @@ async def websocket_chat_hub(
                 client_temp_id: str | None = msg.get("clientTempId") or None
                 # Fire-and-forget — the hub pushes results back asynchronously
                 asyncio.create_task(
-                    _handle_send_message(service, user_id, room_id, content, client_temp_id, lang)
+                    _handle_send_message(
+                        chat_service, user_id, room_id, content, client_temp_id, lang
+                    )
                 )
 
     except WebSocketDisconnect:
