@@ -1,59 +1,34 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { Agent } from '@/core/models';
-import { theme } from '@/core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { ScalePressable } from '@/components/ScalePressable';
 
 interface ChatRoomEmptyStateProps {
   roomAgents: Agent[];
+  suggestions?: string[];
+  onSuggestionPress?: (suggestion: string) => void;
 }
 
-export const ChatRoomEmptyState = ({ roomAgents }: ChatRoomEmptyStateProps) => {
+export const ChatRoomEmptyState = ({
+  roomAgents,
+  suggestions = [],
+  onSuggestionPress,
+}: ChatRoomEmptyStateProps) => {
   const { t } = useTranslation();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
   return (
-    <View style={styles.container}>
-      <View
-        style={[
-          styles.iconContainer,
-          {
-            backgroundColor: isDark
-              ? theme.colors.surface.highestDark
-              : theme.colors.primary.surfaceLight,
-          },
-        ]}
-      >
-        <Ionicons
-          name="chatbubble-ellipses-outline"
-          size={theme.spacing.xxxl}
-          color={theme.colors.primary.DEFAULT}
-        />
+    <View style={styles.card}>
+      <View style={styles.iconContainer}>
+        <Ionicons name="chatbubble-ellipses-outline" size={34} color={DESIGN_TOKENS.colors.primary} />
       </View>
-      <AppText
-        style={[
-          styles.title,
-          {
-            color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
-          },
-        ]}
-      >
+      <AppText style={styles.title}>
         {t('chat.start_conversation')}
       </AppText>
-      <AppText
-        style={[
-          styles.subtitle,
-          {
-            color: isDark
-              ? theme.colors.onSurface.disabledDark
-              : theme.colors.onSurface.disabledLight,
-          },
-        ]}
-      >
+      <AppText style={styles.subtitle}>
         {roomAgents.length > 0
           ? t('chat.room_agents_status', {
               count: roomAgents.length,
@@ -61,32 +36,70 @@ export const ChatRoomEmptyState = ({ roomAgents }: ChatRoomEmptyStateProps) => {
             })
           : t('chat.add_agent_to_start')}
       </AppText>
+      {suggestions.length > 0 && onSuggestionPress ? (
+        <View style={{ marginTop: 16, width: '100%' }}>
+          {suggestions.map((suggestion) => (
+            <ScalePressable
+              key={suggestion}
+              onPress={() => onSuggestionPress(suggestion)}
+              style={styles.suggestionButton}
+              accessibilityRole="button"
+              accessibilityLabel={suggestion}
+            >
+              <AppText variant="caption" style={{ color: DESIGN_TOKENS.colors.primary, fontWeight: '700' }}>
+                {suggestion}
+              </AppText>
+            </ScalePressable>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  card: {
+    marginTop: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: DESIGN_TOKENS.colors.border,
+    backgroundColor: DESIGN_TOKENS.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.colossal,
+    paddingHorizontal: 24,
+    paddingVertical: 52,
+    ...DESIGN_TOKENS.shadow,
   },
   iconContainer: {
-    width: theme.spacing.colossal,
-    height: theme.spacing.colossal,
-    borderRadius: theme.borderRadius.full,
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: 14,
   },
   title: {
-    ...theme.typography.h3,
-    marginBottom: theme.spacing.xs,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+    color: DESIGN_TOKENS.colors.text,
+    marginBottom: 6,
   },
   subtitle: {
-    ...theme.typography.bodySm,
+    fontSize: 14,
+    lineHeight: 20,
+    color: DESIGN_TOKENS.colors.muted,
     textAlign: 'center',
-    paddingHorizontal: theme.spacing.xxl,
+    paddingHorizontal: 14,
+  },
+  suggestionButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: `${DESIGN_TOKENS.colors.primary}30`,
+    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 8,
   },
 });

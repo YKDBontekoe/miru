@@ -27,6 +27,23 @@ class RoomResponse(BaseModel):
     updated_at: datetime
 
 
+class RoomAgentSummaryResponse(BaseModel):
+    id: UUID
+    name: str
+
+
+class RoomSummaryResponse(BaseModel):
+    id: UUID
+    name: str
+    created_at: datetime
+    updated_at: datetime
+    agents: list[RoomAgentSummaryResponse]
+    last_message: str | None = None
+    last_message_at: datetime | None = None
+    has_mention: bool = False
+    has_task: bool = False
+
+
 class ChatMessageResponse(BaseModel):
     id: UUID
     room_id: UUID

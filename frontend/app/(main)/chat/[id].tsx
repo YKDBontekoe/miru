@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   View,
   ActivityIndicator,
 } from 'react-native';
@@ -16,23 +15,34 @@ import { AppText } from '@/components/AppText';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ChatInputBar } from '@/components/ChatInputBar';
 import { AgentActivityIndicator } from '@/components/AgentActivityIndicator';
+import { ScalePressable } from '@/components/ScalePressable';
 import { useChatStore } from '@/store/useChatStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { ApiService } from '@/core/api/ApiService';
-import { Agent } from '@/core/models';
+import { Agent, ChatMessage } from '@/core/models';
 import { QuickViewAgentSheet } from '@/components/agents/QuickViewAgentSheet';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
 import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
 import { ChatRoomEmptyState } from '@/components/chat/ChatRoomEmptyState';
+import { ChatInlineBanner } from '@/components/chat/ChatInlineBanner';
+import { RoomPromptRail } from '@/components/chat/RoomPromptRail';
 import { useChatRoomSetup } from '@/hooks/useChatRoomSetup';
 import { getAgentColor } from '@/utils/chatUtils';
 import { SecureLocalStorage } from '@/core/services/storage';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { useProductivityStore } from '@/store/useProductivityStore';
 
 const C = {
-  bg: '#F8F8FC',
-  primary: '#2563EB',
-  primarySoft: '#EFF6FF',
-  text: '#0F3D31',
+  bg: DESIGN_TOKENS.colors.pageBg,
+  primary: DESIGN_TOKENS.colors.primary,
+  primarySoft: DESIGN_TOKENS.colors.primarySoft,
+  text: DESIGN_TOKENS.colors.text,
+  border: DESIGN_TOKENS.colors.border,
+  surface: DESIGN_TOKENS.colors.surface,
+  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+  muted: DESIGN_TOKENS.colors.muted,
+  faint: DESIGN_TOKENS.colors.faint,
+  destructive: DESIGN_TOKENS.colors.destructive,
 };
 
 interface RoomShortcut {
@@ -69,13 +79,19 @@ export default function ChatRoomScreen() {
     isLoadingMessages,
     rooms,
     addAgentToRoom,
+    hubError,
   } = useChatStore();
+  const { tasks, events, fetchTasks, fetchEvents, createTask, createNote } = useProductivityStore();
 
   const { agents } = useAgentStore();
   const [inputText, setInputText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [quickViewAgent, setQuickViewAgent] = useState<Agent | null>(null);
   const [shortcuts, setShortcuts] = useState<RoomShortcut[]>([]);
+  const [editingShortcutId, setEditingShortcutId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; tone: 'error' | 'success' | 'info' } | null>(
+    null
+  );
 
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
@@ -97,6 +113,17 @@ export default function ChatRoomScreen() {
     return agents.filter((a) => !roomAgents.some((r) => r.id === a.id));
   }, [agents, roomAgents]);
 
+  useEffect(() => {
+    if (tasks.length === 0) fetchTasks();
+    if (events.length === 0) fetchEvents();
+  }, [events.length, fetchEvents, fetchTasks, tasks.length]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 3500);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   // Scroll to end only when the list grows (new message added)
   useEffect(() => {
     if (roomMessages.length > messageCount.current) {
@@ -114,10 +141,27 @@ export default function ChatRoomScreen() {
 
   const handleSend = useCallback(() => {
     if (!inputText.trim() || !roomId || isStreaming) return;
-    const text = inputText.trim();
+    const normalizedInput = inputText.trim();
+    const slashMap: Record<string, string> = {
+      '/plan': t('chat.quick_actions.plan_day', {
+        defaultValue: 'Plan my day from my open tasks and events.',
+      }),
+      '/summarize': t('chat.quick_actions.extract_actions', {
+        defaultValue: 'Extract action items from this chat.',
+      }),
+      '/tasks': t('chat.quick_actions.extract_actions', {
+        defaultValue: 'Extract action items from this chat.',
+      }),
+      '/priorities': t('chat.quick_actions.top_priorities', {
+        defaultValue: 'What are my top 3 priorities today?',
+      }),
+    };
+    const maybeSlash = normalizedInput.split(' ')[0].toLowerCase();
+    const text = slashMap[maybeSlash] ?? normalizedInput;
     setInputText('');
+    setEditingShortcutId(null);
     sendMessage(roomId, text);
-  }, [inputText, roomId, isStreaming, sendMessage]);
+  }, [inputText, isStreaming, roomId, sendMessage, t]);
 
   const handleRetry = useCallback(
     (content: string) => {
@@ -259,6 +303,7 @@ export default function ChatRoomScreen() {
     (prompt: string) => {
       if (!roomId || isStreaming) return;
       setInputText('');
+      setEditingShortcutId(null);
       sendMessage(roomId, prompt);
     },
     [isStreaming, roomId, sendMessage]
@@ -281,20 +326,199 @@ export default function ChatRoomScreen() {
     const normalized = inputText.trim();
     if (!normalized) return;
     setShortcuts((prev) => {
-      if (prev.some((entry) => entry.text.toLowerCase() === normalized.toLowerCase())) {
+      if (
+        editingShortcutId === null &&
+        prev.some((entry) => entry.text.toLowerCase() === normalized.toLowerCase())
+      ) {
         return prev;
       }
-      const next = [{ id: `custom.${Date.now()}`, text: normalized, pinned: true }, ...prev].slice(
-        0,
-        12
-      );
+      const next =
+        editingShortcutId !== null
+          ? prev.map((entry) =>
+              entry.id === editingShortcutId ? { ...entry, text: normalized } : entry
+            )
+          : [{ id: `custom.${Date.now()}`, text: normalized, pinned: true }, ...prev].slice(0, 12);
       persistShortcuts(next).catch(() => {});
       return next;
     });
-  }, [inputText, persistShortcuts]);
+    setEditingShortcutId(null);
+    setNotice({
+      text:
+        editingShortcutId !== null
+          ? t('chat.prompt_updated', { defaultValue: 'Prompt updated.' })
+          : t('chat.prompt_saved', { defaultValue: 'Prompt saved.' }),
+      tone: 'success',
+    });
+  }, [editingShortcutId, inputText, persistShortcuts, t]);
+
+  const manageShortcut = useCallback(
+    (shortcut: RoomShortcut) => {
+      Alert.alert(
+        t('chat.manage_prompt', { defaultValue: 'Manage prompt' }),
+        shortcut.text,
+        [
+          {
+            text: shortcut.pinned
+              ? t('chat.unpin', { defaultValue: 'Unpin' })
+              : t('chat.pin', { defaultValue: 'Pin' }),
+            onPress: () => togglePinnedShortcut(shortcut.id),
+          },
+          {
+            text: t('chat.edit', { defaultValue: 'Edit' }),
+            onPress: () => {
+              setInputText(shortcut.text);
+              setEditingShortcutId(shortcut.id);
+            },
+          },
+          {
+            text: t('chat.move_to_top', { defaultValue: 'Move to top' }),
+            onPress: () => {
+              setShortcuts((prev) => {
+                const selected = prev.find((item) => item.id === shortcut.id);
+                if (!selected) return prev;
+                const next = [selected, ...prev.filter((item) => item.id !== shortcut.id)];
+                persistShortcuts(next).catch(() => {});
+                return next;
+              });
+            },
+          },
+          {
+            text: t('chat.delete_prompt', { defaultValue: 'Delete' }),
+            style: 'destructive',
+            onPress: () => {
+              setShortcuts((prev) => {
+                const next = prev.filter((entry) => entry.id !== shortcut.id);
+                persistShortcuts(next).catch(() => {});
+                return next;
+              });
+            },
+          },
+          { text: t('common.close', { defaultValue: 'Close' }), style: 'cancel' },
+        ]
+      );
+    },
+    [persistShortcuts, t, togglePinnedShortcut]
+  );
+
+  const handleMessageLongPress = useCallback(
+    (message: ChatMessage) => {
+      const content = message.content.trim();
+      if (!content) return;
+
+      Alert.alert(
+        t('chat.message_actions', { defaultValue: 'Message actions' }),
+        content.slice(0, 160),
+        [
+          {
+            text: t('chat.ask_follow_up', { defaultValue: 'Ask follow-up' }),
+            onPress: () => {
+              setInputText(`${t('chat.follow_up_prefix', { defaultValue: 'Follow up:' })} ${content}`);
+            },
+          },
+          {
+            text: t('chat.edit_resend', { defaultValue: 'Edit and resend' }),
+            onPress: () => {
+              setInputText(content);
+            },
+          },
+          {
+            text: t('chat.save_as_note', { defaultValue: 'Save as note' }),
+            onPress: async () => {
+              try {
+                await createNote(
+                  t('chat.note_title_default', { defaultValue: 'Chat note' }),
+                  content
+                );
+                setNotice({
+                  text: t('chat.note_saved', { defaultValue: 'Saved to notes.' }),
+                  tone: 'success',
+                });
+              } catch {
+                setNotice({
+                  text: t('chat.note_save_failed', { defaultValue: 'Failed to save note.' }),
+                  tone: 'error',
+                });
+              }
+            },
+          },
+          {
+            text: t('chat.create_task', { defaultValue: 'Create task' }),
+            onPress: async () => {
+              try {
+                await createTask(content.slice(0, 120));
+                setNotice({
+                  text: t('chat.task_created', { defaultValue: 'Task created.' }),
+                  tone: 'success',
+                });
+              } catch {
+                setNotice({
+                  text: t('chat.task_create_failed', { defaultValue: 'Failed to create task.' }),
+                  tone: 'error',
+                });
+              }
+            },
+          },
+          {
+            text: t('chat.use_as_prompt', { defaultValue: 'Use as prompt' }),
+            onPress: () => {
+              setInputText(content);
+              setNotice({
+                text: t('chat.copied_to_input', { defaultValue: 'Copied to input.' }),
+                tone: 'info',
+              });
+            },
+          },
+          { text: t('common.close', { defaultValue: 'Close' }), style: 'cancel' },
+        ]
+      );
+    },
+    [createNote, createTask, t]
+  );
+
+  const suggestedStarters = useMemo(() => {
+    const pendingTask = tasks.find((task) => !task.completed);
+    const upcomingEvent = events
+      .filter((event) => new Date(event.end_time).getTime() >= Date.now())
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())[0];
+    const starters: string[] = [];
+    if (pendingTask) {
+      starters.push(
+        t('chat.starter_task', {
+          defaultValue: 'Help me break down "{{title}}" into next actions.',
+          title: pendingTask.title,
+        })
+      );
+    }
+    if (upcomingEvent) {
+      starters.push(
+        t('chat.starter_event', {
+          defaultValue: 'Prepare me for "{{title}}" and suggest an agenda.',
+          title: upcomingEvent.title,
+        })
+      );
+    }
+    starters.push(
+      t('chat.quick_actions.plan_day', {
+        defaultValue: 'Plan my day from my open tasks and events.',
+      })
+    );
+    return starters.slice(0, 3);
+  }, [events, t, tasks]);
+
+  const contextActions = useMemo(() => {
+    const topTasks = tasks
+      .filter((task) => !task.completed)
+      .slice(0, 2)
+      .map((task) => `Task: ${task.title}`);
+    const topEvents = events
+      .filter((event) => new Date(event.end_time).getTime() >= Date.now())
+      .slice(0, 1)
+      .map((event) => `Event: ${event.title}`);
+    return [...topTasks, ...topEvents];
+  }, [events, tasks]);
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <ChatRoomHeader
         room={room}
         roomAgents={roomAgents}
@@ -309,6 +533,37 @@ export default function ChatRoomScreen() {
         keyboardVerticalOffset={0}
         className="flex-1"
       >
+        {hubError ? <ChatInlineBanner text={hubError} tone="error" /> : null}
+        {notice ? <ChatInlineBanner text={notice.text} tone={notice.tone} /> : null}
+        {(isStreaming || currentActivity) && (
+          <View
+            style={{
+              marginHorizontal: 12,
+              marginBottom: 8,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: `${C.primary}30`,
+              backgroundColor: `${C.primary}12`,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <AppText variant="caption" style={{ color: C.primary, fontWeight: '700' }}>
+              {currentActivity
+                ? `${currentActivity.agent_names?.join(', ') || 'Agent'} · ${currentActivity.activity}`
+                : t('chat.streaming', { defaultValue: 'Generating response...' })}
+            </AppText>
+            <ScalePressable onPress={stopStreaming} accessibilityRole="button">
+              <AppText variant="caption" style={{ color: C.primary, fontWeight: '700' }}>
+                {t('chat.stop', { defaultValue: 'Stop' })}
+              </AppText>
+            </ScalePressable>
+          </View>
+        )}
+
         {/* Message list */}
         {isLoadingMessages && roomMessages.length === 0 ? (
           <View className="flex-1 items-center justify-center">
@@ -319,9 +574,20 @@ export default function ChatRoomScreen() {
             ref={flatListRef}
             data={roomMessages}
             keyExtractor={(item) => item.id}
-            contentContainerClassName="px-4 pt-4 pb-2 grow"
+            contentContainerStyle={{
+              paddingHorizontal: 14,
+              paddingTop: 14,
+              paddingBottom: 6,
+              flexGrow: 1,
+            }}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={<ChatRoomEmptyState roomAgents={roomAgents} />}
+            ListEmptyComponent={
+              <ChatRoomEmptyState
+                roomAgents={roomAgents}
+                suggestions={suggestedStarters}
+                onSuggestionPress={handleQuickAction}
+              />
+            }
             renderItem={({ item }) => {
               const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
               const isLastUserMsg =
@@ -339,17 +605,19 @@ export default function ChatRoomScreen() {
                 : undefined;
 
               return (
-                <ChatBubble
-                  text={item.content}
-                  isUser={!!item.user_id}
-                  status={item.status}
-                  agentName={
-                    agent?.name ??
-                    (item.agent_id && item.agent_id !== 'assistant' ? 'Assistant' : undefined)
-                  }
-                  timestamp={item.created_at}
-                  onRetry={prevUserMsg ? () => handleRetry(prevUserMsg.content) : undefined}
-                />
+                <Pressable onLongPress={() => handleMessageLongPress(item)}>
+                  <ChatBubble
+                    text={item.content}
+                    isUser={!!item.user_id}
+                    status={item.status}
+                    agentName={
+                      agent?.name ??
+                      (item.agent_id && item.agent_id !== 'assistant' ? 'Assistant' : undefined)
+                    }
+                    timestamp={item.created_at}
+                    onRetry={prevUserMsg ? () => handleRetry(prevUserMsg.content) : undefined}
+                  />
+                </Pressable>
               );
             }}
             ListFooterComponent={
@@ -358,34 +626,25 @@ export default function ChatRoomScreen() {
           />
         )}
 
-        <View className="px-4 pb-2">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <Pressable
-              onPress={saveInputAsShortcut}
-              className="mr-2 rounded-full px-3 py-2"
-              style={{ backgroundColor: C.primarySoft }}
-              disabled={isStreaming || !inputText.trim()}
-            >
-              <AppText className="text-xs font-semibold" style={{ color: C.primary }}>
-                {t('chat.save_prompt')}
-              </AppText>
-            </Pressable>
-            {quickActions.map((action) => (
-              <Pressable
-                key={action.id}
-                onPress={() => handleQuickAction(action.text)}
-                onLongPress={() => togglePinnedShortcut(action.id)}
-                className="mr-2 rounded-full bg-primaryFaint px-3 py-2"
-                disabled={isStreaming}
-              >
-                <AppText className="text-xs font-semibold text-primary">
-                  {action.pinned ? '★ ' : ''}
-                  {action.text}
-                </AppText>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
+        <RoomPromptRail
+          prompts={quickActions}
+          isStreaming={isStreaming}
+          saveLabel={
+            editingShortcutId
+              ? t('chat.update_prompt', { defaultValue: 'Update prompt' })
+              : t('chat.save_prompt')
+          }
+          heading={t('chat.quick_actions_label', { defaultValue: 'Quick prompts' })}
+          isEditing={editingShortcutId !== null}
+          canSave={Boolean(inputText.trim())}
+          onSave={saveInputAsShortcut}
+          onPromptPress={handleQuickAction}
+          onPromptLongPress={manageShortcut}
+          contextActions={contextActions}
+          onContextPress={(value) => {
+            setInputText((prev) => (prev ? `${prev}\n${value}` : value));
+          }}
+        />
 
         <ChatInputBar
           value={inputText}
