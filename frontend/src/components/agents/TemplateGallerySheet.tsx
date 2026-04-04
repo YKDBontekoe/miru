@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { View, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeInDown } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
 import { SkeletonAgentCard } from '../SkeletonCard';
 import { AgentAvatar } from '../AgentAvatar';
@@ -24,6 +25,7 @@ export function TemplateGallerySheet({
   onSelect,
   initialCategory = 'all',
 }: TemplateGallerySheetProps) {
+  const { t } = useTranslation();
   const { C } = useTheme();
   const { templates, isLoadingTemplates, fetchTemplates } = useAgentStore();
   const [hasError, setHasError] = useState(false);
@@ -191,25 +193,25 @@ export function TemplateGallerySheet({
 
     if (templates.length === 0) {
       return (
-        <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-          <AppText style={{ fontSize: 40, marginBottom: 12 }}>🏗️</AppText>
-          <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
-            Templates coming soon
-          </AppText>
-          <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
-            Pre-built personas will be available here.
-          </AppText>
-        </View>
-      );
+            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+              <AppText style={{ fontSize: 40, marginBottom: 12 }}>🏗️</AppText>
+              <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
+                {t('agents.templatesComingSoon')}
+              </AppText>
+              <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
+                {t('agents.templatesComingSoonDesc')}
+              </AppText>
+            </View>
+          );
     }
 
     if (filteredTemplates.length === 0) {
       return (
         <View style={{ alignItems: 'center', paddingVertical: 28 }}>
           <AppText style={{ color: C.text, fontWeight: '600', fontSize: 15, marginBottom: 4 }}>
-            No templates in this category
+            {t('agents.noTemplatesInCategory')}
           </AppText>
-          <AppText style={{ color: C.muted, fontSize: 13 }}>Try another category.</AppText>
+          <AppText style={{ color: C.muted, fontSize: 13 }}>{t('agents.tryAnotherCategory')}</AppText>
         </View>
       );
     }
@@ -226,7 +228,7 @@ export function TemplateGallerySheet({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
         <Animated.View
           entering={SlideInUp.springify().damping(22)}
@@ -282,10 +284,10 @@ export function TemplateGallerySheet({
           >
             {(
               [
-                { key: 'all', label: 'All' },
-                { key: 'work', label: 'Work' },
-                { key: 'planning', label: 'Planning' },
-                { key: 'creative', label: 'Creative' },
+                { key: 'all', label: t('agents.templateCategory.all') },
+                { key: 'work', label: t('agents.templateCategory.work') },
+                { key: 'planning', label: t('agents.templateCategory.planning') },
+                { key: 'creative', label: t('agents.templateCategory.creative') },
               ] as const
             ).map((option) => (
               <ScalePressable

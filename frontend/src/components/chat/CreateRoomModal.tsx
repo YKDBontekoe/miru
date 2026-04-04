@@ -7,16 +7,7 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { useChatStore } from '@/store/useChatStore';
 import { getAgentColor } from '@/utils/colors';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
-
-const C = {
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  text: DESIGN_TOKENS.colors.text,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  primary: DESIGN_TOKENS.colors.primary,
-};
+import { useTheme } from '@/hooks/useTheme';
 
 export interface CreateRoomModalProps {
   /** Whether the modal is currently visible. */
@@ -35,6 +26,7 @@ export interface CreateRoomModalProps {
 export const CreateRoomModal = React.memo(
   ({ visible, agents, onClose, onCreated }: CreateRoomModalProps) => {
     const { t } = useTranslation();
+    const { C } = useTheme();
     const [name, setName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const { createRoom, addAgentToRoom } = useChatStore();
@@ -80,7 +72,7 @@ export const CreateRoomModal = React.memo(
           </ScalePressable>
         );
       },
-      [selectedAgentIds, toggleAgent]
+      [selectedAgentIds, toggleAgent, C.surfaceHigh, C.text]
     );
 
     const handleCreate = async () => {

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { SkeletonAgentCard } from '../../src/components/SkeletonCard';
 import { Snackbar } from '../../src/components/Snackbar';
@@ -29,6 +30,7 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export default function AgentsScreen() {
+  const { t } = useTranslation();
   const C = {
     bg: DESIGN_TOKENS.colors.pageBg,
     surface: DESIGN_TOKENS.colors.surface,
@@ -447,9 +449,9 @@ export default function AgentsScreen() {
             <View style={{ flexDirection: 'row', marginTop: 10 }}>
               {(
                 [
-                  { key: 'all', label: 'All' },
-                  { key: 'pinned', label: 'Pinned' },
-                  { key: 'active', label: 'Active' },
+                  { key: 'all', label: t('agents.filter.all') },
+                  { key: 'pinned', label: t('agents.filter.pinned') },
+                  { key: 'active', label: t('agents.filter.active') },
                 ] as const
               ).map((option) => (
                 <ScalePressable
@@ -481,9 +483,9 @@ export default function AgentsScreen() {
             <View style={{ flexDirection: 'row', marginTop: 8 }}>
               {(
                 [
-                  { key: 'recent', label: 'Recent' },
-                  { key: 'messages', label: 'Most used' },
-                  { key: 'name', label: 'A-Z' },
+                  { key: 'recent', label: t('agents.sort.recent') },
+                  { key: 'messages', label: t('agents.sort.messages') },
+                  { key: 'name', label: t('agents.sort.name') },
                 ] as const
               ).map((option) => (
                 <ScalePressable
@@ -515,10 +517,22 @@ export default function AgentsScreen() {
             <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
               {(
                 [
-                  { key: 'all', label: `All templates (${categoryCount.all})` },
-                  { key: 'work', label: `Work (${categoryCount.work})` },
-                  { key: 'planning', label: `Planning (${categoryCount.planning})` },
-                  { key: 'creative', label: `Creative (${categoryCount.creative})` },
+                  {
+                    key: 'all',
+                    label: t('agents.template.all', { count: categoryCount.all }),
+                  },
+                  {
+                    key: 'work',
+                    label: t('agents.template.work', { count: categoryCount.work }),
+                  },
+                  {
+                    key: 'planning',
+                    label: t('agents.template.planning', { count: categoryCount.planning }),
+                  },
+                  {
+                    key: 'creative',
+                    label: t('agents.template.creative', { count: categoryCount.creative }),
+                  },
                 ] as const
               ).map((option) => (
                 <ScalePressable

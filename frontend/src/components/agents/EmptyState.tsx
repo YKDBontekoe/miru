@@ -5,7 +5,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { theme } from '@/core/theme';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { ThemeColors, useTheme } from '@/hooks/useTheme';
 
 export interface EmptyStateProps {
   searchQuery: string;
@@ -21,16 +21,8 @@ export interface EmptyStateProps {
  * @param {EmptyStateProps} props - The properties for the component.
  * @returns {JSX.Element} The rendered empty state view.
  */
-const C = {
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  border: DESIGN_TOKENS.colors.border,
-  text: DESIGN_TOKENS.colors.text,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  primary: DESIGN_TOKENS.colors.primary,
-};
-
-const styles = StyleSheet.create({
+const createStyles = (C: ThemeColors) =>
+  StyleSheet.create({
   searchContainer: {
     alignItems: 'center',
     paddingVertical: theme.spacing.massive + theme.spacing.sm, // equivalent to 56
@@ -100,10 +92,10 @@ const styles = StyleSheet.create({
   createButtonIcon: {
     marginEnd: theme.spacing.sm,
   },
-  createButtonText: {
-    ...theme.typography.body,
-    color: theme.colors.white,
-    fontWeight: '700',
+    createButtonText: {
+      ...theme.typography.body,
+      color: theme.colors.white,
+      fontWeight: '700',
   },
   browseButton: {
     flexDirection: 'row',
@@ -111,13 +103,15 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
     padding: theme.spacing.sm,
   },
-  browseButtonText: {
-    color: C.muted,
-    ...theme.typography.bodySm,
-  },
-});
+    browseButtonText: {
+      color: C.muted,
+      ...theme.typography.bodySm,
+    },
+  });
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, onBrowse }) => {
+  const { C } = useTheme();
+  const styles = React.useMemo(() => createStyles(C), [C]);
 
   if (searchQuery.trim()) {
     return (

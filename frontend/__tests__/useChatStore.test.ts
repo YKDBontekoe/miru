@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useChatStore } from '../src/store/useChatStore';
 import { ApiService } from '../src/core/api/ApiService';
+import { getApiErrorMessage } from '../src/core/api/errors';
 import { chatHub } from '../src/core/services/ChatHubService';
 
 // Mock ApiService
@@ -321,7 +322,9 @@ it('handles fetchRooms error', async () => {
     await result.current.fetchRooms();
   });
 
-  expect(result.current.hubError).toBe('error');
+  expect(result.current.hubError).toBe(
+    getApiErrorMessage(new Error('error'), 'Failed to load rooms. Please try again.')
+  );
 });
 
 it('handles fetchMessages error', async () => {
@@ -332,7 +335,9 @@ it('handles fetchMessages error', async () => {
     await result.current.fetchMessages('1');
   });
 
-  expect(result.current.hubError).toBe('error');
+  expect(result.current.hubError).toBe(
+    getApiErrorMessage(new Error('error'), 'Failed to load messages. Please try again.')
+  );
 });
 
 it('stopStreaming clears agentActivity and isStreaming', async () => {

@@ -13,7 +13,7 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
   }
   style={
     {
-      "backgroundColor": "#F2F7F2",
+      "backgroundColor": "#F4F6FF",
     }
   }
 >
@@ -76,7 +76,7 @@ exports[`PageShell renders shell and section primitives consistently 1`] = `
     contentContainerStyle={
       [
         {
-          "paddingBottom": 136,
+          "paddingBottom": 104,
         },
         undefined,
       ]
