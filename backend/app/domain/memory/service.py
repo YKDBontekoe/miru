@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 from typing import TYPE_CHECKING, Any
@@ -31,7 +32,8 @@ class MemoryService:
         agent_id: UUID | str | None = None,
         room_id: UUID | str | None = None,
         related_to: list[UUID] | None = None,
-    ) -> UUID | None:
+        _return_task: bool = False,
+    ) -> UUID | None | asyncio.Task:
         """Persist a memory fact with semantic deduplication and graph linkage."""
         content = content.strip()
         if not content:
@@ -68,18 +70,21 @@ class MemoryService:
                 logger.warning(f"Relationship creation failed: {e}")
 
         # 4. Trigger intelligent graph extraction in the background
+        task = None
         if u_id:
             try:
                 import asyncio
 
                 from app.domain.memory.graph_service import GraphExtractionService
 
-                asyncio.create_task(  # noqa: RUF006
+                task = asyncio.create_task(  # noqa: RUF006
                     GraphExtractionService.process_and_store_graph(content, u_id)
                 )
             except Exception:
                 logger.warning("Failed to trigger background graph extraction", exc_info=True)
 
+        if _return_task:
+            return task
         return memory_id
 
     async def store_document_memory(
