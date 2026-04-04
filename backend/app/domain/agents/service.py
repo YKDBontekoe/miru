@@ -104,7 +104,8 @@ class AgentService:
             sections.append(f"\nYour Goals:\n{goal_list}")
         if capability_ids:
             all_caps = await self.list_capabilities()
-            cap_names = [c.name for c in all_caps if c.id in capability_ids]
+            capability_id_set = set(capability_ids)
+            cap_names = (c.name for c in all_caps if str(c.id) in capability_id_set)
             cap_list = ", ".join(cap_names)
             sections.append(
                 f"\nYou have access to the following tools: {cap_list}. "
@@ -288,7 +289,10 @@ class AgentService:
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
-        except Exception:
-            logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
+        except (ValueError, RuntimeError):
+            logger.exception("Mood inference failed for agent %s", agent_id)
             return
+        except Exception:
+            logger.exception("Mood inference failed for agent %s with unexpected error", agent_id)
+            raise
         await self.repo.update_mood(agent_id, mood)
