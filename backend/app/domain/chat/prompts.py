@@ -19,7 +19,7 @@ MULTI_AGENT_PROMPT = (
     "{summary_section}"
     "{memory_section}"
     "{history_section}"
-    "User said: {user_message}. "
+    "User said: <user_input>{user_message}</user_input> "
     "You are managing a group chat with specialized agents. "
     "Delegate ONLY to agents whose expertise is directly relevant to the user's request — "
     "do NOT force every agent to respond. "
@@ -31,15 +31,15 @@ MULTI_AGENT_PROMPT = (
     "(tasks/notes/events) and propose a concrete plan. "
     "Before creating, updating, or deleting tasks/notes/events, confirm intent briefly unless "
     "the user explicitly asked you to perform the action now. "
-    "Return a transcript of only the agents who actually responded, "
-    "formatted as 'AgentName: message' with one blank line between agents.{locale_instruction}"
+    'Return a structured JSON output with a top-level "responses" field containing only '
+    'the agents who actually responded (e.g. {{"responses": [...]}}).{locale_instruction}'
 )
 
 SINGLE_AGENT_PROMPT = (
     "{summary_section}"
     "{memory_section}"
     "{history_section}"
-    "User said: {user_message}. "
+    "User said: <user_input>{user_message}</user_input> "
     "Respond naturally and helpfully as yourself. "
     "When relevant, be proactive about planning and converting intent into tasks/notes/events. "
     "Confirm before write actions unless the user explicitly requested immediate execution. "
@@ -47,9 +47,8 @@ SINGLE_AGENT_PROMPT = (
 )
 
 MULTI_AGENT_EXPECTED_OUTPUT = (
-    "A chat transcript with only the relevant agents responding. "
-    "Format: 'AgentName: message' with one blank line between agents. "
+    'A structured JSON object with a "responses" field containing the responses from the relevant agents. '
     "Agents should be concise and natural, not self-promotional."
 )
 
-SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message."
+SINGLE_AGENT_EXPECTED_OUTPUT = "A structured JSON response to the user's message."

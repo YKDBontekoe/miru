@@ -158,7 +158,29 @@ async def stream_chat(
 ) -> typing.AsyncIterator[typing.Any]:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
-    return await client.stream_chat(messages, chosen_model)
+    fallback = get_settings().fallback_chat_model
+
+    try:
+        primary_iterator = await client.stream_chat(messages, chosen_model)
+        async for chunk in primary_iterator:
+            yield chunk
+    except Exception as e:
+        if isinstance(e, asyncio.CancelledError):
+            raise
+        if fallback and fallback != chosen_model:
+            logger.warning(
+                "stream_chat failed during iteration with model %s, falling back to %s",
+                chosen_model,
+                fallback,
+            )
+            try:
+                fallback_iterator = await client.stream_chat(messages, fallback)
+                async for chunk in fallback_iterator:
+                    yield chunk
+            except Exception as fallback_e:
+                raise fallback_e from e
+        else:
+            raise
 
 
 async def structured_completion(
