@@ -23,7 +23,7 @@ import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
-import { Task, CalendarEvent, ChatRoom, Agent } from '../../src/core/models';
+import { Task, CalendarEvent, ChatRoom, Agent } from '@/core/models';
 
 type SectionItem =
   | { type: 'hero'; greeting: string; firstName: string; initials: string; todayTaskCount: number; completionRate: number }
@@ -353,8 +353,8 @@ export default function HomeScreen() {
 
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
-  const { agents, fetchAgents } = useAgentStore();
-  const { tasks, events, fetchTasks, fetchEvents, toggleTask } = useProductivityStore();
+  const { agents, fetchAgents, isLoading: isLoadingAgents } = useAgentStore();
+  const { tasks, events, fetchTasks, fetchEvents, toggleTask, isLoading: isLoadingProductivity } = useProductivityStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -480,7 +480,15 @@ export default function HomeScreen() {
     }
 
     // 7. Empty State
-    if (rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms) {
+    if (
+      rooms.length === 0 &&
+      agents.length === 0 &&
+      tasks.length === 0 &&
+      events.length === 0 &&
+      !isLoadingRooms &&
+      !isLoadingAgents &&
+      !isLoadingProductivity
+    ) {
       s.push({
         type: 'empty_state',
         data: [{ type: 'empty_state' } as SectionItem]
@@ -496,10 +504,13 @@ export default function HomeScreen() {
     greeting,
     initials,
     isLoadingRooms,
+    isLoadingAgents,
+    isLoadingProductivity,
     recentRooms,
     rooms.length,
     sortedPendingTasks,
     tasks.length,
+    events.length,
     todayTaskCount,
     upcomingEvents,
   ]);

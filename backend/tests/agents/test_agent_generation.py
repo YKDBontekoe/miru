@@ -60,7 +60,8 @@ async def test_update_mood_exception():
         "app.domain.agents.service.structured_completion", new_callable=AsyncMock
     ) as mock_completion:
         mock_completion.side_effect = Exception("API Error")
-        await service.update_mood(agent_id, "User said something")
+        with pytest.raises(Exception):
+            await service.update_mood(agent_id, "User said something")
         repo.update_mood.assert_not_called()
 
 
