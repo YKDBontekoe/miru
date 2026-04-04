@@ -309,14 +309,19 @@ class CrewOrchestrator:
         # CrewAI returns a CrewOutput. Since we enforce output_pydantic, we extract the structured data via pydantic.
         try:
             pydantic_res = getattr(cast("Any", result), "pydantic", None)
+            if pydantic_res is None:
+                return str(result)
+
             if is_multi:
                 # Convert the structured MultiAgentCrewChatResponse back to the transcript format expected by downstream
                 # This prevents breaking the websocket broadcaster that expects the transcript format for parsing
                 transcript_lines = []
-                for resp in pydantic_res.responses:
-                    transcript_lines.append(f"{resp.agent_name}: {resp.message}")
+                for resp in getattr(pydantic_res, "responses", []):
+                    transcript_lines.append(
+                        f"{getattr(resp, 'agent_name', 'Agent')}: {getattr(resp, 'message', '')}"
+                    )
                 return "\n\n".join(transcript_lines)
             else:
-                return pydantic_res.message
+                return getattr(pydantic_res, "message", str(result))
         except Exception:
             return str(result)

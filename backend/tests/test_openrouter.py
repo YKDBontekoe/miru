@@ -307,3 +307,81 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_success() -> None:
+    """Test successful stream_chat call."""
+    from app.infrastructure.external.openrouter import stream_chat
+
+    messages = [{"role": "user", "content": "hello"}]
+
+    with (
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="primary-model")
+        mock_client = MagicMock()
+        mock_client.stream_chat = AsyncMock(return_value="stream_iterator")
+        mock_get_client.return_value = mock_client
+
+        res = await stream_chat(messages)  # type: ignore
+
+        assert res == "stream_iterator"
+        mock_client.stream_chat.assert_called_once_with(messages, "primary-model")
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_fallback() -> None:
+    """Test stream_chat falling back to a secondary model."""
+    from app.infrastructure.external.openrouter import stream_chat
+
+    messages = [{"role": "user", "content": "hello"}]
+
+    with (
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="primary-model", fallback_chat_model="fallback-model"
+        )
+        mock_client = MagicMock()
+        # Fail on first call, succeed on second
+        mock_client.stream_chat = AsyncMock(
+            side_effect=[Exception("Primary model failed"), "fallback_iterator"]
+        )
+        mock_get_client.return_value = mock_client
+
+        res = await stream_chat(messages)  # type: ignore
+
+        assert res == "fallback_iterator"
+        assert mock_client.stream_chat.call_count == 2
+        mock_client.stream_chat.assert_any_call(messages, "primary-model")
+        mock_client.stream_chat.assert_any_call(messages, "fallback-model")
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_fallback_fails() -> None:
+    """Test stream_chat failing entirely when both models fail."""
+    from app.infrastructure.external.openrouter import stream_chat
+
+    messages = [{"role": "user", "content": "hello"}]
+
+    with (
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="primary-model", fallback_chat_model="fallback-model"
+        )
+        mock_client = MagicMock()
+        mock_client.stream_chat = AsyncMock(
+            side_effect=[
+                Exception("Primary model failed"),
+                Exception("Fallback model failed"),
+            ]
+        )
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(Exception, match="Fallback model failed"):
+            await stream_chat(messages)  # type: ignore
