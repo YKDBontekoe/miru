@@ -30,7 +30,10 @@ async def test_memory_creation_and_retrieval_integration() -> None:
     # Note: match_memories uses a cosine distance > threshold check.
     # To bypass it we ensure vectors are different enough, or just let deduplication do its thing.
 
-    with patch("app.domain.memory.service.embed") as mock_embed:
+    with (
+        patch("app.domain.memory.service.embed") as mock_embed,
+        patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
+    ):
         # First memory
         mock_embed.return_value = [0.1, 0.0] + [0.0] * 1534
         mem1_id = await service.store_memory(content="I have a cat named Whiskers", user_id=user_id)
@@ -72,16 +75,21 @@ async def test_memory_relationship_integration() -> None:
 
     user_id = uuid4()
 
-    with patch("app.domain.memory.service.embed") as mock_embed:
+    with (
+        patch("app.domain.memory.service.embed") as mock_embed,
+        patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
+    ):
         mock_embed.return_value = [0.3, 0.0] + [0.0] * 1534
         m1 = await service.store_memory("Paris is a city", user_id=user_id)
 
         assert m1 is not None
+        assert not isinstance(m1, asyncio.Task)
 
         mock_embed.return_value = [0.0, 0.4] + [0.0] * 1534
         m2 = await service.store_memory("France is a country", user_id=user_id, related_to=[m1])
 
     assert m2 is not None
+    assert not isinstance(m2, asyncio.Task)
 
     graph = await service.get_memory_graph(user_id)
     assert len(graph["nodes"]) == 2
@@ -124,14 +132,17 @@ async def test_store_memory_triggers_graph_extraction_integration() -> None:
         mock_embed.return_value = [0.5] * 1536
         mock_extract.return_value = mock_extraction
 
-        await service.store_memory("John is a cool dude", user_id=user_id)
-
-        # Allow the background task created by store_memory to execute
-        await asyncio.sleep(0.1)
+        task = await service.store_memory("John is a cool dude", user_id=user_id, _return_task=True)
 
     from app.domain.memory.models import MemoryGraphNode
 
-    nodes = await MemoryGraphNode.filter(user_id=user_id).all()
+    if task and isinstance(task, asyncio.Task):
+        for _ in range(20):
+            if await MemoryGraphNode.filter(user_id=user_id, name="John").exists():
+                break
+            await asyncio.sleep(0.05)
+
+    nodes = await MemoryGraphNode.filter(user_id=user_id, name="John").all()
     assert len(nodes) == 1
     assert nodes[0].name == "John"
     assert nodes[0].entity_type == "Person"

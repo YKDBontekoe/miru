@@ -100,6 +100,9 @@ async def initialize_tortoise(
         # or skip testcontainer startup logic and rely on local db / SQLite if needed
         import os
 
+        import docker.errors
+        from testcontainers.core.exceptions import ContainerStartException
+
         db_url = os.environ.get("TEST_DATABASE_URL")
         if not db_url:
             try:
@@ -107,7 +110,12 @@ async def initialize_tortoise(
                 db_url = container.get_connection_url().replace(
                     "postgresql+psycopg2://", "postgres://"
                 )
-            except Exception:
+            except (
+                pytest.FixtureLookupError,
+                ContainerStartException,
+                docker.errors.ImageNotFound,
+                docker.errors.APIError,
+            ):
                 db_url = "sqlite://:memory:"
                 # If we fallback to SQLite, we must skip integration tests entirely because
                 # they rely on Postgres-specific pgvector and RPC syntaxes (`:= $1::vector`).
@@ -143,36 +151,38 @@ async def initialize_tortoise(
     if "DATABASE_URL" in os.environ:
         del os.environ["DATABASE_URL"]
 
-    await Tortoise.init(config=config)
+    try:
+        await Tortoise.init(config=config)
 
-    if is_integration:
-        # Create pgvector extension on the container database
-        conn = Tortoise.get_connection("default")
-        await conn.execute_query("CREATE EXTENSION IF NOT EXISTS vector;")
+        if is_integration:
+            # Create pgvector extension on the container database
+            conn = Tortoise.get_connection("default")
+            await conn.execute_query("CREATE EXTENSION IF NOT EXISTS vector;")
 
-    await Tortoise.generate_schemas()
+        await Tortoise.generate_schemas()
 
-    if is_integration:
-        conn = Tortoise.get_connection("default")
+        if is_integration:
+            conn = Tortoise.get_connection("default")
 
-        # Alter the embedding column to be of type vector so operators like <=> work
-        # Tortoise generates JSONField as JSONB by default. We cast it to text and then vector
-        await conn.execute_query(
-            "ALTER TABLE memories ALTER COLUMN embedding TYPE vector(1536) USING embedding::text::vector;"
-        )
+            # Alter the embedding column to be of type vector so operators like <=> work
+            # Tortoise generates JSONField as JSONB by default. We cast it to text and then vector
+            await conn.execute_query(
+                "ALTER TABLE memories ALTER COLUMN embedding TYPE vector(1536) USING embedding::text::vector;"
+            )
 
-        # Create match_memories function to make tests work
-        from app.domain.memory.models import MemoryCollection
+            # Create match_memories function to make tests work
+            from app.domain.memory.models import MemoryCollection
 
-        sql_functions = MemoryCollection.Meta.sql_functions
-        for func in sql_functions:
-            await conn.execute_query(func)
+            sql_functions = MemoryCollection.Meta.sql_functions
+            for func in sql_functions:
+                await conn.execute_query(func)
 
-    yield
-    await Tortoise.close_connections()
+        yield
+    finally:
+        await Tortoise.close_connections()
 
-    if db_url_env:
-        os.environ["DATABASE_URL"] = db_url_env
+        if db_url_env:
+            os.environ["DATABASE_URL"] = db_url_env
 
 
 @pytest.fixture()

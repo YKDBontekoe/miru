@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import io
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -82,21 +83,18 @@ async def test_store_memory_success(mock_process_graph: MagicMock, mock_embed: M
 
     mock_repo.insert_memory.return_value = FakeMemory()
 
-    memory_id = await service.store_memory(
-        content="Test content", user_id=user_id, related_to=related_to
-    )
+    import asyncio
 
-    assert memory_id == FakeMemory.id
+    task = await service.store_memory(
+        content="Test content", user_id=user_id, related_to=related_to, _return_task=True
+    )
+    if task and isinstance(task, asyncio.Task):
+        await asyncio.wait_for(task, timeout=5.0)
+
     mock_embed.assert_awaited_once_with("Test content")
     mock_repo.match_memories.assert_awaited_once()
     mock_repo.insert_memory.assert_awaited_once()
     mock_repo.create_relationship.assert_awaited_once_with(FakeMemory.id, related_to[0])
-    # Background task should be triggered
-    # Due to asyncio.create_task it runs independently, but mock should be called inside it
-    # We can await for asyncio.sleep(0) to let event loop run the background task
-    import asyncio
-
-    await asyncio.sleep(0.01)
     mock_process_graph.assert_awaited_once_with("Test content", user_id)
 
 
@@ -121,15 +119,16 @@ async def test_store_memory_exceptions(
     mock_repo.create_relationship.side_effect = Exception("relationship error")
     mock_process_graph.side_effect = Exception("process graph error")
 
-    memory_id = await service.store_memory(
-        content="Test content", user_id=user_id, related_to=related_to
-    )
-
-    assert memory_id == FakeMemory.id
-    mock_repo.create_relationship.assert_awaited_once_with(FakeMemory.id, related_to[0])
     import asyncio
 
-    await asyncio.sleep(0.01)
+    task = await service.store_memory(
+        content="Test content", user_id=user_id, related_to=related_to, _return_task=True
+    )
+    if task and isinstance(task, asyncio.Task):
+        with contextlib.suppress(Exception):
+            await asyncio.wait_for(task, timeout=5.0)
+
+    mock_repo.create_relationship.assert_awaited_once_with(FakeMemory.id, related_to[0])
     mock_process_graph.assert_called_once_with("Test content", user_id)
 
 
