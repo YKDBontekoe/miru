@@ -101,7 +101,7 @@ export function RoomPromptRail({
               <Pressable
                 key={value}
                 onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+                className="me-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
               >
                 <AppText variant="caption" className="text-[#5A7467] font-bold">
                   {value}
