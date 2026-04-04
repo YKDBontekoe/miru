@@ -1,5 +1,7 @@
 """Tests for Steam CrewAI tools."""
 
+from __future__ import annotations
+
 import typing
 from unittest.mock import AsyncMock, patch
 
@@ -99,6 +101,16 @@ async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, stea
 
 
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
+def test_steam_player_summary_tool_sync_exception(
+    mock_get_summaries: typing.Any, steam_id: str
+) -> None:
+    mock_get_summaries.side_effect = Exception("API error")
+    tool = SteamPlayerSummaryTool(steam_id=steam_id)
+    result = tool._run()
+    assert "An unexpected error occurred while executing the tool." in result
+
+
+@patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
 def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id: str) -> None:
     """Test sync tool execution."""
     mock_get_summaries.return_value = [
@@ -113,6 +125,14 @@ def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id
     result = tool._run()
     assert "Robin" in result
     assert "Online" in result
+
+
+@patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
+def test_steam_owned_games_tool_sync_exception(mock_get_games: typing.Any, steam_id: str) -> None:
+    mock_get_games.side_effect = Exception("API error")
+    tool = SteamOwnedGamesTool(steam_id=steam_id)
+    result = tool._run()
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)

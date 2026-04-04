@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import logging
 from collections.abc import Callable
@@ -18,8 +20,8 @@ def handle_tool_error(reraise: tuple[type[Exception], ...] = ()) -> Callable:
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 try:
                     return await func(*args, **kwargs)
-                except reraise as e:
-                    raise e
+                except reraise:
+                    raise
                 except Exception:
                     logger.exception(f"Error executing {getattr(func, '__name__', repr(func))}")
                     return "An unexpected error occurred while executing the tool."
@@ -31,8 +33,8 @@ def handle_tool_error(reraise: tuple[type[Exception], ...] = ()) -> Callable:
             def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 try:
                     return func(*args, **kwargs)
-                except reraise as e:
-                    raise e
+                except reraise:
+                    raise
                 except Exception:
                     logger.exception(f"Error executing {getattr(func, '__name__', repr(func))}")
                     return "An unexpected error occurred while executing the tool."
