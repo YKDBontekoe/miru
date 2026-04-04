@@ -289,7 +289,7 @@ class AgentService:
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
-        except (ValueError, RuntimeError) as e:
+        except (ValueError, RuntimeError):
             logger.exception("Mood inference failed for agent %s", agent_id)
             return
         except Exception:
