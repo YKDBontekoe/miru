@@ -131,6 +131,7 @@ async def test_list_room_summaries(chat_service: ChatService) -> None:
             room_id=room_id,
             user_id=user_id,
             content="@planner action item for today",
+            attachments=[{"markers": ["mention", "task"]}],
             created_at=now,
         )
     }
@@ -175,7 +176,9 @@ async def test_list_room_summaries_without_latest_message(chat_service: ChatServ
 
 
 @pytest.mark.asyncio
-async def test_list_room_summaries_latest_message_without_markers(chat_service: ChatService) -> None:
+async def test_list_room_summaries_latest_message_without_markers(
+    chat_service: ChatService,
+) -> None:
     room_id = uuid4()
     user_id = uuid4()
     agent_id = uuid4()

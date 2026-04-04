@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
@@ -30,13 +31,15 @@ export const ChatRoomHeader = ({
   onManageAgentsPress,
   getAgentColor,
 }: ChatRoomHeaderProps) => {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-row items-center px-3.5 py-2.5 gap-2 border-b border-[#DDE8E0] bg-white">
       <ScalePressable
         onPress={onBack}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
-        accessibilityLabel="Back"
+        accessibilityLabel={t('chat.back', { defaultValue: 'Back' })}
       >
         <Ionicons name="chevron-back" size={26} color={C.text} />
       </ScalePressable>
@@ -96,7 +99,7 @@ export const ChatRoomHeader = ({
         onPress={onManageAgentsPress}
         className="w-8 h-8 rounded-2xl items-center justify-center bg-[#ECF5F0] border border-[#DDE8E0]"
         accessibilityRole="button"
-        accessibilityLabel="Manage agents"
+        accessibilityLabel={t('chat.manage_agents', { defaultValue: 'Manage agents' })}
       >
         <Ionicons name="person-add-outline" size={16} color={C.primary} />
       </ScalePressable>

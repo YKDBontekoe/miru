@@ -3,6 +3,7 @@ import { View, TextInput, Pressable, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ChatInputBarProps {
   value: string;
@@ -40,6 +41,7 @@ export function ChatInputBar({
   className,
   inputClassName,
 }: ChatInputBarProps) {
+  const { isDark, C } = useTheme();
   const inputRef = useRef<TextInput>(null);
   const canSend = value.trim().length > 0 && !isStreaming;
 
@@ -65,15 +67,21 @@ export function ChatInputBar({
     // Keep focus so keyboard stays open for follow-up messages
   };
 
-  const sendToneClass = canSend
-    ? 'bg-[#147D64] border-[#147D64]'
-    : 'bg-[#ECF5F0] border-[#DDE8E0]';
-  const stopToneClass = 'bg-[#FCEEEE] border-[#F4D1D1]';
-
   return (
-    <View style={styles.container} className={className}>
+    <View
+      style={[styles.container, { borderTopColor: C.border, backgroundColor: C.surface }]}
+      className={className}
+    >
       {/* Text input */}
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            borderColor: C.border,
+            backgroundColor: C.surfaceHigh,
+          },
+        ]}
+      >
         <TextInput
           ref={inputRef}
           value={value}
@@ -82,7 +90,7 @@ export function ChatInputBar({
           placeholderTextColor={DESIGN_TOKENS.colors.faint}
           multiline
           textAlignVertical="center"
-          style={styles.input}
+          style={[styles.input, { color: C.text }]}
           className={inputClassName}
           returnKeyType="default"
           blurOnSubmit={false}
@@ -96,9 +104,12 @@ export function ChatInputBar({
           onPress={onStop}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          className={stopToneClass}
           style={[
             styles.actionButton,
+            {
+              backgroundColor: isDark ? C.dangerSurface : DESIGN_TOKENS.colors.destructiveSoft,
+              borderColor: isDark ? C.danger : DESIGN_TOKENS.colors.destructiveBorder,
+            },
             animatedStyle,
           ]}
         >
@@ -112,9 +123,16 @@ export function ChatInputBar({
           disabled={!canSend}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          className={sendToneClass}
           style={[
             styles.actionButton,
+            {
+              backgroundColor: canSend
+                ? C.primary
+                : isDark
+                  ? C.surfaceHigh
+                  : DESIGN_TOKENS.colors.surfaceSoft,
+              borderColor: canSend ? C.primary : C.border,
+            },
             animatedStyle,
           ]}
         >
@@ -137,16 +155,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 12,
     borderTopWidth: 1,
-    borderTopColor: DESIGN_TOKENS.colors.border,
-    backgroundColor: DESIGN_TOKENS.colors.surface,
     gap: 8,
   },
   inputContainer: {
     flex: 1,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: DESIGN_TOKENS.colors.border,
-    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
     paddingHorizontal: 14,
     paddingTop: Platform.OS === 'ios' ? 10 : 8,
     paddingBottom: Platform.OS === 'ios' ? 10 : 8,
@@ -159,7 +173,6 @@ const styles = StyleSheet.create({
     margin: 0,
     fontSize: 15,
     lineHeight: 20,
-    color: DESIGN_TOKENS.colors.text,
   },
   actionButton: {
     width: 44,

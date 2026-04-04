@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from tortoise import Tortoise
 from tortoise.expressions import Q
 
 from app.domain.agents.models import Agent
@@ -168,16 +169,40 @@ class ChatRepository:
         """Fetch latest non-deleted message per room for a list of room IDs."""
         if not room_ids:
             return {}
-        rows = (
-            await ChatMessage.filter(room_id__in=room_ids, deleted_at__isnull=True)
-            .order_by("room_id", "-created_at", "-id")
-            .all()
-        )
+        conn = Tortoise.get_connection("default")
+        sql = """
+            SELECT DISTINCT ON (room_id)
+                id,
+                room_id,
+                content,
+                message_type,
+                user_id,
+                agent_id,
+                attachments,
+                created_at,
+                updated_at,
+                deleted_at
+            FROM chat_messages
+            WHERE deleted_at IS NULL
+              AND room_id = ANY($1::uuid[])
+            ORDER BY room_id, created_at DESC, id DESC
+        """
+        rows = await conn.execute_query_dict(sql, [room_ids])
         latest_by_room: dict[UUID, ChatMessageEntity] = {}
         for row in rows:
-            if row.room_id in latest_by_room:
-                continue
-            latest_by_room[row.room_id] = _map_message_to_entity(row)
+            message = ChatMessageEntity(
+                id=row["id"],
+                room_id=row["room_id"],
+                content=row["content"],
+                message_type=row["message_type"],
+                user_id=row["user_id"],
+                agent_id=row["agent_id"],
+                attachments=row.get("attachments") or [],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                deleted_at=row["deleted_at"],
+            )
+            latest_by_room[message.room_id] = message
         return latest_by_room
 
     async def update_message(

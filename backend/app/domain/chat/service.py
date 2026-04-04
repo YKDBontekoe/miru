@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from typing import TYPE_CHECKING
 
 import openai
@@ -37,8 +36,41 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 CONVERSATION_HISTORY_LIMIT = 30
-TASK_HINT_PATTERN = re.compile(r"\b(task|todo|to-do|action item|priority)\b", re.IGNORECASE)
-MENTION_PATTERN = re.compile(r"@[\w.-]+")
+
+
+def _extract_marker_flags(message: ChatMessageEntity | None) -> tuple[bool, bool]:
+    """Extract task/mention flags from structured message markers or metadata."""
+    if message is None or not isinstance(message.attachments, list):
+        return False, False
+
+    has_task = False
+    has_mention = False
+
+    for attachment in message.attachments:
+        if not isinstance(attachment, dict):
+            continue
+
+        markers = attachment.get("markers")
+        if isinstance(markers, list):
+            normalized_markers = {str(marker).strip().lower() for marker in markers}
+            has_task = has_task or bool(
+                normalized_markers
+                & {
+                    "task",
+                    "todo",
+                    "to_do",
+                    "action_item",
+                    "priority",
+                }
+            )
+            has_mention = has_mention or "mention" in normalized_markers
+
+        metadata = attachment.get("metadata")
+        if isinstance(metadata, dict):
+            has_task = has_task or bool(metadata.get("has_task"))
+            has_mention = has_mention or bool(metadata.get("has_mention"))
+
+    return has_task, has_mention
 
 
 class ChatService:
@@ -92,8 +124,7 @@ class ChatService:
             agents = rooms_agents_map.get(room.id, [])
             latest = latest_messages_map.get(room.id)
             preview = latest.content.strip() if latest else None
-            has_task = bool(preview and TASK_HINT_PATTERN.search(preview))
-            has_mention = bool(preview and MENTION_PATTERN.search(preview))
+            has_task, has_mention = _extract_marker_flags(latest)
             return RoomSummaryResponse(
                 id=room.id,
                 name=room.name,

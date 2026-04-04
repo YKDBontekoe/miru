@@ -52,7 +52,11 @@ export function RoomPromptRail({
           ) : null}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-3"
+        >
           <Pressable
             onPress={onSave}
             className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
@@ -91,7 +95,7 @@ export function RoomPromptRail({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 }}
+            contentContainerClassName="px-3 pt-2"
           >
             {contextActions.map((value) => (
               <Pressable
