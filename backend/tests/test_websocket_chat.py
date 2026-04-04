@@ -111,9 +111,10 @@ def test_websocket_endpoint_runtime_error_other(client: TestClient) -> None:
     try:
         with patch("starlette.websockets.WebSocket.receive_text") as mock_receive:
             mock_receive.side_effect = RuntimeError("Some other random error")
-            with pytest.raises(RuntimeError, match="Some other random error"):
-                with client.websocket_connect("/api/v1/ws/chat?token=valid"):
-                    pass
+            with pytest.raises(RuntimeError, match="Some other random error"), client.websocket_connect(
+                "/api/v1/ws/chat?token=valid"
+            ):
+                pass
     finally:
         app.dependency_overrides.clear()
 
