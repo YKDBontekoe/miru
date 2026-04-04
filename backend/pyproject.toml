@@ -64,6 +64,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "sentry-sdk>=2.54.0",
     "starlette>=0.52.1",
+    "testcontainers[postgres]>=4.14.2",
 ]
 
 
@@ -115,6 +116,7 @@ markers = [
     # smoke: lightweight tests that run against a live deployment.
     # Tag tests with @pytest.mark.smoke and run with: pytest -m smoke
     "smoke: marks tests as post-deploy smoke checks (run with '-m smoke')",
+    "integration: marks tests as requiring testcontainers and postgres db",
 ]
 
 [tool.aerich]

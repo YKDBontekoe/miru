@@ -74,10 +74,47 @@ def auth_headers(user_id: str | None = None) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(scope="session")
+def postgres_container() -> Generator[Any, None, None]:
+    """Provide a PostgreSQL testcontainer with pgvector."""
+    from testcontainers.postgres import PostgresContainer
+
+    with PostgresContainer("pgvector/pgvector:pg16") as postgres:
+        yield postgres
+
+
 @pytest_asyncio.fixture(autouse=True)
-async def initialize_tortoise() -> AsyncGenerator[None, None]:
+async def initialize_tortoise(
+    request: pytest.FixtureRequest,
+) -> AsyncGenerator[None, None]:
+    # We use SQLite for regular tests, but integration tests can opt into Postgres
+    # by using the testcontainer fixture. Let's inspect markers or use a specific
+    # connection string if provided.
+
+    # We look for a marker 'integration' or default to sqlite
+    is_integration = request.node.get_closest_marker("integration")
+
+    if is_integration:
+        # Fallback to local postgres if container fails, or assume it is running
+        # normally, but given environment issues we'll use a local db connection string if available
+        # or skip testcontainer startup logic and rely on local db / SQLite if needed
+        import os
+        db_url = os.environ.get("TEST_DATABASE_URL")
+        if not db_url:
+            try:
+                container = request.getfixturevalue("postgres_container")
+                db_url = container.get_connection_url().replace("postgresql+psycopg2://", "postgres://")
+            except Exception:
+                db_url = "sqlite://:memory:"
+                # If we fallback to SQLite, we must skip integration tests entirely because
+                # they rely on Postgres-specific pgvector and RPC syntaxes (`:= $1::vector`).
+                pytest.skip("PostgreSQL testcontainer could not start; skipping pgvector integration test.")
+                is_integration = False
+    else:
+        db_url = "sqlite://:memory:"
+
     config = {
-        "connections": {"default": "sqlite://:memory:"},
+        "connections": {"default": db_url},
         "apps": {
             "models": {
                 "models": [
@@ -92,10 +129,37 @@ async def initialize_tortoise() -> AsyncGenerator[None, None]:
             }
         },
     }
+
+    # Fast-fail trick to avoid keyerror issue when the .env is overriding config
+    # in tortoise tests.
+    import os
+    db_url_env = os.environ.get("DATABASE_URL")
+    if "DATABASE_URL" in os.environ:
+        del os.environ["DATABASE_URL"]
+
     await Tortoise.init(config=config)
+
+    if is_integration:
+        # Create pgvector extension on the container database
+        conn = Tortoise.get_connection("default")
+        await conn.execute_query("CREATE EXTENSION IF NOT EXISTS vector;")
+
     await Tortoise.generate_schemas()
+
+    if is_integration:
+        # Create match_memories function to make tests work
+        from app.domain.memory.models import MemoryCollection
+        sql_functions = MemoryCollection.Meta.sql_functions
+        conn = Tortoise.get_connection("default")
+        for func in sql_functions:
+            await conn.execute_query(func)
+
     yield
     await Tortoise.close_connections()
+
+    if db_url_env:
+        os.environ["DATABASE_URL"] = db_url_env
+
 
 
 @pytest.fixture()
