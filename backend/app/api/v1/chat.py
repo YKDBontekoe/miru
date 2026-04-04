@@ -39,7 +39,16 @@ async def list_rooms(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[RoomResponse]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Retrieve all chat rooms for the authenticated user.
+
+    Args:
+        user_id (CurrentUser): The ID of the authenticated user making the request.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        list[RoomResponse]: A list of chat rooms belonging to the user.
+    """
     return await service.list_rooms(user_id)
 
 
@@ -59,7 +68,17 @@ async def create_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Create a new chat room for the authenticated user.
+
+    Args:
+        data (RoomCreate): The payload containing the room details (e.g., name).
+        user_id (CurrentUser): The ID of the authenticated user creating the room.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        RoomResponse: The newly created chat room.
+    """
     return await service.create_room(data.name, user_id)
 
 
@@ -136,7 +155,21 @@ async def update_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Update the details of an existing chat room.
+
+    Args:
+        room_id (UUID): The unique identifier of the room to update.
+        data (RoomUpdate): The payload containing the updated room details.
+        user_id (CurrentUser): The ID of the authenticated user updating the room.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        RoomResponse: The updated chat room.
+
+    Raises:
+        HTTPException: If the room is not found or the user is not authorized.
+    """
     room = await service.update_room(room_id, data.name, user_id=user_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -159,7 +192,20 @@ async def delete_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Delete a chat room.
+
+    Args:
+        room_id (UUID): The unique identifier of the room to delete.
+        user_id (CurrentUser): The ID of the authenticated user deleting the room.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        dict[str, str]: A status dictionary indicating success.
+
+    Raises:
+        HTTPException: If the room is not found or the user is not authorized.
+    """
     success = await service.delete_room(room_id, user_id=user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -182,7 +228,21 @@ async def add_agent_to_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Add an agent to a chat room.
+
+    Args:
+        room_id (UUID): The unique identifier of the room.
+        data (AddAgentToRoom): The payload containing the ID of the agent to add.
+        user_id (CurrentUser): The ID of the authenticated user modifying the room.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        dict[str, str]: A status dictionary indicating success.
+
+    Raises:
+        HTTPException: If the room is not found or the user is not authorized.
+    """
     success = await service.add_agent_to_room(room_id, data.agent_id, user_id=user_id)
     if success is None:
         raise HTTPException(status_code=404, detail="Room not found")
@@ -206,7 +266,20 @@ async def get_room_agents(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> list[AgentResponse]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Retrieve all agents associated with a chat room.
+
+    Args:
+        room_id (UUID): The unique identifier of the room.
+        user_id (CurrentUser): The ID of the authenticated user requesting the agents.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        list[AgentResponse]: A list of agents participating in the room.
+
+    Raises:
+        HTTPException: If the room is not found or the user is not authorized.
+    """
     agents = await service.list_room_agents(room_id, user_id=user_id)
     if agents is None:
         raise HTTPException(status_code=404, detail="Chat room not found")
@@ -230,7 +303,21 @@ async def remove_agent_from_room(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Remove an agent from a chat room.
+
+    Args:
+        room_id (UUID): The unique identifier of the room.
+        agent_id (UUID): The unique identifier of the agent to remove.
+        user_id (CurrentUser): The ID of the authenticated user modifying the room.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        dict[str, str]: A status dictionary indicating success.
+
+    Raises:
+        HTTPException: If the agent is not found in the room or the user is not authorized.
+    """
     success = await service.remove_agent_from_room(room_id, agent_id, user_id=user_id)
     if not success:
         raise HTTPException(
@@ -259,7 +346,22 @@ async def get_room_messages(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[ChatMessageResponse]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Retrieve messages from a chat room, ordered by creation time.
+
+    Args:
+        room_id (UUID): The unique identifier of the room.
+        user_id (CurrentUser): The ID of the authenticated user requesting messages.
+        service (ChatService): The injected chat service containing business logic.
+        limit (int, optional): The maximum number of messages to return. Defaults to 50.
+        before_id (UUID | None, optional): A message ID used as a cursor for pagination. Defaults to None.
+
+    Returns:
+        list[ChatMessageResponse]: A list of chat messages.
+
+    Raises:
+        HTTPException: If the room is not found or the user is not authorized.
+    """
     messages = await service.get_room_messages(
         room_id, user_id=user_id, limit=limit, before_id=before_id
     )
@@ -287,7 +389,22 @@ async def update_message(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> ChatMessageResponse:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Update the content of an existing chat message.
+
+    Args:
+        room_id (UUID): The unique identifier of the room.
+        message_id (UUID): The unique identifier of the message to update.
+        data (MessageUpdate): The payload containing the updated message content.
+        user_id (CurrentUser): The ID of the authenticated user updating the message.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        ChatMessageResponse: The updated chat message.
+
+    Raises:
+        HTTPException: If the message is not found or the user is not authorized.
+    """
     msg = await service.update_message(message_id, data.content, user_id=user_id)
     if not msg:
         raise HTTPException(
@@ -314,7 +431,21 @@ async def delete_message(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> dict[str, str]:
-    # DOCS(miru-agent): undocumented endpoint
+    """
+    Delete a chat message.
+
+    Args:
+        room_id (UUID): The unique identifier of the room.
+        message_id (UUID): The unique identifier of the message to delete.
+        user_id (CurrentUser): The ID of the authenticated user deleting the message.
+        service (ChatService): The injected chat service containing business logic.
+
+    Returns:
+        dict[str, str]: A status dictionary indicating success.
+
+    Raises:
+        HTTPException: If the message is not found or the user is not authorized.
+    """
     success = await service.delete_message(message_id, user_id=user_id)
     if not success:
         raise HTTPException(
