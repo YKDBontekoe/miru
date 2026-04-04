@@ -2013,6 +2013,7 @@ dev = [
     { name = "sentry-sdk" },
     { name = "starlette" },
     { name = "testcontainers" },
+    { name = "ty" },
 ]
 
 [package.metadata]
@@ -2067,6 +2068,7 @@ dev = [
     { name = "sentry-sdk", specifier = ">=2.54.0" },
     { name = "starlette", specifier = ">=0.52.1" },
     { name = "testcontainers", extras = ["postgres"], specifier = ">=4.14.2" },
+    { name = "ty", specifier = ">=0.0.25" },
 ]
 
 [[package]]

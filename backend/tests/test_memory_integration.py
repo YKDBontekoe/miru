@@ -76,10 +76,11 @@ async def test_memory_relationship_integration() -> None:
         mock_embed.return_value = [0.3] * 1536
         m1 = await service.store_memory("Paris is a city", user_id=user_id)
 
+        assert m1 is not None
+
         mock_embed.return_value = [0.4] * 1536
         m2 = await service.store_memory("France is a country", user_id=user_id, related_to=[m1])
 
-    assert m1 is not None
     assert m2 is not None
 
     graph = await service.get_memory_graph(user_id)
