@@ -13,6 +13,11 @@ from app.domain.chat.background_service import ChatBackgroundService
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.dtos import ChatMessageResponse, RoomResponse
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
+from app.domain.productivity.use_cases.manage_productivity import (
+    CalendarEventNotFoundError,
+    InvalidTimeRangeError,
+    TaskNotFoundError,
+)
 from app.infrastructure.external.openrouter import stream_chat
 
 if TYPE_CHECKING:
@@ -285,17 +290,24 @@ class ChatService:
             room = await self.chat_repo.get_room(room_id)
             room_summary = room.summary if room else None
 
-            result_text = await CrewOrchestrator.execute_crew_task(
-                room_agents=room_agents,
-                user_message=user_message,
-                user_id=user_id,
-                user_msg_id=user_msg.id,
-                step_callback=step_callback,
-                accept_language=accept_language,
-                conversation_history=conversation_history,
-                memory_context=memory_context,
-                room_summary=room_summary,
-            )
+            try:
+                result_text = await CrewOrchestrator.execute_crew_task(
+                    room_agents=room_agents,
+                    user_message=user_message,
+                    user_id=user_id,
+                    user_msg_id=user_msg.id,
+                    step_callback=step_callback,
+                    accept_language=accept_language,
+                    conversation_history=conversation_history,
+                    memory_context=memory_context,
+                    room_summary=room_summary,
+                )
+            except TaskNotFoundError:
+                result_text = "The specified task could not be found."
+            except CalendarEventNotFoundError:
+                result_text = "The specified calendar event could not be found."
+            except InvalidTimeRangeError:
+                result_text = "The provided time range is invalid."
 
             # 6. Persist + broadcast — returns only the agents that actually responded.
             responded_agents = await self.ws_broadcaster.persist_and_broadcast_agent_response(
