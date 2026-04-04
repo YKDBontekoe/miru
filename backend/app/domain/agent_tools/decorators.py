@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import logging
 from collections.abc import Callable
 from typing import Any
@@ -28,7 +29,7 @@ def handle_tool_error(
                 raise
             except Exception:
                 # We log at exception level to preserve the traceback
-                logger.exception("Error in %s", func.__qualname__)
+                logger.exception("Error in %s", getattr(func, "__qualname__", repr(func)))
                 return default_message
 
         @functools.wraps(func)
@@ -38,21 +39,11 @@ def handle_tool_error(
             except reraise:
                 raise
             except Exception:
-                logger.exception("Error in %s", func.__qualname__)
+                logger.exception("Error in %s", getattr(func, "__qualname__", repr(func)))
                 return default_message
 
-        if (
-            getattr(func, "__code__", None)
-            and func.__code__.co_flags & 0x80
-            or getattr(func, "_is_coroutine", False)
-        ):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            # Better check for async
-            import inspect
-
-            if inspect.iscoroutinefunction(func):
-                return async_wrapper
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
