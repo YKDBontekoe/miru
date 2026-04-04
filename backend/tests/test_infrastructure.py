@@ -40,7 +40,7 @@ async def test_chat_completion_uses_explicit_model() -> None:
         result = await chat_completion([{"role": "user", "content": "Hi"}], model="custom/model")
     assert result == "World!"
     mock_client.chat_completion.assert_awaited_once_with(
-        [{"role": "user", "content": "Hi"}], "custom/model"
+            [{"role": "user", "content": "Hi"}], "custom/model", accept_language=None
     )
 
 
@@ -101,7 +101,7 @@ async def test_client_chat_completion_delegates_to_structured() -> None:
     result = await client.chat_completion([{"role": "user", "content": "Hi"}], "model")
     assert result == "hello from structured"
     client.structured_completion.assert_called_once_with(
-        [{"role": "user", "content": "Hi"}], "model", ChatResponse
+            [{"role": "user", "content": "Hi"}], "model", ChatResponse, accept_language=None
     )
 
 

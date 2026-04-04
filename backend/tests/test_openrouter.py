@@ -151,7 +151,7 @@ async def test_standalone_chat_completion_success() -> None:
         result = await chat_completion([{"role": "user", "content": "hi"}])
         assert result == "hello"
         mock_client.chat_completion.assert_called_once_with(
-            [{"role": "user", "content": "hi"}], "default-model"
+            [{"role": "user", "content": "hi"}], "default-model", accept_language=None
         )
 
 
@@ -178,7 +178,7 @@ async def test_standalone_chat_completion_fallback() -> None:
 
         # Check that it called with fallback model
         mock_client.chat_completion.assert_called_with(
-            [{"role": "user", "content": "hi"}], "fallback-model"
+            [{"role": "user", "content": "hi"}], "fallback-model", accept_language=None
         )
 
 
@@ -237,7 +237,7 @@ async def test_standalone_structured_completion_success() -> None:
         result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
         assert result.name == "hello"
         mock_client.structured_completion.assert_called_once_with(
-            [{"role": "user", "content": "hi"}], "default-model", DummyModel
+            [{"role": "user", "content": "hi"}], "default-model", DummyModel, accept_language=None
         )
 
 
@@ -264,7 +264,7 @@ async def test_standalone_structured_completion_fallback() -> None:
 
         # Check that it called with fallback model
         mock_client.structured_completion.assert_called_with(
-            [{"role": "user", "content": "hi"}], "fallback-model", DummyModel
+            [{"role": "user", "content": "hi"}], "fallback-model", DummyModel, accept_language=None
         )
 
 
