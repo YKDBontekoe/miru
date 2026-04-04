@@ -18,6 +18,13 @@ def handle_tool_error(
     It catches `Exception` during tool execution. If the exception is an instance
     of a type defined in `reraise`, it will be re-raised. Otherwise, it will log
     the error and return the generic user-facing message `default_message`.
+
+    Args:
+        reraise (tuple[type[Exception], ...], optional): Exceptions to re-raise.
+        default_message (str, optional): User-facing fallback message.
+
+    Returns:
+        Callable[[Callable[..., Any]], Callable[..., Any]]: The wrapped decorator function.
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:

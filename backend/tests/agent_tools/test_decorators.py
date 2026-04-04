@@ -70,6 +70,15 @@ async def test_handle_tool_error_reraises_specified_exception() -> None:
         await my_func()
 
 
+def test_handle_tool_error_sync_reraises_specified_exception() -> None:
+    @handle_tool_error(reraise=(CustomError,), default_message="Should not be returned")
+    def my_func() -> str:
+        raise CustomError("Reraise me")
+
+    with pytest.raises(CustomError, match="Reraise me"):
+        my_func()
+
+
 @pytest.mark.asyncio
 async def test_handle_tool_error_catches_unspecified_exception() -> None:
     @handle_tool_error(reraise=(CustomError,), default_message="Default message")

@@ -397,11 +397,13 @@ jobs:
             echo "Starting Postman Collection: $collection"
             (
               for attempt in 1 2 3; do
-                if newman run "$collection" --env-var baseUrl=${{ steps.app-url.outputs.url }}; then
+                if newman run "$collection" --env-var baseUrl="${{ steps.app-url.outputs.url }}"; then
                   exit 0
                 fi
-                echo "Attempt $attempt failed for $collection. Retrying in 5 seconds..."
-                sleep 5
+                if [ "$attempt" -lt 3 ]; then
+                  echo "Attempt $attempt failed for $collection. Retrying in 5 seconds..."
+                  sleep 5
+                fi
               done
               exit 1
             ) &

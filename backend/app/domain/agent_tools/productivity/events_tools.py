@@ -101,7 +101,7 @@ class CreateEventTool(BaseTool):
     origin_message_id: UUID | None = None
 
     @handle_tool_error(
-        reraise=(CalendarEventNotFoundError, InvalidTimeRangeError),
+        reraise=(InvalidTimeRangeError,),
         default_message="Error creating calendar event.",
     )
     async def _run(
@@ -223,7 +223,7 @@ class DeleteEventTool(BaseTool):
     agent_id: UUID | None = None
 
     @handle_tool_error(
-        reraise=(CalendarEventNotFoundError, InvalidTimeRangeError),
+        reraise=(CalendarEventNotFoundError,),
         default_message="Error deleting calendar event.",
     )
     async def _run(self, event_id: UUID) -> str:
