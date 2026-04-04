@@ -13,6 +13,7 @@ from app.infrastructure.external.openrouter import (
     embed,
     get_openrouter_client,
     structured_completion,
+    stream_chat,
 )
 
 
@@ -64,6 +65,42 @@ def test_openrouter_client_init() -> None:
 
 
 @pytest.mark.asyncio
+async def test_stream_chat_success() -> None:
+    with (
+        patch("openai.AsyncOpenAI"),
+        patch("instructor.from_openai"),
+    ):
+        client = OpenRouterClient("test-key")
+
+        mock_response = MagicMock()
+        cast("Any", client.openai_client.chat.completions).create = AsyncMock(
+            return_value=mock_response
+        )
+
+        result = await client.stream_chat(
+            [{"role": "user", "content": "hi"}], "test-model", accept_language="en"
+        )
+        assert result == mock_response
+
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat_success() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+        mock_client.stream_chat = AsyncMock(return_value="hello-stream")
+        mock_get_client.return_value = mock_client
+
+        result = await stream_chat([{"role": "user", "content": "hi"}], accept_language="en")
+        assert result == "hello-stream"
+        mock_client.stream_chat.assert_called_once_with(
+            [{"role": "user", "content": "hi"}], "default-model", accept_language="en"
+        )
+
+@pytest.mark.asyncio
 async def test_embed_success() -> None:
     with (
         patch("openai.AsyncOpenAI"),
@@ -94,7 +131,7 @@ async def test_chat_completion_success() -> None:
             return_value=mock_response
         )
 
-        result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model")
+        result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model", accept_language="en")
         assert result == "hello"
 
 
@@ -116,7 +153,7 @@ async def test_structured_completion_success() -> None:
         )
 
         result = await client.structured_completion(
-            [{"role": "user", "content": "hi"}], "test-model", DummyModel
+            [{"role": "user", "content": "hi"}], "test-model", DummyModel, accept_language="en"
         )
         assert result.name == "test"
 
@@ -148,10 +185,10 @@ async def test_standalone_chat_completion_success() -> None:
         mock_client.chat_completion = AsyncMock(return_value="hello")
         mock_get_client.return_value = mock_client
 
-        result = await chat_completion([{"role": "user", "content": "hi"}])
+        result = await chat_completion([{"role": "user", "content": "hi"}], accept_language="en")
         assert result == "hello"
         mock_client.chat_completion.assert_called_once_with(
-            [{"role": "user", "content": "hi"}], "default-model", accept_language=None
+            [{"role": "user", "content": "hi"}], "default-model", accept_language="en"
         )
 
 
@@ -234,10 +271,10 @@ async def test_standalone_structured_completion_success() -> None:
         mock_client.structured_completion = AsyncMock(return_value=DummyModel(name="hello"))
         mock_get_client.return_value = mock_client
 
-        result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+        result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel, accept_language="en")
         assert result.name == "hello"
         mock_client.structured_completion.assert_called_once_with(
-            [{"role": "user", "content": "hi"}], "default-model", DummyModel, accept_language=None
+            [{"role": "user", "content": "hi"}], "default-model", DummyModel, accept_language="en"
         )
 
 
