@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React from 'react';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
@@ -20,7 +20,7 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   const isDark = colorScheme === 'dark';
   const initial = room.name[0]?.toUpperCase() ?? '?';
 
-  const relativeTimeStr = useMemo(() => {
+  const relativeTimeStr = React.useMemo(() => {
     const diff = Math.max(0, Date.now() - new Date(room.updated_at).getTime());
     const mins = Math.floor(diff / 60000);
     if (mins === 0) return t('home.time.just_now', 'just now');
@@ -30,35 +30,45 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
     return t('home.time.days_ago', { count: Math.floor(hrs / 24) });
   }, [t, room.updated_at]);
 
-  const styles = useMemo(() => createStyles(isDark), [isDark]);
-
   return (
-    <ScalePressable onPress={onPress} style={styles.container}>
-      <View style={styles.avatar}>
-        <AppText style={styles.avatarText}>
+    <ScalePressable onPress={onPress} className="flex-row items-center py-4">
+      <View
+        className={`w-[42px] h-[42px] rounded-md items-center justify-center me-4 ${
+          isDark ? 'bg-primary-DEFAULT/20' : 'bg-primary-surfaceLight'
+        }`}
+      >
+        <AppText
+          className={`text-[15px] font-bold ${
+            isDark ? 'text-primary-light' : 'text-primary-DEFAULT'
+          }`}
+        >
           {initial}
         </AppText>
       </View>
-      <View style={styles.content}>
+      <View className="flex-1 me-3">
         <AppText
           variant="bodySm"
-          style={styles.title}
+          className={`font-semibold mb-1 ${
+            isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
+          }`}
           numberOfLines={1}
         >
           {room.name}
         </AppText>
         <AppText
           variant="caption"
-          style={styles.subtitle}
+          className={isDark ? 'text-onSurface-mutedDark' : 'text-onSurface-mutedLight'}
           numberOfLines={1}
         >
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={styles.metaContainer}>
+      <View className="items-end">
         <AppText
           variant="caption"
-          style={styles.timeText}
+          className={`mb-1 ${
+            isDark ? 'text-onSurface-disabledDark' : 'text-onSurface-disabledLight'
+          }`}
         >
           {relativeTimeStr}
         </AppText>
@@ -72,47 +82,4 @@ export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
       </View>
     </ScalePressable>
   );
-});
-
-HomeRecentChatRow.displayName = 'HomeRecentChatRow';
-
-const createStyles = (isDark: boolean) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.md,
-  },
-  avatar: {
-    width: theme.spacing.massive - 6,
-    height: theme.spacing.massive - 6,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.lg,
-    backgroundColor: isDark ? `${theme.colors.primary.DEFAULT}33` : theme.colors.primary.surfaceLight,
-  },
-  avatarText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT,
-  },
-  content: {
-    flex: 1,
-    marginRight: theme.spacing.sm,
-  },
-  title: {
-    fontWeight: '600',
-    marginBottom: theme.spacing.xxs,
-    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
-  },
-  subtitle: {
-    color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
-  },
-  metaContainer: {
-    alignItems: 'flex-end',
-  },
-  timeText: {
-    marginBottom: theme.spacing.xxs,
-    color: isDark ? theme.colors.onSurface.disabledDark : theme.colors.onSurface.disabledLight,
-  },
 });
