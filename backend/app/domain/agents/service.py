@@ -104,7 +104,7 @@ class AgentService:
             sections.append(f"\nYour Goals:\n{goal_list}")
         if capability_ids:
             all_caps = await self.list_capabilities()
-            cap_names = [c.name for c in all_caps if c.id in capability_ids]
+            cap_names = (c.name for c in all_caps if c.id in capability_ids)
             cap_list = ", ".join(cap_names)
             sections.append(
                 f"\nYou have access to the following tools: {cap_list}. "
