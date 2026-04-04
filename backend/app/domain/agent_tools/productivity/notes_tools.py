@@ -6,6 +6,7 @@ from uuid import UUID
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from app.domain.agent_tools.decorators import handle_tool_error
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.schemas import NoteCreate
 
@@ -33,22 +34,19 @@ class ListNotesTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error(default_message="Error fetching notes.")
     async def _run(self) -> str:
-        try:
-            notes = await get_productivity_use_case().list_notes(user_id=self.user_id)
+        notes = await get_productivity_use_case().list_notes(user_id=self.user_id)
 
-            if not notes:
-                return "No notes found."
+        if not notes:
+            return "No notes found."
 
-            result = "Notes:\n"
-            for n in notes:
-                pinned = "(Pinned)" if n.is_pinned else ""
-                result += f"- [{n.id}] {pinned} {n.title}\n"
-                result += f"  Content: {n.content}\n"
-            return result
-        except Exception:
-            logger.exception("Error in ListNotesTool")
-            return "Error fetching notes."
+        result = "Notes:\n"
+        for n in notes:
+            pinned = "(Pinned)" if n.is_pinned else ""
+            result += f"- [{n.id}] {pinned} {n.title}\n"
+            result += f"  Content: {n.content}\n"
+        return result
 
 
 class CreateNoteInput(BaseModel):
@@ -78,21 +76,18 @@ class CreateNoteTool(BaseTool):
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
 
+    @handle_tool_error(default_message="Error creating note.")
     async def _run(self, title: str, content: str, origin_context: str | None = None) -> str:
-        try:
-            note_data = NoteCreate(
-                title=title,
-                content=content,
-                is_pinned=False,
-                agent_id=self.agent_id,
-                origin_message_id=self.origin_message_id,
-                origin_context=origin_context,
-            )
-            note = await get_productivity_use_case().create_note(
-                user_id=self.user_id, note_data=note_data
-            )
+        note_data = NoteCreate(
+            title=title,
+            content=content,
+            is_pinned=False,
+            agent_id=self.agent_id,
+            origin_message_id=self.origin_message_id,
+            origin_context=origin_context,
+        )
+        note = await get_productivity_use_case().create_note(
+            user_id=self.user_id, note_data=note_data
+        )
 
-            return f"Successfully created note '{note.title}' with ID {note.id}."
-        except Exception:
-            logger.exception("Error in CreateNoteTool")
-            return "Error creating note."
+        return f"Successfully created note '{note.title}' with ID {note.id}."

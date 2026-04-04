@@ -8,6 +8,7 @@ from uuid import UUID
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from app.domain.agent_tools.decorators import handle_tool_error
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.use_cases.manage_productivity import (
     CalendarEventNotFoundError,
@@ -40,31 +41,28 @@ class ListEventsTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error(default_message="Error fetching calendar events.")
     async def _run(self) -> str:
-        try:
-            events = await get_productivity_use_case().list_events(user_id=self.user_id)
+        events = await get_productivity_use_case().list_events(user_id=self.user_id)
 
-            if not events:
-                return "No calendar events found."
+        if not events:
+            return "No calendar events found."
 
-            result = "Calendar Events:\n"
-            for e in events:
-                if e.is_all_day:
-                    if e.end_time.date() != e.start_time.date():
-                        time_str = f"All Day {e.start_time.strftime('%Y-%m-%d')} to {e.end_time.strftime('%Y-%m-%d')}"
-                    else:
-                        time_str = f"All Day on {e.start_time.strftime('%Y-%m-%d')}"
+        result = "Calendar Events:\n"
+        for e in events:
+            if e.is_all_day:
+                if e.end_time.date() != e.start_time.date():
+                    time_str = f"All Day {e.start_time.strftime('%Y-%m-%d')} to {e.end_time.strftime('%Y-%m-%d')}"
                 else:
-                    time_str = f"{e.start_time.strftime('%Y-%m-%d %H:%M')} to {e.end_time.strftime('%Y-%m-%d %H:%M')}"
-                result += f"- [{e.id}] {e.title} ({time_str})\n"
-                if e.description:
-                    result += f"  Description: {e.description}\n"
-                if e.location:
-                    result += f"  Location: {e.location}\n"
-            return result
-        except Exception:
-            logger.exception("Error in ListEventsTool")
-            return "Error fetching calendar events."
+                    time_str = f"All Day on {e.start_time.strftime('%Y-%m-%d')}"
+            else:
+                time_str = f"{e.start_time.strftime('%Y-%m-%d %H:%M')} to {e.end_time.strftime('%Y-%m-%d %H:%M')}"
+            result += f"- [{e.id}] {e.title} ({time_str})\n"
+            if e.description:
+                result += f"  Description: {e.description}\n"
+            if e.location:
+                result += f"  Location: {e.location}\n"
+        return result
 
 
 class CreateEventInput(BaseModel):
@@ -102,6 +100,10 @@ class CreateEventTool(BaseTool):
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
 
+    @handle_tool_error(
+        reraise=(CalendarEventNotFoundError, InvalidTimeRangeError),
+        default_message="Error creating calendar event.",
+    )
     async def _run(
         self,
         title: str,
@@ -112,31 +114,25 @@ class CreateEventTool(BaseTool):
         location: str | None = None,
         origin_context: str | None = None,
     ) -> str:
-        try:
-            # We import here to avoid circular imports after refactor
-            from app.domain.productivity.schemas import CalendarEventCreate
+        # We import here to avoid circular imports after refactor
+        from app.domain.productivity.schemas import CalendarEventCreate
 
-            event_data = CalendarEventCreate(
-                title=title,
-                description=description,
-                start_time=start_time,
-                end_time=end_time,
-                is_all_day=is_all_day,
-                location=location,
-                agent_id=self.agent_id,
-                origin_message_id=self.origin_message_id,
-                origin_context=origin_context,
-            )
-            event = await get_productivity_use_case().create_event(
-                user_id=self.user_id, event_data=event_data
-            )
+        event_data = CalendarEventCreate(
+            title=title,
+            description=description,
+            start_time=start_time,
+            end_time=end_time,
+            is_all_day=is_all_day,
+            location=location,
+            agent_id=self.agent_id,
+            origin_message_id=self.origin_message_id,
+            origin_context=origin_context,
+        )
+        event = await get_productivity_use_case().create_event(
+            user_id=self.user_id, event_data=event_data
+        )
 
-            return f"Successfully created calendar event '{event.title}' with ID {event.id}."
-        except (CalendarEventNotFoundError, InvalidTimeRangeError):
-            raise
-        except Exception:
-            logger.exception("Error in CreateEventTool")
-            return "Error creating calendar event."
+        return f"Successfully created calendar event '{event.title}' with ID {event.id}."
 
 
 class UpdateEventInput(BaseModel):
@@ -166,6 +162,10 @@ class UpdateEventTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error(
+        reraise=(CalendarEventNotFoundError, InvalidTimeRangeError),
+        default_message="Error updating calendar event.",
+    )
     async def _run(
         self,
         event_id: UUID,
@@ -176,35 +176,29 @@ class UpdateEventTool(BaseTool):
         is_all_day: bool | None = None,
         location: str | None = None,
     ) -> str:
-        try:
-            from app.domain.productivity.schemas import CalendarEventUpdate
+        from app.domain.productivity.schemas import CalendarEventUpdate
 
-            update_fields: dict[str, Any] = {}
-            if title is not None:
-                update_fields["title"] = title
-            if description is not None:
-                update_fields["description"] = description
-            if start_time is not None:
-                update_fields["start_time"] = start_time
-            if end_time is not None:
-                update_fields["end_time"] = end_time
-            if is_all_day is not None:
-                update_fields["is_all_day"] = is_all_day
-            if location is not None:
-                update_fields["location"] = location
+        update_fields: dict[str, Any] = {}
+        if title is not None:
+            update_fields["title"] = title
+        if description is not None:
+            update_fields["description"] = description
+        if start_time is not None:
+            update_fields["start_time"] = start_time
+        if end_time is not None:
+            update_fields["end_time"] = end_time
+        if is_all_day is not None:
+            update_fields["is_all_day"] = is_all_day
+        if location is not None:
+            update_fields["location"] = location
 
-            update_data = CalendarEventUpdate(**update_fields)
+        update_data = CalendarEventUpdate(**update_fields)
 
-            event = await get_productivity_use_case().update_event(
-                user_id=self.user_id, event_id=event_id, update_data=update_data
-            )
+        event = await get_productivity_use_case().update_event(
+            user_id=self.user_id, event_id=event_id, update_data=update_data
+        )
 
-            return f"Successfully updated calendar event '{event.title}' with ID {event.id}."
-        except (CalendarEventNotFoundError, InvalidTimeRangeError):
-            raise
-        except Exception:
-            logger.exception("Error in UpdateEventTool")
-            return "Error updating calendar event."
+        return f"Successfully updated calendar event '{event.title}' with ID {event.id}."
 
 
 class DeleteEventInput(BaseModel):
@@ -228,12 +222,10 @@ class DeleteEventTool(BaseTool):
     user_id: UUID
     agent_id: UUID | None = None
 
+    @handle_tool_error(
+        reraise=(CalendarEventNotFoundError, InvalidTimeRangeError),
+        default_message="Error deleting calendar event.",
+    )
     async def _run(self, event_id: UUID) -> str:
-        try:
-            await get_productivity_use_case().delete_event(user_id=self.user_id, event_id=event_id)
-            return f"Successfully deleted calendar event with ID {event_id}."
-        except (CalendarEventNotFoundError, InvalidTimeRangeError):
-            raise
-        except Exception:
-            logger.exception("Error in DeleteEventTool")
-            return "Error deleting calendar event."
+        await get_productivity_use_case().delete_event(user_id=self.user_id, event_id=event_id)
+        return f"Successfully deleted calendar event with ID {event_id}."
