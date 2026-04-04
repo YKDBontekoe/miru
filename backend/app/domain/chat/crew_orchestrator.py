@@ -233,7 +233,9 @@ class CrewOrchestrator:
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
 
-        sanitized_user_message = user_message.replace("<", "&lt;").replace(">", "&gt;")
+        sanitized_user_message = (
+            user_message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        )
 
         kwargs = {}
         if step_callback:
@@ -313,13 +315,25 @@ class CrewOrchestrator:
                 return str(result)
 
             if is_multi:
+                # Build a mapping of known agent names (case-insensitive) to their canonical names/IDs
+                known_agents = {a.name.lower(): a for a in room_agents}
+
                 # Convert the structured MultiAgentCrewChatResponse back to the transcript format expected by downstream
                 # This prevents breaking the websocket broadcaster that expects the transcript format for parsing
                 transcript_lines = []
                 for resp in getattr(pydantic_res, "responses", []):
-                    transcript_lines.append(
-                        f"{getattr(resp, 'agent_name', 'Agent')}: {getattr(resp, 'message', '')}"
-                    )
+                    raw_name = getattr(resp, "agent_name", "Agent")
+                    mapped_agent = known_agents.get(raw_name.lower())
+                    if mapped_agent:
+                        canonical_name = mapped_agent.name
+                        transcript_lines.append(f"{canonical_name}: {getattr(resp, 'message', '')}")
+                    else:
+                        # Unknown agent, do not treat as a recognized speaker by not emitting it in transcript
+                        # Or fallback to an unknown format that websocket_broadcaster ignores.
+                        # Since websocket_broadcaster filters by room agent names, if we output an unknown name it will drop it.
+                        # But it's safer to just skip it or mark it explicitly.
+                        transcript_lines.append(f"Unknown: {getattr(resp, 'message', '')}")
+
                 return "\n\n".join(transcript_lines)
             else:
                 return getattr(pydantic_res, "message", str(result))

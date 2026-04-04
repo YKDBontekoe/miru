@@ -311,7 +311,7 @@ async def test_standalone_structured_completion_cancelled() -> None:
 
 @pytest.mark.asyncio
 async def test_stream_chat_success() -> None:
-    """Test successful stream_chat call."""
+    """Test successful stream_chat call as an async generator."""
     from app.infrastructure.external.openrouter import stream_chat
 
     messages = [{"role": "user", "content": "hello"}]
@@ -322,18 +322,25 @@ async def test_stream_chat_success() -> None:
     ):
         mock_settings.return_value = MagicMock(default_chat_model="primary-model")
         mock_client = MagicMock()
-        mock_client.stream_chat = AsyncMock(return_value="stream_iterator")
+
+        async def mock_primary_iterator():
+            yield "chunk1"
+            yield "chunk2"
+
+        mock_client.stream_chat = AsyncMock(return_value=mock_primary_iterator())
         mock_get_client.return_value = mock_client
 
-        res = await stream_chat(messages)  # type: ignore
+        chunks = []
+        async for chunk in stream_chat(messages):  # type: ignore
+            chunks.append(chunk)
 
-        assert res == "stream_iterator"
+        assert chunks == ["chunk1", "chunk2"]
         mock_client.stream_chat.assert_called_once_with(messages, "primary-model")
 
 
 @pytest.mark.asyncio
 async def test_stream_chat_fallback() -> None:
-    """Test stream_chat falling back to a secondary model."""
+    """Test stream_chat falling back to a secondary model during iteration."""
     from app.infrastructure.external.openrouter import stream_chat
 
     messages = [{"role": "user", "content": "hello"}]
@@ -346,15 +353,27 @@ async def test_stream_chat_fallback() -> None:
             default_chat_model="primary-model", fallback_chat_model="fallback-model"
         )
         mock_client = MagicMock()
-        # Fail on first call, succeed on second
+
+        async def mock_primary_iterator():
+            yield "primary1"
+            raise Exception("Primary model failed during iteration")
+
+        async def mock_fallback_iterator():
+            yield "fallback1"
+            yield "fallback2"
+
+        # The stream_chat function is called, but we configure it to return generators
         mock_client.stream_chat = AsyncMock(
-            side_effect=[Exception("Primary model failed"), "fallback_iterator"]
+            side_effect=[mock_primary_iterator(), mock_fallback_iterator()]
         )
         mock_get_client.return_value = mock_client
 
-        res = await stream_chat(messages)  # type: ignore
+        chunks = []
+        async for chunk in stream_chat(messages):  # type: ignore
+            chunks.append(chunk)
 
-        assert res == "fallback_iterator"
+        # It yields 'primary1', then catches the exception, creates fallback iterator, and yields 'fallback1', 'fallback2'
+        assert chunks == ["primary1", "fallback1", "fallback2"]
         assert mock_client.stream_chat.call_count == 2
         mock_client.stream_chat.assert_any_call(messages, "primary-model")
         mock_client.stream_chat.assert_any_call(messages, "fallback-model")
@@ -375,13 +394,50 @@ async def test_stream_chat_fallback_fails() -> None:
             default_chat_model="primary-model", fallback_chat_model="fallback-model"
         )
         mock_client = MagicMock()
+
+        async def mock_primary_iterator():
+            raise Exception("Primary model failed")
+            yield "never"
+
+        async def mock_fallback_iterator():
+            raise Exception("Fallback model failed")
+            yield "never"
+
         mock_client.stream_chat = AsyncMock(
-            side_effect=[
-                Exception("Primary model failed"),
-                Exception("Fallback model failed"),
-            ]
+            side_effect=[mock_primary_iterator(), mock_fallback_iterator()]
         )
         mock_get_client.return_value = mock_client
 
         with pytest.raises(Exception, match="Fallback model failed"):
-            await stream_chat(messages)  # type: ignore
+            async for _chunk in stream_chat(messages):  # type: ignore
+                pass
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_cancelled() -> None:
+    """Test stream_chat handling CancelledError."""
+    from app.infrastructure.external.openrouter import stream_chat
+
+    messages = [{"role": "user", "content": "hello"}]
+
+    with (
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+    ):
+        mock_settings.return_value = MagicMock(
+            default_chat_model="primary-model", fallback_chat_model="fallback-model"
+        )
+        mock_client = MagicMock()
+
+        async def mock_primary_iterator():
+            raise asyncio.CancelledError()
+            yield "never"
+
+        mock_client.stream_chat = AsyncMock(side_effect=[mock_primary_iterator()])
+        mock_get_client.return_value = mock_client
+
+        with pytest.raises(asyncio.CancelledError):
+            async for _chunk in stream_chat(messages):  # type: ignore
+                pass
+
+        assert mock_client.stream_chat.call_count == 1

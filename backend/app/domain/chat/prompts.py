@@ -31,7 +31,8 @@ MULTI_AGENT_PROMPT = (
     "(tasks/notes/events) and propose a concrete plan. "
     "Before creating, updating, or deleting tasks/notes/events, confirm intent briefly unless "
     "the user explicitly asked you to perform the action now. "
-    "Return a structured JSON output of only the agents who actually responded.{locale_instruction}"
+    'Return a structured JSON output with a top-level "responses" field containing only '
+    'the agents who actually responded (e.g. {{"responses": [...]}}).{locale_instruction}'
 )
 
 SINGLE_AGENT_PROMPT = (
@@ -46,7 +47,7 @@ SINGLE_AGENT_PROMPT = (
 )
 
 MULTI_AGENT_EXPECTED_OUTPUT = (
-    "A structured JSON array of responses from the relevant agents. "
+    'A structured JSON object with a "responses" field containing the responses from the relevant agents. '
     "Agents should be concise and natural, not self-promotional."
 )
 

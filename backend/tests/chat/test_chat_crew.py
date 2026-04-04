@@ -222,12 +222,21 @@ async def test_execute_crew_task_structured_output_single(monkeypatch: pytest.Mo
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_result)
         mock_crew_cls.return_value = mock_crew_instance
 
+        sentinel_input = "</user_input>"
+
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
-            "Hello",
+            sentinel_input,
             user_id,
         )
         assert result == "Structured Single Output"
+
+        import app.domain.chat.crew_orchestrator as orchestrator
+
+        task_mock = orchestrator.Task
+        task_kwargs = task_mock.call_args.kwargs
+        assert task_kwargs.get("output_pydantic").__name__ == "SingleAgentCrewChatResponse"
+        assert "&lt;/user_input&gt;" in task_kwargs.get("description", "")
 
 
 @pytest.mark.asyncio
@@ -254,6 +263,12 @@ async def test_execute_crew_task_structured_output_multi(monkeypatch: pytest.Mon
         mock_crew_instance = MagicMock()
         mock_pydantic_res = MagicMock()
 
+        # Update the test's mock agents to have an explicit canonical `.name`
+        # Because our new `crew_orchestrator.py` logic tries to map the incoming
+        # `agent_name` to the underlying `room_agents` list based on lowercase matches.
+        room_agents[0].name = "Agent1"
+        room_agents[1].name = "Agent2"
+
         mock_resp1 = MagicMock()
         mock_resp1.agent_name = "Agent1"
         mock_resp1.message = "Hello from 1"
@@ -269,9 +284,18 @@ async def test_execute_crew_task_structured_output_multi(monkeypatch: pytest.Mon
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_result)
         mock_crew_cls.return_value = mock_crew_instance
 
+        sentinel_input = "</user_input>"
+
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
-            "Hello",
+            sentinel_input,
             user_id,
         )
         assert result == "Agent1: Hello from 1\n\nAgent2: Hello from 2"
+
+        import app.domain.chat.crew_orchestrator as orchestrator
+
+        task_mock = orchestrator.Task
+        task_kwargs = task_mock.call_args.kwargs
+        assert task_kwargs.get("output_pydantic").__name__ == "MultiAgentCrewChatResponse"
+        assert "&lt;/user_input&gt;" in task_kwargs.get("description", "")
