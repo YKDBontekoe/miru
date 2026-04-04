@@ -33,7 +33,7 @@ async def test_discord_get_server_info_error(mock_get: typing.Any, bot_token: st
     mock_get.side_effect = Exception("API error")
     tool = DiscordGetServerInfoTool(bot_token=bot_token, guild_id="123")
     result = await tool._arun()
-    assert "Error fetching Discord server info" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ async def test_discord_send_message_error(mock_send: typing.Any, bot_token: str)
     mock_send.side_effect = Exception("API error")
     tool = DiscordSendMessageTool(bot_token=bot_token, channel_id="123", content="err")
     result = await tool._arun()
-    assert "Error sending Discord message" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 def test_discord_server_info_sync(bot_token: str) -> None:

@@ -83,7 +83,7 @@ async def test_list_events_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.list_events = AsyncMock(side_effect=Exception("DB Error"))
     tool = ListEventsTool(user_id=uuid4())
     result = await tool._run()
-    assert "Error fetching calendar events." in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -120,7 +120,7 @@ async def test_create_event_tool_error(mock_service: MagicMock) -> None:
         start_time=datetime(2025, 1, 1, 10, 0),
         end_time=datetime(2025, 1, 1, 11, 0),
     )
-    assert "Error creating calendar event." in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -155,7 +155,7 @@ async def test_update_event_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.update_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = UpdateEventTool(user_id=uuid4())
     result = await tool._run(event_id=uuid4(), title="Updated Event")
-    assert "Error updating calendar event." in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -174,4 +174,4 @@ async def test_delete_event_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.delete_event = AsyncMock(side_effect=Exception("DB Error"))
     tool = DeleteEventTool(user_id=uuid4())
     result = await tool._run(event_id=uuid4())
-    assert "Error deleting calendar event." in result
+    assert "An unexpected error occurred while executing the tool." in result

@@ -51,7 +51,7 @@ async def test_list_tasks_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.list_tasks = AsyncMock(side_effect=Exception("DB Error"))
     tool = ListTasksTool(user_id=uuid4())
     result = await tool._run()
-    assert "Error fetching tasks." in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -74,7 +74,7 @@ async def test_create_task_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.create_task = AsyncMock(side_effect=Exception("DB Error"))
     tool = CreateTaskTool(user_id=uuid4())
     result = await tool._run(title="New Task")
-    assert "Error creating task." in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -99,4 +99,4 @@ async def test_update_task_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.update_task = AsyncMock(side_effect=Exception("DB Error"))
     tool = UpdateTaskTool(user_id=uuid4())
     result = await tool._run(task_id=uuid4(), is_completed=True)
-    assert "Error updating task." in result
+    assert "An unexpected error occurred while executing the tool." in result

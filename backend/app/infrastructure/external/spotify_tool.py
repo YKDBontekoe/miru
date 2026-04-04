@@ -11,6 +11,7 @@ import nest_asyncio
 from crewai.tools import BaseTool
 from pydantic import Field
 
+from app.core.utils.error_handlers import handle_tool_error
 from app.infrastructure.external.spotify import (
     add_tracks_to_playlist,
     create_playlist,
@@ -46,20 +47,19 @@ class SpotifyCurrentlyPlayingTool(BaseTool):
 
     access_token: str = Field(..., description="The Spotify OAuth access token.")
 
+    @handle_tool_error()
     def _run(self) -> str:
         """Run the tool synchronously."""
         return _run_async_in_sync(self._arun())
 
+    @handle_tool_error()
     async def _arun(self) -> str:
         """Async implementation of the tool."""
-        try:
-            track = await get_currently_playing(self.access_token)
-            if not track:
-                return "No track is currently playing."
+        track = await get_currently_playing(self.access_token)
+        if not track:
+            return "No track is currently playing."
 
-            return json.dumps(track, indent=2)
-        except Exception as e:
-            return f"Error fetching currently playing track: {e!s}"
+        return json.dumps(track, indent=2)
 
 
 class SpotifyRecentlyPlayedTool(BaseTool):
@@ -73,24 +73,23 @@ class SpotifyRecentlyPlayedTool(BaseTool):
 
     access_token: str = Field(..., description="The Spotify OAuth access token.")
 
+    @handle_tool_error()
     def _run(self) -> str:
         """Run the tool synchronously."""
         return _run_async_in_sync(self._arun())
 
+    @handle_tool_error()
     async def _arun(self) -> str:
         """Async implementation of the tool.
 
         Returns:
             str: JSON formatted response or error message.
         """
-        try:
-            tracks = await get_recently_played(self.access_token)
-            if not tracks:
-                return "No recently played tracks found."
+        tracks = await get_recently_played(self.access_token)
+        if not tracks:
+            return "No recently played tracks found."
 
-            return json.dumps(tracks, indent=2)
-        except Exception as e:
-            return f"Error fetching recently played tracks: {e!s}"
+        return json.dumps(tracks, indent=2)
 
 
 class SpotifySearchTool(BaseTool):
@@ -111,10 +110,12 @@ class SpotifySearchTool(BaseTool):
         description="Type of item to search for: 'album', 'artist', 'playlist', 'track', 'show', 'episode', 'audiobook'. Defaults to 'track'.",
     )
 
+    @handle_tool_error()
     def _run(self) -> str:
         """Run the tool synchronously."""
         return _run_async_in_sync(self._arun())
 
+    @handle_tool_error()
     async def _arun(self) -> str:
         """Async implementation of the tool.
 
@@ -123,14 +124,11 @@ class SpotifySearchTool(BaseTool):
         """
         if not self.query:
             return "Error: query is required."
-        try:
-            results = await search_spotify(self.access_token, self.query, self.item_type)
-            if not results:
-                return f"No results found for query: {self.query}"
+        results = await search_spotify(self.access_token, self.query, self.item_type)
+        if not results:
+            return f"No results found for query: {self.query}"
 
-            return json.dumps(results, indent=2)
-        except Exception as e:
-            return f"Error searching Spotify: {e!s}"
+        return json.dumps(results, indent=2)
 
 
 class SpotifyCreatePlaylistTool(BaseTool):
@@ -144,6 +142,7 @@ class SpotifyCreatePlaylistTool(BaseTool):
     )
     access_token: str = Field(..., description="The user's Spotify OAuth access token.")
 
+    @handle_tool_error()
     def _run(self, name: str, description: str = "") -> str:
         """Create a new playlist."""
         result = _run_async_in_sync(create_playlist(self.access_token, name, description))
@@ -165,6 +164,7 @@ class SpotifyAddTracksToPlaylistTool(BaseTool):
     )
     access_token: str = Field(..., description="The user's Spotify OAuth access token.")
 
+    @handle_tool_error()
     def _run(self, playlist_id: str, track_uris: str) -> str:
         """Add tracks to playlist."""
         uris_list = [
@@ -200,6 +200,7 @@ class SpotifyGetRecommendationsTool(BaseTool):
     )
     access_token: str = Field(..., description="The user's Spotify OAuth access token.")
 
+    @handle_tool_error()
     def _run(
         self, seed_artists: str = "", seed_genres: str = "", seed_tracks: str = "", limit: int = 10
     ) -> str:

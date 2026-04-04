@@ -86,7 +86,7 @@ async def test_steam_player_summary_tool_exception(
     mock_get_summaries.side_effect = Exception("API error")
     tool = SteamPlayerSummaryTool(steam_id=steam_id)
     result = await tool._arun()
-    assert "Error fetching player summary" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -95,7 +95,7 @@ async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, stea
     mock_get_games.side_effect = Exception("API error")
     tool = SteamOwnedGamesTool(steam_id=steam_id)
     result = await tool._arun()
-    assert "Error fetching owned games" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)

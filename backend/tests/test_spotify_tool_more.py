@@ -25,7 +25,7 @@ async def test_spotify_currently_playing_error(mock_get: typing.Any, access_toke
     mock_get.side_effect = Exception("API error")
     tool = SpotifyCurrentlyPlayingTool(access_token=access_token)
     result = await tool._arun()
-    assert "Error fetching currently playing track" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -43,7 +43,7 @@ async def test_spotify_recently_played_error(mock_get: typing.Any, access_token:
     mock_get.side_effect = Exception("API error")
     tool = SpotifyRecentlyPlayedTool(access_token=access_token)
     result = await tool._arun()
-    assert "Error fetching recently played tracks" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -61,7 +61,7 @@ async def test_spotify_search_error(mock_search: typing.Any, access_token: str) 
     mock_search.side_effect = Exception("API error")
     tool = SpotifySearchTool(access_token=access_token, query="err")
     result = await tool._arun()
-    assert "Error searching Spotify" in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 def test_spotify_currently_playing_sync(access_token: str) -> None:

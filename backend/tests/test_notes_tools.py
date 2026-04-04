@@ -62,7 +62,7 @@ async def test_list_notes_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.list_notes = AsyncMock(side_effect=Exception("DB Error"))
     tool = ListNotesTool(user_id=uuid4())
     result = await tool._run()
-    assert "Error fetching notes." in result
+    assert "An unexpected error occurred while executing the tool." in result
 
 
 @pytest.mark.asyncio
@@ -90,4 +90,4 @@ async def test_create_note_tool_error(mock_service: MagicMock) -> None:
     mock_service.return_value.create_note = AsyncMock(side_effect=Exception("DB Error"))
     tool = CreateNoteTool(user_id=uuid4())
     result = await tool._run(title="New Note", content="Content")
-    assert "Error creating note." in result
+    assert "An unexpected error occurred while executing the tool." in result
