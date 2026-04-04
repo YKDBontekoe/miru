@@ -33,9 +33,7 @@ async def test_memory_creation_and_retrieval_integration() -> None:
     with patch("app.domain.memory.service.embed") as mock_embed:
         # First memory
         mock_embed.return_value = [0.1] * 1536
-        mem1_id = await service.store_memory(
-            content="I have a cat named Whiskers", user_id=user_id
-        )
+        mem1_id = await service.store_memory(content="I have a cat named Whiskers", user_id=user_id)
 
         # Second memory
         mock_embed.return_value = [0.2] * 1536
@@ -113,11 +111,15 @@ async def test_store_memory_triggers_graph_extraction_integration() -> None:
         entities=[
             GraphEntity(name="John", entity_type="Person", description="A cool dude"),
         ],
-        relationships=[]
+        relationships=[],
     )
 
-    with patch("app.domain.memory.service.embed") as mock_embed, \
-         patch("app.domain.memory.graph_service.GraphExtractionService.extract_graph_from_text") as mock_extract:
+    with (
+        patch("app.domain.memory.service.embed") as mock_embed,
+        patch(
+            "app.domain.memory.graph_service.GraphExtractionService.extract_graph_from_text"
+        ) as mock_extract,
+    ):
         mock_embed.return_value = [0.5] * 1536
         mock_extract.return_value = mock_extraction
 
@@ -127,6 +129,7 @@ async def test_store_memory_triggers_graph_extraction_integration() -> None:
         await asyncio.sleep(0.1)
 
     from app.domain.memory.models import MemoryGraphNode
+
     nodes = await MemoryGraphNode.filter(user_id=user_id).all()
     assert len(nodes) == 1
     assert nodes[0].name == "John"

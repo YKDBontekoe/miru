@@ -99,16 +99,21 @@ async def initialize_tortoise(
         # normally, but given environment issues we'll use a local db connection string if available
         # or skip testcontainer startup logic and rely on local db / SQLite if needed
         import os
+
         db_url = os.environ.get("TEST_DATABASE_URL")
         if not db_url:
             try:
                 container = request.getfixturevalue("postgres_container")
-                db_url = container.get_connection_url().replace("postgresql+psycopg2://", "postgres://")
+                db_url = container.get_connection_url().replace(
+                    "postgresql+psycopg2://", "postgres://"
+                )
             except Exception:
                 db_url = "sqlite://:memory:"
                 # If we fallback to SQLite, we must skip integration tests entirely because
                 # they rely on Postgres-specific pgvector and RPC syntaxes (`:= $1::vector`).
-                pytest.skip("PostgreSQL testcontainer could not start; skipping pgvector integration test.")
+                pytest.skip(
+                    "PostgreSQL testcontainer could not start; skipping pgvector integration test."
+                )
                 is_integration = False
     else:
         db_url = "sqlite://:memory:"
@@ -133,6 +138,7 @@ async def initialize_tortoise(
     # Fast-fail trick to avoid keyerror issue when the .env is overriding config
     # in tortoise tests.
     import os
+
     db_url_env = os.environ.get("DATABASE_URL")
     if "DATABASE_URL" in os.environ:
         del os.environ["DATABASE_URL"]
@@ -147,10 +153,18 @@ async def initialize_tortoise(
     await Tortoise.generate_schemas()
 
     if is_integration:
+        conn = Tortoise.get_connection("default")
+
+        # Alter the embedding column to be of type vector so operators like <=> work
+        # Tortoise generates JSONField as JSONB by default. We cast it to text and then vector
+        await conn.execute_query(
+            "ALTER TABLE memories ALTER COLUMN embedding TYPE vector(1536) USING embedding::text::vector;"
+        )
+
         # Create match_memories function to make tests work
         from app.domain.memory.models import MemoryCollection
+
         sql_functions = MemoryCollection.Meta.sql_functions
-        conn = Tortoise.get_connection("default")
         for func in sql_functions:
             await conn.execute_query(func)
 
@@ -159,7 +173,6 @@ async def initialize_tortoise(
 
     if db_url_env:
         os.environ["DATABASE_URL"] = db_url_env
-
 
 
 @pytest.fixture()

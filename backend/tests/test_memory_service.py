@@ -68,9 +68,7 @@ async def test_delete_memory_ownership() -> None:
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph")
-async def test_store_memory_success(
-    mock_process_graph: MagicMock, mock_embed: MagicMock
-) -> None:
+async def test_store_memory_success(mock_process_graph: MagicMock, mock_embed: MagicMock) -> None:
     mock_repo = AsyncMock()
     service = MemoryService(mock_repo)
     user_id = uuid4()
@@ -97,6 +95,7 @@ async def test_store_memory_success(
     # Due to asyncio.create_task it runs independently, but mock should be called inside it
     # We can await for asyncio.sleep(0) to let event loop run the background task
     import asyncio
+
     await asyncio.sleep(0.01)
     mock_process_graph.assert_awaited_once_with("Test content", user_id)
 
@@ -129,6 +128,7 @@ async def test_store_memory_exceptions(
     assert memory_id == FakeMemory.id
     mock_repo.create_relationship.assert_awaited_once_with(FakeMemory.id, related_to[0])
     import asyncio
+
     await asyncio.sleep(0.01)
     mock_process_graph.assert_called_once_with("Test content", user_id)
 
@@ -149,9 +149,7 @@ async def test_store_memory_graph_import_error(mock_embed: MagicMock) -> None:
     mock_repo.insert_memory.return_value = FakeMemory()
 
     with patch.dict("sys.modules", {"app.domain.memory.graph_service": None}):
-        memory_id = await service.store_memory(
-            content="Test content", user_id=user_id
-        )
+        memory_id = await service.store_memory(content="Test content", user_id=user_id)
 
     assert memory_id == FakeMemory.id
 
@@ -230,6 +228,7 @@ async def test_retrieve_memories(mock_embed: MagicMock) -> None:
     assert results == ["memory1", "memory2"]
     mock_embed.assert_awaited_once_with("test query")
     mock_repo.match_memories.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
