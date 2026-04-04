@@ -1,12 +1,12 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { theme } from '@/core/theme';
 
-export function HomeQuickAction({
+export const HomeQuickAction = React.memo(function HomeQuickAction({
   icon,
   label,
   onPress,
@@ -18,18 +18,12 @@ export function HomeQuickAction({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
-    <ScalePressable onPress={onPress} className="w-[48%] mb-4">
-      <View
-        className={`rounded-2xl py-6 px-4 items-center ${
-          isDark ? 'bg-primary-DEFAULT/15' : 'bg-primary-surfaceLight'
-        }`}
-      >
-        <View
-          className={`w-[46px] h-[46px] rounded-xl items-center justify-center mb-4 ${
-            isDark ? 'bg-primary-DEFAULT/30' : 'bg-primary-light'
-          }`}
-        >
+    <ScalePressable onPress={onPress} style={styles.container}>
+      <View style={styles.innerContainer}>
+        <View style={styles.iconContainer}>
           <Ionicons
             name={icon}
             size={22}
@@ -38,9 +32,7 @@ export function HomeQuickAction({
         </View>
         <AppText
           variant="bodySm"
-          className={`font-semibold text-center ${
-            isDark ? 'text-onSurface-dark' : 'text-onSurface-light'
-          }`}
+          style={styles.label}
           numberOfLines={1}
         >
           {label}
@@ -48,4 +40,34 @@ export function HomeQuickAction({
       </View>
     </ScalePressable>
   );
-}
+});
+
+HomeQuickAction.displayName = 'HomeQuickAction';
+
+const createStyles = (isDark: boolean) => StyleSheet.create({
+  container: {
+    width: '48%',
+    marginBottom: theme.spacing.lg,
+  },
+  innerContainer: {
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.lg,
+    alignItems: 'center',
+    backgroundColor: isDark ? `${theme.colors.primary.DEFAULT}26` : theme.colors.primary.surfaceLight,
+  },
+  iconContainer: {
+    width: theme.spacing.massive - 2,
+    height: theme.spacing.massive - 2,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.lg,
+    backgroundColor: isDark ? `${theme.colors.primary.DEFAULT}4D` : theme.colors.primary.light,
+  },
+  label: {
+    fontWeight: '600',
+    textAlign: 'center',
+    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+  },
+});

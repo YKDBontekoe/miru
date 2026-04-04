@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { Platform, RefreshControl, ScrollView, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '../../src/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
@@ -17,16 +18,19 @@ import {
   HomeTaskRow,
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
-import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
+import { theme } from '@/core/theme';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -97,10 +101,12 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   if (isLoadingRooms && rooms.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
           <SkeletonAgentCard index={0} />
           <SkeletonAgentCard index={1} />
           <SkeletonAgentCard index={2} />
@@ -110,17 +116,19 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT}
+          />
         }
-        contentContainerStyle={{
-          paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
-        }}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View style={styles.content}>
           <HomeHeroCard
             greeting={greeting}
             firstName={firstName}
@@ -138,7 +146,7 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.see_all')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <View style={styles.gridContainer}>
               <HomeActionTile
                 icon="chatbubble-ellipses"
                 label={t('home.actions.new_chat')}
@@ -168,30 +176,15 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.manage')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ marginBottom: 10 }}>
-              <View
-                style={{
-                  height: 8,
-                  borderRadius: 8,
-                  backgroundColor: HOME_COLORS.softSurface,
-                  overflow: 'hidden',
-                  marginBottom: 10,
-                }}
-              >
-                <View
-                  style={{
-                    width: `${completionRate}%`,
-                    height: 8,
-                    borderRadius: 8,
-                    backgroundColor: HOME_COLORS.primary,
-                  }}
-                />
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBarBackground}>
+                <View style={[styles.progressBarFill, { width: `${completionRate}%` }]} />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+              <View style={styles.progressTextContainer}>
+                <AppText variant="caption" style={styles.progressText}>
                   {t('home.focus.completed', { count: completedCount, defaultValue: '{{count}} completed' })}
                 </AppText>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                <AppText variant="caption" style={styles.progressText}>
                   {t('home.focus.remaining', {
                     count: sortedPendingTasks.length,
                     defaultValue: '{{count}} remaining',
@@ -201,20 +194,13 @@ export default function HomeScreen() {
             </View>
 
             {sortedPendingTasks.length === 0 ? (
-              <View
-                style={{
-                  borderRadius: 16,
-                  backgroundColor: HOME_COLORS.primarySoft,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="checkmark-circle" size={20} color={HOME_COLORS.primary} />
-                <AppText
-                  variant="bodySm"
-                  style={{ marginLeft: 8, color: HOME_COLORS.text, fontWeight: '600' }}
-                >
+              <View style={styles.caughtUpContainer}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT}
+                />
+                <AppText variant="bodySm" style={styles.caughtUpText}>
                   {t('home.tasks.caught_up')}
                 </AppText>
               </View>
@@ -232,35 +218,19 @@ export default function HomeScreen() {
               onAction={() => router.push('/(main)/productivity')}
             />
             {upcomingEvents.length === 0 ? (
-              <View
-                style={{
-                  borderRadius: 16,
-                  backgroundColor: HOME_COLORS.accentSoft,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="sunny" size={18} color={HOME_COLORS.accent} />
-                <AppText variant="bodySm" style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}>
+              <View style={styles.noEventsContainer}>
+                <Ionicons name="sunny" size={18} color={theme.colors.status.warning} />
+                <AppText variant="bodySm" style={styles.noEventsText}>
                   {t('home.events.none', { defaultValue: 'No upcoming events' })}
                 </AppText>
               </View>
             ) : (
               upcomingEvents.map((event) => (
-                <View
-                  key={event.id}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+                <View key={event.id} style={styles.eventContainer}>
+                  <AppText variant="bodySm" style={styles.eventTitle} numberOfLines={1}>
                     {event.title}
                   </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+                  <AppText variant="caption" style={styles.eventTime}>
                     {formatTimeRange(event, i18n.language)}
                     {event.location ? ` · ${event.location}` : ''}
                   </AppText>
@@ -294,7 +264,7 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <View style={styles.gridContainer}>
                 {agents
                   .slice(0, 4)
                   .map((agent) => (
@@ -309,43 +279,27 @@ export default function HomeScreen() {
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
-              <View style={{ alignItems: 'center', paddingVertical: 18 }}>
-                <View
-                  style={{
-                    width: 76,
-                    height: 76,
-                    borderRadius: 26,
-                    backgroundColor: HOME_COLORS.primarySoft,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: 14,
-                  }}
-                >
-                  <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
+            <HomeSurfaceCard style={styles.emptyStateCard}>
+              <View style={styles.emptyStateContainer}>
+                <View style={styles.emptyStateIconContainer}>
+                  <Ionicons
+                    name="sparkles"
+                    size={30}
+                    color={isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT}
+                  />
                 </View>
-                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                <AppText variant="h2" style={styles.emptyStateTitle}>
                   {t('home.empty.title')}
                 </AppText>
-                <AppText
-                  variant="bodySm"
-                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
-                >
+                <AppText variant="bodySm" style={styles.emptyStateDesc}>
                   {t('home.empty.desc')}
                 </AppText>
                 <ScalePressable
                   onPress={() => setShowNewChat(true)}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.primary,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
+                  style={styles.emptyStateButton}
                 >
-                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                  <Ionicons name="add" size={18} color={theme.colors.white} style={styles.emptyStateButtonIcon} />
+                  <AppText variant="bodySm" style={styles.emptyStateButtonText}>
                     {t('home.actions.start_chat')}
                   </AppText>
                 </ScalePressable>
@@ -363,3 +317,129 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const createStyles = (isDark: boolean) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: isDark ? theme.colors.background.dark : theme.colors.background.light,
+  },
+  loadingContainer: {
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.massive + (Platform.OS === 'ios' ? theme.spacing.xxxl : theme.spacing.lg) + 70,
+  },
+  content: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  progressContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  progressBarBackground: {
+    height: 8,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highLight,
+    overflow: 'hidden',
+    marginBottom: theme.spacing.md,
+  },
+  progressBarFill: {
+    height: 8,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT,
+  },
+  progressTextContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  progressText: {
+    color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
+  },
+  caughtUpContainer: {
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: isDark ? `${theme.colors.primary.DEFAULT}33` : theme.colors.primary.surfaceLight,
+    padding: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  caughtUpText: {
+    marginLeft: theme.spacing.sm,
+    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+    fontWeight: '600',
+  },
+  noEventsContainer: {
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: isDark ? theme.colors.status.warningSurfaceDark : theme.colors.status.warningSurfaceLight,
+    padding: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  noEventsText: {
+    marginLeft: theme.spacing.sm,
+    color: theme.colors.status.warning,
+    fontWeight: '600',
+  },
+  eventContainer: {
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highLight,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  eventTitle: {
+    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+    fontWeight: '700',
+  },
+  eventTime: {
+    color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
+    marginTop: 3,
+  },
+  emptyStateCard: {
+    backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highLight,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.lg,
+  },
+  emptyStateIconContainer: {
+    width: theme.spacing.massive + theme.spacing.avatar,
+    height: theme.spacing.massive + theme.spacing.avatar,
+    borderRadius: theme.borderRadius.xxl,
+    backgroundColor: isDark ? `${theme.colors.primary.DEFAULT}33` : theme.colors.primary.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  emptyStateTitle: {
+    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStateDesc: {
+    color: isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight,
+    textAlign: 'center',
+    marginBottom: theme.spacing.lg,
+    lineHeight: 20,
+  },
+  emptyStateButton: {
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emptyStateButtonIcon: {
+    marginRight: 6,
+  },
+  emptyStateButtonText: {
+    color: theme.colors.white,
+    fontWeight: '700',
+  },
+});
