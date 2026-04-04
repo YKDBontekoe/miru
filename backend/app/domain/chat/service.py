@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
-    from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity
+    from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -74,17 +74,23 @@ class ChatService:
             for r in rooms
         ]
 
-    async def list_room_summaries(self, user_id: UUID) -> list[RoomSummaryResponse]:
+    async def list_room_summaries(
+        self, user_id: UUID, limit: int = 50, before_id: UUID | None = None
+    ) -> list[RoomSummaryResponse]:
         """List rooms with agent and latest-message summaries for the current user."""
-        rooms = await self.chat_repo.list_rooms(user_id)
+        rooms = await self.chat_repo.list_rooms(user_id, limit=limit, before_id=before_id)
         if not rooms:
             return []
 
-        async def build_summary(room: ChatRoomEntity) -> RoomSummaryResponse:
-            agents, latest = await asyncio.gather(
-                self.chat_repo.list_room_agents(room.id),
-                self.chat_repo.get_latest_room_message(room.id),
-            )
+        room_ids = [room.id for room in rooms]
+        rooms_agents_map, latest_messages_map = await asyncio.gather(
+            self.chat_repo.list_rooms_agents(room_ids),
+            self.chat_repo.get_latest_messages_for_rooms(room_ids),
+        )
+
+        def build_summary(room: ChatRoomEntity) -> RoomSummaryResponse:
+            agents = rooms_agents_map.get(room.id, [])
+            latest = latest_messages_map.get(room.id)
             preview = latest.content.strip() if latest else None
             has_task = bool(preview and TASK_HINT_PATTERN.search(preview))
             has_mention = bool(preview and MENTION_PATTERN.search(preview))
@@ -100,12 +106,7 @@ class ChatService:
                 has_task=has_task,
             )
 
-        summaries = await asyncio.gather(*(build_summary(room) for room in rooms))
-        return sorted(
-            summaries,
-            key=lambda item: item.last_message_at or item.updated_at,
-            reverse=True,
-        )
+        return [build_summary(room) for room in rooms]
 
     async def update_room(self, room_id: UUID, name: str, user_id: UUID) -> RoomResponse | None:
         room = await self.chat_repo.update_room(room_id, name, user_id=user_id)

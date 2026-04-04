@@ -188,6 +188,23 @@ def test_get_room_summaries_endpoint(client: TestClient, authed_headers: dict) -
         assert body[0]["id"] == str(room_id)
         assert body[0]["agents"][0]["id"] == str(agent_id)
         assert body[0]["has_task"] is True
-        mock_service.list_room_summaries.assert_called_once_with(user_id)
+        mock_service.list_room_summaries.assert_called_once_with(user_id, limit=50, before_id=None)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_room_summaries_endpoint_empty(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.list_room_summaries.return_value = []
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/v1/rooms/summaries", headers=authed_headers)
+        assert response.status_code == 200
+        assert response.json() == []
+        mock_service.list_room_summaries.assert_called_once_with(user_id, limit=50, before_id=None)
     finally:
         app.dependency_overrides.clear()

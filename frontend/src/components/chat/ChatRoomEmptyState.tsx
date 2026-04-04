@@ -1,11 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
-import { Agent } from '@/core/models';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { ScalePressable } from '@/components/ScalePressable';
+import { Agent } from '@/core/models';
 
 interface ChatRoomEmptyStateProps {
   roomAgents: Agent[];
@@ -21,14 +20,14 @@ export const ChatRoomEmptyState = ({
   const { t } = useTranslation();
 
   return (
-    <View style={styles.card}>
-      <View style={styles.iconContainer}>
-        <Ionicons name="chatbubble-ellipses-outline" size={34} color={DESIGN_TOKENS.colors.primary} />
+    <View className="mt-2.5 rounded-3xl border border-[#DDE8E0] bg-white items-center justify-center px-6 py-[52px] shadow-md">
+      <View className="w-[72px] h-[72px] rounded-3xl bg-[#DDF4EB] items-center justify-center mb-3.5">
+        <Ionicons name="chatbubble-ellipses-outline" size={34} color="#147D64" />
       </View>
-      <AppText style={styles.title}>
+      <AppText className="text-[20px] leading-[26px] font-bold text-[#13251C] mb-1.5">
         {t('chat.start_conversation')}
       </AppText>
-      <AppText style={styles.subtitle}>
+      <AppText className="text-sm leading-5 text-[#5A7467] text-center px-3.5">
         {roomAgents.length > 0
           ? t('chat.room_agents_status', {
               count: roomAgents.length,
@@ -37,16 +36,16 @@ export const ChatRoomEmptyState = ({
           : t('chat.add_agent_to_start')}
       </AppText>
       {suggestions.length > 0 && onSuggestionPress ? (
-        <View style={{ marginTop: 16, width: '100%' }}>
-          {suggestions.map((suggestion) => (
+        <View className="mt-4 w-full">
+          {suggestions.map((suggestion, index) => (
             <ScalePressable
-              key={suggestion}
+              key={`${suggestion}-${index}`}
               onPress={() => onSuggestionPress(suggestion)}
-              style={styles.suggestionButton}
+              className="rounded-xl border border-[#147D644D] bg-[#DDF4EB] px-2.5 py-2 mb-2"
               accessibilityRole="button"
               accessibilityLabel={suggestion}
             >
-              <AppText variant="caption" style={{ color: DESIGN_TOKENS.colors.primary, fontWeight: '700' }}>
+              <AppText variant="caption" className="text-[#147D64] font-bold">
                 {suggestion}
               </AppText>
             </ScalePressable>
@@ -56,50 +55,3 @@ export const ChatRoomEmptyState = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    marginTop: 10,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: DESIGN_TOKENS.colors.border,
-    backgroundColor: DESIGN_TOKENS.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 52,
-    ...DESIGN_TOKENS.shadow,
-  },
-  iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  title: {
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '700',
-    color: DESIGN_TOKENS.colors.text,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: DESIGN_TOKENS.colors.muted,
-    textAlign: 'center',
-    paddingHorizontal: 14,
-  },
-  suggestionButton: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: `${DESIGN_TOKENS.colors.primary}30`,
-    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 8,
-  },
-});

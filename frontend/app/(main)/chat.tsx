@@ -20,6 +20,7 @@ import { ApiService } from '@/core/api/ApiService';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { SecureLocalStorage } from '@/core/services/storage';
 import { ChatRoom } from '@/core/models';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useAgentStore } from '@/store/useAgentStore';
 import { useChatStore } from '@/store/useChatStore';
 
@@ -107,6 +108,7 @@ export default function ChatListScreen() {
   const [loadingMeta, setLoadingMeta] = useState(false);
 
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query, 100);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('recent');
   const [recentOnly, setRecentOnly] = useState(false);
@@ -240,7 +242,7 @@ export default function ChatListScreen() {
   );
 
   const filteredRooms = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
     const now = Date.now();
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
     const pinnedSet = new Set(pinnedRoomIds);
@@ -277,7 +279,7 @@ export default function ChatListScreen() {
     });
   }, [
     pinnedRoomIds,
-    query,
+    debouncedQuery,
     recentOnly,
     roomMeta,
     rooms,
@@ -410,7 +412,7 @@ export default function ChatListScreen() {
                 <Ionicons name="chatbubbles-outline" size={32} color={C.primary} />
               </View>
               <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-                {query || selectedAgentId
+                {debouncedQuery || selectedAgentId
                   ? t('chat.no_filtered_results', 'No chats match this filter')
                   : t('chat.no_conversations_title', 'No conversations yet')}
               </AppText>
@@ -422,7 +424,7 @@ export default function ChatListScreen() {
                   color: C.muted,
                 }}
               >
-                {query || selectedAgentId
+                {debouncedQuery || selectedAgentId
                   ? t('chat.try_adjusting_filters', 'Try adjusting filters or start a new chat.')
                   : t(
                       'chat.no_conversations_desc',

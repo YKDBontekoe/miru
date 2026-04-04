@@ -133,7 +133,11 @@ export const RoomCard = React.memo(
                 className="w-7 h-7 rounded-full items-center justify-center me-1"
                 style={{ backgroundColor: C.primarySurface }}
                 accessibilityRole="button"
-                accessibilityLabel={pinned ? 'Unpin chat' : 'Pin chat'}
+                accessibilityLabel={
+                  pinned
+                    ? t('chat.unpin', { defaultValue: 'Unpin chat' })
+                    : t('chat.pin', { defaultValue: 'Pin chat' })
+                }
               >
                 <Ionicons name={pinned ? 'bookmark' : 'bookmark-outline'} size={14} color={C.primary} />
               </ScalePressable>
