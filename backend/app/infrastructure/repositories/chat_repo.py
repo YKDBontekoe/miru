@@ -127,6 +127,15 @@ class ChatRepository:
         messages = await q.order_by("-created_at", "-id").limit(limit).all()
         return [_map_message_to_entity(msg) for msg in reversed(messages)]
 
+    async def get_latest_room_message(self, room_id: UUID) -> ChatMessageEntity | None:
+        """Fetch the most recent non-deleted message for a room."""
+        message = (
+            await ChatMessage.filter(room_id=room_id, deleted_at__isnull=True)
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        return _map_message_to_entity(message) if message else None
+
     async def update_message(
         self, message_id: UUID, content: str, user_id: UUID | None = None
     ) -> ChatMessageEntity | None:

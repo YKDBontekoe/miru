@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -99,3 +100,42 @@ async def test_get_room_messages_ownership(chat_service: ChatService) -> None:
     result_success = await chat_service.get_room_messages(room_id, user_id)
     assert result_success is not None
     assert len(result_success) == 1
+
+
+@pytest.mark.asyncio
+async def test_list_room_summaries(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+    now = datetime.now(UTC)
+
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms).return_value = [
+        ChatRoomEntity(
+            id=room_id,
+            user_id=user_id,
+            name="Daily planning",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        )
+    ]
+
+    agent = SimpleNamespace(id=agent_id, name="Planner")
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [agent]
+    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_room_message).return_value = (
+        ChatMessageEntity(
+            id=uuid4(),
+            room_id=room_id,
+            user_id=user_id,
+            content="@planner action item for today",
+            created_at=now,
+        )
+    )
+
+    summaries = await chat_service.list_room_summaries(user_id)
+    assert len(summaries) == 1
+    assert summaries[0].id == room_id
+    assert summaries[0].agents[0].id == agent_id
+    assert summaries[0].has_mention is True
+    assert summaries[0].has_task is True

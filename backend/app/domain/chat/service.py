@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import TYPE_CHECKING
 
 import openai
@@ -11,7 +12,12 @@ import openai
 from app.core.config import get_settings
 from app.domain.chat.background_service import ChatBackgroundService
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
-from app.domain.chat.dtos import ChatMessageResponse, RoomResponse
+from app.domain.chat.dtos import (
+    ChatMessageResponse,
+    RoomAgentSummaryResponse,
+    RoomResponse,
+    RoomSummaryResponse,
+)
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 from app.infrastructure.external.openrouter import stream_chat
 
@@ -31,6 +37,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 CONVERSATION_HISTORY_LIMIT = 30
+TASK_HINT_PATTERN = re.compile(r"\b(task|todo|to-do|action item|priority)\b", re.IGNORECASE)
+MENTION_PATTERN = re.compile(r"@[\w.-]+")
 
 
 class ChatService:
@@ -65,6 +73,39 @@ class ChatService:
             RoomResponse(id=r.id, name=r.name, created_at=r.created_at, updated_at=r.updated_at)
             for r in rooms
         ]
+
+    async def list_room_summaries(self, user_id: UUID) -> list[RoomSummaryResponse]:
+        """List rooms with agent and latest-message summaries for the current user."""
+        rooms = await self.chat_repo.list_rooms(user_id)
+        if not rooms:
+            return []
+
+        async def build_summary(room: ChatRoomEntity) -> RoomSummaryResponse:
+            agents, latest = await asyncio.gather(
+                self.chat_repo.list_room_agents(room.id),
+                self.chat_repo.get_latest_room_message(room.id),
+            )
+            preview = latest.content.strip() if latest else None
+            has_task = bool(preview and TASK_HINT_PATTERN.search(preview))
+            has_mention = bool(preview and MENTION_PATTERN.search(preview))
+            return RoomSummaryResponse(
+                id=room.id,
+                name=room.name,
+                created_at=room.created_at,
+                updated_at=room.updated_at,
+                agents=[RoomAgentSummaryResponse(id=agent.id, name=agent.name) for agent in agents],
+                last_message=preview,
+                last_message_at=latest.created_at if latest else None,
+                has_mention=has_mention,
+                has_task=has_task,
+            )
+
+        summaries = await asyncio.gather(*(build_summary(room) for room in rooms))
+        return sorted(
+            summaries,
+            key=lambda item: item.last_message_at or item.updated_at,
+            reverse=True,
+        )
 
     async def update_room(self, room_id: UUID, name: str, user_id: UUID) -> RoomResponse | None:
         room = await self.chat_repo.update_room(room_id, name, user_id=user_id)

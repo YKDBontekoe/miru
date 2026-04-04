@@ -9,6 +9,18 @@ type AgentTemplate = {
   goals: string[];
 };
 
+export interface RoomSummaryRecord {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  agents: { id: string; name: string }[];
+  last_message: string | null;
+  last_message_at: string | null;
+  has_mention: boolean;
+  has_task: boolean;
+}
+
 interface TaskApiRecord {
   id: string;
   user_id: string;
@@ -78,6 +90,11 @@ export const ApiService = {
 
   async createRoom(name: string): Promise<ChatRoom> {
     const response = await apiClient.post<ChatRoom>('rooms', { name });
+    return response.data;
+  },
+
+  async getRoomSummaries(): Promise<RoomSummaryRecord[]> {
+    const response = await apiClient.get<RoomSummaryRecord[]>('rooms/summaries');
     return response.data;
   },
 

@@ -19,6 +19,7 @@ from app.domain.chat.dtos import (
     MessageUpdate,
     RoomCreate,
     RoomResponse,
+    RoomSummaryResponse,
     RoomUpdate,
 )
 from app.domain.chat.service import ChatService  # noqa: TCH001
@@ -60,6 +61,26 @@ async def create_room(
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> RoomResponse:
     return await service.create_room(data.name, user_id)
+
+
+@router.get(
+    "/rooms/summaries",
+    response_model=list[RoomSummaryResponse],
+    summary="List room summaries",
+    description=(
+        "List all chat rooms for the current user with lightweight room metadata, "
+        "agent membership, and the latest message preview."
+    ),
+    responses={
+        200: {"description": "Room summaries retrieved successfully."},
+        401: {"description": "Authentication required"},
+    },
+)
+async def list_room_summaries(
+    user_id: CurrentUser,
+    service: Annotated[ChatService, Depends(get_chat_service)],
+) -> list[RoomSummaryResponse]:
+    return await service.list_room_summaries(user_id)
 
 
 @router.post(

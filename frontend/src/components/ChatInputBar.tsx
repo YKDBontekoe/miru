@@ -2,8 +2,7 @@ import React, { useRef } from 'react';
 import { View, TextInput, Pressable, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { useColorScheme } from 'nativewind';
-import { theme } from '../core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 interface ChatInputBarProps {
   value: string;
@@ -37,9 +36,6 @@ export function ChatInputBar({
   onStop,
   placeholder = 'Message...',
 }: ChatInputBarProps) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const inputRef = useRef<TextInput>(null);
   const canSend = value.trim().length > 0 && !isStreaming;
 
@@ -65,36 +61,19 @@ export function ChatInputBar({
     // Keep focus so keyboard stays open for follow-up messages
   };
 
-  const containerStyle = {
-    backgroundColor: isDark ? theme.colors.surface.dark : theme.colors.surface.light,
-    borderTopColor: isDark ? theme.colors.border.dark : theme.colors.border.light,
-  };
-
-  const inputContainerStyle = {
-    backgroundColor: isDark ? theme.colors.surface.highDark : theme.colors.surface.highLight,
-    borderColor: isDark ? theme.colors.border.dark : theme.colors.border.light,
-  };
-
-  const inputTextStyle = {
-    color: isDark ? theme.colors.onSurface.dark : theme.colors.onSurface.light,
-    ...theme.typography.body,
-  };
-
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={styles.container}>
       {/* Text input */}
-      <View style={[styles.inputContainer, inputContainerStyle]}>
+      <View style={styles.inputContainer}>
         <TextInput
           ref={inputRef}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={
-            isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight
-          }
+          placeholderTextColor={DESIGN_TOKENS.colors.faint}
           multiline
           textAlignVertical="center"
-          style={[styles.input, inputTextStyle]}
+          style={styles.input}
           returnKeyType="default"
           blurOnSubmit={false}
         />
@@ -110,18 +89,14 @@ export function ChatInputBar({
           style={[
             styles.actionButton,
             {
-              backgroundColor: isDark
-                ? theme.colors.status.errorSurfaceDark
-                : theme.colors.status.errorSurfaceLight,
-              borderColor: isDark
-                ? theme.colors.status.errorSurfaceDark
-                : theme.colors.status.errorSurfaceLight, // keep border same to avoid layout shift
+              backgroundColor: DESIGN_TOKENS.colors.destructiveSoft,
+              borderColor: DESIGN_TOKENS.colors.destructiveBorder,
             },
             animatedStyle,
           ]}
         >
           {/* Stop square */}
-          <View style={[styles.stopSquare, { backgroundColor: theme.colors.status.error }]} />
+          <View style={[styles.stopSquare, { backgroundColor: DESIGN_TOKENS.colors.destructive }]} />
         </AnimatedPressable>
       ) : (
         <AnimatedPressable
@@ -133,11 +108,8 @@ export function ChatInputBar({
           style={[
             styles.actionButton,
             {
-              backgroundColor: canSend
-                ? theme.colors.primary.DEFAULT
-                : isDark
-                  ? theme.colors.surface.highestDark
-                  : theme.colors.onSurface.disabledLight,
+              backgroundColor: canSend ? DESIGN_TOKENS.colors.primary : DESIGN_TOKENS.colors.surfaceSoft,
+              borderColor: canSend ? DESIGN_TOKENS.colors.primary : DESIGN_TOKENS.colors.border,
             },
             animatedStyle,
           ]}
@@ -145,13 +117,7 @@ export function ChatInputBar({
           <Ionicons
             name="arrow-up"
             size={22}
-            color={
-              canSend
-                ? theme.colors.white
-                : isDark
-                  ? theme.colors.onSurface.disabledDark
-                  : theme.colors.onSurface.disabledLight
-            }
+            color={canSend ? DESIGN_TOKENS.colors.white : DESIGN_TOKENS.colors.faint}
           />
         </AnimatedPressable>
       )}
@@ -163,38 +129,45 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
     borderTopWidth: 1,
-    gap: theme.spacing.sm,
+    borderTopColor: DESIGN_TOKENS.colors.border,
+    backgroundColor: DESIGN_TOKENS.colors.surface,
+    gap: 8,
   },
   inputContainer: {
     flex: 1,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 24,
     borderWidth: 1,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: Platform.OS === 'ios' ? theme.spacing.md : theme.spacing.sm,
-    paddingBottom: Platform.OS === 'ios' ? theme.spacing.md : theme.spacing.sm,
-    minHeight: theme.spacing.inputBarMinHeight,
-    maxHeight: theme.spacing.inputBarMaxHeight,
+    borderColor: DESIGN_TOKENS.colors.border,
+    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+    paddingHorizontal: 14,
+    paddingTop: Platform.OS === 'ios' ? 10 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
+    minHeight: 48,
+    maxHeight: 132,
     justifyContent: 'center',
   },
   input: {
     padding: 0,
     margin: 0,
+    fontSize: 15,
+    lineHeight: 20,
+    color: DESIGN_TOKENS.colors.text,
   },
   actionButton: {
-    width: theme.spacing.inputBarButton,
-    height: theme.spacing.inputBarButton,
-    borderRadius: theme.borderRadius.full,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'transparent',
   },
   stopSquare: {
-    width: theme.spacing.inputBarStopSquare,
-    height: theme.spacing.inputBarStopSquare,
-    borderRadius: theme.borderRadius.xs,
+    width: 12,
+    height: 12,
+    borderRadius: 3,
   },
 });
