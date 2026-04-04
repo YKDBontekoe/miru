@@ -202,7 +202,9 @@ async def websocket_chat_hub(
                 client_temp_id: str | None = msg.get("clientTempId") or None
                 # Fire-and-forget — the hub pushes results back asynchronously
                 asyncio.create_task(
-                    _handle_send_message(chat_service, user_id, room_id, content, client_temp_id, lang)
+                    _handle_send_message(
+                        chat_service, user_id, room_id, content, client_temp_id, lang
+                    )
                 )
 
     except WebSocketDisconnect:

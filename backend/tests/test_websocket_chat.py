@@ -35,8 +35,8 @@ def test_websocket_endpoint_authorized(client: TestClient) -> None:
     mock_chat_service.run_room_chat_ws = AsyncMock()
 
     # In websocket endpoint, the service is injected via Depends
-    from app.main import app
     from app.api.dependencies import get_auth_service, get_chat_service
+    from app.main import app
 
     app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
     app.dependency_overrides[get_chat_service] = lambda: mock_chat_service
@@ -76,8 +76,8 @@ def test_websocket_endpoint_runtime_error(client: TestClient) -> None:
     mock_auth_service = AsyncMock()
     mock_auth_service.decode_jwt.return_value = type("Payload", (), {"sub": user_id})()
 
-    from app.main import app
     from app.api.dependencies import get_auth_service, get_chat_service
+    from app.main import app
 
     app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
     app.dependency_overrides[get_chat_service] = lambda: AsyncMock(spec=ChatService)
@@ -102,18 +102,20 @@ def test_websocket_endpoint_runtime_error_other(client: TestClient) -> None:
     mock_auth_service = AsyncMock()
     mock_auth_service.decode_jwt.return_value = type("Payload", (), {"sub": user_id})()
 
-    from app.main import app
     from app.api.dependencies import get_auth_service, get_chat_service
+    from app.main import app
 
     app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
     app.dependency_overrides[get_chat_service] = lambda: AsyncMock(spec=ChatService)
 
     try:
-        with patch("starlette.websockets.WebSocket.receive_text") as mock_receive:
+        with (
+            patch("starlette.websockets.WebSocket.receive_text") as mock_receive,
+            pytest.raises(RuntimeError, match="Some other random error"),
+            client.websocket_connect("/api/v1/ws/chat?token=valid"),
+        ):
             mock_receive.side_effect = RuntimeError("Some other random error")
-            with pytest.raises(RuntimeError, match="Some other random error"):
-                with client.websocket_connect("/api/v1/ws/chat?token=valid"):
-                    pass
+            pass
     finally:
         app.dependency_overrides.clear()
 
@@ -142,13 +144,15 @@ def test_websocket_endpoint_runtime_error_during_connect() -> None:
         with patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect:
             import asyncio
 
-            asyncio.run(websocket_chat_hub(
-                mock_ws,
-                token="valid",
-                lang="en-US",
-                auth_service=mock_auth_service,
-                chat_service=mock_chat_service
-            ))
+            asyncio.run(
+                websocket_chat_hub(
+                    mock_ws,
+                    token="valid",
+                    lang="en-US",
+                    auth_service=mock_auth_service,
+                    chat_service=mock_chat_service,
+                )
+            )
 
             mock_disconnect.assert_called_once_with(user_id)
 
@@ -172,12 +176,14 @@ def test_websocket_endpoint_runtime_error_during_close() -> None:
     with patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect:
         import asyncio
 
-        asyncio.run(websocket_chat_hub(
-            mock_ws,
-            token="invalid",
-            lang="en-US",
-            auth_service=mock_auth_service,
-            chat_service=mock_chat_service
-        ))
+        asyncio.run(
+            websocket_chat_hub(
+                mock_ws,
+                token="invalid",
+                lang="en-US",
+                auth_service=mock_auth_service,
+                chat_service=mock_chat_service,
+            )
+        )
 
         mock_disconnect.assert_not_called()
