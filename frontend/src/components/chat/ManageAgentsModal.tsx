@@ -18,6 +18,9 @@ const C = {
   faint: DESIGN_TOKENS.colors.faint,
   primary: DESIGN_TOKENS.colors.primary,
   primarySurface: DESIGN_TOKENS.colors.primarySoft,
+  destructive: DESIGN_TOKENS.colors.destructive,
+  destructiveSurface: DESIGN_TOKENS.colors.destructiveSurface,
+  destructiveBorder: DESIGN_TOKENS.colors.destructiveBorder,
 };
 
 interface ManageAgentsModalProps {
@@ -171,14 +174,14 @@ export const ManageAgentsModal = ({
                       onPress={() => onRemoveAgent(agent.id)}
                       className="rounded-lg px-2.5 py-1 flex-row items-center gap-1 border"
                       style={{
-                        backgroundColor: DESIGN_TOKENS.colors.destructiveSoft,
-                        borderColor: DESIGN_TOKENS.colors.destructiveBorder,
+                        backgroundColor: C.destructiveSurface,
+                        borderColor: C.destructiveBorder,
                       }}
                     >
-                      <Ionicons name="remove" size={13} color={DESIGN_TOKENS.colors.destructive} />
+                      <Ionicons name="remove" size={13} color={C.destructive} />
                       <AppText
                         className="text-xs font-semibold"
-                        style={{ color: DESIGN_TOKENS.colors.destructive }}
+                        style={{ color: C.destructive }}
                       >
                         {t('manageAgents.remove', 'Remove')}
                       </AppText>

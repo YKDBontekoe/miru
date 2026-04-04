@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../AppText';
 import { getAgentColor } from './agentUtils';
 import { Agent } from '../../core/models';
-import { useTheme } from '../../hooks/useTheme';
 import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PinnedChipProps {
   agent: Agent;

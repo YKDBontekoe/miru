@@ -6,9 +6,30 @@ set -u
 echo "Running pre-commit checks..."
 EXIT_CODE=0
 ROOT_DIR=$(git rev-parse --show-toplevel)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRD)
 
-if [ -d "$ROOT_DIR/backend" ]; then
-  echo "Checking backend (CI parity: ruff + format + ty)..."
+has_staged_prefix() {
+  local prefix="$1"
+  printf '%s\n' "$STAGED_FILES" | grep -q "^${prefix}/"
+}
+
+RUN_BACKEND=false
+RUN_FRONTEND=false
+
+if has_staged_prefix "backend"; then
+  RUN_BACKEND=true
+fi
+if has_staged_prefix "frontend"; then
+  RUN_FRONTEND=true
+fi
+
+if [ "$RUN_BACKEND" = false ] && [ "$RUN_FRONTEND" = false ]; then
+  echo "No staged backend/frontend changes detected. Skipping language-specific checks."
+  exit 0
+fi
+
+if [ "$RUN_BACKEND" = true ] && [ -d "$ROOT_DIR/backend" ]; then
+  echo "Checking backend (CI parity: ruff + format + ty + tests)..."
   cd "$ROOT_DIR/backend"
 
   if command -v uv >/dev/null 2>&1; then
@@ -21,6 +42,13 @@ if [ -d "$ROOT_DIR/backend" ]; then
     if ! uv run ty check .; then
       EXIT_CODE=1
     fi
+    if [ "${SKIP_BACKEND_TESTS:-false}" = "true" ]; then
+      echo "Skipping backend tests because SKIP_BACKEND_TESTS=true"
+    else
+      if ! uv run pytest -q; then
+        EXIT_CODE=1
+      fi
+    fi
   else
     if [ -f ".venv/bin/ruff" ] && [ -f ".venv/bin/ty" ]; then
       if ! .venv/bin/ruff check .; then
@@ -32,6 +60,13 @@ if [ -d "$ROOT_DIR/backend" ]; then
       if ! .venv/bin/ty check .; then
         EXIT_CODE=1
       fi
+      if [ "${SKIP_BACKEND_TESTS:-false}" = "true" ]; then
+        echo "Skipping backend tests because SKIP_BACKEND_TESTS=true"
+      else
+        if ! .venv/bin/pytest -q; then
+          EXIT_CODE=1
+        fi
+      fi
     else
       echo "Backend tooling missing. Install uv or backend/.venv first."
       EXIT_CODE=1
@@ -39,14 +74,20 @@ if [ -d "$ROOT_DIR/backend" ]; then
   fi
 
   cd "$ROOT_DIR"
+elif [ "$RUN_BACKEND" = true ]; then
+  echo "Backend directory not found; cannot run backend checks."
+  EXIT_CODE=1
 fi
 
-if [ -d "$ROOT_DIR/frontend" ]; then
-  echo "Checking frontend (CI parity: type-check then lint)..."
+if [ "$RUN_FRONTEND" = true ] && [ -d "$ROOT_DIR/frontend" ]; then
+  echo "Checking frontend (CI parity: type-check, lint, tests)..."
   cd "$ROOT_DIR/frontend"
 
   if [ ! -d "node_modules" ]; then
-    npm install --legacy-peer-deps
+    if ! npm install --legacy-peer-deps; then
+      echo "npm install failed. Aborting pre-commit checks."
+      exit 1
+    fi
   fi
 
   if ! npm run type-check; then
@@ -55,8 +96,18 @@ if [ -d "$ROOT_DIR/frontend" ]; then
   if ! npm run lint; then
     EXIT_CODE=1
   fi
+  if [ "${SKIP_FRONTEND_TESTS:-false}" = "true" ]; then
+    echo "Skipping frontend tests because SKIP_FRONTEND_TESTS=true"
+  else
+    if ! npm test -- --runInBand --watchAll=false; then
+      EXIT_CODE=1
+    fi
+  fi
 
   cd "$ROOT_DIR"
+elif [ "$RUN_FRONTEND" = true ]; then
+  echo "Frontend directory not found; cannot run frontend checks."
+  EXIT_CODE=1
 fi
 
 if [ "$EXIT_CODE" -ne 0 ]; then

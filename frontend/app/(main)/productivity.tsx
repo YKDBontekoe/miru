@@ -80,9 +80,13 @@ export default function ProductivityScreen() {
   } = useProductivityStore();
 
   useEffect(() => {
-    fetchNotes();
-    fetchTasks();
-    fetchEvents();
+    const controller = new AbortController();
+    fetchNotes(controller.signal);
+    fetchTasks(controller.signal);
+    fetchEvents(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   useEffect(() => {
@@ -464,11 +468,23 @@ export default function ProductivityScreen() {
         >
           {(
             [
-              { key: 'all', label: `All (${taskPriorityCounts.all})` },
-              { key: 'overdue', label: `Overdue (${taskPriorityCounts.overdue})` },
-              { key: 'today', label: `Today (${taskPriorityCounts.today})` },
-              { key: 'upcoming', label: `Upcoming (${taskPriorityCounts.upcoming})` },
-              { key: 'no_due', label: `No due (${taskPriorityCounts.no_due})` },
+              { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
+              {
+                key: 'overdue',
+                label: t('productivity.priority.overdue', { count: taskPriorityCounts.overdue }),
+              },
+              {
+                key: 'today',
+                label: t('productivity.priority.today', { count: taskPriorityCounts.today }),
+              },
+              {
+                key: 'upcoming',
+                label: t('productivity.priority.upcoming', { count: taskPriorityCounts.upcoming }),
+              },
+              {
+                key: 'no_due',
+                label: t('productivity.priority.no_due', { count: taskPriorityCounts.no_due }),
+              },
             ] as const
           ).map((option) => (
             <Pressable
@@ -622,7 +638,7 @@ export default function ProductivityScreen() {
                           : styles.emptyButtonText
                       }
                     >
-                      New Task
+                      {t('productivity.new_task')}
                     </AppText>
                   </Pressable>
                 )}

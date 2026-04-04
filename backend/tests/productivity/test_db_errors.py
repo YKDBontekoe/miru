@@ -59,4 +59,4 @@ async def test_handle_db_errors_action_mapping():
     with pytest.raises(HTTPException) as exc_info:
         async with handle_db_errors("list notes"):
             raise IntegrityError("mock error")
-    assert "listing notes" in exc_info.value.detail
+    assert "listing notes" in exc_info.value.detail["message"]

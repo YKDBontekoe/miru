@@ -48,6 +48,13 @@ const BUILT_IN_SHORTCUT_IDS = {
   topPriorities: 'builtin.top_priorities',
 } as const;
 
+const LEGACY_TEXT_TO_ID: Record<string, string> = {
+  'Plan my day from my open tasks and events.': BUILT_IN_SHORTCUT_IDS.planDay,
+  'Extract action items from this chat.': BUILT_IN_SHORTCUT_IDS.extractActions,
+  'Schedule my most important task this week.': BUILT_IN_SHORTCUT_IDS.scheduleWeek,
+  'What are my top 3 priorities today?': BUILT_IN_SHORTCUT_IDS.topPriorities,
+};
+
 export default function ChatRoomScreen() {
   const { t } = useTranslation();
   const { id: roomId } = useLocalSearchParams<{ id: string }>();
@@ -191,13 +198,14 @@ export default function ChatRoomScreen() {
           const parsed = JSON.parse(raw) as Partial<RoomShortcut>[];
           const normalizedParsed = parsed
             .map((entry, index) => {
-              const existingBuiltIn = defaultQuickActions.find((builtin) => builtin.text === entry.text);
               const entryText = typeof entry.text === 'string' ? entry.text : '';
+              const existingBuiltIn = defaultQuickActions.find((builtin) => builtin.text === entry.text);
+              const legacyBuiltInId = LEGACY_TEXT_TO_ID[entryText];
               return {
                 id:
                   typeof entry.id === 'string' && entry.id.length > 0
                     ? entry.id
-                    : existingBuiltIn?.id ?? `custom.legacy.${index}`,
+                    : legacyBuiltInId ?? existingBuiltIn?.id ?? `custom.legacy.${index}`,
                 text: entryText,
                 pinned: Boolean(entry.pinned),
               };
@@ -359,7 +367,7 @@ export default function ChatRoomScreen() {
               disabled={isStreaming || !inputText.trim()}
             >
               <AppText className="text-xs font-semibold" style={{ color: C.primary }}>
-                Save prompt
+                {t('chat.save_prompt')}
               </AppText>
             </Pressable>
             {quickActions.map((action) => (

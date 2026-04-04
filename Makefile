@@ -1,4 +1,7 @@
 .PHONY: db db-stop backend frontend setup setup-hooks
+GIT_DIR := $(shell git rev-parse --git-dir)
+PRE_COMMIT_HOOK := $(GIT_DIR)/hooks/pre-commit
+PRE_COMMIT_SOURCE := $(abspath $(CURDIR)/.github/hooks/pre-commit)
 
 # Start the PostgreSQL + pgvector container
 db:
@@ -17,8 +20,8 @@ setup-backend:
 
 # Install pre-commit hooks
 setup-hooks:
-	rm -f .git/hooks/pre-commit
-	ln -s ../../.github/hooks/pre-commit .git/hooks/pre-commit
+	rm -f "$(PRE_COMMIT_HOOK)"
+	ln -s "$(PRE_COMMIT_SOURCE)" "$(PRE_COMMIT_HOOK)"
 	chmod +x .github/hooks/pre-commit
 	@echo "Pre-commit hooks installed."
 

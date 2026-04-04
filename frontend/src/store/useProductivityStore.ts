@@ -1,14 +1,21 @@
 import { create } from 'zustand';
-import { ApiService } from '../core/api/ApiService';
-import { getApiErrorMessage } from '../core/api/errors';
-import { CalendarEvent, Note, Task } from '../core/models';
+import { ApiService } from '@/core/api/ApiService';
+import { getApiErrorMessage } from '@/core/api/errors';
+import { CalendarEvent, Note, Task } from '@/core/models';
 
 interface ProductivityState {
   notes: Note[];
   tasks: Task[];
   events: CalendarEvent[];
+  pendingRequests: number;
   isLoading: boolean;
   error: string | null;
+  isLoadingNotes: boolean;
+  isLoadingTasks: boolean;
+  isLoadingEvents: boolean;
+  errorNotes: string | null;
+  errorTasks: string | null;
+  errorEvents: string | null;
   fetchNotes: (signal?: AbortSignal) => Promise<void>;
   fetchTasks: (signal?: AbortSignal) => Promise<void>;
   fetchEvents: (signal?: AbortSignal) => Promise<void>;
@@ -34,48 +41,121 @@ export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
   tasks: [],
   events: [],
+  pendingRequests: 0,
   isLoading: false,
   error: null,
+  isLoadingNotes: false,
+  isLoadingTasks: false,
+  isLoadingEvents: false,
+  errorNotes: null,
+  errorTasks: null,
+  errorEvents: null,
 
   fetchNotes: async (signal?: AbortSignal) => {
-    set({ isLoading: true, error: null });
+    set((state) => ({
+      pendingRequests: state.pendingRequests + 1,
+      isLoading: true,
+      isLoadingNotes: true,
+      errorNotes: null,
+      error: null,
+    }));
     try {
       const notes = await ApiService.getNotes(signal);
-      set({ notes, isLoading: false });
+      set((state) => ({
+        notes,
+        isLoadingNotes: false,
+        pendingRequests: Math.max(0, state.pendingRequests - 1),
+        isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+      }));
     } catch (error: unknown) {
       if (signal?.aborted) {
-        set({ isLoading: false });
+        set((state) => ({
+          isLoadingNotes: false,
+          pendingRequests: Math.max(0, state.pendingRequests - 1),
+          isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+        }));
         return;
       }
-      set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load notes.') });
+      const errorMessage = getApiErrorMessage(error, 'Failed to load notes.');
+      set((state) => ({
+        isLoadingNotes: false,
+        errorNotes: errorMessage,
+        error: errorMessage,
+        pendingRequests: Math.max(0, state.pendingRequests - 1),
+        isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+      }));
     }
   },
 
   fetchTasks: async (signal?: AbortSignal) => {
-    set({ isLoading: true, error: null });
+    set((state) => ({
+      pendingRequests: state.pendingRequests + 1,
+      isLoading: true,
+      isLoadingTasks: true,
+      errorTasks: null,
+      error: null,
+    }));
     try {
       const tasks = await ApiService.getTasks(signal);
-      set({ tasks, isLoading: false });
+      set((state) => ({
+        tasks,
+        isLoadingTasks: false,
+        pendingRequests: Math.max(0, state.pendingRequests - 1),
+        isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+      }));
     } catch (error: unknown) {
       if (signal?.aborted) {
-        set({ isLoading: false });
+        set((state) => ({
+          isLoadingTasks: false,
+          pendingRequests: Math.max(0, state.pendingRequests - 1),
+          isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+        }));
         return;
       }
-      set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load tasks.') });
+      const errorMessage = getApiErrorMessage(error, 'Failed to load tasks.');
+      set((state) => ({
+        isLoadingTasks: false,
+        errorTasks: errorMessage,
+        error: errorMessage,
+        pendingRequests: Math.max(0, state.pendingRequests - 1),
+        isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+      }));
     }
   },
 
   fetchEvents: async (signal?: AbortSignal) => {
-    set({ isLoading: true, error: null });
+    set((state) => ({
+      pendingRequests: state.pendingRequests + 1,
+      isLoading: true,
+      isLoadingEvents: true,
+      errorEvents: null,
+      error: null,
+    }));
     try {
       const events = await ApiService.getEvents(signal);
-      set({ events, isLoading: false });
+      set((state) => ({
+        events,
+        isLoadingEvents: false,
+        pendingRequests: Math.max(0, state.pendingRequests - 1),
+        isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+      }));
     } catch (error: unknown) {
       if (signal?.aborted) {
-        set({ isLoading: false });
+        set((state) => ({
+          isLoadingEvents: false,
+          pendingRequests: Math.max(0, state.pendingRequests - 1),
+          isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+        }));
         return;
       }
-      set({ isLoading: false, error: getApiErrorMessage(error, 'Failed to load events.') });
+      const errorMessage = getApiErrorMessage(error, 'Failed to load events.');
+      set((state) => ({
+        isLoadingEvents: false,
+        errorEvents: errorMessage,
+        error: errorMessage,
+        pendingRequests: Math.max(0, state.pendingRequests - 1),
+        isLoading: Math.max(0, state.pendingRequests - 1) > 0,
+      }));
     }
   },
 

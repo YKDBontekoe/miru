@@ -78,6 +78,7 @@ export default function ChatListScreen() {
         }
         setRoomAgents(newRoomAgents);
       } catch (err) {
+        if (!isMounted) return;
         console.error('Failed to load room agents', { err, roomCount: rooms.length });
         Alert.alert(t('chat.error'), t('chat.failed_to_load_agents'));
       }

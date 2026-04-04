@@ -1,8 +1,9 @@
 import React from 'react';
-import { Platform, ScrollView, View, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, View, ViewStyle } from 'react-native';
+import { SafeAreaInsetsContext, SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '@/components/AppText';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PageShellProps {
   title: string;
@@ -78,17 +79,19 @@ const PageHeader = ({
   );
 };
 
-export function PageShell({
+export const PageShell = ({
   title,
   subtitle,
   right,
   children,
   scroll = true,
   contentStyle,
-}: PageShellProps) {
-  const baseBottomPadding = 40 + (Platform.OS === 'ios' ? 32 : 16) + 64;
+}: PageShellProps) => {
+  const { C } = useTheme();
+  const insets = React.useContext(SafeAreaInsetsContext);
+  const baseBottomPadding = 40 + (insets?.bottom ?? 0) + 64;
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: DESIGN_TOKENS.colors.pageBg }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: C.bg }}>
       <PageHeader title={title} subtitle={subtitle} right={right} />
 
       {scroll ? (
@@ -106,4 +109,4 @@ export function PageShell({
       )}
     </SafeAreaView>
   );
-}
+};

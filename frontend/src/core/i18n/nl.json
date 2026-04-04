@@ -189,6 +189,7 @@
       "schedule_week": "Plan mijn belangrijkste taak deze week.",
       "top_priorities": "Wat zijn mijn top 3 prioriteiten vandaag?"
     },
+    "save_prompt": "Prompt opslaan",
     "failed_to_connect": "Verbinding met chat mislukt. Ga terug en probeer opnieuw.",
     "failed_to_load_agents": "Laden van agenten mislukt.",
     "remove_agent_failed": "Agent verwijderen uit chat mislukt. Probeer opnieuw."
@@ -257,7 +258,34 @@
       "generate_failed": "Kon geen persona genereren. Probeer opnieuw.",
       "create_failed": "Aanmaken van agent mislukt. Probeer opnieuw.",
       "name_required": "Naam en persoonlijkheid zijn vereist."
+    },
+    "filter": {
+      "all": "Alles",
+      "pinned": "Vastgezet",
+      "active": "Actief"
+    },
+    "sort": {
+      "recent": "Recent",
+      "messages": "Meest gebruikt",
+      "name": "A-Z"
+    },
+    "template": {
+      "all": "Alle templates ({{count}})",
+      "work": "Werk ({{count}})",
+      "planning": "Planning ({{count}})",
+      "creative": "Creatief ({{count}})"
+    },
+    "templateCategory": {
+      "all": "Alles",
+      "work": "Werk",
+      "planning": "Planning",
+      "creative": "Creatief"
     }
+    ,
+    "templatesComingSoon": "Templates komen binnenkort",
+    "templatesComingSoonDesc": "Vooraf gebouwde persona's verschijnen hier.",
+    "noTemplatesInCategory": "Geen templates in deze categorie",
+    "tryAnotherCategory": "Probeer een andere categorie."
   },
   "productivity": {
     "title_required": "Titel vereist",
@@ -310,7 +338,14 @@
     "due_date_label": "Vervaldatum",
     "due_date_placeholder": "JJJJ-MM-DD (optioneel)",
     "invalid_due_date": "Gebruik een geldige datum in JJJJ-MM-DD-formaat.",
-    "today": "Vandaag",
+    "today_short": "Vandaag",
+    "priority": {
+      "all": "Alles ({{count}})",
+      "overdue": "Achterstallig ({{count}})",
+      "today": "Vandaag ({{count}})",
+      "upcoming": "Aankomend ({{count}})",
+      "no_due": "Geen deadline ({{count}})"
+    },
     "tomorrow": "Morgen",
     "clear": "Wissen"
   }

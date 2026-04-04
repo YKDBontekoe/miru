@@ -3,6 +3,7 @@ import { Modal, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
@@ -18,7 +19,12 @@ export function GlobalQuickActions() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
+  const tabBarHeight = 64;
+  const tabBarOffset = 16;
+  const fabSpacing = 14;
+  const fabBottom = insets.bottom + tabBarHeight + tabBarOffset + fabSpacing;
 
   const actions = useMemo<QuickAction[]>(
     () => [
@@ -61,7 +67,7 @@ export function GlobalQuickActions() {
         style={{
           position: 'absolute',
           right: 24,
-          bottom: 118,
+          bottom: fabBottom,
         }}
       >
         <ScalePressable
@@ -82,7 +88,7 @@ export function GlobalQuickActions() {
         </ScalePressable>
       </View>
 
-      <Modal visible={visible} animationType="fade" transparent>
+      <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.25)' }}>
           <Pressable onPress={() => setVisible(false)} style={{ flex: 1 }} />
           <View

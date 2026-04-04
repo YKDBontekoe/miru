@@ -188,8 +188,8 @@
       "extract_actions": "Extract action items from this chat.",
       "schedule_week": "Schedule my most important task this week.",
       "top_priorities": "What are my top 3 priorities today?"
-    }
-    ,
+    },
+    "save_prompt": "Save prompt",
     "failed_to_connect": "Failed to connect to chat. Please go back and try again.",
     "failed_to_load_agents": "Failed to load agents.",
     "remove_agent_failed": "Could not remove agent from chat. Please try again."
@@ -258,7 +258,34 @@
       "generate_failed": "Could not generate persona. Try again.",
       "create_failed": "Failed to create agent. Please try again.",
       "name_required": "Name and personality are required."
+    },
+    "filter": {
+      "all": "All",
+      "pinned": "Pinned",
+      "active": "Active"
+    },
+    "sort": {
+      "recent": "Recent",
+      "messages": "Most used",
+      "name": "A-Z"
+    },
+    "template": {
+      "all": "All templates ({{count}})",
+      "work": "Work ({{count}})",
+      "planning": "Planning ({{count}})",
+      "creative": "Creative ({{count}})"
+    },
+    "templateCategory": {
+      "all": "All",
+      "work": "Work",
+      "planning": "Planning",
+      "creative": "Creative"
     }
+    ,
+    "templatesComingSoon": "Templates coming soon",
+    "templatesComingSoonDesc": "Pre-built personas will be available here.",
+    "noTemplatesInCategory": "No templates in this category",
+    "tryAnotherCategory": "Try another category."
   },
   "productivity": {
     "title_required": "Title required",
@@ -311,7 +338,14 @@
     "due_date_label": "Due date",
     "due_date_placeholder": "YYYY-MM-DD (optional)",
     "invalid_due_date": "Use a valid date in YYYY-MM-DD format.",
-    "today": "Today",
+    "today_short": "Today",
+    "priority": {
+      "all": "All ({{count}})",
+      "overdue": "Overdue ({{count}})",
+      "today": "Today ({{count}})",
+      "upcoming": "Upcoming ({{count}})",
+      "no_due": "No due ({{count}})"
+    },
     "tomorrow": "Tomorrow",
     "clear": "Clear"
   }
