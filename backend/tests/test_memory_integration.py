@@ -32,17 +32,17 @@ async def test_memory_creation_and_retrieval_integration() -> None:
 
     with patch("app.domain.memory.service.embed") as mock_embed:
         # First memory
-        mock_embed.return_value = [0.1] * 1536
+        mock_embed.return_value = [0.1, 0.0] + [0.0] * 1534
         mem1_id = await service.store_memory(content="I have a cat named Whiskers", user_id=user_id)
 
         # Second memory
-        mock_embed.return_value = [0.2] * 1536
+        mock_embed.return_value = [0.0, 0.1] + [0.0] * 1534
         mem2_id = await service.store_memory(
             content="I like to drink coffee in the morning", user_id=user_id
         )
 
-        # Deduplication case - should return None because vector is exactly [0.1]*1536
-        mock_embed.return_value = [0.1] * 1536
+        # Deduplication case - should return None because vector is exactly [0.1, 0.0]*...
+        mock_embed.return_value = [0.1, 0.0] + [0.0] * 1534
         mem3_id = await service.store_memory(
             content="I own a cat whose name is Whiskers", user_id=user_id
         )
@@ -57,7 +57,7 @@ async def test_memory_creation_and_retrieval_integration() -> None:
 
     # Assert side effects using the service's retrieve_memories
     with patch("app.domain.memory.service.embed") as mock_embed:
-        mock_embed.return_value = [0.1] * 1536
+        mock_embed.return_value = [0.1, 0.0] + [0.0] * 1534
         results = await service.retrieve_memories(query="cat", user_id=user_id)
         assert len(results) >= 1
         assert results[0].id == mem1_id
@@ -73,12 +73,12 @@ async def test_memory_relationship_integration() -> None:
     user_id = uuid4()
 
     with patch("app.domain.memory.service.embed") as mock_embed:
-        mock_embed.return_value = [0.3] * 1536
+        mock_embed.return_value = [0.3, 0.0] + [0.0] * 1534
         m1 = await service.store_memory("Paris is a city", user_id=user_id)
 
         assert m1 is not None
 
-        mock_embed.return_value = [0.4] * 1536
+        mock_embed.return_value = [0.0, 0.4] + [0.0] * 1534
         m2 = await service.store_memory("France is a country", user_id=user_id, related_to=[m1])
 
     assert m2 is not None
