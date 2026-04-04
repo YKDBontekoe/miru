@@ -11,6 +11,8 @@ interface ChatInputBarProps {
   isStreaming: boolean;
   onStop?: () => void;
   placeholder?: string;
+  className?: string;
+  inputClassName?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -35,6 +37,8 @@ export function ChatInputBar({
   isStreaming,
   onStop,
   placeholder = 'Message...',
+  className,
+  inputClassName,
 }: ChatInputBarProps) {
   const inputRef = useRef<TextInput>(null);
   const canSend = value.trim().length > 0 && !isStreaming;
@@ -61,8 +65,13 @@ export function ChatInputBar({
     // Keep focus so keyboard stays open for follow-up messages
   };
 
+  const sendToneClass = canSend
+    ? 'bg-[#147D64] border-[#147D64]'
+    : 'bg-[#ECF5F0] border-[#DDE8E0]';
+  const stopToneClass = 'bg-[#FCEEEE] border-[#F4D1D1]';
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} className={className}>
       {/* Text input */}
       <View style={styles.inputContainer}>
         <TextInput
@@ -74,6 +83,7 @@ export function ChatInputBar({
           multiline
           textAlignVertical="center"
           style={styles.input}
+          className={inputClassName}
           returnKeyType="default"
           blurOnSubmit={false}
         />
@@ -86,12 +96,9 @@ export function ChatInputBar({
           onPress={onStop}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          className={stopToneClass}
           style={[
             styles.actionButton,
-            {
-              backgroundColor: DESIGN_TOKENS.colors.destructiveSoft,
-              borderColor: DESIGN_TOKENS.colors.destructiveBorder,
-            },
             animatedStyle,
           ]}
         >
@@ -105,12 +112,9 @@ export function ChatInputBar({
           disabled={!canSend}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          className={sendToneClass}
           style={[
             styles.actionButton,
-            {
-              backgroundColor: canSend ? DESIGN_TOKENS.colors.primary : DESIGN_TOKENS.colors.surfaceSoft,
-              borderColor: canSend ? DESIGN_TOKENS.colors.primary : DESIGN_TOKENS.colors.border,
-            },
             animatedStyle,
           ]}
         >

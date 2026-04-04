@@ -79,8 +79,10 @@ async def create_room(
 async def list_room_summaries(
     user_id: CurrentUser,
     service: Annotated[ChatService, Depends(get_chat_service)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    before_id: Annotated[UUID | None, Query()] = None,
 ) -> list[RoomSummaryResponse]:
-    return await service.list_room_summaries(user_id)
+    return await service.list_room_summaries(user_id, limit=limit, before_id=before_id)
 
 
 @router.post(

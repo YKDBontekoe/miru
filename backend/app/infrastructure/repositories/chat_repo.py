@@ -49,9 +49,23 @@ class ChatRepository:
         room = await ChatRoom.create(name=name, user_id=user_id)
         return _map_room_to_entity(room)
 
-    async def list_rooms(self, user_id: UUID) -> list[ChatRoomEntity]:
-        """List all chat rooms for a user."""
-        rooms = await ChatRoom.filter(user_id=user_id).all()
+    async def list_rooms(
+        self, user_id: UUID, limit: int | None = None, before_id: UUID | None = None
+    ) -> list[ChatRoomEntity]:
+        """List chat rooms for a user ordered by recency, with optional cursor pagination."""
+        query = ChatRoom.filter(user_id=user_id)
+        if before_id is not None:
+            anchor = await ChatRoom.get_or_none(id=before_id, user_id=user_id)
+            if anchor is None:
+                return []
+            query = query.filter(
+                Q(updated_at__lt=anchor.updated_at)
+                | Q(updated_at=anchor.updated_at, id__lt=before_id)
+            )
+        query = query.order_by("-updated_at", "-id")
+        if limit is not None:
+            query = query.limit(limit)
+        rooms = await query.all()
         return [_map_room_to_entity(room) for room in rooms]
 
     async def get_room(self, room_id: UUID, user_id: UUID | None = None) -> ChatRoomEntity | None:
@@ -108,6 +122,18 @@ class ChatRepository:
         )
         return [assoc.agent for assoc in assocs]
 
+    async def list_rooms_agents(self, room_ids: list[UUID]) -> dict[UUID, list[Agent]]:
+        """Fetch agents for multiple rooms in one query and return a room->agents map."""
+        if not room_ids:
+            return {}
+        assocs = await ChatRoomAgent.filter(room_id__in=room_ids).prefetch_related(
+            "agent__capabilities", "agent__agent_integrations__integration"
+        )
+        grouped: dict[UUID, list[Agent]] = {room_id: [] for room_id in room_ids}
+        for assoc in assocs:
+            grouped.setdefault(assoc.room_id, []).append(assoc.agent)
+        return grouped
+
     async def get_room_messages(
         self, room_id: UUID, limit: int = 50, before_id: UUID | None = None
     ) -> list[ChatMessageEntity]:
@@ -135,6 +161,24 @@ class ChatRepository:
             .first()
         )
         return _map_message_to_entity(message) if message else None
+
+    async def get_latest_messages_for_rooms(
+        self, room_ids: list[UUID]
+    ) -> dict[UUID, ChatMessageEntity]:
+        """Fetch latest non-deleted message per room for a list of room IDs."""
+        if not room_ids:
+            return {}
+        rows = (
+            await ChatMessage.filter(room_id__in=room_ids, deleted_at__isnull=True)
+            .order_by("room_id", "-created_at", "-id")
+            .all()
+        )
+        latest_by_room: dict[UUID, ChatMessageEntity] = {}
+        for row in rows:
+            if row.room_id in latest_by_room:
+                continue
+            latest_by_room[row.room_id] = _map_message_to_entity(row)
+        return latest_by_room
 
     async def update_message(
         self, message_id: UUID, content: str, user_id: UUID | None = None

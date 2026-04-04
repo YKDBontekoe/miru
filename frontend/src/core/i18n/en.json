@@ -190,6 +190,7 @@
       "top_priorities": "What are my top 3 priorities today?"
     },
     "save_prompt": "Save prompt",
+    "editing": "Editing",
     "failed_to_connect": "Failed to connect to chat. Please go back and try again.",
     "failed_to_load_agents": "Failed to load agents.",
     "remove_agent_failed": "Could not remove agent from chat. Please try again."

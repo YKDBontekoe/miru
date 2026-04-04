@@ -190,6 +190,7 @@
       "top_priorities": "Wat zijn mijn top 3 prioriteiten vandaag?"
     },
     "save_prompt": "Prompt opslaan",
+    "editing": "Bewerken",
     "failed_to_connect": "Verbinding met chat mislukt. Ga terug en probeer opnieuw.",
     "failed_to_load_agents": "Laden van agenten mislukt.",
     "remove_agent_failed": "Agent verwijderen uit chat mislukt. Probeer opnieuw."

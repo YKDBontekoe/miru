@@ -114,8 +114,10 @@ export default function ChatRoomScreen() {
   }, [agents, roomAgents]);
 
   useEffect(() => {
-    if (tasks.length === 0) fetchTasks();
-    if (events.length === 0) fetchEvents();
+    const controller = new AbortController();
+    if (tasks.length === 0) fetchTasks(controller.signal);
+    if (events.length === 0) fetchEvents(controller.signal);
+    return () => controller.abort();
   }, [events.length, fetchEvents, fetchTasks, tasks.length]);
 
   useEffect(() => {

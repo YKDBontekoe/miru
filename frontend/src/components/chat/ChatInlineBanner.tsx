@@ -1,35 +1,32 @@
 import React from 'react';
 import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 interface ChatInlineBannerProps {
   text: string;
   tone?: 'error' | 'success' | 'info';
 }
 
-const COLORS = {
-  error: DESIGN_TOKENS.colors.destructive,
-  success: DESIGN_TOKENS.colors.primary,
-  info: DESIGN_TOKENS.colors.muted,
+const TONE_CLASSES = {
+  error: {
+    box: 'border-[#B23A3A66] bg-[#B23A3A1F]',
+    text: 'text-[#B23A3A]',
+  },
+  success: {
+    box: 'border-[#147D6466] bg-[#147D641F]',
+    text: 'text-[#147D64]',
+  },
+  info: {
+    box: 'border-[#5A746766] bg-[#5A74671F]',
+    text: 'text-[#5A7467]',
+  },
 } as const;
 
 export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps) {
-  const color = COLORS[tone];
+  const toneClass = TONE_CLASSES[tone];
   return (
-    <View
-      style={{
-        marginHorizontal: 12,
-        marginBottom: 8,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: `${color}40`,
-        backgroundColor: `${color}12`,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-      }}
-    >
-      <AppText variant="caption" style={{ color, fontWeight: '700' }}>
+    <View className={`mx-3 mb-2 rounded-xl border px-2.5 py-2 ${toneClass.box}`}>
+      <AppText variant="caption" className={`font-bold ${toneClass.text}`}>
         {text}
       </AppText>
     </View>

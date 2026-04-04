@@ -122,20 +122,92 @@ async def test_list_room_summaries(chat_service: ChatService) -> None:
     ]
 
     agent = SimpleNamespace(id=agent_id, name="Planner")
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [agent]
-    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_room_message).return_value = (
-        ChatMessageEntity(
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).return_value = {
+        room_id: [agent]
+    }
+    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).return_value = {
+        room_id: ChatMessageEntity(
             id=uuid4(),
             room_id=room_id,
             user_id=user_id,
             content="@planner action item for today",
             created_at=now,
         )
-    )
+    }
 
-    summaries = await chat_service.list_room_summaries(user_id)
+    summaries = await chat_service.list_room_summaries(user_id, limit=50, before_id=None)
     assert len(summaries) == 1
     assert summaries[0].id == room_id
     assert summaries[0].agents[0].id == agent_id
     assert summaries[0].has_mention is True
     assert summaries[0].has_task is True
+
+
+@pytest.mark.asyncio
+async def test_list_room_summaries_without_latest_message(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+    now = datetime.now(UTC)
+
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms).return_value = [
+        ChatRoomEntity(
+            id=room_id,
+            user_id=user_id,
+            name="Daily planning",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        )
+    ]
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).return_value = {
+        room_id: [SimpleNamespace(id=agent_id, name="Planner")]
+    }
+    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).return_value = {}
+
+    summaries = await chat_service.list_room_summaries(user_id)
+    assert len(summaries) == 1
+    assert summaries[0].id == room_id
+    assert summaries[0].agents[0].id == agent_id
+    assert summaries[0].has_mention is False
+    assert summaries[0].has_task is False
+
+
+@pytest.mark.asyncio
+async def test_list_room_summaries_latest_message_without_markers(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+    now = datetime.now(UTC)
+
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms).return_value = [
+        ChatRoomEntity(
+            id=room_id,
+            user_id=user_id,
+            name="Daily planning",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        )
+    ]
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).return_value = {
+        room_id: [SimpleNamespace(id=agent_id, name="Planner")]
+    }
+    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).return_value = {
+        room_id: ChatMessageEntity(
+            id=uuid4(),
+            room_id=room_id,
+            user_id=user_id,
+            content="plain conversation update",
+            created_at=now,
+        )
+    }
+
+    summaries = await chat_service.list_room_summaries(user_id)
+    assert len(summaries) == 1
+    assert summaries[0].id == room_id
+    assert summaries[0].agents[0].id == agent_id
+    assert summaries[0].has_mention is False
+    assert summaries[0].has_task is False

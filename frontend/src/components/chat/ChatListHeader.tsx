@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, TextInput, View } from 'react-native';
 import { AppText } from '@/components/AppText';
@@ -54,62 +54,34 @@ export function ChatListHeader({
   activeFilterCount,
   roomCount,
 }: ChatListHeaderProps) {
+  const [localQuery, setLocalQuery] = useState(query);
+
+  useEffect(() => {
+    setLocalQuery(query);
+  }, [query]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => onChangeQuery(localQuery), 300);
+    return () => clearTimeout(timer);
+  }, [localQuery, onChangeQuery]);
+
   return (
     <>
-      <View
-        style={{
-          borderRadius: 28,
-          backgroundColor: C.deep,
-          padding: 18,
-          marginBottom: 14,
-          overflow: 'hidden',
-          ...DESIGN_TOKENS.shadow,
-        }}
-      >
-        <View
-          style={{
-            position: 'absolute',
-            right: -26,
-            top: -24,
-            width: 132,
-            height: 132,
-            borderRadius: 66,
-            backgroundColor: 'rgba(255,255,255,0.08)',
-          }}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            right: 36,
-            bottom: -48,
-            width: 148,
-            height: 148,
-            borderRadius: 74,
-            backgroundColor: 'rgba(255,255,255,0.06)',
-          }}
-        />
-        <AppText variant="caption" style={{ color: 'rgba(255,255,255,0.78)', marginBottom: 4 }}>
+      <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
+        <View className="absolute -right-[26px] -top-[24px] w-[132px] h-[132px] rounded-full bg-white/10" />
+        <View className="absolute right-[36px] -bottom-[48px] w-[148px] h-[148px] rounded-full bg-white/5" />
+        <AppText variant="caption" className="text-white/80 mb-1">
           {t('chat.title', 'Miru')}
         </AppText>
-        <AppText variant="h2" style={{ color: '#FFFFFF', fontWeight: '700', marginBottom: 6 }}>
+        <AppText variant="h2" className="text-white font-bold mb-1.5">
           {t('chat.chats', 'Chats')}
         </AppText>
-        <AppText variant="bodySm" style={{ color: 'rgba(255,255,255,0.78)' }}>
+        <AppText variant="bodySm" className="text-white/80">
           {t('chat.design_subtitle', 'Search, pin, and continue the right conversation fast.')}
         </AppText>
       </View>
 
-      <View
-        style={{
-          backgroundColor: C.surface,
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: C.border,
-          padding: 14,
-          marginBottom: 12,
-          ...DESIGN_TOKENS.shadow,
-        }}
-      >
+      <View className="bg-white rounded-3xl border border-[#DDE8E0] p-[14px] mb-3 shadow-md">
         <View
           style={{
             flexDirection: 'row',
@@ -124,16 +96,16 @@ export function ChatListHeader({
         >
           <Ionicons name="search" size={16} color={C.muted} />
           <TextInput
-            value={query}
-            onChangeText={onChangeQuery}
+            value={localQuery}
+            onChangeText={setLocalQuery}
             placeholder={t('chat.search_placeholder', 'Search chats')}
             placeholderTextColor={C.faint}
             style={{ flex: 1, height: 42, color: C.text, marginLeft: 8, fontSize: 14 }}
             accessibilityLabel={t('chat.search_placeholder', 'Search chats')}
           />
-          {query ? (
+          {localQuery ? (
             <ScalePressable
-              onPress={() => onChangeQuery('')}
+              onPress={() => setLocalQuery('')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={t('common.close', 'Close')}
