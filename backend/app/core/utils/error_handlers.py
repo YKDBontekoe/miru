@@ -21,7 +21,7 @@ def handle_tool_error(reraise: tuple[type[Exception], ...] = ()) -> Callable:
                 except reraise as e:
                     raise e
                 except Exception:
-                    logger.exception(f"Error executing {func.__name__}")
+                    logger.exception(f"Error executing {getattr(func, '__name__', repr(func))}")
                     return "An unexpected error occurred while executing the tool."
 
             return async_wrapper
@@ -34,7 +34,7 @@ def handle_tool_error(reraise: tuple[type[Exception], ...] = ()) -> Callable:
                 except reraise as e:
                     raise e
                 except Exception:
-                    logger.exception(f"Error executing {func.__name__}")
+                    logger.exception(f"Error executing {getattr(func, '__name__', repr(func))}")
                     return "An unexpected error occurred while executing the tool."
 
             return sync_wrapper
