@@ -93,8 +93,13 @@ export const ApiService = {
     return response.data;
   },
 
-  async getRoomSummaries(): Promise<RoomSummaryRecord[]> {
-    const response = await apiClient.get<RoomSummaryRecord[]>('rooms/summaries');
+  async getRoomSummaries(limit = 100, beforeId?: string): Promise<RoomSummaryRecord[]> {
+    const response = await apiClient.get<RoomSummaryRecord[]>('rooms/summaries', {
+      params: {
+        limit,
+        before_id: beforeId,
+      },
+    });
     return response.data;
   },
 

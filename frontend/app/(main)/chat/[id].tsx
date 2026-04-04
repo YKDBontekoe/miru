@@ -22,6 +22,7 @@ import { ApiService } from '@/core/api/ApiService';
 import { Agent, ChatMessage } from '@/core/models';
 import { QuickViewAgentSheet } from '@/components/agents/QuickViewAgentSheet';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
+import { ChatActionSheet, ChatActionSheetOption } from '@/components/chat/ChatActionSheet';
 import { ManageAgentsModal } from '@/components/chat/ManageAgentsModal';
 import { ChatRoomEmptyState } from '@/components/chat/ChatRoomEmptyState';
 import { ChatInlineBanner } from '@/components/chat/ChatInlineBanner';
@@ -81,7 +82,16 @@ export default function ChatRoomScreen() {
     addAgentToRoom,
     hubError,
   } = useChatStore();
-  const { tasks, events, fetchTasks, fetchEvents, createTask, createNote } = useProductivityStore();
+  const {
+    tasks,
+    events,
+    fetchTasks,
+    fetchEvents,
+    createTask,
+    createNote,
+    isLoadingTasks,
+    isLoadingEvents,
+  } = useProductivityStore();
 
   const { agents } = useAgentStore();
   const [inputText, setInputText] = useState('');
@@ -92,6 +102,11 @@ export default function ChatRoomScreen() {
   const [notice, setNotice] = useState<{ text: string; tone: 'error' | 'success' | 'info' } | null>(
     null
   );
+  const [actionSheetState, setActionSheetState] = useState<{
+    title: string;
+    subtitle?: string;
+    options: ChatActionSheetOption[];
+  } | null>(null);
 
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
@@ -115,10 +130,17 @@ export default function ChatRoomScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (tasks.length === 0) fetchTasks(controller.signal);
-    if (events.length === 0) fetchEvents(controller.signal);
+    if (tasks.length === 0 && !isLoadingTasks) fetchTasks(controller.signal);
+    if (events.length === 0 && !isLoadingEvents) fetchEvents(controller.signal);
     return () => controller.abort();
-  }, [events.length, fetchEvents, fetchTasks, tasks.length]);
+  }, [
+    events.length,
+    fetchEvents,
+    fetchTasks,
+    isLoadingEvents,
+    isLoadingTasks,
+    tasks.length,
+  ]);
 
   useEffect(() => {
     if (!notice) return;
@@ -327,6 +349,7 @@ export default function ChatRoomScreen() {
   const saveInputAsShortcut = useCallback(() => {
     const normalized = inputText.trim();
     if (!normalized) return;
+    let didChange = false;
     setShortcuts((prev) => {
       if (
         editingShortcutId === null &&
@@ -334,15 +357,17 @@ export default function ChatRoomScreen() {
       ) {
         return prev;
       }
-      const next =
-        editingShortcutId !== null
-          ? prev.map((entry) =>
-              entry.id === editingShortcutId ? { ...entry, text: normalized } : entry
-            )
-          : [{ id: `custom.${Date.now()}`, text: normalized, pinned: true }, ...prev].slice(0, 12);
+      const next = editingShortcutId
+        ? prev.map((entry) =>
+            entry.id === editingShortcutId ? { ...entry, text: normalized } : entry
+          )
+        : [{ id: `custom.${Date.now()}`, text: normalized, pinned: true }, ...prev].slice(0, 12);
+      didChange = JSON.stringify(next) !== JSON.stringify(prev);
+      if (!didChange) return prev;
       persistShortcuts(next).catch(() => {});
       return next;
     });
+    if (!didChange) return;
     setEditingShortcutId(null);
     setNotice({
       text:
@@ -355,25 +380,29 @@ export default function ChatRoomScreen() {
 
   const manageShortcut = useCallback(
     (shortcut: RoomShortcut) => {
-      Alert.alert(
-        t('chat.manage_prompt', { defaultValue: 'Manage prompt' }),
-        shortcut.text,
-        [
+      const isBuiltin = shortcut.id.startsWith('builtin.');
+      const options: ChatActionSheetOption[] = [
+        {
+          id: 'pin',
+          label: shortcut.pinned
+            ? t('chat.unpin', { defaultValue: 'Unpin' })
+            : t('chat.pin', { defaultValue: 'Pin' }),
+          onPress: () => togglePinnedShortcut(shortcut.id),
+        },
+      ];
+      if (!isBuiltin) {
+        options.push(
           {
-            text: shortcut.pinned
-              ? t('chat.unpin', { defaultValue: 'Unpin' })
-              : t('chat.pin', { defaultValue: 'Pin' }),
-            onPress: () => togglePinnedShortcut(shortcut.id),
-          },
-          {
-            text: t('chat.edit', { defaultValue: 'Edit' }),
+            id: 'edit',
+            label: t('chat.edit', { defaultValue: 'Edit' }),
             onPress: () => {
               setInputText(shortcut.text);
               setEditingShortcutId(shortcut.id);
             },
           },
           {
-            text: t('chat.move_to_top', { defaultValue: 'Move to top' }),
+            id: 'move-top',
+            label: t('chat.move_to_top', { defaultValue: 'Move to top' }),
             onPress: () => {
               setShortcuts((prev) => {
                 const selected = prev.find((item) => item.id === shortcut.id);
@@ -385,8 +414,9 @@ export default function ChatRoomScreen() {
             },
           },
           {
-            text: t('chat.delete_prompt', { defaultValue: 'Delete' }),
-            style: 'destructive',
+            id: 'delete',
+            label: t('chat.delete_prompt', { defaultValue: 'Delete' }),
+            tone: 'destructive',
             onPress: () => {
               setShortcuts((prev) => {
                 const next = prev.filter((entry) => entry.id !== shortcut.id);
@@ -394,10 +424,14 @@ export default function ChatRoomScreen() {
                 return next;
               });
             },
-          },
-          { text: t('common.close', { defaultValue: 'Close' }), style: 'cancel' },
-        ]
-      );
+          }
+        );
+      }
+      setActionSheetState({
+        title: t('chat.manage_prompt', { defaultValue: 'Manage prompt' }),
+        subtitle: shortcut.text,
+        options,
+      });
     },
     [persistShortcuts, t, togglePinnedShortcut]
   );
@@ -407,24 +441,29 @@ export default function ChatRoomScreen() {
       const content = message.content.trim();
       if (!content) return;
 
-      Alert.alert(
-        t('chat.message_actions', { defaultValue: 'Message actions' }),
-        content.slice(0, 160),
-        [
+      setActionSheetState({
+        title: t('chat.message_actions', { defaultValue: 'Message actions' }),
+        subtitle: content.slice(0, 160),
+        options: [
           {
-            text: t('chat.ask_follow_up', { defaultValue: 'Ask follow-up' }),
+            id: 'follow-up',
+            label: t('chat.ask_follow_up', { defaultValue: 'Ask follow-up' }),
             onPress: () => {
-              setInputText(`${t('chat.follow_up_prefix', { defaultValue: 'Follow up:' })} ${content}`);
+              setInputText(
+                `${t('chat.follow_up_prefix', { defaultValue: 'Follow up:' })} ${content}`
+              );
             },
           },
           {
-            text: t('chat.edit_resend', { defaultValue: 'Edit and resend' }),
+            id: 'edit-resend',
+            label: t('chat.edit_resend', { defaultValue: 'Edit and resend' }),
             onPress: () => {
               setInputText(content);
             },
           },
           {
-            text: t('chat.save_as_note', { defaultValue: 'Save as note' }),
+            id: 'save-note',
+            label: t('chat.save_as_note', { defaultValue: 'Save as note' }),
             onPress: async () => {
               try {
                 await createNote(
@@ -444,7 +483,8 @@ export default function ChatRoomScreen() {
             },
           },
           {
-            text: t('chat.create_task', { defaultValue: 'Create task' }),
+            id: 'create-task',
+            label: t('chat.create_task', { defaultValue: 'Create task' }),
             onPress: async () => {
               try {
                 await createTask(content.slice(0, 120));
@@ -461,7 +501,8 @@ export default function ChatRoomScreen() {
             },
           },
           {
-            text: t('chat.use_as_prompt', { defaultValue: 'Use as prompt' }),
+            id: 'use-prompt',
+            label: t('chat.use_as_prompt', { defaultValue: 'Use as prompt' }),
             onPress: () => {
               setInputText(content);
               setNotice({
@@ -470,9 +511,8 @@ export default function ChatRoomScreen() {
               });
             },
           },
-          { text: t('common.close', { defaultValue: 'Close' }), style: 'cancel' },
-        ]
-      );
+        ],
+      });
     },
     [createNote, createTask, t]
   );
@@ -520,7 +560,7 @@ export default function ChatRoomScreen() {
   }, [events, tasks]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-[#F2F7F2]" edges={['top', 'left', 'right']}>
       <ChatRoomHeader
         room={room}
         roomAgents={roomAgents}
@@ -538,28 +578,14 @@ export default function ChatRoomScreen() {
         {hubError ? <ChatInlineBanner text={hubError} tone="error" /> : null}
         {notice ? <ChatInlineBanner text={notice.text} tone={notice.tone} /> : null}
         {(isStreaming || currentActivity) && (
-          <View
-            style={{
-              marginHorizontal: 12,
-              marginBottom: 8,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: `${C.primary}30`,
-              backgroundColor: `${C.primary}12`,
-              paddingHorizontal: 10,
-              paddingVertical: 8,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <AppText variant="caption" style={{ color: C.primary, fontWeight: '700' }}>
+          <View className="mx-3 mb-2 rounded-xl border border-[#147D644D] bg-[#147D641F] px-2.5 py-2 flex-row items-center justify-between">
+            <AppText variant="caption" className="text-[#147D64] font-bold">
               {currentActivity
                 ? `${currentActivity.agent_names?.join(', ') || 'Agent'} · ${currentActivity.activity}`
                 : t('chat.streaming', { defaultValue: 'Generating response...' })}
             </AppText>
             <ScalePressable onPress={stopStreaming} accessibilityRole="button">
-              <AppText variant="caption" style={{ color: C.primary, fontWeight: '700' }}>
+              <AppText variant="caption" className="text-[#147D64] font-bold">
                 {t('chat.stop', { defaultValue: 'Stop' })}
               </AppText>
             </ScalePressable>
@@ -576,12 +602,7 @@ export default function ChatRoomScreen() {
             ref={flatListRef}
             data={roomMessages}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{
-              paddingHorizontal: 14,
-              paddingTop: 14,
-              paddingBottom: 6,
-              flexGrow: 1,
-            }}
+            contentContainerClassName="px-[14px] pt-[14px] pb-[6px] grow"
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
               <ChatRoomEmptyState
@@ -684,6 +705,13 @@ export default function ChatRoomScreen() {
           getAgentColor={getAgentColor}
         />
       )}
+      <ChatActionSheet
+        visible={Boolean(actionSheetState)}
+        title={actionSheetState?.title ?? ''}
+        subtitle={actionSheetState?.subtitle}
+        options={actionSheetState?.options ?? []}
+        onClose={() => setActionSheetState(null)}
+      />
     </SafeAreaView>
   );
 }

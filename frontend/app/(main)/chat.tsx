@@ -162,19 +162,32 @@ export default function ChatListScreen() {
     const loadMeta = async () => {
       setLoadingMeta(true);
       try {
-        const summaries = await ApiService.getRoomSummaries();
-        if (cancelled) return;
         const nextMeta: Record<string, RoomMeta> = {};
-        summaries.forEach((summary) => {
-          nextMeta[summary.id] = {
-            agents: summary.agents,
-            lastMessage: previewText(summary.last_message ?? ''),
-            lastMessageAt: summary.last_message_at ?? summary.updated_at,
-            hasMention: summary.has_mention,
-            hasTask: summary.has_task,
-            version: summary.updated_at,
-          };
-        });
+        const roomIds = new Set(rooms.map((room) => room.id));
+        let beforeId: string | undefined;
+
+        while (true) {
+          const summaries = await ApiService.getRoomSummaries(100, beforeId);
+          if (summaries.length === 0) break;
+
+          summaries.forEach((summary) => {
+            if (!roomIds.has(summary.id)) return;
+            nextMeta[summary.id] = {
+              agents: summary.agents,
+              lastMessage: previewText(summary.last_message ?? ''),
+              lastMessageAt: summary.last_message_at ?? summary.updated_at,
+              hasMention: summary.has_mention,
+              hasTask: summary.has_task,
+              version: summary.updated_at,
+            };
+          });
+
+          if (summaries.length < 100) break;
+          beforeId = summaries[summaries.length - 1]?.id;
+          if (!beforeId) break;
+        }
+
+        if (cancelled) return;
         setRoomMeta(nextMeta);
         setMetaError(null);
       } catch {
@@ -412,7 +425,7 @@ export default function ChatListScreen() {
                 <Ionicons name="chatbubbles-outline" size={32} color={C.primary} />
               </View>
               <AppText variant="h3" style={{ marginBottom: 8, textAlign: 'center', color: C.text }}>
-                {debouncedQuery || selectedAgentId
+                {debouncedQuery || selectedAgentId || recentOnly || unreadOnly
                   ? t('chat.no_filtered_results', 'No chats match this filter')
                   : t('chat.no_conversations_title', 'No conversations yet')}
               </AppText>
@@ -424,7 +437,7 @@ export default function ChatListScreen() {
                   color: C.muted,
                 }}
               >
-                {debouncedQuery || selectedAgentId
+                {debouncedQuery || selectedAgentId || recentOnly || unreadOnly
                   ? t('chat.try_adjusting_filters', 'Try adjusting filters or start a new chat.')
                   : t(
                       'chat.no_conversations_desc',
