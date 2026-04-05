@@ -31,6 +31,7 @@ from app.domain.chat.prompts import (
     SINGLE_AGENT_PROMPT,
     SUMMARY_PREFIX,
 )
+from app.domain.chat.schemas import AgentTranscript, SingleAgentResponse
 from app.infrastructure.external.discord_tool import (
     DiscordGetServerInfoTool,
     DiscordSendMessageTool,
@@ -71,11 +72,14 @@ class CrewOrchestrator:
     def get_crew_llm() -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return _OpenRouterLLM(
-            model=f"openrouter/{settings.default_chat_model}",
-            base_url="https://openrouter.ai/api/v1",
-            api_key=settings.openrouter_api_key,
-            additional_drop_params=["tool_choice"],
+        return cast(
+            "_OpenRouterLLM",
+            _OpenRouterLLM(
+                model=f"openrouter/{settings.default_chat_model}",
+                base_url="https://openrouter.ai/api/v1",
+                api_key=settings.openrouter_api_key,
+                additional_drop_params=["tool_choice"],
+            ),
         )
 
     @staticmethod
@@ -248,6 +252,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=AgentTranscript,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -266,6 +271,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=SingleAgentResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +295,11 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
+        # CrewAI returns `CrewOutput` which may not always have typed pydantic attrs in older versions
+        raw_result = cast("Any", result)
+        pydantic_output = getattr(raw_result, "pydantic", None)
+        if raw_result and pydantic_output:
+            return cast("Any", pydantic_output).model_dump_json()
+
+        # Fallback if somehow CrewAI failed to populate the pydantic attribute
         return str(result)

@@ -8,6 +8,7 @@ import pytest
 from starlette.websockets import WebSocketDisconnect
 
 from app.domain.chat.service import ChatService
+from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 
 if typing.TYPE_CHECKING:
     from fastapi.testclient import TestClient
@@ -144,3 +145,67 @@ def test_websocket_endpoint_runtime_error_during_close() -> None:
             asyncio.run(websocket_chat_hub(mock_ws, token="invalid", lang="en-US"))
 
             mock_disconnect.assert_not_called()
+
+
+def test_parse_transcript_single_agent() -> None:
+    import json
+
+    text = json.dumps({"message": "Just a single response"})
+    result = ChatWebSocketBroadcaster.parse_transcript(text, ["Agent1"])
+    assert result == [("", "Just a single response")]
+
+
+def test_parse_transcript_single_agent_fallback() -> None:
+    text = "Raw unparsed fallback text"
+    result = ChatWebSocketBroadcaster.parse_transcript(text, ["Agent1"])
+    assert result == [("", "Raw unparsed fallback text")]
+
+
+def test_parse_transcript_multi_agent() -> None:
+    import json
+
+    text = json.dumps(
+        {
+            "responses": [
+                {"agent_name": "Agent1", "message": "hello"},
+                {"agent_name": "Agent2", "message": "world"},
+            ]
+        }
+    )
+    result = ChatWebSocketBroadcaster.parse_transcript(text, ["Agent1", "Agent2"])
+    assert result == [("Agent1", "hello"), ("Agent2", "world")]
+
+
+def test_parse_transcript_multi_agent_fallback() -> None:
+    text = "Not a json payload"
+    result = ChatWebSocketBroadcaster.parse_transcript(text, ["Agent1", "Agent2"])
+    assert result == [("", "Not a json payload")]
+
+
+def test_parse_transcript_multi_agent_unrecognized() -> None:
+    import json
+
+    text = json.dumps(
+        {
+            "responses": [
+                {"agent_name": "Agent1", "message": "hello"},
+                {"agent_name": "Unknown", "message": "world"},
+            ]
+        }
+    )
+    result = ChatWebSocketBroadcaster.parse_transcript(text, ["Agent1", "Agent2"])
+    assert result == [("Agent1", "hello")]
+
+
+def test_parse_transcript_empty_text() -> None:
+    result = ChatWebSocketBroadcaster.parse_transcript("   ", ["Agent1"])
+    assert result == []
+
+
+def test_parse_transcript_multi_agent_empty_filtered() -> None:
+    import json
+
+    # Valid json but no matching agents and no single fallback should return raw text inside a tuple
+    text = json.dumps({"responses": [{"agent_name": "Unknown", "message": "world"}]})
+    result = ChatWebSocketBroadcaster.parse_transcript(text, ["Agent1", "Agent2"])
+    assert result == [("", text)]

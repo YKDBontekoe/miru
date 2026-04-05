@@ -120,6 +120,11 @@ class OpenRouterClient:
         )
 
 
+# Simple in-memory cache for embeddings to prevent redundant external API calls
+_EMBEDDING_CACHE: dict[str, list[float]] = {}
+# Maximum cache size to prevent memory leaks over time
+_MAX_EMBEDDING_CACHE_SIZE = 1000
+
 # Singleton client for internal use
 _client: OpenRouterClient | None = None
 
@@ -188,5 +193,21 @@ async def structured_completion(
 
 
 async def embed(text: str) -> list[float]:
+    global _EMBEDDING_CACHE
+
+    # Check cache first
+    cache_key = text.strip()
+    if cache_key in _EMBEDDING_CACHE:
+        return _EMBEDDING_CACHE[cache_key]
+
     client = get_openrouter_client()
-    return await client.embed(text, get_settings().embedding_model)
+    embedding = await client.embed(text, get_settings().embedding_model)
+
+    # Simple LRU-like eviction if cache grows too large
+    if len(_EMBEDDING_CACHE) >= _MAX_EMBEDDING_CACHE_SIZE:
+        # Remove oldest item (Python dicts maintain insertion order since 3.7)
+        oldest_key = next(iter(_EMBEDDING_CACHE))
+        del _EMBEDDING_CACHE[oldest_key]
+
+    _EMBEDDING_CACHE[cache_key] = embedding
+    return embedding
