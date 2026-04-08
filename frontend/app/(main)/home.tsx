@@ -17,6 +17,8 @@ import {
   HomeTaskRow,
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
+import { useColorScheme } from 'nativewind';
+import { theme } from '@/core/theme';
 import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
@@ -27,6 +29,9 @@ import { useProductivityStore } from '../../src/store/useProductivityStore';
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -114,7 +119,12 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={HOME_COLORS.primary}
+            colors={[isDark ? theme.colors.primary.light : theme.colors.primary.DEFAULT]}
+          />
         }
         contentContainerStyle={{
           paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
