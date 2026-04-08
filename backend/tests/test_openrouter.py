@@ -123,6 +123,10 @@ async def test_structured_completion_success() -> None:
 
 @pytest.mark.asyncio
 async def test_standalone_embed() -> None:
+    from app.infrastructure.external.openrouter import _EMBEDDING_CACHE
+
+    _EMBEDDING_CACHE.clear()
+
     with (
         patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
         patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
@@ -135,6 +139,69 @@ async def test_standalone_embed() -> None:
         result = await embed("test text")
         assert result == [0.1, 0.2]
         mock_client.embed.assert_called_once_with("test text", "test-embed-model")
+
+
+@pytest.mark.asyncio
+async def test_standalone_embed_caching() -> None:
+    from app.infrastructure.external.openrouter import _EMBEDDING_CACHE
+
+    _EMBEDDING_CACHE.clear()
+
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(embedding_model="test-embed-model")
+        mock_client = MagicMock()
+        mock_client.embed = AsyncMock(return_value=[0.4, 0.5])
+        mock_get_client.return_value = mock_client
+
+        # First call hits the mock client
+        result1 = await embed("cache test")
+        assert result1 == [0.4, 0.5]
+        assert mock_client.embed.call_count == 1
+
+        # Second call with same text (even with padding whitespace) hits the cache
+        result2 = await embed("  cache test  ")
+        assert result2 == [0.4, 0.5]
+        # Call count should still be 1
+        assert mock_client.embed.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_standalone_embed_cache_eviction() -> None:
+    import app.infrastructure.external.openrouter as openrouter
+
+    openrouter._EMBEDDING_CACHE.clear()
+
+    original_max = openrouter._MAX_EMBEDDING_CACHE_SIZE
+    openrouter._MAX_EMBEDDING_CACHE_SIZE = 2  # type: ignore[assignment]
+
+    try:
+        with (
+            patch(
+                "app.infrastructure.external.openrouter.get_openrouter_client"
+            ) as mock_get_client,
+            patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+        ):
+            mock_settings.return_value = MagicMock(embedding_model="test-embed-model")
+            mock_client = MagicMock()
+            mock_client.embed = AsyncMock(return_value=[0.0])
+            mock_get_client.return_value = mock_client
+
+            await embed("item1")
+            await embed("item2")
+            assert "item1" in openrouter._EMBEDDING_CACHE
+            assert "item2" in openrouter._EMBEDDING_CACHE
+
+            # This call should evict item1 since max size is 2
+            await embed("item3")
+            assert "item3" in openrouter._EMBEDDING_CACHE
+            assert "item2" in openrouter._EMBEDDING_CACHE
+            assert "item1" not in openrouter._EMBEDDING_CACHE
+    finally:
+        openrouter._MAX_EMBEDDING_CACHE_SIZE = original_max
+        openrouter._EMBEDDING_CACHE.clear()
 
 
 @pytest.mark.asyncio
