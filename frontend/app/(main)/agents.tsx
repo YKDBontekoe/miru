@@ -410,7 +410,7 @@ export default function AgentsScreen() {
                 }}
               >
                 <Ionicons name="add" size={18} color="white" style={{ marginEnd: 4 }} />
-                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>New</AppText>
+                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>{t('agents.new')}</AppText>
               </View>
             </ScalePressable>
           </View>

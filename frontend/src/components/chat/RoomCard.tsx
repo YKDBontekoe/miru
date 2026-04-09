@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { ChatRoom } from '@/core/models';
@@ -54,7 +55,7 @@ export const RoomCard = React.memo(
     const rawUpdatedDate = new Date(lastMessageAt ?? room.updated_at);
     const hasValidUpdatedDate = !Number.isNaN(rawUpdatedDate.getTime());
     const updatedLabel = hasValidUpdatedDate
-      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(rawUpdatedDate)
+      ? new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(rawUpdatedDate)
       : '';
     const memberLabel = () => {
       if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');

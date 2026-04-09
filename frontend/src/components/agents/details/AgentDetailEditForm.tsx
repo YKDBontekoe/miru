@@ -168,7 +168,7 @@ export function AgentDetailEditForm({
           }}
           className="flex-row items-center justify-center bg-danger rounded-lg py-2.5"
         >
-          <Ionicons name="archive-outline" size={15} color="white" className="mr-1.5" />
+          <Ionicons name="archive-outline" size={15} color="white" className="me-1.5" />
           <AppText className="text-white font-bold text-sm">Archive Persona</AppText>
         </ScalePressable>
       </View>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleProp, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from 'i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
@@ -119,7 +120,7 @@ export function HomeTaskRow({
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const dueText =
     dueDate && !isNaN(dueDate.getTime())
-      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(dueDate)
+      ? new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(dueDate)
       : null;
 
   return (

@@ -57,7 +57,7 @@ const GoalItem = React.memo(
   ({ goal, index, displayColor }: { goal: string; index: number; displayColor: string }) => (
     <View className="flex-row items-start mb-2">
       <View
-        className="w-5 h-5 rounded-full items-center justify-center mr-2.5 mt-0.5 shrink-0"
+        className="w-5 h-5 rounded-full items-center justify-center me-2.5 mt-0.5 shrink-0"
         style={{ backgroundColor: `${displayColor}18` }}
       >
         <AppText className="text-[10px] font-bold" style={{ color: displayColor }}>
@@ -116,7 +116,7 @@ export function AgentDetailView({
             <ActivityIndicator color="white" size="small" />
           ) : (
             <>
-              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="mr-2" />
+              <Ionicons name="chatbubble-ellipses" size={17} color="white" className="me-2" />
               <AppText className="text-white font-bold text-base">Start Chat</AppText>
             </>
           )}

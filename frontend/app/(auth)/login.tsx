@@ -19,7 +19,7 @@ function ErrorBanner({ message }: { message: string }) {
       style={{ backgroundColor: C.dangerSurface, borderColor: C.danger }}
     >
       <Ionicons name="alert-circle-outline" size={16} color={C.danger} style={{ marginTop: 1 }} />
-      <AppText variant="caption" className="flex-1 ml-xs" style={{ color: C.danger }}>
+      <AppText variant="caption" className="flex-1 ms-xs" style={{ color: C.danger }}>
         {message}
       </AppText>
     </View>
@@ -254,7 +254,7 @@ export default function LoginScreen() {
               style={[{ backgroundColor: C.surfaceHigh, borderColor: C.border }, formCardShadow]}
             >
               {/* Email */}
-              <AppText variant="caption" color="muted" className="mb-xs ml-xs">
+              <AppText variant="caption" color="muted" className="mb-xs ms-xs">
                 Email address
               </AppText>
               <View
@@ -270,7 +270,7 @@ export default function LoginScreen() {
                   color={focusedInput === 'email' ? C.primary : C.muted}
                 />
                 <TextInput
-                  className="flex-1 ml-sm text-[15px]"
+                  className="flex-1 ms-sm text-[15px]"
                   style={[{ color: C.text }, textInputPlatformStyles]}
                   placeholder="you@example.com"
                   placeholderTextColor={C.muted}
@@ -298,7 +298,7 @@ export default function LoginScreen() {
               {/* Password field (password mode only) */}
               {mode === 'password' && (
                 <>
-                  <AppText variant="caption" color="muted" className="mb-xs ml-xs">
+                  <AppText variant="caption" color="muted" className="mb-xs ms-xs">
                     Password
                   </AppText>
                   <View
@@ -315,7 +315,7 @@ export default function LoginScreen() {
                     />
                     <TextInput
                       ref={passwordRef}
-                      className="flex-1 ml-sm text-[15px]"
+                      className="flex-1 ms-sm text-[15px]"
                       style={[{ color: C.text }, textInputPlatformStyles]}
                       placeholder="Enter your password"
                       placeholderTextColor={C.muted}
@@ -356,7 +356,7 @@ export default function LoginScreen() {
                   />
                   <AppText
                     variant="caption"
-                    className="flex-1 ml-xs"
+                    className="flex-1 ms-xs"
                     style={{ color: C.primary, lineHeight: 18 }}
                   >
                     Your device will prompt you to authenticate with Face ID, Touch ID, or a

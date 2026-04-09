@@ -89,7 +89,7 @@ export function ChatListHeader({
             onChangeText={setLocalQuery}
             placeholder={t('chat.search_placeholder', 'Search chats')}
             placeholderTextColor={C.faint}
-            className="flex-1 h-[42px] text-[14px] ml-2 text-[#13251C]"
+            className="flex-1 h-[42px] text-[14px] ms-2 text-[#13251C]"
             accessibilityLabel={t('chat.search_placeholder', 'Search chats')}
           />
           {localQuery ? (
