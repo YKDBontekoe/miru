@@ -210,6 +210,20 @@ def test_tortoise_url_strips_pgbouncer(test_env_vars: dict[str, str]) -> None:
             == "postgres://user:pass@host:6543/db?statement_cache_size=0"
         )
 
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?pgBouncer=true&PgBouncer=1",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        # Should strip case-insensitive pgbouncer
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?statement_cache_size=0"
+        )
+
 
 def test_tortoise_url_maps_search_path(test_env_vars: dict[str, str]) -> None:
     """Verify that the tortoise URL builder maps search_path to schema.
@@ -229,6 +243,20 @@ def test_tortoise_url_maps_search_path(test_env_vars: dict[str, str]) -> None:
         },
     ):
         tort_mod = _reload_tortoise_module()
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?schema=public%2Cauth&statement_cache_size=0"
+        )
+
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?search_Path=public,auth",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        # Should map case-insensitive search_path to schema
         assert (
             tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
             == "postgres://user:pass@host:6543/db?schema=public%2Cauth&statement_cache_size=0"
