@@ -210,6 +210,20 @@ def test_tortoise_url_strips_pgbouncer(test_env_vars: dict[str, str]) -> None:
             == "postgres://user:pass@host:6543/db?statement_cache_size=0"
         )
 
+    with patch.dict(
+        os.environ,
+        {
+            **test_env_vars,
+            "DATABASE_URL": "postgresql://user:pass@host:6543/db?PGBouncer=true&statement_cache_size=100",
+        },
+    ):
+        tort_mod = _reload_tortoise_module()
+        # Should strip PGBouncer=true case-insensitively and preserve statement_cache_size
+        assert (
+            tort_mod.TORTOISE_ORM["connections"]["default"]  # type: ignore[index]
+            == "postgres://user:pass@host:6543/db?statement_cache_size=100"
+        )
+
 
 def test_tortoise_url_maps_search_path(test_env_vars: dict[str, str]) -> None:
     """Verify that the tortoise URL builder maps search_path to schema.
