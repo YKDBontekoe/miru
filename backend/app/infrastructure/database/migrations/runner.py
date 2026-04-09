@@ -66,6 +66,11 @@ def _psql_run_file(db_url: str, path: Path) -> None:
 
 
 def _get_applied_migrations(db_url: str, table_name: str = "public.schema_migrations") -> set[str]:
+    allowed_tables = {"public.schema_migrations", "supabase_migrations.schema_migrations"}
+    if table_name not in allowed_tables:
+        print(f"ERROR: Invalid tracking table name '{table_name}'.")
+        sys.exit(1)
+
     result = subprocess.run(
         [
             "psql",
@@ -158,17 +163,22 @@ def cmd_migrate() -> None:
         # Apply atomic transaction wrapping migration body + insert query
         # Ensures that a transient runner error won't apply DDL without recording it,
         # and checking if the row already exists locks against double-runs.
+        safe_name = sql_file.name.replace("'", "''")
+        safe_checksum = checksum.replace("'", "''")
+
         atomic_sql = f"""
+\\set file_name '{safe_name}'
+\\set file_checksum '{safe_checksum}'
 BEGIN;
-SELECT 1 FROM public.schema_migrations WHERE name = '{sql_file.name}' FOR UPDATE;
+SELECT 1 FROM public.schema_migrations WHERE name = :'file_name' FOR UPDATE;
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM public.schema_migrations WHERE name = '{sql_file.name}') THEN
-        RAISE EXCEPTION 'Migration already applied: {sql_file.name}';
+    IF EXISTS (SELECT 1 FROM public.schema_migrations WHERE name = :'file_name') THEN
+        RAISE EXCEPTION 'Migration already applied: %', :'file_name';
     END IF;
 END $$;
 {migration_sql}
-INSERT INTO public.schema_migrations (name, checksum) VALUES ('{sql_file.name}', '{checksum}');
+INSERT INTO public.schema_migrations (name, checksum) VALUES (:'file_name', :'file_checksum');
 COMMIT;
 """
         _psql_run(db_url, atomic_sql)

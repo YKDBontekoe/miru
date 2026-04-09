@@ -5,9 +5,9 @@ import { useAppStore } from '../../store/useAppStore';
 import i18next from 'i18next';
 
 const LOCAL_BACKEND_URL = Platform.select({
-  android: 'http://10.0.2.2:8000',
-  ios: 'http://localhost:8000',
-  default: 'http://localhost:8000',
+  android: 'https://10.0.2.2:8000',
+  ios: 'https://localhost:8000', // Allow cleartext for localhost dev exceptions if needed, but production MUST be https
+  default: 'https://localhost:8000',
 });
 
 // We'll update the axios baseURL dynamically via an interceptor or by directly accessing the store.
