@@ -45,7 +45,7 @@ dev = [
     "pip-audit>=2.7.0",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.0.0",
+    "pytest-cov>=7.1.0",
 ]
 
 [tool.setuptools]
@@ -61,7 +61,7 @@ dev = [
     "pydantic[email]>=2.11.10",
     "pyjwt>=2.12.0",
     "pytest-asyncio>=1.3.0",
-    "pytest-cov>=7.0.0",
+    "pytest-cov>=7.1.0",
     "sentry-sdk>=2.54.0",
     "starlette>=0.52.1",
 ]
