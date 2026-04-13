@@ -60,7 +60,7 @@ jobs:
           fi
 
       - name: Proxy to Jules
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           # Use the fine-grained PAT so the bridge comment appears from a
           # distinct identity rather than the default GITHUB_TOKEN bot account.
@@ -177,7 +177,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Post CodeRabbit review trigger
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.JULES_GITHUB_PAT }}
           script: |
@@ -257,7 +257,7 @@ jobs:
     steps:
       - name: Find issues with jules-fix-pending label
         id: find
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -310,7 +310,7 @@ jobs:
 
       - name: Get issue details
         id: issue
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: issue } = await github.rest.issues.get({
@@ -400,7 +400,7 @@ jobs:
 
       - name: Update issue labels and comment
         if: always() && steps.issue.outputs.skip != 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           # Must use the PAT so Jules can read this comment if it polls the
           # issue timeline. Comments from GITHUB_TOKEN bot are invisible to Jules.
@@ -443,7 +443,7 @@ jobs:
       issues: write
     steps:
       - name: Queue PR for re-review
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           # Use the fine-grained PAT so the queue comment appears from the same
           # distinct identity as the bridge — keeps bot comments consistent and
@@ -476,7 +476,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Re-trigger queued PRs
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           # Use the fine-grained PAT so the @coderabbitai mention comes from the
           # same distinct identity as the bridge. CodeRabbit responds to mentions
@@ -555,7 +555,7 @@ jobs:
       issues: write
     steps:
       - name: Compute and post metrics
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo;

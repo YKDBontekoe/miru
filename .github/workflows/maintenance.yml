@@ -113,7 +113,7 @@ jobs:
           echo "frontend_issues=$(jq -c '.' /tmp/sentry-frontend.json)" >> "$GITHUB_ENV"
 
       - name: Create GitHub issues for new Sentry errors
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           BACKEND_ISSUES: ${{ env.backend_issues }}
           FRONTEND_ISSUES: ${{ env.frontend_issues }}
