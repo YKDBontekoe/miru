@@ -78,7 +78,7 @@ class CrewOrchestrator:
     def get_crew_llm() -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return _OpenRouterLLM(
+        return _OpenRouterLLM(  # type: ignore[return-value]
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
@@ -300,7 +300,9 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        if result and getattr(result, "pydantic", None):
-            return result.pydantic.message
+        if result:
+            pydantic_output = getattr(result, "pydantic", None)
+            if pydantic_output is not None and hasattr(pydantic_output, "message"):
+                return str(pydantic_output.message)
 
         return str(result)
