@@ -46,6 +46,7 @@ def test_get_crew_llm() -> None:
         assert llm.base_url == "https://openrouter.ai/api/v1"
         assert llm.supports_function_calling() is True
 
+
 def test_get_agent_tools_with_integrations() -> None:
     agent = MagicMock()
     agent.id = uuid4()
@@ -63,7 +64,12 @@ def test_get_agent_tools_with_integrations() -> None:
     mock_discord = MagicMock()
     mock_discord.integration_id = "discord"
     mock_discord.enabled = True
-    mock_discord.config = {"bot_token": "bot123", "guild_id": "guild123", "channel_id": "chan123", "content": "hi"}
+    mock_discord.config = {
+        "bot_token": "bot123",
+        "guild_id": "guild123",
+        "channel_id": "chan123",
+        "content": "hi",
+    }
 
     agent.agent_integrations = [mock_steam, mock_spotify, mock_discord]
     user_id = uuid4()
@@ -90,6 +96,7 @@ def test_format_history() -> None:
 
     assert CrewOrchestrator.format_history(None) == ""
     assert CrewOrchestrator.format_history([]) == ""
+
 
 def test_get_agent_tools_steam_missing_id() -> None:
     agent = MagicMock()
@@ -205,6 +212,7 @@ async def test_execute_crew_task(
 
         # Mock result to have pydantic output
         from app.domain.chat.crew_orchestrator import ChatResponse
+
         mock_result = MagicMock()
         mock_result.pydantic = ChatResponse(message="Result")
 
@@ -249,6 +257,7 @@ async def test_execute_crew_task_multi(
 
         # Mock result to have pydantic output
         from app.domain.chat.crew_orchestrator import AgentReply, MultiAgentChatResponse
+
         mock_result = MagicMock()
         mock_result.pydantic = MultiAgentChatResponse(
             replies=[AgentReply(agent="Agent1", message="ResultMulti")]
@@ -333,6 +342,7 @@ async def test_execute_crew_task_retry_logic(
         mock_crew_instance = MagicMock()
 
         from app.domain.chat.crew_orchestrator import ChatResponse
+
         mock_result = MagicMock()
         mock_result.pydantic = ChatResponse(message="Success on attempt 2")
 
@@ -376,9 +386,7 @@ async def test_execute_crew_task_cancelled(
     ):
         mock_crew_instance = MagicMock()
 
-        mock_crew_instance.kickoff_async = AsyncMock(
-            side_effect=asyncio.CancelledError()
-        )
+        mock_crew_instance.kickoff_async = AsyncMock(side_effect=asyncio.CancelledError())
         mock_crew_cls.return_value = mock_crew_instance
 
         with pytest.raises(asyncio.CancelledError):
@@ -416,7 +424,10 @@ async def test_execute_crew_task_all_retries_fail(
         )
         mock_crew_cls.return_value = mock_crew_instance
 
-        with patch("asyncio.sleep", AsyncMock()), pytest.raises(Exception, match="Transient error 2"):
+        with (
+            patch("asyncio.sleep", AsyncMock()),
+            pytest.raises(Exception, match="Transient error 2"),
+        ):
             await CrewOrchestrator.execute_crew_task(
                 typing.cast("list[typing.Any]", room_agents),
                 "Hello",
