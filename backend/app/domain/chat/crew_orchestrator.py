@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
@@ -51,8 +52,19 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class AgentReply(BaseModel):
+    agent: str = Field(description="The name of the agent responding.")
+    message: str = Field(description="The agent's message.")
+
+
+class MultiAgentChatResponse(BaseModel):
+    """Structured response model for multi-agent CrewAI orchestration."""
+
+    replies: list[AgentReply] = Field(description="List of agent replies.")
+
+
 class ChatResponse(BaseModel):
-    """Structured response model for CrewAI orchestration."""
+    """Structured response model for single-agent CrewAI orchestration."""
 
     message: str = Field(description="The response message to the user.")
 
@@ -229,7 +241,7 @@ class CrewOrchestrator:
             origin_message_id=user_msg_id,
         )
 
-        safe_user_message = user_message.replace("<", "&lt;").replace(">", "&gt;")
+        safe_user_message = html.escape(user_message, quote=False)
 
         locale_instruction = (
             f" Ensure you respond in {resolve_language(accept_language)}."
@@ -257,7 +269,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
-                output_pydantic=ChatResponse,
+                output_pydantic=MultiAgentChatResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -288,7 +300,7 @@ class CrewOrchestrator:
 
         # Retry once on transient failures (e.g. output-parsing errors from the LLM).
         result = None
-        for attempt in (0, 1):
+        for attempt_index, attempt in enumerate((0, 1), start=1):
             try:
                 result = await crew.kickoff_async()
                 break
@@ -297,12 +309,29 @@ class CrewOrchestrator:
             except Exception:
                 if attempt == 1:
                     raise
-                logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
+                logger.warning(f"Crew kickoff failed on attempt {attempt_index}, retrying in 2 s…")
                 await asyncio.sleep(2)
 
         if result:
             pydantic_output = getattr(result, "pydantic", None)
-            if pydantic_output is not None and hasattr(pydantic_output, "message"):
+            expected_class = MultiAgentChatResponse if is_multi else ChatResponse
+
+            if not isinstance(pydantic_output, expected_class):
+                raw_output = getattr(result, "raw", str(result))
+                logger.warning(
+                    "Structured parsing failed or returned unexpected type. "
+                    f"Expected: {expected_class.__name__}, Got: {type(pydantic_output).__name__}. "
+                    f"Raw LLM output: {raw_output}"
+                )
+            elif is_multi and isinstance(pydantic_output, MultiAgentChatResponse):
+                # Reconstruct the transcript string format for parse_transcript
+                formatted_replies = [
+                    f"{reply.agent}: {reply.message}" for reply in pydantic_output.replies
+                ]
+                return "\n\n".join(formatted_replies)
+            elif not is_multi and isinstance(pydantic_output, ChatResponse):
                 return str(pydantic_output.message)
 
-        return str(result)
+        # Fallback for parsing errors: normalize literal newlines to real newlines
+        raw_text = str(result).replace("\\n", "\n")
+        return raw_text
