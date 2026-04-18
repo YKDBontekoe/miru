@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -48,6 +49,12 @@ if TYPE_CHECKING:
     from app.domain.agents.models import Agent
 
 logger = logging.getLogger(__name__)
+
+
+class ChatResponse(BaseModel):
+    """Structured response model for CrewAI orchestration."""
+
+    message: str = Field(description="The response message to the user.")
 
 
 class _OpenRouterLLM(LLM):
@@ -222,6 +229,8 @@ class CrewOrchestrator:
             origin_message_id=user_msg_id,
         )
 
+        safe_user_message = user_message.replace("<", "&lt;").replace(">", "&gt;")
+
         locale_instruction = (
             f" Ensure you respond in {resolve_language(accept_language)}."
             if accept_language
@@ -244,10 +253,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,10 +272,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -288,5 +299,8 @@ class CrewOrchestrator:
                     raise
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
+
+        if result and getattr(result, "pydantic", None):
+            return result.pydantic.message
 
         return str(result)
