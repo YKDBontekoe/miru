@@ -30,18 +30,20 @@ class AgentRepository:
         """List all available integrations."""
         return await Integration.exclude(status="disabled").all()
 
-    async def get_by_id(
-        self, agent_id: UUID | str, user_id: UUID | str | None = None
-    ) -> Agent | None:
-        """Fetch a single agent by ID, with capabilities prefetched. Enforces user ownership if provided."""
+    async def get_by_id(self, agent_id: UUID | str, user_id: UUID | str) -> Agent | None:
+        """Fetch a single agent by ID, with capabilities prefetched. Enforces user ownership."""
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
-        if user_id is not None:
-            if isinstance(user_id, str):
-                user_id = UUID(user_id)
-            return await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
-                "capabilities", "agent_integrations__integration"
-            )
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        return await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
+            "capabilities", "agent_integrations__integration"
+        )
+
+    async def _get_by_id_unscoped(self, agent_id: UUID | str) -> Agent | None:
+        """Private helper to fetch an agent by ID without enforcing user ownership."""
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
         return await Agent.get_or_none(id=agent_id).prefetch_related(
             "capabilities", "agent_integrations__integration"
         )
@@ -67,7 +69,7 @@ class AgentRepository:
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
-        agent = await self.get_by_id(agent_id)
+        agent = await self._get_by_id_unscoped(agent_id)
         if agent:
             agent.mood = mood
             await agent.save()
@@ -112,7 +114,7 @@ class AgentRepository:
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""
-        agent = await self.get_by_id(agent_id)
+        agent = await self._get_by_id_unscoped(agent_id)
         if agent:
             agent.message_count += 1
             await agent.save()

@@ -65,7 +65,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-cors_origins = settings.cors_allowed_origins.split(",")
+cors_origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()]
 allow_credentials = "*" not in cors_origins
 
 app.add_middleware(
