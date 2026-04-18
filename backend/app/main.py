@@ -6,8 +6,9 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
@@ -64,10 +65,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_origins = settings.cors_allowed_origins.split(",")
+allow_credentials = "*" not in cors_origins
+
 app.add_middleware(
     cast("Any", CORSMiddleware),
-    allow_origins=settings.cors_allowed_origins.split(","),
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -80,6 +84,19 @@ app.include_router(productivity_router, prefix="/api/v1/productivity")
 app.include_router(integrations_router, prefix="/api/v1/integrations")
 app.include_router(notifications_router, prefix="/api/v1/notifications")
 app.include_router(websocket_router, prefix="/api/v1")
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Security Advisory: Global error masking to prevent internal detail leaks.
+
+    Integrity Note: Logs full traceback internally but returns a safe, generic 500 response to clients.
+    """
+    logger.exception("Unhandled exception occurred during request to %s: %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": {"error": "internal_error", "message": "Internal Server Error"}},
+    )
 
 
 @app.get("/health")
