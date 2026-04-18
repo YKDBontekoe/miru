@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -50,6 +52,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class AgentReply(BaseModel):
+    agent: str = Field(description="The name of the agent responding.")
+    message: str = Field(description="The agent's message.")
+
+
+class MultiAgentChatResponse(BaseModel):
+    """Structured response model for multi-agent CrewAI orchestration."""
+
+    replies: list[AgentReply] = Field(description="List of agent replies.")
+
+
+class ChatResponse(BaseModel):
+    """Structured response model for single-agent CrewAI orchestration."""
+
+    message: str = Field(description="The response message to the user.")
+
+
 class _OpenRouterLLM(LLM):
     """CrewAI LLM wrapper that supports function calling via OpenRouter.
 
@@ -71,7 +90,7 @@ class CrewOrchestrator:
     def get_crew_llm() -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return _OpenRouterLLM(
+        return _OpenRouterLLM(  # type: ignore[return-value]
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
@@ -222,6 +241,8 @@ class CrewOrchestrator:
             origin_message_id=user_msg_id,
         )
 
+        safe_user_message = html.escape(user_message, quote=False)
+
         locale_instruction = (
             f" Ensure you respond in {resolve_language(accept_language)}."
             if accept_language
@@ -244,10 +265,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=MultiAgentChatResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,10 +284,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -277,7 +300,7 @@ class CrewOrchestrator:
 
         # Retry once on transient failures (e.g. output-parsing errors from the LLM).
         result = None
-        for attempt in (0, 1):
+        for attempt_index, attempt in enumerate((0, 1), start=1):
             try:
                 result = await crew.kickoff_async()
                 break
@@ -286,7 +309,29 @@ class CrewOrchestrator:
             except Exception:
                 if attempt == 1:
                     raise
-                logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
+                logger.warning(f"Crew kickoff failed on attempt {attempt_index}, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        if result:
+            pydantic_output = getattr(result, "pydantic", None)
+            expected_class = MultiAgentChatResponse if is_multi else ChatResponse
+
+            if not isinstance(pydantic_output, expected_class):
+                raw_output = getattr(result, "raw", str(result))
+                logger.warning(
+                    "Structured parsing failed or returned unexpected type. "
+                    f"Expected: {expected_class.__name__}, Got: {type(pydantic_output).__name__}. "
+                    f"Raw LLM output: {raw_output}"
+                )
+            elif is_multi and isinstance(pydantic_output, MultiAgentChatResponse):
+                # Reconstruct the transcript string format for parse_transcript
+                formatted_replies = [
+                    f"{reply.agent}: {reply.message}" for reply in pydantic_output.replies
+                ]
+                return "\n\n".join(formatted_replies)
+            elif not is_multi and isinstance(pydantic_output, ChatResponse):
+                return str(pydantic_output.message)
+
+        # Fallback for parsing errors: normalize literal newlines to real newlines
+        raw_text = str(result).replace("\\n", "\n")
+        return raw_text
