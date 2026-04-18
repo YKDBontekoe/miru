@@ -416,13 +416,12 @@ async def test_execute_crew_task_all_retries_fail(
         )
         mock_crew_cls.return_value = mock_crew_instance
 
-        with patch("asyncio.sleep", AsyncMock()):
-            with pytest.raises(Exception, match="Transient error 2"):
-                await CrewOrchestrator.execute_crew_task(
-                    typing.cast("list[typing.Any]", room_agents),
-                    "Hello",
-                    user_id,
-                )
+        with patch("asyncio.sleep", AsyncMock()), pytest.raises(Exception, match="Transient error 2"):
+            await CrewOrchestrator.execute_crew_task(
+                typing.cast("list[typing.Any]", room_agents),
+                "Hello",
+                user_id,
+            )
         assert mock_crew_instance.kickoff_async.call_count == 2
 
 
