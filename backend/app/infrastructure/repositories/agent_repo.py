@@ -36,12 +36,13 @@ class AgentRepository:
         """Fetch a single agent by ID, with capabilities prefetched. Enforces user ownership if provided."""
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
-        filters = {"id": agent_id}
         if user_id is not None:
             if isinstance(user_id, str):
                 user_id = UUID(user_id)
-            filters["user_id"] = user_id
-        return await Agent.get_or_none(**filters).prefetch_related(
+            return await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
+                "capabilities", "agent_integrations__integration"
+            )
+        return await Agent.get_or_none(id=agent_id).prefetch_related(
             "capabilities", "agent_integrations__integration"
         )
 
