@@ -141,18 +141,8 @@ async def test_create_step_callback_no_tool(chat_service: ChatService) -> None:
         mock_output.log = "some log text"
         mock_output.agent = "Agent1"
 
-        # In order to trigger the exception block in create_step_callback,
-        # we can mock getattr to raise an exception. The broadcast_to_room happens
-        # asynchronously so patching it might not trigger the exception synchronously
-        # inside the step_callback if the coroutine just runs and fails silently in loop.
-        # Alternatively, we pass an output that triggers a synchronous exception.
-
-        # Let's patch getattr specifically for this test
-        with patch("builtins.getattr", side_effect=Exception("sync error")):
-            callback(mock_output)
-
         import asyncio
-
+        callback(mock_output)
         await asyncio.sleep(0.01)
         mock_hub.broadcast_to_room.assert_called_once()
 
