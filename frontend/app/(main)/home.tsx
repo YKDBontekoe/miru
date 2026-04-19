@@ -221,7 +221,7 @@ export default function HomeScreen() {
             ) : (
               sortedPendingTasks
                 .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={toggleTask} />)
             )}
           </HomeSurfaceCard>
 
@@ -302,6 +302,7 @@ export default function HomeScreen() {
                       key={agent.id}
                       agent={agent}
                       onPress={() => router.push('/(main)/agents')}
+                      t={t}
                     />
                   ))}
               </View>
@@ -309,7 +310,7 @@ export default function HomeScreen() {
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
+            <HomeSurfaceCard className="bg-[#F7FBF8]">
               <View style={{ alignItems: 'center', paddingVertical: 18 }}>
                 <View
                   style={{

@@ -12,6 +12,11 @@ export const HOME_CORE_COLORS = {
   accent: '#E28A2E',
   accentSoft: '#FDF1E1',
   deep: '#0F3D31',
+  deepHighlight1: '#2BA98A',
+  deepHighlight2: '#F0B470',
+  deepCard1: '#2D6A58',
+  deepCard2: '#215445',
+  deepTextMuted: '#CDE9DF',
 } as const;
 
 export const HOME_CORE_SHADOW = Platform.select({

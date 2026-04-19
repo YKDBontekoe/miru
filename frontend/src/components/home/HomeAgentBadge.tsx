@@ -15,9 +15,11 @@ import { HOME_COLORS } from './homeTheme';
 export function HomeAgentBadge({
   agent,
   onPress,
+  t,
 }: {
   agent: Agent;
   onPress: () => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   return (
     <ScalePressable
@@ -45,7 +47,7 @@ export function HomeAgentBadge({
           }}
         >
           <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
-            {agent.name?.[0]?.toUpperCase() ?? '?'}
+            {agent.name?.trim()?.[0]?.toUpperCase() ?? '?'}
           </AppText>
         </View>
         <View style={{ flex: 1 }}>
@@ -55,7 +57,7 @@ export function HomeAgentBadge({
         </View>
       </View>
       <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
-        {agent.message_count} {agent.message_count === 1 ? 'message' : 'messages'}
+        {t('home.agent.messages', { count: agent.message_count, defaultValue: '{{count}} message', defaultValue_plural: '{{count}} messages' })}
       </AppText>
     </ScalePressable>
   );

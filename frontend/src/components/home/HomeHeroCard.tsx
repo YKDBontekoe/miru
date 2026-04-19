@@ -54,7 +54,7 @@ export function HomeHeroCard({
           width: 180,
           height: 180,
           borderRadius: 999,
-          backgroundColor: '#2BA98A',
+          backgroundColor: HOME_COLORS.deepHighlight1,
           opacity: 0.26,
           top: -90,
           right: -40,
@@ -66,7 +66,7 @@ export function HomeHeroCard({
           width: 120,
           height: 120,
           borderRadius: 999,
-          backgroundColor: '#F0B470',
+          backgroundColor: HOME_COLORS.deepHighlight2,
           opacity: 0.22,
           bottom: -44,
           left: -24,
@@ -82,13 +82,13 @@ export function HomeHeroCard({
         }}
       >
         <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText variant="bodySm" style={{ color: '#CDE9DF', fontWeight: '600' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.deepTextMuted, fontWeight: '600' }}>
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} style={{ color: HOME_COLORS.surface, fontWeight: '700' }}>
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: '#CDE9DF' }}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.deepTextMuted }}>
             {dateText}
           </AppText>
         </View>
@@ -98,12 +98,12 @@ export function HomeHeroCard({
             width: 44,
             height: 44,
             borderRadius: 22,
-            backgroundColor: '#2D6A58',
+            backgroundColor: HOME_COLORS.deepCard1,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.surface, fontWeight: '700' }}>
             {initials}
           </AppText>
         </ScalePressable>
@@ -114,19 +114,20 @@ export function HomeHeroCard({
           style={{
             flex: 1,
             borderRadius: 14,
-            backgroundColor: '#215445',
+            backgroundColor: HOME_COLORS.deepCard2,
             paddingVertical: 10,
             paddingHorizontal: 10,
           }}
         >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.deepTextMuted, marginBottom: 2 }}>
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.surface, fontWeight: '700' }}>
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
-                  defaultValue: '{{count}} tasks due today',
+                  defaultValue: '{{count}} task due today',
+                  defaultValue_plural: '{{count}} tasks due today',
                 })
               : t('home.hero.no_deadlines', { defaultValue: 'No deadlines today' })}
           </AppText>
@@ -135,15 +136,15 @@ export function HomeHeroCard({
           style={{
             flex: 1,
             borderRadius: 14,
-            backgroundColor: '#215445',
+            backgroundColor: HOME_COLORS.deepCard2,
             paddingVertical: 10,
             paddingHorizontal: 10,
           }}
         >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.deepTextMuted, marginBottom: 2 }}>
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.surface, fontWeight: '700' }}>
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>

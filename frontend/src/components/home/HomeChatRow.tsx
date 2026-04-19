@@ -49,7 +49,7 @@ export function HomeChatRow({
         }}
       >
         <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
-          {room.name[0]?.toUpperCase() ?? '?'}
+          {room.name?.[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
       <View style={{ flex: 1, paddingRight: 8 }}>

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
@@ -10,25 +11,31 @@ import { HOME_COLORS } from './homeTheme';
  * A row component displaying a task on the home dashboard.
  * @param {object} props - The component props.
  * @param {Task} props.task - The task object to display.
- * @param {() => void} props.onToggle - The callback function executed when the task row is pressed (e.g. to toggle completion).
+ * @param {(id: string) => void} props.onToggle - The callback function executed when the task row is pressed (e.g. to toggle completion).
  * @returns {React.ReactElement} The HomeTaskRow component.
  */
-export function HomeTaskRow({
+export const HomeTaskRow = React.memo(function HomeTaskRow({
   task,
   onToggle,
 }: {
   task: Task;
-  onToggle: () => void;
+  onToggle: (id: string) => void;
 }) {
+  const { i18n } = useTranslation();
+
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const dueText =
     dueDate && !isNaN(dueDate.getTime())
-      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(dueDate)
+      ? new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(dueDate)
       : null;
+
+  const handleToggle = useCallback(() => {
+    onToggle(task.id);
+  }, [task.id, onToggle]);
 
   return (
     <ScalePressable
-      onPress={onToggle}
+      onPress={handleToggle}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -82,4 +89,4 @@ export function HomeTaskRow({
       ) : null}
     </ScalePressable>
   );
-}
+});

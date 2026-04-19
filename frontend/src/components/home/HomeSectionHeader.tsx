@@ -1,8 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
-import { HOME_COLORS } from './homeTheme';
 
 /**
  * A header component used to separate sections on the home dashboard.
@@ -21,21 +21,17 @@ export function HomeSectionHeader({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}
-    >
-      <AppText variant="h3" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+    <View className="flex-row justify-between items-center mb-3">
+      <AppText variant="h3" className={`font-bold ${isDark ? 'text-onSurface-dark' : 'text-[#13251C]'}`}>
         {title}
       </AppText>
       {actionLabel && onAction ? (
         <ScalePressable onPress={onAction}>
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '700' }}>
+          <AppText variant="bodySm" className="font-bold text-primary-DEFAULT">
             {actionLabel}
           </AppText>
         </ScalePressable>
