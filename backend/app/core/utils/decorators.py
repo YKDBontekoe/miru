@@ -30,7 +30,8 @@ def handle_tool_error(
                 except Exception as e:
                     if reraise and isinstance(e, reraise):
                         raise
-                    logger.exception(f"Error in {func.__name__}")
+                    func_name = getattr(func, "__name__", repr(func))
+                    logger.exception(f"Error in {func_name}")
                     return return_message
 
             return async_wrapper
@@ -43,7 +44,8 @@ def handle_tool_error(
                 except Exception as e:
                     if reraise and isinstance(e, reraise):
                         raise
-                    logger.exception(f"Error in {func.__name__}")
+                    func_name = getattr(func, "__name__", repr(func))
+                    logger.exception(f"Error in {func_name}")
                     return return_message
 
             return sync_wrapper
