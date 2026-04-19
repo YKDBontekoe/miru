@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -48,6 +49,19 @@ if TYPE_CHECKING:
     from app.domain.agents.models import Agent
 
 logger = logging.getLogger(__name__)
+
+
+class AgentResponse(BaseModel):
+    """Pydantic model for an individual agent's response."""
+
+    agent_name: str
+    message: str
+
+
+class ChatTranscript(BaseModel):
+    """Pydantic model representing the transcript of all agent responses."""
+
+    responses: list[AgentResponse]
 
 
 class _OpenRouterLLM(LLM):
@@ -222,6 +236,11 @@ class CrewOrchestrator:
             origin_message_id=user_msg_id,
         )
 
+        safe_user_message = (
+            user_message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        )
+        isolated_user_message = f"<user_input>{safe_user_message}</user_input>"
+
         locale_instruction = (
             f" Ensure you respond in {resolve_language(accept_language)}."
             if accept_language
@@ -244,10 +263,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=isolated_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatTranscript,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,10 +282,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=isolated_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatTranscript,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +310,6 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        if hasattr(result, "pydantic") and result.pydantic:
+            return getattr(result.pydantic, "model_dump_json", lambda: "{}")()
+        return getattr(result, "json", "{}") or "{}"
