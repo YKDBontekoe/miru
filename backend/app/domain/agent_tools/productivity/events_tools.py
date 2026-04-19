@@ -52,11 +52,16 @@ class ListEventsTool(BaseTool):
         for e in events:
             if e.is_all_day:
                 if e.end_time.date() != e.start_time.date():
-                    time_str = f"All Day {e.start_time.strftime('%Y-%m-%d')} to {e.end_time.strftime('%Y-%m-%d')}"
+                    start_fmt = e.start_time.strftime("%Y-%m-%d")
+                    end_fmt = e.end_time.strftime("%Y-%m-%d")
+                    time_str = f"All Day {start_fmt} to {end_fmt}"
                 else:
-                    time_str = f"All Day on {e.start_time.strftime('%Y-%m-%d')}"
+                    start_fmt = e.start_time.strftime("%Y-%m-%d")
+                    time_str = f"All Day on {start_fmt}"
             else:
-                time_str = f"{e.start_time.strftime('%Y-%m-%d %H:%M')} to {e.end_time.strftime('%Y-%m-%d %H:%M')}"
+                start_fmt = e.start_time.strftime("%Y-%m-%d %H:%M")
+                end_fmt = e.end_time.strftime("%Y-%m-%d %H:%M")
+                time_str = f"{start_fmt} to {end_fmt}"
             result += f"- [{e.id}] {e.title} ({time_str})\n"
             if e.description:
                 result += f"  Description: {e.description}\n"
