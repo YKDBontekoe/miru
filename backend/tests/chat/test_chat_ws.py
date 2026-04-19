@@ -148,9 +148,33 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
         responded = await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), '{"responses": [{"agent_name": "Agent1", "message": "Done!"}]}', agent_names
         )
         assert len(responded) == 1
+
+def test_parse_transcript_invalid_json(chat_service: ChatService) -> None:
+    result_text = "Just a plain string response"
+    agent_names = ["Agent1"]
+
+    segments = chat_service.ws_broadcaster.parse_transcript(result_text, agent_names)
+    assert len(segments) == 1
+    assert segments[0] == ("", "Just a plain string response")
+
+def test_parse_transcript_empty_responses(chat_service: ChatService) -> None:
+    result_text = '{"responses": []}'
+    agent_names = ["Agent1"]
+
+    segments = chat_service.ws_broadcaster.parse_transcript(result_text, agent_names)
+    assert len(segments) == 1
+    assert segments[0] == ("", '{"responses": []}')
+
+def test_parse_transcript_single_agent(chat_service: ChatService) -> None:
+    result_text = '{"responses": [{"agent_name": "Agent1", "message": "Hello"}]}'
+    agent_names = ["Agent1"]
+
+    segments = chat_service.ws_broadcaster.parse_transcript(result_text, agent_names)
+    assert len(segments) == 1
+    assert segments[0] == ("Agent1", "Hello")
 
 
 @pytest.mark.asyncio
@@ -163,7 +187,7 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     )
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), '{"responses": [{"agent_name": "Agent1", "message": "Done!"}]}', agent_names
         )
 
 
