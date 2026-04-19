@@ -236,7 +236,9 @@ class CrewOrchestrator:
             origin_message_id=user_msg_id,
         )
 
-        safe_user_message = user_message.replace("<", "&lt;").replace(">", "&gt;")
+        safe_user_message = (
+            user_message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        )
         isolated_user_message = f"<user_input>{safe_user_message}</user_input>"
 
         locale_instruction = (

@@ -158,11 +158,6 @@ class ChatWebSocketBroadcaster:
             if not segments:
                 return [("", result_text.strip())]
 
-            if not agent_names or len(agent_names) == 1:
-                # If single agent, we might want to just return without specific names
-                # or ensure the fallback is smooth.
-                pass
-
             return segments
         except (json.JSONDecodeError, AttributeError):
             return [("", result_text.strip() if result_text else "")]

@@ -31,8 +31,8 @@ MULTI_AGENT_PROMPT = (
     "(tasks/notes/events) and propose a concrete plan. "
     "Before creating, updating, or deleting tasks/notes/events, confirm intent briefly unless "
     "the user explicitly asked you to perform the action now. "
-    "Return a valid JSON array of AgentResponse objects containing the responses "
-    "from the agents who actually responded.{locale_instruction}"
+    "Return a JSON object matching the ChatTranscript schema (with a 'responses' key "
+    "containing an array of AgentResponse objects) from the agents who actually responded.{locale_instruction}"
 )
 
 SINGLE_AGENT_PROMPT = (
@@ -48,10 +48,10 @@ SINGLE_AGENT_PROMPT = (
 
 MULTI_AGENT_EXPECTED_OUTPUT = (
     "A structured list of responses from the relevant agents. "
-    "Return a valid JSON array of AgentResponse objects."
+    "Return a JSON object with a 'responses' key containing an array of AgentResponse objects."
 )
 
 SINGLE_AGENT_EXPECTED_OUTPUT = (
     "A direct, helpful response to the user's message, "
-    "formatted as a JSON array of AgentResponse objects."
+    "formatted as a JSON object with a 'responses' key containing an array of AgentResponse objects."
 )
