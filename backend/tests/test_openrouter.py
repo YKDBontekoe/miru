@@ -65,6 +65,10 @@ def test_openrouter_client_init() -> None:
 
 @pytest.mark.asyncio
 async def test_embed_success() -> None:
+    # Clear cache before running
+    from app.infrastructure.external.openrouter import _embed_cache
+    _embed_cache.clear()
+
     with (
         patch("openai.AsyncOpenAI"),
         patch("instructor.from_openai"),
@@ -73,10 +77,18 @@ async def test_embed_success() -> None:
 
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=[0.1, 0.2])]
-        cast("Any", client.openai_client.embeddings).create = AsyncMock(return_value=mock_response)
+        mock_create = AsyncMock(return_value=mock_response)
+        cast("Any", client.openai_client.embeddings).create = mock_create
 
+        # First call, should miss cache
         result = await client.embed("test text", "test-model")
         assert result == [0.1, 0.2]
+        assert mock_create.call_count == 1
+
+        # Second call, should hit cache
+        result2 = await client.embed("test text", "test-model")
+        assert result2 == [0.1, 0.2]
+        assert mock_create.call_count == 1
 
 
 @pytest.mark.asyncio

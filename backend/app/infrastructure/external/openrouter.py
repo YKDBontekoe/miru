@@ -78,12 +78,18 @@ class OpenRouterClient:
         reraise=True,
     )
     async def embed(self, text: str, model: str) -> list[float]:
+        cache_key = (text, model)
+        if cache_key in _embed_cache:
+            return _embed_cache[cache_key]
+
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
             encoding_format="float",
         )
-        return response.data[0].embedding
+        embedding = response.data[0].embedding
+        _embed_cache[cache_key] = embedding
+        return embedding
 
     @retry(
         stop=stop_after_attempt(3),
