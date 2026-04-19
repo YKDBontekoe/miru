@@ -166,6 +166,7 @@ async def test_execute_crew_task(
         )
         assert result == "Result"
 
+
 @pytest.mark.asyncio
 async def test_execute_crew_task_retry(
     chat_service: ChatService, monkeypatch: pytest.MonkeyPatch
@@ -191,7 +192,9 @@ async def test_execute_crew_task_retry(
         mock_crew_result = MagicMock()
         mock_crew_result.json = "ResultRetry"
         # First call fails, second succeeds
-        mock_crew_instance.kickoff_async = AsyncMock(side_effect=[Exception("test error"), mock_crew_result])
+        mock_crew_instance.kickoff_async = AsyncMock(
+            side_effect=[Exception("test error"), mock_crew_result]
+        )
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
@@ -201,6 +204,7 @@ async def test_execute_crew_task_retry(
         )
         assert result == "ResultRetry"
         assert mock_crew_instance.kickoff_async.call_count == 2
+
 
 @pytest.mark.asyncio
 async def test_execute_crew_task_retry_cancelled(
@@ -226,7 +230,10 @@ async def test_execute_crew_task_retry_cancelled(
         mock_crew_instance = MagicMock()
         # Should raise directly without retry on CancelledError
         import asyncio
-        mock_crew_instance.kickoff_async = AsyncMock(side_effect=asyncio.CancelledError("cancelled"))
+
+        mock_crew_instance.kickoff_async = AsyncMock(
+            side_effect=asyncio.CancelledError("cancelled")
+        )
         mock_crew_cls.return_value = mock_crew_instance
         with pytest.raises(asyncio.CancelledError):
             await CrewOrchestrator.execute_crew_task(
@@ -235,6 +242,7 @@ async def test_execute_crew_task_retry_cancelled(
                 user_id,
                 user_msg_id,
             )
+
 
 @pytest.mark.asyncio
 async def test_execute_crew_task_retry_fails_both(
@@ -259,7 +267,9 @@ async def test_execute_crew_task_retry_fails_both(
     ):
         mock_crew_instance = MagicMock()
         # Should fail twice and raise
-        mock_crew_instance.kickoff_async = AsyncMock(side_effect=[Exception("test error 1"), Exception("test error 2")])
+        mock_crew_instance.kickoff_async = AsyncMock(
+            side_effect=[Exception("test error 1"), Exception("test error 2")]
+        )
         mock_crew_cls.return_value = mock_crew_instance
         with pytest.raises(Exception, match="test error 2"):
             await CrewOrchestrator.execute_crew_task(

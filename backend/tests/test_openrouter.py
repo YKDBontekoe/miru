@@ -67,6 +67,7 @@ def test_openrouter_client_init() -> None:
 async def test_embed_success() -> None:
     # Clear cache before running
     from app.infrastructure.external.openrouter import _embed_cache
+
     _embed_cache.clear()
 
     with (
