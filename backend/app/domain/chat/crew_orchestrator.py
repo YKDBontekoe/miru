@@ -309,5 +309,5 @@ class CrewOrchestrator:
                 await asyncio.sleep(2)
 
         if hasattr(result, "pydantic") and result.pydantic:
-            return result.pydantic.model_dump_json()
+            return getattr(result.pydantic, "model_dump_json", lambda: "{}")()
         return getattr(result, "json", "{}") or "{}"
