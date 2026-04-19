@@ -11,6 +11,7 @@ import nest_asyncio
 from crewai.tools import BaseTool
 from pydantic import Field
 
+from app.core.utils.decorators import handle_tool_error
 from app.infrastructure.external.spotify import (
     add_tracks_to_playlist,
     create_playlist,
@@ -50,16 +51,14 @@ class SpotifyCurrentlyPlayingTool(BaseTool):
         """Run the tool synchronously."""
         return _run_async_in_sync(self._arun())
 
+    @handle_tool_error(logger, "Error fetching currently playing track.")
     async def _arun(self) -> str:
         """Async implementation of the tool."""
-        try:
-            track = await get_currently_playing(self.access_token)
-            if not track:
-                return "No track is currently playing."
+        track = await get_currently_playing(self.access_token)
+        if not track:
+            return "No track is currently playing."
 
-            return json.dumps(track, indent=2)
-        except Exception as e:
-            return f"Error fetching currently playing track: {e!s}"
+        return json.dumps(track, indent=2)
 
 
 class SpotifyRecentlyPlayedTool(BaseTool):
@@ -77,20 +76,18 @@ class SpotifyRecentlyPlayedTool(BaseTool):
         """Run the tool synchronously."""
         return _run_async_in_sync(self._arun())
 
+    @handle_tool_error(logger, "Error fetching recently played tracks.")
     async def _arun(self) -> str:
         """Async implementation of the tool.
 
         Returns:
             str: JSON formatted response or error message.
         """
-        try:
-            tracks = await get_recently_played(self.access_token)
-            if not tracks:
-                return "No recently played tracks found."
+        tracks = await get_recently_played(self.access_token)
+        if not tracks:
+            return "No recently played tracks found."
 
-            return json.dumps(tracks, indent=2)
-        except Exception as e:
-            return f"Error fetching recently played tracks: {e!s}"
+        return json.dumps(tracks, indent=2)
 
 
 class SpotifySearchTool(BaseTool):
@@ -115,6 +112,7 @@ class SpotifySearchTool(BaseTool):
         """Run the tool synchronously."""
         return _run_async_in_sync(self._arun())
 
+    @handle_tool_error(logger, "Error searching Spotify.")
     async def _arun(self) -> str:
         """Async implementation of the tool.
 
@@ -123,14 +121,12 @@ class SpotifySearchTool(BaseTool):
         """
         if not self.query:
             return "Error: query is required."
-        try:
-            results = await search_spotify(self.access_token, self.query, self.item_type)
-            if not results:
-                return f"No results found for query: {self.query}"
 
-            return json.dumps(results, indent=2)
-        except Exception as e:
-            return f"Error searching Spotify: {e!s}"
+        results = await search_spotify(self.access_token, self.query, self.item_type)
+        if not results:
+            return f"No results found for query: {self.query}"
+
+        return json.dumps(results, indent=2)
 
 
 class SpotifyCreatePlaylistTool(BaseTool):
