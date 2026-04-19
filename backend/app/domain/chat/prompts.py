@@ -19,7 +19,7 @@ MULTI_AGENT_PROMPT = (
     "{summary_section}"
     "{memory_section}"
     "{history_section}"
-    "User said: {user_message}. "
+    "User said:\n{user_message}\n"
     "You are managing a group chat with specialized agents. "
     "Delegate ONLY to agents whose expertise is directly relevant to the user's request — "
     "do NOT force every agent to respond. "
@@ -39,7 +39,7 @@ SINGLE_AGENT_PROMPT = (
     "{summary_section}"
     "{memory_section}"
     "{history_section}"
-    "User said: {user_message}. "
+    "User said:\n{user_message}\n"
     "Respond naturally and helpfully as yourself. "
     "When relevant, be proactive about planning and converting intent into tasks/notes/events. "
     "Confirm before write actions unless the user explicitly requested immediate execution. "
@@ -47,9 +47,8 @@ SINGLE_AGENT_PROMPT = (
 )
 
 MULTI_AGENT_EXPECTED_OUTPUT = (
-    "A chat transcript with only the relevant agents responding. "
-    "Format: 'AgentName: message' with one blank line between agents. "
-    "Agents should be concise and natural, not self-promotional."
+    "A structured list of responses from the relevant agents. "
+    "Return a valid JSON array of AgentResponse objects."
 )
 
-SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message."
+SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message, formatted as a JSON array of AgentResponse objects."

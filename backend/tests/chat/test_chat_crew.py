@@ -145,7 +145,9 @@ async def test_execute_crew_task(
         patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
     ):
         mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Result")
+        mock_crew_result = MagicMock()
+        mock_crew_result.json = "Result"
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_result)
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
@@ -183,7 +185,9 @@ async def test_execute_crew_task_multi(
         patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
     ):
         mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="ResultMulti")
+        mock_crew_result = MagicMock()
+        mock_crew_result.json = "ResultMulti"
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_result)
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),

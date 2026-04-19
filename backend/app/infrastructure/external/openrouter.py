@@ -46,6 +46,19 @@ class OpenRouterClient:
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(
+            (
+                openai.APIConnectionError,
+                openai.RateLimitError,
+                openai.InternalServerError,
+                openai.APITimeoutError,
+            )
+        ),
+        reraise=True,
+    )
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
         # Internally enforce strict JSON structured output even for generic strings
         structured_resp = await self.structured_completion(messages, model, ChatResponse)
@@ -119,6 +132,9 @@ class OpenRouterClient:
             response_model=response_model,
         )
 
+
+# Global in-memory cache for text embeddings to prevent redundant LLM calls
+_embed_cache: dict[tuple[str, str], list[float]] = {}
 
 # Singleton client for internal use
 _client: OpenRouterClient | None = None

@@ -135,45 +135,34 @@ class ChatWebSocketBroadcaster:
         return _step_callback
 
     @staticmethod
-    def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
-        """Parse a multi-agent transcript into (agent_name, message) pairs.
+    def parse_transcript(result_text: str | None, agent_names: list[str]) -> list[tuple[str, str]]:
+        """Parse a multi-agent JSON transcript into (agent_name, message) pairs.
 
-        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
+        Expected format is a JSON representation of ChatTranscript Pydantic model.
         Falls back to a single unnamed entry when the format cannot be parsed.
         """
-        if not agent_names or len(agent_names) == 1:
-            return [("", result_text.strip())]
+        import json
 
-        # Build a set of known names (case-insensitive) for matching
-        name_set = {n.lower() for n in agent_names}
-        segments: list[tuple[str, str]] = []
-        current_name = ""
-        current_lines: list[str] = []
+        if not result_text or not result_text.strip():
+            return []
 
-        for line in result_text.splitlines():
-            # Detect "AgentName: ..." prefix
-            colon_pos = line.find(":")
-            if colon_pos > 0:
-                candidate = line[:colon_pos].strip()
-                if candidate.lower() in name_set:
-                    # Save previous segment
-                    if current_lines or current_name:
-                        segments.append((current_name, "\n".join(current_lines).strip()))
-                    current_name = candidate
-                    current_lines = [line[colon_pos + 1 :].strip()]
-                    continue
-            current_lines.append(line)
+        try:
+            parsed = json.loads(result_text)
+            responses = parsed.get("responses", [])
+            segments = [(r.get("agent_name", ""), r.get("message", "").strip()) for r in responses]
+            segments = [(n, m) for n, m in segments if m]
 
-        if current_lines or current_name:
-            segments.append((current_name, "\n".join(current_lines).strip()))
+            if not segments:
+                return [("", result_text.strip())]
 
-        # Drop empty segments
-        segments = [(n, m) for n, m in segments if m]
-        return (
-            segments
-            if segments
-            else ([] if not result_text.strip() else [("", result_text.strip())])
-        )
+            if not agent_names or len(agent_names) == 1:
+                # If single agent, we might want to just return without specific names
+                # or ensure the fallback is smooth.
+                pass
+
+            return segments
+        except (json.JSONDecodeError, AttributeError):
+            return [("", result_text.strip() if result_text else "")]
 
     async def persist_and_broadcast_agent_response(
         self,
