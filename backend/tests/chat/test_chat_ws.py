@@ -142,6 +142,7 @@ async def test_create_step_callback_no_tool(chat_service: ChatService) -> None:
         mock_output.agent = "Agent1"
 
         import asyncio
+
         callback(mock_output)
         await asyncio.sleep(0.01)
         mock_hub.broadcast_to_room.assert_called_once()
