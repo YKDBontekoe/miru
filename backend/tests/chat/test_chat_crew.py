@@ -153,7 +153,7 @@ async def test_execute_crew_task(
     ):
         mock_crew_instance = MagicMock()
         mock_crew_result = MagicMock()
-        mock_crew_result.json = "Result"
+        mock_crew_result.pydantic.model_dump_json.return_value = "Result"
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_result)
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(
@@ -190,7 +190,7 @@ async def test_execute_crew_task_retry(
     ):
         mock_crew_instance = MagicMock()
         mock_crew_result = MagicMock()
-        mock_crew_result.json = "ResultRetry"
+        mock_crew_result.pydantic.model_dump_json.return_value = "ResultRetry"
         # First call fails, second succeeds
         mock_crew_instance.kickoff_async = AsyncMock(
             side_effect=[Exception("test error"), mock_crew_result]
@@ -306,7 +306,7 @@ async def test_execute_crew_task_multi(
     ):
         mock_crew_instance = MagicMock()
         mock_crew_result = MagicMock()
-        mock_crew_result.json = "ResultMulti"
+        mock_crew_result.pydantic.model_dump_json.return_value = "ResultMulti"
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_result)
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(

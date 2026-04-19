@@ -308,4 +308,6 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return getattr(result, "json", "{}")
+        if hasattr(result, "pydantic") and result.pydantic:
+            return result.pydantic.model_dump_json()
+        return getattr(result, "json", "{}") or "{}"

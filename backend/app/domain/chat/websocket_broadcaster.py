@@ -152,6 +152,9 @@ class ChatWebSocketBroadcaster:
             segments = [(r.get("agent_name", ""), r.get("message", "").strip()) for r in responses]
             segments = [(n, m) for n, m in segments if m]
 
+            if "responses" in parsed and not segments:
+                return []
+
             if not segments:
                 return [("", result_text.strip())]
 

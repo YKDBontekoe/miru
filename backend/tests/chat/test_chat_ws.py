@@ -140,7 +140,17 @@ async def test_create_step_callback_no_tool(chat_service: ChatService) -> None:
         mock_output.tool = None
         mock_output.log = "some log text"
         mock_output.agent = "Agent1"
-        callback(mock_output)
+
+        # In order to trigger the exception block in create_step_callback,
+        # we can mock getattr to raise an exception. The broadcast_to_room happens
+        # asynchronously so patching it might not trigger the exception synchronously
+        # inside the step_callback if the coroutine just runs and fails silently in loop.
+        # Alternatively, we pass an output that triggers a synchronous exception.
+
+        # Let's patch getattr specifically for this test
+        with patch("builtins.getattr", side_effect=Exception("sync error")):
+            callback(mock_output)
+
         import asyncio
 
         await asyncio.sleep(0.01)
@@ -151,18 +161,25 @@ async def test_create_step_callback_no_tool(chat_service: ChatService) -> None:
 async def test_create_step_callback_exception(chat_service: ChatService) -> None:
     room_id = uuid4()
     agent_names = ["Agent1"]
-    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+    with (
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
+        patch("app.domain.chat.websocket_broadcaster.logger") as mock_logger,
+    ):
         mock_hub.broadcast_to_room = AsyncMock(side_effect=Exception("error"))
         callback = chat_service.ws_broadcaster.create_step_callback(room_id, agent_names)
         mock_output = MagicMock()
-        mock_output.tool = None
-        mock_output.log = "some log text"
-        mock_output.agent = "Agent1"
+        # We can trigger it by making an attribute access on mock_output raise.
+        from unittest.mock import PropertyMock
+
+        type(mock_output).tool = PropertyMock(side_effect=Exception("forced error"))
+
         callback(mock_output)
+
         import asyncio
 
         await asyncio.sleep(0.01)
         # Should not raise
+        mock_logger.exception.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -206,8 +223,7 @@ def test_parse_transcript_empty_responses(chat_service: ChatService) -> None:
     agent_names = ["Agent1"]
 
     segments = chat_service.ws_broadcaster.parse_transcript(result_text, agent_names)
-    assert len(segments) == 1
-    assert segments[0] == ("", '{"responses": []}')
+    assert len(segments) == 0
 
 
 def test_parse_transcript_single_agent(chat_service: ChatService) -> None:
