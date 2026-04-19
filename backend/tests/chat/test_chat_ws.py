@@ -128,6 +128,40 @@ async def test_create_step_callback(chat_service: ChatService) -> None:
         await asyncio.sleep(0.01)
         mock_hub.broadcast_to_room.assert_called_once()
 
+@pytest.mark.asyncio
+async def test_create_step_callback_no_tool(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    agent_names = ["Agent1"]
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock()
+        callback = chat_service.ws_broadcaster.create_step_callback(room_id, agent_names)
+        mock_output = MagicMock()
+        mock_output.tool = None
+        mock_output.log = "some log text"
+        mock_output.agent = "Agent1"
+        callback(mock_output)
+        import asyncio
+
+        await asyncio.sleep(0.01)
+        mock_hub.broadcast_to_room.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_create_step_callback_exception(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    agent_names = ["Agent1"]
+    with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
+        mock_hub.broadcast_to_room = AsyncMock(side_effect=Exception("error"))
+        callback = chat_service.ws_broadcaster.create_step_callback(room_id, agent_names)
+        mock_output = MagicMock()
+        mock_output.tool = None
+        mock_output.log = "some log text"
+        mock_output.agent = "Agent1"
+        callback(mock_output)
+        import asyncio
+
+        await asyncio.sleep(0.01)
+        # Should not raise
+
 
 @pytest.mark.asyncio
 async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -> None:
