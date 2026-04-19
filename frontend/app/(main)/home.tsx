@@ -15,8 +15,8 @@ import {
   HomeSectionHeader,
   HomeSurfaceCard,
   HomeTaskRow,
-} from '@/components/home/HomeDashboardParts';
-import { HomeNewChatModal } from '@/components/home';
+  HomeNewChatModal,
+} from '@/components/home';
 import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
@@ -221,7 +221,7 @@ export default function HomeScreen() {
             ) : (
               sortedPendingTasks
                 .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={toggleTask} />)
             )}
           </HomeSurfaceCard>
 
@@ -302,6 +302,7 @@ export default function HomeScreen() {
                       key={agent.id}
                       agent={agent}
                       onPress={() => router.push('/(main)/agents')}
+                      t={t}
                     />
                   ))}
               </View>
@@ -309,7 +310,7 @@ export default function HomeScreen() {
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
+            <HomeSurfaceCard className="bg-[#F7FBF8]">
               <View style={{ alignItems: 'center', paddingVertical: 18 }}>
                 <View
                   style={{
