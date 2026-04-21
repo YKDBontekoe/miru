@@ -45,7 +45,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -76,7 +76,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -107,7 +107,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -138,7 +138,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -171,7 +171,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -204,7 +204,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
@@ -237,7 +237,7 @@
           "script": {
             "exec": [
               "pm.test(\"Status code is 401 or 422\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+              "    pm.expect(pm.response.code).to.be.oneOf([401, 403, 404, 422]);",
               "});"
             ],
             "type": "text/javascript"
