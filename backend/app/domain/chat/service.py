@@ -345,8 +345,10 @@ class ChatService:
             )
             if memories:
                 memory_context = "\n".join(f"- {m.content}" for m in memories)
-        except Exception:
-            logger.warning("Memory retrieval failed for room=%s, proceeding without", room_id)
+        except openai.OpenAIError as e:
+            logger.warning("Memory retrieval OpenAI error for room=%s: %s", room_id, e)
+        except Exception as e:
+            logger.exception("Memory retrieval unexpected error for room=%s: %s", room_id, e)
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
@@ -412,8 +414,32 @@ class ChatService:
                     self.bg_service.update_room_summary_background(room_id, conversation_history)
                 )
 
+        except openai.OpenAIError:
+            logger.exception("OpenAI error processing crew task for room=%s", room_id)
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "agent_activity",
+                    "data": {
+                        "room_id": str(room_id),
+                        "agent_names": agent_names,
+                        "activity": "error",
+                        "detail": "",
+                    },
+                },
+            )
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "error",
+                    "data": {
+                        "message": "Something went wrong, please try again.",
+                        "room_id": str(room_id),
+                    },
+                },
+            )
         except Exception:
-            logger.exception("Failed processing crew task for room=%s", room_id)
+            logger.exception("Unexpected error processing crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
                 {

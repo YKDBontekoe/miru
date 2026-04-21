@@ -18,6 +18,7 @@ import { CreateNoteModal } from '../../src/components/productivity/CreateNoteMod
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
 import { NoteCard } from '../../src/components/productivity/NoteCard';
 import { TaskCard } from '../../src/components/productivity/TaskCard';
+import { EventCard } from '../../src/components/productivity/EventCard';
 import { theme } from '../../src/core/theme';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
@@ -344,25 +345,7 @@ export default function ProductivityScreen() {
       }
       if (item.type === 'event') {
         const event = item.item as CalendarEvent;
-        return (
-          <View style={styles.eventCard}>
-            <View style={styles.eventIcon}>
-              <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
-            </View>
-            <View style={styles.eventBody}>
-              <AppText style={styles.eventTitle}>{event.title}</AppText>
-              <AppText style={styles.eventMeta}>
-                {new Intl.DateTimeFormat(i18n.language, {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: event.is_all_day ? undefined : '2-digit',
-                  minute: event.is_all_day ? undefined : '2-digit',
-                }).format(new Date(event.start_time))}
-              </AppText>
-            </View>
-          </View>
-        );
+        return <EventCard event={event} />;
       }
 
       const task = item.item as Task;
@@ -374,7 +357,7 @@ export default function ProductivityScreen() {
         />
       );
     },
-    [confirmDelete, deleteNote, deleteTask, i18n.language, toggleTask]
+    [confirmDelete, deleteNote, deleteTask, toggleTask]
   );
 
   return (
@@ -758,39 +741,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: S.xl,
     paddingBottom: 100,
     paddingTop: S.sm,
-  },
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface.light,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: T.onSurface.mutedLight,
-    marginTop: 2,
-    fontSize: 13,
   },
   emptyContainer: {
     alignItems: 'center',
