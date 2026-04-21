@@ -13,6 +13,13 @@ from app.core.security.auth import get_current_user
 from app.domain.memory.models import Memory
 from app.main import app
 
+EXPECTED_SERVICE_UNAVAILABLE = {
+    "detail": {
+        "error": "service_unavailable",
+        "message": "Upstream AI service is currently unreachable",
+    }
+}
+
 
 @pytest.fixture
 def client() -> Generator[TestClient]:
@@ -131,12 +138,7 @@ def test_get_memory_graph_network_error(client: TestClient) -> None:
     response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_get_memory_graph_timeout_error(client: TestClient) -> None:
@@ -155,12 +157,7 @@ def test_get_memory_graph_timeout_error(client: TestClient) -> None:
     response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_get_memory_graph_oserror(client: TestClient) -> None:
@@ -175,12 +172,7 @@ def test_get_memory_graph_oserror(client: TestClient) -> None:
     response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_store_memory_route_timeout_error(client: TestClient) -> None:
@@ -203,12 +195,7 @@ def test_store_memory_route_timeout_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_list_memories_route_oserror(client: TestClient) -> None:
@@ -223,12 +210,7 @@ def test_list_memories_route_oserror(client: TestClient) -> None:
     response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_upload_document_service_timeout(client: TestClient) -> None:
@@ -252,12 +234,7 @@ def test_upload_document_service_timeout(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_store_memory_route_network_error(client: TestClient) -> None:
@@ -280,12 +257,7 @@ def test_store_memory_route_network_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_store_memory_route_oserror(client: TestClient) -> None:
@@ -304,12 +276,7 @@ def test_store_memory_route_oserror(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_upload_document(client: TestClient) -> None:
@@ -377,12 +344,7 @@ def test_upload_document_service_unavailable(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": {
-            "error": "service_unavailable",
-            "message": "Upstream AI service is currently unreachable",
-        }
-    }
+    assert response.json() == EXPECTED_SERVICE_UNAVAILABLE
 
 
 def test_upload_document_invalid_type(client: TestClient) -> None:
