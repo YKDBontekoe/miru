@@ -240,8 +240,6 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room.assert_awaited_once()
 
 
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "side_effect, log_message_part",
