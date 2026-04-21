@@ -65,6 +65,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Catch all unhandled exceptions to prevent leaking sensitive details to the client."""
@@ -72,12 +73,10 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     return JSONResponse(
         status_code=500,
         content={
-            "detail": {
-                "error": "internal_error",
-                "message": "An internal server error occurred."
-            }
+            "detail": {"error": "internal_error", "message": "An internal server error occurred."}
         },
     )
+
 
 app.add_middleware(
     cast("Any", CORSMiddleware),
