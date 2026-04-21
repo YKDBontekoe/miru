@@ -6,8 +6,9 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
@@ -63,6 +64,19 @@ app = FastAPI(
     version="0.2.0",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Catch all unhandled exceptions to prevent leaking sensitive details to the client."""
+    logger.exception("Unhandled application error")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": {"error": "internal_error", "message": "An internal server error occurred."}
+        },
+    )
+
 
 app.add_middleware(
     cast("Any", CORSMiddleware),
