@@ -4,6 +4,7 @@ import typing
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import openai
 import pytest
 from tortoise.exceptions import BaseORMException
 
@@ -213,7 +214,6 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         ) as m_agent_resp,
         patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
         patch("app.domain.chat.service.asyncio.create_task") as m_create_task,
-        patch("app.domain.chat.service.openai.OpenAIError", Exception),
     ):
         mock_hub.broadcast_to_room = AsyncMock()
         m_persist.return_value = MagicMock(id=uuid4())
@@ -240,15 +240,28 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room.assert_awaited_once()
 
 
-@pytest.mark.asyncio
-async def test_run_room_chat_ws_exception(chat_service: ChatService) -> None:
-    import openai
 
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "side_effect, log_message_part",
+    [
+        (openai.OpenAIError("API error"), "OpenAI error"),
+        (ValueError("Unexpected error"), "Unexpected error"),
+    ],
+)
+async def test_run_room_chat_ws_exceptions(
+    chat_service: ChatService,
+    caplog: pytest.LogCaptureFixture,
+    side_effect: Exception,
+    log_message_part: str,
+) -> None:
     room_id = uuid4()
     user_id = uuid4()
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
-        MagicMock(id=uuid4(), name="Agent1")
-    ]
+    agent_name = "Agent1"
+    mock_agent = MagicMock(id=uuid4())
+    mock_agent.name = agent_name
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [mock_agent]
     with (
         patch.object(
             chat_service.ws_broadcaster,
@@ -267,36 +280,23 @@ async def test_run_room_chat_ws_exception(chat_service: ChatService) -> None:
     ):
         mock_hub.broadcast_to_room = AsyncMock()
         m_persist.return_value = MagicMock(id=uuid4())
-        m_exec.side_effect = openai.OpenAIError("API error")
+        m_exec.side_effect = side_effect
         await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
-        mock_hub.broadcast_to_room.assert_called()
 
+        assert mock_hub.broadcast_to_room.call_count == 2
 
-@pytest.mark.asyncio
-async def test_run_room_chat_ws_unexpected_exception(chat_service: ChatService) -> None:
-    room_id = uuid4()
-    user_id = uuid4()
-    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
-        MagicMock(id=uuid4(), name="Agent1")
-    ]
-    with (
-        patch.object(
-            chat_service.ws_broadcaster,
-            "handle_message_persistence_and_broadcast",
-            new_callable=AsyncMock,
-        ) as m_persist,
-        patch.object(
-            chat_service.ws_broadcaster, "broadcast_thinking_status", new_callable=AsyncMock
-        ),
-        patch.object(chat_service.ws_broadcaster, "create_step_callback", return_value=MagicMock()),
-        patch(
-            "app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task",
-            new_callable=AsyncMock,
-        ) as m_exec,
-        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
-    ):
-        mock_hub.broadcast_to_room = AsyncMock()
-        m_persist.return_value = MagicMock(id=uuid4())
-        m_exec.side_effect = ValueError("Unexpected error")
-        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
-        mock_hub.broadcast_to_room.assert_called()
+        # Check first broadcast (agent_activity error)
+        call_args_1 = mock_hub.broadcast_to_room.call_args_list[0][0]
+        assert call_args_1[0] == room_id
+        assert call_args_1[1]["type"] == "agent_activity"
+        assert call_args_1[1]["data"]["activity"] == "error"
+        assert agent_name in call_args_1[1]["data"]["agent_names"]
+
+        # Check second broadcast (generic error payload)
+        call_args_2 = mock_hub.broadcast_to_room.call_args_list[1][0]
+        assert call_args_2[0] == room_id
+        assert call_args_2[1]["type"] == "error"
+        assert "Something went wrong" in call_args_2[1]["data"]["message"]
+
+        # Assert logging contains specific message
+        assert any(log_message_part in record.message for record in caplog.records)

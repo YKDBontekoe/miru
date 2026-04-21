@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
@@ -38,7 +38,7 @@ export const EventCard = React.memo(({ event }: Props) => {
           padding: S.lg,
           marginBottom: S.md,
           ...Platform.select({
-            ios: theme.elevation.sm as any,
+            ios: theme.elevation.sm as ViewStyle,
             android: { elevation: 1 },
             default: { elevation: 1 },
           }),
@@ -69,6 +69,19 @@ export const EventCard = React.memo(({ event }: Props) => {
     [C.border, C.muted, C.primarySurface, C.surface, C.text]
   );
 
+  const formatter = useMemo(() => {
+    return new Intl.DateTimeFormat(i18n.language, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: event.is_all_day ? undefined : '2-digit',
+      minute: event.is_all_day ? undefined : '2-digit',
+    });
+  }, [i18n.language, event.is_all_day]);
+
+  const date = new Date(event.start_time);
+  const formattedTime = isNaN(date.getTime()) ? 'Unknown time' : formatter.format(date);
+
   return (
     <View style={styles.eventCard}>
       <View style={styles.eventIcon}>
@@ -76,15 +89,7 @@ export const EventCard = React.memo(({ event }: Props) => {
       </View>
       <View style={styles.eventBody}>
         <AppText style={styles.eventTitle}>{event.title}</AppText>
-        <AppText style={styles.eventMeta}>
-          {new Intl.DateTimeFormat(i18n.language, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: event.is_all_day ? undefined : '2-digit',
-            minute: event.is_all_day ? undefined : '2-digit',
-          }).format(new Date(event.start_time))}
-        </AppText>
+        <AppText style={styles.eventMeta}>{formattedTime}</AppText>
       </View>
     </View>
   );

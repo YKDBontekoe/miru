@@ -357,7 +357,7 @@ export default function ProductivityScreen() {
         />
       );
     },
-    [confirmDelete, deleteNote, deleteTask, i18n.language, toggleTask]
+    [confirmDelete, deleteNote, deleteTask, toggleTask]
   );
 
   return (

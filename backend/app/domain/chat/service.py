@@ -348,7 +348,7 @@ class ChatService:
         except openai.OpenAIError as e:
             logger.warning("Memory retrieval OpenAI error for room=%s: %s", room_id, e)
         except Exception as e:
-            logger.warning("Memory retrieval unexpected error for room=%s: %s", room_id, e)
+            logger.exception("Memory retrieval unexpected error for room=%s: %s", room_id, e)
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
