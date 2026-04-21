@@ -239,9 +239,11 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
         await chat_service.run_room_chat_ws(room_id, user_message, user_id)
         mock_hub.broadcast_to_room.assert_awaited_once()
 
+
 @pytest.mark.asyncio
 async def test_run_room_chat_ws_exception(chat_service: ChatService) -> None:
     import openai
+
     room_id = uuid4()
     user_id = uuid4()
     typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
@@ -268,6 +270,7 @@ async def test_run_room_chat_ws_exception(chat_service: ChatService) -> None:
         m_exec.side_effect = openai.OpenAIError("API error")
         await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
         mock_hub.broadcast_to_room.assert_called()
+
 
 @pytest.mark.asyncio
 async def test_run_room_chat_ws_unexpected_exception(chat_service: ChatService) -> None:
