@@ -44,7 +44,7 @@ async def list_memories(
         raise_api_error(
             status_code=503,
             error="service_unavailable",
-            message="Upstream AI service is currently unreachable"
+            message="Upstream AI service is currently unreachable",
         )
 
 
@@ -70,7 +70,7 @@ async def get_memory_graph(
         raise_api_error(
             status_code=503,
             error="service_unavailable",
-            message="Upstream AI service is currently unreachable"
+            message="Upstream AI service is currently unreachable",
         )
 
 
@@ -99,7 +99,7 @@ async def store_memory(
         raise_api_error(
             status_code=503,
             error="service_unavailable",
-            message="Upstream AI service is currently unreachable"
+            message="Upstream AI service is currently unreachable",
         )
 
 
@@ -173,14 +173,12 @@ async def upload_document(
         raise_api_error(
             status_code=503,
             error="service_unavailable",
-            message="Upstream AI service is currently unreachable"
+            message="Upstream AI service is currently unreachable",
         )
     except Exception:
         logger.exception("Failed to process document")
         raise_api_error(
-            status_code=500,
-            error="internal_error",
-            message="Failed to process document"
+            status_code=500, error="internal_error", message="Failed to process document"
         )
 
 
@@ -203,9 +201,5 @@ async def delete_memory(
     """Delete a memory."""
     success = await service.delete_memory(memory_id, user_id=user_id)
     if not success:
-        raise_api_error(
-            status_code=404,
-            error="not_found",
-            message="Memory not found"
-        )
+        raise_api_error(status_code=404, error="not_found", message="Memory not found")
     return {"status": "ok"}
