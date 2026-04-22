@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, cast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.exception_handlers import register_exception_handlers
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.chat import router as chat_router
@@ -63,6 +64,8 @@ app = FastAPI(
     version="0.2.0",
     lifespan=lifespan,
 )
+
+register_exception_handlers(app)
 
 app.add_middleware(
     cast("Any", CORSMiddleware),
