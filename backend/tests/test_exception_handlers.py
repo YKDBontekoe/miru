@@ -34,9 +34,11 @@ async def test_global_exception_handler_http():
 
     # Verify the response
     assert isinstance(response, JSONResponse)
+    assert response is not None
     assert response.status_code == 500
 
     # fastapi.responses.JSONResponse doesn't have a content property, we have to decode the body
+    assert isinstance(response.body, bytes)
     body = json.loads(response.body.decode("utf-8"))
     assert body["error"] == "internal_server_error"
     assert body["message"] == "An unexpected error occurred."
