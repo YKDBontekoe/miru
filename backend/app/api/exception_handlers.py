@@ -29,4 +29,6 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register all exception handlers to the FastAPI app."""
-    app.add_exception_handler(Exception, global_exception_handler)
+    # We use a cast or ignore type check since Starlette's add_exception_handler is strictly typed
+    # for Request vs WebSocket handlers, but a single global handler may be invoked for both
+    app.add_exception_handler(Exception, global_exception_handler)  # type: ignore[arg-type]
