@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, TextInput, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, TextInput, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -20,9 +19,6 @@ const T = {
   },
   transparent: 'transparent',
 };
-
-const S = theme.spacing;
-const R = theme.borderRadius;
 
 type Tab = 'today' | 'all' | 'notes' | 'tasks';
 type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -41,7 +37,7 @@ interface Props {
   setShowCreateTask: (show: boolean) => void;
 }
 
-export function ProductivityHeader({
+export const ProductivityHeader = ({
   pendingTasksCount,
   searchQuery,
   setSearchQuery,
@@ -53,8 +49,16 @@ export function ProductivityHeader({
   taskPriorityCounts,
   setShowCreateNote,
   setShowCreateTask,
-}: Props) {
+}: Props) => {
   const { t } = useTranslation();
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(localQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localQuery, setSearchQuery]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'today', label: t('productivity.today') || 'Today' },
@@ -73,71 +77,119 @@ export function ProductivityHeader({
 
   return (
     <>
-      <View style={styles.headerContainer}>
-        <View style={styles.headerRow}>
+      <View
+        className="px-6 pt-4 pb-6 z-10 shadow-sm"
+        style={{ backgroundColor: T.surface.light }}
+      >
+        <View className="flex-row justify-between items-center mb-6">
           <View>
-            <AppText variant="h1" style={styles.headerTitle}>
+            <AppText variant="h1" className="text-[28px] font-extrabold tracking-tight" style={{ color: T.onSurface.light }}>
               {t('productivity.title') || 'Workspace'}
             </AppText>
-            <AppText style={styles.headerSubtitle}>
+            <AppText className="text-sm mt-1" style={{ color: T.onSurface.mutedLight }}>
               {pendingTasksCount === 0
                 ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
                 : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
                   `You have ${pendingTasksCount} tasks pending.`}
             </AppText>
           </View>
-          <View style={styles.headerActions}>
+          <View className="flex-row gap-2">
             <Pressable
               onPress={generateTodayPlan}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Generate today's plan"
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={({ pressed }) => [
+                { backgroundColor: T.primary.surfaceLight },
+                pressed && { opacity: 0.7 },
+              ]}
             >
               <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
               onPress={() => setShowCreateNote(true)}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create note"
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={({ pressed }) => [
+                { backgroundColor: T.primary.surfaceLight },
+                pressed && { opacity: 0.7 },
+              ]}
             >
               <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
               onPress={() => setShowCreateTask(true)}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create task"
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={({ pressed }) => [
+                { backgroundColor: T.primary.surfaceLight },
+                pressed && { opacity: 0.7 },
+              ]}
             >
               <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
             </Pressable>
           </View>
         </View>
 
-        <View style={styles.searchContainer}>
+        <View
+          className="flex-row items-center rounded-lg px-4 h-11 border"
+          style={{ backgroundColor: T.background.light, borderColor: T.border.light }}
+        >
           <Ionicons
             name="search"
             size={18}
             color={T.onSurface.mutedLight}
-            style={styles.searchIcon}
+            className="mr-2"
           />
           <TextInput
-            style={styles.searchInput}
+            className="flex-1 text-base h-full"
+            style={{ color: T.onSurface.light }}
             placeholder={t('productivity.search') || 'Search notes, tasks, events...'}
             placeholderTextColor={T.onSurface.mutedLight}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={localQuery}
+            onChangeText={setLocalQuery}
           />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={10}>
+          {localQuery.length > 0 && (
+            <Pressable
+              onPress={() => setLocalQuery('')}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+            >
               <Ionicons name="close-circle" size={20} color={T.onSurface.mutedLight} />
             </Pressable>
           )}
         </View>
       </View>
 
-      <View style={styles.tabsContainer}>
+      <View
+        className="flex-row rounded-xl p-1 mx-6 mt-6 mb-4 border"
+        style={{ backgroundColor: T.surface.highLight, borderColor: T.border.light }}
+      >
         {tabs.map((tab) => (
           <Pressable
             key={tab.key}
             onPress={() => setActiveTab(tab.key)}
-            style={[styles.tabButton, activeTab === tab.key && styles.tabButtonActive]}
+            accessibilityRole="tab"
+            accessibilityLabel={tab.label}
+            accessibilityState={{ selected: activeTab === tab.key }}
+            className={`flex-1 py-2 items-center rounded-lg ${
+              activeTab === tab.key ? 'shadow-sm' : ''
+            }`}
+            style={[
+              { backgroundColor: T.transparent },
+              activeTab === tab.key && { backgroundColor: T.surface.light },
+            ]}
           >
-            <AppText style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+            <AppText
+              className="text-sm"
+              style={[
+                { fontWeight: '500', color: T.onSurface.mutedLight },
+                activeTab === tab.key && { fontWeight: '700', color: T.onSurface.light },
+              ]}
+            >
               {tab.label}
             </AppText>
           </Pressable>
@@ -145,38 +197,29 @@ export function ProductivityHeader({
       </View>
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View
-          style={{
-            flexDirection: 'row',
-            paddingHorizontal: S.xl,
-            marginBottom: S.sm,
-            flexWrap: 'wrap',
-          }}
-        >
+        <View className="flex-row px-6 mb-2 flex-wrap">
           {priorityOptions.map((option) => (
             <Pressable
               key={option.key}
               onPress={() => setTaskPriority(option.key)}
+              accessibilityRole="button"
+              accessibilityLabel={option.label}
+              accessibilityState={{ selected: taskPriority === option.key }}
+              className="px-3 py-1.5 rounded-full border mr-2 mb-2"
               style={({ pressed }) => [
                 {
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: R.full,
                   backgroundColor:
                     taskPriority === option.key ? T.primary.surfaceLight : T.surface.light,
-                  borderWidth: 1,
                   borderColor: taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
-                  marginRight: 8,
-                  marginBottom: 8,
                 },
                 pressed && { opacity: 0.8 },
               ]}
             >
               <AppText
                 variant="caption"
+                className="font-bold"
                 style={{
                   color: taskPriority === option.key ? T.primary.DEFAULT : T.onSurface.mutedLight,
-                  fontWeight: '700',
                 }}
               >
                 {option.label}
@@ -187,94 +230,4 @@ export function ProductivityHeader({
       )}
     </>
   );
-}
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    paddingHorizontal: S.xl,
-    paddingTop: S.md,
-    paddingBottom: S.lg,
-    backgroundColor: T.surface.light,
-    ...theme.elevation.sm,
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: S.lg,
-  },
-  headerTitle: {
-    color: T.onSurface.light,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    color: T.onSurface.mutedLight,
-    fontSize: 14,
-    marginTop: S.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: S.sm,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: R.full,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.background.light,
-    borderRadius: R.lg,
-    paddingHorizontal: S.md,
-    height: 44,
-    borderWidth: 1,
-    borderColor: T.border.light,
-  },
-  searchIcon: {
-    marginRight: S.sm,
-  },
-  searchInput: {
-    flex: 1,
-    color: T.onSurface.light,
-    fontSize: 16,
-    height: '100%',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: T.surface.highLight,
-    borderRadius: R.xl,
-    padding: S.xs,
-    marginHorizontal: S.xl,
-    marginTop: S.lg,
-    marginBottom: S.md,
-    borderWidth: 1,
-    borderColor: T.border.light,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: S.sm,
-    alignItems: 'center',
-    borderRadius: R.lg,
-    backgroundColor: T.transparent,
-  },
-  tabButtonActive: {
-    backgroundColor: T.surface.light,
-    ...theme.elevation.sm,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: T.onSurface.mutedLight,
-  },
-  tabTextActive: {
-    fontWeight: '700',
-    color: T.onSurface.light,
-  },
-});
+};

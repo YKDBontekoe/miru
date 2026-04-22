@@ -8,20 +8,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { ProductivityHeader } from '../../src/components/productivity/ProductivityHeader';
-import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
-import { theme } from '../../src/core/theme';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { AppText } from '@/components/AppText';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { ProductivityHeader } from '@/components/productivity/ProductivityHeader';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
+import { theme } from '@/core/theme';
+import { CalendarEvent, Note, Task } from '@/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import {
   useProductivityViewModel,
   RenderItemData,
-} from '../../src/features/productivity/useProductivityViewModel';
+} from '@/features/productivity/useProductivityViewModel';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -44,6 +44,7 @@ const R = theme.borderRadius;
 
 export default function ProductivityScreen() {
   const {
+    t,
     i18n,
     dataToRender,
     isLoading,
@@ -161,7 +162,7 @@ export default function ProductivityScreen() {
                 }}
               >
                 <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
-                  Today plan
+                  {t('productivity.today_plan') || "Today's Plan"}
                 </AppText>
                 <Pressable onPress={() => setTodayPlan(null)}>
                   <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
@@ -174,12 +175,14 @@ export default function ProductivityScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={activeTab}
-            searchQuery={searchQuery}
-            setShowCreateNote={setShowCreateNote}
-            setShowCreateTask={setShowCreateTask}
-          />
+          !isLoading && dataToRender.length === 0 ? (
+            <ProductivityEmptyState
+              activeTab={activeTab}
+              searchQuery={searchQuery}
+              setShowCreateNote={setShowCreateNote}
+              setShowCreateTask={setShowCreateTask}
+            />
+          ) : null
         }
       />
 

@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -18,9 +17,6 @@ const T = {
   white: '#FFFFFF',
 };
 
-const S = theme.spacing;
-const R = theme.borderRadius;
-
 interface Props {
   activeTab: 'today' | 'all' | 'notes' | 'tasks';
   searchQuery: string;
@@ -28,17 +24,20 @@ interface Props {
   setShowCreateTask: (show: boolean) => void;
 }
 
-export function ProductivityEmptyState({
+export const ProductivityEmptyState = ({
   activeTab,
   searchQuery,
   setShowCreateNote,
   setShowCreateTask,
-}: Props) {
+}: Props) => {
   const { t } = useTranslation();
 
   return (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconCircle}>
+    <View className="items-center py-24">
+      <View
+        className="w-20 h-20 rounded-full items-center justify-center mb-6"
+        style={{ backgroundColor: T.primary.surfaceLight }}
+      >
         <Ionicons
           name={
             activeTab === 'notes'
@@ -53,7 +52,7 @@ export function ProductivityEmptyState({
           color={T.primary.DEFAULT}
         />
       </View>
-      <AppText variant="h3" style={styles.emptyTitle}>
+      <AppText variant="h3" className="mb-2 text-center" style={{ color: T.onSurface.light }}>
         {searchQuery
           ? t('productivity.no_matches') || 'No matches found'
           : activeTab === 'notes'
@@ -64,7 +63,10 @@ export function ProductivityEmptyState({
                 ? t('productivity.nothing_urgent_today') || 'Nothing urgent today'
                 : t('productivity.workspace_clear') || 'Your workspace is clear'}
       </AppText>
-      <AppText style={styles.emptySubtitle}>
+      <AppText
+        className="text-center mb-8 px-10 leading-6"
+        style={{ color: T.onSurface.mutedLight }}
+      >
         {searchQuery
           ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
           : activeTab === 'today'
@@ -74,14 +76,18 @@ export function ProductivityEmptyState({
       </AppText>
 
       {!searchQuery && (
-        <View style={styles.emptyActions}>
+        <View className="flex-row gap-4">
           {(activeTab === 'all' || activeTab === 'notes') && (
             <Pressable
               onPress={() => setShowCreateNote(true)}
-              style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+              className="flex-row items-center rounded-xl py-3 px-6 shadow-md"
+              style={({ pressed }) => [
+                { backgroundColor: T.primary.DEFAULT },
+                pressed && { opacity: 0.8 },
+              ]}
             >
               <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
-              <AppText style={styles.emptyButtonText}>
+              <AppText className="text-white font-bold text-[15px]">
                 {t('productivity.newNote') || 'New Note'}
               </AppText>
             </Pressable>
@@ -89,10 +95,16 @@ export function ProductivityEmptyState({
           {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
             <Pressable
               onPress={() => setShowCreateTask(true)}
+              className="flex-row items-center rounded-xl py-3 px-6 shadow-md"
               style={({ pressed }) => [
-                styles.emptyButton,
-                (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
+                {
+                  backgroundColor:
+                    activeTab === 'all' || activeTab === 'today'
+                      ? T.primary.surfaceLight
+                      : T.primary.DEFAULT,
+                },
                 pressed && { opacity: 0.8 },
+                (activeTab === 'all' || activeTab === 'today') && { shadowOpacity: 0, elevation: 0 },
               ]}
             >
               <Ionicons
@@ -102,11 +114,11 @@ export function ProductivityEmptyState({
                 style={{ marginEnd: 6 }}
               />
               <AppText
-                style={
-                  activeTab === 'all' || activeTab === 'today'
-                    ? styles.emptyButtonTextSecondary
-                    : styles.emptyButtonText
-                }
+                className="font-bold text-[15px]"
+                style={{
+                  color:
+                    activeTab === 'all' || activeTab === 'today' ? T.primary.DEFAULT : T.white,
+                }}
               >
                 {t('productivity.new_task') || 'New Task'}
               </AppText>
@@ -116,70 +128,6 @@ export function ProductivityEmptyState({
       )}
     </View>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: S.massive,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: S.lg,
-  },
-  emptyTitle: {
-    marginBottom: S.sm,
-    textAlign: 'center',
-    color: T.onSurface.light,
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    marginBottom: S.xl,
-    color: T.onSurface.mutedLight,
-    paddingHorizontal: S.xxxl,
-    lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: S.md,
-  },
-  emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.primary.DEFAULT,
-    borderRadius: R.xl,
-    paddingVertical: S.md,
-    paddingHorizontal: S.xl,
-    ...theme.elevation.md,
-  },
-  emptyButtonSecondary: {
-    backgroundColor: T.primary.surfaceLight,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
-        elevation: 0,
-      },
-      android: {
-        elevation: 0,
-      },
-      default: {
-        elevation: 0,
-      },
-    }),
-  },
-  emptyButtonText: {
-    color: T.white,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  emptyButtonTextSecondary: {
-    color: T.primary.DEFAULT,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-});
+export default ProductivityEmptyState;

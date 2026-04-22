@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter, usePathname, useLocalSearchParams } from 'expo-router';
-import { CalendarEvent, Note, Task } from '../../core/models';
-import { useProductivityStore } from '../../store/useProductivityStore';
+import { CalendarEvent, Note, Task } from '@/core/models';
+import { useProductivityStore } from '@/store/useProductivityStore';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -15,7 +15,7 @@ export type RenderItemData = {
   id: string;
 };
 
-export function useProductivityViewModel() {
+export const useProductivityViewModel = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -94,7 +94,20 @@ export function useProductivityViewModel() {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: async () => {
+              try {
+                await action();
+              } catch {
+                Alert.alert(
+                  t('errors.default_title') || 'Error',
+                  t('errors.delete_failed') || 'Failed to delete item. Please try again.',
+                  [
+                    { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
+                    { text: t('actions.retry') || 'Retry', onPress: () => confirmDelete(action) }
+                  ]
+                );
+              }
+            },
           },
         ]
       ),
@@ -131,8 +144,8 @@ export function useProductivityViewModel() {
   }, [events, searchQuery]);
 
   const pendingTasksCount = useMemo(
-    () => filteredTasks.filter((task) => !task.completed).length,
-    [filteredTasks]
+    () => tasks.filter((task) => !task.completed).length,
+    [tasks]
   );
 
   const getTaskPriority = useCallback((task: Task): Exclude<TaskPriority, 'all'> => {
@@ -166,6 +179,12 @@ export function useProductivityViewModel() {
     return counts;
   }, [filteredTasks, getTaskPriority]);
 
+  const normalizeDueTime = useCallback((dueStr: string | null | undefined): number => {
+    if (!dueStr) return Number.MAX_SAFE_INTEGER;
+    const d = new Date(dueStr).getTime();
+    return isNaN(d) ? Number.MAX_SAFE_INTEGER : d;
+  }, []);
+
   const prioritizedTasks = useMemo(() => {
     const tasksToRank = filteredTasks.filter((task) => !task.completed);
     const pool =
@@ -173,11 +192,11 @@ export function useProductivityViewModel() {
         ? tasksToRank
         : tasksToRank.filter((task) => getTaskPriority(task) === taskPriority);
     return [...pool].sort((a, b) => {
-      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const aDue = normalizeDueTime(a.due_date);
+      const bDue = normalizeDueTime(b.due_date);
       return aDue - bDue;
     });
-  }, [filteredTasks, getTaskPriority, taskPriority]);
+  }, [filteredTasks, getTaskPriority, normalizeDueTime, taskPriority]);
 
   const mixedData = useMemo(() => {
     const data: RenderItemData[] = [];
@@ -272,15 +291,16 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(t('productivity.todayPlan.overdue', { count: taskPriorityCounts.overdue }) || `1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(t('productivity.todayPlan.noOverdue') || '1) No overdue tasks: start with highest-impact open work.');
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      const titles = nextTasks.map((task) => task.title).join(', ');
+      lines.push(t('productivity.focusBlock.items', { titles }) || `2) Focus block: ${titles}.`);
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(t('productivity.focusBlock.empty') || '2) Focus block: no pending tasks, use this for planning or review.');
     }
 
     if (nextEvents.length > 0) {
@@ -292,14 +312,14 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(t('productivity.calendar.checkpoints', { times: eventLine }) || `3) Calendar checkpoints at ${eventLine}.`);
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(t('productivity.calendar.empty') || '3) Calendar is light: reserve time for deep work and wrap-up.');
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue, t]);
 
   return {
     t,
@@ -329,4 +349,4 @@ export function useProductivityViewModel() {
     fetchNotes,
     fetchTasks,
   };
-}
+};
