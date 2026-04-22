@@ -100,6 +100,7 @@ async def _handle_send_message(
 # WebSocket endpoint
 # ---------------------------------------------------------------------------
 @router.websocket("/ws/chat")
+# DOCS(miru-agent): undocumented endpoint
 async def websocket_chat_hub(
     websocket: WebSocket,
     token: str = Query(..., description="Supabase JWT access token"),
