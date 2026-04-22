@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fastapi.responses import JSONResponse
 
@@ -31,4 +31,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register all exception handlers to the FastAPI app."""
     # We use a cast or ignore type check since Starlette's add_exception_handler is strictly typed
     # for Request vs WebSocket handlers, but a single global handler may be invoked for both
-    app.add_exception_handler(Exception, global_exception_handler)  # type: ignore[arg-type]
+    # pyright ignores don't work cleanly across IDEs and CI so we will cast to Any
+    import typing
+
+    app.add_exception_handler(Exception, typing.cast("Any", global_exception_handler))
