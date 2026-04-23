@@ -40,6 +40,10 @@ class GraphExtractionService:
     @staticmethod
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
+        import openai
+        import pydantic
+        from instructor.core import InstructorRetryException
+
         try:
             from app.infrastructure.external.openrouter import structured_completion
 
@@ -58,6 +62,15 @@ class GraphExtractionService:
                 response_model=GraphExtractionSchema,
                 model="gpt-4o-mini",
             )
+        except openai.OpenAIError as e:
+            logger.warning("Graph extraction LLM failed: %s", e)
+            return None
+        except pydantic.ValidationError as e:
+            logger.warning("Graph extraction validation failed: %s", e)
+            return None
+        except InstructorRetryException as e:
+            logger.warning("Graph extraction Instructor retries failed: %s", e)
+            return None
         except Exception:
             logger.warning("Graph extraction failed", exc_info=True)
             return None
@@ -65,6 +78,8 @@ class GraphExtractionService:
     @staticmethod
     async def process_and_store_graph(text: str, user_id: UUID) -> None:
         """Extract graph elements from text and store them in the database."""
+        from tortoise.exceptions import DBConnectionError, OperationalError
+
         extraction = await GraphExtractionService.extract_graph_from_text(text)
         if not extraction or not extraction.entities:
             return
@@ -110,5 +125,7 @@ class GraphExtractionService:
                         edge.weight = min(1.0, edge.weight + 0.1)
                         await edge.save()
 
+        except (DBConnectionError, OperationalError) as e:
+            logger.warning("Failed to store graph elements due to DB error: %s", e)
         except Exception:
             logger.warning("Failed to store graph elements", exc_info=True)
