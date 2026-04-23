@@ -288,7 +288,11 @@ class AgentService:
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
-        except Exception:
+        except Exception as e:
+            import openai
+            from tortoise.exceptions import DBConnectionError, OperationalError
+            if isinstance(e, (openai.OpenAIError, DBConnectionError, OperationalError)):
+                raise e
             logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
             return
         await self.repo.update_mood(agent_id, mood)

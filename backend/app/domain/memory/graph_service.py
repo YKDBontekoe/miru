@@ -41,6 +41,8 @@ class GraphExtractionService:
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
         import openai
+        import pydantic
+        from instructor.core import InstructorRetryException
 
         try:
             from app.infrastructure.external.openrouter import structured_completion
@@ -62,6 +64,12 @@ class GraphExtractionService:
             )
         except openai.OpenAIError as e:
             logger.warning("Graph extraction LLM failed: %s", e)
+            return None
+        except pydantic.ValidationError as e:
+            logger.warning("Graph extraction validation failed: %s", e)
+            return None
+        except InstructorRetryException as e:
+            logger.warning("Graph extraction Instructor retries failed: %s", e)
             return None
         except Exception:
             logger.warning("Graph extraction failed", exc_info=True)
