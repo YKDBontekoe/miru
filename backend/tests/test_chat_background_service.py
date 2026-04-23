@@ -323,3 +323,31 @@ async def test_update_room_summary_background_settings_exception(
             with patch("app.domain.chat.background_service.logger.info") as mock_logger:
                 await background_service.update_room_summary_background(room_id, history)
                 mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_no_room(
+    background_service: ChatBackgroundService,
+) -> None:
+    room_id = uuid.uuid4()
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+    background_service.chat_repo.get_room = AsyncMock(return_value=None)
+
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        await background_service.update_room_summary_background(room_id, history)
+        mock_structured_completion.assert_not_called()
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_no_chat_repo(
+    background_service: ChatBackgroundService,
+) -> None:
+    room_id = uuid.uuid4()
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+    background_service.chat_repo = None
+
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        await background_service.update_room_summary_background(room_id, history)
+        mock_structured_completion.assert_not_called()

@@ -98,6 +98,74 @@ async def test_process_and_store_graph_db_exception() -> None:
                 await GraphExtractionService.process_and_store_graph("text", uuid.uuid4())
                 mock_logger.assert_called_once()
 
+@pytest.mark.asyncio
+async def test_process_and_store_graph_existing_edge() -> None:
+    from app.domain.memory.graph_service import GraphExtractionSchema, GraphEntity, GraphRelationship
+    with patch.object(
+        GraphExtractionService, "extract_graph_from_text", new_callable=AsyncMock
+    ) as mock_extract:
+        mock_extract.return_value = GraphExtractionSchema(
+            entities=[
+                GraphEntity(name="Alice", entity_type="Person", description="A friend"),
+                GraphEntity(name="Bob", entity_type="Person", description="Another friend"),
+            ],
+            relationships=[GraphRelationship(source="Alice", target="Bob", relationship="KNOWS", weight=0.5)],
+        )
+
+        with patch("app.domain.memory.models.MemoryGraphNode.get_or_create", new_callable=AsyncMock) as mock_node_create:
+            mock_node_create.side_effect = [
+                (MagicMock(), True),
+                (MagicMock(), True),
+            ]
+
+            with patch("app.domain.memory.models.MemoryGraphEdge.get_or_create", new_callable=AsyncMock) as mock_edge_create:
+                mock_edge = MagicMock()
+                mock_edge.weight = 0.5
+                mock_edge_create.return_value = (mock_edge, False)
+
+                await GraphExtractionService.process_and_store_graph("text", uuid.uuid4())
+
+                mock_edge.save.assert_called_once()
+                assert mock_edge.weight == 0.6
+
+@pytest.mark.asyncio
+async def test_process_and_store_graph_existing_node_new_desc() -> None:
+    from app.domain.memory.graph_service import GraphExtractionSchema, GraphEntity
+    with patch.object(
+        GraphExtractionService, "extract_graph_from_text", new_callable=AsyncMock
+    ) as mock_extract:
+        mock_extract.return_value = GraphExtractionSchema(
+            entities=[GraphEntity(name="Alice", entity_type="Person", description="A friend")],
+            relationships=[],
+        )
+
+        with patch("app.domain.memory.models.MemoryGraphNode.get_or_create", new_callable=AsyncMock) as mock_node_create:
+            mock_node = MagicMock()
+            mock_node.description = "Old description"
+            mock_node_create.return_value = (mock_node, False)
+
+            await GraphExtractionService.process_and_store_graph("text", uuid.uuid4())
+
+            mock_node.save.assert_called_once()
+            assert "A friend" in mock_node.description
+
+@pytest.mark.asyncio
+async def test_process_and_store_graph_generic_exception() -> None:
+    from app.domain.memory.graph_service import GraphExtractionSchema, GraphEntity
+    with patch.object(
+        GraphExtractionService, "extract_graph_from_text", new_callable=AsyncMock
+    ) as mock_extract:
+        mock_extract.return_value = GraphExtractionSchema(
+            entities=[GraphEntity(name="Alice", entity_type="Person", description="A friend")],
+            relationships=[],
+        )
+
+        with patch("app.domain.memory.models.MemoryGraphNode.get_or_create", new_callable=AsyncMock) as mock_get_or_create:
+            mock_get_or_create.side_effect = Exception("Generic error")
+            with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
+                await GraphExtractionService.process_and_store_graph("text", uuid.uuid4())
+                mock_logger.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_process_and_store_graph_empty() -> None:
