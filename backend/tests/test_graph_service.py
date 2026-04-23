@@ -41,6 +41,63 @@ async def test_extract_graph_from_text_exception() -> None:
             assert result is None
             mock_logger.assert_called_once()
 
+@pytest.mark.asyncio
+async def test_extract_graph_from_text_openai_exception() -> None:
+    import openai
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured:
+        mock_structured.side_effect = openai.OpenAIError("API error")
+
+        with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
+            result = await GraphExtractionService.extract_graph_from_text("Alice is a friend")
+            assert result is None
+            mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_extract_graph_from_text_validation_exception() -> None:
+    import pydantic
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured:
+        mock_structured.side_effect = pydantic.ValidationError.from_exception_data("error", line_errors=[])
+
+        with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
+            result = await GraphExtractionService.extract_graph_from_text("Alice is a friend")
+            assert result is None
+            mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_extract_graph_from_text_instructor_exception() -> None:
+    from instructor.core import InstructorRetryException
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured:
+        mock_structured.side_effect = InstructorRetryException(Exception("test"), last_completion=None, n_attempts=2, messages=[], total_usage={})
+
+        with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
+            result = await GraphExtractionService.extract_graph_from_text("Alice is a friend")
+            assert result is None
+            mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_process_and_store_graph_db_exception() -> None:
+    from tortoise.exceptions import DBConnectionError
+    from app.domain.memory.graph_service import GraphExtractionSchema, GraphEntity
+    with patch.object(
+        GraphExtractionService, "extract_graph_from_text", new_callable=AsyncMock
+    ) as mock_extract:
+        mock_extract.return_value = GraphExtractionSchema(
+            entities=[GraphEntity(name="Alice", entity_type="Person", description="A friend")],
+            relationships=[],
+        )
+
+        with patch("app.domain.memory.models.MemoryGraphNode.get_or_create", new_callable=AsyncMock) as mock_get_or_create:
+            mock_get_or_create.side_effect = DBConnectionError("DB error")
+            with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
+                await GraphExtractionService.process_and_store_graph("text", uuid.uuid4())
+                mock_logger.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_process_and_store_graph_empty() -> None:

@@ -39,6 +39,30 @@ async def test_update_mood_background_exception(background_service: ChatBackgrou
         await background_service.update_mood_background(agent_id, recent_context)
         mock_logger.assert_called_once()
 
+@pytest.mark.asyncio
+async def test_update_mood_background_openai_exception(background_service: ChatBackgroundService) -> None:
+    import openai
+    agent_id = uuid.uuid4()
+    recent_context = "User: Hello\nAgent: Hi!"
+    background_service.agent_service.update_mood.side_effect = openai.OpenAIError("Failed")  # type: ignore
+
+    # Should not raise
+    with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+        await background_service.update_mood_background(agent_id, recent_context)
+        mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_mood_background_db_exception(background_service: ChatBackgroundService) -> None:
+    from tortoise.exceptions import DBConnectionError
+    agent_id = uuid.uuid4()
+    recent_context = "User: Hello\nAgent: Hi!"
+    background_service.agent_service.update_mood.side_effect = DBConnectionError("Failed")  # type: ignore
+
+    # Should not raise
+    with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+        await background_service.update_mood_background(agent_id, recent_context)
+        mock_logger.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_update_affinity_background_success(
@@ -58,6 +82,20 @@ async def test_update_affinity_background_exception(
     user_id = uuid.uuid4()
     agent_id = uuid.uuid4()
     background_service.agent_repo.upsert_affinity.side_effect = Exception("Failed")  # type: ignore
+
+    # Should not raise
+    with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+        await background_service.update_affinity_background(user_id, agent_id)
+        mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_affinity_background_db_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    from tortoise.exceptions import DBConnectionError
+    user_id = uuid.uuid4()
+    agent_id = uuid.uuid4()
+    background_service.agent_repo.upsert_affinity.side_effect = DBConnectionError("Failed")  # type: ignore
 
     # Should not raise
     with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
@@ -115,6 +153,44 @@ async def test_store_memories_background_exception(
     ):
         mock_embed.side_effect = Exception("Embed failed")
 
+        # Should not raise
+        await background_service.store_memories_background(user_id, room_id, "Hello", [], "", [])
+
+        mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_store_memories_background_openai_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    import openai
+    user_id = uuid.uuid4()
+    room_id = uuid.uuid4()
+
+    with (
+        patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
+        patch("app.domain.chat.background_service.logger.warning") as mock_logger,
+    ):
+        mock_embed.side_effect = openai.OpenAIError("Embed failed")
+
+        # Should not raise
+        await background_service.store_memories_background(user_id, room_id, "Hello", [], "", [])
+
+        mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_store_memories_background_db_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    from tortoise.exceptions import DBConnectionError
+    user_id = uuid.uuid4()
+    room_id = uuid.uuid4()
+
+    with (
+        patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
+        patch("app.domain.chat.background_service.logger.warning") as mock_logger,
+    ):
+        mock_embed.return_value = [0.1]
+        background_service.memory_repo.insert_memory.side_effect = DBConnectionError("db fail")
         # Should not raise
         await background_service.store_memories_background(user_id, room_id, "Hello", [], "", [])
 
@@ -180,3 +256,70 @@ async def test_update_room_summary_background_exception(
         with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
             await background_service.update_room_summary_background(room_id, history)
             mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_openai_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    import openai
+    room_id = uuid.uuid4()
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+
+    mock_room = MagicMock()
+    mock_room.summary = "old summary"
+    background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
+
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        mock_structured_completion.side_effect = openai.OpenAIError("error")
+
+        with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+            await background_service.update_room_summary_background(room_id, history)
+            mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_db_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    from tortoise.exceptions import DBConnectionError
+    room_id = uuid.uuid4()
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+
+    mock_room = MagicMock()
+    mock_room.summary = "old summary"
+    background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
+    background_service.chat_repo.update_room_summary.side_effect = DBConnectionError("error")
+
+    from app.domain.chat.background_service import RoomSummaryResponse
+
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        mock_structured_completion.return_value = RoomSummaryResponse(summary="new updated summary")
+        with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+            await background_service.update_room_summary_background(room_id, history)
+            mock_logger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_room_summary_background_settings_exception(
+    background_service: ChatBackgroundService,
+) -> None:
+    room_id = uuid.uuid4()
+    history = [{"role": "user", "content": "hi"} for _ in range(26)]
+
+    mock_room = MagicMock()
+    mock_room.summary = "old summary"
+    background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
+
+    from app.domain.chat.background_service import RoomSummaryResponse
+
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured_completion:
+        mock_structured_completion.return_value = RoomSummaryResponse(summary="new updated summary")
+        with patch("app.core.config.get_settings") as mock_get_settings:
+            mock_get_settings.side_effect = Exception("settings error")
+            with patch("app.domain.chat.background_service.logger.info") as mock_logger:
+                await background_service.update_room_summary_background(room_id, history)
+                mock_logger.assert_called_once()
