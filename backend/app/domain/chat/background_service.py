@@ -44,15 +44,31 @@ class ChatBackgroundService:
 
     async def update_mood_background(self, agent_id: UUID, recent_context: str) -> None:
         """Infer and persist an agent's mood from the recent conversation turn."""
+        import openai
+        from tortoise.exceptions import DBConnectionError, OperationalError
+
         try:
             await self.agent_service.update_mood(agent_id, recent_context)
+        except openai.OpenAIError as e:
+            logger.warning("Background mood update LLM failed for agent %s: %s", agent_id, e)
+        except (DBConnectionError, OperationalError) as e:
+            logger.warning("Background mood update DB failed for agent %s: %s", agent_id, e)
         except Exception:
             logger.warning("Background mood update failed for agent %s", agent_id, exc_info=True)
 
     async def update_affinity_background(self, user_id: UUID, agent_id: UUID) -> None:
         """Increment the user ↔ agent affinity score after a conversation turn."""
+        from tortoise.exceptions import DBConnectionError, OperationalError
+
         try:
             await self.agent_repo.upsert_affinity(user_id, agent_id)
+        except (DBConnectionError, OperationalError) as e:
+            logger.warning(
+                "Background affinity update DB failed for user=%s agent=%s: %s",
+                user_id,
+                agent_id,
+                e,
+            )
         except Exception:
             logger.warning(
                 "Background affinity update failed for user=%s agent=%s",
@@ -71,6 +87,9 @@ class ChatBackgroundService:
         agent_names: list[str],
     ) -> None:
         """Embed and store the conversation turn as memories for future retrieval."""
+        import openai
+        from tortoise.exceptions import DBConnectionError, OperationalError
+
         from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
         from app.domain.memory.models import Memory
         from app.infrastructure.external.openrouter import embed
@@ -110,6 +129,10 @@ class ChatBackgroundService:
                         meta={"role": "agent", "agent_name": agent_name or ""},
                     )
                 )
+        except openai.OpenAIError as e:
+            logger.warning("Background memory storage embedding failed for room=%s: %s", room_id, e)
+        except (DBConnectionError, OperationalError) as e:
+            logger.warning("Background memory storage DB failed for room=%s: %s", room_id, e)
         except Exception:
             logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
 
@@ -119,6 +142,9 @@ class ChatBackgroundService:
         """Summarize the conversation history and update the room summary."""
         if not self.chat_repo:
             return
+
+        import openai
+        from tortoise.exceptions import DBConnectionError, OperationalError
 
         from app.infrastructure.external.openrouter import structured_completion
 
@@ -183,6 +209,14 @@ class ChatBackgroundService:
                 await self.chat_repo.update_room_summary(room_id, new_summary)
                 logger.info("Successfully updated summary for room %s", room_id)
 
+        except openai.OpenAIError as e:
+            logger.warning(
+                "Background room summary update LLM failed for room %s: %s", room_id, e
+            )
+        except (DBConnectionError, OperationalError) as e:
+            logger.warning(
+                "Background room summary update DB failed for room %s: %s", room_id, e
+            )
         except Exception:
             logger.warning(
                 "Background room summary update failed for room %s", room_id, exc_info=True

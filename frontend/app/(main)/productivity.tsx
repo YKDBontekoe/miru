@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -17,6 +16,7 @@ import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
 import { NoteCard } from '../../src/components/productivity/NoteCard';
+import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
 import { TaskCard } from '../../src/components/productivity/TaskCard';
 import { theme } from '../../src/core/theme';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
@@ -565,86 +565,12 @@ export default function ProductivityScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons
-                name={
-                  activeTab === 'notes'
-                    ? 'document-text'
-                    : activeTab === 'tasks'
-                      ? 'checkbox'
-                      : activeTab === 'today'
-                        ? 'sunny-outline'
-                        : 'planet'
-                }
-                size={42}
-                color={T.primary.DEFAULT}
-              />
-            </View>
-            <AppText variant="h3" style={styles.emptyTitle}>
-              {searchQuery
-                ? t('productivity.no_matches') || 'No matches found'
-                : activeTab === 'notes'
-                  ? t('productivity.no_notes') || 'No Notes'
-                  : activeTab === 'tasks'
-                    ? t('productivity.no_tasks') || 'No Tasks'
-                    : activeTab === 'today'
-                      ? t('productivity.nothing_urgent_today')
-                      : t('productivity.workspace_clear') || 'Your workspace is clear'}
-            </AppText>
-            <AppText style={styles.emptySubtitle}>
-              {searchQuery
-                ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-                : activeTab === 'today'
-                  ? t('productivity.today_empty_detail')
-                  : t('productivity.capture_thoughts') ||
-                    'Capture your thoughts and track what needs to get done.'}
-            </AppText>
-
-            {!searchQuery && (
-              <View style={styles.emptyActions}>
-                {(activeTab === 'all' || activeTab === 'notes') && (
-                  <Pressable
-                    onPress={() => setShowCreateNote(true)}
-                    style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
-                  >
-                    <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
-                    <AppText style={styles.emptyButtonText}>
-                      {t('productivity.newNote') || 'New Note'}
-                    </AppText>
-                  </Pressable>
-                )}
-                {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
-                  <Pressable
-                    onPress={() => setShowCreateTask(true)}
-                    style={({ pressed }) => [
-                      styles.emptyButton,
-                      (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
-                      pressed && { opacity: 0.8 },
-                    ]}
-                  >
-                    <Ionicons
-                      name="add"
-                      size={18}
-                      color={
-                        activeTab === 'all' || activeTab === 'today' ? T.primary.DEFAULT : T.white
-                      }
-                      style={{ marginEnd: 6 }}
-                    />
-                    <AppText
-                      style={
-                        activeTab === 'all' || activeTab === 'today'
-                          ? styles.emptyButtonTextSecondary
-                          : styles.emptyButtonText
-                      }
-                    >
-                      {t('productivity.new_task')}
-                    </AppText>
-                  </Pressable>
-                )}
-              </View>
-            )}
-          </View>
+          <ProductivityEmptyState
+            activeTab={activeTab}
+            searchQuery={searchQuery}
+            setShowCreateNote={setShowCreateNote}
+            setShowCreateTask={setShowCreateTask}
+          />
         }
       />
 
@@ -791,68 +717,5 @@ const styles = StyleSheet.create({
     color: T.onSurface.mutedLight,
     marginTop: 2,
     fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: S.massive,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: S.lg,
-  },
-  emptyTitle: {
-    marginBottom: S.sm,
-    textAlign: 'center',
-    color: T.onSurface.light,
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    marginBottom: S.xl,
-    color: T.onSurface.mutedLight,
-    paddingHorizontal: S.xxxl,
-    lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: S.md,
-  },
-  emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.primary.DEFAULT,
-    borderRadius: R.xl,
-    paddingVertical: S.md,
-    paddingHorizontal: S.xl,
-    ...theme.elevation.md,
-  },
-  emptyButtonSecondary: {
-    backgroundColor: T.primary.surfaceLight,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
-        elevation: 0,
-      },
-      android: {
-        elevation: 0,
-      },
-      default: {
-        elevation: 0,
-      },
-    }),
-  },
-  emptyButtonText: {
-    color: T.white,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  emptyButtonTextSecondary: {
-    color: T.primary.DEFAULT,
-    fontWeight: '700',
-    fontSize: 15,
   },
 });
