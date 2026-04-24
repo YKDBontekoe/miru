@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from app.domain.agents.interfaces.llm import ILLMClient
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
@@ -14,14 +15,13 @@ from app.domain.agents.schemas import (
     AgentUpdate,
     MoodResponse,
 )
-from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.infrastructure.repositories.agent_repo import AgentRepository
+    from app.domain.agents.interfaces.repository import IAgentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,12 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
 
 
 class AgentService:
-    def __init__(self, repo: AgentRepository):
+    def __init__(self, repo: IAgentRepository, llm: ILLMClient):
+        self.llm = llm
+        if self.llm is None:
+            from app.infrastructure.external.llm_client import OpenRouterLLMClient
+
+            self.llm = OpenRouterLLMClient()
         self.repo = repo
         self._cached_capabilities: list[Capability] | None = None
         self._cached_integrations: list[Integration] | None = None
@@ -173,7 +178,7 @@ class AgentService:
             {"role": "user", "content": f"Keywords: {keywords}"},
         ]
 
-        return await structured_completion(
+        return await self.llm.structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
         )
@@ -271,7 +276,7 @@ class AgentService:
             return
         mood_list = ", ".join(self._VALID_MOODS)
         try:
-            response = await structured_completion(
+            response = await self.llm.structured_completion(
                 messages=[
                     {
                         "role": "system",

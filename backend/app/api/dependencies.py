@@ -44,7 +44,9 @@ def get_auth_repo(db: SupabaseClient) -> AuthRepository:
 
 
 def get_agent_service(repo: Annotated[AgentRepository, Depends(get_agent_repo)]) -> AgentService:
-    return AgentService(repo)
+    from app.infrastructure.external.llm_client import OpenRouterLLMClient
+
+    return AgentService(repo, OpenRouterLLMClient())
 
 
 def get_chat_service(

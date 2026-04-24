@@ -33,6 +33,7 @@ from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.infrastructure.database.supabase import get_supabase
+from app.infrastructure.external.llm_client import OpenRouterLLMClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -128,7 +129,7 @@ async def websocket_chat_hub(
             chat_repo=ChatRepository(),
             agent_repo=agent_repo,
             memory_repo=MemoryRepository(),
-            agent_service=AgentService(repo=agent_repo),
+            agent_service=AgentService(repo=agent_repo, llm=OpenRouterLLMClient()),
         )
 
         while True:
