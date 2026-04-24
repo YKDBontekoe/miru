@@ -56,7 +56,7 @@ async def test_update_mood_exception():
     service = AgentService(repo, llm)
     agent_id = str(get_deterministic_uuid())
 
-    llm.structured_completion.side_effect = Exception("API Error")
+    llm.structured_completion.side_effect = ValueError("API Error")
     await service.update_mood(agent_id, "User said something")
     repo.update_mood.assert_not_called()
 

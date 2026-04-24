@@ -292,7 +292,14 @@ class AgentService:
                 mood = "Neutral"
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except ValueError:
+            logger.exception("Mood inference failed for agent %s", agent_id)
+            return
+        except Exception as e:
+            if e.__class__.__name__ in ("APIError", "APIConnectionError", "APITimeoutError"):
+                logger.exception("Mood inference failed for agent %s", agent_id)
+                return
+            raise
             logger.exception("Mood inference failed for agent %s", agent_id)
             return
         await self.repo.update_mood(agent_id, mood)
