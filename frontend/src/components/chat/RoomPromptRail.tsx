@@ -1,7 +1,9 @@
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 interface PromptItem {
   id: string;
@@ -37,16 +39,51 @@ export function RoomPromptRail({
   onContextPress,
 }: RoomPromptRailProps) {
   const { t } = useTranslation();
+  const { C } = useTheme();
+
+  const dynamicStyles = React.useMemo(() => StyleSheet.create({
+    container: {
+      backgroundColor: C.surface,
+      borderColor: C.border,
+    },
+    heading: {
+      color: C.subtext,
+    },
+    editingText: {
+      color: C.primary,
+    },
+    chipDefault: {
+      backgroundColor: C.surfaceHigh,
+      borderColor: C.border,
+    },
+    chipPinned: {
+      backgroundColor: C.primarySurface,
+      borderColor: `${C.primary}55`,
+    },
+    chipTextDefault: {
+      color: C.text,
+    },
+    chipTextPinned: {
+      color: C.primary,
+    },
+    contextChip: {
+      backgroundColor: C.surfaceHigh,
+      borderColor: C.border,
+    },
+    contextText: {
+      color: C.subtext,
+    },
+  }), [C]);
 
   return (
-    <View className="px-3 pb-2">
-      <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
-        <View className="px-3 mb-1.5 flex-row items-center">
-          <AppText variant="caption" className="text-[#5A7467] font-bold flex-1">
+    <View style={styles.wrapper}>
+      <View style={[styles.container, dynamicStyles.container, theme.elevation.sm]}>
+        <View style={styles.headerRow}>
+          <AppText variant="caption" style={[styles.heading, dynamicStyles.heading]}>
             {heading}
           </AppText>
           {isEditing ? (
-            <AppText variant="caption" className="text-[#147D64] font-bold">
+            <AppText variant="caption" style={[styles.editingText, dynamicStyles.editingText]}>
               {t('chat.editing', { defaultValue: 'Editing' })}
             </AppText>
           ) : null}
@@ -55,16 +92,18 @@ export function RoomPromptRail({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
+          contentContainerStyle={styles.scrollContent}
         >
           <Pressable
             onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
+            style={[
+              styles.chip,
+              dynamicStyles.chipPinned,
+              (isStreaming || !canSave) ? styles.chipDisabled : null
+            ]}
             disabled={isStreaming || !canSave}
           >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
+            <AppText style={[styles.chipText, dynamicStyles.chipTextPinned]}>{saveLabel}</AppText>
           </Pressable>
 
           {prompts.map((action) => (
@@ -72,17 +111,18 @@ export function RoomPromptRail({
               key={action.id}
               onPress={() => onPromptPress(action.text)}
               onLongPress={() => onPromptLongPress(action)}
-              className={`mr-2 rounded-full px-3 py-2 border ${
-                action.pinned
-                  ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
-                  : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
-              } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
+              style={[
+                styles.chip,
+                action.pinned ? dynamicStyles.chipPinned : dynamicStyles.chipDefault,
+                isStreaming ? styles.chipDisabledStreaming : null
+              ]}
               disabled={isStreaming}
             >
               <AppText
-                className={`text-xs font-bold ${
-                  action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-                }`}
+                style={[
+                  styles.chipText,
+                  action.pinned ? dynamicStyles.chipTextPinned : dynamicStyles.chipTextDefault
+                ]}
               >
                 {action.pinned ? '★ ' : ''}
                 {action.text}
@@ -95,15 +135,15 @@ export function RoomPromptRail({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
+            contentContainerStyle={styles.contextScrollContent}
           >
             {contextActions.map((value) => (
               <Pressable
                 key={value}
                 onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+                style={[styles.contextChip, dynamicStyles.contextChip]}
               >
-                <AppText variant="caption" className="text-[#5A7467] font-bold">
+                <AppText variant="caption" style={[styles.contextText, dynamicStyles.contextText]}>
                   {value}
                 </AppText>
               </Pressable>
@@ -114,3 +154,62 @@ export function RoomPromptRail({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  wrapper: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  container: {
+    borderRadius: theme.borderRadius.lg + 2,
+    borderWidth: 1,
+    paddingVertical: theme.spacing.sm,
+  },
+  headerRow: {
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.xs + 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  heading: {
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  editingText: {
+    fontWeight: 'bold',
+  },
+  scrollContent: {
+    paddingHorizontal: theme.spacing.md,
+  },
+  chip: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderWidth: 1,
+  },
+  chipDisabled: {
+    opacity: 0.5,
+  },
+  chipDisabledStreaming: {
+    opacity: 0.6,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  contextScrollContent: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+  },
+  contextChip: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.sm + 2,
+    paddingVertical: 7,
+    borderWidth: 1,
+  },
+  contextText: {
+    fontWeight: 'bold',
+  },
+});

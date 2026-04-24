@@ -18,6 +18,10 @@ export interface ThemeColors {
   dangerSurface: string;
   success: string;
   successSurface: string;
+  heroBg: string;
+  heroOnColor: string;
+  heroTint1: string;
+  heroTint2: string;
 }
 
 /**
@@ -49,6 +53,10 @@ export function useTheme(): { isDark: boolean; C: ThemeColors } {
             dangerSurface: '#2D1515',
             success: '#10B981',
             successSurface: '#0D2B21',
+            heroBg: '#242438',
+            heroOnColor: '#EBEBF5',
+            heroTint1: 'rgba(255, 255, 255, 0.03)',
+            heroTint2: 'rgba(255, 255, 255, 0.02)',
           }
         : {
             bg: '#F4F6FF',
@@ -67,6 +75,10 @@ export function useTheme(): { isDark: boolean; C: ThemeColors } {
             dangerSurface: '#FEF2F2',
             success: '#10B981',
             successSurface: '#F0FDF4',
+            heroBg: '#0F3D31',
+            heroOnColor: '#FFFFFF',
+            heroTint1: 'rgba(255, 255, 255, 0.1)',
+            heroTint2: 'rgba(255, 255, 255, 0.05)',
           },
     [isDark]
   );

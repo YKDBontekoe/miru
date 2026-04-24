@@ -1,7 +1,9 @@
 import React from 'react';
-import { Modal, View } from 'react-native';
+import { Modal, View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 export interface ChatActionSheetOption {
   id: string;
@@ -25,19 +27,53 @@ export function ChatActionSheet({
   options,
   onClose,
 }: ChatActionSheetProps) {
+  const { C } = useTheme();
+
+  const dynamicStyles = React.useMemo(() => StyleSheet.create({
+    backdrop: {
+      backgroundColor: C.backdrop,
+    },
+    sheet: {
+      backgroundColor: C.surface,
+    },
+    title: {
+      color: C.text,
+    },
+    subtitle: {
+      color: C.subtext,
+    },
+    optionButton: {
+      backgroundColor: C.surfaceHigh,
+      borderColor: C.border,
+    },
+    optionTextDefault: {
+      color: C.text,
+    },
+    optionTextDestructive: {
+      color: C.danger,
+    },
+    closeButton: {
+      borderColor: C.border,
+      backgroundColor: C.surface,
+    },
+    closeText: {
+      color: C.subtext,
+    },
+  }), [C]);
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/35">
-        <View className="rounded-t-[24px] bg-white p-4 max-h-[70%]">
-          <AppText variant="h3" className="text-[#13251C] mb-1">
+      <View style={[styles.backdrop, dynamicStyles.backdrop]}>
+        <View style={[styles.sheet, dynamicStyles.sheet]}>
+          <AppText variant="h3" style={[styles.title, dynamicStyles.title]}>
             {title}
           </AppText>
           {subtitle ? (
-            <AppText variant="caption" className="text-[#5A7467] mb-3">
+            <AppText variant="caption" style={[styles.subtitle, dynamicStyles.subtitle]}>
               {subtitle}
             </AppText>
           ) : null}
-          <View className="gap-2">
+          <View style={styles.optionsContainer}>
             {options.map((option) => (
               <ScalePressable
                 key={option.id}
@@ -45,23 +81,69 @@ export function ChatActionSheet({
                   onClose();
                   option.onPress();
                 }}
-                className="rounded-xl border border-[#DDE8E0] bg-[#ECF5F0] px-3 py-3"
+                style={[styles.optionButton, dynamicStyles.optionButton]}
               >
                 <AppText
-                  className={`font-semibold ${
-                    option.tone === 'destructive' ? 'text-[#B23A3A]' : 'text-[#13251C]'
-                  }`}
+                  style={[
+                    styles.optionText,
+                    option.tone === 'destructive'
+                      ? dynamicStyles.optionTextDestructive
+                      : dynamicStyles.optionTextDefault,
+                  ]}
                 >
                   {option.label}
                 </AppText>
               </ScalePressable>
             ))}
           </View>
-          <ScalePressable onPress={onClose} className="rounded-xl px-3 py-3 mt-3 border border-[#DDE8E0]">
-            <AppText className="text-[#5A7467] font-semibold text-center">Close</AppText>
+          <ScalePressable onPress={onClose} style={[styles.closeButton, dynamicStyles.closeButton]}>
+            <AppText style={[styles.closeText, dynamicStyles.closeText]}>Close</AppText>
           </ScalePressable>
         </View>
       </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    borderTopLeftRadius: theme.borderRadius.xl + 4,
+    borderTopRightRadius: theme.borderRadius.xl + 4,
+    padding: theme.spacing.lg,
+    maxHeight: '70%',
+  },
+  title: {
+    marginBottom: theme.spacing.xs,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    marginBottom: theme.spacing.md,
+  },
+  optionsContainer: {
+    gap: theme.spacing.sm,
+  },
+  optionButton: {
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+  },
+  optionText: {
+    fontWeight: '600',
+  },
+  closeButton: {
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    borderWidth: 1,
+  },
+  closeText: {
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
