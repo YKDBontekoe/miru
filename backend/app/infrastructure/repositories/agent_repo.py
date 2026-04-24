@@ -117,13 +117,18 @@ class AgentRepository:
     )
 
     async def upsert_affinity(
-        self, user_id: UUID, agent_id: UUID, score_delta: float = 1.0
+        self, user_id: UUID | str, agent_id: UUID | str, score_delta: float = 1.0
     ) -> None:
         """Increment affinity score, unlock milestones, and update trust level.
 
         The entire read-modify-write is wrapped in a transaction with a row-level
         lock (``select_for_update``) to prevent concurrent increments from racing.
         """
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+
         async with in_transaction():
             affinity = await UserAgentAffinity.select_for_update().get_or_none(
                 user_id=user_id, agent_id=agent_id

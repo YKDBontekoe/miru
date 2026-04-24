@@ -25,19 +25,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
-from app.domain.agents.service import AgentService
+from app.api.dependencies import get_chat_service
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.infrastructure.database.supabase import get_supabase
-from app.infrastructure.external.llm_client import OpenRouterLLMClient
-from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
-from app.infrastructure.repositories.chat_repo import ChatRepository
-from app.infrastructure.repositories.memory_repo import MemoryRepository
 from app.infrastructure.websocket.manager import chat_hub
 
 router = APIRouter(tags=["WebSocket"])
@@ -103,6 +100,7 @@ async def _handle_send_message(
 @router.websocket("/ws/chat")
 async def websocket_chat_hub(
     websocket: WebSocket,
+    service: Annotated[ChatService, Depends(get_chat_service)],
     token: str = Query(..., description="Supabase JWT access token"),
     lang: str | None = Query(
         None, description="Preferred language", pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$"
@@ -123,14 +121,6 @@ async def websocket_chat_hub(
 
         await chat_hub.connect(websocket, user_id)
         await chat_hub.send_to_user(user_id, {"type": "connected", "user_id": str(user_id)})
-
-        agent_repo = AgentRepository()
-        service = ChatService(
-            chat_repo=ChatRepository(),
-            agent_repo=agent_repo,
-            memory_repo=MemoryRepository(),
-            agent_service=AgentService(repo=agent_repo, llm=OpenRouterLLMClient()),
-        )
 
         while True:
             raw = await websocket.receive_text()

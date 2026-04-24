@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -58,12 +59,8 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
 
 
 class AgentService:
-    def __init__(self, repo: IAgentRepository, llm: ILLMClient):
+    def __init__(self, repo: IAgentRepository, llm: ILLMClient) -> None:
         self.llm = llm
-        if self.llm is None:
-            from app.infrastructure.external.llm_client import OpenRouterLLMClient
-
-            self.llm = OpenRouterLLMClient()
         self.repo = repo
         self._cached_capabilities: list[Capability] | None = None
         self._cached_integrations: list[Integration] | None = None
@@ -293,7 +290,9 @@ class AgentService:
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
+        except asyncio.CancelledError:
+            raise
         except Exception:
-            logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
+            logger.exception("Mood inference failed for agent %s", agent_id)
             return
         await self.repo.update_mood(agent_id, mood)

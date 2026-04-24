@@ -11,6 +11,7 @@ from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
 from app.infrastructure.database.supabase import SupabaseClient
+from app.infrastructure.external.llm_client import OpenRouterLLMClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -44,7 +45,6 @@ def get_auth_repo(db: SupabaseClient) -> AuthRepository:
 
 
 def get_agent_service(repo: Annotated[AgentRepository, Depends(get_agent_repo)]) -> AgentService:
-    from app.infrastructure.external.llm_client import OpenRouterLLMClient
 
     return AgentService(repo, OpenRouterLLMClient())
 
