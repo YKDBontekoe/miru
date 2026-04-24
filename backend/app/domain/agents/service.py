@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+from app.domain.agents.interfaces.llm import ILLMClient
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
@@ -14,14 +16,13 @@ from app.domain.agents.schemas import (
     AgentUpdate,
     MoodResponse,
 )
-from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.infrastructure.repositories.agent_repo import AgentRepository
+    from app.domain.agents.interfaces.repository import IAgentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,8 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
 
 
 class AgentService:
-    def __init__(self, repo: AgentRepository):
+    def __init__(self, repo: IAgentRepository, llm: ILLMClient) -> None:
+        self.llm = llm
         self.repo = repo
         self._cached_capabilities: list[Capability] | None = None
         self._cached_integrations: list[Integration] | None = None
@@ -173,7 +175,7 @@ class AgentService:
             {"role": "user", "content": f"Keywords: {keywords}"},
         ]
 
-        return await structured_completion(
+        return await self.llm.structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
         )
@@ -271,7 +273,7 @@ class AgentService:
             return
         mood_list = ", ".join(self._VALID_MOODS)
         try:
-            response = await structured_completion(
+            response = await self.llm.structured_completion(
                 messages=[
                     {
                         "role": "system",
@@ -288,7 +290,16 @@ class AgentService:
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
-        except Exception:
-            logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
+        except asyncio.CancelledError:
+            raise
+        except ValueError:
+            logger.exception("Mood inference failed for agent %s", agent_id)
+            return
+        except Exception as e:
+            if e.__class__.__name__ in ("APIError", "APIConnectionError", "APITimeoutError"):
+                logger.exception("Mood inference failed for agent %s", agent_id)
+                return
+            raise
+            logger.exception("Mood inference failed for agent %s", agent_id)
             return
         await self.repo.update_mood(agent_id, mood)

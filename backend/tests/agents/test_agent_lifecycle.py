@@ -19,10 +19,16 @@ def get_deterministic_uuid() -> uuid.UUID:
     return uuid.UUID(f"00000000-0000-0000-0000-{_uuid_counter:012d}")
 
 
+@pytest.fixture
+def mock_llm_client() -> AsyncMock:
+    """Fixture providing an AsyncMock for the ILLMClient."""
+    return AsyncMock()
+
+
 @pytest.mark.asyncio
-async def test_create_agent_with_relations():
+async def test_create_agent_with_relations(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     await Capability.create(id="web_search", name="Web Search", description="desc", icon="icon")
     await Integration.create(
@@ -41,9 +47,9 @@ async def test_create_agent_with_relations():
 
 
 @pytest.mark.asyncio
-async def test_update_agent_success():
+async def test_update_agent_success(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     await Capability.create(id="web_search2", name="Web Search", description="desc", icon="icon")
     await Capability.create(id="memory", name="Memory", description="desc", icon="icon")
@@ -74,9 +80,9 @@ async def test_update_agent_success():
 
 
 @pytest.mark.asyncio
-async def test_update_agent_not_found():
+async def test_update_agent_not_found(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     update_data = AgentUpdate(name="Non-existent")
     response = await service.update_agent(str(get_deterministic_uuid()), user_id, update_data)
@@ -84,9 +90,9 @@ async def test_update_agent_not_found():
 
 
 @pytest.mark.asyncio
-async def test_update_agent_wrong_user():
+async def test_update_agent_wrong_user(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     wrong_user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="Test Agent", personality="Helpful")
@@ -97,9 +103,9 @@ async def test_update_agent_wrong_user():
 
 
 @pytest.mark.asyncio
-async def test_delete_agent():
+async def test_delete_agent(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="Agent To Delete", personality="Helpful")
     initial_agent = await service.create_agent(agent_data, user_id)
@@ -108,18 +114,18 @@ async def test_delete_agent():
 
 
 @pytest.mark.asyncio
-async def test_delete_agent_not_found():
+async def test_delete_agent_not_found(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     result = await service.delete_agent(str(get_deterministic_uuid()), user_id)
     assert result is False
 
 
 @pytest.mark.asyncio
-async def test_delete_agent_wrong_user():
+async def test_delete_agent_wrong_user(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     wrong_user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="Agent To Delete", personality="Helpful")
@@ -129,9 +135,9 @@ async def test_delete_agent_wrong_user():
 
 
 @pytest.mark.asyncio
-async def test_list_templates():
+async def test_list_templates(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     await AgentTemplate.create(
         id=get_deterministic_uuid(),
         name="Template 1",
@@ -144,9 +150,9 @@ async def test_list_templates():
 
 
 @pytest.mark.asyncio
-async def test_update_agent_no_capabilities_update():
+async def test_update_agent_no_capabilities_update(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     await Capability.create(id="web_search3", name="Web Search", description="desc", icon="icon")
     agent_data = AgentCreate(name="Test Agent", personality="Helpful", capabilities=["web_search3"])
@@ -158,9 +164,9 @@ async def test_update_agent_no_capabilities_update():
 
 
 @pytest.mark.asyncio
-async def test_update_agent_repo_returns_none():
+async def test_update_agent_repo_returns_none(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="Test Agent", personality="Helpful")
     initial_agent = await service.create_agent(agent_data, user_id)
@@ -172,9 +178,9 @@ async def test_update_agent_repo_returns_none():
 
 
 @pytest.mark.asyncio
-async def test_list_agents():
+async def test_list_agents(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     await service.create_agent(AgentCreate(name="Agent 1", personality="P1"), user_id)
     await service.create_agent(AgentCreate(name="Agent 2", personality="P2"), user_id)
@@ -183,9 +189,9 @@ async def test_list_agents():
 
 
 @pytest.mark.asyncio
-async def test_create_agent_chaos_db_error():
+async def test_create_agent_chaos_db_error(mock_llm_client: AsyncMock):
     repo = AgentRepository()
-    service = AgentService(repo)
+    service = AgentService(repo, mock_llm_client)
     user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="DB Error Agent", personality="Helpful")
     with patch("app.domain.agents.models.Agent.create", new_callable=AsyncMock) as mock_create:
