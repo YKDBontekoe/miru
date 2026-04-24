@@ -66,7 +66,7 @@ export function RoomPromptRail({
   const renderContextAction = useCallback(
     ({ item: value }: { item: string }) => (
       <Pressable
-        onPress={() => onContextPress && onContextPress(value)}
+        onPress={() => onContextPress?.(value)}
         className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
       >
         <AppText variant="caption" className="text-[#5A7467] font-bold">
@@ -118,7 +118,7 @@ export function RoomPromptRail({
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="px-3 pt-2"
             data={contextActions}
-            keyExtractor={(item) => item}
+            keyExtractor={(item, index) => `${item}-${index}`}
             renderItem={renderContextAction}
           />
         ) : null}

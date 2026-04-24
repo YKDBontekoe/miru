@@ -58,7 +58,7 @@ export function ChatListHeader({
 
   const renderAgentItem = React.useCallback(
     ({ item }: { item: Agent }) => (
-      <View style={{ marginRight: 8 }}>
+      <View className="me-2">
         <AgentPill
           agent={item}
           onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
