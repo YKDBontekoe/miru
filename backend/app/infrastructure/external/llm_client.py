@@ -10,7 +10,9 @@ from app.infrastructure.external.openrouter import (
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
-T = TypeVar("T")
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class OpenRouterLLMClient(ILLMClient):
