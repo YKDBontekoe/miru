@@ -28,7 +28,7 @@ export const ChatRoomHeader = ({
   const { t } = useTranslation();
   const { C } = useTheme();
 
-  const dynamicStyles = StyleSheet.create({
+  const dynamicStyles = React.useMemo(() => StyleSheet.create({
     container: {
       backgroundColor: C.surface,
       borderColor: C.border,
@@ -60,7 +60,7 @@ export const ChatRoomHeader = ({
     agentAvatarOutline: {
       borderColor: C.surface,
     },
-  });
+  }), [C]);
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>

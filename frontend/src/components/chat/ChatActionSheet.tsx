@@ -29,7 +29,7 @@ export function ChatActionSheet({
 }: ChatActionSheetProps) {
   const { C } = useTheme();
 
-  const dynamicStyles = StyleSheet.create({
+  const dynamicStyles = React.useMemo(() => StyleSheet.create({
     backdrop: {
       backgroundColor: C.backdrop,
     },
@@ -59,7 +59,7 @@ export function ChatActionSheet({
     closeText: {
       color: C.subtext,
     },
-  });
+  }), [C]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

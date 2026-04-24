@@ -41,7 +41,7 @@ export function RoomPromptRail({
   const { t } = useTranslation();
   const { C } = useTheme();
 
-  const dynamicStyles = StyleSheet.create({
+  const dynamicStyles = React.useMemo(() => StyleSheet.create({
     container: {
       backgroundColor: C.surface,
       borderColor: C.border,
@@ -73,7 +73,7 @@ export function RoomPromptRail({
     contextText: {
       color: C.subtext,
     },
-  });
+  }), [C]);
 
   return (
     <View style={styles.wrapper}>

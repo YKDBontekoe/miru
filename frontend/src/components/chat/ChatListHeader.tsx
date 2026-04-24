@@ -55,15 +55,15 @@ export function ChatListHeader({
     return () => clearTimeout(timer);
   }, [localQuery, onChangeQuery]);
 
-  const dynamicStyles = StyleSheet.create({
+  const dynamicStyles = React.useMemo(() => StyleSheet.create({
     heroContainer: {
-      backgroundColor: isDark ? C.surfaceHigh : '#0F3D31',
+      backgroundColor: C.heroBg,
     },
     heroSubtitle: {
       color: isDark ? C.muted : 'rgba(255,255,255,0.8)',
     },
     heroTitle: {
-      color: isDark ? C.text : '#FFF',
+      color: C.heroOnColor,
     },
     sectionCard: {
       backgroundColor: C.surface,
@@ -96,13 +96,13 @@ export function ChatListHeader({
     sectionSubtitle: {
       color: C.subtext,
     },
-  });
+  }), [C, isDark]);
 
   return (
     <>
       <View style={[styles.heroContainer, dynamicStyles.heroContainer, theme.elevation.sm]}>
-        <View style={[styles.heroCircle1, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.1)' }]} />
-        <View style={[styles.heroCircle2, { backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)' }]} />
+        <View style={[styles.heroCircle1, { backgroundColor: C.heroTint1 }]} />
+        <View style={[styles.heroCircle2, { backgroundColor: C.heroTint2 }]} />
         <AppText variant="caption" style={[styles.heroSubtitle, dynamicStyles.heroSubtitle]}>
           {t('chat.title', 'Miru')}
         </AppText>
@@ -243,7 +243,7 @@ export function ChatListHeader({
 
 const styles = StyleSheet.create({
   heroContainer: {
-    borderRadius: theme.borderRadius.xl + 4, // 28
+    borderRadius: theme.borderRadius.xl + 4, // 24
     padding: theme.spacing.lg + 2, // 18
     marginBottom: theme.spacing.md + 2, // 14
     overflow: 'hidden',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.none + 2,
+    marginTop: theme.spacing.xxs,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

@@ -68,7 +68,7 @@ export const RoomCard = React.memo(
       ' '
     );
 
-    const dynamicStyles = StyleSheet.create({
+    const dynamicStyles = React.useMemo(() => StyleSheet.create({
       card: {
         backgroundColor: C.surface,
         borderColor: unread ? `${C.primary}73` : C.border,
@@ -98,7 +98,7 @@ export const RoomCard = React.memo(
       pinButton: {
         backgroundColor: C.primarySurface,
       },
-    });
+    }), [C, unread]);
 
     return (
       <ScalePressable
