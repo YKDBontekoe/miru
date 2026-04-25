@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import typing
+from collections import OrderedDict
 from typing import TYPE_CHECKING, TypeVar
 
 import openai
@@ -27,6 +29,45 @@ class ChatResponse(BaseModel):
     message: str
 
 
+class LRUCache:
+    """A simple dictionary-based LRU cache for async methods.
+
+    This cache limits its size and ejects the least recently used entry
+    when maxsize is exceeded.
+    """
+
+    def __init__(self, maxsize: int = 100):
+        self.cache: OrderedDict[str, typing.Any] = OrderedDict()
+        self.maxsize = maxsize
+
+    def get(self, key: str) -> typing.Any | None:
+        """Retrieve an item from the cache.
+
+        Args:
+            key: The key used to identify the cached value.
+
+        Returns:
+            The cached value if present, or None.
+        """
+        if key in self.cache:
+            self.cache.move_to_end(key)
+            return self.cache[key]
+        return None
+
+    def set(self, key: str, value: typing.Any) -> None:
+        """Store an item in the cache.
+
+        Args:
+            key: The key to associate with the value.
+            value: The value to store.
+        """
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        self.cache[key] = value
+        if len(self.cache) > self.maxsize:
+            self.cache.popitem(last=False)
+
+
 class OpenRouterClient:
     def __init__(self, api_key: str):
         # We defer imports to bypass Python 3.13 circular import bugs at startup
@@ -45,6 +86,9 @@ class OpenRouterClient:
             self.openai_client,
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
+        # Initialize an LRU cache for semantic deduplication (e.g. embeddings)
+        self._embed_cache = LRUCache(maxsize=100)
+        self._embed_inflight: dict[str, asyncio.Future] = {}
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
         # Internally enforce strict JSON structured output even for generic strings
@@ -65,12 +109,34 @@ class OpenRouterClient:
         reraise=True,
     )
     async def embed(self, text: str, model: str) -> list[float]:
-        response = await self.openai_client.embeddings.create(
-            model=model,
-            input=text,
-            encoding_format="float",
-        )
-        return response.data[0].embedding
+        text_digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        cache_key = f"{model}:{text_digest}"
+
+        cached_val = self._embed_cache.get(cache_key)
+        if cached_val is not None:
+            return typing.cast("list[float]", cached_val)
+
+        if cache_key in self._embed_inflight:
+            return await self._embed_inflight[cache_key]
+
+        future: asyncio.Future = asyncio.Future()
+        self._embed_inflight[cache_key] = future
+
+        try:
+            response = await self.openai_client.embeddings.create(
+                model=model,
+                input=text,
+                encoding_format="float",
+            )
+            embedding = response.data[0].embedding
+            self._embed_cache.set(cache_key, embedding)
+            future.set_result(embedding)
+            return embedding
+        except Exception as e:
+            future.set_exception(e)
+            raise
+        finally:
+            self._embed_inflight.pop(cache_key, None)
 
     @retry(
         stop=stop_after_attempt(3),
