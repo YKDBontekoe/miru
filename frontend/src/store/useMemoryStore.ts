@@ -18,6 +18,12 @@ interface MemoryState {
  *
  * State includes:
  * - `memories`: List of loaded Memory entities.
+ * - `isLoading`: Boolean flag indicating if memories are currently being fetched.
+ * - `error`: String containing any error message from the last operation, or null if successful.
+ *
+ * Side effects:
+ * - `fetchMemories`: Calls the backend API to retrieve memories.
+ * - `deleteMemory`: Calls the backend API to delete a memory and performs an optimistic update, rolling back on failure.
  *
  * It provides optimistic updates for deletion to ensure the UI
  * responds instantly while the server request completes in the background.

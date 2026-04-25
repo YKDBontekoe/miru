@@ -63,10 +63,11 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 ### 1. Jules
 
+// DOCS(miru-agent): prompt mismatch
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
-- Triggered automatically on every issue labeled event and only proceeds when the label equals `jules-fix-pending` (label checked in the job-level filter).
+- Triggered automatically on an issue labeled event if the label is `jules-fix-pending`.
 - Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
@@ -75,10 +76,11 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 ### 2. CodeRabbit
 
+// DOCS(miru-agent): prompt mismatch
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
-- Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
+- Retries automatically every 30 minutes unconditionally for all PRs via a queue processor if rate-limited (label `coderabbit:queued`).
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 
 ## Project Structure
@@ -118,6 +120,7 @@ backend/
         models.py    # Task, Note, CalendarEvent Tortoise ORM models
         schemas.py   # Task, Note, CalendarEvent Pydantic schemas
         entities.py  # Pure python domain entities
+        dependencies.py # FastAPI dependencies
         interfaces/  # Interface boundaries for dependencies
         use_cases/   # Application logic orchestrating productivity domain
       agent_tools/

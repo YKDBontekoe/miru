@@ -34,6 +34,11 @@ const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL || FALLBACK_URL;
  * - `isOnboardingComplete`: Whether the user has completed the initial app tour.
  * - `baseUrl`: The target backend API URL.
  * - `language`: The user's preferred language code.
+ * - `appearanceMode`: The user's preferred appearance mode (system, light, dark).
+ * - `notifications`: Settings for push notifications (longRunningTasks, dailySummary, mentions).
+ *
+ * Side effects:
+ * - Automatically persists state changes to `miru-app-storage` using `SecureLocalStorage`.
  */
 export const useAppStore = create<AppState>()(
   persist(
