@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -24,6 +24,20 @@ export interface ProductivityTabsProps {
   onTabChange: (tab: Tab) => void;
 }
 
+const TAB_LABELS: Record<Tab, string> = {
+  today: 'productivity.today',
+  all: 'productivity.all',
+  notes: 'productivity.notes',
+  tasks: 'productivity.tasks',
+};
+
+const TAB_FALLBACKS: Record<Tab, string> = {
+  today: 'Today',
+  all: 'All',
+  notes: 'Notes',
+  tasks: 'Tasks',
+};
+
 /**
  * Tabs component for the Productivity screen.
  * Allows switching between 'today', 'all', 'notes', and 'tasks' views.
@@ -36,6 +50,8 @@ export const ProductivityTabs: React.FC<ProductivityTabsProps> = ({ activeTab, o
       {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
         <Pressable
           key={tab}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === tab }}
           onPress={() => onTabChange(tab)}
           style={({ pressed }) => [
             styles.tabButton,
@@ -44,13 +60,7 @@ export const ProductivityTabs: React.FC<ProductivityTabsProps> = ({ activeTab, o
           ]}
         >
           <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-            {tab === 'today'
-              ? t('productivity.today') || 'Today'
-              : tab === 'all'
-                ? t('productivity.all') || 'All'
-                : tab === 'notes'
-                  ? t('productivity.notes') || 'Notes'
-                  : t('productivity.tasks') || 'Tasks'}
+            {t(TAB_LABELS[tab]) || TAB_FALLBACKS[tab]}
           </AppText>
         </Pressable>
       ))}

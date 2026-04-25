@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -62,6 +62,8 @@ export const ProductivityFilters: React.FC<ProductivityFiltersProps> = ({
       ).map((option) => (
         <Pressable
           key={option.key}
+          accessibilityRole="button"
+          accessibilityState={{ selected: taskPriority === option.key }}
           onPress={() => onPriorityChange(option.key)}
           style={({ pressed }) => [
             styles.filterButton,

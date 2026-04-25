@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -47,6 +47,20 @@ export const ProductivityHeader: React.FC<ProductivityHeaderProps> = ({
   onOpenCreateTask,
 }) => {
   const { t } = useTranslation();
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (localSearch !== searchQuery) {
+        onSearchChange(localSearch);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [localSearch, onSearchChange, searchQuery]);
 
   return (
     <View style={styles.headerContainer}>
@@ -65,18 +79,24 @@ export const ProductivityHeader: React.FC<ProductivityHeaderProps> = ({
 
         <View style={styles.headerActions}>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.generatePlan') || 'Generate plan'}
             onPress={onGeneratePlan}
             style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.newNote') || 'New note'}
             onPress={onOpenCreateNote}
             style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.new_task') || 'New task'}
             onPress={onOpenCreateTask}
             style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
           >
@@ -93,8 +113,8 @@ export const ProductivityHeader: React.FC<ProductivityHeaderProps> = ({
           style={styles.searchIcon}
         />
         <TextInput
-          value={searchQuery}
-          onChangeText={onSearchChange}
+          value={localSearch}
+          onChangeText={setLocalSearch}
           placeholder={t('productivity.search') || 'Search notes & tasks...'}
           placeholderTextColor={T.onSurface.disabledLight}
           style={styles.searchInput}

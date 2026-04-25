@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Pressable, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { Tab } from './ProductivityTabs';
 
@@ -28,6 +28,39 @@ export interface ProductivityEmptyStateProps {
   onOpenCreateTask: () => void;
 }
 
+const getIconName = (activeTab: Tab) => {
+  switch (activeTab) {
+    case 'notes':
+      return 'document-text';
+    case 'tasks':
+      return 'checkbox';
+    case 'today':
+      return 'sunny-outline';
+    default:
+      return 'planet';
+  }
+};
+
+const getTitle = (activeTab: Tab, searchQuery: string, t: (key: string) => string) => {
+  if (searchQuery) return t('productivity.no_matches') || 'No matches found';
+  switch (activeTab) {
+    case 'notes':
+      return t('productivity.no_notes') || 'No Notes';
+    case 'tasks':
+      return t('productivity.no_tasks') || 'No Tasks';
+    case 'today':
+      return t('productivity.nothing_urgent_today') || 'Nothing urgent today';
+    default:
+      return t('productivity.workspace_clear') || 'Your workspace is clear';
+  }
+};
+
+const getSubtitle = (activeTab: Tab, searchQuery: string, t: (key: string) => string) => {
+  if (searchQuery) return t('productivity.try_adjust_search') || 'Try adjusting your search terms.';
+  if (activeTab === 'today') return t('productivity.today_empty_detail') || 'Enjoy your free time.';
+  return t('productivity.capture_thoughts') || 'Capture your thoughts and track what needs to get done.';
+};
+
 /**
  * Empty state component for the Productivity screen.
  * Displays appropriate icon, title, subtitle, and action buttons based on current tab and search context.
@@ -40,47 +73,28 @@ export const ProductivityEmptyState: React.FC<ProductivityEmptyStateProps> = ({
 }) => {
   const { t } = useTranslation();
 
+  const iconName = getIconName(activeTab);
+  const titleText = getTitle(activeTab, searchQuery, t);
+  const subtitleText = getSubtitle(activeTab, searchQuery, t);
+
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
-        <Ionicons
-          name={
-            activeTab === 'notes'
-              ? 'document-text'
-              : activeTab === 'tasks'
-                ? 'checkbox'
-                : activeTab === 'today'
-                  ? 'sunny-outline'
-                  : 'planet'
-          }
-          size={42}
-          color={T.primary.DEFAULT}
-        />
+        <Ionicons name={iconName} size={42} color={T.primary.DEFAULT} />
       </View>
       <AppText variant="h3" style={styles.emptyTitle}>
-        {searchQuery
-          ? t('productivity.no_matches') || 'No matches found'
-          : activeTab === 'notes'
-            ? t('productivity.no_notes') || 'No Notes'
-            : activeTab === 'tasks'
-              ? t('productivity.no_tasks') || 'No Tasks'
-              : activeTab === 'today'
-                ? t('productivity.nothing_urgent_today') || 'Nothing urgent today'
-                : t('productivity.workspace_clear') || 'Your workspace is clear'}
+        {titleText}
       </AppText>
       <AppText style={styles.emptySubtitle}>
-        {searchQuery
-          ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-          : activeTab === 'today'
-            ? t('productivity.today_empty_detail') || 'Enjoy your free time.'
-            : t('productivity.capture_thoughts') ||
-              'Capture your thoughts and track what needs to get done.'}
+        {subtitleText}
       </AppText>
 
       {!searchQuery && (
         <View style={styles.emptyActions}>
           {(activeTab === 'all' || activeTab === 'notes') && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('productivity.newNote') || 'New Note'}
               onPress={onOpenCreateNote}
               style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
             >
@@ -92,6 +106,8 @@ export const ProductivityEmptyState: React.FC<ProductivityEmptyStateProps> = ({
           )}
           {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('productivity.new_task') || 'New Task'}
               onPress={onOpenCreateTask}
               style={({ pressed }) => [
                 styles.emptyButton,
@@ -163,18 +179,8 @@ const styles = StyleSheet.create({
   },
   emptyButtonSecondary: {
     backgroundColor: T.primary.surfaceLight,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
-        elevation: 0,
-      },
-      android: {
-        elevation: 0,
-      },
-      default: {
-        elevation: 0,
-      },
-    }),
+    elevation: 0,
+    shadowOpacity: 0,
   },
   emptyButtonText: {
     color: T.white,

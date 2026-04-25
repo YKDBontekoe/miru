@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -32,7 +32,13 @@ export const TodayPlanWidget: React.FC<TodayPlanWidgetProps> = ({ todayPlan, onD
     <View style={styles.container}>
       <View style={styles.header}>
         <AppText style={styles.title}>Today plan</AppText>
-        <Pressable onPress={onDismiss}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          accessible={true}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          onPress={onDismiss}
+        >
           <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
         </Pressable>
       </View>
