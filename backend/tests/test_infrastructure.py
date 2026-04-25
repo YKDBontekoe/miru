@@ -111,6 +111,7 @@ async def test_client_embed() -> None:
 
     client = OpenRouterClient.__new__(OpenRouterClient)
     client._embed_cache = LRUCache()
+    client._embed_inflight = {}
     mock_openai = AsyncMock()
     embedding_data = MagicMock()
     embedding_data.embedding = [0.5, 0.6]
@@ -119,8 +120,13 @@ async def test_client_embed() -> None:
     mock_openai.embeddings.create = AsyncMock(return_value=mock_response)
     client.openai_client = mock_openai
 
-    result = await client.embed("text", "model")
-    assert result == [0.5, 0.6]
+    result1 = await client.embed("text", "model")
+    assert result1 == [0.5, 0.6]
+
+    result2 = await client.embed("text", "model")
+    assert result2 == [0.5, 0.6]
+
+    mock_openai.embeddings.create.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

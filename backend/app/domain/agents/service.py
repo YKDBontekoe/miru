@@ -89,17 +89,23 @@ class AgentService:
         capability_ids: list[str] | None = None,
     ) -> str:
         """Build a rich system prompt from agent profile fields."""
-        description_section = f"\n{description}" if description else ""
+        # Sanitize personality and description to prevent newline injection
+        safe_personality = personality.replace("\n", " ")
+        safe_description = description.replace("\n", " ") if description else ""
+        description_section = f"\n{safe_description}" if safe_description else ""
 
         goals_section = ""
         if goals:
-            goal_list = "\n".join(f"- {g}" for g in goals)
+            # Sanitize each goal string
+            safe_goals = [g.replace("\n", " ") for g in goals]
+            goal_list = "\n".join(f"- {g}" for g in safe_goals)
             goals_section = f"\nYour Goals:\n{goal_list}"
 
         capabilities_section = ""
         if capability_ids:
             all_caps = await self.list_capabilities()
-            cap_names = [c.name for c in all_caps if c.id in capability_ids]
+            # Sanitize capability names
+            cap_names = [c.name.replace("\n", " ") for c in all_caps if c.id in capability_ids]
             cap_list = ", ".join(cap_names)
             capabilities_section = (
                 f"\nYou have access to the following tools: {cap_list}. "
@@ -108,8 +114,8 @@ class AgentService:
             )
 
         return AGENT_SYSTEM_PROMPT_TEMPLATE.format(
-            name=name,
-            personality=personality,
+            name=name.replace("\n", " "),
+            personality=safe_personality,
             description_section=description_section,
             goals_section=goals_section,
             capabilities_section=capabilities_section,
