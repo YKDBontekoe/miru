@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.prompts import AGENT_SYSTEM_PROMPT_TEMPLATE
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -88,30 +89,31 @@ class AgentService:
         capability_ids: list[str] | None = None,
     ) -> str:
         """Build a rich system prompt from agent profile fields."""
-        sections = [
-            f"You are {name}.",
-            (
-                "Respond naturally and concisely like a real person in a chat. "
-                "Never introduce yourself, announce your capabilities, or explain what you can do "
-                "unless the user specifically asks. Just answer helpfully and directly."
-            ),
-        ]
-        if description:
-            sections.append(description)
-        sections.append(f"\nPersonality & Behavior:\n{personality}")
+        description_section = f"\n{description}" if description else ""
+
+        goals_section = ""
         if goals:
             goal_list = "\n".join(f"- {g}" for g in goals)
-            sections.append(f"\nYour Goals:\n{goal_list}")
+            goals_section = f"\nYour Goals:\n{goal_list}"
+
+        capabilities_section = ""
         if capability_ids:
             all_caps = await self.list_capabilities()
             cap_names = [c.name for c in all_caps if c.id in capability_ids]
             cap_list = ", ".join(cap_names)
-            sections.append(
+            capabilities_section = (
                 f"\nYou have access to the following tools: {cap_list}. "
                 "Use them proactively when the user's request calls for it, "
                 "but do not mention or advertise them."
             )
-        return "\n".join(sections)
+
+        return AGENT_SYSTEM_PROMPT_TEMPLATE.format(
+            name=name,
+            personality=personality,
+            description_section=description_section,
+            goals_section=goals_section,
+            capabilities_section=capabilities_section,
+        )
 
     async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
         """Onboard a new agent with a built system prompt."""

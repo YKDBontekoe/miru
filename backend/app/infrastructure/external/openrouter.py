@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import typing
+from collections import OrderedDict
 from typing import TYPE_CHECKING, TypeVar
 
 import openai
@@ -27,6 +28,27 @@ class ChatResponse(BaseModel):
     message: str
 
 
+class LRUCache:
+    """A simple dictionary-based LRU cache for async methods."""
+
+    def __init__(self, maxsize: int = 100):
+        self.cache: OrderedDict[str, typing.Any] = OrderedDict()
+        self.maxsize = maxsize
+
+    def get(self, key: str) -> typing.Any | None:
+        if key in self.cache:
+            self.cache.move_to_end(key)
+            return self.cache[key]
+        return None
+
+    def set(self, key: str, value: typing.Any) -> None:
+        if key in self.cache:
+            self.cache.move_to_end(key)
+        self.cache[key] = value
+        if len(self.cache) > self.maxsize:
+            self.cache.popitem(last=False)
+
+
 class OpenRouterClient:
     def __init__(self, api_key: str):
         # We defer imports to bypass Python 3.13 circular import bugs at startup
@@ -45,6 +67,8 @@ class OpenRouterClient:
             self.openai_client,
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
+        # Initialize an LRU cache for semantic deduplication (e.g. embeddings)
+        self._embed_cache = LRUCache(maxsize=100)
 
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
         # Internally enforce strict JSON structured output even for generic strings
@@ -65,12 +89,19 @@ class OpenRouterClient:
         reraise=True,
     )
     async def embed(self, text: str, model: str) -> list[float]:
+        cache_key = f"{model}:{text}"
+        cached_val = self._embed_cache.get(cache_key)
+        if cached_val is not None:
+            return typing.cast("list[float]", cached_val)
+
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
             encoding_format="float",
         )
-        return response.data[0].embedding
+        embedding = response.data[0].embedding
+        self._embed_cache.set(cache_key, embedding)
+        return embedding
 
     @retry(
         stop=stop_after_attempt(3),

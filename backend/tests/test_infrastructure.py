@@ -107,9 +107,10 @@ async def test_client_chat_completion_delegates_to_structured() -> None:
 
 @pytest.mark.asyncio
 async def test_client_embed() -> None:
-    from app.infrastructure.external.openrouter import OpenRouterClient
+    from app.infrastructure.external.openrouter import LRUCache, OpenRouterClient
 
     client = OpenRouterClient.__new__(OpenRouterClient)
+    client._embed_cache = LRUCache()
     mock_openai = AsyncMock()
     embedding_data = MagicMock()
     embedding_data.embedding = [0.5, 0.6]
