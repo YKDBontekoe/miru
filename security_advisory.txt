@@ -1,0 +1,14 @@
+Security Advisory:
+- Threat: Cleartext Traffic vulnerability on Mobile Clients (Low Severity)
+- Threat: CORS Misconfiguration causing framework crashes or Browser-Level Attacks (Medium Severity)
+- Threat: Stack Trace Leakage exposing internal system architectures (Medium Severity)
+
+Hardened Code:
+- Expo config updated to strictly disable `usesCleartextTraffic` and `NSAllowsArbitraryLoads`.
+- Backend Settings model updated with a Pydantic `model_validator` to enforce `cors_allow_credentials = False` when wildcards are allowed.
+- Added `@app.exception_handler(Exception)` intercepting unhandled backend errors, securely logging the full traceback internally, and returning generic 500 JSON to the client.
+
+Integrity Note:
+- Enforced strict Cleartext disabling across platforms.
+- CORS fallback prevents invalid framework configurations and wildcard-credential exploits.
+- Generic Exception masking protects against infrastructure leakage without losing visibility.
