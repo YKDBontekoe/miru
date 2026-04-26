@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import logging
+import traceback
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
 
-import traceback
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
@@ -87,6 +87,7 @@ app.include_router(websocket_router, prefix="/api/v1")
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
