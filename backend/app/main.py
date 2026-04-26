@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import traceback
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
 
@@ -91,9 +90,22 @@ async def health() -> dict:
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.error("Unhandled Exception on %s %s", request.method, request.url.path)
-    logger.error("".join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
+    """Handle uncaught exceptions globally.
+
+    Args:
+        request: The incoming FastAPI request.
+        exc: The unhandled exception.
+
+    Returns:
+        JSONResponse: A generic 500 error response.
+    """
+    logger.exception("Unhandled Exception on %s %s", request.method, request.url.path)
+    if settings.sentry_dsn:
+        import sentry_sdk
+
+        sentry_sdk.capture_exception(exc)
+
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error"},
+        content={"error": "Internal Server Error", "message": "An unexpected error occurred"},
     )
