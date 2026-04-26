@@ -6,8 +6,9 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.agents import router as agents_router
 from app.api.v1.auth import router as auth_router
@@ -66,8 +67,8 @@ app = FastAPI(
 
 app.add_middleware(
     cast("Any", CORSMiddleware),
-    allow_origins=settings.cors_allowed_origins.split(","),
-    allow_credentials=True,
+    allow_origins=[origin.strip() for origin in settings.cors_allowed_origins.split(",")],
+    allow_credentials=settings.cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -85,3 +86,26 @@ app.include_router(websocket_router, prefix="/api/v1")
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Handle uncaught exceptions globally.
+
+    Args:
+        request: The incoming FastAPI request.
+        exc: The unhandled exception.
+
+    Returns:
+        JSONResponse: A generic 500 error response.
+    """
+    logger.exception("Unhandled Exception on %s %s", request.method, request.url.path)
+    if settings.sentry_dsn:
+        import sentry_sdk
+
+        sentry_sdk.capture_exception(exc)
+
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal Server Error", "message": "An unexpected error occurred"},
+    )

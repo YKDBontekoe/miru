@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
     webauthn_expected_origin: str = "http://localhost"
     # Comma-separated allowed CORS origins — tighten in production
     cors_allowed_origins: str = "*"
+    cors_allow_credentials: bool = True
     # Tavily Search API key for web search capabilities
     tavily_api_key: str | None = None
     # Steam Web API key for Steam games integration
@@ -53,6 +55,12 @@ class Settings(BaseSettings):
     # Azure Notification Hubs
     azure_notification_hub_name: str | None = None
     azure_notification_hub_connection_string: str | None = None
+
+    @model_validator(mode="after")
+    def validate_cors(self) -> Settings:
+        if "*" in [origin.strip() for origin in self.cors_allowed_origins.split(",")]:
+            self.cors_allow_credentials = False
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",
