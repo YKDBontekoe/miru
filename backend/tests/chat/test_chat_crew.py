@@ -195,6 +195,7 @@ async def test_execute_crew_task_multi(
         )
         assert result == "ResultMulti"
 
+
 @pytest.mark.asyncio
 async def test_run_crew_no_agents(chat_service: typing.Any) -> None:
     user_id = uuid4()
