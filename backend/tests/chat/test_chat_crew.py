@@ -194,3 +194,11 @@ async def test_execute_crew_task_multi(
             accept_language="hi-IN",
         )
         assert result == "ResultMulti"
+
+
+@pytest.mark.asyncio
+async def test_run_crew_no_agents(chat_service: typing.Any) -> None:
+    user_id = uuid4()
+    chat_service.agent_repo.list_by_user.return_value = []
+    result = await chat_service.run_crew("Hi", user_id)
+    assert result == {"task_type": "error", "result": "No agents available."}
