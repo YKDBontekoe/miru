@@ -237,3 +237,181 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room = AsyncMock()
         await chat_service.run_room_chat_ws(room_id, user_message, user_id)
         mock_hub.broadcast_to_room.assert_awaited_once()
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_openai_error(chat_service: ChatService) -> None:
+    import openai
+
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+        MagicMock(id=uuid4(), name="Agent1")
+    ]
+    with (
+        patch.object(
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
+        ),
+        patch.object(
+            chat_service.ws_broadcaster, "broadcast_thinking_status", new_callable=AsyncMock
+        ),
+        patch.object(chat_service.ws_broadcaster, "create_step_callback", return_value=MagicMock()),
+        patch(
+            "app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task",
+            new_callable=AsyncMock,
+        ) as m_exec,
+        patch.object(chat_service.chat_repo, "get_room_messages", new_callable=AsyncMock) as m_get_msgs,
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        m_get_msgs.return_value = []
+        import httpx
+
+        request = httpx.Request("POST", "http://test")
+        m_exec.side_effect = openai.APIConnectionError(request=request)
+
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+
+        mock_hub.broadcast_to_room.assert_any_call(
+            room_id,
+            {
+                "type": "error",
+                "data": {
+                    "message": "AI connection failed, please try again.",
+                    "room_id": str(room_id),
+                },
+            },
+        )
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_generic_error(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+        MagicMock(id=uuid4(), name="Agent1")
+    ]
+    with (
+        patch.object(
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
+        ),
+        patch.object(
+            chat_service.ws_broadcaster, "broadcast_thinking_status", new_callable=AsyncMock
+        ),
+        patch.object(chat_service.ws_broadcaster, "create_step_callback", return_value=MagicMock()),
+        patch(
+            "app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task",
+            new_callable=AsyncMock,
+        ) as m_exec,
+        patch.object(chat_service.chat_repo, "get_room_messages", new_callable=AsyncMock) as m_get_msgs,
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        m_get_msgs.return_value = []
+
+        m_exec.side_effect = Exception("Generic Error")
+
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+
+        mock_hub.broadcast_to_room.assert_any_call(
+            room_id,
+            {
+                "type": "error",
+                "data": {
+                    "message": "Something went wrong, please try again.",
+                    "room_id": str(room_id),
+                },
+            },
+        )
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_openai_error_memory_retrieval(chat_service: ChatService) -> None:
+    import openai
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+        MagicMock(id=uuid4(), name="Agent1")
+    ]
+    with (
+        patch.object(
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
+        ),
+        patch("app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task", new_callable=AsyncMock) as m_exec,
+        patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        import httpx
+        request = httpx.Request("POST", "http://test")
+        mock_embed.side_effect = openai.APIConnectionError(request=request)
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        # Should not raise, just log warning and proceed
+        m_exec.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_openai_error_memory_retrieval_2(chat_service: ChatService) -> None:
+    import openai
+    import httpx
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+        MagicMock(id=uuid4(), name="Agent1")
+    ]
+    with (
+        patch.object(
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
+        ),
+        patch("app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task", new_callable=AsyncMock) as m_exec,
+        patch("app.domain.chat.service.ChatService._build_history", return_value=[]) as m_build_history,
+        patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        request = httpx.Request("POST", "http://test")
+        mock_embed.side_effect = openai.APIConnectionError(request=request)
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        # Should not raise, just log warning and proceed
+        m_exec.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_openai_error_memory_retrieval_generic(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+        MagicMock(id=uuid4(), name="Agent1")
+    ]
+    with (
+        patch.object(
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
+        ),
+        patch("app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task", new_callable=AsyncMock) as m_exec,
+        patch("app.domain.chat.service.ChatService._build_history", return_value=[]) as m_build_history,
+        patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        mock_embed.side_effect = Exception("Generic error")
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        # Should not raise, just log warning and proceed
+        m_exec.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_stream_responses_api_connection_error_generic(chat_service: typing.Any) -> None:
+    user_id = uuid4()
+    agent = MagicMock()
+    agent.personality = "Helpful"
+    chat_service.agent_repo.list_by_user.return_value = [agent]
+    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
+        mock_stream_chat.side_effect = Exception("Generic connection error")
+        responses = []
+        async for r in chat_service.stream_responses("Hi", user_id):
+            responses.append(r)
+    assert responses == ["\n[[STATUS:error]]\nAn unexpected error occurred.\n"]
