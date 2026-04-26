@@ -41,9 +41,9 @@ interface ChatListHeaderProps {
 
 
 const SORT_MODES = [
-  ['recent', 'chat.filter_recent', 'Recent'],
-  ['mentions', 'chat.filter_mentions', 'Mentions'],
-  ['tasks', 'chat.filter_tasks', 'Tasks'],
+  { id: 'recent', i18nKey: 'chat.filter_recent', label: 'Recent' },
+  { id: 'mentions', i18nKey: 'chat.filter_mentions', label: 'Mentions' },
+  { id: 'tasks', i18nKey: 'chat.filter_tasks', label: 'Tasks' },
 ] as const;
 
 type FilterItemType =
@@ -52,7 +52,6 @@ type FilterItemType =
   | { type: 'unread'; label: string };
 
 export function ChatListHeader({
-
   t,
   query,
   onChangeQuery,
@@ -80,13 +79,13 @@ export function ChatListHeader({
   }, [localQuery, onChangeQuery]);
 
   const filterItemsData = useMemo(() => ([
-    ...SORT_MODES.map((sm) => ({ type: 'sort' as const, mode: sm[0] as SortMode, tKey: sm[1], fallback: sm[2] })),
+    ...SORT_MODES.map((sm) => ({ type: 'sort' as const, mode: sm.id as SortMode, tKey: sm.i18nKey, fallback: sm.label })),
     { type: 'recent', label: t('chat.recent_only', '7d') },
     { type: 'unread', label: t('chat.unread_only', 'Unread') },
   ] as FilterItemType[]), [t]);
 
   const renderAgentPill = useCallback(({ item }: { item: Agent }) => (
-    <View style={{ marginRight: 8 }}>
+    <View className="mr-2">
       <AgentPill
         agent={item}
         onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -134,6 +133,8 @@ export function ChatListHeader({
     );
   }, [sortMode, recentOnly, unreadOnly, t, onChangeSortMode, onToggleRecentOnly, onToggleUnreadOnly]);
 
+  const memoizedExtraData = useMemo(() => ({ sortMode, recentOnly, unreadOnly, t, onChangeSortMode, onToggleRecentOnly, onToggleUnreadOnly }), [sortMode, recentOnly, unreadOnly, t, onChangeSortMode, onToggleRecentOnly, onToggleUnreadOnly]);
+
   return (
     <>
       <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
@@ -177,9 +178,9 @@ export function ChatListHeader({
           horizontal
           showsHorizontalScrollIndicator={false}
           data={filterItemsData}
-          keyExtractor={(item, index) => item.type === 'sort' ? `sort-${item.mode}` : `toggle-${item.type}`}
+          keyExtractor={(item) => item.type === 'sort' ? `sort-${item.mode}` : `toggle-${item.type}`}
           renderItem={renderFilterItem}
-          extraData={{ sortMode, recentOnly, unreadOnly, t, onChangeSortMode, onToggleRecentOnly, onToggleUnreadOnly }}
+          extraData={memoizedExtraData}
         />
       </View>
 
@@ -202,7 +203,7 @@ export function ChatListHeader({
             data={agents}
             keyExtractor={(item) => item.id}
             renderItem={renderAgentPill}
-            extraData={{ selectedAgentId, onSelectAgent }}
+            extraData={selectedAgentId}
             ListHeaderComponent={
               <ScalePressable
                 onPress={() => onSelectAgent(null)}

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
@@ -63,7 +63,7 @@ export function RoomPromptRail({
 
   const renderContextAction = useCallback(({ item: value }: { item: string }) => (
     <Pressable
-      onPress={() => onContextPress && onContextPress(value)}
+      onPress={() => onContextPress?.(value)}
       className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
     >
       <AppText variant="caption" className="text-[#5A7467] font-bold">
@@ -71,6 +71,8 @@ export function RoomPromptRail({
       </AppText>
     </Pressable>
   ), [onContextPress]);
+
+  const memoizedExtraData = useMemo(() => ({ isStreaming, onPromptPress, onPromptLongPress }), [isStreaming, onPromptPress, onPromptLongPress]);
 
 
 
@@ -95,7 +97,7 @@ export function RoomPromptRail({
           data={prompts}
           keyExtractor={(item) => item.id}
           renderItem={renderPromptItem}
-          extraData={{ isStreaming, onPromptPress, onPromptLongPress }}
+          extraData={memoizedExtraData}
           ListHeaderComponent={
             <Pressable
               onPress={onSave}
@@ -115,9 +117,9 @@ export function RoomPromptRail({
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="px-3 pt-2"
             data={contextActions}
-            keyExtractor={(item) => item}
+            keyExtractor={(item, index) => `${item}-${index}`}
             renderItem={renderContextAction}
-            extraData={{ onContextPress }}
+            extraData={onContextPress}
           />
         ) : null}
       </View>
