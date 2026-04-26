@@ -345,7 +345,10 @@ class ChatService:
             if memories:
                 memory_context = "\n".join(f"- {m.content}" for m in memories)
         except openai.OpenAIError:
-            logger.warning("Embedding generation failed for memory retrieval in room=%s, proceeding without", room_id)
+            logger.warning(
+                "Embedding generation failed for memory retrieval in room=%s, proceeding without",
+                room_id,
+            )
         except Exception:
             logger.warning("Memory retrieval failed for room=%s, proceeding without", room_id)
 
