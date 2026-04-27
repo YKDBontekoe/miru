@@ -243,13 +243,12 @@ class ChatService:
         except TimeoutError:
             logger.warning("Timeout connecting to AI service for user=%s", user_id)
             yield "\n[[STATUS:error]]\nConnection timed out. Please try again later.\n"
-        except Exception as e:
-            if isinstance(e, (openai.APIConnectionError, openai.APITimeoutError, OSError)):
-                logger.warning("Connection error to AI service for user=%s", user_id)
-                yield "\n[[STATUS:error]]\nConnection error. Please try again later.\n"
-            else:
-                logger.exception("Unexpected error in chat stream for user=%s", user_id)
-                yield "\n[[STATUS:error]]\nAn unexpected error occurred.\n"
+        except (openai.APIConnectionError, openai.APITimeoutError, ConnectionError) as e:
+            logger.warning("Connection error to AI service for user=%s: %s", user_id, str(e))
+            yield "\n[[STATUS:error]]\nConnection error. Please try again later.\n"
+        except Exception:
+            logger.exception("Unexpected error in chat stream for user=%s", user_id)
+            yield "\n[[STATUS:error]]\nAn unexpected error occurred.\n"
 
     async def run_crew(
         self, user_message: str, user_id: UUID, accept_language: str | None = None
@@ -345,8 +344,10 @@ class ChatService:
             )
             if memories:
                 memory_context = "\n".join(f"- {m.content}" for m in memories)
+        except ValueError as e:
+            logger.warning("ValueError in memory retrieval for room=%s: %s", room_id, str(e))
         except Exception:
-            logger.warning("Memory retrieval failed for room=%s, proceeding without", room_id)
+            logger.exception("Memory retrieval failed for room=%s, proceeding without", room_id)
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
@@ -412,8 +413,32 @@ class ChatService:
                     self.bg_service.update_room_summary_background(room_id, conversation_history)
                 )
 
+        except openai.OpenAIError:
+            logger.exception("OpenAI error during crew task for room=%s", room_id)
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "agent_activity",
+                    "data": {
+                        "room_id": str(room_id),
+                        "agent_names": agent_names,
+                        "activity": "error",
+                        "detail": "AI Service error.",
+                    },
+                },
+            )
+            await chat_hub.broadcast_to_room(
+                room_id,
+                {
+                    "type": "error",
+                    "data": {
+                        "message": "AI Service error, please try again.",
+                        "room_id": str(room_id),
+                    },
+                },
+            )
         except Exception:
-            logger.exception("Failed processing crew task for room=%s", room_id)
+            logger.exception("Unexpected error processing crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
                 {

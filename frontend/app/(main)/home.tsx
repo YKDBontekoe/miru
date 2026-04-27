@@ -15,7 +15,7 @@ import {
   HomeSectionHeader,
   HomeSurfaceCard,
   HomeTaskRow,
-} from '@/components/home/HomeDashboardParts';
+} from '@/components/home/dashboard';
 import { HomeNewChatModal } from '@/components/home';
 import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
@@ -221,7 +221,7 @@ export default function HomeScreen() {
             ) : (
               sortedPendingTasks
                 .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} locale={i18n.language} />)
             )}
           </HomeSurfaceCard>
 
@@ -302,6 +302,7 @@ export default function HomeScreen() {
                       key={agent.id}
                       agent={agent}
                       onPress={() => router.push('/(main)/agents')}
+                      t={t}
                     />
                   ))}
               </View>
