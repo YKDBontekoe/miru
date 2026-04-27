@@ -63,6 +63,7 @@ async def create_room(
     return await service.create_room(data.name, user_id)
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get(
     "/rooms/summaries",
     response_model=list[RoomSummaryResponse],

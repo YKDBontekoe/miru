@@ -26,6 +26,7 @@ interface Props {
   onCreated: () => void;
 }
 
+// DOCS(miru-agent): needs documentation
 export function CreateNoteModal({ visible, onClose, onCreated }: Props) {
   const { t } = useTranslation();
   const { createNote } = useProductivityStore();

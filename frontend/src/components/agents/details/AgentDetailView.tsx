@@ -88,6 +88,7 @@ interface AgentDetailViewProps {
   onStartChat: () => void;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AgentDetailView({
   agent,
   level,

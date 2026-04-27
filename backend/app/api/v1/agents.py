@@ -100,6 +100,7 @@ async def list_integrations(
     return await service.list_integrations()
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get(
     "/templates",
     response_model=list[AgentTemplateResponse],

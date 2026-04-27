@@ -13,6 +13,7 @@ interface Props {
   onDelete: () => void;
 }
 
+// DOCS(miru-agent): needs documentation
 export const NoteCard = React.memo(({ note, onDelete }: Props) => {
   const { i18n } = useTranslation();
   const { C } = useTheme();

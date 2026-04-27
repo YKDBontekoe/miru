@@ -9,6 +9,7 @@ interface ScalePressableProps extends Omit<PressableProps, 'style'> {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+// DOCS(miru-agent): needs documentation
 export const ScalePressable = ({
   children,
   style,

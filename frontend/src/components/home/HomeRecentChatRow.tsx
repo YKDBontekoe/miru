@@ -8,6 +8,7 @@ import { ScalePressable } from '../ScalePressable';
 import { ChatRoom } from '@/core/models';
 import { theme } from '@/core/theme';
 
+// DOCS(miru-agent): needs documentation
 export const HomeRecentChatRow = React.memo(function HomeRecentChatRow({
   room,
   onPress,

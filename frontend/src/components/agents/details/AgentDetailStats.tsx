@@ -10,6 +10,7 @@ interface AgentDetailStatsProps {
   displayColor: string;
 }
 
+// DOCS(miru-agent): needs documentation
 export function AgentDetailStats({ agent, level, displayColor }: AgentDetailStatsProps) {
   const { t } = useTranslation();
 

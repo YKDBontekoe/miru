@@ -18,6 +18,7 @@ interface SnackbarProps {
   duration?: number;
 }
 
+// DOCS(miru-agent): needs documentation
 export function Snackbar({
   visible,
   message,

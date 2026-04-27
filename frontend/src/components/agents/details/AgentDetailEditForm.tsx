@@ -35,6 +35,25 @@ interface AgentDetailEditFormProps {
   onDeleted: (agent: Agent) => Promise<void> | void;
 }
 
+/**
+ * Component for editing an agent's details (personality, description, goals).
+ *
+ * Handles local validation and input for editing agent properties. When changes
+ * are submitted, the parent component takes care of the API call via `onSave`
+ * and updating the UI state.
+ *
+ * @param agent - The original agent being edited.
+ * @param editPersonality - The current local state for personality.
+ * @param setEditPersonality - State setter for personality.
+ * @param editDescription - The current local state for description.
+ * @param setEditDescription - State setter for description.
+ * @param editGoals - The current local state for the agent's goals.
+ * @param setEditGoals - State setter for the goals array.
+ * @param isSaving - Loading flag while an update is in progress.
+ * @param onSave - Callback to trigger the actual save operation in the parent.
+ * @param onClose - Callback to discard edits and close the form.
+ * @param onDeleted - Callback to handle agent deletion.
+ */
 export function AgentDetailEditForm({
   agent,
   editPersonality,

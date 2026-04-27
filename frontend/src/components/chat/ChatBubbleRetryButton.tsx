@@ -12,6 +12,7 @@ interface ChatBubbleRetryButtonProps {
   onRetry: () => void;
 }
 
+// DOCS(miru-agent): needs documentation
 export const ChatBubbleRetryButton = ({ onRetry }: ChatBubbleRetryButtonProps) => {
   const { t } = useTranslation();
   const retryScale = useSharedValue(1);

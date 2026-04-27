@@ -15,6 +15,7 @@ type QuickAction = {
   route: string;
 };
 
+// DOCS(miru-agent): needs documentation
 export function GlobalQuickActions() {
   const { t } = useTranslation();
   const router = useRouter();
