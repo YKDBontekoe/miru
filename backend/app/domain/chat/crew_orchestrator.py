@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -52,7 +52,13 @@ logger = logging.getLogger(__name__)
 
 
 class CrewResponse(BaseModel):
-    transcript: str
+    """Structured response schema for CrewAI tasks.
+
+    Provides a clean, validated output format ensuring that agent responses
+    are encapsulated correctly before returning to the chat service.
+    """
+
+    transcript: str = Field(..., description="Final agent transcript")
 
 
 class _OpenRouterLLM(LLM):
@@ -233,11 +239,10 @@ class CrewOrchestrator:
             else ""
         )
 
-        if conversation_history is None:
-            conversation_history = []
-        conversation_history.append({"role": "user", "name": "User", "content": user_message})
+        new_history = list(conversation_history) if conversation_history is not None else []
+        new_history.append({"role": "user", "name": "User", "content": user_message})
 
-        history_text = CrewOrchestrator.format_history(conversation_history)
+        history_text = CrewOrchestrator.format_history(new_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
@@ -301,4 +306,9 @@ class CrewOrchestrator:
         if result and hasattr(result, "pydantic") and isinstance(result.pydantic, CrewResponse):
             return result.pydantic.transcript
 
+        logger.warning(
+            "Structured output failed. output_pydantic=CrewResponse but result.pydantic "
+            "is None or invalid. Falling back to str(result). LLM raw output: %s",
+            result,
+        )
         return str(result)
