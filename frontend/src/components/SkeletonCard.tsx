@@ -54,7 +54,15 @@ function ShimmerBox({
   );
 }
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders a full Skeleton layout simulating an Agent Card to prevent layout jank during loading.
+ *
+ * It coordinates multiple internal Shimmer components to match the layout of the actual AgentCard,
+ * cascading the animation delay based on its index in a list.
+ *
+ * @param index - The index of the card in a list, used to stagger the loading animation. Defaults to 0.
+ * @returns {JSX.Element} The skeleton agent card element.
+ */
 export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
   const { C } = useTheme();
   const baseDelay = index * 120;

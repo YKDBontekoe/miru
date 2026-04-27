@@ -8,7 +8,17 @@ import { ScalePressable } from '../ScalePressable';
 import { useChatStore } from '../../store/useChatStore';
 import { theme } from '@/core/theme';
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders a modal dialogue for creating a new chat room.
+ *
+ * Provides an input field for the room name and handles the form submission,
+ * including executing the room creation API call through the chat store and
+ * managing loading states.
+ *
+ * @param visible - Controls whether the modal is currently displayed.
+ * @param onClose - Callback to discard input and dismiss the modal.
+ * @param onCreated - Callback triggered after a new room is successfully created.
+ */
 export function HomeNewChatModal({
   visible,
   onClose,

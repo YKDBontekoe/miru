@@ -18,7 +18,15 @@ interface AgentDetailSheetProps {
   onUpdated: (updated: Agent) => void;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders agent details in a bottom sheet.
+ *
+ * @param agent - The agent object to display or edit.
+ * @param visible - Controls the visibility of the modal sheet.
+ * @param onClose - Callback invoked when the modal is requested to close.
+ * @param onDeleted - Callback invoked when the agent is deleted.
+ * @param onUpdated - Callback invoked after the agent's details have been updated.
+ */
 export function AgentDetailSheet({
   agent,
   visible,

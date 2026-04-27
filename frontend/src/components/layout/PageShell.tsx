@@ -14,7 +14,7 @@ interface PageShellProps {
   contentStyle?: ViewStyle;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const PageSectionCard = ({
   children,
   style,
@@ -39,7 +39,7 @@ export const PageSectionCard = ({
   );
 };
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const PageSectionHeader = ({
   title,
   action,
@@ -81,7 +81,7 @@ const PageHeader = ({
   );
 };
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const PageShell = ({
   title,
   subtitle,

@@ -38,7 +38,7 @@ interface ChatListHeaderProps {
   roomCount: number;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export function ChatListHeader({
   t,
   query,

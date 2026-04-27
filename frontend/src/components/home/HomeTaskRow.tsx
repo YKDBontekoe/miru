@@ -6,7 +6,7 @@ import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Task } from '@/core/models';
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const HomeTaskRow = React.memo(function HomeTaskRow({
   task,
   onToggle,

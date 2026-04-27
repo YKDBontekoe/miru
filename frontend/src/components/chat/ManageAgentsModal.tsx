@@ -34,7 +34,22 @@ interface ManageAgentsModalProps {
   getAgentColor: (name: string) => string;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders a full-screen modal allowing users to manage which agents are active in a specific chat room.
+ *
+ * Displays a sectioned list of agents (Currently in Room vs. Available). Users can add
+ * or remove agents by tapping on them. The changes are emitted via the `onAddAgent` and
+ * `onRemoveAgent` callbacks which should be hooked up to the respective chat service or store.
+ *
+ * @param isVisible - Controls the visibility of the modal.
+ * @param onClose - Callback to dismiss the modal.
+ * @param roomAgents - Array of agents currently active in the room.
+ * @param availableAgents - Array of agents available to be added.
+ * @param agents - Complete list of agents (used as a fallback or for lookups).
+ * @param onAddAgent - Callback triggered when an available agent is selected.
+ * @param onRemoveAgent - Callback triggered when an active agent is selected for removal.
+ * @param getAgentColor - Function mapping agent names to their respective theme colors.
+ */
 export const ManageAgentsModal = ({
   isVisible,
   onClose,

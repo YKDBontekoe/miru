@@ -20,7 +20,7 @@ interface AgentChatBubbleProps {
   onRetry?: () => void;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const AgentChatBubble = ({
   text,
   status = MessageStatus.sent,

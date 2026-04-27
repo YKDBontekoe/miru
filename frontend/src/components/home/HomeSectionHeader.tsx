@@ -4,7 +4,7 @@ import { useColorScheme } from 'nativewind';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export function HomeSectionHeader({
   title,
   actionLabel,

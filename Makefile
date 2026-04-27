@@ -11,9 +11,9 @@ db:
 db-stop:
 	docker compose down
 
-# Create venv and install backend dependencies
+# Install backend dependencies via uv
 setup-backend:
-	cd backend && uv sync
+	cd backend && uv sync --extra dev
 	@echo "Done. Copy backend/.env.example to backend/.env and fill in API keys."
 
 # Install pre-commit hooks
@@ -25,7 +25,7 @@ setup-hooks:
 
 # Run the FastAPI server (requires backend/.env to be present)
 backend:
-	cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+	cd backend && uv run granian --interface asgi --host 0.0.0.0 --port 8000 --reload app.main:app
 
 # Run React Native in the simulator / connected device
 frontend:
@@ -51,7 +51,7 @@ lint-backend:
 	cd backend && \
 	ruff check . && \
 	ruff format --check . && \
-	uv run mypy . --ignore-missing-imports
+	uv run ty check .
 
 # Run frontend linting
 lint-frontend:

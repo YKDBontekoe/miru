@@ -23,7 +23,7 @@ interface ChatRoomHeaderProps {
   getAgentColor: (name: string) => string;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const ChatRoomHeader = ({
   room,
   roomAgents,

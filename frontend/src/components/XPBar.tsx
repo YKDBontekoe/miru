@@ -12,7 +12,7 @@ interface XPBarProps {
   color: string;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export function XPBar({ progress, color }: XPBarProps) {
   const width = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as `${number}%` }));
@@ -26,15 +26,13 @@ export function XPBar({ progress, color }: XPBarProps) {
 
   return (
     <View
-      style={{
-        height: 4,
-        backgroundColor: `${color}22`,
-        borderRadius: 2,
-        overflow: 'hidden',
-        flex: 1,
-      }}
+      className="h-1 rounded overflow-hidden flex-1"
+      style={{ backgroundColor: `${color}22` }}
     >
-      <Animated.View style={[{ height: 4, backgroundColor: color, borderRadius: 2 }, animStyle]} />
+      <Animated.View
+        className="h-1 rounded"
+        style={[{ backgroundColor: color }, animStyle]}
+      />
     </View>
   );
 }

@@ -4,7 +4,7 @@ import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const HomeAgentChip = React.memo(function HomeAgentChip({
   agent,
   onPress,

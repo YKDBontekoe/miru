@@ -11,7 +11,7 @@ interface UserChatBubbleProps {
   timestamp?: string;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const UserChatBubble = ({ text, timestamp }: UserChatBubbleProps) => {
   const { i18n } = useTranslation();
   const { colorScheme } = useColorScheme();

@@ -13,7 +13,7 @@ interface ChatRoomEmptyStateProps {
   onSuggestionPress?: (suggestion: string) => void;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export const ChatRoomEmptyState = ({
   roomAgents,
   suggestions = [],

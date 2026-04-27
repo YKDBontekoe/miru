@@ -23,7 +23,24 @@ interface RoomPromptRailProps {
   onContextPress?: (value: string) => void;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders the horizontal scrolling rail of suggested/pinned prompts in a chat room.
+ *
+ * Manages the display and selection of quick-action prompts or context-specific actions
+ * (e.g., summarizing, extracting tasks) available to the user in a given chat room context.
+ *
+ * @param prompts - Array of available prompt items (id, text, pinned status).
+ * @param isStreaming - True if the assistant is currently generating a response (disables interactions).
+ * @param saveLabel - Localization string for the save action.
+ * @param heading - Heading displayed above the prompt rail.
+ * @param isEditing - True if the user is currently editing a previous message.
+ * @param canSave - True if the user has modified an editing message and it can be saved.
+ * @param onSave - Callback to save edits.
+ * @param onPromptPress - Callback emitted when a prompt is pressed, passing the prompt text.
+ * @param onPromptLongPress - Callback emitted on a long press of a prompt, allowing for edits/unpinning.
+ * @param contextActions - Optional array of strings representing context-aware contextual actions.
+ * @param onContextPress - Optional callback emitted when a context action is selected.
+ */
 export function RoomPromptRail({
   prompts,
   isStreaming,

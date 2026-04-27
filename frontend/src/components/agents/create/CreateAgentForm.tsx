@@ -48,7 +48,7 @@ interface CreateAgentFormProps {
   errorMsg: string;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export function CreateAgentForm({
   name,
   setName,

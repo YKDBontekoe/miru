@@ -19,7 +19,7 @@ interface TemplateGallerySheetProps {
   initialCategory?: 'all' | 'work' | 'planning' | 'creative';
 }
 
-/** // DOCS(miru-agent): needs documentation */
+// DOCS(miru-agent): needs documentation
 export function TemplateGallerySheet({
   visible,
   onClose,

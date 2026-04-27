@@ -17,7 +17,20 @@ interface QuickViewAgentSheetProps {
   getAgentColor: (name: string) => string;
 }
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders a bottom sheet for quickly viewing and managing an agent's membership in a room.
+ *
+ * Provides details about the agent and a primary action button to either add them to
+ * the current room or remove them if they are already present. The component handles
+ * its own modal presentation over the current context.
+ *
+ * @param agent - The agent being viewed.
+ * @param onClose - Callback to close the bottom sheet.
+ * @param onAdd - Async callback to add the agent to the current room.
+ * @param onRemove - Async callback to remove the agent from the current room.
+ * @param roomAgents - List of agents currently in the room (used to determine add/remove state).
+ * @param getAgentColor - Function mapping agent names to theme colors.
+ */
 export function QuickViewAgentSheet({
   agent,
   onClose,

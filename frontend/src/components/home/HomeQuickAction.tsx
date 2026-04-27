@@ -6,7 +6,17 @@ import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { theme } from '@/core/theme';
 
-/** // DOCS(miru-agent): needs documentation */
+/**
+ * Renders a large quick action button, typically on the Home screen dashboard.
+ *
+ * Displays an icon and label inside a touchable card format designed for grid layouts.
+ *
+ * @param icon - The name of the Ionicons icon to display.
+ * @param label - The text label for the action.
+ * @param onPress - Callback executed when the action is tapped.
+ *
+ * @returns {JSX.Element} The rendered quick action button.
+ */
 export function HomeQuickAction({
   icon,
   label,
