@@ -7,6 +7,7 @@ import { Agent, ChatRoom, Task } from '@/core/models';
 import { HOME_COLORS, HOME_SHADOW } from './homeTheme';
 import { relativeTimeFromNow } from './homeUtils';
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeSectionHeader({
   title,
   actionLabel,
@@ -39,6 +40,7 @@ export function HomeSectionHeader({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeSurfaceCard({
   children,
   style,
@@ -66,6 +68,7 @@ export function HomeSurfaceCard({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeActionTile({
   label,
   icon,
@@ -109,6 +112,7 @@ export function HomeActionTile({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeTaskRow({
   task,
   onToggle,
@@ -180,6 +184,7 @@ export function HomeTaskRow({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeChatRow({
   room,
   onPress,
@@ -235,6 +240,7 @@ export function HomeChatRow({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeAgentBadge({
   agent,
   onPress,
@@ -284,6 +290,7 @@ export function HomeAgentBadge({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeHeroCard({
   greeting,
   firstName,

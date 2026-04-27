@@ -6,6 +6,7 @@ import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
 import { theme } from '@/core/theme';
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeQuickAction({
   icon,
   label,

@@ -18,6 +18,7 @@ interface ChatActionSheetProps {
   onClose: () => void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function ChatActionSheet({
   visible,
   title,

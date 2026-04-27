@@ -12,6 +12,7 @@ interface PinnedChipProps {
   onPress: () => void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function PinnedChip({ agent, onPress }: PinnedChipProps) {
   const color = getAgentColor(agent.name);
   const { C } = useTheme();

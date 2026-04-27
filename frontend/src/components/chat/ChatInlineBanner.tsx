@@ -22,6 +22,7 @@ const TONE_CLASSES = {
   },
 } as const;
 
+/** // DOCS(miru-agent): needs documentation */
 export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps) {
   const toneClass = TONE_CLASSES[tone];
   return (

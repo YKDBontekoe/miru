@@ -8,6 +8,7 @@ import { ScalePressable } from '../ScalePressable';
 import { useChatStore } from '../../store/useChatStore';
 import { theme } from '@/core/theme';
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeNewChatModal({
   visible,
   onClose,

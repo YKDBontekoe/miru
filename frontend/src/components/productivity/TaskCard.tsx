@@ -17,6 +17,7 @@ interface Props {
   onDelete: () => void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export const TaskCard = React.memo(({ task, onToggle, onDelete }: Props) => {
   const { t, i18n } = useTranslation();
   const { C } = useTheme();

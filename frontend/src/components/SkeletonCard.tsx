@@ -54,6 +54,7 @@ function ShimmerBox({
   );
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
   const { C } = useTheme();
   const baseDelay = index * 120;

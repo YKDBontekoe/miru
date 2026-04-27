@@ -61,15 +61,14 @@ make fix-frontend    # Auto-fix frontend lint
 
 The following AI agents actively monitor and modify the Miru codebase. Their actions are automated via `.github/workflows/ai-agents.yml`.
 
-### 1. Jules
+### 1. Jules // DOCS(miru-agent): prompt mismatch
 
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
-- Triggered automatically on every issue labeled event and only proceeds when the label equals `jules-fix-pending` (label checked in the job-level filter).
-- Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
-- Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
+- Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
+- Scheduled weekly (Monday 9 AM UTC) to generate a performance report.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
 **Note on Prompt:** Jules is instructed to strictly follow project architecture and code style: 100-char lines, type hints/explicit types, double quotes for Python, single quotes for TypeScript, specific import orders (`stdlib` → `third-party` → `first-party`), use `str | None` not `Optional[str]`, use `const` for components/internal functions, include `from __future__ import annotations`, log errors with context (`logger.exception()`), and structure domains in `backend/app/domain/<domain>/` and routes in `backend/app/api/v1/`.
 

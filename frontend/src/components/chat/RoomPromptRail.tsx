@@ -23,6 +23,7 @@ interface RoomPromptRailProps {
   onContextPress?: (value: string) => void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function RoomPromptRail({
   prompts,
   isStreaming,

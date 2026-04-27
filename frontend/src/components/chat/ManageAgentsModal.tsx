@@ -34,6 +34,7 @@ interface ManageAgentsModalProps {
   getAgentColor: (name: string) => string;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export const ManageAgentsModal = ({
   isVisible,
   onClose,

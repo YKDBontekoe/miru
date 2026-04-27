@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
+/** // DOCS(miru-agent): needs documentation */
 export function HomeCard({ children }: { children: React.ReactNode }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';

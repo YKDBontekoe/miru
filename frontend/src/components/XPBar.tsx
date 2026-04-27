@@ -12,6 +12,7 @@ interface XPBarProps {
   color: string;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function XPBar({ progress, color }: XPBarProps) {
   const width = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as `${number}%` }));

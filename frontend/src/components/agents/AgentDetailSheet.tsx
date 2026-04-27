@@ -18,6 +18,7 @@ interface AgentDetailSheetProps {
   onUpdated: (updated: Agent) => void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function AgentDetailSheet({
   agent,
   visible,

@@ -35,6 +35,7 @@ interface AgentDetailEditFormProps {
   onDeleted: (agent: Agent) => Promise<void> | void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function AgentDetailEditForm({
   agent,
   editPersonality,

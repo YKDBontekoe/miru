@@ -13,9 +13,7 @@ db-stop:
 
 # Create venv and install backend dependencies
 setup-backend:
-	python3.12 -m venv backend/.venv
-	backend/.venv/bin/pip install --upgrade pip
-	backend/.venv/bin/pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+	cd backend && uv sync
 	@echo "Done. Copy backend/.env.example to backend/.env and fill in API keys."
 
 # Install pre-commit hooks
@@ -27,7 +25,7 @@ setup-hooks:
 
 # Run the FastAPI server (requires backend/.env to be present)
 backend:
-	cd backend && .venv/bin/granian --interface asgi --host 0.0.0.0 --port 8000 --reload app.main:app
+	cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Run React Native in the simulator / connected device
 frontend:
@@ -39,7 +37,7 @@ dev: db
 
 # Run backend tests
 test-backend:
-	cd backend && .venv/bin/pytest --cov=app --cov-report=term-missing
+	cd backend && uv run pytest --cov=app --cov-report=term-missing
 
 # Run frontend tests
 test-frontend:
@@ -53,7 +51,7 @@ lint-backend:
 	cd backend && \
 	ruff check . && \
 	ruff format --check . && \
-	ty check .
+	uv run mypy . --ignore-missing-imports
 
 # Run frontend linting
 lint-frontend:

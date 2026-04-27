@@ -22,6 +22,7 @@ interface AgentDetailHeaderProps {
   onClose: () => void;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function AgentDetailHeader({
   agent,
   isEditing,

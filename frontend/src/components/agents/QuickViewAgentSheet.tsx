@@ -17,6 +17,7 @@ interface QuickViewAgentSheetProps {
   getAgentColor: (name: string) => string;
 }
 
+/** // DOCS(miru-agent): needs documentation */
 export function QuickViewAgentSheet({
   agent,
   onClose,
