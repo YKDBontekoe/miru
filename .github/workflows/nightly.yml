@@ -52,7 +52,7 @@ jobs:
 
       - name: Create issue if vulnerabilities found
         if: steps.security_audit.outcome == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = '🔒 Security: Vulnerabilities found in Python dependencies';
@@ -134,7 +134,7 @@ jobs:
 
       - name: Create issue if vulnerabilities found
         if: steps.npm_audit.outcome == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = '🔒 Security: Vulnerabilities found in Frontend dependencies';
@@ -207,7 +207,7 @@ jobs:
 
       - name: Create issue on failure
         if: failure()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = `🔥 Nightly Build Failed: Frontend Web`;
