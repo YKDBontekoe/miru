@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -48,6 +49,16 @@ if TYPE_CHECKING:
     from app.domain.agents.models import Agent
 
 logger = logging.getLogger(__name__)
+
+
+class CrewResponse(BaseModel):
+    """Structured response schema for CrewAI tasks.
+
+    Provides a clean, validated output format ensuring that agent responses
+    are encapsulated correctly before returning to the chat service.
+    """
+
+    transcript: str = Field(..., description="Final agent transcript")
 
 
 class _OpenRouterLLM(LLM):
@@ -228,7 +239,10 @@ class CrewOrchestrator:
             else ""
         )
 
-        history_text = CrewOrchestrator.format_history(conversation_history)
+        new_history = list(conversation_history) if conversation_history is not None else []
+        new_history.append({"role": "user", "name": "User", "content": user_message})
+
+        history_text = CrewOrchestrator.format_history(new_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
@@ -244,10 +258,10 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=CrewResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,11 +276,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
                 agent=crew_agents[0],
+                output_pydantic=CrewResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -289,4 +303,12 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
+        if result and hasattr(result, "pydantic") and isinstance(result.pydantic, CrewResponse):
+            return result.pydantic.transcript
+
+        logger.warning(
+            "Structured output failed. output_pydantic=CrewResponse but result.pydantic "
+            "is None or invalid. Falling back to str(result). LLM raw output: %s",
+            result,
+        )
         return str(result)
