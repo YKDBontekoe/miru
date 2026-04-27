@@ -355,6 +355,8 @@ class TestMemoryRepository:
         params = call_args[0][1]
 
         # Verify the explicit casts are in the SQL string
+        assert "$2::float" in sql_query
+        assert "$3::int" in sql_query
         assert "$4::uuid" in sql_query
         assert "$5::uuid" in sql_query
         assert "$6::uuid" in sql_query
