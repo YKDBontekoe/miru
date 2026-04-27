@@ -115,6 +115,8 @@ class ChatService:
             return []
 
         room_ids = [room.id for room in rooms]
+        # Executed serially to avoid Tortoise ORM connection crashes that manifest
+        # as Application callable raised an exception in AsyncExitStackMiddleware
         rooms_agents_map = await self.chat_repo.list_rooms_agents(room_ids)
         latest_messages_map = await self.chat_repo.get_latest_messages_for_rooms(room_ids)
 
