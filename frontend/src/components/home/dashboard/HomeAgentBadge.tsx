@@ -5,12 +5,16 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { HOME_COLORS } from '../homeTheme';
 
+import { TFunction } from 'i18next';
+
 export function HomeAgentBadge({
   agent,
   onPress,
+  t,
 }: {
   agent: Agent;
   onPress: () => void;
+  t: TFunction;
 }) {
   return (
     <ScalePressable
@@ -48,7 +52,7 @@ export function HomeAgentBadge({
         </View>
       </View>
       <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
-        {agent.message_count} {agent.message_count === 1 ? 'message' : 'messages'}
+        {t('messages', { count: agent.message_count })}
       </AppText>
     </ScalePressable>
   );

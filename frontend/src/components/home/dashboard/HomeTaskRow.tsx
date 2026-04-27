@@ -9,14 +9,16 @@ import { HOME_COLORS } from '../homeTheme';
 export function HomeTaskRow({
   task,
   onToggle,
+  locale,
 }: {
   task: Task;
   onToggle: () => void;
+  locale?: string;
 }) {
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const dueText =
     dueDate && !isNaN(dueDate.getTime())
-      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(dueDate)
+      ? new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(dueDate)
       : null;
 
   return (

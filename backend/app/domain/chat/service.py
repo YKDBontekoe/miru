@@ -243,7 +243,7 @@ class ChatService:
         except TimeoutError:
             logger.warning("Timeout connecting to AI service for user=%s", user_id)
             yield "\n[[STATUS:error]]\nConnection timed out. Please try again later.\n"
-        except (openai.APIConnectionError, openai.APITimeoutError, OSError) as e:
+        except (openai.APIConnectionError, openai.APITimeoutError, ConnectionError) as e:
             logger.warning("Connection error to AI service for user=%s: %s", user_id, str(e))
             yield "\n[[STATUS:error]]\nConnection error. Please try again later.\n"
         except Exception:
@@ -346,9 +346,9 @@ class ChatService:
                 memory_context = "\n".join(f"- {m.content}" for m in memories)
         except ValueError as e:
             logger.warning("ValueError in memory retrieval for room=%s: %s", room_id, str(e))
-        except Exception as e:
-            logger.warning(
-                "Memory retrieval failed for room=%s, proceeding without: %s", room_id, str(e)
+        except Exception:
+            logger.exception(
+                "Memory retrieval failed for room=%s, proceeding without", room_id
             )
 
         # 5. Broadcast thinking indicator and create step callback.
@@ -415,8 +415,8 @@ class ChatService:
                     self.bg_service.update_room_summary_background(room_id, conversation_history)
                 )
 
-        except openai.OpenAIError as e:
-            logger.exception("OpenAI error during crew task for room=%s: %s", room_id, str(e))
+        except openai.OpenAIError:
+            logger.exception("OpenAI error during crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
                 {
@@ -439,9 +439,9 @@ class ChatService:
                     },
                 },
             )
-        except Exception as e:
+        except Exception:
             logger.exception(
-                "Unexpected error processing crew task for room=%s: %s", room_id, str(e)
+                "Unexpected error processing crew task for room=%s", room_id
             )
             await chat_hub.broadcast_to_room(
                 room_id,
