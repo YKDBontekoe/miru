@@ -347,9 +347,7 @@ class ChatService:
         except ValueError as e:
             logger.warning("ValueError in memory retrieval for room=%s: %s", room_id, str(e))
         except Exception:
-            logger.exception(
-                "Memory retrieval failed for room=%s, proceeding without", room_id
-            )
+            logger.exception("Memory retrieval failed for room=%s, proceeding without", room_id)
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
@@ -440,9 +438,7 @@ class ChatService:
                 },
             )
         except Exception:
-            logger.exception(
-                "Unexpected error processing crew task for room=%s", room_id
-            )
+            logger.exception("Unexpected error processing crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
                 {
