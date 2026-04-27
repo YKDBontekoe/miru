@@ -214,3 +214,94 @@ async def test_list_room_summaries_latest_message_without_markers(
     assert summaries[0].agents[0].id == agent_id
     assert summaries[0].has_mention is False
     assert summaries[0].has_task is False
+
+
+@pytest.mark.asyncio
+async def test_list_room_summaries_sequential_execution(chat_service: ChatService) -> None:
+    room_id_1 = uuid4()
+    room_id_2 = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+    now = datetime.now(UTC)
+
+    # Mock list_rooms to return two rooms
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms).return_value = [
+        ChatRoomEntity(
+            id=room_id_1,
+            user_id=user_id,
+            name="Room 1",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        ),
+        ChatRoomEntity(
+            id=room_id_2,
+            user_id=user_id,
+            name="Room 2",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        ),
+    ]
+
+    agent = SimpleNamespace(id=agent_id, name="Planner")
+
+    call_order: list[str] = []
+
+    import asyncio
+
+    async def mock_list_agents(*args, **kwargs) -> dict:
+        call_order.append("list_rooms_agents_start")
+        await asyncio.sleep(0)
+        call_order.append("list_rooms_agents_end")
+        return {
+            room_id_1: [agent],
+            room_id_2: [agent],
+        }
+
+    async def mock_get_messages(*args, **kwargs) -> dict:
+        call_order.append("get_latest_messages_start")
+        await asyncio.sleep(0)
+        call_order.append("get_latest_messages_end")
+        return {
+            room_id_1: ChatMessageEntity(
+                id=uuid4(),
+                room_id=room_id_1,
+                user_id=user_id,
+                content="Message 1",
+                created_at=now,
+            ),
+            room_id_2: ChatMessageEntity(
+                id=uuid4(),
+                room_id=room_id_2,
+                user_id=user_id,
+                content="Message 2",
+                created_at=now,
+            ),
+        }
+
+    typing.cast(
+        "AsyncMock", chat_service.chat_repo.list_rooms_agents
+    ).side_effect = mock_list_agents
+    typing.cast(
+        "AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms
+    ).side_effect = mock_get_messages
+
+    summaries = await chat_service.list_room_summaries(user_id, limit=50, before_id=None)
+    assert len(summaries) == 2
+
+    assert call_order == [
+        "list_rooms_agents_start",
+        "list_rooms_agents_end",
+        "get_latest_messages_start",
+        "get_latest_messages_end",
+    ]
+
+    room_ids = [room_id_1, room_id_2]
+    repo_agents = typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents)
+    repo_agents.assert_awaited_once_with(room_ids)
+
+    repo_msgs = typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms)
+    repo_msgs.assert_awaited_once_with(room_ids)
