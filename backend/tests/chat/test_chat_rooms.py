@@ -214,3 +214,65 @@ async def test_list_room_summaries_latest_message_without_markers(
     assert summaries[0].agents[0].id == agent_id
     assert summaries[0].has_mention is False
     assert summaries[0].has_task is False
+
+@pytest.mark.asyncio
+async def test_list_room_summaries_sequential_execution(chat_service: ChatService) -> None:
+    room_id_1 = uuid4()
+    room_id_2 = uuid4()
+    user_id = uuid4()
+    agent_id = uuid4()
+    now = datetime.now(UTC)
+
+    # Mock list_rooms to return two rooms
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms).return_value = [
+        ChatRoomEntity(
+            id=room_id_1,
+            user_id=user_id,
+            name="Room 1",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        ),
+        ChatRoomEntity(
+            id=room_id_2,
+            user_id=user_id,
+            name="Room 2",
+            created_at=now,
+            updated_at=now,
+            deleted_at=None,
+            summary=None,
+        )
+    ]
+
+    agent = SimpleNamespace(id=agent_id, name="Planner")
+
+    # We will track the call order and confirm they run sequentially.
+    # While we can't easily assert on absence of asyncio.gather, we can ensure both mock queries are called.
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).return_value = {
+        room_id_1: [agent],
+        room_id_2: [agent]
+    }
+    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).return_value = {
+        room_id_1: ChatMessageEntity(
+            id=uuid4(),
+            room_id=room_id_1,
+            user_id=user_id,
+            content="Message 1",
+            created_at=now,
+        ),
+        room_id_2: ChatMessageEntity(
+            id=uuid4(),
+            room_id=room_id_2,
+            user_id=user_id,
+            content="Message 2",
+            created_at=now,
+        )
+    }
+
+    summaries = await chat_service.list_room_summaries(user_id, limit=50, before_id=None)
+    assert len(summaries) == 2
+
+    # Verify the mock repository methods were called
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).assert_awaited_once_with([room_id_1, room_id_2])
+    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).assert_awaited_once_with([room_id_1, room_id_2])

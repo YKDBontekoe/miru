@@ -115,10 +115,8 @@ class ChatService:
             return []
 
         room_ids = [room.id for room in rooms]
-        rooms_agents_map, latest_messages_map = await asyncio.gather(
-            self.chat_repo.list_rooms_agents(room_ids),
-            self.chat_repo.get_latest_messages_for_rooms(room_ids),
-        )
+        rooms_agents_map = await self.chat_repo.list_rooms_agents(room_ids)
+        latest_messages_map = await self.chat_repo.get_latest_messages_for_rooms(room_ids)
 
         def build_summary(room: ChatRoomEntity) -> RoomSummaryResponse:
             agents = rooms_agents_map.get(room.id, [])
