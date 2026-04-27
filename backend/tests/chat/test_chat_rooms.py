@@ -215,6 +215,7 @@ async def test_list_room_summaries_latest_message_without_markers(
     assert summaries[0].has_mention is False
     assert summaries[0].has_task is False
 
+
 @pytest.mark.asyncio
 async def test_list_room_summaries_sequential_execution(chat_service: ChatService) -> None:
     room_id_1 = uuid4()
@@ -242,7 +243,7 @@ async def test_list_room_summaries_sequential_execution(chat_service: ChatServic
             updated_at=now,
             deleted_at=None,
             summary=None,
-        )
+        ),
     ]
 
     agent = SimpleNamespace(id=agent_id, name="Planner")
@@ -251,7 +252,7 @@ async def test_list_room_summaries_sequential_execution(chat_service: ChatServic
     # While we can't easily assert on absence of asyncio.gather, we can ensure both mock queries are called.
     typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).return_value = {
         room_id_1: [agent],
-        room_id_2: [agent]
+        room_id_2: [agent],
     }
     typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).return_value = {
         room_id_1: ChatMessageEntity(
@@ -267,12 +268,16 @@ async def test_list_room_summaries_sequential_execution(chat_service: ChatServic
             user_id=user_id,
             content="Message 2",
             created_at=now,
-        )
+        ),
     }
 
     summaries = await chat_service.list_room_summaries(user_id, limit=50, before_id=None)
     assert len(summaries) == 2
 
     # Verify the mock repository methods were called
-    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).assert_awaited_once_with([room_id_1, room_id_2])
-    typing.cast("AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms).assert_awaited_once_with([room_id_1, room_id_2])
+    typing.cast("AsyncMock", chat_service.chat_repo.list_rooms_agents).assert_awaited_once_with(
+        [room_id_1, room_id_2]
+    )
+    typing.cast(
+        "AsyncMock", chat_service.chat_repo.get_latest_messages_for_rooms
+    ).assert_awaited_once_with([room_id_1, room_id_2])
