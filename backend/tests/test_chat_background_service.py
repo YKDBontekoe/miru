@@ -35,7 +35,7 @@ async def test_update_mood_background_exception(background_service: ChatBackgrou
     background_service.agent_service.update_mood.side_effect = Exception("Failed")  # type: ignore
 
     # Should not raise
-    with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+    with patch("app.domain.chat.background_service.logger.exception") as mock_logger:
         await background_service.update_mood_background(agent_id, recent_context)
         mock_logger.assert_called_once()
 
@@ -60,7 +60,7 @@ async def test_update_affinity_background_exception(
     background_service.agent_repo.upsert_affinity.side_effect = Exception("Failed")  # type: ignore
 
     # Should not raise
-    with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+    with patch("app.domain.chat.background_service.logger.exception") as mock_logger:
         await background_service.update_affinity_background(user_id, agent_id)
         mock_logger.assert_called_once()
 
@@ -111,7 +111,7 @@ async def test_store_memories_background_exception(
 
     with (
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
-        patch("app.domain.chat.background_service.logger.warning") as mock_logger,
+        patch("app.domain.chat.background_service.logger.exception") as mock_logger,
     ):
         mock_embed.side_effect = Exception("Embed failed")
 
@@ -177,6 +177,6 @@ async def test_update_room_summary_background_exception(
     ) as mock_structured_completion:
         mock_structured_completion.side_effect = Exception("error")
 
-        with patch("app.domain.chat.background_service.logger.warning") as mock_logger:
+        with patch("app.domain.chat.background_service.logger.exception") as mock_logger:
             await background_service.update_room_summary_background(room_id, history)
             mock_logger.assert_called_once()
