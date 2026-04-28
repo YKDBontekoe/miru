@@ -183,6 +183,4 @@ class ChatBackgroundService:
                 logger.info("Successfully updated summary for room %s", room_id)
 
         except Exception:
-            logger.warning(
-                "Background room summary update failed for room %s", room_id
-            )
+            logger.warning("Background room summary update failed for room %s", room_id)
