@@ -120,15 +120,14 @@ class ChatWebSocketBroadcaster:
                     ),
                     loop,
                 )
-            except Exception as e:
-                logger.exception(
+            except Exception:
+                logger.warning(
                     "step_callback error — suppressed",
                     extra={
                         "room_id": str(room_id),
                         "acting_name": acting_name,
                         "activity": activity,
                         "detail": detail,
-                        "exception": str(e),
                     },
                 )
 

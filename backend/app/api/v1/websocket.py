@@ -83,7 +83,7 @@ async def _handle_send_message(
             accept_language=accept_language,
         )
     except Exception:
-        logger.exception("WS message processing failed  room=%s  user=%s", room_id, user_id)
+        logger.warning("WS message processing failed  room=%s  user=%s", room_id, user_id)
         await chat_hub.send_to_user(
             user_id,
             {

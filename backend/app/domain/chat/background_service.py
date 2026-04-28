@@ -47,7 +47,7 @@ class ChatBackgroundService:
         try:
             await self.agent_service.update_mood(agent_id, recent_context)
         except Exception:
-            logger.warning("Background mood update failed for agent %s", agent_id, exc_info=True)
+            logger.warning("Background mood update failed for agent %s", agent_id)
 
     async def update_affinity_background(self, user_id: UUID, agent_id: UUID) -> None:
         """Increment the user ↔ agent affinity score after a conversation turn."""
@@ -58,7 +58,6 @@ class ChatBackgroundService:
                 "Background affinity update failed for user=%s agent=%s",
                 user_id,
                 agent_id,
-                exc_info=True,
             )
 
     async def store_memories_background(
@@ -111,7 +110,7 @@ class ChatBackgroundService:
                     )
                 )
         except Exception:
-            logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
+            logger.warning("Background memory storage failed for room=%s", room_id)
 
     async def update_room_summary_background(
         self, room_id: UUID, conversation_history: list[dict]
@@ -185,5 +184,5 @@ class ChatBackgroundService:
 
         except Exception:
             logger.warning(
-                "Background room summary update failed for room %s", room_id, exc_info=True
+                "Background room summary update failed for room %s", room_id
             )

@@ -248,7 +248,7 @@ class ChatService:
                 logger.warning("Connection error to AI service for user=%s", user_id)
                 yield "\n[[STATUS:error]]\nConnection error. Please try again later.\n"
             else:
-                logger.exception("Unexpected error in chat stream for user=%s", user_id)
+                logger.warning("Unexpected error in chat stream for user=%s", user_id)
                 yield "\n[[STATUS:error]]\nAn unexpected error occurred.\n"
 
     async def run_crew(
@@ -413,7 +413,7 @@ class ChatService:
                 )
 
         except Exception:
-            logger.exception("Failed processing crew task for room=%s", room_id)
+            logger.warning("Failed processing crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
                 {
