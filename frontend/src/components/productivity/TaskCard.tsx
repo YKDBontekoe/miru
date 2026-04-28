@@ -5,8 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '../ScalePressable';
 import { Task } from '../../core/models';
-import { theme } from '../../core/theme';
+import { theme } from '@/core/theme';
 import { useTheme } from '../../hooks/useTheme';
+
+const S = theme.spacing;
+const R = theme.borderRadius;
 
 
 interface Props {

@@ -1,8 +1,11 @@
 import React from 'react';
 import { View, Pressable } from 'react-native';
+
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
+
 
 
 
