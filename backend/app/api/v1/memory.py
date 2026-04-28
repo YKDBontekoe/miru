@@ -166,7 +166,7 @@ async def upload_document(
             status_code=503, detail="Upstream AI service is currently unreachable"
         ) from e
     except Exception:
-        logger.warning("Failed to process document")
+        logger.exception("Failed to process document")
         raise HTTPException(status_code=500, detail="Failed to process document") from None
 
 
