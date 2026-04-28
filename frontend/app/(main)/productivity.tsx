@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Platform,
   Pressable,
@@ -16,16 +15,13 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { theme } from '../../src/core/theme';
-
 import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
 import { TodayPlanCard } from '@/components/productivity/TodayPlanCard';
-import { PriorityFilter } from '@/components/productivity/PriorityFilter';
-import { ProductivityTabs } from '@/components/productivity/ProductivityTabs';
-import { ProductivityItem } from '@/components/productivity/ProductivityItem';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { PriorityFilter, TaskPriority } from '@/components/productivity/PriorityFilter';
+import { ProductivityTabs, Tab } from '@/components/productivity/ProductivityTabs';
+import { ProductivityItem, RenderItemData } from '@/components/productivity/ProductivityItem';
+import { theme } from '../../src/core/theme';
+import { Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
@@ -48,15 +44,6 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
-type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
-
-type RenderItemData = {
-  date?: number;
-  type: 'note' | 'task' | 'event';
-  item: Note | Task | CalendarEvent;
-  id: string;
-};
 
 export default function ProductivityScreen() {
   const { t, i18n } = useTranslation();
@@ -90,22 +77,7 @@ export default function ProductivityScreen() {
     fetchNotes(controller.signal);
     fetchTasks(controller.signal);
     fetchEvents(controller.signal);
-
-
-
-  const renderItem = useCallback(
-    ({ item }: { item: RenderItemData }) => (
-      <ProductivityItem
-        item={item}
-        deleteNote={deleteNote}
-        deleteTask={deleteTask}
-        toggleTask={toggleTask}
-      />
-    ),
-    [deleteNote, deleteTask, toggleTask]
-  );
-
-  return () => {
+    return () => {
       controller.abort();
     };
   }, [fetchEvents, fetchNotes, fetchTasks]);
@@ -343,16 +315,6 @@ export default function ProductivityScreen() {
 
 
 
-
-
-
-
-
-
-
-
-
-
   const renderItem = useCallback(
     ({ item }: { item: RenderItemData }) => (
       <ProductivityItem
@@ -421,90 +383,14 @@ export default function ProductivityScreen() {
         </View>
       </View>
 
-      <View style={styles.tabsContainer}>
-        {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
-          <Pressable
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={({ pressed }) => [
-              styles.tabButton,
-              activeTab === tab && styles.tabButtonActive,
-              pressed && activeTab !== tab && { opacity: 0.6 },
-            ]}
-          >
-            <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'today'
-                ? t('productivity.today')
-                : tab === 'all'
-                  ? t('productivity.all') || 'All'
-                  : tab === 'notes'
-                    ? t('productivity.notes') || 'Notes'
-                    : t('productivity.tasks') || 'Tasks'}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
+      <ProductivityTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            marginHorizontal: S.xl,
-            marginBottom: S.sm,
-          }}
-        >
-          {(
-            [
-              { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
-              {
-                key: 'overdue',
-                label: t('productivity.priority.overdue', { count: taskPriorityCounts.overdue }),
-              },
-              {
-                key: 'today',
-                label: t('productivity.priority.today', { count: taskPriorityCounts.today }),
-              },
-              {
-                key: 'upcoming',
-                label: t('productivity.priority.upcoming', { count: taskPriorityCounts.upcoming }),
-              },
-              {
-                key: 'no_due',
-                label: t('productivity.priority.no_due', { count: taskPriorityCounts.no_due }),
-              },
-            ] as const
-          ).map((option) => (
-            <Pressable
-              key={option.key}
-              onPress={() => setTaskPriority(option.key)}
-              style={({ pressed }) => [
-                {
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
-                  backgroundColor:
-                    taskPriority === option.key ? T.primary.surfaceLight : T.surface.light,
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  marginRight: 8,
-                  marginBottom: 8,
-                },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <AppText
-                variant="caption"
-                style={{
-                  color: taskPriority === option.key ? T.primary.DEFAULT : T.onSurface.mutedLight,
-                  fontWeight: '700',
-                }}
-              >
-                {option.label}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
+        <PriorityFilter
+          taskPriority={taskPriority}
+          setTaskPriority={setTaskPriority}
+          taskPriorityCounts={taskPriorityCounts}
+        />
       )}
 
       <FlatList
@@ -516,42 +402,11 @@ export default function ProductivityScreen() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefresh}
-            tintColor={T.primary.DEFAULT}
+            tintColor={DESIGN_TOKENS.colors.primary}
           />
         }
         renderItem={renderItem}
-        ListHeaderComponent={
-          activeTab === 'today' && todayPlan ? (
-            <View
-              style={{
-                borderRadius: R.xl,
-                backgroundColor: T.primary.surfaceLight,
-                borderWidth: 1,
-                borderColor: T.border.light,
-                padding: S.lg,
-                marginBottom: S.md,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
-                  Today plan
-                </AppText>
-                <Pressable onPress={() => setTodayPlan(null)}>
-                  <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
-                </Pressable>
-              </View>
-              <AppText style={{ color: T.onSurface.mutedLight, marginTop: 8, lineHeight: 20 }}>
-                {todayPlan}
-              </AppText>
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={<TodayPlanCard todayPlan={activeTab === 'today' ? todayPlan : null} setTodayPlan={setTodayPlan} />}
         ListEmptyComponent={
           !isLoading ? (
             <ProductivityEmptyState
@@ -695,9 +550,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: S.md,
   },
-  eventBody: {
-    flex: 1,
-  },
   eventTitle: {
     color: T.onSurface.light,
     fontWeight: '700',
@@ -707,10 +559,6 @@ const styles = StyleSheet.create({
     color: T.onSurface.mutedLight,
     marginTop: 2,
     fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: S.massive,
   },
   emptyIconCircle: {
     width: 80,
@@ -732,10 +580,6 @@ const styles = StyleSheet.create({
     color: T.onSurface.mutedLight,
     paddingHorizontal: S.xxxl,
     lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: S.md,
   },
   emptyButton: {
     flexDirection: 'row',

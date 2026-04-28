@@ -5,12 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { NoteCard } from '@/components/productivity/NoteCard';
 import { TaskCard } from '@/components/productivity/TaskCard';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { theme } from '@/core/theme';
+
+
 import { CalendarEvent, Note, Task } from '@/core/models';
 
-const S = theme.spacing;
-const R = theme.borderRadius;
 
 export type RenderItemData = {
   date?: number;
@@ -59,7 +57,7 @@ export const ProductivityItem = React.memo(({
           onPress: async () => {
             try {
               await action();
-            } catch (error) {
+            } catch (_error) {
               Alert.alert(
                 t('errors.unexpected') || 'An unexpected error occurred.',
                 t('productivity.delete_failed') || 'Failed to delete item.'

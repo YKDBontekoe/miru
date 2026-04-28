@@ -2,11 +2,9 @@ import React from 'react';
 import { View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { theme } from '@/core/theme';
 
-const S = theme.spacing;
-const R = theme.borderRadius;
+
+
 
 interface TodayPlanCardProps {
   todayPlan: string | null;

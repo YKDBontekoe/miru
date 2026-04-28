@@ -2,10 +2,9 @@ import React from 'react';
 import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { theme } from '@/core/theme';
 
-const S = theme.spacing;
+
+
 
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
 

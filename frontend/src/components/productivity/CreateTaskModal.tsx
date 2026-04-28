@@ -17,8 +17,6 @@ import { useProductivityStore } from '../../store/useProductivityStore';
 import { theme } from '../../core/theme';
 import { useTheme } from '../../hooks/useTheme';
 
-const S = theme.spacing;
-const R = theme.borderRadius;
 
 interface Props {
   visible: boolean;
