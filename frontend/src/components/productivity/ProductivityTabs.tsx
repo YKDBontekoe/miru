@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { theme } from '@/core/theme';
 
@@ -21,20 +21,16 @@ export const ProductivityTabs = React.memo(({ activeTab, setActiveTab }: Product
   const { t } = useTranslation();
 
   return (
-    <View style={styles.tabsContainer}>
+    <View className="flex-row bg-surface-soft rounded-xl p-1 mx-6 mt-6 mb-4 border border-border">
       {TABS.map((tab) => {
         const isActive = activeTab === tab;
         return (
           <Pressable
             key={tab}
             onPress={() => setActiveTab(tab)}
-            style={({ pressed }) => [
-              styles.tabButton,
-              isActive && styles.tabButtonActive,
-              pressed && !isActive && { opacity: 0.6 },
-            ]}
+            className={`flex-1 py-3 items-center rounded-lg bg-transparent ${isActive ? 'bg-surface shadow-sm' : ''} ${pressed && !isActive ? 'opacity-60' : ''}`}
           >
-            <AppText style={[styles.tabText, isActive && styles.tabTextActive]}>
+            <AppText className={`text-[14px] font-medium text-muted ${isActive ? 'font-bold text-text' : ''}`}>
               {tab === 'today'
                 ? t('productivity.today') || 'Today'
                 : tab === 'all'
@@ -51,37 +47,3 @@ export const ProductivityTabs = React.memo(({ activeTab, setActiveTab }: Product
 });
 
 ProductivityTabs.displayName = 'ProductivityTabs';
-
-const styles = StyleSheet.create({
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
-    borderRadius: R.xl,
-    padding: S.xs,
-    marginHorizontal: S.xl,
-    marginTop: S.lg,
-    marginBottom: S.md,
-    borderWidth: 1,
-    borderColor: DESIGN_TOKENS.colors.border,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: S.sm,
-    alignItems: 'center',
-    borderRadius: R.lg,
-    backgroundColor: 'transparent',
-  },
-  tabButtonActive: {
-    backgroundColor: DESIGN_TOKENS.colors.surface,
-    ...theme.elevation.sm,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: DESIGN_TOKENS.colors.muted,
-  },
-  tabTextActive: {
-    fontWeight: '700',
-    color: DESIGN_TOKENS.colors.text,
-  },
-});

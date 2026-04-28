@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { theme } from '@/core/theme';
 
@@ -31,18 +31,14 @@ export const PriorityFilter = React.memo(({
   ];
 
   return (
-    <View style={styles.container}>
+    <View className="flex-row flex-wrap mx-6 mb-2">
       {options.map((option) => {
         const isActive = taskPriority === option.key;
         return (
           <Pressable
             key={option.key}
             onPress={() => setTaskPriority(option.key)}
-            style={({ pressed }) => [
-              styles.chip,
-              isActive && styles.chipActive,
-              pressed && { opacity: 0.8 },
-            ]}
+            className={`rounded-xl border px-3 py-1.5 mr-2 mb-2 ${isActive ? 'border-primary bg-primary-soft' : 'border-border bg-surface'} ${pressed ? 'opacity-80' : ''}`}
           >
             <AppText
               variant="caption"
@@ -61,33 +57,3 @@ export const PriorityFilter = React.memo(({
 });
 
 PriorityFilter.displayName = 'PriorityFilter';
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: S.xl,
-    marginBottom: S.sm,
-  },
-  chip: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: DESIGN_TOKENS.colors.border,
-    backgroundColor: DESIGN_TOKENS.colors.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipActive: {
-    borderColor: DESIGN_TOKENS.colors.primary,
-    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-  },
-  chipText: {
-    color: DESIGN_TOKENS.colors.muted,
-    fontWeight: '700',
-  },
-  chipTextActive: {
-    color: DESIGN_TOKENS.colors.primary,
-  },
-});

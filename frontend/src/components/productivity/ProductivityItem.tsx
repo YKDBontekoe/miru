@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { NoteCard } from './NoteCard';
-import { TaskCard } from './TaskCard';
+import { AppText } from '@/components/AppText';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { theme } from '@/core/theme';
 import { CalendarEvent, Note, Task } from '@/core/models';
@@ -34,6 +34,7 @@ export const ProductivityItem = React.memo(({
 }: ProductivityItemProps) => {
   const { t, i18n } = useTranslation();
 
+
   const confirmDelete = (action: () => Promise<void>) =>
     Alert.alert(
       t('productivity.delete') || 'Delete',
@@ -43,10 +44,20 @@ export const ProductivityItem = React.memo(({
         {
           text: t('settings.actions.delete') || 'Delete',
           style: 'destructive',
-          onPress: () => action(),
+          onPress: async () => {
+            try {
+              await action();
+            } catch (error) {
+              Alert.alert(
+                t('errors.unexpected') || 'An unexpected error occurred.',
+                t('productivity.delete_failed') || 'Failed to delete item.'
+              );
+            }
+          },
         },
       ]
     );
+
 
   if (item.type === 'note') {
     const note = item.item as Note;
@@ -56,13 +67,13 @@ export const ProductivityItem = React.memo(({
   if (item.type === 'event') {
     const event = item.item as CalendarEvent;
     return (
-      <View style={styles.eventCard}>
-        <View style={styles.eventIcon}>
+      <View className="flex-row items-center bg-surface border border-border rounded-xl p-6 mb-4 shadow-sm">
+        <View className="w-8 h-8 rounded-lg bg-primary-soft items-center justify-center mr-4">
           <Ionicons name="calendar-outline" size={16} color={DESIGN_TOKENS.colors.primary} />
         </View>
-        <View style={styles.eventBody}>
-          <AppText style={styles.eventTitle}>{event.title}</AppText>
-          <AppText style={styles.eventMeta}>
+        <View className="flex-1">
+          <AppText className="text-text font-bold text-[15px]">{event.title}</AppText>
+          <AppText className="text-muted mt-0.5 text-[13px]">
             {new Intl.DateTimeFormat(i18n.language, {
               weekday: 'short',
               month: 'short',
@@ -87,39 +98,3 @@ export const ProductivityItem = React.memo(({
 });
 
 ProductivityItem.displayName = 'ProductivityItem';
-
-const styles = StyleSheet.create({
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: DESIGN_TOKENS.colors.surface,
-    borderWidth: 1,
-    borderColor: DESIGN_TOKENS.colors.border,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: DESIGN_TOKENS.colors.text,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: DESIGN_TOKENS.colors.muted,
-    marginTop: 2,
-    fontSize: 13,
-  },
-});

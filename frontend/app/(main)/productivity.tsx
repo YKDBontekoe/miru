@@ -14,11 +14,11 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
-import { TodayPlanCard } from '../../src/components/productivity/TodayPlanCard';
-import { PriorityFilter, TaskPriority } from '../../src/components/productivity/PriorityFilter';
-import { ProductivityTabs, Tab } from '../../src/components/productivity/ProductivityTabs';
-import { ProductivityItem, RenderItemData } from '../../src/components/productivity/ProductivityItem';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
+import { TodayPlanCard } from '@/components/productivity/TodayPlanCard';
+import { PriorityFilter, TaskPriority } from '@/components/productivity/PriorityFilter';
+import { ProductivityTabs, Tab } from '@/components/productivity/ProductivityTabs';
+import { ProductivityItem, RenderItemData } from '@/components/productivity/ProductivityItem';
 import { theme } from '../../src/core/theme';
 import { Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
@@ -44,7 +44,59 @@ export default function ProductivityScreen() {
     const handler = setTimeout(() => {
       setSearchQuery(searchInput);
     }, 300);
-    return () => clearTimeout(handler);
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+  return () => clearTimeout(handler);
   }, [searchInput]);
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
@@ -68,7 +120,59 @@ export default function ProductivityScreen() {
     fetchNotes(controller.signal);
     fetchTasks(controller.signal);
     fetchEvents(controller.signal);
-    return () => {
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+  return () => {
       controller.abort();
     };
   }, [fetchEvents, fetchNotes, fetchTasks]);
@@ -305,6 +409,82 @@ export default function ProductivityScreen() {
   }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
 
 
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
@@ -378,12 +558,12 @@ export default function ProductivityScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading && dataToRender.length > 0}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
             tintColor={DESIGN_TOKENS.colors.primary}
           />
         }
-        renderItem={({ item }) => (
+        renderItem={renderItem}) => (
           <ProductivityItem
             item={item}
             deleteNote={deleteNote}
@@ -393,12 +573,14 @@ export default function ProductivityScreen() {
         )}
         ListHeaderComponent={<TodayPlanCard todayPlan={activeTab === 'today' ? todayPlan : null} setTodayPlan={setTodayPlan} />}
         ListEmptyComponent={
-          <ProductivityEmptyState
-            searchQuery={searchQuery}
-            activeTab={activeTab}
-            setShowCreateNote={setShowCreateNote}
-            setShowCreateTask={setShowCreateTask}
-          />
+          !isLoading ? (
+            <ProductivityEmptyState
+              searchQuery={searchQuery}
+              activeTab={activeTab}
+              setShowCreateNote={setShowCreateNote}
+              setShowCreateTask={setShowCreateTask}
+            />
+          ) : null
         }
       />
 

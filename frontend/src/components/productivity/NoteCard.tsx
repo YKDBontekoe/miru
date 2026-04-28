@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { ScalePressable } from '../ScalePressable';
 import { Note } from '../../core/models';
 import { theme } from '../../core/theme';

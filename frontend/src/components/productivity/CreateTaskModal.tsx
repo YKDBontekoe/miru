@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { ScalePressable } from '../ScalePressable';
 import { useProductivityStore } from '../../store/useProductivityStore';
 import { theme } from '../../core/theme';
