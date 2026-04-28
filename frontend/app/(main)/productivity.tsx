@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Platform,
   Pressable,
@@ -16,10 +15,13 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
+import { TodayPlanCard } from '@/components/productivity/TodayPlanCard';
+import { PriorityFilter, TaskPriority } from '@/components/productivity/PriorityFilter';
+import { ProductivityTabs, Tab } from '@/components/productivity/ProductivityTabs';
+import { ProductivityItem, RenderItemData } from '@/components/productivity/ProductivityItem';
 import { theme } from '../../src/core/theme';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
@@ -42,15 +44,6 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
-type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
-
-type RenderItemData = {
-  date?: number;
-  type: 'note' | 'task' | 'event';
-  item: Note | Task | CalendarEvent;
-  id: string;
-};
 
 export default function ProductivityScreen() {
   const { t, i18n } = useTranslation();
@@ -119,22 +112,6 @@ export default function ProductivityScreen() {
     fetchEvents();
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
-  const confirmDelete = useCallback(
-    (action: () => Promise<void>) =>
-      Alert.alert(
-        t('productivity.delete') || 'Delete',
-        t('productivity.are_you_sure') || 'Are you sure?',
-        [
-          { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
-          {
-            text: t('settings.actions.delete') || 'Delete',
-            style: 'destructive',
-            onPress: () => action(),
-          },
-        ]
-      ),
-    [t]
-  );
 
   const filteredNotes = useMemo(() => {
     if (!searchQuery) return notes;
@@ -336,45 +313,18 @@ export default function ProductivityScreen() {
     setActiveTab('today');
   }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: RenderItemData }) => {
-      if (item.type === 'note') {
-        const note = item.item as Note;
-        return <NoteCard note={note} onDelete={() => confirmDelete(() => deleteNote(note.id))} />;
-      }
-      if (item.type === 'event') {
-        const event = item.item as CalendarEvent;
-        return (
-          <View style={styles.eventCard}>
-            <View style={styles.eventIcon}>
-              <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
-            </View>
-            <View style={styles.eventBody}>
-              <AppText style={styles.eventTitle}>{event.title}</AppText>
-              <AppText style={styles.eventMeta}>
-                {new Intl.DateTimeFormat(i18n.language, {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: event.is_all_day ? undefined : '2-digit',
-                  minute: event.is_all_day ? undefined : '2-digit',
-                }).format(new Date(event.start_time))}
-              </AppText>
-            </View>
-          </View>
-        );
-      }
 
-      const task = item.item as Task;
-      return (
-        <TaskCard
-          task={task}
-          onToggle={() => toggleTask(task.id)}
-          onDelete={() => confirmDelete(() => deleteTask(task.id))}
-        />
-      );
-    },
-    [confirmDelete, deleteNote, deleteTask, i18n.language, toggleTask]
+
+  const renderItem = useCallback(
+    ({ item }: { item: RenderItemData }) => (
+      <ProductivityItem
+        item={item}
+        deleteNote={deleteNote}
+        deleteTask={deleteTask}
+        toggleTask={toggleTask}
+      />
+    ),
+    [deleteNote, deleteTask, toggleTask]
   );
 
   return (
@@ -433,90 +383,14 @@ export default function ProductivityScreen() {
         </View>
       </View>
 
-      <View style={styles.tabsContainer}>
-        {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
-          <Pressable
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={({ pressed }) => [
-              styles.tabButton,
-              activeTab === tab && styles.tabButtonActive,
-              pressed && activeTab !== tab && { opacity: 0.6 },
-            ]}
-          >
-            <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'today'
-                ? t('productivity.today')
-                : tab === 'all'
-                  ? t('productivity.all') || 'All'
-                  : tab === 'notes'
-                    ? t('productivity.notes') || 'Notes'
-                    : t('productivity.tasks') || 'Tasks'}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
+      <ProductivityTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            marginHorizontal: S.xl,
-            marginBottom: S.sm,
-          }}
-        >
-          {(
-            [
-              { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
-              {
-                key: 'overdue',
-                label: t('productivity.priority.overdue', { count: taskPriorityCounts.overdue }),
-              },
-              {
-                key: 'today',
-                label: t('productivity.priority.today', { count: taskPriorityCounts.today }),
-              },
-              {
-                key: 'upcoming',
-                label: t('productivity.priority.upcoming', { count: taskPriorityCounts.upcoming }),
-              },
-              {
-                key: 'no_due',
-                label: t('productivity.priority.no_due', { count: taskPriorityCounts.no_due }),
-              },
-            ] as const
-          ).map((option) => (
-            <Pressable
-              key={option.key}
-              onPress={() => setTaskPriority(option.key)}
-              style={({ pressed }) => [
-                {
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
-                  backgroundColor:
-                    taskPriority === option.key ? T.primary.surfaceLight : T.surface.light,
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  marginRight: 8,
-                  marginBottom: 8,
-                },
-                pressed && { opacity: 0.8 },
-              ]}
-            >
-              <AppText
-                variant="caption"
-                style={{
-                  color: taskPriority === option.key ? T.primary.DEFAULT : T.onSurface.mutedLight,
-                  fontWeight: '700',
-                }}
-              >
-                {option.label}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
+        <PriorityFilter
+          taskPriority={taskPriority}
+          setTaskPriority={setTaskPriority}
+          taskPriorityCounts={taskPriorityCounts}
+        />
       )}
 
       <FlatList
@@ -526,125 +400,22 @@ export default function ProductivityScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading && dataToRender.length > 0}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
-            tintColor={T.primary.DEFAULT}
+            tintColor={DESIGN_TOKENS.colors.primary}
           />
         }
         renderItem={renderItem}
-        ListHeaderComponent={
-          activeTab === 'today' && todayPlan ? (
-            <View
-              style={{
-                borderRadius: R.xl,
-                backgroundColor: T.primary.surfaceLight,
-                borderWidth: 1,
-                borderColor: T.border.light,
-                padding: S.lg,
-                marginBottom: S.md,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
-                  Today plan
-                </AppText>
-                <Pressable onPress={() => setTodayPlan(null)}>
-                  <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
-                </Pressable>
-              </View>
-              <AppText style={{ color: T.onSurface.mutedLight, marginTop: 8, lineHeight: 20 }}>
-                {todayPlan}
-              </AppText>
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={<TodayPlanCard todayPlan={activeTab === 'today' ? todayPlan : null} setTodayPlan={setTodayPlan} />}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons
-                name={
-                  activeTab === 'notes'
-                    ? 'document-text'
-                    : activeTab === 'tasks'
-                      ? 'checkbox'
-                      : activeTab === 'today'
-                        ? 'sunny-outline'
-                        : 'planet'
-                }
-                size={42}
-                color={T.primary.DEFAULT}
-              />
-            </View>
-            <AppText variant="h3" style={styles.emptyTitle}>
-              {searchQuery
-                ? t('productivity.no_matches') || 'No matches found'
-                : activeTab === 'notes'
-                  ? t('productivity.no_notes') || 'No Notes'
-                  : activeTab === 'tasks'
-                    ? t('productivity.no_tasks') || 'No Tasks'
-                    : activeTab === 'today'
-                      ? t('productivity.nothing_urgent_today')
-                      : t('productivity.workspace_clear') || 'Your workspace is clear'}
-            </AppText>
-            <AppText style={styles.emptySubtitle}>
-              {searchQuery
-                ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-                : activeTab === 'today'
-                  ? t('productivity.today_empty_detail')
-                  : t('productivity.capture_thoughts') ||
-                    'Capture your thoughts and track what needs to get done.'}
-            </AppText>
-
-            {!searchQuery && (
-              <View style={styles.emptyActions}>
-                {(activeTab === 'all' || activeTab === 'notes') && (
-                  <Pressable
-                    onPress={() => setShowCreateNote(true)}
-                    style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
-                  >
-                    <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
-                    <AppText style={styles.emptyButtonText}>
-                      {t('productivity.newNote') || 'New Note'}
-                    </AppText>
-                  </Pressable>
-                )}
-                {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
-                  <Pressable
-                    onPress={() => setShowCreateTask(true)}
-                    style={({ pressed }) => [
-                      styles.emptyButton,
-                      (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
-                      pressed && { opacity: 0.8 },
-                    ]}
-                  >
-                    <Ionicons
-                      name="add"
-                      size={18}
-                      color={
-                        activeTab === 'all' || activeTab === 'today' ? T.primary.DEFAULT : T.white
-                      }
-                      style={{ marginEnd: 6 }}
-                    />
-                    <AppText
-                      style={
-                        activeTab === 'all' || activeTab === 'today'
-                          ? styles.emptyButtonTextSecondary
-                          : styles.emptyButtonText
-                      }
-                    >
-                      {t('productivity.new_task')}
-                    </AppText>
-                  </Pressable>
-                )}
-              </View>
-            )}
-          </View>
+          !isLoading ? (
+            <ProductivityEmptyState
+              searchQuery={searchQuery}
+              activeTab={activeTab}
+              setShowCreateNote={setShowCreateNote}
+              setShowCreateTask={setShowCreateTask}
+            />
+          ) : null
         }
       />
 
@@ -779,9 +550,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: S.md,
   },
-  eventBody: {
-    flex: 1,
-  },
   eventTitle: {
     color: T.onSurface.light,
     fontWeight: '700',
@@ -791,10 +559,6 @@ const styles = StyleSheet.create({
     color: T.onSurface.mutedLight,
     marginTop: 2,
     fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: S.massive,
   },
   emptyIconCircle: {
     width: 80,
@@ -816,10 +580,6 @@ const styles = StyleSheet.create({
     color: T.onSurface.mutedLight,
     paddingHorizontal: S.xxxl,
     lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: S.md,
   },
   emptyButton: {
     flexDirection: 'row',
