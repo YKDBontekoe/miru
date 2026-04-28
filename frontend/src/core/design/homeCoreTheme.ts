@@ -5,13 +5,20 @@ export const HOME_CORE_COLORS = {
   text: '#13251C',
   muted: '#5A7467',
   border: '#DDE8E0',
+  borderFaint: '#8FB7A7',
   surface: '#FFFFFF',
   softSurface: '#ECF5F0',
   primary: '#147D64',
   primarySoft: '#DDF4EB',
+  primarySoftText: '#CDE9DF',
+  primaryDark: '#2D6A58',
+  primaryDarker: '#215445',
   accent: '#E28A2E',
   accentSoft: '#FDF1E1',
   deep: '#0F3D31',
+  success: '#2BA98A',
+  warning: '#F0B470',
+  warningText: '#9E5817',
 } as const;
 
 export const HOME_CORE_SHADOW = Platform.select({

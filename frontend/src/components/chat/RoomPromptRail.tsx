@@ -1,7 +1,18 @@
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
+
+const C = {
+  border: DESIGN_TOKENS.colors.border,
+  muted: DESIGN_TOKENS.colors.muted,
+  primary: DESIGN_TOKENS.colors.primary,
+  primarySoft: DESIGN_TOKENS.colors.primarySoft,
+  surfaceSoft: DESIGN_TOKENS.colors.surfaceSoft,
+  text: DESIGN_TOKENS.colors.text,
+  white: DESIGN_TOKENS.colors.white,
+};
 
 interface PromptItem {
   id: string;
@@ -39,14 +50,14 @@ export function RoomPromptRail({
   const { t } = useTranslation();
 
   return (
-    <View className="px-3 pb-2">
-      <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
-        <View className="px-3 mb-1.5 flex-row items-center">
-          <AppText variant="caption" className="text-[#5A7467] font-bold flex-1">
+    <View style={styles.container}>
+      <View style={styles.railContainer}>
+        <View style={styles.headerRow}>
+          <AppText variant="caption" style={styles.headingText}>
             {heading}
           </AppText>
           {isEditing ? (
-            <AppText variant="caption" className="text-[#147D64] font-bold">
+            <AppText variant="caption" style={styles.editingText}>
               {t('chat.editing', { defaultValue: 'Editing' })}
             </AppText>
           ) : null}
@@ -55,16 +66,18 @@ export function RoomPromptRail({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
+          contentContainerStyle={styles.scrollContent}
         >
           <Pressable
             onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
+            style={[
+              styles.actionButton,
+              styles.saveButton,
+              (isStreaming || !canSave) && styles.opacity50,
+            ]}
             disabled={isStreaming || !canSave}
           >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
+            <AppText style={[styles.actionButtonText, { color: C.primary }]}>{saveLabel}</AppText>
           </Pressable>
 
           {prompts.map((action) => (
@@ -72,17 +85,18 @@ export function RoomPromptRail({
               key={action.id}
               onPress={() => onPromptPress(action.text)}
               onLongPress={() => onPromptLongPress(action)}
-              className={`mr-2 rounded-full px-3 py-2 border ${
-                action.pinned
-                  ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
-                  : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
-              } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
+              style={[
+                styles.actionButton,
+                action.pinned ? styles.pinnedButton : styles.defaultButton,
+                isStreaming && styles.opacity60,
+              ]}
               disabled={isStreaming}
             >
               <AppText
-                className={`text-xs font-bold ${
-                  action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-                }`}
+                style={[
+                  styles.actionButtonText,
+                  { color: action.pinned ? C.primary : C.text },
+                ]}
               >
                 {action.pinned ? '★ ' : ''}
                 {action.text}
@@ -95,15 +109,15 @@ export function RoomPromptRail({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
+            contentContainerStyle={styles.contextScrollContent}
           >
             {contextActions.map((value) => (
               <Pressable
                 key={value}
                 onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+                style={styles.contextActionButton}
               >
-                <AppText variant="caption" className="text-[#5A7467] font-bold">
+                <AppText variant="caption" style={styles.contextActionText}>
                   {value}
                 </AppText>
               </Pressable>
@@ -114,3 +128,86 @@ export function RoomPromptRail({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  railContainer: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.white,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  headerRow: {
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headingText: {
+    color: C.muted,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  editingText: {
+    color: C.primary,
+    fontWeight: 'bold',
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
+  },
+  actionButton: {
+    marginRight: 8,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  saveButton: {
+    backgroundColor: C.primarySoft,
+    borderColor: `${C.primary}55`,
+  },
+  pinnedButton: {
+    backgroundColor: C.primarySoft,
+    borderColor: `${C.primary}55`,
+  },
+  defaultButton: {
+    backgroundColor: C.surfaceSoft,
+    borderColor: C.border,
+  },
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  opacity50: {
+    opacity: 0.5,
+  },
+  opacity60: {
+    opacity: 0.6,
+  },
+  contextScrollContent: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+  },
+  contextActionButton: {
+    marginRight: 8,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: C.surfaceSoft,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  contextActionText: {
+    color: C.muted,
+    fontWeight: 'bold',
+  },
+});
