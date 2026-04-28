@@ -13,7 +13,7 @@ import {
   HomeChatRow,
   HomeHeroCard,
   HomeSectionHeader,
-  HomeSurfaceCard,
+  HomeCard,
   HomeTaskRow,
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
@@ -132,7 +132,7 @@ export default function HomeScreen() {
             t={t}
           />
 
-          <HomeSurfaceCard>
+          <HomeCard>
             <HomeSectionHeader
               title={t('home.sections.quick_actions')}
               actionLabel={t('home.actions.see_all')}
@@ -160,9 +160,9 @@ export default function HomeScreen() {
                 onPress={() => router.push('/(main)/productivity')}
               />
             </View>
-          </HomeSurfaceCard>
+          </HomeCard>
 
-          <HomeSurfaceCard>
+          <HomeCard>
             <HomeSectionHeader
               title={t('home.sections.focus_board', { defaultValue: 'Focus board' })}
               actionLabel={t('home.actions.manage')}
@@ -223,9 +223,9 @@ export default function HomeScreen() {
                 .slice(0, 4)
                 .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
             )}
-          </HomeSurfaceCard>
+          </HomeCard>
 
-          <HomeSurfaceCard>
+          <HomeCard>
             <HomeSectionHeader
               title={t('home.sections.today_timeline', { defaultValue: 'Today timeline' })}
               actionLabel={t('home.actions.see_all')}
@@ -267,10 +267,10 @@ export default function HomeScreen() {
                 </View>
               ))
             )}
-          </HomeSurfaceCard>
+          </HomeCard>
 
           {recentRooms.length > 0 ? (
-            <HomeSurfaceCard>
+            <HomeCard>
               <HomeSectionHeader
                 title={t('home.sections.recent_chats')}
                 actionLabel={t('home.actions.see_all')}
@@ -284,11 +284,11 @@ export default function HomeScreen() {
                   t={t}
                 />
               ))}
-            </HomeSurfaceCard>
+            </HomeCard>
           ) : null}
 
           {agents.length > 0 ? (
-            <HomeSurfaceCard>
+            <HomeCard>
               <HomeSectionHeader
                 title={t('home.sections.your_agents')}
                 actionLabel={t('home.actions.manage')}
@@ -305,11 +305,11 @@ export default function HomeScreen() {
                     />
                   ))}
               </View>
-            </HomeSurfaceCard>
+            </HomeCard>
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
+            <HomeCard style={{ backgroundColor: '#F7FBF8' }}>
               <View style={{ alignItems: 'center', paddingVertical: 18 }}>
                 <View
                   style={{
@@ -350,7 +350,7 @@ export default function HomeScreen() {
                   </AppText>
                 </ScalePressable>
               </View>
-            </HomeSurfaceCard>
+            </HomeCard>
           ) : null}
         </View>
       </ScrollView>

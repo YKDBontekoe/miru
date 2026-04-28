@@ -1,34 +1,49 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 interface ChatInlineBannerProps {
   text: string;
   tone?: 'error' | 'success' | 'info';
 }
 
-const TONE_CLASSES = {
-  error: {
-    box: 'border-[#B23A3A66] bg-[#B23A3A1F]',
-    text: 'text-[#B23A3A]',
-  },
-  success: {
-    box: 'border-[#147D6466] bg-[#147D641F]',
-    text: 'text-[#147D64]',
-  },
-  info: {
-    box: 'border-[#5A746766] bg-[#5A74671F]',
-    text: 'text-[#5A7467]',
-  },
-} as const;
+const TONE_COLORS = {
+  error: DESIGN_TOKENS.colors.destructive,
+  success: DESIGN_TOKENS.colors.primary,
+  info: DESIGN_TOKENS.colors.muted,
+};
 
 export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps) {
-  const toneClass = TONE_CLASSES[tone];
+  const color = TONE_COLORS[tone];
+
   return (
-    <View className={`mx-3 mb-2 rounded-xl border px-2.5 py-2 ${toneClass.box}`}>
-      <AppText variant="caption" className={`font-bold ${toneClass.text}`}>
+    <View
+      style={[
+        styles.container,
+        {
+          borderColor: `${color}66`,
+          backgroundColor: `${color}1F`
+        }
+      ]}
+    >
+      <AppText variant="caption" style={[styles.text, { color }]}>
         {text}
       </AppText>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  text: {
+    fontWeight: 'bold',
+  },
+});
