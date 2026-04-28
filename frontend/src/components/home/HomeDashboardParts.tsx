@@ -48,21 +48,6 @@ export function HomeCard({
   );
 }
 
-export function HomeSurfaceCard({
-  children,
-  style,
-}: {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-}) {
-  return (
-    <View style={[styles.cardContainer, style]}>
-      {children}
-    </View>
-  );
-}
-
-
 export function HomeActionTile({
   label,
   icon,
