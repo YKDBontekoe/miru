@@ -35,6 +35,18 @@ export const ProductivityItem = React.memo(({
   const { t, i18n } = useTranslation();
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   const confirmDelete = (action: () => Promise<void>) =>
     Alert.alert(
       t('productivity.delete') || 'Delete',
@@ -57,6 +69,18 @@ export const ProductivityItem = React.memo(({
         },
       ]
     );
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   if (item.type === 'note') {

@@ -38,14 +38,11 @@ export const PriorityFilter = React.memo(({
           <Pressable
             key={option.key}
             onPress={() => setTaskPriority(option.key)}
-            className={`rounded-xl border px-3 py-1.5 mr-2 mb-2 ${isActive ? 'border-primary bg-primary-soft' : 'border-border bg-surface'} ${pressed ? 'opacity-80' : ''}`}
+            className={`rounded-xl border px-3 py-1.5 mr-2 mb-2 ${isActive ? 'border-primary bg-primary-soft' : 'border-border bg-surface'} active:opacity-80`}
           >
             <AppText
               variant="caption"
-              style={[
-                styles.chipText,
-                isActive && styles.chipTextActive,
-              ]}
+              className={`text-muted font-bold ${isActive ? 'text-primary' : ''}`}
             >
               {option.label}
             </AppText>

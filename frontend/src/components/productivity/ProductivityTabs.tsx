@@ -28,7 +28,7 @@ export const ProductivityTabs = React.memo(({ activeTab, setActiveTab }: Product
           <Pressable
             key={tab}
             onPress={() => setActiveTab(tab)}
-            className={`flex-1 py-3 items-center rounded-lg bg-transparent ${isActive ? 'bg-surface shadow-sm' : ''} ${pressed && !isActive ? 'opacity-60' : ''}`}
+            className={`flex-1 py-3 items-center rounded-lg bg-transparent ${isActive ? 'bg-surface shadow-sm' : 'active:opacity-60'}`}
           >
             <AppText className={`text-[14px] font-medium text-muted ${isActive ? 'font-bold text-text' : ''}`}>
               {tab === 'today'

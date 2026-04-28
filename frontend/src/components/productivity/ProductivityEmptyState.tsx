@@ -66,7 +66,7 @@ export const ProductivityEmptyState = React.memo(({
           {(activeTab === 'all' || activeTab === 'notes') && (
             <Pressable
               onPress={() => setShowCreateNote(true)}
-              style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+              className={`flex-row items-center bg-primary rounded-xl py-4 px-6 shadow-md active:opacity-80`}
             >
               <Ionicons name="add" size={18} color={'#FFFFFF'} className="mr-1.5" />
               <AppText className="text-white font-bold text-[15px]">
@@ -77,7 +77,7 @@ export const ProductivityEmptyState = React.memo(({
           {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
             <Pressable
               onPress={() => setShowCreateTask(true)}
-              className={`flex-row items-center rounded-xl py-4 px-6 ${activeTab === 'all' || activeTab === 'today' ? 'bg-primary-soft shadow-none' : 'bg-primary shadow-md'} ${pressed ? 'opacity-80' : ''}`}
+              className={`flex-row items-center rounded-xl py-4 px-6 ${activeTab === 'all' || activeTab === 'today' ? 'bg-primary-soft shadow-none' : 'bg-primary shadow-md'} active:opacity-80`}
             >
               <Ionicons
                 name="add"
