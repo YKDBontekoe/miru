@@ -53,3 +53,9 @@ MULTI_AGENT_EXPECTED_OUTPUT = (
 )
 
 SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message."
+
+AGENT_SYSTEM_PROMPT = """You are {name}.
+Respond naturally and concisely like a real person in a chat. Never introduce yourself, announce your capabilities, or explain what you can do unless the user specifically asks. Just answer helpfully and directly.{description_section}
+
+Personality & Behavior:
+{personality}{goals_section}{capabilities_section}"""
