@@ -161,13 +161,16 @@ async def upload_document(
             "message": f"Document processed and stored in {len(memory_ids)} chunks.",
             "memory_ids": [str(m) for m in memory_ids],
         }
-    except (APIConnectionError, APITimeoutError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError):
+        logger.warning("Failed to process document due to connectivity error", exc_info=True)
         raise HTTPException(
             status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+        ) from None
     except Exception:
-        logger.exception("Failed to process document")
-        raise HTTPException(status_code=500, detail="Failed to process document") from None
+        logger.error("Failed to process document", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="An unexpected error occurred while processing the document."
+        ) from None
 
 
 @router.delete(

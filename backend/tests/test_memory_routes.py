@@ -301,7 +301,9 @@ def test_upload_document_unexpected_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "Failed to process document"}
+    assert response.json() == {
+        "detail": "An unexpected error occurred while processing the document."
+    }
 
 
 def test_upload_document_service_unavailable(client: TestClient) -> None:
