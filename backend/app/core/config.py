@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
     webauthn_expected_origin: str = "http://localhost"
     # Comma-separated allowed CORS origins — tighten in production
     cors_allowed_origins: str = "*"
+    cors_allow_credentials: bool = True
     # Tavily Search API key for web search capabilities
     tavily_api_key: str | None = None
     # Steam Web API key for Steam games integration
@@ -59,6 +61,12 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def validate_cors(self) -> Settings:
+        if "*" in [o.strip() for o in self.cors_allowed_origins.split(",")]:
+            self.cors_allow_credentials = False
+        return self
 
 
 @lru_cache
