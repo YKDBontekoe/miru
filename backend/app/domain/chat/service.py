@@ -216,7 +216,7 @@ class ChatService:
         model_name = get_settings().default_chat_model
 
         messages: list[ChatCompletionMessageParam] = [
-            {"role": "system", "content": agent.personality}
+            {"role": "system", "content": agent.system_prompt or agent.personality}
         ]
         if accept_language:
             messages.append(
