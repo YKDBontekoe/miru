@@ -75,18 +75,14 @@ class CrewOrchestrator:
     """Handles the creation and execution of CrewAI tasks and agents."""
 
     @staticmethod
-    def get_crew_llm() -> _OpenRouterLLM:
+    def get_crew_llm() -> Any:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        # Cast the returned LLM to _OpenRouterLLM to satisfy type checkers
-        return cast(
-            "_OpenRouterLLM",
-            _OpenRouterLLM(
-                model=f"openrouter/{settings.default_chat_model}",
-                base_url="https://openrouter.ai/api/v1",
-                api_key=settings.openrouter_api_key,
-                additional_drop_params=["tool_choice"],
-            ),
+        return _OpenRouterLLM(
+            model=f"openrouter/{settings.default_chat_model}",
+            base_url="https://openrouter.ai/api/v1",
+            api_key=settings.openrouter_api_key,
+            additional_drop_params=["tool_choice"],
         )
 
     @staticmethod
@@ -242,7 +238,7 @@ class CrewOrchestrator:
         # Append user message to conversation history to isolate prompt injection
         if conversation_history is None:
             conversation_history = []
-        conversation_history.append({"role": "user", "content": user_message})
+        conversation_history.append({"role": "user", "name": "User", "content": user_message})
 
         history_text = CrewOrchestrator.format_history(conversation_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
