@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -64,11 +65,17 @@ class _OpenRouterLLM(LLM):
         return True
 
 
+class ChatOutput(BaseModel):
+    """Structured output expected from a CrewAI task execution."""
+
+    response: str
+
+
 class CrewOrchestrator:
     """Handles the creation and execution of CrewAI tasks and agents."""
 
     @staticmethod
-    def get_crew_llm() -> _OpenRouterLLM:
+    def get_crew_llm() -> Any:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
         return _OpenRouterLLM(
@@ -228,6 +235,11 @@ class CrewOrchestrator:
             else ""
         )
 
+        # Append user message to conversation history to isolate prompt injection
+        if conversation_history is None:
+            conversation_history = []
+        conversation_history.append({"role": "user", "name": "User", "content": user_message})
+
         history_text = CrewOrchestrator.format_history(conversation_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
@@ -244,10 +256,10 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatOutput,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,11 +274,11 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
                 agent=crew_agents[0],
+                output_pydantic=ChatOutput,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -289,4 +301,8 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
+        if result:
+            pydantic_output = getattr(result, "pydantic", None)
+            if isinstance(pydantic_output, ChatOutput):
+                return str(pydantic_output.response)
         return str(result)
