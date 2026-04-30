@@ -67,14 +67,17 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
     ({ item: value }: { item: string }) => (
       <Pressable
         onPress={() => onContextPress?.(value)}
-        className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+        className={`mr-2 rounded-xl px-2.5 py-[7px] border border-[#DDE8E0] bg-[#ECF5F0] ${
+          isStreaming ? 'opacity-60' : 'opacity-100'
+        }`}
+        disabled={isStreaming}
       >
         <AppText variant="caption" className="text-[#5A7467] font-bold">
           {value}
         </AppText>
       </Pressable>
     ),
-    [onContextPress]
+    [onContextPress, isStreaming]
   );
 
   return (
@@ -120,6 +123,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
             data={contextActions}
             keyExtractor={(item) => item}
             renderItem={renderContextAction}
+            extraData={isStreaming}
           />
         ) : null}
       </View>

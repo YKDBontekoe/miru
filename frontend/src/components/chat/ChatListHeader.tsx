@@ -65,16 +65,20 @@ export const ChatListHeader = React.memo(function ChatListHeader({
     return () => clearTimeout(timer);
   }, [localQuery, onChangeQuery]);
 
+  const handleSelectAgent = useCallback(
+    (id: string) => {
+      onSelectAgent(selectedAgentId === id ? null : id);
+    },
+    [selectedAgentId, onSelectAgent]
+  );
+
   const renderAgentItem = useCallback(
     ({ item }: { item: Agent }) => (
       <View style={{ marginRight: 8 }}>
-        <AgentPill
-          agent={item}
-          onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
-        />
+        <AgentPill agent={item} onPress={() => handleSelectAgent(item.id)} />
       </View>
     ),
-    [selectedAgentId, onSelectAgent]
+    [handleSelectAgent]
   );
 
   const keyExtractor = useCallback((item: Agent) => item.id, []);
