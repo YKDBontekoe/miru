@@ -64,24 +64,15 @@ export function GlobalQuickActions() {
     <>
       <View
         pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          right: 24,
-          bottom: fabBottom,
-        }}
+        className="absolute right-6"
+        style={{ bottom: fabBottom }}
       >
         <ScalePressable
           onPress={() => setVisible(true)}
+          className="w-14 h-14 rounded-full items-center justify-center border shadow-md"
           style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
             backgroundColor: DESIGN_TOKENS.colors.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
             borderColor: DESIGN_TOKENS.colors.surface,
-            ...DESIGN_TOKENS.shadow,
           }}
         >
           <Ionicons name="add" size={30} color={DESIGN_TOKENS.colors.white} />
@@ -89,21 +80,16 @@ export function GlobalQuickActions() {
       </View>
 
       <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.25)' }}>
-          <Pressable onPress={() => setVisible(false)} style={{ flex: 1 }} />
+        <View className="flex-1 justify-end bg-black/25">
+          <Pressable onPress={() => setVisible(false)} className="flex-1" />
           <View
+            className="rounded-t-3xl border px-4 pt-3.5 pb-6"
             style={{
               backgroundColor: DESIGN_TOKENS.colors.surface,
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              borderWidth: 1,
               borderColor: DESIGN_TOKENS.colors.border,
-              paddingHorizontal: 16,
-              paddingTop: 14,
-              paddingBottom: 26,
             }}
           >
-            <AppText variant="h3" style={{ color: DESIGN_TOKENS.colors.text, marginBottom: 10 }}>
+            <AppText variant="h3" className="mb-2.5" style={{ color: DESIGN_TOKENS.colors.text }}>
               {t('quickActions.title')}
             </AppText>
             {actions.map((action) => (
@@ -113,32 +99,19 @@ export function GlobalQuickActions() {
                   setVisible(false);
                   router.push(action.route as never);
                 }}
+                className="flex-row items-center rounded-xl border px-3 py-3 mb-2"
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderRadius: 14,
-                  borderWidth: 1,
                   borderColor: DESIGN_TOKENS.colors.border,
                   backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
-                  paddingHorizontal: 12,
-                  paddingVertical: 12,
-                  marginBottom: 8,
                 }}
               >
                 <View
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 10,
-                    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-                  }}
+                  className="w-[34px] h-[34px] rounded-[10px] items-center justify-center mr-2.5"
+                  style={{ backgroundColor: DESIGN_TOKENS.colors.primarySoft }}
                 >
                   <Ionicons name={action.icon} size={17} color={DESIGN_TOKENS.colors.primary} />
                 </View>
-                <AppText style={{ color: DESIGN_TOKENS.colors.text, fontWeight: '700' }}>
+                <AppText className="font-bold" style={{ color: DESIGN_TOKENS.colors.text }}>
                   {action.label}
                 </AppText>
               </ScalePressable>

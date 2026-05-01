@@ -71,35 +71,16 @@ export function Snackbar({
 
   return (
     <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          bottom: 24,
-          left: 16,
-          right: 16,
-          backgroundColor: '#1A1A2E',
-          borderRadius: 16,
-          paddingHorizontal: 18,
-          paddingVertical: 14,
-          flexDirection: 'row',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.22,
-          shadowRadius: 14,
-          elevation: 10,
-          zIndex: 999,
-        },
-        animStyle,
-      ]}
+      className="absolute bottom-6 left-4 right-4 rounded-2xl px-[18px] py-[14px] flex-row items-center shadow-md z-[999]"
+      style={[{ backgroundColor: '#1A1A2E' }, animStyle]}
       pointerEvents={visible ? 'auto' : 'none'}
     >
-      <AppText style={{ flex: 1, color: '#E0E0F0', fontSize: 14, lineHeight: 20 }}>
+      <AppText className="flex-1 text-[14px] leading-5" style={{ color: '#E0E0F0' }}>
         {message}
       </AppText>
       {onAction && (
         <ScalePressable onPress={handleAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
-          <AppText style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14, marginStart: 16 }}>
+          <AppText className="font-bold text-[14px] ms-4" style={{ color: '#60A5FA' }}>
             {actionLabel}
           </AppText>
         </ScalePressable>
