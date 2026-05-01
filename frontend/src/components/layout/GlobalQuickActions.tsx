@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { theme } from '@/core/theme';
 
 type QuickAction = {
   key: string;
@@ -64,46 +65,36 @@ export function GlobalQuickActions() {
     <>
       <View
         pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          right: 24,
-          bottom: fabBottom,
-        }}
+        style={[styles.fabContainer, { bottom: fabBottom }]}
       >
         <ScalePressable
           onPress={() => setVisible(true)}
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: DESIGN_TOKENS.colors.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: DESIGN_TOKENS.colors.surface,
-            ...DESIGN_TOKENS.shadow,
-          }}
+          style={[
+            styles.fabButton,
+            {
+              backgroundColor: DESIGN_TOKENS.colors.primary,
+              borderColor: DESIGN_TOKENS.colors.surface,
+              ...DESIGN_TOKENS.shadow,
+            },
+          ]}
         >
           <Ionicons name="add" size={30} color={DESIGN_TOKENS.colors.white} />
         </ScalePressable>
       </View>
 
       <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.25)' }}>
-          <Pressable onPress={() => setVisible(false)} style={{ flex: 1 }} />
+        <View style={styles.modalOverlay}>
+          <Pressable onPress={() => setVisible(false)} style={styles.modalBackdrop} />
           <View
-            style={{
-              backgroundColor: DESIGN_TOKENS.colors.surface,
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              borderWidth: 1,
-              borderColor: DESIGN_TOKENS.colors.border,
-              paddingHorizontal: 16,
-              paddingTop: 14,
-              paddingBottom: 26,
-            }}
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: DESIGN_TOKENS.colors.surface,
+                borderColor: DESIGN_TOKENS.colors.border,
+              },
+            ]}
           >
-            <AppText variant="h3" style={{ color: DESIGN_TOKENS.colors.text, marginBottom: 10 }}>
+            <AppText variant="h3" style={[styles.modalTitle, { color: DESIGN_TOKENS.colors.text }]}>
               {t('quickActions.title')}
             </AppText>
             {actions.map((action) => (
@@ -113,32 +104,23 @@ export function GlobalQuickActions() {
                   setVisible(false);
                   router.push(action.route as never);
                 }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  borderColor: DESIGN_TOKENS.colors.border,
-                  backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
-                  paddingHorizontal: 12,
-                  paddingVertical: 12,
-                  marginBottom: 8,
-                }}
+                style={[
+                  styles.actionItem,
+                  {
+                    borderColor: DESIGN_TOKENS.colors.border,
+                    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+                  },
+                ]}
               >
                 <View
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 10,
-                    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-                  }}
+                  style={[
+                    styles.actionIconContainer,
+                    { backgroundColor: DESIGN_TOKENS.colors.primarySoft },
+                  ]}
                 >
                   <Ionicons name={action.icon} size={17} color={DESIGN_TOKENS.colors.primary} />
                 </View>
-                <AppText style={{ color: DESIGN_TOKENS.colors.text, fontWeight: '700' }}>
+                <AppText style={[styles.actionLabel, { color: DESIGN_TOKENS.colors.text }]}>
                   {action.label}
                 </AppText>
               </ScalePressable>
@@ -149,3 +131,57 @@ export function GlobalQuickActions() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  fabContainer: {
+    position: 'absolute',
+    right: theme.spacing.xxl,
+  },
+  fabButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  modalBackdrop: {
+    flex: 1,
+  },
+  modalContent: {
+    borderTopLeftRadius: theme.borderRadius.xxl,
+    borderTopRightRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: 14,
+    paddingBottom: 26,
+  },
+  modalTitle: {
+    marginBottom: theme.spacing.md,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  actionIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  actionLabel: {
+    fontWeight: '700',
+  },
+});

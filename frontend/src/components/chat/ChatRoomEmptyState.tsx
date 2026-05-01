@@ -1,11 +1,12 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 interface ChatRoomEmptyStateProps {
   roomAgents: Agent[];
@@ -23,19 +24,27 @@ export const ChatRoomEmptyState = ({
 
   return (
     <View
-      className="mt-2.5 rounded-3xl items-center justify-center px-6 py-[52px] shadow-md"
-      style={{ borderWidth: 1, borderColor: C.border, backgroundColor: C.surface }}
+      style={[
+        styles.container,
+        {
+          borderColor: C.border,
+          backgroundColor: C.surface,
+          ...theme.elevation.md,
+        },
+      ]}
     >
       <View
-        className="w-[72px] h-[72px] rounded-3xl items-center justify-center mb-3.5"
-        style={{ backgroundColor: C.primarySurface }}
+        style={[
+          styles.iconContainer,
+          { backgroundColor: C.primarySurface },
+        ]}
       >
         <Ionicons name="chatbubble-ellipses-outline" size={34} color={C.primary} />
       </View>
-      <AppText className="text-[20px] leading-[26px] font-bold mb-1.5" style={{ color: C.text }}>
+      <AppText style={[styles.title, { color: C.text }]}>
         {t('chat.start_conversation')}
       </AppText>
-      <AppText className="text-sm leading-5 text-center px-3.5" style={{ color: C.muted }}>
+      <AppText style={[styles.subtitle, { color: C.muted }]}>
         {roomAgents.length > 0
           ? t('chat.room_agents_status', {
               count: roomAgents.length,
@@ -44,17 +53,22 @@ export const ChatRoomEmptyState = ({
           : t('chat.add_agent_to_start')}
       </AppText>
       {suggestions.length > 0 && onSuggestionPress ? (
-        <View className="mt-4 w-full">
+        <View style={styles.suggestionsContainer}>
           {suggestions.map((suggestion, index) => (
             <ScalePressable
               key={`${suggestion}-${index}`}
               onPress={() => onSuggestionPress(suggestion)}
-              className="rounded-xl px-2.5 py-2 mb-2"
-              style={{ borderWidth: 1, borderColor: `${C.primary}4D`, backgroundColor: C.primarySurface }}
+              style={[
+                styles.suggestionChip,
+                {
+                  borderColor: `${C.primary}4D`,
+                  backgroundColor: C.primarySurface,
+                },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={suggestion}
             >
-              <AppText variant="caption" className="font-bold" style={{ color: C.primary }}>
+              <AppText variant="caption" style={[styles.suggestionText, { color: C.primary }]}>
                 {suggestion}
               </AppText>
             </ScalePressable>
@@ -64,3 +78,50 @@ export const ChatRoomEmptyState = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 10,
+    borderRadius: theme.borderRadius.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: 52,
+    borderWidth: 1,
+  },
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: theme.borderRadius.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  title: {
+    fontSize: theme.typography.h3.fontSize,
+    lineHeight: 26,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: theme.typography.bodySm.fontSize,
+    lineHeight: theme.typography.bodySm.lineHeight,
+    letterSpacing: theme.typography.bodySm.letterSpacing,
+    textAlign: 'center',
+    paddingHorizontal: 14,
+  },
+  suggestionsContainer: {
+    marginTop: theme.spacing.lg,
+    width: '100%',
+  },
+  suggestionChip: {
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+  },
+  suggestionText: {
+    fontWeight: 'bold',
+  },
+});
