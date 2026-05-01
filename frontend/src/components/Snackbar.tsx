@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,8 +8,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AppText } from './AppText';
 import { ScalePressable } from '@/components/ScalePressable';
-import { useTheme } from '@/hooks/useTheme';
-import { theme } from '@/core/theme';
 
 interface SnackbarProps {
   visible: boolean;
@@ -29,7 +26,6 @@ export function Snackbar({
   onDismiss,
   duration = 4500,
 }: SnackbarProps) {
-  const { C } = useTheme();
   const translateY = useSharedValue(80);
   const opacity = useSharedValue(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,19 +71,16 @@ export function Snackbar({
 
   return (
     <Animated.View
-      style={[
-        styles.container,
-        { backgroundColor: C.surfaceHigh },
-        animStyle,
-      ]}
+      className="absolute bottom-6 left-4 right-4 rounded-2xl px-[18px] py-[14px] flex-row items-center shadow-md z-[999]"
+      style={[{ backgroundColor: '#1A1A2E' }, animStyle]}
       pointerEvents={visible ? 'auto' : 'none'}
     >
-      <AppText style={[styles.messageText, { color: C.text }]}>
+      <AppText className="flex-1 text-[14px] leading-5" style={{ color: '#E0E0F0' }}>
         {message}
       </AppText>
       {onAction && (
         <ScalePressable onPress={handleAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
-          <AppText style={[styles.actionText, { color: C.primary }]}>
+          <AppText className="font-bold text-[14px] ms-4" style={{ color: '#60A5FA' }}>
             {actionLabel}
           </AppText>
         </ScalePressable>
@@ -95,30 +88,3 @@ export function Snackbar({
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: theme.spacing.xxl,
-    left: theme.spacing.lg,
-    right: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 999,
-    ...theme.elevation.xl,
-  },
-  messageText: {
-    flex: 1,
-    fontSize: theme.typography.bodySm.fontSize,
-    lineHeight: theme.typography.bodySm.lineHeight,
-    letterSpacing: theme.typography.bodySm.letterSpacing,
-  },
-  actionText: {
-    fontWeight: '700',
-    fontSize: theme.typography.bodySm.fontSize,
-    marginStart: theme.spacing.lg,
-  },
-});

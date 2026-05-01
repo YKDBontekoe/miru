@@ -1,12 +1,11 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { theme } from '@/core/theme';
 
 const C = {
   surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
@@ -35,7 +34,7 @@ export const ChatRoomHeader = ({
   const { t } = useTranslation();
 
   return (
-    <View style={[styles.container, { borderColor: DESIGN_TOKENS.colors.border, backgroundColor: DESIGN_TOKENS.colors.surface }]}>
+    <View className="flex-row items-center px-3.5 py-2.5 gap-2 border-b border-[#DDE8E0] bg-white">
       <ScalePressable
         onPress={onBack}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -45,18 +44,18 @@ export const ChatRoomHeader = ({
         <Ionicons name="chevron-back" size={26} color={C.text} />
       </ScalePressable>
 
-      <View style={[styles.roomIcon, { backgroundColor: DESIGN_TOKENS.colors.primarySoft, borderColor: DESIGN_TOKENS.colors.border }]}>
-        <AppText style={[styles.roomIconText, { color: C.primary }]}>
+      <View className="w-9 h-9 rounded-[10px] items-center justify-center bg-[#DDF4EB] border border-[#147D6455]">
+        <AppText className="font-bold text-base" style={{ color: C.primary }}>
           {(room?.name?.charAt(0) || '?').toUpperCase()}
         </AppText>
       </View>
 
-      <View style={styles.titleContainer}>
-        <AppText style={[styles.titleText, { color: C.text }]} numberOfLines={1}>
+      <View className="flex-1">
+        <AppText className="text-base font-semibold" style={{ color: C.text }} numberOfLines={1}>
           {room?.name ?? 'Chat'}
         </AppText>
         {roomAgents.length > 0 && (
-          <AppText style={[styles.agentsSubtitle, { color: C.muted }]} numberOfLines={1}>
+          <AppText className="text-[11px]" style={{ color: C.muted }} numberOfLines={1}>
             {roomAgents.map((a) => a.name).join(', ')}
           </AppText>
         )}
@@ -64,24 +63,21 @@ export const ChatRoomHeader = ({
 
       {/* Tappable agent avatars row */}
       {roomAgents.length > 0 && (
-        <View style={styles.avatarsRow}>
+        <View className="flex-row items-center">
           {roomAgents.slice(0, 3).map((agent, i) => {
             const color = getAgentColor(agent.name);
             return (
               <ScalePressable
                 key={agent.id}
                 onPress={() => onQuickViewAgent(agent)}
-                style={[
-                  styles.avatar,
-                  {
-                    borderColor: DESIGN_TOKENS.colors.surface,
-                    backgroundColor: `${color}22`,
-                    marginStart: i === 0 ? 0 : -9,
-                    zIndex: 3 - i,
-                  },
-                ]}
+                className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center"
+                style={{
+                  backgroundColor: `${color}22`,
+                  marginStart: i === 0 ? 0 : -9,
+                  zIndex: 3 - i,
+                }}
               >
-                <AppText style={[styles.avatarText, { color }]}>
+                <AppText style={{ color }} className="text-[11px] font-bold">
                   {(agent.name?.charAt(0) || '?').toUpperCase()}
                 </AppText>
               </ScalePressable>
@@ -89,15 +85,9 @@ export const ChatRoomHeader = ({
           })}
           {roomAgents.length > 3 && (
             <View
-              style={[
-                styles.avatarMore,
-                {
-                  borderColor: DESIGN_TOKENS.colors.surface,
-                  backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
-                },
-              ]}
+              className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center -ms-[9px] z-0 bg-[#ECF5F0]"
             >
-              <AppText style={[styles.avatarMoreText, { color: C.muted }]}>
+              <AppText className="text-[10px] font-bold" style={{ color: C.muted }}>
                 +{roomAgents.length - 3}
               </AppText>
             </View>
@@ -107,13 +97,7 @@ export const ChatRoomHeader = ({
 
       <ScalePressable
         onPress={onManageAgentsPress}
-        style={[
-          styles.manageButton,
-          {
-            backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
-            borderColor: DESIGN_TOKENS.colors.border,
-          },
-        ]}
+        className="w-8 h-8 rounded-2xl items-center justify-center bg-[#ECF5F0] border border-[#DDE8E0]"
         accessibilityRole="button"
         accessibilityLabel={t('chat.manage_agents', { defaultValue: 'Manage agents' })}
       >
@@ -122,74 +106,3 @@ export const ChatRoomHeader = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 8,
-    borderBottomWidth: 1,
-  },
-  roomIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  roomIconText: {
-    fontWeight: 'bold',
-    fontSize: theme.typography.body.fontSize,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  titleText: {
-    fontSize: theme.typography.body.fontSize,
-    fontWeight: '600',
-  },
-  agentsSubtitle: {
-    fontSize: 11,
-  },
-  avatarsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  avatarMore: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginStart: -9,
-    zIndex: 0,
-  },
-  avatarMoreText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  manageButton: {
-    width: 32,
-    height: 32,
-    borderRadius: theme.borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-});
