@@ -100,7 +100,9 @@ class AgentRepository:
 
         return agent
 
-    async def update_agent_capabilities(self, agent: Agent, capability_ids: list[str] | None) -> list[str]:
+    async def update_agent_capabilities(
+        self, agent: Agent, capability_ids: list[str] | None
+    ) -> list[str]:
         """Update an agent's capabilities."""
         if capability_ids is not None:
             caps = await Capability.filter(id__in=capability_ids)

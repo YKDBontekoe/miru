@@ -185,8 +185,9 @@ class AgentService:
         new_integration_ids: list[str] | None = fields.pop("integrations", None)
         new_integration_configs: dict = fields.pop("integration_configs", None) or {}
         if new_integration_ids is not None:
-             await self.repo.update_agent_integrations(agent, new_integration_ids, new_integration_configs)
-
+            await self.repo.update_agent_integrations(
+                agent, new_integration_ids, new_integration_configs
+            )
 
         # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
