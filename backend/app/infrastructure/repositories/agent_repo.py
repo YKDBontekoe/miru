@@ -10,6 +10,7 @@ from tortoise.transactions import in_transaction
 
 from app.domain.agents.models import (
     Agent,
+    AgentIntegration,
     AgentTemplate,
     Capability,
     Integration,
@@ -56,6 +57,77 @@ class AgentRepository:
         """Create a new agent."""
         await agent.save()
         return agent
+
+    async def create_agent_with_relations(
+        self,
+        user_id: UUID,
+        name: str,
+        personality: str,
+        description: str | None,
+        goals: list[str],
+        system_prompt: str,
+        capability_ids: list[str],
+        integration_ids: list[str],
+        integration_configs: dict,
+    ) -> Agent:
+        """Create a new agent with capabilities and integrations."""
+        agent = await Agent.create(
+            user_id=user_id,
+            name=name,
+            personality=personality,
+            description=description,
+            goals=goals,
+            system_prompt=system_prompt,
+        )
+
+        if capability_ids:
+            caps = await Capability.filter(id__in=capability_ids)
+            await agent.capabilities.add(*caps)
+
+        if integration_ids:
+            integrations = await Integration.filter(id__in=integration_ids)
+            agent_integrations = [
+                AgentIntegration(
+                    agent=agent,
+                    integration=integration,
+                    config=integration_configs.get(str(integration.id), {}),
+                    enabled=True,
+                )
+                for integration in integrations
+            ]
+            if agent_integrations:
+                await AgentIntegration.bulk_create(agent_integrations)
+
+        return agent
+
+    async def update_agent_capabilities(self, agent: Agent, capability_ids: list[str] | None) -> list[str]:
+        """Update an agent's capabilities."""
+        if capability_ids is not None:
+            caps = await Capability.filter(id__in=capability_ids)
+            await agent.capabilities.clear()
+            if caps:
+                await agent.capabilities.add(*caps)
+            return capability_ids
+        return [str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)]
+
+    async def update_agent_integrations(
+        self, agent: Agent, integration_ids: list[str] | None, integration_configs: dict
+    ) -> None:
+        """Update an agent's integrations."""
+        if integration_ids is not None:
+            await AgentIntegration.filter(agent=agent).delete()
+            integrations = await Integration.filter(id__in=integration_ids)
+            agent_integrations = [
+                AgentIntegration(
+                    agent=agent,
+                    integration=integration,
+                    config=integration_configs.get(str(integration.id), {}),
+                    enabled=True,
+                )
+                for integration in integrations
+            ]
+            if agent_integrations:
+                await AgentIntegration.bulk_create(agent_integrations)
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
