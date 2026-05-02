@@ -80,6 +80,8 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
 - Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
+// DOCS(miru-agent): prompt mismatch
+**Note on Prompt:** CodeRabbit is instructed to explicitly mention the project stack (FastAPI/Python 3.13 and React Native/TypeScript/Expo) and remind AI agents like Jules to run `make lint` and `make test` before pushing. It uses specific path instructions for `backend/**/*.py` (checking type hints, dependency injection, HTTPException handling, Ruff/Black/Mypy standards, and `str | None` / `list[str]` usage) and `frontend/src/**/*.{ts,tsx,js,jsx}` (enforcing `const`/`let`, Zustand for state management, `FlatList` for long lists, `useEffect` hook cleanup, and removing Flutter-only concepts).
 
 ## Project Structure
 
