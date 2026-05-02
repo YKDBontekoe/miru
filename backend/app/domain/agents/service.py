@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.models import Agent, Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -123,7 +123,7 @@ class AgentService:
             capability_ids=agent_data.capabilities,
         )
 
-        agent = await Agent.create(
+        agent = Agent(
             user_id=user_id,
             name=agent_data.name,
             personality=agent_data.personality,
@@ -132,26 +132,16 @@ class AgentService:
             system_prompt=system_prompt,
         )
 
-        if agent_data.capabilities:
-            caps = await Capability.filter(id__in=agent_data.capabilities)
-            await agent.capabilities.add(*caps)
-
-        if agent_data.integrations:
-            integrations = await Integration.filter(id__in=agent_data.integrations)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=agent_data.integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+        # Delegate M2M relationship logic and save to the repository
+        created_agent = await self.repo.create_agent_with_relations(
+            agent=agent,
+            capabilities=agent_data.capabilities,
+            integrations=agent_data.integrations,
+            integration_configs=agent_data.integration_configs,
+        )
 
         # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
+        refetched = await self.repo.get_by_id(created_agent.pk)
         assert refetched is not None
         return _build_agent_response(refetched)
 
@@ -192,36 +182,13 @@ class AgentService:
 
         fields = data.model_dump(exclude_none=True)
 
-        # --- capabilities ---
-        new_capability_ids: list[str] | None = fields.pop("capabilities", None)
+        # Extract M2M fields to determine effective capabilities
+        new_capability_ids = fields.get("capabilities", None)
+
         if new_capability_ids is not None:
-            caps = await Capability.filter(id__in=new_capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
-            ]
-
-        # --- integrations ---
-        new_integration_ids: list[str] | None = fields.pop("integrations", None)
-        new_integration_configs: dict = fields.pop("integration_configs", None) or {}
-        if new_integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=new_integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=new_integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            effective_cap_ids = [cap.pk for cap in agent.capabilities.related_objects]
 
         # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
