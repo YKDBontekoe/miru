@@ -150,7 +150,7 @@ class AgentRepository:
                         AgentIntegration(
                             agent=agent,
                             integration=integration,
-                            config=new_integration_configs.get(str(integration.id), {}),
+                            config=new_integration_configs.get(str(integration.pk), {}),
                             enabled=True,
                         )
                         for integration in db_integrations
