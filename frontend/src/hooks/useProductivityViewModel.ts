@@ -54,33 +54,34 @@ export function useProductivityViewModel() {
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   useEffect(() => {
-    if (openCreateTask === '1' || openCreateTask === 'true') {
-      setShowCreateTask(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
-        )
-      );
-      router.replace({ pathname, params: nextParams });
-    }
-  }, [openCreateTask, params, pathname, router]);
+    const processOpenParam = (
+      key: string,
+      value: string | string[] | undefined,
+      setter: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+      if (value === '1' || value === 'true') {
+        setter(true);
+        const nextParams = Object.fromEntries(
+          Object.entries(params).filter(
+            ([k, v]) => k !== key && typeof v === 'string'
+          )
+        );
+        router.replace({ pathname, params: nextParams });
+      }
+    };
 
-  useEffect(() => {
-    if (openCreateNote === '1' || openCreateNote === 'true') {
-      setShowCreateNote(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
-        )
-      );
-      router.replace({ pathname, params: nextParams });
-    }
-  }, [openCreateNote, params, pathname, router]);
+    processOpenParam('openCreateTask', openCreateTask, setShowCreateTask);
+    processOpenParam('openCreateNote', openCreateNote, setShowCreateNote);
+  }, [openCreateTask, openCreateNote, params, pathname, router]);
 
   const handleRefresh = useCallback(() => {
-    fetchNotes();
-    fetchTasks();
-    fetchEvents();
+    const controller = new AbortController();
+    fetchNotes(controller.signal);
+    fetchTasks(controller.signal);
+    fetchEvents(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   const confirmDelete = useCallback(
@@ -248,18 +249,22 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
-      ? todayData.filter((entry) => {
-          if (entry.type !== 'task') return true;
-          if (taskPriority === 'all') return true;
-          return getTaskPriority(entry.item as Task) === taskPriority;
-        })
-      : activeTab === 'all'
-        ? mixedData
-        : activeTab === 'notes'
-          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
-          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  const dataToRender = useMemo(() => {
+    if (activeTab === 'today') {
+      return todayData.filter((entry) => {
+        if (entry.type !== 'task') return true;
+        if (taskPriority === 'all') return true;
+        return getTaskPriority(entry.item as Task) === taskPriority;
+      });
+    }
+    if (activeTab === 'all') {
+      return mixedData;
+    }
+    if (activeTab === 'notes') {
+      return filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }));
+    }
+    return prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [activeTab, todayData, mixedData, filteredNotes, prioritizedTasks, taskPriority, getTaskPriority]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -271,15 +276,32 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(
+        `1) ` +
+        (t('productivity.plan.recoverOverdue', { count: taskPriorityCounts.overdue }) ||
+          `Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`)
+      );
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(
+        `1) ` +
+        (t('productivity.plan.noOverdue') ||
+          'No overdue tasks: start with highest-impact open work.')
+      );
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      const taskTitles = nextTasks.map((task) => task.title).join(', ');
+      lines.push(
+        `2) ` +
+        (t('productivity.plan.focusBlock', { tasks: taskTitles }) ||
+          `Focus block: ${taskTitles}.`)
+      );
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(
+        `2) ` +
+        (t('productivity.plan.noPendingFocus') ||
+          'Focus block: no pending tasks, use this for planning or review.')
+      );
     }
 
     if (nextEvents.length > 0) {
@@ -291,14 +313,22 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(
+        `3) ` +
+        (t('productivity.plan.calendarCheckpoints', { times: eventLine }) ||
+          `Calendar checkpoints at ${eventLine}.`)
+      );
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(
+        `3) ` +
+        (t('productivity.plan.calendarLight') ||
+          'Calendar is light: reserve time for deep work and wrap-up.')
+      );
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue, t]);
 
   return {
     t,

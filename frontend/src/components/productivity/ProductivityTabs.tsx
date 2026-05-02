@@ -40,7 +40,7 @@ export function ProductivityTabs({ activeTab, onTabChange }: ProductivityTabsPro
         >
           <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
             {tab === 'today'
-              ? t('productivity.today')
+              ? t('productivity.today') || 'Today'
               : tab === 'all'
                 ? t('productivity.all') || 'All'
                 : tab === 'notes'

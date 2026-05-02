@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import debounce from 'lodash.debounce';
 import { AppText } from '../AppText';
 import { theme } from '../../core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
@@ -43,6 +44,17 @@ export function ProductivityHeader({
   onShowCreateTask,
 }: ProductivityHeaderProps) {
   const { t } = useTranslation();
+
+  const debouncedSearch = useMemo(
+    () => debounce((text: string) => onSearchQueryChange(text), 300),
+    [onSearchQueryChange]
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   return (
     <View style={styles.headerContainer}>
@@ -89,8 +101,8 @@ export function ProductivityHeader({
           style={styles.searchIcon}
         />
         <TextInput
-          value={searchQuery}
-          onChangeText={onSearchQueryChange}
+          defaultValue={searchQuery}
+          onChangeText={debouncedSearch}
           placeholder={t('productivity.search') || 'Search notes & tasks...'}
           placeholderTextColor={T.onSurface.disabledLight}
           style={styles.searchInput}
