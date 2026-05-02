@@ -93,7 +93,7 @@ PromptActionItem.displayName = 'PromptActionItem';
 
 // Stable key extractors
 const keyExtractorPrompt = (item: PromptItem) => item.id;
-const keyExtractorContext = (item: string) => item;
+const keyExtractorContext = (item: string, index: number) => `${item}-${index}`;
 
 export const RoomPromptRail = React.memo(function RoomPromptRail({
   prompts,
@@ -111,7 +111,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
   const { t } = useTranslation();
 
   const renderContextItem = useCallback(({ item }: ListRenderItemInfo<string>) => (
-    <ContextActionItem value={item} onPress={onContextPress!} />
+    <ContextActionItem value={item} onPress={onContextPress ?? (() => {})} />
   ), [onContextPress]);
 
   const renderPromptItem = useCallback(({ item }: ListRenderItemInfo<PromptItem>) => (

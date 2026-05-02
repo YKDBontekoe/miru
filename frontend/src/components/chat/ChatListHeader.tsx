@@ -89,22 +89,23 @@ FilterPill.displayName = 'FilterPill';
 
 const AgentItem = React.memo(({
   item,
-  selectedAgentId,
+  isSelected,
   onSelectAgent
 }: {
   item: Agent;
-  selectedAgentId: string | null;
+  isSelected: boolean;
   onSelectAgent: (id: string | null) => void;
 }) => {
   const handlePress = useCallback(() => {
-    onSelectAgent(selectedAgentId === item.id ? null : item.id);
-  }, [item.id, selectedAgentId, onSelectAgent]);
+    onSelectAgent(isSelected ? null : item.id);
+  }, [item.id, isSelected, onSelectAgent]);
 
   return (
-    <View style={{ marginRight: 8 }}>
+    <View className="mr-2">
       <AgentPill
         agent={item}
         onPress={handlePress}
+        selected={isSelected}
       />
     </View>
   );
@@ -153,9 +154,10 @@ export const ChatListHeader = React.memo(function ChatListHeader({
     <FilterPill item={item} sortMode={sortMode} onChangeSortMode={onChangeSortMode} />
   ), [sortMode, onChangeSortMode]);
 
-  const renderAgentItem = useCallback(({ item }: ListRenderItemInfo<Agent>) => (
-    <AgentItem item={item} selectedAgentId={selectedAgentId} onSelectAgent={onSelectAgent} />
-  ), [selectedAgentId, onSelectAgent]);
+  const renderAgentItem = useCallback(({ item }: ListRenderItemInfo<Agent>) => {
+    const isSelected = selectedAgentId === item.id;
+    return <AgentItem item={item} isSelected={isSelected} onSelectAgent={onSelectAgent} />;
+  }, [selectedAgentId, onSelectAgent]);
 
   const AgentListHeaderComponent = useMemo(() => (
     <ScalePressable
