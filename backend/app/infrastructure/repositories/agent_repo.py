@@ -67,26 +67,27 @@ class AgentRepository:
         """Create an agent and its related capabilities and integrations."""
         from app.domain.agents.models import AgentIntegration
 
-        await agent.save()
+        async with in_transaction():
+            await agent.save()
 
-        if capabilities:
-            caps = await Capability.filter(id__in=capabilities)
-            await agent.capabilities.add(*caps)
+            if capabilities:
+                caps = await Capability.filter(id__in=capabilities)
+                await agent.capabilities.add(*caps)
 
-        if integrations:
-            integration_configs = integration_configs or {}
-            db_integrations = await Integration.filter(id__in=integrations)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in db_integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            if integrations:
+                integration_configs = integration_configs or {}
+                db_integrations = await Integration.filter(id__in=integrations)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in db_integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
         return agent
 
@@ -139,10 +140,12 @@ class AgentRepository:
             new_integration_ids = fields.pop("integrations", None)
             new_integration_configs = fields.pop("integration_configs", None) or {}
 
-            if new_integration_ids is not None:
-                await AgentIntegration.filter(agent=agent).delete()
-                db_integrations = await Integration.filter(id__in=new_integration_ids)
-                if isinstance(new_integration_configs, dict):
+            async with in_transaction():
+                if new_integration_ids is not None:
+                    if not isinstance(new_integration_configs, dict):
+                        raise TypeError("integration_configs must be a dictionary")
+                    await AgentIntegration.filter(agent=agent).delete()
+                    db_integrations = await Integration.filter(id__in=new_integration_ids)
                     agent_integrations = [
                         AgentIntegration(
                             agent=agent,
@@ -152,16 +155,14 @@ class AgentRepository:
                         )
                         for integration in db_integrations
                     ]
-                else:
-                    agent_integrations = []
-                if agent_integrations:
-                    await AgentIntegration.bulk_create(agent_integrations)
+                    if agent_integrations:
+                        await AgentIntegration.bulk_create(agent_integrations)
 
-            # Update regular fields
-            for key, value in fields.items():
-                if value is not None:
-                    setattr(agent, key, value)
-            await agent.save()
+                # Update regular fields
+                for key, value in fields.items():
+                    if value is not None:
+                        setattr(agent, key, value)
+                await agent.save()
 
             # Refetch to get updated relations
             return await self.get_by_id(agent_id)

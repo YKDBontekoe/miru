@@ -142,7 +142,8 @@ class AgentService:
 
         # Refetch with relations so the response is fully populated.
         refetched = await self.repo.get_by_id(created_agent.pk)
-        assert refetched is not None
+        if refetched is None:
+            raise RuntimeError(f"Failed to refetch created agent with id {created_agent.pk}")
         return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
@@ -256,6 +257,6 @@ class AgentService:
             if mood not in self._VALID_MOODS:
                 mood = "Neutral"
         except Exception:
-            logger.warning("Mood inference failed for agent %s, keeping current mood", agent_id)
+            logger.exception("Mood inference failed for agent %s, keeping current mood", agent_id)
             return
         await self.repo.update_mood(agent_id, mood)
