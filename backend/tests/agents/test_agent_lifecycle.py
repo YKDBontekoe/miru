@@ -188,7 +188,10 @@ async def test_create_agent_chaos_db_error():
     service = AgentService(repo)
     user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="DB Error Agent", personality="Helpful")
-    with patch("app.domain.agents.models.Agent.create", new_callable=AsyncMock) as mock_create:
+    with patch(
+        "app.infrastructure.repositories.agent_repo.AgentRepository.create_agent_with_relations",
+        new_callable=AsyncMock,
+    ) as mock_create:
         mock_create.side_effect = Exception("Database constraint violation")
         with pytest.raises(Exception, match="Database constraint violation"):
             await service.create_agent(agent_data, user_id)

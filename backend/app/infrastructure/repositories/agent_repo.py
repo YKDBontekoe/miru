@@ -57,6 +57,40 @@ class AgentRepository:
         await agent.save()
         return agent
 
+    async def create_agent_with_relations(
+        self,
+        agent: Agent,
+        capabilities: list[str] | None = None,
+        integrations: list[str] | None = None,
+        integration_configs: dict | None = None,
+    ) -> Agent:
+        """Create an agent and its related capabilities and integrations."""
+        from app.domain.agents.models import AgentIntegration
+
+        async with in_transaction():
+            await agent.save()
+
+            if capabilities:
+                caps = await Capability.filter(id__in=capabilities)
+                await agent.capabilities.add(*caps)
+
+            if integrations:
+                integration_configs = integration_configs or {}
+                db_integrations = await Integration.filter(id__in=integrations)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in db_integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
+        return agent
+
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
         agent = await self.get_by_id(agent_id)
@@ -65,13 +99,25 @@ class AgentRepository:
             await agent.save()
 
     _ALLOWED_AGENT_FIELDS: frozenset[str] = frozenset(
-        {"name", "personality", "description", "goals", "system_prompt", "mood"}
+        {
+            "name",
+            "personality",
+            "description",
+            "goals",
+            "system_prompt",
+            "mood",
+            "capabilities",
+            "integrations",
+            "integration_configs",
+        }
     )
 
     async def update_agent(
         self, agent_id: UUID | str, user_id: UUID | str, **fields: object
     ) -> Agent | None:
         """Update an agent's fields. Only updates the owner's agent."""
+        from app.domain.agents.models import AgentIntegration
+
         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
         if unknown:
             raise ValueError(f"update_agent received unknown fields: {unknown}")
@@ -83,10 +129,43 @@ class AgentRepository:
             "capabilities", "agent_integrations__integration"
         )
         if agent:
-            for key, value in fields.items():
-                if value is not None:
-                    setattr(agent, key, value)
-            await agent.save()
+            # Handle M2M relationships first
+            new_capability_ids = fields.pop("capabilities", None)
+            if new_capability_ids is not None:
+                caps = await Capability.filter(id__in=new_capability_ids)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
+
+            new_integration_ids = fields.pop("integrations", None)
+            new_integration_configs = fields.pop("integration_configs", None) or {}
+
+            async with in_transaction():
+                if new_integration_ids is not None:
+                    if not isinstance(new_integration_configs, dict):
+                        raise TypeError("integration_configs must be a dictionary")
+                    await AgentIntegration.filter(agent=agent).delete()
+                    db_integrations = await Integration.filter(id__in=new_integration_ids)
+                    agent_integrations = [
+                        AgentIntegration(
+                            agent=agent,
+                            integration=integration,
+                            config=new_integration_configs.get(str(integration.pk), {}),
+                            enabled=True,
+                        )
+                        for integration in db_integrations
+                    ]
+                    if agent_integrations:
+                        await AgentIntegration.bulk_create(agent_integrations)
+
+                # Update regular fields
+                for key, value in fields.items():
+                    if value is not None:
+                        setattr(agent, key, value)
+                await agent.save()
+
+            # Refetch to get updated relations
+            return await self.get_by_id(agent_id)
         return agent
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:
