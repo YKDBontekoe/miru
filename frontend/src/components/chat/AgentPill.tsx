@@ -11,13 +11,14 @@ export interface AgentPillProps {
   agent: Agent;
   /** Callback fired when the pill is pressed. */
   onPress: () => void;
+  selected?: boolean;
 }
 
 /**
  * A small pill component that displays an agent's initial and name.
  * Uses a hashed color based on the agent's name.
  */
-export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
+export const AgentPill = React.memo(({ agent, onPress, selected = false }: AgentPillProps) => {
   const color = getAgentColor(agent.name);
   const { C } = useTheme();
   const initial = agent?.name ? agent.name[0].toUpperCase() : '?';
@@ -25,7 +26,7 @@ export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
   return (
     <ScalePressable onPress={onPress} className="w-[72px] items-center me-3">
       <View
-        className="w-[52px] h-[52px] rounded-full items-center justify-center mb-1.5 border-[1.5px]"
+        className={`w-[52px] h-[52px] rounded-full items-center justify-center mb-1.5 border-[1.5px] ${selected ? 'border-[#147D64] bg-[#DDF4EB]' : ''}`}
         style={{
           backgroundColor: `${color}18`,
           borderColor: `${color}40`,
