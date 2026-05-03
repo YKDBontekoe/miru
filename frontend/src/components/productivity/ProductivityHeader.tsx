@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { View, StyleSheet, Pressable, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +34,9 @@ interface ProductivityHeaderProps {
   setShowCreateTask: (show: boolean) => void;
 }
 
+import { useDebouncedCallback } from 'use-debounce';
+import { useState, useEffect } from 'react';
+
 export function ProductivityHeader({
   pendingTasksCount,
   searchQuery,
@@ -41,6 +45,125 @@ export function ProductivityHeader({
   setShowCreateNote,
   setShowCreateTask,
 }: ProductivityHeaderProps) {
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useMemo(
+    () => debounce((value: string) => setSearchQuery(value), 300),
+    [setSearchQuery]
+  );
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    return () => {
+      debouncedSetSearchQuery.cancel();
+    };
+  }, [debouncedSetSearchQuery]);
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useMemo(
+    () => debounce((value: string) => setSearchQuery(value), 300),
+    [setSearchQuery]
+  );
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    return () => {
+      debouncedSetSearchQuery.cancel();
+    };
+  }, [debouncedSetSearchQuery]);
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useMemo(
+    () => debounce((value: string) => setSearchQuery(value), 300),
+    [setSearchQuery]
+  );
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    return () => {
+      debouncedSetSearchQuery.cancel();
+    };
+  }, [debouncedSetSearchQuery]);
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+  }, 300);
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+  }, 300);
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+  }, 300);
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+  }, 300);
+
+  const handleSearchChange = (text: string) => {
+    setLocalSearchQuery(text);
+    debouncedSetSearchQuery(text);
+  };
+
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
   const { t } = useTranslation();
 
   return (
@@ -60,19 +183,49 @@ export function ProductivityHeader({
 
         <View style={styles.headerActions}>
           <Pressable
-            onPress={generateTodayPlan}
+            onPress={generateTodayPlan} accessibilityRole="button" accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"} accessibilityRole="button" accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"} accessibilityRole="button" accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"} accessibilityRole="button" accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"} accessibilityRole="button" accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.generate_plan') || "Generate today's plan"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.generate_plan') || \"Generate today's plan\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.generate_plan') || \"Generate today's plan\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.generate_plan') || \"Generate today's plan\"}
             style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
-            onPress={() => setShowCreateNote(true)}
+            onPress={() => setShowCreateNote(true)} accessibilityRole="button" accessibilityLabel={t('productivity.create_note') || "Create note"} accessibilityRole="button" accessibilityLabel={t('productivity.create_note') || "Create note"} accessibilityRole="button" accessibilityLabel={t('productivity.create_note') || "Create note"} accessibilityRole="button" accessibilityLabel={t('productivity.create_note') || "Create note"} accessibilityRole="button" accessibilityLabel={t('productivity.create_note') || "Create note"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.create_note') || "Create note"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.create_note') || "Create note"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.create_note') || \"Create note\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.create_note') || \"Create note\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.create_note') || \"Create note\"}
             style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
-            onPress={() => setShowCreateTask(true)}
+            onPress={() => setShowCreateTask(true)} accessibilityRole="button" accessibilityLabel={t('productivity.create_task') || "Create task"} accessibilityRole="button" accessibilityLabel={t('productivity.create_task') || "Create task"} accessibilityRole="button" accessibilityLabel={t('productivity.create_task') || "Create task"} accessibilityRole="button" accessibilityLabel={t('productivity.create_task') || "Create task"} accessibilityRole="button" accessibilityLabel={t('productivity.create_task') || "Create task"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.create_task') || "Create task"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.create_task') || "Create task"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.create_task') || \"Create task\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.create_task') || \"Create task\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.create_task') || \"Create task\"}
             style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
@@ -91,11 +244,21 @@ export function ProductivityHeader({
           style={styles.searchInput}
           placeholder={t('productivity.search') || 'Search everything...'}
           placeholderTextColor={T.onSurface.disabledLight}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+          value={localSearchQuery}
+          onChangeText={(text) => handleSearchChange(text)}
         />
         {searchQuery ? (
-          <Pressable onPress={() => setSearchQuery('')}>
+          <Pressable onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel={t('productivity.clear_search') || "Clear search"} accessibilityRole="button" accessibilityLabel={t('productivity.clear_search') || "Clear search"} accessibilityRole="button" accessibilityLabel={t('productivity.clear_search') || "Clear search"} accessibilityRole="button" accessibilityLabel={t('productivity.clear_search') || "Clear search"} accessibilityRole="button" accessibilityLabel={t('productivity.clear_search') || "Clear search"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.clear_search') || "Clear search"}
+            accessibilityRole="button"
+            accessibilityLabel={t('productivity.clear_search') || "Clear search"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.clear_search') || \"Clear search\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.clear_search') || \"Clear search\"}
+            accessibilityRole=\"button\"
+            accessibilityLabel={t('productivity.clear_search') || \"Clear search\"}>
             <Ionicons name="close-circle" size={20} color={T.onSurface.mutedLight} />
           </Pressable>
         ) : null}

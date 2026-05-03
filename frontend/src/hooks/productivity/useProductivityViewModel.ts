@@ -29,6 +29,7 @@ export function useProductivityViewModel() {
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
+  const [fetchFailed, setFetchFailed] = useState(false);
 
   const {
     notes,
@@ -77,10 +78,17 @@ export function useProductivityViewModel() {
     }
   }, [openCreateNote, params, pathname, router]);
 
-  const handleRefresh = useCallback(() => {
-    fetchNotes();
-    fetchTasks();
-    fetchEvents();
+  const handleRefresh = useCallback(async () => {
+    setFetchFailed(false);
+    try {
+      await Promise.all([
+        fetchNotes(),
+        fetchTasks(),
+        fetchEvents()
+      ]);
+    } catch (error) {
+      setFetchFailed(true);
+    }
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   const confirmDelete = useCallback(
@@ -271,15 +279,15 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(t('plan.recoverOverdue', { count: taskPriorityCounts.overdue }));
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(t('plan.noOverdue'));
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      lines.push(t('plan.focusBlock', { tasks: nextTasks.map((task) => task.title).join(', ') }));
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(t('plan.noPendingTasks'));
     }
 
     if (nextEvents.length > 0) {
@@ -291,9 +299,9 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(t('plan.calendarCheckpoints', { times: eventLine }));
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(t('plan.calendarLight'));
     }
 
     setTodayPlan(lines.join('\n'));
@@ -327,5 +335,6 @@ export function useProductivityViewModel() {
     taskPriorityCounts,
     fetchNotes,
     fetchTasks,
+    fetchFailed,
   };
 }

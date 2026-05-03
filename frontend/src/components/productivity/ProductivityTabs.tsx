@@ -42,7 +42,7 @@ export function ProductivityTabs({
 
   return (
     <>
-      <View style={styles.tabsContainer}>
+      <View style={styles.tabsContainer} accessibilityRole=\"tablist\">
         {[
           { key: 'today', label: t('productivity.today') || 'Today' },
           { key: 'all', label: t('productivity.all') || 'All' },
@@ -51,7 +51,17 @@ export function ProductivityTabs({
         ].map((tab) => (
           <Pressable
             key={tab.key}
-            onPress={() => setActiveTab(tab.key as Tab)}
+            onPress={() => setActiveTab(tab.key as Tab)} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.key }} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.key }} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.key }} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.key }} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab.key }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab.key }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab.key }}
+            accessibilityRole=\"tab\"
+            accessibilityState={{ selected: activeTab === tab.key }}
+            accessibilityRole=\"tab\"
+            accessibilityState={{ selected: activeTab === tab.key }}
+            accessibilityRole=\"tab\"
+            accessibilityState={{ selected: activeTab === tab.key }}
             style={[styles.tabButton, activeTab === tab.key && styles.tabButtonActive]}
           >
             <AppText style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
@@ -72,7 +82,17 @@ export function ProductivityTabs({
           ].map((option) => (
             <Pressable
               key={option.key}
-              onPress={() => setTaskPriority(option.key as TaskPriority)}
+              onPress={() => setTaskPriority(option.key as TaskPriority)} accessibilityRole="button" accessibilityState={{ selected: taskPriority === option.key }} accessibilityRole="button" accessibilityState={{ selected: taskPriority === option.key }} accessibilityRole="button" accessibilityState={{ selected: taskPriority === option.key }} accessibilityRole="button" accessibilityState={{ selected: taskPriority === option.key }} accessibilityRole="button" accessibilityState={{ selected: taskPriority === option.key }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: taskPriority === option.key }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: taskPriority === option.key }}
+              accessibilityRole=\"button\"
+              accessibilityState={{ selected: taskPriority === option.key }}
+              accessibilityRole=\"button\"
+              accessibilityState={{ selected: taskPriority === option.key }}
+              accessibilityRole=\"button\"
+              accessibilityState={{ selected: taskPriority === option.key }}
               style={({ pressed }) => [
                 styles.priorityButton,
                 {

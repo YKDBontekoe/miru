@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
@@ -38,8 +38,8 @@ export function ProductivityEmptyState({
   const { t } = useTranslation();
 
   return (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconCircle}>
+    <View className=\"items-center py-16\">
+      <View className=\"w-20 h-20 rounded-full bg-primary-soft items-center justify-center mb-6\">
         <Ionicons
           name={
             activeTab === 'notes'
@@ -54,7 +54,7 @@ export function ProductivityEmptyState({
           color={T.primary.DEFAULT}
         />
       </View>
-      <AppText variant="h3" style={styles.emptyTitle}>
+      <AppText variant="h3" className=\"mb-2 text-center text-text\">
         {searchQuery
           ? t('productivity.no_matches') || 'No matches found'
           : activeTab === 'notes'
@@ -65,7 +65,7 @@ export function ProductivityEmptyState({
                 ? t('productivity.nothing_urgent_today') || 'Nothing urgent today'
                 : t('productivity.workspace_clear') || 'Your workspace is clear'}
       </AppText>
-      <AppText style={styles.emptySubtitle}>
+      <AppText className=\"text-center mb-8 text-muted px-12 leading-6\">
         {searchQuery
           ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
           : activeTab === 'today'
@@ -75,14 +75,14 @@ export function ProductivityEmptyState({
       </AppText>
 
       {!searchQuery && (
-        <View style={styles.emptyActions}>
+        <View className=\"flex-row gap-4\">
           {(activeTab === 'all' || activeTab === 'notes') && (
             <Pressable
               onPress={() => setShowCreateNote(true)}
-              style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+              className={({ pressed }) => `flex-row items-center bg-primary rounded-xl py-3 px-6 shadow-md ${pressed ? 'opacity-80' : ''}`}
             >
               <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
-              <AppText style={styles.emptyButtonText}>
+              <AppText className=\"text-white font-bold text-[15px]\">
                 {t('productivity.newNote') || 'New Note'}
               </AppText>
             </Pressable>
@@ -90,11 +90,7 @@ export function ProductivityEmptyState({
           {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
             <Pressable
               onPress={() => setShowCreateTask(true)}
-              style={({ pressed }) => [
-                styles.emptyButton,
-                (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
-                pressed && { opacity: 0.8 },
-              ]}
+              className={({ pressed }) => `flex-row items-center rounded-xl py-3 px-6 ${(activeTab === 'all' || activeTab === 'today') ? 'bg-primary-soft shadow-none' : 'bg-primary shadow-md'} ${pressed ? 'opacity-80' : ''}`}
             >
               <Ionicons
                 name="add"
@@ -103,11 +99,7 @@ export function ProductivityEmptyState({
                 style={{ marginEnd: 6 }}
               />
               <AppText
-                style={
-                  activeTab === 'all' || activeTab === 'today'
-                    ? styles.emptyButtonTextSecondary
-                    : styles.emptyButtonText
-                }
+                className={`font-bold text-[15px] ${(activeTab === 'all' || activeTab === 'today') ? 'text-primary' : 'text-white'}`}
               >
                 {t('productivity.new_task') || 'New Task'}
               </AppText>
@@ -118,69 +110,3 @@ export function ProductivityEmptyState({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: S.massive,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: S.lg,
-  },
-  emptyTitle: {
-    marginBottom: S.sm,
-    textAlign: 'center',
-    color: T.onSurface.light,
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    marginBottom: S.xl,
-    color: T.onSurface.mutedLight,
-    paddingHorizontal: S.xxxl,
-    lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: S.md,
-  },
-  emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.primary.DEFAULT,
-    borderRadius: R.xl,
-    paddingVertical: S.md,
-    paddingHorizontal: S.xl,
-    ...theme.elevation.md,
-  },
-  emptyButtonSecondary: {
-    backgroundColor: T.primary.surfaceLight,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
-        elevation: 0,
-      },
-      android: {
-        elevation: 0,
-      },
-      default: {
-        elevation: 0,
-      },
-    }),
-  },
-  emptyButtonText: {
-    color: T.white,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  emptyButtonTextSecondary: {
-    color: T.primary.DEFAULT,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-});

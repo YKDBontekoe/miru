@@ -39,6 +39,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "@supabase/supabase-js": "^2.101.1",
+    "@types/lodash.debounce": "^4.0.9",
     "axios": "^1.13.6",
     "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.0",
@@ -53,6 +54,7 @@
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "i18next": "^25.10.9",
+    "lodash.debounce": "^4.0.8",
     "nativewind": "^4.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
