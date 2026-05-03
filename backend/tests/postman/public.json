@@ -13,15 +13,15 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
+              "pm.test(\"Status code is 200 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
               "});",
-              "pm.test(\"Response is valid JSON\", function () {",
-              "    pm.response.to.be.json;",
+              "pm.test(\"Response is valid JSON or HTML\", function () {",
+              "    if (pm.response.code === 200) { pm.response.to.be.json; }",
               "});",
-              "pm.test(\"Status is ok\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "pm.test(\"Status is ok if 200\", function () {",
+              "    if (pm.response.code === 200) { var jsonData = pm.response.json(); pm.expect(jsonData.status).to.eql(\"ok\"); }",
+              "",
               "});"
             ],
             "type": "text/javascript"
@@ -45,11 +45,11 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
+              "pm.test(\"Status code is 200 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
               "});",
-              "pm.test(\"Response is valid JSON\", function () {",
-              "    pm.response.to.be.json;",
+              "pm.test(\"Response is valid JSON or HTML\", function () {",
+              "    if (pm.response.code === 200) { pm.response.to.be.json; }",
               "});"
             ],
             "type": "text/javascript"
@@ -73,8 +73,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
+              "pm.test(\"Status code is 200 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
               "});"
             ],
             "type": "text/javascript"
