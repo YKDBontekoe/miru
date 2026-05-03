@@ -16,7 +16,9 @@ MOOD_CLASSIFIER_SYSTEM_PROMPT = (
     "pick the single most fitting mood for the AI agent from this list: {mood_list}."
 )
 
-MOOD_CLASSIFIER_USER_PROMPT = "--- CONVERSATION EXCERPT ---\n{recent_history}\n----------------------------"
+MOOD_CLASSIFIER_USER_PROMPT = (
+    "--- CONVERSATION EXCERPT ---\n{recent_history}\n----------------------------"
+)
 
 # Agent System Prompt Builder
 SYSTEM_PROMPT_IDENTITY = (

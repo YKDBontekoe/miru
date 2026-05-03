@@ -283,7 +283,9 @@ class AgentService:
                     },
                     {
                         "role": "user",
-                        "content": MOOD_CLASSIFIER_USER_PROMPT.format(recent_history=recent_history),
+                        "content": MOOD_CLASSIFIER_USER_PROMPT.format(
+                            recent_history=recent_history
+                        ),
                     },
                 ],
                 response_model=MoodResponse,
