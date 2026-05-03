@@ -6,6 +6,16 @@ import logging
 from typing import TYPE_CHECKING
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.prompts import (
+    AGENT_GENERATION_SYSTEM_PROMPT,
+    AGENT_GENERATION_USER_PROMPT,
+    MOOD_CLASSIFIER_SYSTEM_PROMPT,
+    MOOD_CLASSIFIER_USER_PROMPT,
+    SYSTEM_PROMPT_CAPABILITIES,
+    SYSTEM_PROMPT_GOALS,
+    SYSTEM_PROMPT_IDENTITY,
+    SYSTEM_PROMPT_PERSONALITY,
+)
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -88,29 +98,23 @@ class AgentService:
         capability_ids: list[str] | None = None,
     ) -> str:
         """Build a rich system prompt from agent profile fields."""
-        sections = [
-            f"You are {name}.",
-            (
-                "Respond naturally and concisely like a real person in a chat. "
-                "Never introduce yourself, announce your capabilities, or explain what you can do "
-                "unless the user specifically asks. Just answer helpfully and directly."
-            ),
-        ]
+        sections = [SYSTEM_PROMPT_IDENTITY.format(name=name)]
+
         if description:
             sections.append(description)
-        sections.append(f"\nPersonality & Behavior:\n{personality}")
+
+        sections.append(SYSTEM_PROMPT_PERSONALITY.format(personality=personality))
+
         if goals:
             goal_list = "\n".join(f"- {g}" for g in goals)
-            sections.append(f"\nYour Goals:\n{goal_list}")
+            sections.append(SYSTEM_PROMPT_GOALS.format(goals=goal_list))
+
         if capability_ids:
             all_caps = await self.list_capabilities()
             cap_names = [c.name for c in all_caps if c.id in capability_ids]
             cap_list = ", ".join(cap_names)
-            sections.append(
-                f"\nYou have access to the following tools: {cap_list}. "
-                "Use them proactively when the user's request calls for it, "
-                "but do not mention or advertise them."
-            )
+            sections.append(SYSTEM_PROMPT_CAPABILITIES.format(cap_list=cap_list))
+
         return "\n".join(sections)
 
     async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
@@ -165,12 +169,12 @@ class AgentService:
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
-                "content": (
-                    "You are a creative director for AI personas. "
-                    "Create a unique, high-quality persona based on the user's keywords."
-                ),
+                "content": AGENT_GENERATION_SYSTEM_PROMPT,
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {
+                "role": "user",
+                "content": AGENT_GENERATION_USER_PROMPT.format(keywords=keywords),
+            },
         ]
 
         return await structured_completion(
@@ -275,13 +279,12 @@ class AgentService:
                 messages=[
                     {
                         "role": "system",
-                        "content": (
-                            f"You are a mood classifier. Given a conversation excerpt, "
-                            f"pick the single most fitting mood for the AI agent from this list: "
-                            f"{mood_list}."
-                        ),
+                        "content": MOOD_CLASSIFIER_SYSTEM_PROMPT.format(mood_list=mood_list),
                     },
-                    {"role": "user", "content": recent_history},
+                    {
+                        "role": "user",
+                        "content": MOOD_CLASSIFIER_USER_PROMPT.format(recent_history=recent_history),
+                    },
                 ],
                 response_model=MoodResponse,
             )

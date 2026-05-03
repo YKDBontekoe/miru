@@ -207,6 +207,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
+        from app.domain.chat.prompts import (
+            SIMPLE_CHAT_LOCALE_INSTRUCTION,
+            SIMPLE_CHAT_SYSTEM_PROMPT,
+            SIMPLE_CHAT_USER_PROMPT,
+        )
+
         db_agents = await self.agent_repo.list_by_user(user_id)
         if not db_agents:
             yield "No agents available. Please create one first."
@@ -215,17 +221,17 @@ class ChatService:
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
-        messages: list[ChatCompletionMessageParam] = [
-            {"role": "system", "content": agent.personality}
-        ]
+        system_content = SIMPLE_CHAT_SYSTEM_PROMPT.format(personality=agent.personality)
         if accept_language:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
-                }
-            )
-        messages.append({"role": "user", "content": user_message})
+            system_content += SIMPLE_CHAT_LOCALE_INSTRUCTION.format(accept_language=accept_language)
+
+        messages: list[ChatCompletionMessageParam] = [
+            {"role": "system", "content": system_content},
+            {
+                "role": "user",
+                "content": SIMPLE_CHAT_USER_PROMPT.format(user_message=user_message),
+            },
+        ]
 
         try:
             response = await stream_chat(
