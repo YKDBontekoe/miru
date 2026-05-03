@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { AppText } from './AppText';
+import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 
 interface SnackbarProps {
@@ -71,35 +71,16 @@ export function Snackbar({
 
   return (
     <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          bottom: 24,
-          left: 16,
-          right: 16,
-          backgroundColor: '#1A1A2E',
-          borderRadius: 16,
-          paddingHorizontal: 18,
-          paddingVertical: 14,
-          flexDirection: 'row',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.22,
-          shadowRadius: 14,
-          elevation: 10,
-          zIndex: 999,
-        },
-        animStyle,
-      ]}
+      className="absolute bottom-8 left-4 right-4 bg-surfaceHigh rounded-2xl px-4 py-3 flex-row items-center z-[999] shadow-xl shadow-black/20"
+      style={animStyle}
       pointerEvents={visible ? 'auto' : 'none'}
     >
-      <AppText style={{ flex: 1, color: '#E0E0F0', fontSize: 14, lineHeight: 20 }}>
+      <AppText className="flex-1 text-text text-sm tracking-wide">
         {message}
       </AppText>
       {onAction && (
         <ScalePressable onPress={handleAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
-          <AppText style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14, marginStart: 16 }}>
+          <AppText className="text-primary text-sm font-bold ms-4">
             {actionLabel}
           </AppText>
         </ScalePressable>
