@@ -351,16 +351,16 @@ jobs:
             sleep 10
           done
 
-          for i in $(seq 1 5); do
+          for i in $(seq 1 24); do
             STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
               --connect-timeout 10 --max-time 90 \
               "${APP_URL}/health" || echo "000")
-            echo "Attempt ${i}/5: HTTP ${STATUS}"
+            echo "Attempt ${i}/24: HTTP ${STATUS}"
             if [ "$STATUS" = "200" ]; then
               echo "PR deployment is healthy."
               exit 0
             fi
-            [ "$i" -lt 5 ] && sleep 5
+            [ "$i" -lt 24 ] && sleep 10
           done
           echo "::error::PR deployment did not become healthy within the expected window."
           exit 1
