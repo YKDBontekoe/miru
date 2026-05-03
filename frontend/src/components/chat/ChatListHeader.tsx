@@ -118,7 +118,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
 
   const renderAgentPill = useCallback(
     ({ item }: ListRenderItemInfo<Agent>) => (
-      <View style={{ marginRight: 8 }}>
+      <View className="mr-2">
         <AgentPill
           agent={item}
           onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -191,7 +191,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 14 }}
+          contentContainerClassName="px-[14px]"
           data={filterItems}
           renderItem={renderFilterItem}
           keyExtractor={filterKeyExtractor}
@@ -214,7 +214,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerClassName="px-4"
             data={agents}
             renderItem={renderAgentPill}
             keyExtractor={agentPillKeyExtractor}

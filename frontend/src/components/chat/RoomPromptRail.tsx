@@ -93,7 +93,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
   );
 
   const promptKeyExtractor = useCallback((item: PromptItem) => item.id, []);
-  const contextKeyExtractor = useCallback((item: string) => item, []);
+  const contextKeyExtractor = useCallback((item: string, index: number) => `${item}-${index}`, []);
 
   return (
     <View className="px-3 pb-2">
@@ -112,7 +112,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
+          contentContainerClassName="px-3"
           data={prompts}
           renderItem={renderPrompt}
           keyExtractor={promptKeyExtractor}
@@ -124,7 +124,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 }}
+            contentContainerClassName="px-3 pt-2"
             data={contextActions}
             renderItem={renderContextAction}
             keyExtractor={contextKeyExtractor}
