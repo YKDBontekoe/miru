@@ -9,8 +9,8 @@ import Animated, {
   withDelay,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { useTheme } from '../hooks/useTheme';
-import { theme } from '../core/theme';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 function ShimmerBox({
   width,
@@ -23,7 +23,6 @@ function ShimmerBox({
   borderRadius?: number;
   delay?: number;
 }) {
-  const { C } = useTheme();
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -42,12 +41,12 @@ function ShimmerBox({
 
   return (
     <Animated.View
+      className="bg-surfaceHigh"
       style={[
         {
           width,
           height,
           borderRadius,
-          backgroundColor: C.surfaceHigh,
         },
         animStyle,
       ]}
@@ -68,7 +67,6 @@ export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
           marginBottom: theme.spacing.md,
           padding: theme.spacing.lg,
           ...theme.elevation.sm,
-          shadowColor: C.primary,
         },
         row: {
           flexDirection: 'row',
