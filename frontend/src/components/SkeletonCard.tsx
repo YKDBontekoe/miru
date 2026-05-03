@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,11 +10,12 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
+import { theme } from '../core/theme';
 
 function ShimmerBox({
   width,
   height = 12,
-  borderRadius = 6,
+  borderRadius = theme.borderRadius.xs,
   delay = 0,
 }: {
   width: number | `${number}%`;
@@ -22,7 +23,7 @@ function ShimmerBox({
   borderRadius?: number;
   delay?: number;
 }) {
-  const { isDark } = useTheme();
+  const { C } = useTheme();
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -46,7 +47,7 @@ function ShimmerBox({
           width,
           height,
           borderRadius,
-          backgroundColor: isDark ? '#2E2E48' : '#E4E4F0',
+          backgroundColor: C.surfaceHigh,
         },
         animStyle,
       ]}
@@ -58,36 +59,56 @@ export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
   const { C } = useTheme();
   const baseDelay = index * 120;
 
-  return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 20,
-        marginBottom: 10,
-        padding: 16,
-        shadowColor: '#2563EB',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {/* Avatar */}
-        <ShimmerBox width={48} height={48} borderRadius={24} delay={baseDelay} />
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        card: {
+          backgroundColor: C.surface,
+          borderRadius: theme.borderRadius.xl,
+          marginBottom: theme.spacing.md,
+          padding: theme.spacing.lg,
+          ...theme.elevation.sm,
+          shadowColor: C.primary,
+        },
+        row: {
+          flexDirection: 'row',
+          alignItems: 'center',
+        },
+        contentContainer: {
+          flex: 1,
+          marginStart: theme.spacing.md,
+          gap: theme.spacing.sm,
+        },
+        pillRow: {
+          flexDirection: 'row',
+          gap: theme.spacing.xs,
+        },
+        rightActionContainer: {
+          alignItems: 'flex-end',
+          gap: theme.spacing.sm,
+        },
+      }),
+    [C]
+  );
 
-        <View style={{ flex: 1, marginStart: 12, gap: 8 }}>
+  return (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        {/* Avatar */}
+        <ShimmerBox width={48} height={48} borderRadius={theme.borderRadius.full} delay={baseDelay} />
+
+        <View style={styles.contentContainer}>
           <ShimmerBox width="55%" height={14} delay={baseDelay + 60} />
           <ShimmerBox width="85%" height={10} delay={baseDelay + 120} />
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <ShimmerBox width={36} height={18} borderRadius={9} delay={baseDelay + 180} />
-            <ShimmerBox width={60} height={18} borderRadius={9} delay={baseDelay + 200} />
+          <View style={styles.pillRow}>
+            <ShimmerBox width={36} height={18} borderRadius={theme.borderRadius.md} delay={baseDelay + 180} />
+            <ShimmerBox width={60} height={18} borderRadius={theme.borderRadius.md} delay={baseDelay + 200} />
           </View>
         </View>
 
-        <View style={{ alignItems: 'flex-end', gap: 8 }}>
+        <View style={styles.rightActionContainer}>
           <ShimmerBox width={32} height={10} delay={baseDelay + 80} />
-          <ShimmerBox width={14} height={14} borderRadius={7} delay={baseDelay + 140} />
+          <ShimmerBox width={14} height={14} borderRadius={theme.borderRadius.full} delay={baseDelay + 140} />
         </View>
       </View>
     </View>

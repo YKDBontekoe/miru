@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,6 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AppText } from './AppText';
 import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 interface SnackbarProps {
   visible: boolean;
@@ -26,9 +29,43 @@ export function Snackbar({
   onDismiss,
   duration = 4500,
 }: SnackbarProps) {
+  const { C } = useTheme();
   const translateY = useSharedValue(80);
   const opacity = useSharedValue(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          position: 'absolute',
+          bottom: theme.spacing.xxl,
+          left: theme.spacing.lg,
+          right: theme.spacing.lg,
+          backgroundColor: C.surfaceHigh,
+          borderRadius: theme.borderRadius.lg,
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
+          flexDirection: 'row',
+          alignItems: 'center',
+          zIndex: 999,
+          ...theme.elevation.xl,
+        },
+        message: {
+          flex: 1,
+          color: C.text,
+          ...theme.typography.bodySm,
+          letterSpacing: 0.1,
+        },
+        actionText: {
+          color: C.primary,
+          ...theme.typography.bodySm,
+          fontWeight: '700',
+          marginStart: theme.spacing.lg,
+        },
+      }),
+    [C]
+  );
 
   const dismiss = () => {
     translateY.value = withSpring(80, { damping: 18, stiffness: 220 });
@@ -71,35 +108,15 @@ export function Snackbar({
 
   return (
     <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          bottom: 24,
-          left: 16,
-          right: 16,
-          backgroundColor: '#1A1A2E',
-          borderRadius: 16,
-          paddingHorizontal: 18,
-          paddingVertical: 14,
-          flexDirection: 'row',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.22,
-          shadowRadius: 14,
-          elevation: 10,
-          zIndex: 999,
-        },
-        animStyle,
-      ]}
+      style={[styles.container, animStyle]}
       pointerEvents={visible ? 'auto' : 'none'}
     >
-      <AppText style={{ flex: 1, color: '#E0E0F0', fontSize: 14, lineHeight: 20 }}>
+      <AppText style={styles.message}>
         {message}
       </AppText>
       {onAction && (
         <ScalePressable onPress={handleAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}>
-          <AppText style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14, marginStart: 16 }}>
+          <AppText style={styles.actionText}>
             {actionLabel}
           </AppText>
         </ScalePressable>
