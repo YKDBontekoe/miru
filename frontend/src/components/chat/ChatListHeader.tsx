@@ -160,6 +160,16 @@ export const ChatListHeader = memo(function ChatListHeader({
     [selectedAgentId, onSelectAgent, t]
   );
 
+  const filterExtraData = useMemo(
+    () => ({ sortMode, onChangeSortMode, recentOnly, unreadOnly }),
+    [sortMode, onChangeSortMode, recentOnly, unreadOnly]
+  );
+
+  const agentsExtraData = useMemo(
+    () => ({ selectedAgentId, onSelectAgent }),
+    [selectedAgentId, onSelectAgent]
+  );
+
   return (
     <>
       <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
@@ -205,7 +215,7 @@ export const ChatListHeader = memo(function ChatListHeader({
           showsHorizontalScrollIndicator={false}
           keyExtractor={keyExtractorFilter}
           renderItem={renderFilter}
-          extraData={{ sortMode, onChangeSortMode, recentOnly, unreadOnly }}
+          extraData={filterExtraData}
         />
       </View>
 
@@ -229,7 +239,7 @@ export const ChatListHeader = memo(function ChatListHeader({
             keyExtractor={keyExtractorAgent}
             renderItem={renderAgent}
             ListHeaderComponent={renderAgentHeader}
-            extraData={{ selectedAgentId, onSelectAgent }}
+            extraData={agentsExtraData}
           />
         </View>
       ) : null}

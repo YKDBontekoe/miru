@@ -108,6 +108,16 @@ export const RoomPromptRail = memo(function RoomPromptRail({
     [onSave, isStreaming, canSave, saveLabel]
   );
 
+  const promptsExtra = React.useMemo(
+    () => ({ isStreaming, onPromptPress, onPromptLongPress }),
+    [isStreaming, onPromptPress, onPromptLongPress]
+  );
+
+  const contextExtra = React.useMemo(
+    () => ({ onContextPress }),
+    [onContextPress]
+  );
+
   return (
     <View className="px-3 pb-2">
       <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
@@ -130,7 +140,7 @@ export const RoomPromptRail = memo(function RoomPromptRail({
           keyExtractor={keyExtractorPrompt}
           renderItem={renderPrompt}
           ListHeaderComponent={renderHeader}
-          extraData={{ isStreaming, onPromptPress, onPromptLongPress }}
+          extraData={promptsExtra}
         />
 
         {contextActions && contextActions.length > 0 && onContextPress ? (
@@ -141,7 +151,7 @@ export const RoomPromptRail = memo(function RoomPromptRail({
             contentContainerClassName="px-3 pt-2"
             keyExtractor={keyExtractorContext}
             renderItem={renderContext}
-            extraData={{ onContextPress }}
+            extraData={contextExtra}
           />
         ) : null}
       </View>

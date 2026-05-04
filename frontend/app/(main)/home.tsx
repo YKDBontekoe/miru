@@ -32,17 +32,15 @@ const renderTaskItem = ({ item: task }: ListRenderItemInfo<any>, toggleTask: (id
 
 const renderEventItem = ({ item: event }: ListRenderItemInfo<any>, i18nLanguage: string) => (
   <View
+    className="rounded-2xl p-3 mb-2"
     style={{
-      borderRadius: 16,
       backgroundColor: HOME_COLORS.softSurface,
-      padding: 12,
-      marginBottom: 8,
     }}
   >
-    <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+    <AppText variant="bodySm" className="font-semibold" style={{ color: HOME_COLORS.text }} numberOfLines={1}>
       {event.title}
     </AppText>
-    <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+    <AppText variant="caption" className="mt-1" style={{ color: HOME_COLORS.muted }}>
       {formatTimeRange(event, i18nLanguage)}
       {event.location ? ` · ${event.location}` : ''}
     </AppText>
@@ -128,14 +126,17 @@ const HomeScreenContent = memo(function HomeScreenContent() {
   const completionRate = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   useEffect(() => {
-    Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
+    Promise.allSettled([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
   }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
-    setRefreshing(false);
-  };
+    try {
+      await Promise.allSettled([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
 
   const sectionsData = useMemo<SectionItem[]>(() => [
     { id: 'hero' },
@@ -417,11 +418,11 @@ const HomeScreenContent = memo(function HomeScreenContent() {
           paddingTop: 16,
           paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
         }}
-        extraData={{
+        extraData={useMemo(() => ({
           greeting, firstName, initials, todayTaskCount, completionRate, language: i18n.language,
           completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, roomsLength: rooms.length,
           tasksLength: tasks.length, isLoadingRooms
-        }}
+        }), [greeting, firstName, initials, todayTaskCount, completionRate, i18n.language, completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, rooms.length, tasks.length, isLoadingRooms])}
       />
 
       <HomeNewChatModal
