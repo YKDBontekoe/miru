@@ -1,11 +1,12 @@
 import React from 'react';
-import { StyleProp, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
-import { HOME_COLORS, HOME_SHADOW } from './homeTheme';
 import { relativeTimeFromNow } from './homeUtils';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 export function HomeSectionHeader({
   title,
@@ -16,21 +17,15 @@ export function HomeSectionHeader({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const { C } = useTheme();
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}
-    >
-      <AppText variant="h3" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+    <View style={styles.sectionHeader}>
+      <AppText variant="h3" style={[styles.sectionTitle, { color: C.text }]}>
         {title}
       </AppText>
       {actionLabel && onAction ? (
-        <ScalePressable onPress={onAction}>
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '700' }}>
+        <ScalePressable onPress={onAction} style={styles.sectionAction}>
+          <AppText variant="bodySm" style={{ color: C.primary, fontWeight: '700' }}>
             {actionLabel}
           </AppText>
         </ScalePressable>
@@ -46,17 +41,15 @@ export function HomeSurfaceCard({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { C } = useTheme();
   return (
     <View
       style={[
+        styles.surfaceCard,
         {
-          backgroundColor: HOME_COLORS.surface,
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: HOME_COLORS.border,
-          padding: 16,
-          marginBottom: 14,
-          ...HOME_SHADOW,
+          backgroundColor: C.surface,
+          borderColor: C.border,
+          ...theme.elevation.md,
         },
         style,
       ]}
@@ -75,34 +68,22 @@ export function HomeActionTile({
   icon: React.ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
 }) {
+  const { C } = useTheme();
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        width: '48.5%',
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        borderRadius: 18,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 10,
-      }}
+      style={[
+        styles.actionTile,
+        {
+          borderColor: C.border,
+          backgroundColor: C.surfaceHigh,
+        },
+      ]}
     >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 12,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
-        }}
-      >
-        <Ionicons name={icon} size={18} color={HOME_COLORS.primary} />
+      <View style={[styles.actionTileIconContainer, { backgroundColor: C.primarySurface }]}>
+        <Ionicons name={icon} size={18} color={C.primary} />
       </View>
-      <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+      <AppText variant="bodySm" style={{ color: C.text, fontWeight: '700' }}>
         {label}
       </AppText>
     </ScalePressable>
@@ -116,6 +97,7 @@ export function HomeTaskRow({
   task: Task;
   onToggle: () => void;
 }) {
+  const { C } = useTheme();
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const dueText =
     dueDate && !isNaN(dueDate.getTime())
@@ -125,53 +107,35 @@ export function HomeTaskRow({
   return (
     <ScalePressable
       onPress={onToggle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        paddingHorizontal: 12,
-        paddingVertical: 11,
-        marginBottom: 8,
-      }}
+      style={[styles.taskRow, { backgroundColor: C.surfaceHigh }]}
     >
       <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: task.completed ? HOME_COLORS.primary : '#8FB7A7',
-          backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
+        style={[
+          styles.taskRowCheckbox,
+          {
+            borderColor: task.completed ? C.primary : C.muted,
+            backgroundColor: task.completed ? C.primary : theme.colors.transparent,
+          },
+        ]}
       >
-        {task.completed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+        {task.completed ? <Ionicons name="checkmark" size={14} color={theme.colors.white} /> : null}
       </View>
       <AppText
         variant="bodySm"
         numberOfLines={1}
-        style={{
-          flex: 1,
-          color: task.completed ? HOME_COLORS.muted : HOME_COLORS.text,
-          textDecorationLine: task.completed ? 'line-through' : 'none',
-          fontWeight: '600',
-        }}
+        style={[
+          styles.taskRowText,
+          {
+            color: task.completed ? C.muted : C.text,
+            textDecorationLine: task.completed ? 'line-through' : 'none',
+          },
+        ]}
       >
         {task.title}
       </AppText>
       {dueText ? (
-        <View
-          style={{
-            borderRadius: 12,
-            backgroundColor: HOME_COLORS.accentSoft,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#9E5817', fontWeight: '700' }}>
+        <View style={[styles.taskRowBadge, { backgroundColor: C.dangerSurface }]}>
+          <AppText variant="caption" style={{ color: C.danger, fontWeight: '700' }}>
             {dueText}
           </AppText>
         </View>
@@ -189,47 +153,30 @@ export function HomeChatRow({
   onPress: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
+  const { C } = useTheme();
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 8,
-      }}
+      style={[styles.chatRow, { backgroundColor: C.surfaceHigh }]}
     >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 11,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
-      >
-        <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+      <View style={[styles.chatRowAvatar, { backgroundColor: C.primarySurface }]}>
+        <AppText variant="bodySm" style={{ color: C.primary, fontWeight: '800' }}>
           {room.name[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
-      <View style={{ flex: 1, paddingRight: 8 }}>
-        <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+      <View style={styles.chatRowContent}>
+        <AppText variant="bodySm" numberOfLines={1} style={{ color: C.text, fontWeight: '700' }}>
           {room.name}
         </AppText>
-        <AppText variant="caption" numberOfLines={1} style={{ color: HOME_COLORS.muted }}>
+        <AppText variant="caption" numberOfLines={1} style={{ color: C.muted }}>
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginBottom: 2 }}>
+      <View style={styles.chatRowMeta}>
+        <AppText variant="caption" style={{ color: C.muted, marginBottom: theme.spacing.xxs }}>
           {relativeTimeFromNow(room.updated_at, t)}
         </AppText>
-        <Ionicons name="chevron-forward" size={14} color={HOME_COLORS.muted} />
+        <Ionicons name="chevron-forward" size={14} color={C.muted} />
       </View>
     </ScalePressable>
   );
@@ -242,42 +189,31 @@ export function HomeAgentBadge({
   agent: Agent;
   onPress: () => void;
 }) {
+  const { C } = useTheme();
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        backgroundColor: HOME_COLORS.surface,
-        padding: 10,
-        width: '48.5%',
-        marginBottom: 10,
-      }}
+      style={[
+        styles.agentBadge,
+        {
+          borderColor: C.border,
+          backgroundColor: C.surface,
+        },
+      ]}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-        <View
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 10,
-            backgroundColor: HOME_COLORS.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 8,
-          }}
-        >
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+      <View style={styles.agentBadgeHeader}>
+        <View style={[styles.agentBadgeAvatar, { backgroundColor: C.primarySurface }]}>
+          <AppText variant="bodySm" style={{ color: C.primary, fontWeight: '800' }}>
             {agent.name?.[0]?.toUpperCase() ?? '?'}
           </AppText>
         </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+        <View style={styles.agentBadgeContent}>
+          <AppText variant="bodySm" numberOfLines={1} style={{ color: C.text, fontWeight: '700' }}>
             {agent.name}
           </AppText>
         </View>
       </View>
-      <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+      <AppText variant="caption" style={{ color: C.muted }}>
         {agent.message_count} {agent.message_count === 1 ? 'message' : 'messages'}
       </AppText>
     </ScalePressable>
@@ -303,93 +239,40 @@ export function HomeHeroCard({
   onSettingsPress: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
+  const { C } = useTheme();
   return (
-    <View
-      style={{
-        borderRadius: 28,
-        backgroundColor: HOME_COLORS.deep,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        marginBottom: 14,
-        overflow: 'hidden',
-        ...HOME_SHADOW,
-      }}
-    >
-      <View
-        style={{
-          position: 'absolute',
-          width: 180,
-          height: 180,
-          borderRadius: 999,
-          backgroundColor: '#2BA98A',
-          opacity: 0.26,
-          top: -90,
-          right: -40,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          width: 120,
-          height: 120,
-          borderRadius: 999,
-          backgroundColor: '#F0B470',
-          opacity: 0.22,
-          bottom: -44,
-          left: -24,
-        }}
-      />
+    <View style={[styles.heroCard, { backgroundColor: C.primarySurface, ...theme.elevation.md }]}>
+      <View style={[styles.heroCardBlobTopRight, { backgroundColor: C.primary }]} />
+      <View style={[styles.heroCardBlobBottomLeft, { backgroundColor: C.success }]} />
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 16,
-        }}
-      >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText variant="bodySm" style={{ color: '#CDE9DF', fontWeight: '600' }}>
+      <View style={styles.heroCardHeader}>
+        <View style={styles.heroCardHeaderText}>
+          <AppText variant="bodySm" style={{ color: C.muted, fontWeight: '600' }}>
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} style={{ color: C.text, fontWeight: '700' }}>
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: '#CDE9DF' }}>
+          <AppText variant="caption" style={{ color: C.muted }}>
             {dateText}
           </AppText>
         </View>
         <ScalePressable
           onPress={onSettingsPress}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: '#2D6A58',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={[styles.heroCardAvatar, { backgroundColor: C.primary }]}
         >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: theme.colors.white, fontWeight: '700' }}>
             {initials}
           </AppText>
         </ScalePressable>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+      <View style={styles.heroCardStats}>
+        <View style={[styles.heroCardStatBox, { backgroundColor: C.surfaceHigh }]}>
+          <AppText variant="caption" style={{ color: C.muted, marginBottom: theme.spacing.xxs }}>
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: C.text, fontWeight: '700' }}>
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
@@ -398,19 +281,11 @@ export function HomeHeroCard({
               : t('home.hero.no_deadlines', { defaultValue: 'No deadlines today' })}
           </AppText>
         </View>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+        <View style={[styles.heroCardStatBox, { backgroundColor: C.surfaceHigh }]}>
+          <AppText variant="caption" style={{ color: C.muted, marginBottom: theme.spacing.xxs }}>
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: C.text, fontWeight: '700' }}>
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>
@@ -418,3 +293,164 @@ export function HomeHeroCard({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  sectionTitle: {
+    fontWeight: '700',
+  },
+  sectionAction: {
+    padding: theme.spacing.xxs,
+  },
+  surfaceCard: {
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  actionTile: {
+    width: '48.5%',
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  actionTileIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  taskRowCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  taskRowText: {
+    flex: 1,
+    fontWeight: '600',
+  },
+  taskRowBadge: {
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  chatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.sm,
+  },
+  chatRowAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  chatRowContent: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
+  },
+  chatRowMeta: {
+    alignItems: 'flex-end',
+  },
+  agentBadge: {
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    padding: theme.spacing.md,
+    width: '48.5%',
+    marginBottom: theme.spacing.sm,
+  },
+  agentBadgeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  agentBadgeAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  agentBadgeContent: {
+    flex: 1,
+  },
+  heroCard: {
+    borderRadius: theme.borderRadius.xxl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    overflow: 'hidden',
+  },
+  heroCardBlobTopRight: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: theme.borderRadius.full,
+    opacity: 0.15,
+    top: -90,
+    right: -40,
+  },
+  heroCardBlobBottomLeft: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: theme.borderRadius.full,
+    opacity: 0.1,
+    bottom: -44,
+    left: -24,
+  },
+  heroCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.lg,
+  },
+  heroCardHeaderText: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
+  },
+  heroCardAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCardStats: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  heroCardStatBox: {
+    flex: 1,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+  },
+});

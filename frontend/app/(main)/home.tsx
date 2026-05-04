@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { LayoutAnimation, Platform, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
-import { SkeletonAgentCard } from '@/components/SkeletonCard';
+
 import {
   HomeActionTile,
   HomeAgentBadge,
@@ -17,16 +17,18 @@ import {
   HomeTaskRow,
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
-import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { C } = useTheme();
 
   const { user } = useAuthStore();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
@@ -97,30 +99,38 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const handleToggleTask = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    toggleTask(id);
+  };
+
   if (isLoadingRooms && rooms.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
-          <SkeletonAgentCard index={0} />
-          <SkeletonAgentCard index={1} />
-          <SkeletonAgentCard index={2} />
+      <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}>
+        <View style={styles.contentContainer}>
+          <View style={[styles.skeletonHero, { backgroundColor: C.surfaceHigh }]} />
+          <View style={styles.skeletonGrid}>
+            <View style={[styles.skeletonTile, { backgroundColor: C.surfaceHigh }]} />
+            <View style={[styles.skeletonTile, { backgroundColor: C.surfaceHigh }]} />
+            <View style={[styles.skeletonTile, { backgroundColor: C.surfaceHigh }]} />
+            <View style={[styles.skeletonTile, { backgroundColor: C.surfaceHigh }]} />
+          </View>
+          <View style={[styles.skeletonCard, { backgroundColor: C.surfaceHigh }]} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: C.bg }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
         }
-        contentContainerStyle={{
-          paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
-        }}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View style={styles.contentContainer}>
           <HomeHeroCard
             greeting={greeting}
             firstName={firstName}
@@ -138,7 +148,7 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.see_all')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <View style={styles.gridContainer}>
               <HomeActionTile
                 icon="chatbubble-ellipses"
                 label={t('home.actions.new_chat')}
@@ -168,30 +178,23 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.manage')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ marginBottom: 10 }}>
-              <View
-                style={{
-                  height: 8,
-                  borderRadius: 8,
-                  backgroundColor: HOME_COLORS.softSurface,
-                  overflow: 'hidden',
-                  marginBottom: 10,
-                }}
-              >
+            <View style={{ marginBottom: theme.spacing.sm }}>
+              <View style={[styles.progressBarBg, { backgroundColor: C.surfaceHigh }]}>
                 <View
-                  style={{
-                    width: `${completionRate}%`,
-                    height: 8,
-                    borderRadius: 8,
-                    backgroundColor: HOME_COLORS.primary,
-                  }}
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${completionRate}%`,
+                      backgroundColor: C.primary,
+                    },
+                  ]}
                 />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+              <View style={styles.progressLabels}>
+                <AppText variant="caption" style={{ color: C.muted }}>
                   {t('home.focus.completed', { count: completedCount, defaultValue: '{{count}} completed' })}
                 </AppText>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                <AppText variant="caption" style={{ color: C.muted }}>
                   {t('home.focus.remaining', {
                     count: sortedPendingTasks.length,
                     defaultValue: '{{count}} remaining',
@@ -201,27 +204,16 @@ export default function HomeScreen() {
             </View>
 
             {sortedPendingTasks.length === 0 ? (
-              <View
-                style={{
-                  borderRadius: 16,
-                  backgroundColor: HOME_COLORS.primarySoft,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="checkmark-circle" size={20} color={HOME_COLORS.primary} />
-                <AppText
-                  variant="bodySm"
-                  style={{ marginLeft: 8, color: HOME_COLORS.text, fontWeight: '600' }}
-                >
+              <View style={[styles.caughtUpCard, { backgroundColor: C.primarySurface }]}>
+                <Ionicons name="checkmark-circle" size={20} color={C.primary} />
+                <AppText variant="bodySm" style={[styles.caughtUpText, { color: C.text }]}>
                   {t('home.tasks.caught_up')}
                 </AppText>
               </View>
             ) : (
               sortedPendingTasks
                 .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => handleToggleTask(task.id)} />)
             )}
           </HomeSurfaceCard>
 
@@ -232,35 +224,19 @@ export default function HomeScreen() {
               onAction={() => router.push('/(main)/productivity')}
             />
             {upcomingEvents.length === 0 ? (
-              <View
-                style={{
-                  borderRadius: 16,
-                  backgroundColor: HOME_COLORS.accentSoft,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="sunny" size={18} color={HOME_COLORS.accent} />
-                <AppText variant="bodySm" style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}>
+              <View style={[styles.emptyEventCard, { backgroundColor: C.dangerSurface }]}>
+                <Ionicons name="sunny" size={18} color={C.danger} />
+                <AppText variant="bodySm" style={[styles.emptyEventText, { color: C.danger }]}>
                   {t('home.events.none', { defaultValue: 'No upcoming events' })}
                 </AppText>
               </View>
             ) : (
               upcomingEvents.map((event) => (
-                <View
-                  key={event.id}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+                <View key={event.id} style={[styles.eventCard, { backgroundColor: C.surfaceHigh }]}>
+                  <AppText variant="bodySm" style={{ color: C.text, fontWeight: '700' }} numberOfLines={1}>
                     {event.title}
                   </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+                  <AppText variant="caption" style={{ color: C.muted, marginTop: theme.spacing.xxs }}>
                     {formatTimeRange(event, i18n.language)}
                     {event.location ? ` · ${event.location}` : ''}
                   </AppText>
@@ -294,7 +270,7 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <View style={styles.gridContainer}>
                 {agents
                   .slice(0, 4)
                   .map((agent) => (
@@ -309,43 +285,23 @@ export default function HomeScreen() {
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
-              <View style={{ alignItems: 'center', paddingVertical: 18 }}>
-                <View
-                  style={{
-                    width: 76,
-                    height: 76,
-                    borderRadius: 26,
-                    backgroundColor: HOME_COLORS.primarySoft,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: 14,
-                  }}
-                >
-                  <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
+            <HomeSurfaceCard style={{ backgroundColor: C.surfaceHigh }}>
+              <View style={styles.emptyStateContainer}>
+                <View style={[styles.emptyStateIconContainer, { backgroundColor: C.primarySurface }]}>
+                  <Ionicons name="sparkles" size={30} color={C.primary} />
                 </View>
-                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                <AppText variant="h2" style={[styles.emptyStateTitle, { color: C.text }]}>
                   {t('home.empty.title')}
                 </AppText>
-                <AppText
-                  variant="bodySm"
-                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
-                >
+                <AppText variant="bodySm" style={[styles.emptyStateDesc, { color: C.muted }]}>
                   {t('home.empty.desc')}
                 </AppText>
                 <ScalePressable
                   onPress={() => setShowNewChat(true)}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.primary,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
+                  style={[styles.emptyStateButton, { backgroundColor: C.primary }]}
                 >
-                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                  <Ionicons name="add" size={18} color={theme.colors.white} style={{ marginRight: theme.spacing.xs }} />
+                  <AppText variant="bodySm" style={{ color: theme.colors.white, fontWeight: '700' }}>
                     {t('home.actions.start_chat')}
                   </AppText>
                 </ScalePressable>
@@ -363,3 +319,112 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
+  },
+  contentContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  progressBarBg: {
+    height: 8,
+    borderRadius: theme.borderRadius.sm,
+    overflow: 'hidden',
+    marginBottom: theme.spacing.sm,
+  },
+  progressBarFill: {
+    height: 8,
+    borderRadius: theme.borderRadius.sm,
+  },
+  progressLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  caughtUpCard: {
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  caughtUpText: {
+    marginLeft: theme.spacing.sm,
+    fontWeight: '600',
+  },
+  emptyEventCard: {
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emptyEventText: {
+    marginLeft: theme.spacing.sm,
+    fontWeight: '600',
+  },
+  eventCard: {
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.lg,
+  },
+  emptyStateIconContainer: {
+    width: 76,
+    height: 76,
+    borderRadius: theme.borderRadius.xxl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  emptyStateTitle: {
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStateDesc: {
+    textAlign: 'center',
+    marginBottom: theme.spacing.lg,
+    lineHeight: 20,
+  },
+  emptyStateButton: {
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  skeletonHero: {
+    height: 180,
+    borderRadius: theme.borderRadius.xxl,
+    marginBottom: theme.spacing.md,
+    ...theme.elevation.md,
+  },
+  skeletonGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    marginBottom: theme.spacing.md,
+  },
+  skeletonTile: {
+    width: '48.5%',
+    height: 80,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.sm,
+  },
+  skeletonCard: {
+    height: 220,
+    borderRadius: theme.borderRadius.xxl,
+    marginBottom: theme.spacing.md,
+    ...theme.elevation.md,
+  },
+});
