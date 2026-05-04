@@ -148,6 +148,12 @@ const HomeScreenContent = memo(function HomeScreenContent() {
     { id: 'empty_state' }
   ], []);
 
+  const listExtraData = useMemo(() => ({
+    greeting, firstName, initials, todayTaskCount, completionRate, language: i18n.language,
+    completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, roomsLength: rooms.length,
+    tasksLength: tasks.length, isLoadingRooms
+  }), [greeting, firstName, initials, todayTaskCount, completionRate, i18n.language, completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, rooms.length, tasks.length, isLoadingRooms]);
+
   const renderSection = useCallback(({ item }: ListRenderItemInfo<SectionItem>) => {
     switch (item.id) {
       case 'hero':
@@ -418,11 +424,7 @@ const HomeScreenContent = memo(function HomeScreenContent() {
           paddingTop: 16,
           paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
         }}
-        extraData={useMemo(() => ({
-          greeting, firstName, initials, todayTaskCount, completionRate, language: i18n.language,
-          completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, roomsLength: rooms.length,
-          tasksLength: tasks.length, isLoadingRooms
-        }), [greeting, firstName, initials, todayTaskCount, completionRate, i18n.language, completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, rooms.length, tasks.length, isLoadingRooms])}
+        extraData={listExtraData}
       />
 
       <HomeNewChatModal
