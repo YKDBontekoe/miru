@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import React, { useEffect, useMemo, useState, memo, useCallback } from 'react';
+import { Platform, RefreshControl, FlatList, View, ListRenderItemInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +24,45 @@ import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 
-export default function HomeScreen() {
+type SectionItem = { id: string };
+
+const renderTaskItem = ({ item: task }: ListRenderItemInfo<any>, toggleTask: (id: string) => void) => (
+  <HomeTaskRow task={task} onToggle={() => toggleTask(task.id)} />
+);
+
+const renderEventItem = ({ item: event }: ListRenderItemInfo<any>, i18nLanguage: string) => (
+  <View
+    className="rounded-2xl p-3 mb-2"
+    style={{
+      backgroundColor: HOME_COLORS.softSurface,
+    }}
+  >
+    <AppText variant="bodySm" className="font-semibold" style={{ color: HOME_COLORS.text }} numberOfLines={1}>
+      {event.title}
+    </AppText>
+    <AppText variant="caption" className="mt-1" style={{ color: HOME_COLORS.muted }}>
+      {formatTimeRange(event, i18nLanguage)}
+      {event.location ? ` · ${event.location}` : ''}
+    </AppText>
+  </View>
+);
+
+const renderRoomItem = ({ item: room }: ListRenderItemInfo<any>, router: any, t: any) => (
+  <HomeChatRow
+    room={room}
+    onPress={() => router.push(`/(main)/chat/${room.id}`)}
+    t={t}
+  />
+);
+
+const renderAgentItem = ({ item: agent }: ListRenderItemInfo<any>, router: any) => (
+  <HomeAgentBadge
+    agent={agent}
+    onPress={() => router.push('/(main)/agents')}
+  />
+);
+
+const HomeScreenContent = memo(function HomeScreenContent() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
 
@@ -88,39 +126,38 @@ export default function HomeScreen() {
   const completionRate = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
 
   useEffect(() => {
-    Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
+    Promise.allSettled([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
   }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
-    setRefreshing(false);
-  };
+    try {
+      await Promise.allSettled([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
 
-  if (isLoadingRooms && rooms.length === 0) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
-          <SkeletonAgentCard index={0} />
-          <SkeletonAgentCard index={1} />
-          <SkeletonAgentCard index={2} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const sectionsData = useMemo<SectionItem[]>(() => [
+    { id: 'hero' },
+    { id: 'quick_actions' },
+    { id: 'focus_board' },
+    { id: 'timeline' },
+    { id: 'recent_chats' },
+    { id: 'your_agents' },
+    { id: 'empty_state' }
+  ], []);
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
-        }
-        contentContainerStyle={{
-          paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
-        }}
-      >
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+  const listExtraData = useMemo(() => ({
+    greeting, firstName, initials, todayTaskCount, completionRate, language: i18n.language,
+    completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, roomsLength: rooms.length,
+    tasksLength: tasks.length, isLoadingRooms
+  }), [greeting, firstName, initials, todayTaskCount, completionRate, i18n.language, completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, rooms.length, tasks.length, isLoadingRooms]);
+
+  const renderSection = useCallback(({ item }: ListRenderItemInfo<SectionItem>) => {
+    switch (item.id) {
+      case 'hero':
+        return (
           <HomeHeroCard
             greeting={greeting}
             firstName={firstName}
@@ -131,7 +168,9 @@ export default function HomeScreen() {
             onSettingsPress={() => router.push('/(main)/settings')}
             t={t}
           />
-
+        );
+      case 'quick_actions':
+        return (
           <HomeSurfaceCard>
             <HomeSectionHeader
               title={t('home.sections.quick_actions')}
@@ -161,7 +200,9 @@ export default function HomeScreen() {
               />
             </View>
           </HomeSurfaceCard>
-
+        );
+      case 'focus_board':
+        return (
           <HomeSurfaceCard>
             <HomeSectionHeader
               title={t('home.sections.focus_board', { defaultValue: 'Focus board' })}
@@ -219,12 +260,17 @@ export default function HomeScreen() {
                 </AppText>
               </View>
             ) : (
-              sortedPendingTasks
-                .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+              <FlatList
+                data={sortedPendingTasks.slice(0, 4)}
+                keyExtractor={(task) => task.id}
+                scrollEnabled={false}
+                renderItem={(info) => renderTaskItem(info, toggleTask)}
+              />
             )}
           </HomeSurfaceCard>
-
+        );
+      case 'timeline':
+        return (
           <HomeSurfaceCard>
             <HomeSectionHeader
               title={t('home.sections.today_timeline', { defaultValue: 'Today timeline' })}
@@ -247,113 +293,139 @@ export default function HomeScreen() {
                 </AppText>
               </View>
             ) : (
-              upcomingEvents.map((event) => (
-                <View
-                  key={event.id}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
-                    {event.title}
-                  </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
-                    {formatTimeRange(event, i18n.language)}
-                    {event.location ? ` · ${event.location}` : ''}
-                  </AppText>
-                </View>
-              ))
+              <FlatList
+                data={upcomingEvents}
+                keyExtractor={(event) => event.id}
+                scrollEnabled={false}
+                renderItem={(info) => renderEventItem(info, i18n.language)}
+              />
             )}
           </HomeSurfaceCard>
-
-          {recentRooms.length > 0 ? (
-            <HomeSurfaceCard>
-              <HomeSectionHeader
-                title={t('home.sections.recent_chats')}
-                actionLabel={t('home.actions.see_all')}
-                onAction={() => router.push('/(main)/chat')}
+        );
+      case 'recent_chats':
+        if (recentRooms.length === 0) return null;
+        return (
+          <HomeSurfaceCard>
+            <HomeSectionHeader
+              title={t('home.sections.recent_chats')}
+              actionLabel={t('home.actions.see_all')}
+              onAction={() => router.push('/(main)/chat')}
+            />
+            <FlatList
+              data={recentRooms}
+              keyExtractor={(room) => room.id}
+              scrollEnabled={false}
+              renderItem={(info) => renderRoomItem(info, router, t)}
+            />
+          </HomeSurfaceCard>
+        );
+      case 'your_agents':
+        if (agents.length === 0) return null;
+        return (
+          <HomeSurfaceCard>
+            <HomeSectionHeader
+              title={t('home.sections.your_agents')}
+              actionLabel={t('home.actions.manage')}
+              onAction={() => router.push('/(main)/agents')}
+            />
+            <View style={{ width: '100%' }}>
+              <FlatList
+                data={agents.slice(0, 4)}
+                keyExtractor={(agent) => agent.id}
+                scrollEnabled={false}
+                numColumns={2}
+                columnWrapperStyle={{ justifyContent: 'space-between' }}
+                renderItem={(info) => renderAgentItem(info, router)}
               />
-              {recentRooms.map((room) => (
-                <HomeChatRow
-                  key={room.id}
-                  room={room}
-                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
-                  t={t}
-                />
-              ))}
-            </HomeSurfaceCard>
-          ) : null}
-
-          {agents.length > 0 ? (
-            <HomeSurfaceCard>
-              <HomeSectionHeader
-                title={t('home.sections.your_agents')}
-                actionLabel={t('home.actions.manage')}
-                onAction={() => router.push('/(main)/agents')}
-              />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                {agents
-                  .slice(0, 4)
-                  .map((agent) => (
-                    <HomeAgentBadge
-                      key={agent.id}
-                      agent={agent}
-                      onPress={() => router.push('/(main)/agents')}
-                    />
-                  ))}
+            </View>
+          </HomeSurfaceCard>
+        );
+      case 'empty_state':
+        if (!(rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms)) {
+          return null;
+        }
+        return (
+          <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
+            <View style={{ alignItems: 'center', paddingVertical: 18 }}>
+              <View
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: 26,
+                  backgroundColor: HOME_COLORS.primarySoft,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: 14,
+                }}
+              >
+                <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
               </View>
-            </HomeSurfaceCard>
-          ) : null}
+              <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                {t('home.empty.title')}
+              </AppText>
+              <AppText
+                variant="bodySm"
+                style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
+              >
+                {t('home.empty.desc')}
+              </AppText>
+              <ScalePressable
+                onPress={() => setShowNewChat(true)}
+                style={{
+                  borderRadius: 16,
+                  backgroundColor: HOME_COLORS.primary,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                  {t('home.actions.start_chat')}
+                </AppText>
+              </ScalePressable>
+            </View>
+          </HomeSurfaceCard>
+        );
+      default:
+        return null;
+    }
+  }, [
+    greeting, firstName, initials, todayTaskCount, completionRate, router, t, i18n.language,
+    completedCount, sortedPendingTasks, upcomingEvents, recentRooms, agents, rooms.length,
+    tasks.length, isLoadingRooms, toggleTask
+  ]);
 
-          {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
-              <View style={{ alignItems: 'center', paddingVertical: 18 }}>
-                <View
-                  style={{
-                    width: 76,
-                    height: 76,
-                    borderRadius: 26,
-                    backgroundColor: HOME_COLORS.primarySoft,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: 14,
-                  }}
-                >
-                  <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
-                </View>
-                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
-                  {t('home.empty.title')}
-                </AppText>
-                <AppText
-                  variant="bodySm"
-                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
-                >
-                  {t('home.empty.desc')}
-                </AppText>
-                <ScalePressable
-                  onPress={() => setShowNewChat(true)}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.primary,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
-                    {t('home.actions.start_chat')}
-                  </AppText>
-                </ScalePressable>
-              </View>
-            </HomeSurfaceCard>
-          ) : null}
+  if (isLoadingRooms && rooms.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
+          <SkeletonAgentCard index={0} />
+          <SkeletonAgentCard index={1} />
+          <SkeletonAgentCard index={2} />
         </View>
-      </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+      <FlatList
+        data={sectionsData}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSection}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
+        }
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
+        }}
+        extraData={listExtraData}
+      />
 
       <HomeNewChatModal
         visible={showNewChat}
@@ -362,4 +434,8 @@ export default function HomeScreen() {
       />
     </SafeAreaView>
   );
+});
+
+export default function HomeScreen() {
+  return <HomeScreenContent />;
 }
