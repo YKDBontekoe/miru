@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { LayoutAnimation, Platform, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
-import { SkeletonAgentCard } from '@/components/SkeletonCard';
 import {
   HomeActionTile,
   HomeAgentBadge,
@@ -17,21 +16,22 @@ import {
   HomeTaskRow,
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
-import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { C } = useTheme();
 
   const { user } = useAuthStore();
-  const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
-  const { agents, fetchAgents } = useAgentStore();
-  const { tasks, events, fetchTasks, fetchEvents, toggleTask } = useProductivityStore();
+  const { rooms, fetchRooms, isLoadingRooms, hubError } = useChatStore();
+  const { agents, fetchAgents, error: agentError } = useAgentStore();
+  const { tasks, events, fetchTasks, fetchEvents, toggleTask, error: productivityError } = useProductivityStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -40,6 +40,8 @@ export default function HomeScreen() {
   const greeting = getGreeting(hour, t);
   const firstName = getFirstName(user?.email);
   const initials = getInitials(user?.email);
+
+  const combinedError = hubError || agentError || productivityError;
 
   const recentRooms = useMemo(
     () =>
@@ -97,30 +99,68 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const handleToggleTask = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    toggleTask(id);
+  };
+
   if (isLoadingRooms && rooms.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
-          <SkeletonAgentCard index={0} />
-          <SkeletonAgentCard index={1} />
-          <SkeletonAgentCard index={2} />
+      <SafeAreaView style={{ backgroundColor: C.bg }} className="flex-1">
+        <View className="px-4 pt-4">
+          <View style={{ backgroundColor: C.surfaceHigh }} className="mb-4 h-[180px] rounded-[24px] shadow-md dark:shadow-none" />
+          <View className="mb-4 flex-row flex-wrap justify-between">
+            <View style={{ backgroundColor: C.surfaceHigh }} className="mb-2 h-20 w-[48.5%] rounded-2xl" />
+            <View style={{ backgroundColor: C.surfaceHigh }} className="mb-2 h-20 w-[48.5%] rounded-2xl" />
+            <View style={{ backgroundColor: C.surfaceHigh }} className="mb-2 h-20 w-[48.5%] rounded-2xl" />
+            <View style={{ backgroundColor: C.surfaceHigh }} className="mb-2 h-20 w-[48.5%] rounded-2xl" />
+          </View>
+          <View style={{ backgroundColor: C.surfaceHigh }} className="mb-4 h-[220px] rounded-[24px] shadow-md dark:shadow-none" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (combinedError && rooms.length === 0 && agents.length === 0 && tasks.length === 0) {
+    return (
+      <SafeAreaView style={{ backgroundColor: C.bg }} className="flex-1">
+        <View className="flex-1 justify-center px-4 pt-4">
+          <View style={{ backgroundColor: C.surfaceHigh }} className="items-center rounded-2xl p-6">
+            <Ionicons name="alert-circle-outline" size={48} color={C.danger} className="mb-3" />
+            <AppText variant="h3" style={{ color: C.text }} className="mb-2 text-center">
+              Failed to load dashboard
+            </AppText>
+            <AppText variant="bodySm" style={{ color: C.muted }} className="mb-4 text-center">
+              {combinedError}
+            </AppText>
+            <ScalePressable
+              onPress={onRefresh}
+              style={{ backgroundColor: C.primary }}
+              className="flex-row items-center rounded-2xl px-4 py-3"
+            >
+              <Ionicons name="refresh" size={18} color="#FFFFFF" className="mr-1" />
+              <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                Retry
+              </AppText>
+            </ScalePressable>
+          </View>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+    <SafeAreaView style={{ backgroundColor: C.bg }} className="flex-1">
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
         }
         contentContainerStyle={{
           paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
         }}
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View className="px-4 pt-4">
           <HomeHeroCard
             greeting={greeting}
             firstName={firstName}
@@ -138,7 +178,7 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.see_all')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <View className="flex-row flex-wrap justify-between">
               <HomeActionTile
                 icon="chatbubble-ellipses"
                 label={t('home.actions.new_chat')}
@@ -168,30 +208,21 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.manage')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ marginBottom: 10 }}>
-              <View
-                style={{
-                  height: 8,
-                  borderRadius: 8,
-                  backgroundColor: HOME_COLORS.softSurface,
-                  overflow: 'hidden',
-                  marginBottom: 10,
-                }}
-              >
+            <View className="mb-2.5">
+              <View style={{ backgroundColor: C.surfaceHigh }} className="mb-2.5 h-2 overflow-hidden rounded-sm">
                 <View
                   style={{
                     width: `${completionRate}%`,
-                    height: 8,
-                    borderRadius: 8,
-                    backgroundColor: HOME_COLORS.primary,
+                    backgroundColor: C.primary,
                   }}
+                  className="h-2 rounded-sm"
                 />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+              <View className="flex-row justify-between">
+                <AppText variant="caption" style={{ color: C.muted }}>
                   {t('home.focus.completed', { count: completedCount, defaultValue: '{{count}} completed' })}
                 </AppText>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                <AppText variant="caption" style={{ color: C.muted }}>
                   {t('home.focus.remaining', {
                     count: sortedPendingTasks.length,
                     defaultValue: '{{count}} remaining',
@@ -201,27 +232,16 @@ export default function HomeScreen() {
             </View>
 
             {sortedPendingTasks.length === 0 ? (
-              <View
-                style={{
-                  borderRadius: 16,
-                  backgroundColor: HOME_COLORS.primarySoft,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="checkmark-circle" size={20} color={HOME_COLORS.primary} />
-                <AppText
-                  variant="bodySm"
-                  style={{ marginLeft: 8, color: HOME_COLORS.text, fontWeight: '600' }}
-                >
+              <View style={{ backgroundColor: C.primarySurface }} className="flex-row items-center rounded-2xl p-3">
+                <Ionicons name="checkmark-circle" size={20} color={C.primary} />
+                <AppText variant="bodySm" style={{ color: C.text }} className="ml-2 font-semibold">
                   {t('home.tasks.caught_up')}
                 </AppText>
               </View>
             ) : (
               sortedPendingTasks
                 .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => handleToggleTask(task.id)} />)
             )}
           </HomeSurfaceCard>
 
@@ -232,35 +252,19 @@ export default function HomeScreen() {
               onAction={() => router.push('/(main)/productivity')}
             />
             {upcomingEvents.length === 0 ? (
-              <View
-                style={{
-                  borderRadius: 16,
-                  backgroundColor: HOME_COLORS.accentSoft,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="sunny" size={18} color={HOME_COLORS.accent} />
-                <AppText variant="bodySm" style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}>
+              <View style={{ backgroundColor: C.dangerSurface }} className="flex-row items-center rounded-2xl p-3">
+                <Ionicons name="sunny" size={18} color={C.danger} />
+                <AppText variant="bodySm" style={{ color: C.danger }} className="ml-2 font-semibold">
                   {t('home.events.none', { defaultValue: 'No upcoming events' })}
                 </AppText>
               </View>
             ) : (
               upcomingEvents.map((event) => (
-                <View
-                  key={event.id}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+                <View key={event.id} style={{ backgroundColor: C.surfaceHigh }} className="mb-2 rounded-2xl p-3">
+                  <AppText variant="bodySm" style={{ color: C.text, fontWeight: '700' }} numberOfLines={1}>
                     {event.title}
                   </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+                  <AppText variant="caption" style={{ color: C.muted }} className="mt-1">
                     {formatTimeRange(event, i18n.language)}
                     {event.location ? ` · ${event.location}` : ''}
                   </AppText>
@@ -294,7 +298,7 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <View className="flex-row flex-wrap justify-between">
                 {agents
                   .slice(0, 4)
                   .map((agent) => (
@@ -309,42 +313,23 @@ export default function HomeScreen() {
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
-              <View style={{ alignItems: 'center', paddingVertical: 18 }}>
-                <View
-                  style={{
-                    width: 76,
-                    height: 76,
-                    borderRadius: 26,
-                    backgroundColor: HOME_COLORS.primarySoft,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: 14,
-                  }}
-                >
-                  <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
+            <HomeSurfaceCard style={{ backgroundColor: C.surfaceHigh }}>
+              <View className="items-center py-4">
+                <View style={{ backgroundColor: C.primarySurface }} className="mb-3 h-[76px] w-[76px] items-center justify-center rounded-[26px]">
+                  <Ionicons name="sparkles" size={30} color={C.primary} />
                 </View>
-                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                <AppText variant="h2" style={{ color: C.text }} className="mb-2 text-center">
                   {t('home.empty.title')}
                 </AppText>
-                <AppText
-                  variant="bodySm"
-                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
-                >
+                <AppText variant="bodySm" style={{ color: C.muted }} className="mb-4 text-center leading-5">
                   {t('home.empty.desc')}
                 </AppText>
                 <ScalePressable
                   onPress={() => setShowNewChat(true)}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.primary,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
+                  style={{ backgroundColor: C.primary }}
+                  className="flex-row items-center rounded-2xl px-4 py-3"
                 >
-                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Ionicons name="add" size={18} color="#FFFFFF" className="mr-1.5" />
                   <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
                     {t('home.actions.start_chat')}
                   </AppText>
