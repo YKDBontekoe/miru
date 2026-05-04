@@ -15,6 +15,14 @@ export type RenderItemData = {
   id: string;
 };
 
+/**
+ * ViewModel hook for the Productivity screen.
+ * Handles complex state, filtering, routing side-effects, and priority sorting.
+ *
+ * Groups tasks/events by date (local timezone, start-of-day boundary).
+ * Fetches notes, tasks, and events on mount. Errors during fetch/action are caught
+ * and displayed via generic alerts to prevent unhandled promise rejections.
+ */
 export function useProductivityViewModel() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -38,6 +46,9 @@ export function useProductivityViewModel() {
     fetchTasks,
     fetchEvents,
     isLoading,
+    errorNotes,
+    errorTasks,
+    errorEvents,
     deleteNote,
     deleteTask,
     toggleTask,
@@ -83,6 +94,41 @@ export function useProductivityViewModel() {
     fetchEvents();
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
+  const safeAsyncAction = useCallback(
+    async (action: () => Promise<void>) => {
+      try {
+        await action();
+      } catch (err) {
+        Alert.alert(
+          t('settings.actions.error') || 'Error',
+          t('settings.actions.error_generic') || 'An unexpected error occurred. Please try again later.'
+        );
+      }
+    },
+    [t]
+  );
+
+  const safeToggleTask = useCallback(
+    (id: string) => {
+      safeAsyncAction(() => toggleTask(id));
+    },
+    [safeAsyncAction, toggleTask]
+  );
+
+  const safeDeleteNote = useCallback(
+    async (id: string) => {
+      await safeAsyncAction(() => deleteNote(id));
+    },
+    [safeAsyncAction, deleteNote]
+  );
+
+  const safeDeleteTask = useCallback(
+    async (id: string) => {
+      await safeAsyncAction(() => deleteTask(id));
+    },
+    [safeAsyncAction, deleteTask]
+  );
+
   const confirmDelete = useCallback(
     (action: () => Promise<void>) =>
       Alert.alert(
@@ -93,11 +139,11 @@ export function useProductivityViewModel() {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: () => safeAsyncAction(action),
           },
         ]
       ),
-    [t]
+    [safeAsyncAction, t]
   );
 
   const filteredNotes = useMemo(() => {
@@ -322,10 +368,13 @@ export function useProductivityViewModel() {
     taskPriorityCounts,
     dataToRender,
     isLoading,
+    errorNotes,
+    errorTasks,
+    errorEvents,
     fetchNotes,
     fetchTasks,
-    deleteNote,
-    deleteTask,
-    toggleTask,
+    deleteNote: safeDeleteNote,
+    deleteTask: safeDeleteTask,
+    toggleTask: safeToggleTask,
   };
 }
