@@ -50,8 +50,8 @@ class MemoryRepository:
         query = """
             SELECT * FROM match_memories(
                 query_embedding := $1::vector,
-                match_threshold := $2,
-                match_count := $3,
+                match_threshold := $2::float,
+                match_count := $3::int,
                 p_user_id := $4::uuid,
                 p_agent_id := $5::uuid,
                 p_room_id := $6::uuid
