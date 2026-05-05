@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RoomCreate(BaseModel):
@@ -68,3 +69,34 @@ class MessageUpdate(BaseModel):
         if not v.strip():
             raise ValueError("content must not be blank or whitespace only")
         return v.strip()
+
+
+class WSPing(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    type: Literal["ping"]
+
+
+class WSJoinRoom(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    type: Literal["join_room"]
+    room_id: UUID
+
+
+class WSLeaveRoom(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    type: Literal["leave_room"]
+    room_id: UUID
+
+
+class WSSendMessage(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    type: Literal["send_message"]
+    room_id: UUID
+    content: str
+    client_temp_id: str | None = Field(default=None, alias="clientTempId")
+
+
+WSMsgType = Annotated[
+    WSPing | WSJoinRoom | WSLeaveRoom | WSSendMessage, Field(discriminator="type")
+]

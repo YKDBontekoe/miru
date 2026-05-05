@@ -23,14 +23,16 @@ Server → Client frame shapes
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from uuid import UUID
 
+import jwt
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from pydantic import TypeAdapter, ValidationError
 
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
+from app.domain.chat.dtos import WSMsgType
 from app.domain.chat.service import ChatService
 from app.infrastructure.database.supabase import get_supabase
 from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -41,6 +43,8 @@ from app.infrastructure.websocket.manager import chat_hub
 
 router = APIRouter(tags=["WebSocket"])
 logger = logging.getLogger(__name__)
+
+ws_msg_adapter = TypeAdapter(WSMsgType)
 
 # ---------------------------------------------------------------------------
 # JWT authentication — delegates to AuthService so algorithm/claims handling
@@ -55,7 +59,7 @@ async def _verify_token(token: str) -> UUID | None:
         auth_service = AuthService(AuthRepository(get_supabase()))
         payload = await auth_service.decode_jwt(token)
         return payload.sub
-    except Exception:
+    except jwt.PyJWTError:
         logger.warning("WS auth rejected: invalid token")
         return None
 
@@ -83,7 +87,7 @@ async def _handle_send_message(
             accept_language=accept_language,
         )
     except Exception:
-        logger.exception("WS message processing failed  room=%s  user=%s", room_id, user_id)
+        logger.warning("WS message processing failed  room=%s  user=%s", room_id, user_id)
         await chat_hub.send_to_user(
             user_id,
             {
@@ -135,74 +139,47 @@ async def websocket_chat_hub(
             raw = await websocket.receive_text()
 
             try:
-                msg: dict = json.loads(raw)
-            except json.JSONDecodeError:
+                msg_obj = ws_msg_adapter.validate_json(raw)
+            except ValidationError:
                 await chat_hub.send_to_user(
                     user_id, {"type": "error", "data": {"message": "Invalid JSON"}}
                 )
                 continue
 
-            msg_type = msg.get("type")
-
-            if msg_type == "ping":
+            if msg_obj.type == "ping":
                 await chat_hub.send_to_user(user_id, {"type": "pong"})
 
-            elif msg_type == "join_room":
-                try:
-                    room_id = UUID(msg["room_id"])
-                except (KeyError, ValueError):
+            elif msg_obj.type == "join_room":
+                room_id = msg_obj.room_id
+
+                # Authorisation: verify the user is allowed to join that room
+                if not await service.user_in_room(user_id, room_id):
                     await chat_hub.send_to_user(
                         user_id,
                         {
                             "type": "error",
                             "action": "join_room",
                             "data": {
-                                "message": "invalid room_id",
-                                "room_id": msg.get("room_id"),
+                                "message": "not authorised for this room",
+                                "room_id": str(room_id),
                             },
                         },
                     )
                     continue
+
                 chat_hub.join_room(user_id, room_id)
                 await chat_hub.send_to_user(
                     user_id, {"type": "joined_room", "room_id": str(room_id)}
                 )
 
-            elif msg_type == "leave_room":
-                try:
-                    room_id = UUID(msg["room_id"])
-                except (KeyError, ValueError):
-                    await chat_hub.send_to_user(
-                        user_id,
-                        {
-                            "type": "error",
-                            "action": "leave_room",
-                            "data": {
-                                "message": "invalid room_id",
-                                "room_id": msg.get("room_id"),
-                            },
-                        },
-                    )
-                    continue
+            elif msg_obj.type == "leave_room":
+                room_id = msg_obj.room_id
                 chat_hub.leave_room(user_id, room_id)
 
-            elif msg_type == "send_message":
-                try:
-                    room_id = UUID(msg["room_id"])
-                    content = str(msg.get("content", "")).strip()
-                except (KeyError, ValueError):
-                    await chat_hub.send_to_user(
-                        user_id,
-                        {
-                            "type": "error",
-                            "action": "send_message",
-                            "data": {
-                                "message": "invalid room_id",
-                                "room_id": msg.get("room_id"),
-                            },
-                        },
-                    )
-                    continue
+            elif msg_obj.type == "send_message":
+                room_id = msg_obj.room_id
+                content = msg_obj.content.strip()
+
                 if not content:
                     continue
 
@@ -221,7 +198,7 @@ async def websocket_chat_hub(
                     )
                     continue
 
-                client_temp_id: str | None = msg.get("clientTempId") or None
+                client_temp_id = getattr(msg_obj, "client_temp_id", None)
                 # Fire-and-forget — the hub pushes results back asynchronously
                 asyncio.create_task(
                     _handle_send_message(service, user_id, room_id, content, client_temp_id, lang)

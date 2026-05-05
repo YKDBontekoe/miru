@@ -187,7 +187,7 @@ class ChatRepository:
               AND room_id = ANY($1::uuid[])
             ORDER BY room_id, created_at DESC, id DESC
         """
-        rows = await conn.execute_query_dict(sql, [room_ids])
+        rows = await conn.execute_query_dict(sql, [list(room_ids)])
         latest_by_room: dict[UUID, ChatMessageEntity] = {}
         for row in rows:
             message = ChatMessageEntity(
