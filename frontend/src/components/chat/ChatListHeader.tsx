@@ -45,10 +45,13 @@ const styles = StyleSheet.create({
   agentContainer: {
     marginRight: 8,
   },
+  filterRow: {
+    flexDirection: 'row',
+  },
 });
 
 const keyExtractorMode = (item: { mode: SortMode; label: string }) => item.mode;
-const keyExtractorFilter = (item: { label: string; active: boolean; onToggle: () => void }) => item.label;
+
 const keyExtractorAgent = (item: Agent) => item.id;
 
 const ChatListHeaderComponent = ({
@@ -85,8 +88,8 @@ const ChatListHeaderComponent = ({
   ], [t]);
 
   const filterData = useMemo(() => [
-    { active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
-    { active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
+    { id: 'recent_only', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
+    { id: 'unread_only', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
   ], [recentOnly, onToggleRecentOnly, unreadOnly, onToggleUnreadOnly, t]);
 
   const renderModeItem = useCallback(
@@ -111,22 +114,6 @@ const ChatListHeaderComponent = ({
       );
     },
     [sortMode, onChangeSortMode]
-  );
-
-  const renderFilterItem = useCallback(
-    ({ item }: ListRenderItemInfo<{ label: string; active: boolean; onToggle: () => void }>) => (
-      <ScalePressable
-        onPress={item.onToggle}
-        className={`me-2 rounded-full px-3 py-2 border ${
-          item.active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-        }`}
-      >
-        <AppText variant="caption" className={`font-bold ${item.active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
-          {item.label}
-        </AppText>
-      </ScalePressable>
-    ),
-    []
   );
 
   const renderAgentHeader = useCallback(() => (
@@ -158,14 +145,22 @@ const ChatListHeaderComponent = ({
   );
 
   const renderFooter = useCallback(() => (
-    <FlatList
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      data={filterData}
-      keyExtractor={keyExtractorFilter}
-      renderItem={renderFilterItem}
-    />
-  ), [filterData, renderFilterItem]);
+    <View style={styles.filterRow}>
+      {filterData.map((item) => (
+        <ScalePressable
+          key={item.id}
+          onPress={item.onToggle}
+          className={`me-2 rounded-full px-3 py-2 border ${
+            item.active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
+          }`}
+        >
+          <AppText variant="caption" className={`font-bold ${item.active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
+            {item.label}
+          </AppText>
+        </ScalePressable>
+      ))}
+    </View>
+  ), [filterData]);
 
   return (
     <>

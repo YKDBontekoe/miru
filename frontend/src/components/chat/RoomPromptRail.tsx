@@ -24,7 +24,7 @@ interface RoomPromptRailProps {
 }
 
 const keyExtractorPrompt = (item: PromptItem) => item.id;
-const keyExtractorContext = (item: string) => item;
+const keyExtractorContext = (item: string, index: number) => `${item}:${index}`;
 
 const styles = StyleSheet.create({
   contentContainer: {
