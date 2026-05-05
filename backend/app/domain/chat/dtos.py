@@ -72,21 +72,24 @@ class MessageUpdate(BaseModel):
 
 
 class WSPing(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     type: Literal["ping"]
 
 
 class WSJoinRoom(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     type: Literal["join_room"]
     room_id: UUID
 
 
 class WSLeaveRoom(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     type: Literal["leave_room"]
     room_id: UUID
 
 
 class WSSendMessage(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     type: Literal["send_message"]
     room_id: UUID

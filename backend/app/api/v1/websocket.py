@@ -151,6 +151,22 @@ async def websocket_chat_hub(
 
             elif msg_obj.type == "join_room":
                 room_id = msg_obj.room_id
+
+                # Authorisation: verify the user is allowed to join that room
+                if not await service.user_in_room(user_id, room_id):
+                    await chat_hub.send_to_user(
+                        user_id,
+                        {
+                            "type": "error",
+                            "action": "join_room",
+                            "data": {
+                                "message": "not authorised for this room",
+                                "room_id": str(room_id),
+                            },
+                        },
+                    )
+                    continue
+
                 chat_hub.join_room(user_id, room_id)
                 await chat_hub.send_to_user(
                     user_id, {"type": "joined_room", "room_id": str(room_id)}

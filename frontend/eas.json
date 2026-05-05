@@ -8,7 +8,15 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "infoPlist": {
+          "NSAppTransportSecurity": {
+            "NSAllowsArbitraryLoads": true
+          }
+        }
+      },
+      "android": {
+        "buildType": "debug"
       },
       "env": {
         "APP_ENV": "development"
@@ -17,6 +25,16 @@
     "development:device": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "infoPlist": {
+          "NSAppTransportSecurity": {
+            "NSAllowsArbitraryLoads": true
+          }
+        }
+      },
+      "android": {
+        "buildType": "debug"
+      },
       "env": {
         "APP_ENV": "development"
       }
@@ -41,7 +59,16 @@
     },
     "production": {
       "autoIncrement": true,
-      "ios": {},
+      "ios": {
+        "infoPlist": {
+          "NSAppTransportSecurity": {
+            "NSAllowsArbitraryLoads": false
+          }
+        }
+      },
+      "android": {
+        "buildType": "release"
+      },
       "env": {
         "APP_ENV": "production"
       }
