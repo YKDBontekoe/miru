@@ -74,13 +74,16 @@ class MessageUpdate(BaseModel):
 class WSPing(BaseModel):
     type: Literal["ping"]
 
+
 class WSJoinRoom(BaseModel):
     type: Literal["join_room"]
     room_id: UUID
 
+
 class WSLeaveRoom(BaseModel):
     type: Literal["leave_room"]
     room_id: UUID
+
 
 class WSSendMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -91,4 +94,6 @@ class WSSendMessage(BaseModel):
     client_temp_id: str | None = Field(default=None, alias="clientTempId")
 
 
-WSMsgType = Annotated[WSPing | WSJoinRoom | WSLeaveRoom | WSSendMessage, Field(discriminator="type")]
+WSMsgType = Annotated[
+    WSPing | WSJoinRoom | WSLeaveRoom | WSSendMessage, Field(discriminator="type")
+]
