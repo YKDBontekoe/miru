@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useDeferredValue } from 'react';
 import { Alert } from 'react-native';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { useProductivityStore } from '@/store/useProductivityStore';
 import { CalendarEvent, Note, Task } from '@/core/models';
 
@@ -38,10 +39,31 @@ export const useProductivityViewModel = () => {
     fetchTasks,
     fetchEvents,
     isLoading,
+    error,
+    errorNotes,
+    errorTasks,
+    errorEvents,
     deleteNote,
     deleteTask,
     toggleTask,
-  } = useProductivityStore();
+  } = useProductivityStore(
+    useShallow((state) => ({
+      notes: state.notes,
+      tasks: state.tasks,
+      events: state.events,
+      fetchNotes: state.fetchNotes,
+      fetchTasks: state.fetchTasks,
+      fetchEvents: state.fetchEvents,
+      isLoading: state.isLoading,
+      error: state.error,
+      errorNotes: state.errorNotes,
+      errorTasks: state.errorTasks,
+      errorEvents: state.errorEvents,
+      deleteNote: state.deleteNote,
+      deleteTask: state.deleteTask,
+      toggleTask: state.toggleTask,
+    }))
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -93,41 +115,59 @@ export const useProductivityViewModel = () => {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: async () => {
+              try {
+                await action();
+              } catch {
+                Alert.alert(
+                  t('common.error') || 'Error',
+                  t('productivity.error_delete') || 'Failed to delete item. Please try again.',
+                  [
+                    { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
+                    {
+                      text: t('settings.actions.retry') || 'Retry',
+                      onPress: () => confirmDelete(action),
+                    },
+                  ]
+                );
+              }
+            },
           },
         ]
       ),
     [t]
   );
 
+  const deferredSearch = useDeferredValue(searchQuery);
+
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!deferredSearch) return notes;
+    const lowerQ = deferredSearch.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, deferredSearch]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!deferredSearch) return tasks;
+    const lowerQ = deferredSearch.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [deferredSearch, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!deferredSearch) return events;
+    const lowerQ = deferredSearch.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, deferredSearch]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,
@@ -248,8 +288,8 @@ export const useProductivityViewModel = () => {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender: RenderItemData[] = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -260,6 +300,7 @@ export const useProductivityViewModel = () => {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [activeTab, todayData, mixedData, filteredNotes, prioritizedTasks, taskPriority, getTaskPriority]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -316,6 +357,10 @@ export const useProductivityViewModel = () => {
     todayPlan,
     setTodayPlan,
     isLoading,
+    error,
+    errorNotes,
+    errorTasks,
+    errorEvents,
     pendingTasksCount,
     taskPriorityCounts,
     dataToRender,

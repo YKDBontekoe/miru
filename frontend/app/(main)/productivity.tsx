@@ -56,6 +56,10 @@ export default function ProductivityScreen() {
     todayPlan,
     setTodayPlan,
     isLoading,
+    error,
+    errorNotes,
+    errorTasks,
+    errorEvents,
     pendingTasksCount,
     taskPriorityCounts,
     dataToRender,
@@ -252,6 +256,36 @@ export default function ProductivityScreen() {
         </View>
       )}
 
+      {(error || errorNotes || errorTasks || errorEvents) ? (
+        <View style={{
+          backgroundColor: T.surface.light,
+          borderColor: DESIGN_TOKENS.colors.destructiveBorder,
+          borderWidth: 1,
+          borderRadius: R.xl,
+          marginHorizontal: S.xl,
+          marginVertical: S.md,
+          padding: S.lg,
+          alignItems: 'center'
+        }}>
+          <Ionicons name="warning" size={24} color={DESIGN_TOKENS.colors.destructive} style={{ marginBottom: S.sm }} />
+          <AppText style={{ color: DESIGN_TOKENS.colors.text, textAlign: 'center', marginBottom: S.md }}>
+            {error || errorNotes || errorTasks || errorEvents || t('common.error') || 'An error occurred'}
+          </AppText>
+          <Pressable
+            onPress={handleRefresh}
+            style={({pressed}) => [{
+              backgroundColor: DESIGN_TOKENS.colors.destructive,
+              paddingHorizontal: S.xl,
+              paddingVertical: S.sm,
+              borderRadius: R.lg
+            }, pressed && { opacity: 0.8 }]}
+          >
+            <AppText style={{ color: T.white, fontWeight: '700' }}>
+              {t('settings.actions.retry') || 'Retry'}
+            </AppText>
+          </Pressable>
+        </View>
+      ) : (
       <FlatList
         data={dataToRender}
         keyExtractor={(item) => item.id}
@@ -380,6 +414,7 @@ export default function ProductivityScreen() {
           </View>
         }
       />
+      )}
 
       <CreateNoteModal
         visible={showCreateNote}
