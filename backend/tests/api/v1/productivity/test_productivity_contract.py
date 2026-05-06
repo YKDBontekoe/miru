@@ -19,7 +19,8 @@ from app.domain.productivity.schemas import (
 )
 
 
-def test_task_create_schema_valid():
+def test_task_create_schema_valid() -> None:
+    """Verify that a valid task creation schema passes validation."""
     data: dict[str, Any] = {
         "title": "Buy groceries",
         "description": "Milk, Eggs, Bread",
@@ -33,12 +34,14 @@ def test_task_create_schema_valid():
     assert task.due_date is not None
 
 
-def test_task_create_schema_invalid_title():
+def test_task_create_schema_invalid_title() -> None:
+    """Verify that a task with an empty title fails validation."""
     with pytest.raises(ValidationError):
         TaskCreate(title="")
 
 
-def test_task_response_schema():
+def test_task_response_schema() -> None:
+    """Verify that a valid task response dictionary parses correctly."""
     data: dict[str, Any] = {
         "id": uuid.uuid4(),
         "user_id": uuid.uuid4(),
@@ -54,7 +57,8 @@ def test_task_response_schema():
     assert task.is_completed
 
 
-def test_note_create_schema_valid():
+def test_note_create_schema_valid() -> None:
+    """Verify that a valid note creation schema passes validation."""
     data: dict[str, Any] = {
         "title": "Meeting notes",
         "content": "Discussed new project",
@@ -66,7 +70,8 @@ def test_note_create_schema_valid():
     assert note.is_pinned
 
 
-def test_note_response_schema():
+def test_note_response_schema() -> None:
+    """Verify that a valid note response dictionary parses correctly."""
     data: dict[str, Any] = {
         "id": uuid.uuid4(),
         "user_id": uuid.uuid4(),
@@ -83,7 +88,8 @@ def test_note_response_schema():
     assert note.title == "Note 1"
 
 
-def test_calendar_event_create_valid():
+def test_calendar_event_create_valid() -> None:
+    """Verify that a valid calendar event creation schema passes validation."""
     now = datetime.datetime.now(datetime.UTC)
     end = now + datetime.timedelta(hours=1)
     data: dict[str, Any] = {
@@ -96,7 +102,8 @@ def test_calendar_event_create_valid():
     assert event.title == "Dentist Appointment"
 
 
-def test_calendar_event_create_invalid_time_range():
+def test_calendar_event_create_invalid_time_range() -> None:
+    """Verify that an event where end_time is before start_time fails validation."""
     now = datetime.datetime.now(datetime.UTC)
     end = now - datetime.timedelta(hours=1)
     data: dict[str, Any] = {
@@ -105,11 +112,12 @@ def test_calendar_event_create_invalid_time_range():
         "end_time": end,
         "is_all_day": False,
     }
-    with pytest.raises(ValueError, match="end_time must be greater than start_time"):
+    with pytest.raises(ValidationError, match="end_time must be greater than start_time"):
         CalendarEventCreate(**data)
 
 
-def test_calendar_event_response_schema():
+def test_calendar_event_response_schema() -> None:
+    """Verify that a valid calendar event response dictionary parses correctly."""
     data: dict[str, Any] = {
         "id": uuid.uuid4(),
         "user_id": uuid.uuid4(),
@@ -129,9 +137,14 @@ def test_calendar_event_response_schema():
     assert event.title == "Event 1"
 
 
-def test_extract_uuid_from_relation_with_id():
+def test_extract_uuid_from_relation_with_id() -> None:
+    """Verify that a UUID can be extracted from an object with an `id` attribute."""
+
     class DummyRelation:
-        def __init__(self, obj_id: uuid.UUID):
+        """Dummy relation wrapper exposing `id`."""
+
+        def __init__(self, obj_id: uuid.UUID) -> None:
+            """Initialize with an ID."""
             self.id = obj_id
 
     obj_id = uuid.uuid4()
@@ -142,9 +155,14 @@ def test_extract_uuid_from_relation_with_id():
     assert extract_uuid_from_relation(rel) == obj_id
 
 
-def test_extract_uuid_from_relation_with_pk():
+def test_extract_uuid_from_relation_with_pk() -> None:
+    """Verify that a UUID can be extracted from an object with a `pk` attribute."""
+
     class DummyRelation:
-        def __init__(self, obj_id: uuid.UUID):
+        """Dummy relation wrapper exposing `pk`."""
+
+        def __init__(self, obj_id: uuid.UUID) -> None:
+            """Initialize with a PK."""
             self.pk = obj_id
 
     obj_id = uuid.uuid4()
@@ -155,8 +173,12 @@ def test_extract_uuid_from_relation_with_pk():
     assert extract_uuid_from_relation(rel) == obj_id
 
 
-def test_extract_uuid_from_relation_none_or_missing():
+def test_extract_uuid_from_relation_none_or_missing() -> None:
+    """Verify extraction returns None when no valid relation/PK exists."""
+
     class DummyRelation:
+        """Dummy relation missing attributes."""
+
         pass
 
     rel = DummyRelation()
@@ -166,7 +188,8 @@ def test_extract_uuid_from_relation_none_or_missing():
     assert extract_uuid_from_relation(None) is None
 
 
-def test_task_create_schema_invalid_due_date():
+def test_task_create_schema_invalid_due_date() -> None:
+    """Verify validation fails if a non-datetime string is provided for due_date."""
     data: dict[str, Any] = {
         "title": "Buy groceries",
         "description": "Milk, Eggs, Bread",
@@ -177,7 +200,8 @@ def test_task_create_schema_invalid_due_date():
         TaskCreate(**data)
 
 
-def test_task_update_schema_invalid_due_date():
+def test_task_update_schema_invalid_due_date() -> None:
+    """Verify updating with an invalid due_date fails validation."""
     data: dict[str, Any] = {
         "due_date": "invalid-date",
     }
@@ -185,14 +209,16 @@ def test_task_update_schema_invalid_due_date():
         TaskUpdate(**data)
 
 
-def test_task_update_schema_empty():
+def test_task_update_schema_empty() -> None:
+    """Verify an empty update payload passes and fields are None."""
     data: dict[str, Any] = {}
     task = TaskUpdate(**data)
     assert task.title is None
     assert task.description is None
 
 
-def test_note_create_schema_missing_title():
+def test_note_create_schema_missing_title() -> None:
+    """Verify validation fails if title is missing."""
     data: dict[str, Any] = {
         "content": "Discussed new project",
     }
@@ -200,7 +226,8 @@ def test_note_create_schema_missing_title():
         NoteCreate(**data)
 
 
-def test_note_create_schema_invalid_agent_id():
+def test_note_create_schema_invalid_agent_id() -> None:
+    """Verify validation fails if agent_id is an invalid UUID."""
     data: dict[str, Any] = {
         "title": "Meeting notes",
         "content": "Discussed new project",
@@ -210,7 +237,8 @@ def test_note_create_schema_invalid_agent_id():
         NoteCreate(**data)
 
 
-def test_calendar_event_update_invalid_time():
+def test_calendar_event_update_invalid_time() -> None:
+    """Verify calendar event update fails if start_time is invalid."""
     data: dict[str, Any] = {
         "start_time": "invalid-time",
     }
@@ -218,7 +246,8 @@ def test_calendar_event_update_invalid_time():
         CalendarEventUpdate(**data)
 
 
-def test_calendar_event_create_invalid_time_range_same_time():
+def test_calendar_event_create_invalid_time_range_same_time() -> None:
+    """Verify calendar event creation fails if start_time equals end_time."""
     now = datetime.datetime.now(datetime.UTC)
     data: dict[str, Any] = {
         "title": "Dentist Appointment",
@@ -226,5 +255,5 @@ def test_calendar_event_create_invalid_time_range_same_time():
         "end_time": now,
         "is_all_day": False,
     }
-    with pytest.raises(ValueError, match="end_time must be greater than start_time"):
+    with pytest.raises(ValidationError, match="end_time must be greater than start_time"):
         CalendarEventCreate(**data)

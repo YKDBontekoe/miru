@@ -148,8 +148,8 @@ describe('ApiService - Productivity', () => {
   });
 
   it('should handle deleteEvent network delay/timeout gracefully', async () => {
-    // Assuming deleteEvent was added or checking one of the delete functions.
     (apiClient.delete as jest.Mock).mockRejectedValue(new Error('Timeout Error'));
-    await expect(ApiService.deleteTask('event-1')).rejects.toThrow('Timeout Error');
+    // changed from deleteTask to match CodeRabbit request
+    await expect(ApiService.deleteNote('event-1')).rejects.toThrow('Timeout Error');
   });
 });

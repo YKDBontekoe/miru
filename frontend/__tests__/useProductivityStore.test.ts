@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react-native';
+import { useProductivityStore } from '../src/store/useProductivityStore';
 import { ApiService } from '../src/core/api/ApiService';
-// we'll mock ApiService to check the connection to the frontend models
 
 jest.mock('../src/core/api/ApiService', () => ({
   ApiService: {
@@ -16,12 +16,12 @@ jest.mock('../src/core/api/ApiService', () => ({
   },
 }));
 
-describe('Frontend API Contract verification for Productivity', () => {
+describe('useProductivityStore - Events', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('ApiService shape for CalendarEvent is verified against models', async () => {
+  it('ApiService shape for CalendarEvent is verified via store logic', async () => {
     const mockEvent = {
         id: 'evt-1',
         title: 'Meeting',
@@ -32,7 +32,14 @@ describe('Frontend API Contract verification for Productivity', () => {
     };
     (ApiService.getEvents as jest.Mock).mockResolvedValue([mockEvent]);
 
-    const events = await ApiService.getEvents();
+    // Load events into the store
+    await act(async () => {
+        await useProductivityStore.getState().fetchEvents();
+    });
+
+    // Check store state mapping
+    const events = useProductivityStore.getState().events;
     expect(events[0].id).toBe('evt-1');
+    expect(events[0].title).toBe('Meeting');
   });
 });
