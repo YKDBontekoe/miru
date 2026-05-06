@@ -68,10 +68,10 @@ class CrewOrchestrator:
     """Handles the creation and execution of CrewAI tasks and agents."""
 
     @staticmethod
-    def get_crew_llm() -> _OpenRouterLLM:
+    def get_crew_llm() -> LLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return _OpenRouterLLM(
+        return _OpenRouterLLM(  # type: ignore[return-value]
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,

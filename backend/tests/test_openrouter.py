@@ -237,7 +237,11 @@ async def test_standalone_structured_completion_success() -> None:
         result = await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
         assert result.name == "hello"
         mock_client.structured_completion.assert_called_once_with(
-            [{"role": "user", "content": "hi"}], "default-model", DummyModel, use_cache=True, namespace=None
+            [{"role": "user", "content": "hi"}],
+            "default-model",
+            DummyModel,
+            use_cache=True,
+            namespace=None,
         )
 
 
@@ -264,7 +268,11 @@ async def test_standalone_structured_completion_fallback() -> None:
 
         # Check that it called with fallback model
         mock_client.structured_completion.assert_called_with(
-            [{"role": "user", "content": "hi"}], "fallback-model", DummyModel, use_cache=True, namespace=None
+            [{"role": "user", "content": "hi"}],
+            "fallback-model",
+            DummyModel,
+            use_cache=True,
+            namespace=None,
         )
 
 

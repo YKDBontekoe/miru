@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 import typing
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import openai
 from cachetools import TTLCache
@@ -149,7 +149,7 @@ class OpenRouterClient:
 
 # L1 Cache for structured completions with a time-to-live and max size to prevent memory leaks
 # Redis could be added here as an L2 cache in the future.
-_structured_cache: TTLCache = TTLCache(maxsize=1000, ttl=300)
+_structured_cache: TTLCache[str, Any] = TTLCache(maxsize=1000, ttl=300)
 
 # Singleton client for internal use
 _client: OpenRouterClient | None = None
