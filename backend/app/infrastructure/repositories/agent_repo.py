@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from tortoise.transactions import in_transaction
 
 from app.domain.agents.models import (
     Agent,
+    AgentIntegration,
     AgentTemplate,
     Capability,
     Integration,
@@ -57,6 +59,52 @@ class AgentRepository:
         await agent.save()
         return agent
 
+    async def create_agent(
+        self,
+        user_id: UUID,
+        name: str,
+        personality: str,
+        description: str | None,
+        goals: list[str],
+        system_prompt: str,
+        capabilities: list[str] | None = None,
+        integrations: list[str] | None = None,
+        integration_configs: dict[str, Any] | None = None,
+    ) -> Agent:
+        """Create a new agent along with capabilities and integrations."""
+        async with in_transaction():
+            agent = await Agent.create(
+                user_id=user_id,
+                name=name,
+                personality=personality,
+                description=description,
+                goals=goals,
+                system_prompt=system_prompt,
+            )
+
+            if capabilities:
+                caps = await Capability.filter(id__in=capabilities)
+                await agent.capabilities.add(*caps)
+
+            if integrations:
+                integration_records = await Integration.filter(id__in=integrations)
+                configs = integration_configs or {}
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integration_records
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
+            refetched = await self.get_by_id(agent.pk)
+            assert refetched is not None
+            return refetched
+
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
         agent = await self.get_by_id(agent_id)
@@ -69,25 +117,62 @@ class AgentRepository:
     )
 
     async def update_agent(
-        self, agent_id: UUID | str, user_id: UUID | str, **fields: object
+        self,
+        agent_id: UUID | str,
+        user_id: UUID | str,
+        capabilities: list[str] | None = None,
+        integrations: list[str] | None = None,
+        integration_configs: dict[str, Any] | None = None,
+        **fields: object,
     ) -> Agent | None:
-        """Update an agent's fields. Only updates the owner's agent."""
+        """Update an agent's fields, capabilities, and integrations. Only updates the owner's agent."""
         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
         if unknown:
             raise ValueError(f"update_agent received unknown fields: {unknown}")
+
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
         if isinstance(user_id, str):
             user_id = UUID(user_id)
-        agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
-            "capabilities", "agent_integrations__integration"
-        )
-        if agent:
+
+        async with in_transaction():
+            agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
+                "capabilities", "agent_integrations__integration"
+            )
+
+            if not agent:
+                return None
+
+            if capabilities is not None:
+                caps = await Capability.filter(id__in=capabilities)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
+
+            if integrations is not None:
+                await AgentIntegration.filter(agent=agent).delete()
+                integration_records = await Integration.filter(id__in=integrations)
+                configs = integration_configs or {}
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integration_records
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
             for key, value in fields.items():
                 if value is not None:
                     setattr(agent, key, value)
+
             await agent.save()
-        return agent
+
+            # Refetch to ensure we have the latest relations for the return value
+            return await self.get_by_id(agent.pk)
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:
         """Soft-delete an agent by setting deleted_at. Only deletes the owner's agent."""
