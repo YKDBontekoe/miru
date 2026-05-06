@@ -170,7 +170,7 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {"role": "user", "content": f"--- KEYWORDS ---\n{keywords}\n--- END KEYWORDS ---"},
         ]
 
         return await structured_completion(
@@ -281,7 +281,10 @@ class AgentService:
                             f"{mood_list}."
                         ),
                     },
-                    {"role": "user", "content": recent_history},
+                    {
+                        "role": "user",
+                        "content": f"--- CONVERSATION EXCERPT ---\n{recent_history}\n--- END EXCERPT ---",
+                    },
                 ],
                 response_model=MoodResponse,
             )

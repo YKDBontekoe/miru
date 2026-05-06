@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import logging
 import typing
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import openai
 from pydantic import BaseModel
@@ -46,6 +48,19 @@ class OpenRouterClient:
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(
+            (
+                openai.APIConnectionError,
+                openai.RateLimitError,
+                openai.InternalServerError,
+                openai.APITimeoutError,
+            )
+        ),
+        reraise=True,
+    )
     async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
         # Internally enforce strict JSON structured output even for generic strings
         structured_resp = await self.structured_completion(messages, model, ChatResponse)
@@ -113,12 +128,30 @@ class OpenRouterClient:
         model: str,
         response_model: type[T],
     ) -> T:
-        return await self.instructor_client.chat.completions.create(
+        # Determine a cache key based on model, messages, and response model name
+        msg_str = json.dumps(messages, sort_keys=True)
+        key_str = f"{model}:{response_model.__name__}:{msg_str}"
+        cache_key = hashlib.sha256(key_str.encode("utf-8")).hexdigest()
+
+        if cache_key in _structured_cache:
+            return typing.cast("T", _structured_cache[cache_key])
+
+        response = await self.instructor_client.chat.completions.create(
             model=model,
             messages=messages,
             response_model=response_model,
         )
 
+        # Basic unbounded dictionary eviction logic to prevent memory leaks in the absence of Redis/alru_cache
+        if len(_structured_cache) >= 1000:
+            _structured_cache.clear()
+
+        _structured_cache[cache_key] = response
+        return response
+
+
+# Cache for structured completions
+_structured_cache: dict[str, Any] = {}
 
 # Singleton client for internal use
 _client: OpenRouterClient | None = None
