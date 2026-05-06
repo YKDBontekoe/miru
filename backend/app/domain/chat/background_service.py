@@ -175,6 +175,7 @@ class ChatBackgroundService:
                 model=model_name,  # Use a fast/cheap model for summarization
                 messages=messages,
                 response_model=RoomSummaryResponse,
+                namespace=f"room:{room_id}",
             )
 
             new_summary = response.summary.strip()

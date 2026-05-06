@@ -44,22 +44,22 @@ async def test_extract_graph_from_text_exception() -> None:
 
 @pytest.mark.asyncio
 async def test_process_and_store_graph_empty() -> None:
-    with patch.object(
-        GraphExtractionService, "extract_graph_from_text", new_callable=AsyncMock
-    ) as mock_extract:
-        mock_extract.return_value = None
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured:
+        mock_structured.return_value = None
         await GraphExtractionService.process_and_store_graph("text", uuid.uuid4())
-        mock_extract.assert_called_once()
+        mock_structured.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_process_and_store_graph_success() -> None:
-    with patch.object(
-        GraphExtractionService, "extract_graph_from_text", new_callable=AsyncMock
-    ) as mock_extract:
+    with patch(
+        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+    ) as mock_structured:
         user_id = uuid.uuid4()
 
-        mock_extract.return_value = GraphExtractionSchema(
+        mock_structured.return_value = GraphExtractionSchema(
             entities=[
                 GraphEntity(name="Alice", entity_type="Person", description="A friend"),
                 GraphEntity(name="Bob", entity_type="Person", description="A brother"),

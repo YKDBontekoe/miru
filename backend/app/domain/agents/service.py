@@ -170,12 +170,13 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {"role": "user", "content": f"--- KEYWORDS ---\n{keywords}\n--- END KEYWORDS ---"},
         ]
 
         return await structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
+            use_cache=False,
         )
 
     async def update_agent(
@@ -281,9 +282,13 @@ class AgentService:
                             f"{mood_list}."
                         ),
                     },
-                    {"role": "user", "content": recent_history},
+                    {
+                        "role": "user",
+                        "content": f"--- CONVERSATION EXCERPT ---\n{recent_history}\n--- END EXCERPT ---",
+                    },
                 ],
                 response_model=MoodResponse,
+                namespace=f"agent:{agent_id}",
             )
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:

@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import logging
 import typing
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import openai
+from cachetools import TTLCache
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -112,13 +115,41 @@ class OpenRouterClient:
         messages: list[ChatCompletionMessageParam],
         model: str,
         response_model: type[T],
+        use_cache: bool = True,
+        namespace: str | None = None,
     ) -> T:
-        return await self.instructor_client.chat.completions.create(
+        if not use_cache:
+            return await self.instructor_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                response_model=response_model,
+            )
+
+        # Determine a cache key based on model, messages, response model name, and optional namespace
+        msg_str = json.dumps(messages, sort_keys=True)
+        ns_prefix = f"{namespace}:" if namespace else ""
+        key_str = f"{ns_prefix}{model}:{response_model.__name__}:{msg_str}"
+        cache_key = hashlib.sha256(key_str.encode("utf-8")).hexdigest()
+
+        if cache_key in _structured_cache:
+            hit = typing.cast("T", _structured_cache[cache_key])
+            # Return a deep copy so caller mutations do not leak into the cache
+            return hit.model_copy(deep=True)
+
+        response = await self.instructor_client.chat.completions.create(
             model=model,
             messages=messages,
             response_model=response_model,
         )
 
+        # Store a deep copy so callers mutating the return value do not affect cached data
+        _structured_cache[cache_key] = response.model_copy(deep=True)
+        return response
+
+
+# L1 Cache for structured completions with a time-to-live and max size to prevent memory leaks
+# Redis could be added here as an L2 cache in the future.
+_structured_cache: TTLCache[str, Any] = TTLCache(maxsize=1000, ttl=300)
 
 # Singleton client for internal use
 _client: OpenRouterClient | None = None
@@ -165,11 +196,15 @@ async def structured_completion(
     messages: list[ChatCompletionMessageParam],
     response_model: type[T],
     model: str | None = None,
+    use_cache: bool = True,
+    namespace: str | None = None,
 ) -> T:
     client = get_openrouter_client()
     chosen_model = model or get_settings().default_chat_model
     try:
-        return await client.structured_completion(messages, chosen_model, response_model)
+        return await client.structured_completion(
+            messages, chosen_model, response_model, use_cache=use_cache, namespace=namespace
+        )
     except Exception as e:
         if isinstance(e, asyncio.CancelledError):
             raise
@@ -181,7 +216,9 @@ async def structured_completion(
                 fallback,
             )
             try:
-                return await client.structured_completion(messages, fallback, response_model)
+                return await client.structured_completion(
+                    messages, fallback, response_model, use_cache=use_cache, namespace=namespace
+                )
             except Exception as fallback_e:
                 raise fallback_e from e
         raise
