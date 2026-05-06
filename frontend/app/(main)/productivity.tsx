@@ -48,7 +48,8 @@ export default function ProductivityScreen() {
     taskPriority,
     setTaskPriority,
     searchQuery,
-    setSearchQuery,
+    searchInput,
+    setSearchInput,
     showCreateNote,
     setShowCreateNote,
     showCreateTask,
@@ -156,8 +157,8 @@ export default function ProductivityScreen() {
             style={styles.searchIcon}
           />
           <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={searchInput}
+            onChangeText={setSearchInput}
             placeholder={t('productivity.search') || 'Search notes & tasks...'}
             placeholderTextColor={T.onSurface.disabledLight}
             style={styles.searchInput}
@@ -285,7 +286,7 @@ export default function ProductivityScreen() {
                 }}
               >
                 <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
-                  Today plan
+                  {t('todayPlan')}
                 </AppText>
                 <Pressable onPress={() => setTodayPlan(null)}>
                   <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />

@@ -247,8 +247,8 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -259,6 +259,7 @@ export function useProductivityViewModel() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [activeTab, todayData, mixedData, filteredNotes, prioritizedTasks, taskPriority, getTaskPriority]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -270,15 +271,15 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(t('todayPlan.recoverOverdue', { count: taskPriorityCounts.overdue }));
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(t('todayPlan.noOverdue'));
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      lines.push(t('todayPlan.focusBlock', { tasks: nextTasks.map((task) => task.title).join(', ') }));
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(t('todayPlan.focusBlockEmpty'));
     }
 
     if (nextEvents.length > 0) {
@@ -290,14 +291,23 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(t('todayPlan.calendarCheckpoints', { times: eventLine }));
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(t('todayPlan.calendarEmpty'));
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, t, taskPriorityCounts.overdue]);
+
+  const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   return {
     t,
@@ -308,6 +318,8 @@ export function useProductivityViewModel() {
     setTaskPriority,
     searchQuery,
     setSearchQuery,
+    searchInput,
+    setSearchInput,
     showCreateNote,
     setShowCreateNote,
     showCreateTask,
