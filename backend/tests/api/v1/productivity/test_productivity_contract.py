@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -19,11 +20,11 @@ from app.domain.productivity.schemas import (
 
 
 def test_task_create_schema_valid():
-    data = {
+    data: dict[str, Any] = {
         "title": "Buy groceries",
         "description": "Milk, Eggs, Bread",
         "is_completed": False,
-        "due_date": "2024-12-31T23:59:59Z",
+        "due_date": datetime.datetime(2024, 12, 31, 23, 59, 59, tzinfo=datetime.UTC),
     }
     task = TaskCreate(**data)
     assert task.title == "Buy groceries"
@@ -38,23 +39,23 @@ def test_task_create_schema_invalid_title():
 
 
 def test_task_response_schema():
-    data = {
-        "id": str(uuid.uuid4()),
-        "user_id": str(uuid.uuid4()),
+    data: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "user_id": uuid.uuid4(),
         "title": "Test",
         "description": None,
         "is_completed": True,
         "due_date": None,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
+        "created_at": datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
+        "updated_at": datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
     }
-    task = TaskResponse(**data)
+    task = TaskResponse.model_validate(data)
     assert task.title == "Test"
     assert task.is_completed
 
 
 def test_note_create_schema_valid():
-    data = {
+    data: dict[str, Any] = {
         "title": "Meeting notes",
         "content": "Discussed new project",
         "is_pinned": True,
@@ -66,29 +67,29 @@ def test_note_create_schema_valid():
 
 
 def test_note_response_schema():
-    data = {
-        "id": str(uuid.uuid4()),
-        "user_id": str(uuid.uuid4()),
-        "agent_id": str(uuid.uuid4()),
+    data: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "user_id": uuid.uuid4(),
+        "agent_id": uuid.uuid4(),
         "origin_message_id": None,
         "origin_context": None,
         "title": "Note 1",
         "content": "Content",
         "is_pinned": False,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
+        "created_at": datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
+        "updated_at": datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
     }
-    note = NoteResponse(**data)
+    note = NoteResponse.model_validate(data)
     assert note.title == "Note 1"
 
 
 def test_calendar_event_create_valid():
     now = datetime.datetime.now(datetime.UTC)
     end = now + datetime.timedelta(hours=1)
-    data = {
+    data: dict[str, Any] = {
         "title": "Dentist Appointment",
-        "start_time": now.isoformat(),
-        "end_time": end.isoformat(),
+        "start_time": now,
+        "end_time": end,
         "is_all_day": False,
     }
     event = CalendarEventCreate(**data)
@@ -98,10 +99,10 @@ def test_calendar_event_create_valid():
 def test_calendar_event_create_invalid_time_range():
     now = datetime.datetime.now(datetime.UTC)
     end = now - datetime.timedelta(hours=1)
-    data = {
+    data: dict[str, Any] = {
         "title": "Dentist Appointment",
-        "start_time": now.isoformat(),
-        "end_time": end.isoformat(),
+        "start_time": now,
+        "end_time": end,
         "is_all_day": False,
     }
     with pytest.raises(ValueError, match="end_time must be greater than start_time"):
@@ -109,28 +110,28 @@ def test_calendar_event_create_invalid_time_range():
 
 
 def test_calendar_event_response_schema():
-    data = {
-        "id": str(uuid.uuid4()),
-        "user_id": str(uuid.uuid4()),
+    data: dict[str, Any] = {
+        "id": uuid.uuid4(),
+        "user_id": uuid.uuid4(),
         "agent_id": None,
         "origin_message_id": None,
         "origin_context": None,
         "title": "Event 1",
         "description": None,
-        "start_time": "2024-01-01T09:00:00Z",
-        "end_time": "2024-01-01T10:00:00Z",
+        "start_time": datetime.datetime(2024, 1, 1, 9, 0, 0, tzinfo=datetime.UTC),
+        "end_time": datetime.datetime(2024, 1, 1, 10, 0, 0, tzinfo=datetime.UTC),
         "is_all_day": False,
         "location": None,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
+        "created_at": datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
+        "updated_at": datetime.datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
     }
-    event = CalendarEventResponse(**data)
+    event = CalendarEventResponse.model_validate(data)
     assert event.title == "Event 1"
 
 
 def test_extract_uuid_from_relation_with_id():
     class DummyRelation:
-        def __init__(self, obj_id):
+        def __init__(self, obj_id: uuid.UUID):
             self.id = obj_id
 
     obj_id = uuid.uuid4()
@@ -143,7 +144,7 @@ def test_extract_uuid_from_relation_with_id():
 
 def test_extract_uuid_from_relation_with_pk():
     class DummyRelation:
-        def __init__(self, obj_id):
+        def __init__(self, obj_id: uuid.UUID):
             self.pk = obj_id
 
     obj_id = uuid.uuid4()
@@ -166,7 +167,7 @@ def test_extract_uuid_from_relation_none_or_missing():
 
 
 def test_task_create_schema_invalid_due_date():
-    data = {
+    data: dict[str, Any] = {
         "title": "Buy groceries",
         "description": "Milk, Eggs, Bread",
         "is_completed": False,
@@ -177,7 +178,7 @@ def test_task_create_schema_invalid_due_date():
 
 
 def test_task_update_schema_invalid_due_date():
-    data = {
+    data: dict[str, Any] = {
         "due_date": "invalid-date",
     }
     with pytest.raises(ValidationError):
@@ -185,14 +186,14 @@ def test_task_update_schema_invalid_due_date():
 
 
 def test_task_update_schema_empty():
-    data = {}
+    data: dict[str, Any] = {}
     task = TaskUpdate(**data)
     assert task.title is None
     assert task.description is None
 
 
 def test_note_create_schema_missing_title():
-    data = {
+    data: dict[str, Any] = {
         "content": "Discussed new project",
     }
     with pytest.raises(ValidationError):
@@ -200,7 +201,7 @@ def test_note_create_schema_missing_title():
 
 
 def test_note_create_schema_invalid_agent_id():
-    data = {
+    data: dict[str, Any] = {
         "title": "Meeting notes",
         "content": "Discussed new project",
         "agent_id": "not-a-uuid",
@@ -210,7 +211,7 @@ def test_note_create_schema_invalid_agent_id():
 
 
 def test_calendar_event_update_invalid_time():
-    data = {
+    data: dict[str, Any] = {
         "start_time": "invalid-time",
     }
     with pytest.raises(ValidationError):
@@ -219,10 +220,10 @@ def test_calendar_event_update_invalid_time():
 
 def test_calendar_event_create_invalid_time_range_same_time():
     now = datetime.datetime.now(datetime.UTC)
-    data = {
+    data: dict[str, Any] = {
         "title": "Dentist Appointment",
-        "start_time": now.isoformat(),
-        "end_time": now.isoformat(),
+        "start_time": now,
+        "end_time": now,
         "is_all_day": False,
     }
     with pytest.raises(ValueError, match="end_time must be greater than start_time"):
