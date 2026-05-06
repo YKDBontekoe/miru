@@ -203,7 +203,7 @@ class AgentService:
             capabilities=new_capability_ids,
             integrations=new_integration_ids,
             integration_configs=new_integration_configs,
-            **fields
+            **fields,
         )
 
         if not updated:
