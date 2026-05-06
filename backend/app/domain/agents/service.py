@@ -176,6 +176,7 @@ class AgentService:
         return await structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
+            use_cache=False,
         )
 
     async def update_agent(
@@ -287,6 +288,7 @@ class AgentService:
                     },
                 ],
                 response_model=MoodResponse,
+                namespace=f"agent:{agent_id}",
             )
             mood = response.mood.strip().capitalize()
             if mood not in self._VALID_MOODS:

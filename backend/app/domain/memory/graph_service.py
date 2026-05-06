@@ -65,7 +65,28 @@ class GraphExtractionService:
     @staticmethod
     async def process_and_store_graph(text: str, user_id: UUID) -> None:
         """Extract graph elements from text and store them in the database."""
-        extraction = await GraphExtractionService.extract_graph_from_text(text)
+        try:
+            from app.infrastructure.external.openrouter import structured_completion
+
+            extraction = await structured_completion(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a knowledge graph extraction system. Extract key entities and relationships from the user's text. Be concise and precise. Focus on long-term facts, preferences, and relationships.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"--- USER TEXT ---\n{text}\n--- END USER TEXT ---",
+                    },
+                ],
+                response_model=GraphExtractionSchema,
+                model="gpt-4o-mini",
+                namespace=f"user:{user_id}",
+            )
+        except Exception:
+            logger.warning("Graph extraction failed", exc_info=True)
+            return
+
         if not extraction or not extraction.entities:
             return
 
