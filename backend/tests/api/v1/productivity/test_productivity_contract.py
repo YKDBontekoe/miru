@@ -12,7 +12,6 @@ from app.domain.productivity.schemas import (
     CalendarEventUpdate,
     NoteCreate,
     NoteResponse,
-    NoteUpdate,
     TaskCreate,
     TaskResponse,
     TaskUpdate,
@@ -84,7 +83,7 @@ def test_note_response_schema():
 
 
 def test_calendar_event_create_valid():
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     end = now + datetime.timedelta(hours=1)
     data = {
         "title": "Dentist Appointment",
@@ -97,7 +96,7 @@ def test_calendar_event_create_valid():
 
 
 def test_calendar_event_create_invalid_time_range():
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     end = now - datetime.timedelta(hours=1)
     data = {
         "title": "Dentist Appointment",
@@ -107,6 +106,7 @@ def test_calendar_event_create_invalid_time_range():
     }
     with pytest.raises(ValueError, match="end_time must be greater than start_time"):
         CalendarEventCreate(**data)
+
 
 def test_calendar_event_response_schema():
     data = {
@@ -137,6 +137,7 @@ def test_extract_uuid_from_relation_with_id():
     rel = DummyRelation(obj_id)
 
     from app.domain.productivity.schemas import extract_uuid_from_relation
+
     assert extract_uuid_from_relation(rel) == obj_id
 
 
@@ -149,6 +150,7 @@ def test_extract_uuid_from_relation_with_pk():
     rel = DummyRelation(obj_id)
 
     from app.domain.productivity.schemas import extract_uuid_from_relation
+
     assert extract_uuid_from_relation(rel) == obj_id
 
 
@@ -158,8 +160,10 @@ def test_extract_uuid_from_relation_none_or_missing():
 
     rel = DummyRelation()
     from app.domain.productivity.schemas import extract_uuid_from_relation
+
     assert extract_uuid_from_relation(rel) is None
     assert extract_uuid_from_relation(None) is None
+
 
 def test_task_create_schema_invalid_due_date():
     data = {
@@ -212,8 +216,9 @@ def test_calendar_event_update_invalid_time():
     with pytest.raises(ValidationError):
         CalendarEventUpdate(**data)
 
+
 def test_calendar_event_create_invalid_time_range_same_time():
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     data = {
         "title": "Dentist Appointment",
         "start_time": now.isoformat(),
