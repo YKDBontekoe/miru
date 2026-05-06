@@ -210,6 +210,7 @@ All routes are under `/api/v1` and require a Supabase JWT Bearer token (except h
 | `/api/v1/productivity` | Tasks, Notes, Calendar Events |
 | `/api/v1/integrations` | External integrations |
 | `/api/v1/notifications` | Push notification registration |
+| `/api/v1/ws/chat` | WebSocket chat hub |
 
 Interactive API docs are available at `http://localhost:8000/docs` when the backend is running.
 
