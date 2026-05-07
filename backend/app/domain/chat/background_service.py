@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
+from app.domain.chat.prompts import ROOM_SUMMARY_PROMPT
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -120,7 +122,6 @@ class ChatBackgroundService:
         if not self.chat_repo:
             return
 
-        from app.domain.chat.prompts import ROOM_SUMMARY_PROMPT
         from app.infrastructure.external.openrouter import structured_completion
 
         try:
@@ -142,6 +143,10 @@ class ChatBackgroundService:
             # Build the prompt messages
             current_summary = room.summary or "No previous summary."
 
+            summary_and_transcript = (
+                f"--- CURRENT SUMMARY ---\n{current_summary}\n\n"
+                f"--- LATEST MESSAGES ---\n{transcript}"
+            )
             messages: list[ChatCompletionMessageParam] = [
                 {
                     "role": "system",
@@ -149,7 +154,7 @@ class ChatBackgroundService:
                 },
                 {
                     "role": "user",
-                    "content": f"--- CURRENT SUMMARY ---\n{current_summary}\n\n--- LATEST MESSAGES ---\n{transcript}",
+                    "content": summary_and_transcript,
                 },
             ]
 

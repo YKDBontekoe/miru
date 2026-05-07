@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
 from app.domain.memory.graph_service import (
@@ -16,7 +17,7 @@ from app.domain.memory.graph_service import (
 @pytest.mark.asyncio
 async def test_extract_graph_from_text_success() -> None:
     with patch(
-        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+        "app.domain.memory.graph_service.structured_completion", new_callable=AsyncMock
     ) as mock_structured:
         mock_result = GraphExtractionSchema(
             entities=[GraphEntity(name="Alice", entity_type="Person", description="A friend")],
@@ -32,11 +33,11 @@ async def test_extract_graph_from_text_success() -> None:
 @pytest.mark.asyncio
 async def test_extract_graph_from_text_exception() -> None:
     with patch(
-        "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
+        "app.domain.memory.graph_service.structured_completion", new_callable=AsyncMock
     ) as mock_structured:
-        mock_structured.side_effect = Exception("API error")
+        mock_structured.side_effect = httpx.HTTPError("API error")
 
-        with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
+        with patch("app.domain.memory.graph_service.logger.exception") as mock_logger:
             result = await GraphExtractionService.extract_graph_from_text("Alice is a friend")
             assert result is None
             mock_logger.assert_called_once()
