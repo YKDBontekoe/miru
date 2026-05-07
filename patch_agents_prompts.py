@@ -1,0 +1,1 @@
+from app.domain.agents.prompts import MOOD_CLASSIFICATION_PROMPT_TEMPLATE

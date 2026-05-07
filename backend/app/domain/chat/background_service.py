@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
+from app.domain.chat.prompts import ROOM_SUMMARY_PROMPT
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -141,22 +143,18 @@ class ChatBackgroundService:
             # Build the prompt messages
             current_summary = room.summary or "No previous summary."
 
+            summary_and_transcript = (
+                f"--- CURRENT SUMMARY ---\n{current_summary}\n\n"
+                f"--- LATEST MESSAGES ---\n{transcript}"
+            )
             messages: list[ChatCompletionMessageParam] = [
                 {
                     "role": "system",
-                    "content": (
-                        "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
-                        "Please generate a new, comprehensive but concise summary of the ENTIRE conversation (merging the current summary with the new messages). "
-                        "Focus on the main topics discussed, user preferences revealed, and any ongoing tasks or context the agents need to remember."
-                    ),
+                    "content": ROOM_SUMMARY_PROMPT,
                 },
                 {
                     "role": "user",
-                    "content": f"CURRENT SUMMARY:\n{current_summary}",
-                },
-                {
-                    "role": "user",
-                    "content": f"LATEST MESSAGES:\n{transcript}",
+                    "content": summary_and_transcript,
                 },
             ]
 

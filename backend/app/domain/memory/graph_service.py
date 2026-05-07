@@ -3,9 +3,13 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
+import httpx
+import pydantic
 from pydantic import BaseModel, Field
 
 from app.domain.memory.models import MemoryGraphEdge, MemoryGraphNode
+from app.domain.memory.prompts import GRAPH_EXTRACTION_PROMPT
+from app.infrastructure.external.openrouter import structured_completion
 
 logger = logging.getLogger(__name__)
 
@@ -41,25 +45,23 @@ class GraphExtractionService:
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
         try:
-            from app.infrastructure.external.openrouter import structured_completion
-
             # Using gpt-4o-mini for fast/cheap structured extraction
             return await structured_completion(
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a knowledge graph extraction system. Extract key entities and relationships from the user's text. Be concise and precise. Focus on long-term facts, preferences, and relationships.",
+                        "content": GRAPH_EXTRACTION_PROMPT,
                     },
                     {
                         "role": "user",
-                        "content": text,
+                        "content": f"--- USER TEXT ---\n{text}\n--- END USER TEXT ---",
                     },
                 ],
                 response_model=GraphExtractionSchema,
                 model="gpt-4o-mini",
             )
-        except Exception:
-            logger.warning("Graph extraction failed", exc_info=True)
+        except (httpx.HTTPError, pydantic.ValidationError):
+            logger.exception("Graph extraction failed")
             return None
 
     @staticmethod
@@ -110,5 +112,7 @@ class GraphExtractionService:
                         edge.weight = min(1.0, edge.weight + 0.1)
                         await edge.save()
 
-        except Exception:
-            logger.warning("Failed to store graph elements", exc_info=True)
+        except (ValueError, KeyError):
+            logger.exception("Failed to store graph elements due to data error")
+        except Exception as e:
+            logger.exception("Failed to store graph elements: %s", e)

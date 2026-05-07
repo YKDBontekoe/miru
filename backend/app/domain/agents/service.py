@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.prompts import MOOD_CLASSIFICATION_PROMPT_TEMPLATE, PERSONA_GENERATION_PROMPT
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -162,15 +164,16 @@ class AgentService:
 
     async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
         """Use Instructor to generate a validated agent profile."""
+        safe_keywords = re.sub(r"---[\w\s]+---", "", keywords).strip()
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
-                "content": (
-                    "You are a creative director for AI personas. "
-                    "Create a unique, high-quality persona based on the user's keywords."
-                ),
+                "content": PERSONA_GENERATION_PROMPT,
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {
+                "role": "user",
+                "content": f"--- USER KEYWORDS ---\n{safe_keywords}\n--- END USER KEYWORDS ---",
+            },
         ]
 
         return await structured_completion(
@@ -271,17 +274,17 @@ class AgentService:
             return
         mood_list = ", ".join(self._VALID_MOODS)
         try:
+            safe_history = re.sub(r"---[\w\s]+---", "", recent_history).strip()
             response = await structured_completion(
                 messages=[
                     {
                         "role": "system",
-                        "content": (
-                            f"You are a mood classifier. Given a conversation excerpt, "
-                            f"pick the single most fitting mood for the AI agent from this list: "
-                            f"{mood_list}."
-                        ),
+                        "content": MOOD_CLASSIFICATION_PROMPT_TEMPLATE.format(mood_list=mood_list),
                     },
-                    {"role": "user", "content": recent_history},
+                    {
+                        "role": "user",
+                        "content": f"--- CONVERSATION EXCERPT ---\n{safe_history}\n--- END CONVERSATION EXCERPT ---",
+                    },
                 ],
                 response_model=MoodResponse,
             )
