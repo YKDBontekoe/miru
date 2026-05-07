@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.domain.memory.models import MemoryGraphEdge, MemoryGraphNode
+from app.domain.memory.prompts import GRAPH_EXTRACTION_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,11 @@ class GraphExtractionService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a knowledge graph extraction system. Extract key entities and relationships from the user's text. Be concise and precise. Focus on long-term facts, preferences, and relationships.",
+                        "content": GRAPH_EXTRACTION_PROMPT,
                     },
                     {
                         "role": "user",
-                        "content": text,
+                        "content": f"--- USER TEXT ---\n{text}",
                     },
                 ],
                 response_model=GraphExtractionSchema,

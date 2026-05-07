@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.prompts import MOOD_CLASSIFICATION_PROMPT, PERSONA_GENERATION_PROMPT
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -165,12 +166,12 @@ class AgentService:
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
-                "content": (
-                    "You are a creative director for AI personas. "
-                    "Create a unique, high-quality persona based on the user's keywords."
-                ),
+                "content": PERSONA_GENERATION_PROMPT,
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {
+                "role": "user",
+                "content": f"--- USER KEYWORDS ---\n{keywords}",
+            },
         ]
 
         return await structured_completion(
@@ -275,13 +276,12 @@ class AgentService:
                 messages=[
                     {
                         "role": "system",
-                        "content": (
-                            f"You are a mood classifier. Given a conversation excerpt, "
-                            f"pick the single most fitting mood for the AI agent from this list: "
-                            f"{mood_list}."
-                        ),
+                        "content": MOOD_CLASSIFICATION_PROMPT.format(mood_list=mood_list),
                     },
-                    {"role": "user", "content": recent_history},
+                    {
+                        "role": "user",
+                        "content": f"--- CONVERSATION EXCERPT ---\n{recent_history}",
+                    },
                 ],
                 response_model=MoodResponse,
             )
