@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   FlatList,
   Platform,
@@ -10,15 +10,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { theme } from '../../src/core/theme';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
-import { useTheme } from '../../src/hooks/useTheme';
-import { RenderItemData, useProductivityViewModel } from '../../src/hooks/viewmodels/useProductivityViewModel';
+import { AppText } from '@/components/AppText';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { theme } from '@/core/theme';
+import { CalendarEvent, Note, Task } from '@/core/models';
+import { useTheme } from '@/hooks/useTheme';
+import {
+  RenderItemData,
+  useProductivityViewModel,
+} from '@/hooks/viewmodels/useProductivityViewModel';
 
 const S = theme.spacing;
 const R = theme.borderRadius;
@@ -32,7 +35,7 @@ export default function ProductivityScreen() {
     taskPriority,
     setTaskPriority,
     searchQuery,
-    setSearchQuery,
+    setDebouncedSearchQuery,
     showCreateNote,
     setShowCreateNote,
     showCreateTask,
@@ -40,6 +43,7 @@ export default function ProductivityScreen() {
     todayPlan,
     setTodayPlan,
     isLoading,
+    error,
     handleRefresh,
     confirmDelete,
     pendingTasksCount,
@@ -254,7 +258,7 @@ export default function ProductivityScreen() {
     [C]
   );
 
-  const renderItem = React.useCallback(
+  const renderItem = useCallback(
     ({ item }: { item: RenderItemData }) => {
       if (item.type === 'note') {
         const note = item.item as Note;
@@ -337,7 +341,7 @@ export default function ProductivityScreen() {
           <Ionicons name="search" size={18} color={C.muted} style={styles.searchIcon} />
           <TextInput
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={setDebouncedSearchQuery}
             placeholder={t('productivity.search') || 'Search notes & tasks...'}
             placeholderTextColor={C.faint}
             style={styles.searchInput}
@@ -480,84 +484,110 @@ export default function ProductivityScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons
-                name={
-                  activeTab === 'notes'
-                    ? 'document-text'
-                    : activeTab === 'tasks'
-                      ? 'checkbox'
-                      : activeTab === 'today'
-                        ? 'sunny-outline'
-                        : 'planet'
-                }
-                size={42}
-                color={C.primary}
-              />
-            </View>
-            <AppText variant="h3" style={styles.emptyTitle}>
-              {searchQuery
-                ? t('productivity.no_matches') || 'No matches found'
-                : activeTab === 'notes'
-                  ? t('productivity.no_notes') || 'No Notes'
-                  : activeTab === 'tasks'
-                    ? t('productivity.no_tasks') || 'No Tasks'
-                    : activeTab === 'today'
-                      ? t('productivity.nothing_urgent_today')
-                      : t('productivity.workspace_clear') || 'Your workspace is clear'}
-            </AppText>
-            <AppText style={styles.emptySubtitle}>
-              {searchQuery
-                ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-                : activeTab === 'today'
-                  ? t('productivity.today_empty_detail')
-                  : t('productivity.capture_thoughts') ||
-                    'Capture your thoughts and track what needs to get done.'}
-            </AppText>
-
-            {!searchQuery && (
-              <View style={styles.emptyActions}>
-                {(activeTab === 'all' || activeTab === 'notes') && (
-                  <Pressable
-                    onPress={() => setShowCreateNote(true)}
-                    style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
-                  >
-                    <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginEnd: 6 }} />
-                    <AppText style={styles.emptyButtonText}>
-                      {t('productivity.newNote') || 'New Note'}
-                    </AppText>
-                  </Pressable>
-                )}
-                {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
-                  <Pressable
-                    onPress={() => setShowCreateTask(true)}
-                    style={({ pressed }) => [
-                      styles.emptyButton,
-                      (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
-                      pressed && { opacity: 0.8 },
-                    ]}
-                  >
-                    <Ionicons
-                      name="add"
-                      size={18}
-                      color={activeTab === 'all' || activeTab === 'today' ? C.primary : '#FFFFFF'}
-                      style={{ marginEnd: 6 }}
-                    />
-                    <AppText
-                      style={
-                        activeTab === 'all' || activeTab === 'today'
-                          ? styles.emptyButtonTextSecondary
-                          : styles.emptyButtonText
-                      }
-                    >
-                      {t('productivity.new_task')}
-                    </AppText>
-                  </Pressable>
-                )}
+          error ? (
+            <View style={styles.emptyContainer}>
+              <View style={[styles.emptyIconCircle, { backgroundColor: C.dangerSurface }]}>
+                <Ionicons name="warning-outline" size={42} color={C.danger} />
               </View>
-            )}
-          </View>
+              <AppText variant="h3" style={styles.emptyTitle}>
+                {t('productivity.error_title') || 'Failed to load workspace'}
+              </AppText>
+              <AppText style={styles.emptySubtitle}>
+                {error || t('productivity.error_subtitle') || 'Please try again later.'}
+              </AppText>
+              <Pressable
+                onPress={handleRefresh}
+                style={({ pressed }) => [
+                  styles.emptyButton,
+                  { backgroundColor: C.primary },
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <Ionicons name="refresh" size={18} color="#FFFFFF" style={{ marginEnd: 6 }} />
+                <AppText style={styles.emptyButtonText}>{t('common.retry') || 'Retry'}</AppText>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Ionicons
+                  name={
+                    activeTab === 'notes'
+                      ? 'document-text'
+                      : activeTab === 'tasks'
+                        ? 'checkbox'
+                        : activeTab === 'today'
+                          ? 'sunny-outline'
+                          : 'planet'
+                  }
+                  size={42}
+                  color={C.primary}
+                />
+              </View>
+              <AppText variant="h3" style={styles.emptyTitle}>
+                {searchQuery
+                  ? t('productivity.no_matches') || 'No matches found'
+                  : activeTab === 'notes'
+                    ? t('productivity.no_notes') || 'No Notes'
+                    : activeTab === 'tasks'
+                      ? t('productivity.no_tasks') || 'No Tasks'
+                      : activeTab === 'today'
+                        ? t('productivity.nothing_urgent_today')
+                        : t('productivity.workspace_clear') || 'Your workspace is clear'}
+              </AppText>
+              <AppText style={styles.emptySubtitle}>
+                {searchQuery
+                  ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
+                  : activeTab === 'today'
+                    ? t('productivity.today_empty_detail')
+                    : t('productivity.capture_thoughts') ||
+                      'Capture your thoughts and track what needs to get done.'}
+              </AppText>
+
+              {!searchQuery && (
+                <View style={styles.emptyActions}>
+                  {(activeTab === 'all' || activeTab === 'notes') && (
+                    <Pressable
+                      onPress={() => setShowCreateNote(true)}
+                      style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+                    >
+                      <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginEnd: 6 }} />
+                      <AppText style={styles.emptyButtonText}>
+                        {t('productivity.newNote') || 'New Note'}
+                      </AppText>
+                    </Pressable>
+                  )}
+                  {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
+                    <Pressable
+                      onPress={() => setShowCreateTask(true)}
+                      style={({ pressed }) => [
+                        styles.emptyButton,
+                        (activeTab === 'all' || activeTab === 'today') &&
+                          styles.emptyButtonSecondary,
+                        pressed && { opacity: 0.8 },
+                      ]}
+                    >
+                      <Ionicons
+                        name="add"
+                        size={18}
+                        color={activeTab === 'all' || activeTab === 'today' ? C.primary : '#FFFFFF'}
+                        style={{ marginEnd: 6 }}
+                      />
+                      <AppText
+                        style={
+                          activeTab === 'all' || activeTab === 'today'
+                            ? styles.emptyButtonTextSecondary
+                            : styles.emptyButtonText
+                        }
+                      >
+                        {t('productivity.new_task')}
+                      </AppText>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+            </View>
+          )
         }
       />
 

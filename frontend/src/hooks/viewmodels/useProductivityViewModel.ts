@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { CalendarEvent, Note, Task } from '../../core/models';
-import { useProductivityStore } from '../../store/useProductivityStore';
 import { useRouter, useLocalSearchParams, usePathname } from 'expo-router';
+import { CalendarEvent, Note, Task } from '@/core/models';
+import { useProductivityStore } from '@/store/useProductivityStore';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -26,10 +27,15 @@ export function useProductivityViewModel() {
 
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearchQuery = useDebounce(searchInput, 200);
+  const searchQuery = debouncedSearchQuery;
+
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
+
+  const refreshControllerRef = useRef<AbortController | null>(null);
 
   const {
     notes,
@@ -39,6 +45,7 @@ export function useProductivityViewModel() {
     fetchTasks,
     fetchEvents,
     isLoading,
+    error,
     deleteNote,
     deleteTask,
     toggleTask,
@@ -54,35 +61,44 @@ export function useProductivityViewModel() {
     };
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
+  const removeQueryParamAndReplace = useCallback((key: string) => {
+    const nextParams = Object.entries(params).filter(([k]) => k !== key);
+    router.replace({ pathname, params: Object.fromEntries(nextParams) });
+  }, [params, pathname, router]);
+
   useEffect(() => {
     if (openCreateTask === '1' || openCreateTask === 'true') {
       setShowCreateTask(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
-        )
-      );
-      router.replace({ pathname, params: nextParams });
+      removeQueryParamAndReplace('openCreateTask');
     }
-  }, [openCreateTask, params, pathname, router]);
+  }, [openCreateTask, removeQueryParamAndReplace]);
 
   useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
       setShowCreateNote(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
-        )
-      );
-      router.replace({ pathname, params: nextParams });
+      removeQueryParamAndReplace('openCreateNote');
     }
-  }, [openCreateNote, params, pathname, router]);
+  }, [openCreateNote, removeQueryParamAndReplace]);
 
   const handleRefresh = useCallback(() => {
-    fetchNotes();
-    fetchTasks();
-    fetchEvents();
+    if (refreshControllerRef.current) {
+      refreshControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    refreshControllerRef.current = controller;
+
+    fetchNotes(controller.signal);
+    fetchTasks(controller.signal);
+    fetchEvents(controller.signal);
   }, [fetchEvents, fetchNotes, fetchTasks]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshControllerRef.current) {
+        refreshControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const confirmDelete = useCallback(
     (action: () => Promise<void>) =>
@@ -249,8 +265,8 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -261,6 +277,15 @@ export function useProductivityViewModel() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [
+    activeTab,
+    todayData,
+    mixedData,
+    filteredNotes,
+    prioritizedTasks,
+    taskPriority,
+    getTaskPriority,
+  ]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -308,8 +333,8 @@ export function useProductivityViewModel() {
     setActiveTab,
     taskPriority,
     setTaskPriority,
-    searchQuery,
-    setSearchQuery,
+    searchQuery: searchInput,
+    setDebouncedSearchQuery: setSearchInput,
     showCreateNote,
     setShowCreateNote,
     showCreateTask,
@@ -317,6 +342,7 @@ export function useProductivityViewModel() {
     todayPlan,
     setTodayPlan,
     isLoading,
+    error,
     handleRefresh,
     confirmDelete,
     pendingTasksCount,
