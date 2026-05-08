@@ -137,7 +137,8 @@ class AgentService:
 
         # Refetch with relations so the response is fully populated.
         refetched = await self.repo.get_by_id(agent.pk)
-        assert refetched is not None
+        if refetched is None:
+            raise LookupError(f"Agent not found after refetch: {agent.pk}")
         return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
@@ -214,7 +215,8 @@ class AgentService:
 
         # Need to refetch here since capabilities/integrations may have been updated.
         refetched = await self.repo.get_by_id(updated.pk)
-        assert refetched is not None
+        if refetched is None:
+            raise LookupError(f"Agent not found after refetch: {updated.pk}")
 
         return _build_agent_response(refetched)
 

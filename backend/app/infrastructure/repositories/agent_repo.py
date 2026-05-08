@@ -72,35 +72,36 @@ class AgentRepository:
         integration_configs: dict[str, Any] | None,
     ) -> Agent:
         """Create a new agent with capabilities and integrations."""
-        agent = await Agent.create(
-            user_id=user_id,
-            name=name,
-            personality=personality,
-            description=description,
-            goals=goals,
-            system_prompt=system_prompt,
-        )
+        async with in_transaction():
+            agent = await Agent.create(
+                user_id=user_id,
+                name=name,
+                personality=personality,
+                description=description,
+                goals=goals,
+                system_prompt=system_prompt,
+            )
 
-        if capability_ids:
-            caps = await Capability.filter(id__in=capability_ids)
-            await agent.capabilities.add(*caps)
+            if capability_ids:
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.add(*caps)
 
-        if integration_ids:
-            integrations = await Integration.filter(id__in=integration_ids)
-            configs = integration_configs or {}
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            if integration_ids:
+                integrations = await Integration.filter(id__in=integration_ids)
+                configs = integration_configs or {}
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
-        return agent
+            return agent
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
@@ -136,28 +137,30 @@ class AgentRepository:
 
     async def update_agent_capabilities(self, agent: Agent, capability_ids: list[str]) -> None:
         """Update the capabilities of an agent."""
-        caps = await Capability.filter(id__in=capability_ids)
-        await agent.capabilities.clear()
-        if caps:
-            await agent.capabilities.add(*caps)
+        async with in_transaction():
+            caps = await Capability.filter(id__in=capability_ids)
+            await agent.capabilities.clear()
+            if caps:
+                await agent.capabilities.add(*caps)
 
     async def update_agent_integrations(
         self, agent: Agent, integration_ids: list[str], integration_configs: dict[str, Any]
     ) -> None:
         """Update the integrations of an agent."""
-        await AgentIntegration.filter(agent=agent).delete()
-        integrations = await Integration.filter(id__in=integration_ids)
-        agent_integrations = [
-            AgentIntegration(
-                agent=agent,
-                integration=integration,
-                config=integration_configs.get(str(integration.id), {}),
-                enabled=True,
-            )
-            for integration in integrations
-        ]
-        if agent_integrations:
-            await AgentIntegration.bulk_create(agent_integrations)
+        async with in_transaction():
+            await AgentIntegration.filter(agent=agent).delete()
+            integrations = await Integration.filter(id__in=integration_ids)
+            agent_integrations = [
+                AgentIntegration(
+                    agent=agent,
+                    integration=integration,
+                    config=integration_configs.get(str(integration.id), {}),
+                    enabled=True,
+                )
+                for integration in integrations
+            ]
+            if agent_integrations:
+                await AgentIntegration.bulk_create(agent_integrations)
 
     async def get_agent_capability_ids(self, agent: Agent) -> list[str]:
         """Get the current capabilities of an agent."""
