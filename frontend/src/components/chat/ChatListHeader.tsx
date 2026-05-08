@@ -1,23 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View, StyleSheet, Platform } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { Agent } from '@/core/models';
-
-const C = {
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  deep: DESIGN_TOKENS.colors.deep,
-  border: DESIGN_TOKENS.colors.border,
-  text: DESIGN_TOKENS.colors.text,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  primary: DESIGN_TOKENS.colors.primary,
-  primarySoft: DESIGN_TOKENS.colors.primarySoft,
-};
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 type SortMode = 'recent' | 'mentions' | 'tasks';
 
@@ -55,6 +45,7 @@ export function ChatListHeader({
   roomCount,
 }: ChatListHeaderProps) {
   const [localQuery, setLocalQuery] = useState(query);
+  const { C } = useTheme();
 
   useEffect(() => {
     setLocalQuery(query);
@@ -67,29 +58,29 @@ export function ChatListHeader({
 
   return (
     <>
-      <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
-        <View className="absolute -right-[26px] -top-[24px] w-[132px] h-[132px] rounded-full bg-white/10" />
-        <View className="absolute right-[36px] -bottom-[48px] w-[148px] h-[148px] rounded-full bg-white/5" />
-        <AppText variant="caption" className="text-white/80 mb-1">
+      <View style={[styles.heroContainer, { backgroundColor: DESIGN_TOKENS.colors.deep }]}>
+        <View style={styles.heroCircle1} />
+        <View style={styles.heroCircle2} />
+        <AppText variant="caption" style={styles.heroSubtitle}>
           {t('chat.title', 'Miru')}
         </AppText>
-        <AppText variant="h2" className="text-white font-bold mb-1.5">
+        <AppText variant="h2" style={styles.heroTitle}>
           {t('chat.chats', 'Chats')}
         </AppText>
-        <AppText variant="bodySm" className="text-white/80">
+        <AppText variant="bodySm" style={styles.heroDesc}>
           {t('chat.design_subtitle', 'Search, pin, and continue the right conversation fast.')}
         </AppText>
       </View>
 
-      <View className="bg-white rounded-3xl border border-[#DDE8E0] p-[14px] mb-3 shadow-md">
-        <View className="flex-row items-center rounded-[14px] border border-[#DDE8E0] bg-[#ECF5F0] px-2.5 mb-2.5">
+      <View style={[styles.sectionContainer, { backgroundColor: C.surface, borderColor: C.border }]}>
+        <View style={[styles.searchBar, { backgroundColor: C.surfaceHigh, borderColor: C.border }]}>
           <Ionicons name="search" size={16} color={C.muted} />
           <TextInput
             value={localQuery}
             onChangeText={setLocalQuery}
             placeholder={t('chat.search_placeholder', 'Search chats')}
             placeholderTextColor={C.faint}
-            className="flex-1 h-[42px] text-[14px] ml-2 text-[#13251C]"
+            style={[styles.searchInput, { color: C.text }]}
             accessibilityLabel={t('chat.search_placeholder', 'Search chats')}
           />
           {localQuery ? (
@@ -117,15 +108,17 @@ export function ChatListHeader({
               <ScalePressable
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
-                className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
-                }`}
+                style={[
+                  styles.filterPill,
+                  {
+                    backgroundColor: selected ? C.primarySurface : C.surfaceHigh,
+                    borderColor: selected ? `${C.primary}73` : C.border,
+                  },
+                ]}
               >
                 <AppText
                   variant="caption"
-                  className={`font-bold ${selected ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+                  style={[styles.filterPillText, { color: selected ? C.primary : C.muted }]}
                 >
                   {label}
                 </AppText>
@@ -141,11 +134,15 @@ export function ChatListHeader({
             <ScalePressable
               key={label}
               onPress={onToggle}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-              }`}
+              style={[
+                styles.filterPill,
+                {
+                  backgroundColor: active ? C.primarySurface : C.surfaceHigh,
+                  borderColor: active ? `${C.primary}73` : C.border,
+                },
+              ]}
             >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
+              <AppText variant="caption" style={[styles.filterPillText, { color: active ? C.primary : C.muted }]}>
                 {label}
               </AppText>
             </ScalePressable>
@@ -154,12 +151,12 @@ export function ChatListHeader({
       </View>
 
       {agents.length > 0 ? (
-        <View className="bg-white rounded-3xl border border-[#DDE8E0] py-[14px] mb-3 shadow-md">
-          <View className="flex-row justify-between items-center px-4 mb-2.5">
-            <AppText variant="h3" className="text-[#13251C] font-bold">
+        <View style={[styles.sectionContainer, styles.personasContainer, { backgroundColor: C.surface, borderColor: C.border }]}>
+          <View style={styles.personasHeader}>
+            <AppText variant="h3" style={[styles.personasTitle, { color: C.text }]}>
               {t('chat.personas', 'Personas')}
             </AppText>
-            <AppText variant="caption" className="text-[#5A7467] font-bold">
+            <AppText variant="caption" style={[styles.personasCount, { color: C.muted }]}>
               {activeFilterCount > 0
                 ? t('chat.active_filters', { count: activeFilterCount, defaultValue: '{{count}} filters' })
                 : agents.length}
@@ -168,23 +165,27 @@ export function ChatListHeader({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-4"
+            contentContainerStyle={styles.personasScrollContent}
           >
             <ScalePressable
               onPress={() => onSelectAgent(null)}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-              }`}
+              style={[
+                styles.filterPill,
+                {
+                  backgroundColor: selectedAgentId ? C.surfaceHigh : C.primarySurface,
+                  borderColor: selectedAgentId ? C.border : `${C.primary}73`,
+                },
+              ]}
             >
               <AppText
                 variant="caption"
-                className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+                style={[styles.filterPillText, { color: selectedAgentId ? C.muted : C.primary }]}
               >
                 {t('chat.all_agents', 'All')}
               </AppText>
             </ScalePressable>
             {agents.map((item) => (
-              <View key={item.id} style={{ marginRight: 8 }}>
+              <View key={item.id} style={styles.agentPillWrapper}>
                 <AgentPill
                   agent={item}
                   onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -195,14 +196,126 @@ export function ChatListHeader({
         </View>
       ) : null}
 
-      <View className="mb-3 mt-0.5 flex-row justify-between items-center">
-        <AppText variant="h3" className="text-[#13251C] font-bold">
+      <View style={styles.listHeader}>
+        <AppText variant="h3" style={[styles.listTitle, { color: C.text }]}>
           {t('chat.chats', 'Chats')}
         </AppText>
-        <AppText variant="caption" className="text-[#5A7467]">
+        <AppText variant="caption" style={{ color: C.muted }}>
           {roomCount}
         </AppText>
       </View>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  heroContainer: {
+    borderRadius: theme.borderRadius.xxl + 4,
+    padding: theme.spacing.lg + 2,
+    marginBottom: theme.spacing.md + 2,
+    overflow: 'hidden',
+    ...(Platform.OS === 'ios' ? theme.elevation.md : {
+      elevation: theme.elevation.md.elevation,
+      shadowColor: 'transparent',
+    }),
+  },
+  heroCircle1: {
+    position: 'absolute',
+    right: -26,
+    top: -24,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: DESIGN_TOKENS.colors.white + '1A', // 10% opacity
+  },
+  heroCircle2: {
+    position: 'absolute',
+    right: 36,
+    bottom: -48,
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    backgroundColor: DESIGN_TOKENS.colors.white + '0D', // 5% opacity
+  },
+  heroSubtitle: {
+    color: DESIGN_TOKENS.colors.surface,
+    opacity: 0.8,
+    marginBottom: theme.spacing.xs,
+  },
+  heroTitle: {
+    color: DESIGN_TOKENS.colors.white,
+    fontWeight: 'bold',
+    marginBottom: theme.spacing.sm - 2,
+  },
+  heroDesc: {
+    color: DESIGN_TOKENS.colors.surface,
+    opacity: 0.8,
+  },
+  sectionContainer: {
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    padding: theme.spacing.md + 2,
+    marginBottom: theme.spacing.md,
+    ...(Platform.OS === 'ios' ? theme.elevation.md : {
+      elevation: theme.elevation.md.elevation,
+      shadowColor: 'transparent',
+    }),
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.md + 2,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.md - 2,
+    marginBottom: theme.spacing.md - 2,
+  },
+  searchInput: {
+    flex: 1,
+    height: 42, // Keeping min height for touch target
+    ...theme.typography.bodySm,
+    marginLeft: theme.spacing.sm,
+  },
+  filterPill: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderWidth: 1,
+  },
+  filterPillText: {
+    fontWeight: 'bold',
+  },
+  personasContainer: {
+    paddingVertical: theme.spacing.md + 2,
+    paddingHorizontal: 0,
+  },
+  personasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md - 2,
+  },
+  personasTitle: {
+    fontWeight: 'bold',
+  },
+  personasCount: {
+    fontWeight: 'bold',
+  },
+  personasScrollContent: {
+    paddingHorizontal: theme.spacing.lg,
+  },
+  agentPillWrapper: {
+    marginRight: theme.spacing.sm,
+  },
+  listHeader: {
+    marginBottom: theme.spacing.md,
+    marginTop: theme.spacing.xxs,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  listTitle: {
+    fontWeight: 'bold',
+  },
+});

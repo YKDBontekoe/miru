@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Modal, TextInput, Alert, ActivityIndicator, FlatList } from 'react-native';
+import { View, Modal, TextInput, Alert, ActivityIndicator, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
@@ -8,6 +8,7 @@ import { Agent } from '@/core/models';
 import { useChatStore } from '@/store/useChatStore';
 import { getAgentColor } from '@/utils/colors';
 import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 export interface CreateRoomModalProps {
   /** Whether the modal is currently visible. */
@@ -47,24 +48,26 @@ export const CreateRoomModal = React.memo(
         return (
           <ScalePressable
             onPress={() => toggleAgent(agent.id)}
-            className="flex-row items-center rounded-2xl p-3 mb-2"
-            style={{
-              backgroundColor: selected ? `${color}12` : C.surfaceHigh,
-            }}
+            style={[
+              styles.agentRow,
+              { backgroundColor: selected ? `${color}12` : C.surfaceHigh }
+            ]}
           >
             <View
-              className="w-9 h-9 rounded-full items-center justify-center me-3"
-              style={{ backgroundColor: `${color}18` }}
+              style={[
+                styles.agentAvatar,
+                { backgroundColor: `${color}18` }
+              ]}
             >
-              <AppText className="font-bold" style={{ color }}>
+              <AppText style={[styles.agentAvatarText, { color }]}>
                 {agent.name[0].toUpperCase()}
               </AppText>
             </View>
-            <View className="flex-1">
-              <AppText className="text-[14px] font-semibold" style={{ color: C.text }}>
+            <View style={styles.agentInfo}>
+              <AppText style={[styles.agentName, { color: C.text }]}>
                 {agent.name}
               </AppText>
-              <AppText variant="caption" className="text-muted" numberOfLines={1}>
+              <AppText variant="caption" style={[styles.agentPersonality, { color: C.muted }]} numberOfLines={1}>
                 {agent.personality}
               </AppText>
             </View>
@@ -72,7 +75,7 @@ export const CreateRoomModal = React.memo(
           </ScalePressable>
         );
       },
-      [selectedAgentIds, toggleAgent, C.surfaceHigh, C.text]
+      [selectedAgentIds, toggleAgent, C.surfaceHigh, C.text, C.muted]
     );
 
     const handleCreate = async () => {
@@ -120,9 +123,9 @@ export const CreateRoomModal = React.memo(
 
     return (
       <Modal visible={visible} animationType="slide" transparent>
-        <View className="flex-1 justify-end bg-black/35">
-          <View className="rounded-t-[28px] p-6 max-h-[82%]" style={{ backgroundColor: C.surface }}>
-            <View className="flex-row justify-between items-center mb-6">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: C.surface }]}>
+            <View style={styles.header}>
               <AppText variant="h2" style={{ color: C.text }}>
                 {t('createRoom.title', 'New Chat')}
               </AppText>
@@ -133,8 +136,7 @@ export const CreateRoomModal = React.memo(
 
             <AppText
               variant="caption"
-              className="uppercase tracking-widest mb-2"
-              style={{ color: C.muted }}
+              style={[styles.label, { color: C.muted }]}
             >
               {t('createRoom.nameLabel', 'Chat Name')}
             </AppText>
@@ -143,19 +145,20 @@ export const CreateRoomModal = React.memo(
               onChangeText={setName}
               placeholder={t('createRoom.namePlaceholder', 'e.g. Gaming Session')}
               placeholderTextColor={C.faint}
-              className="rounded-2xl px-3.5 py-3 text-[16px] mb-5"
-              style={{
-                backgroundColor: C.surfaceHigh,
-                color: C.text,
-              }}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: C.surfaceHigh,
+                  color: C.text,
+                },
+              ]}
             />
 
             {agents.length > 0 && (
               <>
                 <AppText
                   variant="caption"
-                  className="uppercase tracking-widest mb-2.5"
-                  style={{ color: C.muted }}
+                  style={[styles.label, styles.agentsLabel, { color: C.muted }]}
                 >
                   {t('createRoom.addAgents', 'Add Agents')}
                 </AppText>
@@ -164,7 +167,7 @@ export const CreateRoomModal = React.memo(
                   keyExtractor={(item) => item.id}
                   renderItem={renderAgentItem}
                   showsVerticalScrollIndicator={false}
-                  className="max-h-[180px]"
+                  style={styles.agentsList}
                 />
               </>
             )}
@@ -172,16 +175,17 @@ export const CreateRoomModal = React.memo(
             <ScalePressable
               onPress={handleCreate}
               disabled={isSaving}
-              className="rounded-2xl py-4 items-center mt-5"
-              style={{
-                backgroundColor: isSaving ? `${C.primary}80` : C.primary,
-                elevation: 4,
-              }}
+              style={[
+                styles.createButton,
+                {
+                  backgroundColor: isSaving ? `${C.primary}80` : C.primary,
+                },
+              ]}
             >
               {isSaving ? (
-                <ActivityIndicator color="white" />
+                <ActivityIndicator color={theme.colors.white} />
               ) : (
-                <AppText className="text-white font-bold text-[16px]">
+                <AppText style={styles.createButtonText}>
                   {t('createRoom.createButton', 'Create Chat')}
                 </AppText>
               )}
@@ -194,3 +198,80 @@ export const CreateRoomModal = React.memo(
 );
 
 CreateRoomModal.displayName = 'CreateRoomModal';
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: theme.spacing.xxl,
+    maxHeight: '82%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
+  label: {
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: theme.spacing.xs,
+  },
+  input: {
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: 14,
+    paddingVertical: theme.spacing.md,
+    ...theme.typography.body,
+    marginBottom: theme.spacing.xl,
+  },
+  agentsLabel: {
+    marginBottom: 10,
+  },
+  agentsList: {
+    maxHeight: 180,
+  },
+  agentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  agentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: theme.spacing.md,
+  },
+  agentAvatarText: {
+    fontWeight: 'bold',
+  },
+  agentInfo: {
+    flex: 1,
+  },
+  agentName: {
+    ...theme.typography.bodySm,
+    fontWeight: '600',
+  },
+  agentPersonality: {
+  },
+  createButton: {
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.lg,
+    alignItems: 'center',
+    marginTop: theme.spacing.xl,
+    elevation: 4,
+  },
+  createButtonText: {
+    color: theme.colors.white,
+    ...theme.typography.body,
+    fontWeight: 'bold',
+  },
+});
