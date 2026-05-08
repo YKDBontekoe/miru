@@ -26,6 +26,7 @@ from app.domain.agents.service import AgentService  # noqa: TCH001
 router = APIRouter(tags=["Agents"])
 logger = logging.getLogger(__name__)
 
+
 @router.post(
     "",
     response_model=AgentResponse,
@@ -47,7 +48,11 @@ async def create_agent(
         return await service.create_agent(agent_data, user_id)
     except LookupError as e:
         logger.error("Failed to create agent: %s", str(e))
-        raise_api_error(status_code=500, error="agent_creation_failed", message="Failed to fully construct agent on creation.")
+        raise_api_error(
+            status_code=500,
+            error="agent_creation_failed",
+            message="Failed to fully construct agent on creation.",
+        )
 
 
 @router.get(
@@ -189,7 +194,11 @@ async def update_agent(
         return result
     except LookupError as e:
         logger.error("Failed to fetch agent after update: %s", str(e))
-        raise_api_error(status_code=500, error="agent_update_failed", message="Agent updated but failed to refetch fully.")
+        raise_api_error(
+            status_code=500,
+            error="agent_update_failed",
+            message="Agent updated but failed to refetch fully.",
+        )
 
 
 @router.delete(

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+import app.domain.agents.models
 from app.domain.agents.models import AgentTemplate, Capability, Integration
 from app.domain.agents.schemas import AgentCreate, AgentUpdate
 from app.domain.agents.service import AgentService
@@ -192,3 +194,54 @@ async def test_create_agent_chaos_db_error():
         mock_create.side_effect = Exception("Database constraint violation")
         with pytest.raises(Exception, match="Database constraint violation"):
             await service.create_agent(agent_data, user_id)
+
+
+@pytest.mark.asyncio
+async def test_create_agent_lookup_error():
+    repo = AgentRepository()
+    service = AgentService(repo)
+    user_id = get_deterministic_uuid()
+    agent_data = AgentCreate(name="Test Agent", personality="Helpful")
+
+    with patch.object(repo, "get_by_id", new_callable=AsyncMock) as mock_get_by_id:
+        mock_get_by_id.return_value = None
+        with pytest.raises(LookupError, match="Agent not found after refetch"):
+            await service.create_agent(agent_data, user_id)
+
+
+@pytest.mark.asyncio
+async def test_update_agent_lookup_error():
+    repo = AgentRepository()
+    service = AgentService(repo)
+    user_id = get_deterministic_uuid()
+    agent_data = AgentCreate(name="Test Agent", personality="Helpful")
+
+    initial_agent = await service.create_agent(agent_data, user_id)
+
+    update_data = AgentUpdate(name="Updated Agent")
+
+    with patch.object(repo, "get_by_id", new_callable=AsyncMock) as mock_get_by_id:
+        # First call is to get the agent to update
+        # Second call is to refetch it after update
+        fake_agent = app.domain.agents.models.Agent(
+            id=initial_agent.id,
+            user_id=user_id,
+            name="Test Agent",
+            personality="Helpful",
+            status="active",
+            mood="Neutral",
+            goals=[],
+            message_count=0,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            deleted_at=None,
+        )
+        fake_agent._saved_in_db = True
+        mock_get_by_id.side_effect = [fake_agent, None]
+
+        with patch.object(
+            repo, "get_agent_capability_ids", new_callable=AsyncMock
+        ) as mock_get_cap_ids:
+            mock_get_cap_ids.return_value = []
+            with pytest.raises(LookupError, match="Agent not found after refetch"):
+                await service.update_agent(str(initial_agent.id), user_id, update_data)

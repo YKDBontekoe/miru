@@ -206,11 +206,14 @@ def test_create_agent_route_contract(client: TestClient) -> None:
     assert parsed_response.message_count == 5
     # Just asserting it passes validation successfully is the primary goal
 
+
 def test_create_agent_route_lookup_error(client: TestClient) -> None:
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
-    mock_service.create_agent = AsyncMock(side_effect=LookupError("Agent not found after refetch: id"))
+    mock_service.create_agent = AsyncMock(
+        side_effect=LookupError("Agent not found after refetch: id")
+    )
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service
@@ -221,7 +224,12 @@ def test_create_agent_route_lookup_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": {"error": "agent_creation_failed", "message": "Failed to fully construct agent on creation."}}
+    assert response.json() == {
+        "detail": {
+            "error": "agent_creation_failed",
+            "message": "Failed to fully construct agent on creation.",
+        }
+    }
 
 
 def test_update_agent_route_lookup_error(client: TestClient) -> None:
@@ -229,7 +237,9 @@ def test_update_agent_route_lookup_error(client: TestClient) -> None:
     user_id = UUID("12345678-1234-5678-1234-567812345678")
     agent_id = UUID("12345678-1234-5678-1234-567812345678")
 
-    mock_service.update_agent = AsyncMock(side_effect=LookupError("Agent not found after refetch: id"))
+    mock_service.update_agent = AsyncMock(
+        side_effect=LookupError("Agent not found after refetch: id")
+    )
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service
@@ -240,4 +250,9 @@ def test_update_agent_route_lookup_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": {"error": "agent_update_failed", "message": "Agent updated but failed to refetch fully."}}
+    assert response.json() == {
+        "detail": {
+            "error": "agent_update_failed",
+            "message": "Agent updated but failed to refetch fully.",
+        }
+    }
