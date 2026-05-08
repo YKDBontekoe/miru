@@ -209,16 +209,13 @@ export function ChatListHeader({
 
 const styles = StyleSheet.create({
   heroContainer: {
-    borderRadius: 28,
-    padding: 18,
-    marginBottom: 14,
+    borderRadius: theme.borderRadius.xxl + 4,
+    padding: theme.spacing.lg + 2,
+    marginBottom: theme.spacing.md + 2,
     overflow: 'hidden',
-    ...Platform.select({
-      ios: theme.elevation.md,
-      android: {
-        elevation: theme.elevation.md.elevation,
-        shadowColor: 'transparent',
-      },
+    ...(Platform.OS === 'ios' ? theme.elevation.md : {
+      elevation: theme.elevation.md.elevation,
+      shadowColor: 'transparent',
     }),
   },
   heroCircle1: {
@@ -228,7 +225,7 @@ const styles = StyleSheet.create({
     width: 132,
     height: 132,
     borderRadius: 66,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: DESIGN_TOKENS.colors.white + '1A', // 10% opacity
   },
   heroCircle2: {
     position: 'absolute',
@@ -237,44 +234,43 @@ const styles = StyleSheet.create({
     width: 148,
     height: 148,
     borderRadius: 74,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: DESIGN_TOKENS.colors.white + '0D', // 5% opacity
   },
   heroSubtitle: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: DESIGN_TOKENS.colors.surface,
+    opacity: 0.8,
     marginBottom: theme.spacing.xs,
   },
   heroTitle: {
-    color: theme.colors.white,
+    color: DESIGN_TOKENS.colors.white,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: theme.spacing.sm - 2,
   },
   heroDesc: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: DESIGN_TOKENS.colors.surface,
+    opacity: 0.8,
   },
   sectionContainer: {
-    borderRadius: 24,
+    borderRadius: theme.borderRadius.xxl,
     borderWidth: 1,
-    padding: 14,
+    padding: theme.spacing.md + 2,
     marginBottom: theme.spacing.md,
-    ...Platform.select({
-      ios: theme.elevation.md,
-      android: {
-        elevation: theme.elevation.md.elevation,
-        shadowColor: 'transparent',
-      },
+    ...(Platform.OS === 'ios' ? theme.elevation.md : {
+      elevation: theme.elevation.md.elevation,
+      shadowColor: 'transparent',
     }),
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: theme.borderRadius.md + 2,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+    paddingHorizontal: theme.spacing.md - 2,
+    marginBottom: theme.spacing.md - 2,
   },
   searchInput: {
     flex: 1,
-    height: 42,
+    height: 42, // Keeping min height for touch target
     ...theme.typography.bodySm,
     marginLeft: theme.spacing.sm,
   },
@@ -288,16 +284,12 @@ const styles = StyleSheet.create({
   filterPillText: {
     fontWeight: 'bold',
   },
-  personasContainer: {
-    paddingVertical: 14,
-    paddingHorizontal: 0,
-  },
   personasHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
-    marginBottom: 10,
+    marginBottom: theme.spacing.md - 2,
   },
   personasTitle: {
     fontWeight: 'bold',

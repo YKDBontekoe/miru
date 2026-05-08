@@ -75,7 +75,7 @@ export const CreateRoomModal = React.memo(
           </ScalePressable>
         );
       },
-      [selectedAgentIds, toggleAgent, C.surfaceHigh, C.text]
+      [selectedAgentIds, toggleAgent, C.surfaceHigh, C.text, C.muted]
     );
 
     const handleCreate = async () => {

@@ -53,25 +53,25 @@ AgentPill.displayName = 'AgentPill';
 
 const styles = StyleSheet.create({
   container: {
-    width: 72,
+    width: theme.spacing.colossal + theme.spacing.sm,
     alignItems: 'center',
     marginEnd: theme.spacing.md,
   },
   avatar: {
-    width: 52,
-    height: 52,
+    width: theme.spacing.massive + theme.spacing.xs,
+    height: theme.spacing.massive + theme.spacing.xs,
     borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: theme.spacing.sm,
     borderWidth: 1.5,
   },
   avatarText: {
-    fontSize: 20,
+    ...theme.typography.h3,
     fontWeight: 'bold',
   },
   nameText: {
     textAlign: 'center',
-    fontSize: 11,
+    ...theme.typography.caption,
   },
 });

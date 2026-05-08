@@ -153,16 +153,16 @@ const styles = StyleSheet.create({
     }),
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: theme.spacing.massive,
+    height: theme.spacing.massive,
+    borderRadius: theme.borderRadius.md + 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginEnd: 14,
+    marginEnd: theme.spacing.md - 2,
     borderWidth: 1,
   },
   avatarText: {
-    fontSize: 20,
+    ...theme.typography.h3,
     fontWeight: 'bold',
   },
   content: {
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: theme.spacing.xxs + 1,
   },
   title: {
     ...theme.typography.body,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     marginStart: theme.spacing.xs,
   },
   preview: {
-    marginBottom: 3,
+    marginBottom: theme.spacing.xxs + 1,
   },
   membersRow: {
     flexDirection: 'row',
@@ -199,21 +199,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   timestamp: {
-    marginBottom: 3,
+    marginBottom: theme.spacing.xxs + 1,
   },
   unreadDot: {
-    width: 9,
-    height: 9,
+    width: theme.spacing.sm + 1,
+    height: theme.spacing.sm + 1,
     borderRadius: theme.borderRadius.full,
-    marginBottom: 6,
+    marginBottom: theme.spacing.xs + 2,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   pinAction: {
-    width: 28,
-    height: 28,
+    width: theme.spacing.avatar,
+    height: theme.spacing.avatar,
     borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
