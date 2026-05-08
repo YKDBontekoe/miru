@@ -205,3 +205,54 @@ def test_create_agent_route_contract(client: TestClient) -> None:
     assert parsed_response.integration_configs == {"discord": {"token": "x"}}
     assert parsed_response.message_count == 5
     # Just asserting it passes validation successfully is the primary goal
+
+
+def test_create_agent_route_lookup_error(client: TestClient) -> None:
+    mock_service = MagicMock()
+    user_id = UUID("12345678-1234-5678-1234-567812345678")
+
+    mock_service.create_agent = AsyncMock(
+        side_effect=LookupError("Agent not found after refetch: id")
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.post(
+        "/api/v1/agents",
+        json={"name": "Bot", "personality": "Friendly", "goals": []},
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": {
+            "error": "agent_creation_failed",
+            "message": "Failed to fully construct agent on creation.",
+        }
+    }
+
+
+def test_update_agent_route_lookup_error(client: TestClient) -> None:
+    mock_service = MagicMock()
+    user_id = UUID("12345678-1234-5678-1234-567812345678")
+    agent_id = UUID("12345678-1234-5678-1234-567812345678")
+
+    mock_service.update_agent = AsyncMock(
+        side_effect=LookupError("Agent not found after refetch: id")
+    )
+
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    app.dependency_overrides[get_agent_service] = lambda: mock_service
+
+    response = client.patch(
+        f"/api/v1/agents/{agent_id}",
+        json={"name": "Bot2"},
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": {
+            "error": "agent_update_failed",
+            "message": "Agent updated but failed to refetch fully.",
+        }
+    }
