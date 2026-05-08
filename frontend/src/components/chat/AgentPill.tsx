@@ -1,10 +1,11 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { getAgentColor } from '@/utils/colors';
 import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 export interface AgentPillProps {
   /** The agent data to display. */
@@ -23,23 +24,24 @@ export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
   const initial = agent?.name ? agent.name[0].toUpperCase() : '?';
 
   return (
-    <ScalePressable onPress={onPress} className="w-[72px] items-center me-3">
+    <ScalePressable onPress={onPress} style={styles.container}>
       <View
-        className="w-[52px] h-[52px] rounded-full items-center justify-center mb-1.5 border-[1.5px]"
-        style={{
-          backgroundColor: `${color}18`,
-          borderColor: `${color}40`,
-        }}
+        style={[
+          styles.avatar,
+          {
+            backgroundColor: `${color}18`,
+            borderColor: `${color}40`,
+          },
+        ]}
       >
-        <AppText className="text-[20px] font-bold" style={{ color }}>
+        <AppText style={[styles.avatarText, { color }]}>
           {initial}
         </AppText>
       </View>
       <AppText
         variant="caption"
         numberOfLines={1}
-        className="text-center text-[11px]"
-        style={{ color: C.muted }}
+        style={[styles.nameText, { color: C.muted }]}
       >
         {agent.name}
       </AppText>
@@ -48,3 +50,28 @@ export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
 });
 
 AgentPill.displayName = 'AgentPill';
+
+const styles = StyleSheet.create({
+  container: {
+    width: 72,
+    alignItems: 'center',
+    marginEnd: theme.spacing.md,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    borderWidth: 1.5,
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  nameText: {
+    textAlign: 'center',
+    fontSize: 11,
+  },
+});
