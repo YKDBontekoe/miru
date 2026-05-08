@@ -7,6 +7,7 @@ import { AgentPill } from '@/components/chat/AgentPill';
 import { Agent } from '@/core/models';
 import { useTheme } from '@/hooks/useTheme';
 import { theme } from '@/core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 type SortMode = 'recent' | 'mentions' | 'tasks';
 
@@ -57,7 +58,7 @@ export function ChatListHeader({
 
   return (
     <>
-      <View style={[styles.heroContainer, { backgroundColor: C.deep }]}>
+      <View style={[styles.heroContainer, { backgroundColor: DESIGN_TOKENS.colors.deep }]}>
         <View style={styles.heroCircle1} />
         <View style={styles.heroCircle2} />
         <AppText variant="caption" style={styles.heroSubtitle}>
@@ -283,6 +284,10 @@ const styles = StyleSheet.create({
   },
   filterPillText: {
     fontWeight: 'bold',
+  },
+  personasContainer: {
+    paddingVertical: theme.spacing.md + 2,
+    paddingHorizontal: 0,
   },
   personasHeader: {
     flexDirection: 'row',

@@ -84,12 +84,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xxl,
     paddingVertical: 52,
     borderWidth: 1,
-    ...Platform.select({
-      ios: theme.elevation.md,
-      android: {
-        elevation: theme.elevation.md.elevation,
-        shadowColor: 'transparent',
-      },
+    ...(Platform.OS === 'ios' ? theme.elevation.md : {
+      elevation: theme.elevation.md.elevation,
+      shadowColor: 'transparent',
     }),
   },
   iconContainer: {

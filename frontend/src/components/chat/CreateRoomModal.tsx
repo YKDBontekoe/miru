@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: theme.colors.white,
-    fontWeight: 'bold',
     ...theme.typography.body,
+    fontWeight: 'bold',
   },
 });

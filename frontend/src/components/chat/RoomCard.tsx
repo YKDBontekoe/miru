@@ -144,12 +144,9 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    ...Platform.select({
-      ios: theme.elevation.md,
-      android: {
-        elevation: theme.elevation.md.elevation,
-        shadowColor: 'transparent',
-      },
+    ...(Platform.OS === 'ios' ? theme.elevation.md : {
+      elevation: theme.elevation.md.elevation,
+      shadowColor: 'transparent',
     }),
   },
   avatar: {
