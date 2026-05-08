@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -41,6 +42,16 @@ from app.infrastructure.external.spotify_tool import (
     SpotifySearchTool,
 )
 from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
+
+
+class AgentMessage(BaseModel):
+    agent_name: str
+    message: str
+
+
+class CrewResponse(BaseModel):
+    responses: list[AgentMessage]
+
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -228,7 +239,11 @@ class CrewOrchestrator:
             else ""
         )
 
-        history_text = CrewOrchestrator.format_history(conversation_history)
+        # Append the raw user message to the history for proper isolation
+        full_history = list(conversation_history) if conversation_history else []
+        full_history.append({"role": "user", "name": "User", "content": user_message})
+
+        history_text = CrewOrchestrator.format_history(full_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
@@ -244,10 +259,10 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=CrewResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -262,10 +277,10 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=CrewResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +304,14 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        if not result or not hasattr(result, "pydantic") or not result.pydantic:
+            return str(result)
+
+        crew_response: CrewResponse = result.pydantic
+
+        # Reconstruct transcript to be compatible with downstream websocket logic
+        lines = []
+        for r in crew_response.responses:
+            lines.append(f"{r.agent_name}: {r.message}")
+
+        return "\n\n".join(lines)
