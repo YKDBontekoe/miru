@@ -77,8 +77,8 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
-- Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
-- Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
+- Automatically invoked by mentioning `@coderabbitai` in a PR comment.
+- Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`) or via manual dispatch.
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 
 ## Project Structure

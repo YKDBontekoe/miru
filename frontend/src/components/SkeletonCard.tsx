@@ -11,6 +11,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '../hooks/useTheme';
 
+/**
+ * An animated placeholder box that continuously pulses to indicate loading state.
+ *
+ * @param props.width - The width of the placeholder box.
+ * @param props.height - The height of the placeholder box (defaults to 12).
+ * @param props.borderRadius - The border radius of the placeholder box (defaults to 6).
+ * @param props.delay - Animation delay in milliseconds (defaults to 0).
+ */
 function ShimmerBox({
   width,
   height = 12,
@@ -54,6 +62,12 @@ function ShimmerBox({
   );
 }
 
+/**
+ * A skeleton placeholder for an agent card to be displayed while loading data.
+ * Features animated shimmer effects.
+ *
+ * @param props.index - Optional index to stagger animations in a list.
+ */
 export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
   const { C } = useTheme();
   const baseDelay = index * 120;
