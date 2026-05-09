@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { useProductivityStore } from '../../store/useProductivityStore';
 import { Task, CalendarEvent, Note } from '../../core/models';
+import { useDebounce } from '../useDebounce';
 
 type Tab = 'today' | 'all' | 'notes' | 'tasks';
 type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -27,6 +28,7 @@ export const useProductivityViewModel = () => {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 250);
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
@@ -55,28 +57,21 @@ export const useProductivityViewModel = () => {
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   useEffect(() => {
-    if (openCreateTask === '1' || openCreateTask === 'true') {
-      setShowCreateTask(true);
+    if (openCreateTask || openCreateNote) {
+      if (openCreateTask === '1' || openCreateTask === 'true') {
+        setShowCreateTask(true);
+      }
+      if (openCreateNote === '1' || openCreateNote === 'true') {
+        setShowCreateNote(true);
+      }
       const nextParams = Object.fromEntries(
         Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
+          ([key]) => key !== 'openCreateTask' && key !== 'openCreateNote'
         )
       );
       router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateTask, params, pathname, router]);
-
-  useEffect(() => {
-    if (openCreateNote === '1' || openCreateNote === 'true') {
-      setShowCreateNote(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
-        )
-      );
-      router.replace({ pathname, params: nextParams });
-    }
-  }, [openCreateNote, params, pathname, router]);
+  }, [openCreateTask, openCreateNote, params, pathname, router]);
 
   const handleRefresh = useCallback(() => {
     fetchNotes();
@@ -102,33 +97,33 @@ export const useProductivityViewModel = () => {
   );
 
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return notes;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, debouncedSearchQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return tasks;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [debouncedSearchQuery, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return events;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, debouncedSearchQuery]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,
@@ -149,6 +144,15 @@ export const useProductivityViewModel = () => {
     return 'upcoming';
   }, []);
 
+  const todayDataFilters = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  }, []);
+
   const taskPriorityCounts = useMemo(() => {
     const counts: Record<TaskPriority, number> = {
       all: 0,
@@ -159,12 +163,17 @@ export const useProductivityViewModel = () => {
     };
     filteredTasks
       .filter((task) => !task.completed)
+      .filter((task) => {
+        if (!task.due_date) return false;
+        const dueDate = new Date(task.due_date);
+        return dueDate < todayDataFilters.end;
+      })
       .forEach((task) => {
         counts.all += 1;
         counts[getTaskPriority(task)] += 1;
       });
     return counts;
-  }, [filteredTasks, getTaskPriority]);
+  }, [filteredTasks, getTaskPriority, todayDataFilters]);
 
   const prioritizedTasks = useMemo(() => {
     let filtered = filteredTasks.filter((task) => !task.completed);
@@ -211,11 +220,7 @@ export const useProductivityViewModel = () => {
   }, [filteredNotes, filteredTasks]);
 
   const todayData = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const { start, end } = todayDataFilters;
     const weekEnd = new Date(start);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
@@ -257,7 +262,7 @@ export const useProductivityViewModel = () => {
     ];
 
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
-  }, [filteredEvents, filteredTasks]);
+  }, [filteredEvents, filteredTasks, todayDataFilters]);
 
   const dataToRender: RenderItemData[] =
     activeTab === 'today'
