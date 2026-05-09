@@ -64,30 +64,33 @@ class AgentRepository:
         user_id: UUID | str,
         capability_ids: list[str] | None,
         integration_ids: list[str] | None,
-        integration_configs: dict,
+        integration_configs: dict | None,
     ) -> Agent:
         """Create a new agent and its relationships."""
         if isinstance(user_id, str):
             user_id = UUID(user_id)
-        agent = await Agent.create(user_id=user_id, **agent_data)
 
-        if capability_ids:
-            caps = await Capability.filter(id__in=capability_ids)
-            await agent.capabilities.add(*caps)
+        async with in_transaction():
+            agent = await Agent.create(user_id=user_id, **agent_data)
 
-        if integration_ids:
-            integrations = await Integration.filter(id__in=integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            if capability_ids:
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.add(*caps)
+
+            if integration_ids:
+                integrations = await Integration.filter(id__in=integration_ids)
+                configs = integration_configs or {}
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
         refetched = await self.get_by_id(agent.pk)
         assert refetched is not None
@@ -122,39 +125,40 @@ class AgentRepository:
         if isinstance(user_id, str):
             user_id = UUID(user_id)
 
-        agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
-            "capabilities", "agent_integrations__integration"
-        )
+        async with in_transaction():
+            agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
+                "capabilities", "agent_integrations__integration"
+            )
 
-        if not agent:
-            return None
+            if not agent:
+                return None
 
-        if capability_ids is not None:
-            caps = await Capability.filter(id__in=capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
+            if capability_ids is not None:
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
 
-        if integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=integration_ids)
-            configs = integration_configs or {}
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            if integration_ids is not None:
+                await AgentIntegration.filter(agent=agent).delete()
+                integrations = await Integration.filter(id__in=integration_ids)
+                configs = integration_configs or {}
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
-        for key, value in fields.items():
-            if value is not None:
-                setattr(agent, key, value)
-        await agent.save()
+            for key, value in fields.items():
+                if value is not None:
+                    setattr(agent, key, value)
+            await agent.save()
 
         return await self.get_by_id(agent_id)
 
