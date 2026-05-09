@@ -63,8 +63,12 @@ class MemoryService:
         if related_to:
             try:
                 await self.repo.bulk_create_relationships(memory_id, related_to)
-            except Exception as e:
-                logger.warning(f"Relationship creation failed: {e}")
+            except ValueError as e:
+                logger.error(f"Validation error during relationship creation: {e}")
+            except Exception:
+                logger.exception(
+                    "Unexpected error during bulk relationship creation for memory %s", memory_id
+                )
 
         # 4. Trigger intelligent graph extraction in the background
         if u_id:

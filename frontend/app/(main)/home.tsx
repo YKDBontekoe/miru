@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Platform, RefreshControl, ScrollView, View, FlatList, ListRenderItem } from 'react-native';
+import { Task, CalendarEvent, ChatRoom, Agent } from '@/core/models';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,11 +93,11 @@ export default function HomeScreen() {
     Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
   }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
 
-  const renderTaskItem = React.useCallback(({ item: task }: { item: any }) => (
+  const renderTaskItem: ListRenderItem<Task> = React.useCallback(({ item: task }) => (
     <HomeTaskRow task={task} onToggle={() => toggleTask(task.id)} />
   ), [toggleTask]);
 
-  const renderEventItem = React.useCallback(({ item: event }: { item: any }) => (
+  const renderEventItem: ListRenderItem<CalendarEvent> = React.useCallback(({ item: event }) => (
     <View style={{ borderRadius: 16, backgroundColor: HOME_COLORS.softSurface, padding: 12, marginBottom: 8 }}>
       <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
         {event.title}
@@ -108,11 +109,11 @@ export default function HomeScreen() {
     </View>
   ), [i18n.language]);
 
-  const renderRoomItem = React.useCallback(({ item: room }: { item: any }) => (
+  const renderRoomItem: ListRenderItem<ChatRoom> = React.useCallback(({ item: room }) => (
     <HomeChatRow room={room} onPress={() => router.push(`/(main)/chat/${room.id}`)} t={t} />
   ), [router, t]);
 
-  const renderAgentItem = React.useCallback(({ item: agent }: { item: any }) => (
+  const renderAgentItem: ListRenderItem<Agent> = React.useCallback(({ item: agent }) => (
     <HomeAgentBadge agent={agent} onPress={() => router.push('/(main)/agents')} />
   ), [router]);
 
@@ -278,7 +279,9 @@ export default function HomeScreen() {
               <FlatList
                 data={upcomingEvents}
                 keyExtractor={(event) => event.id}
-                renderItem={renderEventItem} scrollEnabled={false} />
+                renderItem={renderEventItem}
+                scrollEnabled={false}
+              />
             )}
           </HomeSurfaceCard>
 
@@ -292,7 +295,9 @@ export default function HomeScreen() {
               <FlatList
                 data={recentRooms}
                 keyExtractor={(room) => room.id}
-                renderItem={renderRoomItem} scrollEnabled={false} />
+                renderItem={renderRoomItem}
+                scrollEnabled={false}
+              />
             </HomeSurfaceCard>
           ) : null}
 

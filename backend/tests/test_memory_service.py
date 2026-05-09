@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Awaitable, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
 
+from app.domain.memory.models import Memory, MemoryRelationship
 from app.domain.memory.service import MemoryService
+from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 
 @pytest.mark.asyncio
@@ -66,38 +69,33 @@ async def test_delete_memory_ownership() -> None:
 
 
 @pytest.fixture
-def mock_embed(monkeypatch):
-    async def _mock_embed(text):
+def mock_embed(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], Awaitable[list[float]]]:
+    async def _mock_embed(text: str) -> list[float]:
         return [0.1] * 1536
+
     monkeypatch.setattr("app.domain.memory.service.embed", _mock_embed)
     return _mock_embed
 
-from app.infrastructure.repositories.memory_repo import MemoryRepository
-from app.domain.memory.models import MemoryRelationship, Memory
 
 @pytest.mark.asyncio
-async def test_store_memory_with_related_to(mock_embed):
+async def test_store_memory_with_related_to(
+    mock_embed: Callable[..., Awaitable[list[float]]],
+) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
-    m1 = Memory(content="existing", embedding=[0.1]*1536)
+    m1 = Memory(content="existing", embedding=[0.1] * 1536)
     await m1.save()
 
     # Mock the match_memories to bypass vector match sqlite errors
     async def mock_match(*args, **kwargs):
         return []
+
     repo.match_memories = mock_match
 
     memory_id = await service.store_memory("new memory", related_to=[m1.id])
 
     # Assert bulk_create_relationships logic coverage
     assert memory_id is not None
-    rels = await MemoryRelationship.all()
-    assert len(rels) == 1
-    assert rels[0].source_id == memory_id
-    assert rels[0].target_id == m1.id
-
-    assert memory_id is not None
-
     rels = await MemoryRelationship.all()
     assert len(rels) == 1
     assert rels[0].source_id == memory_id
