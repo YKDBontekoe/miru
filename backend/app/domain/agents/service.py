@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -13,6 +14,13 @@ from app.domain.agents.schemas import (
     AgentTemplateResponse,
     AgentUpdate,
     MoodResponse,
+)
+from app.domain.chat.prompts import (
+    AGENT_PROFILE_SYSTEM_PROMPT,
+    AGENT_PROFILE_USER_PROMPT,
+    BUILD_SYSTEM_PROMPT_TEMPLATE,
+    MOOD_CLASSIFIER_SYSTEM_PROMPT,
+    MOOD_CLASSIFIER_USER_PROMPT,
 )
 from app.infrastructure.external.openrouter import structured_completion
 
@@ -88,30 +96,29 @@ class AgentService:
         capability_ids: list[str] | None = None,
     ) -> str:
         """Build a rich system prompt from agent profile fields."""
-        sections = [
-            f"You are {name}.",
-            (
-                "Respond naturally and concisely like a real person in a chat. "
-                "Never introduce yourself, announce your capabilities, or explain what you can do "
-                "unless the user specifically asks. Just answer helpfully and directly."
-            ),
-        ]
-        if description:
-            sections.append(description)
-        sections.append(f"\nPersonality & Behavior:\n{personality}")
+        goals_section = ""
         if goals:
             goal_list = "\n".join(f"- {g}" for g in goals)
-            sections.append(f"\nYour Goals:\n{goal_list}")
+            goals_section = f"\nYour Goals:\n{goal_list}\n"
+
+        tools_section = ""
         if capability_ids:
             all_caps = await self.list_capabilities()
             cap_names = [c.name for c in all_caps if c.id in capability_ids]
             cap_list = ", ".join(cap_names)
-            sections.append(
+            tools_section = (
                 f"\nYou have access to the following tools: {cap_list}. "
                 "Use them proactively when the user's request calls for it, "
-                "but do not mention or advertise them."
+                "but do not mention or advertise them.\n"
             )
-        return "\n".join(sections)
+
+        return BUILD_SYSTEM_PROMPT_TEMPLATE.format(
+            name=name,
+            description=f"{description}\n" if description else "",
+            personality=personality,
+            goals_section=goals_section,
+            tools_section=tools_section,
+        ).strip()
 
     async def create_agent(self, agent_data: AgentCreate, user_id: UUID) -> AgentResponse:
         """Onboard a new agent with a built system prompt."""
@@ -165,12 +172,14 @@ class AgentService:
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
-                "content": (
-                    "You are a creative director for AI personas. "
-                    "Create a unique, high-quality persona based on the user's keywords."
+                "content": AGENT_PROFILE_SYSTEM_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": AGENT_PROFILE_USER_PROMPT.format(
+                    keywords=json.dumps(keywords, ensure_ascii=False)
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
         ]
 
         return await structured_completion(
@@ -275,13 +284,14 @@ class AgentService:
                 messages=[
                     {
                         "role": "system",
-                        "content": (
-                            f"You are a mood classifier. Given a conversation excerpt, "
-                            f"pick the single most fitting mood for the AI agent from this list: "
-                            f"{mood_list}."
+                        "content": MOOD_CLASSIFIER_SYSTEM_PROMPT.format(mood_list=mood_list),
+                    },
+                    {
+                        "role": "user",
+                        "content": MOOD_CLASSIFIER_USER_PROMPT.format(
+                            recent_history=json.dumps(recent_history, ensure_ascii=False)
                         ),
                     },
-                    {"role": "user", "content": recent_history},
                 ],
                 response_model=MoodResponse,
             )

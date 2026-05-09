@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ from app.domain.chat.dtos import (
     RoomResponse,
     RoomSummaryResponse,
 )
+from app.domain.chat.prompts import STREAM_CHAT_USER_PROMPT
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 from app.infrastructure.external.openrouter import stream_chat
 
@@ -225,7 +227,14 @@ class ChatService:
                     "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
                 }
             )
-        messages.append({"role": "user", "content": user_message})
+        messages.append(
+            {
+                "role": "user",
+                "content": STREAM_CHAT_USER_PROMPT.format(
+                    user_message=json.dumps(user_message, ensure_ascii=False)
+                ),
+            }
+        )
 
         try:
             response = await stream_chat(
