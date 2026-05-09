@@ -100,6 +100,12 @@ interface AgentState {
  * - `fetchTemplates`: Fetches the available agent templates.
  * - `togglePin`: Toggles the pinned status of an agent.
  * - `setViewMode`: Sets the UI preference for list vs grid layout.
+ * - `createAgent`: Creates a new agent.
+ * - `deleteAgent`: Removes an agent from local state immediately.
+ * - `confirmDelete`: Calls the server to permanently delete an agent.
+ * - `restoreAgent`: Restores an agent that was optimistically removed.
+ * - `duplicateAgent`: Creates a copy of an existing agent.
+ * - `fetchAgents`: Fetches all agents from the backend.
  *
  * It provides optimistic updates for creation and deletion to ensure the UI
  * responds instantly while the server request completes in the background.
