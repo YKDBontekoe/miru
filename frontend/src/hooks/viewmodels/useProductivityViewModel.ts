@@ -1,0 +1,347 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useLocalSearchParams, useRouter, usePathname } from 'expo-router';
+import { useProductivityStore } from '../../store/useProductivityStore';
+import { Task, CalendarEvent, Note } from '../../core/models';
+import { useDebounce } from '../useDebounce';
+
+type Tab = 'today' | 'all' | 'notes' | 'tasks';
+type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
+
+export type RenderItemData = {
+  date?: number;
+  type: 'note' | 'task' | 'event';
+  item: Note | Task | CalendarEvent;
+  id: string;
+};
+
+export const useProductivityViewModel = () => {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
+
+  const openCreateTask = params.openCreateTask;
+  const openCreateNote = params.openCreateNote;
+
+  const [activeTab, setActiveTab] = useState<Tab>('today');
+  const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 250);
+  const [showCreateNote, setShowCreateNote] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [todayPlan, setTodayPlan] = useState<string | null>(null);
+
+  const {
+    notes,
+    tasks,
+    events,
+    fetchNotes,
+    fetchTasks,
+    fetchEvents,
+    isLoading,
+    deleteNote,
+    deleteTask,
+    toggleTask,
+  } = useProductivityStore();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchNotes(controller.signal);
+    fetchTasks(controller.signal);
+    fetchEvents(controller.signal);
+    return () => {
+      controller.abort();
+    };
+  }, [fetchEvents, fetchNotes, fetchTasks]);
+
+  useEffect(() => {
+    if (openCreateTask || openCreateNote) {
+      if (openCreateTask === '1' || openCreateTask === 'true') {
+        setShowCreateTask(true);
+      }
+      if (openCreateNote === '1' || openCreateNote === 'true') {
+        setShowCreateNote(true);
+      }
+      const nextParams = Object.fromEntries(
+        Object.entries(params).filter(
+          ([key]) => key !== 'openCreateTask' && key !== 'openCreateNote'
+        )
+      );
+      router.replace({ pathname, params: nextParams });
+    }
+  }, [openCreateTask, openCreateNote, params, pathname, router]);
+
+  const handleRefresh = useCallback(() => {
+    fetchNotes();
+    fetchTasks();
+    fetchEvents();
+  }, [fetchEvents, fetchNotes, fetchTasks]);
+
+  const confirmDelete = useCallback(
+    (action: () => Promise<void>) =>
+      Alert.alert(
+        t('productivity.delete') || 'Delete',
+        t('productivity.are_you_sure') || 'Are you sure?',
+        [
+          { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
+          {
+            text: t('settings.actions.delete') || 'Delete',
+            style: 'destructive',
+            onPress: () => action(),
+          },
+        ]
+      ),
+    [t]
+  );
+
+  const filteredNotes = useMemo(() => {
+    if (!debouncedSearchQuery) return notes;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
+    return notes.filter(
+      (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
+    );
+  }, [notes, debouncedSearchQuery]);
+
+  const filteredTasks = useMemo(() => {
+    if (!debouncedSearchQuery) return tasks;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
+    return tasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(lowerQ) ||
+        (task.description?.toLowerCase().includes(lowerQ) ?? false)
+    );
+  }, [debouncedSearchQuery, tasks]);
+
+  const filteredEvents = useMemo(() => {
+    if (!debouncedSearchQuery) return events;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
+    return events.filter(
+      (event) =>
+        event.title.toLowerCase().includes(lowerQ) ||
+        (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
+        (event.location?.toLowerCase().includes(lowerQ) ?? false)
+    );
+  }, [events, debouncedSearchQuery]);
+
+  const pendingTasksCount = useMemo(
+    () => filteredTasks.filter((task) => !task.completed).length,
+    [filteredTasks]
+  );
+
+  const getTaskPriority = useCallback((task: Task): Exclude<TaskPriority, 'all'> => {
+    if (!task.due_date) return 'no_due';
+    const now = new Date();
+    const due = new Date(task.due_date);
+    if (isNaN(due.getTime())) return 'no_due';
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(dayStart);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (due < dayStart) return 'overdue';
+    if (due >= dayStart && due < tomorrow) return 'today';
+    return 'upcoming';
+  }, []);
+
+  const todayDataFilters = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  }, []);
+
+  const taskPriorityCounts = useMemo(() => {
+    const counts: Record<TaskPriority, number> = {
+      all: 0,
+      overdue: 0,
+      today: 0,
+      upcoming: 0,
+      no_due: 0,
+    };
+    filteredTasks
+      .filter((task) => !task.completed)
+      .filter((task) => {
+        if (!task.due_date) return false;
+        const dueDate = new Date(task.due_date);
+        return dueDate < todayDataFilters.end;
+      })
+      .forEach((task) => {
+        counts.all += 1;
+        counts[getTaskPriority(task)] += 1;
+      });
+    return counts;
+  }, [filteredTasks, getTaskPriority, todayDataFilters]);
+
+  const prioritizedTasks = useMemo(() => {
+    let filtered = filteredTasks.filter((task) => !task.completed);
+    if (taskPriority !== 'all') {
+      filtered = filtered.filter((task) => getTaskPriority(task) === taskPriority);
+    }
+    return filtered.sort((a, b) => {
+      const priorityWeights: Record<Exclude<TaskPriority, 'all'>, number> = {
+        overdue: 0,
+        today: 1,
+        upcoming: 2,
+        no_due: 3,
+      };
+      const wA = priorityWeights[getTaskPriority(a)];
+      const wB = priorityWeights[getTaskPriority(b)];
+      if (wA !== wB) return wA - wB;
+
+      if (a.due_date && b.due_date) {
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      }
+      return 0;
+    });
+  }, [filteredTasks, taskPriority, getTaskPriority]);
+
+  const mixedData = useMemo(() => {
+    const data: RenderItemData[] = [];
+    filteredNotes.forEach((note) => {
+      data.push({
+        type: 'note',
+        item: note,
+        id: `note-${note.id}`,
+        date: new Date(note.created_at).getTime(),
+      });
+    });
+    filteredTasks.forEach((task) => {
+      data.push({
+        type: 'task',
+        item: task,
+        id: `task-${task.id}`,
+        date: new Date(task.created_at).getTime(),
+      });
+    });
+    return data.sort((a, b) => (b.date || 0) - (a.date || 0));
+  }, [filteredNotes, filteredTasks]);
+
+  const todayData = useMemo(() => {
+    const { start, end } = todayDataFilters;
+    const weekEnd = new Date(start);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const overdueTasks = filteredTasks.filter((task) => {
+      if (task.completed || !task.due_date) return false;
+      return new Date(task.due_date) < start;
+    });
+
+    const dueTodayTasks = filteredTasks.filter((task) => {
+      if (task.completed || !task.due_date) return false;
+      const dueDate = new Date(task.due_date);
+      return dueDate >= start && dueDate < end;
+    });
+
+    const upcomingEvents = filteredEvents.filter((event) => {
+      const startTime = new Date(event.start_time);
+      return startTime >= start && startTime < weekEnd;
+    });
+
+    const items: RenderItemData[] = [
+      ...overdueTasks.map((task) => ({
+        type: 'task' as const,
+        item: task,
+        id: `overdue-${task.id}`,
+        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
+      })),
+      ...dueTodayTasks.map((task) => ({
+        type: 'task' as const,
+        item: task,
+        id: `today-${task.id}`,
+        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
+      })),
+      ...upcomingEvents.map((event) => ({
+        type: 'event' as const,
+        item: event,
+        id: `event-${event.id}`,
+        date: new Date(event.start_time).getTime(),
+      })),
+    ];
+
+    return items.sort((a, b) => (a.date || 0) - (b.date || 0));
+  }, [filteredEvents, filteredTasks, todayDataFilters]);
+
+  const dataToRender: RenderItemData[] =
+    activeTab === 'today'
+      ? todayData.filter((entry) => {
+          if (entry.type !== 'task') return true;
+          if (taskPriority === 'all') return true;
+          return getTaskPriority(entry.item as Task) === taskPriority;
+        })
+      : activeTab === 'all'
+        ? mixedData
+        : activeTab === 'notes'
+          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
+          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+
+  const generateTodayPlan = useCallback(() => {
+    const now = new Date();
+    const nextTasks = prioritizedTasks.slice(0, 3);
+    const nextEvents = [...filteredEvents]
+      .filter((event) => new Date(event.end_time) >= now)
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+      .slice(0, 3);
+
+    const lines: string[] = [];
+    if (taskPriorityCounts.overdue > 0) {
+      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+    } else {
+      lines.push('1) No overdue tasks: start with highest-impact open work.');
+    }
+
+    if (nextTasks.length > 0) {
+      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+    } else {
+      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+    }
+
+    if (nextEvents.length > 0) {
+      const eventLine = nextEvents
+        .map((event) =>
+          new Intl.DateTimeFormat(i18n.language, {
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date(event.start_time))
+        )
+        .join(', ');
+      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+    } else {
+      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+    }
+
+    setTodayPlan(lines.join('\n'));
+    setActiveTab('today');
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+
+  return {
+    t,
+    i18n,
+    activeTab,
+    setActiveTab,
+    taskPriority,
+    setTaskPriority,
+    searchQuery,
+    setSearchQuery,
+    showCreateNote,
+    setShowCreateNote,
+    showCreateTask,
+    setShowCreateTask,
+    todayPlan,
+    setTodayPlan,
+    isLoading,
+    handleRefresh,
+    confirmDelete,
+    deleteNote,
+    deleteTask,
+    toggleTask,
+    pendingTasksCount,
+    taskPriorityCounts,
+    dataToRender,
+    generateTodayPlan,
+    fetchNotes,
+    fetchTasks,
+  };
+};
