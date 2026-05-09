@@ -63,3 +63,34 @@ async def test_delete_memory_ownership() -> None:
     result_fail = await service.delete_memory(memory_id, user_id)
     assert result_fail is False
     mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)
+
+
+@pytest.fixture
+def mock_embed(monkeypatch):
+    async def _mock_embed(text):
+        return [0.1] * 1536
+    monkeypatch.setattr("app.domain.memory.service.embed", _mock_embed)
+    return _mock_embed
+
+from app.infrastructure.repositories.memory_repo import MemoryRepository
+from app.domain.memory.models import MemoryRelationship, Memory
+
+@pytest.mark.asyncio
+async def test_store_memory_with_related_to(mock_embed):
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+    m1 = Memory(content="existing", embedding=[0.1]*1536)
+    await m1.save()
+
+    # Mock the match_memories to bypass vector match sqlite errors
+    async def mock_match(*args, **kwargs):
+        return []
+    repo.match_memories = mock_match
+
+    memory_id = await service.store_memory("new memory", related_to=[m1.id])
+    assert memory_id is not None
+
+    rels = await MemoryRelationship.all()
+    assert len(rels) == 1
+    assert rels[0].source_id == memory_id
+    assert rels[0].target_id == m1.id
