@@ -90,6 +90,16 @@ interface AgentState {
  * - `agents`: List of loaded Agent entities.
  * - `pinnedIds`: Persisted list of agent IDs pinned to the top.
  * - `viewMode`: Persisted UI preference for list vs grid layout.
+ * - `templates`: Available agent templates.
+ * - `isLoadingTemplates`: Loading state for templates.
+ * - `error`: Last encountered error message.
+ *
+ * Methods include:
+ * - `generateAgent`: Generates a new agent from keywords using AI.
+ * - `updateAgent`: Updates an existing agent.
+ * - `fetchTemplates`: Fetches the available agent templates.
+ * - `togglePin`: Toggles the pinned status of an agent.
+ * - `setViewMode`: Sets the UI preference for list vs grid layout.
  *
  * It provides optimistic updates for creation and deletion to ensure the UI
  * responds instantly while the server request completes in the background.
