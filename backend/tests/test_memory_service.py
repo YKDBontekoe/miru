@@ -78,6 +78,136 @@ def mock_embed(monkeypatch: pytest.MonkeyPatch) -> Callable[[str], Awaitable[lis
 
 
 @pytest.mark.asyncio
+async def test_store_memory_with_related_to_exceptions(
+    mock_embed: Callable[..., Awaitable[list[float]]],
+) -> None:
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+    m1 = Memory(content="existing", embedding=[0.1] * 1536)
+    await m1.save()
+
+    async def mock_match(*args, **kwargs):
+        return []
+    repo.match_memories = mock_match
+
+    # Test ValueError
+    async def mock_bulk_error(*args, **kwargs):
+        raise ValueError("Invalid target")
+    repo.bulk_create_relationships = mock_bulk_error
+    memory_id = await service.store_memory("new memory", related_to=[m1.id])
+    assert memory_id is not None
+
+    # Test unexpected Exception
+    async def mock_bulk_exception(*args, **kwargs):
+        raise Exception("Database down")
+    repo.bulk_create_relationships = mock_bulk_exception
+    memory_id2 = await service.store_memory("new memory 2", related_to=[m1.id])
+    assert memory_id2 is not None
+
+
+@pytest.mark.asyncio
+@patch("asyncio.create_task")
+async def test_store_memory_background_task(
+    mock_create_task: MagicMock,
+    mock_embed: Callable[..., Awaitable[list[float]]],
+) -> None:
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+    user_id = uuid4()
+
+    async def mock_match(*args, **kwargs):
+        return []
+    repo.match_memories = mock_match
+
+    memory_id = await service.store_memory("new memory", user_id=user_id)
+    assert memory_id is not None
+    mock_create_task.assert_called_once()
+
+    # prevent unawaited coroutine warning
+    args, _ = mock_create_task.call_args
+    coro = args[0]
+    coro.close()
+
+@pytest.mark.asyncio
+@patch("asyncio.create_task")
+async def test_store_memory_background_task_exception(
+    mock_create_task: MagicMock,
+    mock_embed: Callable[..., Awaitable[list[float]]],
+) -> None:
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+    user_id = uuid4()
+
+    async def mock_match(*args, **kwargs):
+        return []
+    repo.match_memories = mock_match
+
+    mock_create_task.side_effect = Exception("Background task failed")
+    memory_id = await service.store_memory("new memory", user_id=user_id)
+    assert memory_id is not None
+
+    try:
+        args, _ = mock_create_task.call_args
+        coro = args[0]
+        coro.close()
+    except Exception:
+        pass
+
+
+
+@pytest.mark.asyncio
+async def test_get_memory_graph():
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+    user_id = uuid4()
+
+    async def mock_list(u_id):
+        return []
+    repo.list_all_memories = mock_list
+
+    graph = await service.get_memory_graph(user_id)
+    assert graph["nodes"] == []
+
+    async def mock_list2(u_id):
+        m1 = Memory(id=uuid4(), content="m1", user_id=u_id, embedding=[0.1]*1536)
+        return [m1]
+    repo.list_all_memories = mock_list2
+
+    async def mock_edges(m_ids):
+        return []
+    repo.get_relationships_subgraph = mock_edges
+
+    graph2 = await service.get_memory_graph(user_id)
+    assert len(graph2["nodes"]) == 1
+
+@pytest.mark.asyncio
+async def test_retrieve_memories(mock_embed):
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+
+    async def mock_match(*args, **kwargs):
+        return [Memory(content="match", embedding=[0.1]*1536)]
+    repo.match_memories = mock_match
+
+    mems = await service.retrieve_memories("query")
+    assert len(mems) == 1
+
+    mems_empty = await service.retrieve_memories("")
+    assert len(mems_empty) == 1
+
+    # cover early exits
+    mem_none = await service.store_memory("   ")
+    assert mem_none is None
+
+    async def mock_match_existing(*args, **kwargs):
+        return [Memory(id=uuid4())]
+    repo.match_memories = mock_match_existing
+
+    mem_exists = await service.store_memory("new memory")
+    assert mem_exists is None
+
+
+@pytest.mark.asyncio
 async def test_store_memory_with_related_to(
     mock_embed: Callable[..., Awaitable[list[float]]],
 ) -> None:
