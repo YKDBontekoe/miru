@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from uuid import UUID
 
@@ -56,7 +57,9 @@ class GraphExtractionService:
                     },
                     {
                         "role": "user",
-                        "content": GRAPH_EXTRACTION_USER_PROMPT.format(text=text),
+                        "content": GRAPH_EXTRACTION_USER_PROMPT.format(
+                            text=json.dumps(text, ensure_ascii=False)
+                        ),
                     },
                 ],
                 response_model=GraphExtractionSchema,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -227,7 +228,12 @@ class ChatService:
                 }
             )
         messages.append(
-            {"role": "user", "content": STREAM_CHAT_USER_PROMPT.format(user_message=user_message)}
+            {
+                "role": "user",
+                "content": STREAM_CHAT_USER_PROMPT.format(
+                    user_message=json.dumps(user_message, ensure_ascii=False)
+                ),
+            }
         )
 
         try:

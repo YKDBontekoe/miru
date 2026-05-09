@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
@@ -229,9 +230,21 @@ class CrewOrchestrator:
         )
 
         history_text = CrewOrchestrator.format_history(conversation_history)
-        history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
-        memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
-        summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
+        history_section = (
+            HISTORY_PREFIX.format(history=json.dumps(history_text, ensure_ascii=False))
+            if history_text
+            else ""
+        )
+        memory_section = (
+            MEMORY_PREFIX.format(memories=json.dumps(memory_context, ensure_ascii=False))
+            if memory_context
+            else ""
+        )
+        summary_section = (
+            SUMMARY_PREFIX.format(summary=json.dumps(room_summary, ensure_ascii=False))
+            if room_summary
+            else ""
+        )
 
         kwargs = {}
         if step_callback:
@@ -244,7 +257,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=json.dumps(user_message, ensure_ascii=False),
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
@@ -262,7 +275,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=json.dumps(user_message, ensure_ascii=False),
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,

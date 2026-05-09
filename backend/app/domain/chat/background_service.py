@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from typing import TYPE_CHECKING, Any
@@ -150,7 +151,8 @@ class ChatBackgroundService:
                 {
                     "role": "user",
                     "content": ROOM_SUMMARY_USER_PROMPT.format(
-                        current_summary=current_summary, transcript=transcript
+                        current_summary=json.dumps(current_summary, ensure_ascii=False),
+                        transcript=json.dumps(transcript, ensure_ascii=False),
                     ),
                 },
             ]

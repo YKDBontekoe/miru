@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -173,7 +174,12 @@ class AgentService:
                 "role": "system",
                 "content": AGENT_PROFILE_SYSTEM_PROMPT,
             },
-            {"role": "user", "content": AGENT_PROFILE_USER_PROMPT.format(keywords=keywords)},
+            {
+                "role": "user",
+                "content": AGENT_PROFILE_USER_PROMPT.format(
+                    keywords=json.dumps(keywords, ensure_ascii=False)
+                ),
+            },
         ]
 
         return await structured_completion(
@@ -283,7 +289,7 @@ class AgentService:
                     {
                         "role": "user",
                         "content": MOOD_CLASSIFIER_USER_PROMPT.format(
-                            recent_history=recent_history
+                            recent_history=json.dumps(recent_history, ensure_ascii=False)
                         ),
                     },
                 ],

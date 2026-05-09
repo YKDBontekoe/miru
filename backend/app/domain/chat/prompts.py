@@ -78,9 +78,11 @@ MOOD_CLASSIFIER_USER_PROMPT = (
 )
 
 ROOM_SUMMARY_SYSTEM_PROMPT = (
-    "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
-    "Please generate a new, comprehensive but concise summary of the ENTIRE conversation (merging the current summary with the new messages). "
-    "Focus on the main topics discussed, user preferences revealed, and any ongoing tasks or context the agents need to remember."
+    "You are an AI tasked with maintaining a concise running summary of a chat room "
+    "conversation. Please generate a new, comprehensive but concise summary of the ENTIRE "
+    "conversation (merging the current summary with the new messages). Focus on the "
+    "main topics discussed, user preferences revealed, and any ongoing tasks or "
+    "context the agents need to remember."
 )
 
 ROOM_SUMMARY_USER_PROMPT = (
