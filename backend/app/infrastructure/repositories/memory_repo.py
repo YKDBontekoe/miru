@@ -81,6 +81,53 @@ class MemoryRepository:
             source_id=from_id, target_id=to_id, relationship_type=rel_type
         )
 
+    async def bulk_create_relationships(
+        self,
+        from_id: UUID,
+        to_ids: list[UUID],
+        rel_type: str = "RELATED_TO",
+    ) -> list[MemoryRelationship]:
+        """Bulk create memory relationships, deduplicating to prevent duplicate rows.
+
+        Args:
+            from_id: The UUID of the source memory.
+            to_ids: A list of UUIDs of the target memories.
+            rel_type: The relationship type.
+
+        Returns:
+            A list of newly created MemoryRelationship instances.
+
+        Raises:
+            Exception: If bulk creation fails.
+        """
+        if not to_ids:
+            return []
+
+        unique_targets = list(dict.fromkeys(to_ids))
+
+        existing_records = await MemoryRelationship.filter(
+            source_id=from_id, target_id__in=unique_targets, relationship_type=rel_type
+        ).values_list("target_id", flat=True)
+
+        existing_set = set(existing_records)
+        new_targets = [tid for tid in unique_targets if tid not in existing_set]
+
+        if not new_targets:
+            return []
+
+        relationships = [
+            MemoryRelationship(
+                source_id=from_id,
+                target_id=to_id,
+                relationship_type=rel_type,
+            )
+            for to_id in new_targets
+        ]
+
+        await MemoryRelationship.bulk_create(relationships)
+
+        return await MemoryRelationship.filter(source_id=from_id, target_id__in=new_targets).all()
+
     async def find_related(self, memory_id: UUID, rel_type: str | None = None) -> list[Memory]:
         """Find related memories."""
         q = MemoryRelationship.filter(Q(source_id=memory_id) | Q(target_id=memory_id))

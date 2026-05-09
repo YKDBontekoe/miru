@@ -9,7 +9,7 @@ import pytest
 
 from app.domain.agents.models import Agent
 from app.domain.chat.entities import ChatMessageEntity
-from app.domain.memory.models import Memory
+from app.domain.memory.models import Memory, MemoryRelationship
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -482,3 +482,25 @@ class TestAuthRepository:
             user_id=uuid.uuid4(), credential_id="cred123", public_key="pubkey"
         )
         await repo.create_passkey(input_data)
+
+
+@pytest.mark.asyncio
+async def test_memory_repo_bulk_create_relationships() -> None:
+    repo = MemoryRepository()
+    m1 = Memory(content="m1", embedding=[0.1] * 1536)
+    m2 = Memory(content="m2", embedding=[0.2] * 1536)
+    m3 = Memory(content="m3", embedding=[0.3] * 1536)
+    await m1.save()
+    await m2.save()
+    await m3.save()
+
+    rels = await repo.bulk_create_relationships(m1.id, [m2.id, m3.id])
+    assert len(rels) == 2
+
+    # Assert they are in db
+    db_rels = await MemoryRelationship.all()
+    assert len(db_rels) == 2
+
+    # Test empty
+    empty_rels = await repo.bulk_create_relationships(m1.id, [])
+    assert len(empty_rels) == 0
