@@ -88,6 +88,7 @@ interface AgentState {
  *
  * State includes:
  * - `agents`: List of loaded Agent entities.
+ * - `isLoading`: Loading state for agents list.
  * - `pinnedIds`: Persisted list of agent IDs pinned to the top.
  * - `viewMode`: Persisted UI preference for list vs grid layout.
  * - `templates`: Available agent templates.
