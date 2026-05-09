@@ -73,7 +73,9 @@ MOOD_CLASSIFIER_SYSTEM_PROMPT = (
     "{mood_list}."
 )
 
-MOOD_CLASSIFIER_USER_PROMPT = "--- CONVERSATION EXCERPT ---\n{recent_history}\n--- END CONVERSATION EXCERPT ---"
+MOOD_CLASSIFIER_USER_PROMPT = (
+    "--- CONVERSATION EXCERPT ---\n{recent_history}\n--- END CONVERSATION EXCERPT ---"
+)
 
 ROOM_SUMMARY_SYSTEM_PROMPT = (
     "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
@@ -93,7 +95,9 @@ GRAPH_EXTRACTION_SYSTEM_PROMPT = (
 
 GRAPH_EXTRACTION_USER_PROMPT = "--- TEXT TO EXTRACT ---\n{text}\n--- END TEXT TO EXTRACT ---"
 
-STREAM_CHAT_USER_PROMPT = "--- LATEST USER MESSAGE ---\n{user_message}\n--- END LATEST USER MESSAGE ---"
+STREAM_CHAT_USER_PROMPT = (
+    "--- LATEST USER MESSAGE ---\n{user_message}\n--- END LATEST USER MESSAGE ---"
+)
 
 BUILD_SYSTEM_PROMPT_TEMPLATE = (
     "You are {name}.\n"
