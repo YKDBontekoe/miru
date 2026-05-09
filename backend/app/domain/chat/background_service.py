@@ -120,6 +120,7 @@ class ChatBackgroundService:
         if not self.chat_repo:
             return
 
+        from app.domain.chat.prompts import ROOM_SUMMARY_SYSTEM_PROMPT, ROOM_SUMMARY_USER_PROMPT
         from app.infrastructure.external.openrouter import structured_completion
 
         try:
@@ -144,19 +145,13 @@ class ChatBackgroundService:
             messages: list[ChatCompletionMessageParam] = [
                 {
                     "role": "system",
-                    "content": (
-                        "You are an AI tasked with maintaining a concise running summary of a chat room conversation. "
-                        "Please generate a new, comprehensive but concise summary of the ENTIRE conversation (merging the current summary with the new messages). "
-                        "Focus on the main topics discussed, user preferences revealed, and any ongoing tasks or context the agents need to remember."
+                    "content": ROOM_SUMMARY_SYSTEM_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content": ROOM_SUMMARY_USER_PROMPT.format(
+                        current_summary=current_summary, transcript=transcript
                     ),
-                },
-                {
-                    "role": "user",
-                    "content": f"CURRENT SUMMARY:\n{current_summary}",
-                },
-                {
-                    "role": "user",
-                    "content": f"LATEST MESSAGES:\n{transcript}",
                 },
             ]
 

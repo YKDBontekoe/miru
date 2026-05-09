@@ -41,6 +41,10 @@ class GraphExtractionService:
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
         try:
+            from app.domain.chat.prompts import (
+                GRAPH_EXTRACTION_SYSTEM_PROMPT,
+                GRAPH_EXTRACTION_USER_PROMPT,
+            )
             from app.infrastructure.external.openrouter import structured_completion
 
             # Using gpt-4o-mini for fast/cheap structured extraction
@@ -48,11 +52,11 @@ class GraphExtractionService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a knowledge graph extraction system. Extract key entities and relationships from the user's text. Be concise and precise. Focus on long-term facts, preferences, and relationships.",
+                        "content": GRAPH_EXTRACTION_SYSTEM_PROMPT,
                     },
                     {
                         "role": "user",
-                        "content": text,
+                        "content": GRAPH_EXTRACTION_USER_PROMPT.format(text=text),
                     },
                 ],
                 response_model=GraphExtractionSchema,

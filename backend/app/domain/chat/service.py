@@ -17,6 +17,7 @@ from app.domain.chat.dtos import (
     RoomResponse,
     RoomSummaryResponse,
 )
+from app.domain.chat.prompts import STREAM_CHAT_USER_PROMPT
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 from app.infrastructure.external.openrouter import stream_chat
 
@@ -225,7 +226,9 @@ class ChatService:
                     "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
                 }
             )
-        messages.append({"role": "user", "content": user_message})
+        messages.append(
+            {"role": "user", "content": STREAM_CHAT_USER_PROMPT.format(user_message=user_message)}
+        )
 
         try:
             response = await stream_chat(
