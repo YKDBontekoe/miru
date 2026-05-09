@@ -99,8 +99,12 @@ class MemoryRepository:
             )
             for to_id in to_ids
         ]
+
+        # Explicit fetch after insert as per instructions
         await MemoryRelationship.bulk_create(relationships)
-        return relationships
+
+        # Manually return fetched relationships
+        return await MemoryRelationship.filter(source_id=from_id, target_id__in=to_ids).all()
 
     async def find_related(self, memory_id: UUID, rel_type: str | None = None) -> list[Memory]:
         """Find related memories."""
