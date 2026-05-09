@@ -88,6 +88,14 @@ async def test_store_memory_with_related_to(mock_embed):
     repo.match_memories = mock_match
 
     memory_id = await service.store_memory("new memory", related_to=[m1.id])
+
+    # Assert bulk_create_relationships logic coverage
+    assert memory_id is not None
+    rels = await MemoryRelationship.all()
+    assert len(rels) == 1
+    assert rels[0].source_id == memory_id
+    assert rels[0].target_id == m1.id
+
     assert memory_id is not None
 
     rels = await MemoryRelationship.all()
