@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { Platform, RefreshControl, ScrollView, View, FlatList, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,7 @@ import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
+
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -90,6 +91,30 @@ export default function HomeScreen() {
   useEffect(() => {
     Promise.all([fetchRooms(), fetchAgents(), fetchTasks(), fetchEvents()]);
   }, [fetchRooms, fetchAgents, fetchTasks, fetchEvents]);
+
+  const renderTaskItem = React.useCallback(({ item: task }: { item: any }) => (
+    <HomeTaskRow task={task} onToggle={() => toggleTask(task.id)} />
+  ), [toggleTask]);
+
+  const renderEventItem = React.useCallback(({ item: event }: { item: any }) => (
+    <View style={{ borderRadius: 16, backgroundColor: HOME_COLORS.softSurface, padding: 12, marginBottom: 8 }}>
+      <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+        {event.title}
+      </AppText>
+      <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+        {formatTimeRange(event, i18n.language)}
+        {event.location ? ` · ${event.location}` : ''}
+      </AppText>
+    </View>
+  ), [i18n.language]);
+
+  const renderRoomItem = React.useCallback(({ item: room }: { item: any }) => (
+    <HomeChatRow room={room} onPress={() => router.push(`/(main)/chat/${room.id}`)} t={t} />
+  ), [router, t]);
+
+  const renderAgentItem = React.useCallback(({ item: agent }: { item: any }) => (
+    <HomeAgentBadge agent={agent} onPress={() => router.push('/(main)/agents')} />
+  ), [router]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -219,9 +244,12 @@ export default function HomeScreen() {
                 </AppText>
               </View>
             ) : (
-              sortedPendingTasks
-                .slice(0, 4)
-                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
+              <FlatList
+                data={sortedPendingTasks.slice(0, 4)}
+                keyExtractor={(task) => task.id}
+                renderItem={renderTaskItem}
+                scrollEnabled={false}
+              />
             )}
           </HomeSurfaceCard>
 
@@ -247,25 +275,10 @@ export default function HomeScreen() {
                 </AppText>
               </View>
             ) : (
-              upcomingEvents.map((event) => (
-                <View
-                  key={event.id}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
-                    {event.title}
-                  </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
-                    {formatTimeRange(event, i18n.language)}
-                    {event.location ? ` · ${event.location}` : ''}
-                  </AppText>
-                </View>
-              ))
+              <FlatList
+                data={upcomingEvents}
+                keyExtractor={(event) => event.id}
+                renderItem={renderEventItem} scrollEnabled={false} />
             )}
           </HomeSurfaceCard>
 
@@ -276,14 +289,10 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.see_all')}
                 onAction={() => router.push('/(main)/chat')}
               />
-              {recentRooms.map((room) => (
-                <HomeChatRow
-                  key={room.id}
-                  room={room}
-                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
-                  t={t}
-                />
-              ))}
+              <FlatList
+                data={recentRooms}
+                keyExtractor={(room) => room.id}
+                renderItem={renderRoomItem} scrollEnabled={false} />
             </HomeSurfaceCard>
           ) : null}
 
@@ -294,17 +303,14 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                {agents
-                  .slice(0, 4)
-                  .map((agent) => (
-                    <HomeAgentBadge
-                      key={agent.id}
-                      agent={agent}
-                      onPress={() => router.push('/(main)/agents')}
-                    />
-                  ))}
-              </View>
+              <FlatList
+                data={agents.slice(0, 4)}
+                keyExtractor={(agent) => agent.id}
+                renderItem={renderAgentItem}
+                scrollEnabled={false}
+                numColumns={4}
+                columnWrapperStyle={{ justifyContent: 'space-between' }}
+              />
             </HomeSurfaceCard>
           ) : null}
 
