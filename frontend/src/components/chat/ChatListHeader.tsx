@@ -43,6 +43,7 @@ export function ChatListHeader({
   activeFilterCount,
   roomCount,
 }: ChatListHeaderProps) {
+  const { C } = useTheme();
   const [localQuery, setLocalQuery] = useState(query);
 
   useEffect(() => {
