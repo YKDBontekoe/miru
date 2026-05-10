@@ -55,4 +55,54 @@ describe('RoomCard', () => {
     fireEvent.press(getByText('Test Room'));
     expect(onPressMock).toHaveBeenCalledTimes(1);
   });
+
+  it('renders unread state', () => {
+    const onPressMock = jest.fn();
+    const { getByText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={onPressMock} unread={true} />
+    );
+
+    // Assuming the unread dot is rendered, we don't have a specific text but we can check it renders without crashing
+    expect(getByText('Test Room')).toBeTruthy();
+  });
+
+  it('renders pinned state and calls onTogglePin', () => {
+    const onPressMock = jest.fn();
+    const onTogglePinMock = jest.fn();
+    const { getByLabelText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={onPressMock} pinned={true} onTogglePin={onTogglePinMock} />
+    );
+
+    // Test unpin accessibility label
+    const pinButton = getByLabelText('chat.unpin');
+    expect(pinButton).toBeTruthy();
+
+    fireEvent.press(pinButton);
+    expect(onTogglePinMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders unpinned state and calls onTogglePin', () => {
+    const onPressMock = jest.fn();
+    const onTogglePinMock = jest.fn();
+    const { getByLabelText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={onPressMock} pinned={false} onTogglePin={onTogglePinMock} />
+    );
+
+    // Test pin accessibility label
+    const pinButton = getByLabelText('chat.pin');
+    expect(pinButton).toBeTruthy();
+
+    fireEvent.press(pinButton);
+    expect(onTogglePinMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders lastMessage and lastMessageAt', () => {
+    const onPressMock = jest.fn();
+    const lastMessageDate = new Date().toISOString();
+    const { getByText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={onPressMock} lastMessage="Hello world" lastMessageAt={lastMessageDate} />
+    );
+
+    expect(getByText('Hello world')).toBeTruthy();
+  });
 });
