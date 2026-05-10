@@ -33,21 +33,7 @@ import { RoomPromptRail } from '@/components/chat/RoomPromptRail';
 import { useChatRoomSetup } from '@/hooks/useChatRoomSetup';
 import { getAgentColor } from '@/utils/chatUtils';
 import { SecureLocalStorage } from '@/core/services/storage';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { useProductivityStore } from '@/store/useProductivityStore';
-
-const C = {
-  bg: DESIGN_TOKENS.colors.pageBg,
-  primary: DESIGN_TOKENS.colors.primary,
-  primarySoft: DESIGN_TOKENS.colors.primarySoft,
-  text: DESIGN_TOKENS.colors.text,
-  border: DESIGN_TOKENS.colors.border,
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  destructive: DESIGN_TOKENS.colors.destructive,
-};
 
 interface RoomShortcut {
   id: string;
