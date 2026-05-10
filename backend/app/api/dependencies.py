@@ -9,15 +9,18 @@ from fastapi import Depends
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
+from app.domain.integrations.interfaces.steam_client import ISteamClient
+from app.domain.integrations.use_cases.resolve_steam_user import ResolveSteamUserUseCase
 from app.domain.memory.service import MemoryService
 from app.infrastructure.database.supabase import SupabaseClient
+from app.infrastructure.external.steam_client import SteamClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 # ---------------------------------------------------------------------------
-# Repository factories
+# Repository / Client factories
 # ---------------------------------------------------------------------------
 
 
@@ -64,3 +67,13 @@ def get_memory_service(
 
 def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
     return AuthService(repo)
+
+
+def get_steam_client() -> ISteamClient:
+    """Dependency injection for the Steam client."""
+    return SteamClient()
+
+
+def get_resolve_steam_user_use_case() -> ResolveSteamUserUseCase:
+    """Dependency injection for the ResolveSteamUser use case."""
+    return ResolveSteamUserUseCase(steam_client=get_steam_client())

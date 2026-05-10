@@ -14,7 +14,7 @@ def steam_id() -> str:
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_player_summaries", new_callable=AsyncMock)
 async def test_steam_player_summary_tool(mock_get_summaries: typing.Any, steam_id: str) -> None:
     """Test fetching player summary."""
     mock_get_summaries.return_value = [
@@ -34,7 +34,7 @@ async def test_steam_player_summary_tool(mock_get_summaries: typing.Any, steam_i
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_player_summaries", new_callable=AsyncMock)
 async def test_steam_player_summary_tool_not_found(
     mock_get_summaries: typing.Any, steam_id: str
 ) -> None:
@@ -48,7 +48,7 @@ async def test_steam_player_summary_tool_not_found(
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_owned_games", new_callable=AsyncMock)
 async def test_steam_owned_games_tool(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test fetching owned games."""
     mock_get_games.return_value = [
@@ -67,7 +67,7 @@ async def test_steam_owned_games_tool(mock_get_games: typing.Any, steam_id: str)
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_owned_games", new_callable=AsyncMock)
 async def test_steam_owned_games_tool_empty(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test handling when profile has no games or is private."""
     mock_get_games.return_value = []
@@ -79,7 +79,7 @@ async def test_steam_owned_games_tool_empty(mock_get_games: typing.Any, steam_id
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_player_summaries", new_callable=AsyncMock)
 async def test_steam_player_summary_tool_exception(
     mock_get_summaries: typing.Any, steam_id: str
 ) -> None:
@@ -90,7 +90,7 @@ async def test_steam_player_summary_tool_exception(
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_owned_games", new_callable=AsyncMock)
 async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, steam_id: str) -> None:
     mock_get_games.side_effect = Exception("API error")
     tool = SteamOwnedGamesTool(steam_id=steam_id)
@@ -98,7 +98,7 @@ async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, stea
     assert "Error fetching owned games" in result
 
 
-@patch("app.infrastructure.external.steam_tool.get_player_summaries", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_player_summaries", new_callable=AsyncMock)
 def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id: str) -> None:
     """Test sync tool execution."""
     mock_get_summaries.return_value = [
@@ -115,7 +115,7 @@ def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id
     assert "Online" in result
 
 
-@patch("app.infrastructure.external.steam_tool.get_owned_games", new_callable=AsyncMock)
+@patch("app.infrastructure.external.steam_client.SteamClient.get_owned_games", new_callable=AsyncMock)
 def test_steam_owned_games_tool_sync(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test sync tool execution for owned games."""
     mock_get_games.return_value = [
