@@ -10,7 +10,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ChatBubble } from '@/components/ChatBubble';
 import { ChatInputBar } from '@/components/ChatInputBar';
@@ -30,21 +33,7 @@ import { RoomPromptRail } from '@/components/chat/RoomPromptRail';
 import { useChatRoomSetup } from '@/hooks/useChatRoomSetup';
 import { getAgentColor } from '@/utils/chatUtils';
 import { SecureLocalStorage } from '@/core/services/storage';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { useProductivityStore } from '@/store/useProductivityStore';
-
-const C = {
-  bg: DESIGN_TOKENS.colors.pageBg,
-  primary: DESIGN_TOKENS.colors.primary,
-  primarySoft: DESIGN_TOKENS.colors.primarySoft,
-  text: DESIGN_TOKENS.colors.text,
-  border: DESIGN_TOKENS.colors.border,
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  destructive: DESIGN_TOKENS.colors.destructive,
-};
 
 interface RoomShortcut {
   id: string;
@@ -110,6 +99,7 @@ export default function ChatRoomScreen() {
 
   const flatListRef = useRef<FlatList>(null);
   const messageCount = useRef(0);
+  const { C } = useTheme();
 
   const { roomAgents, setRoomAgents } = useChatRoomSetup(roomId);
 
@@ -560,7 +550,7 @@ export default function ChatRoomScreen() {
   }, [events, tasks]);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F2F7F2]" edges={['top', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <ChatRoomHeader
         room={room}
         roomAgents={roomAgents}
@@ -578,14 +568,22 @@ export default function ChatRoomScreen() {
         {hubError ? <ChatInlineBanner text={hubError} tone="error" /> : null}
         {notice ? <ChatInlineBanner text={notice.text} tone={notice.tone} /> : null}
         {(isStreaming || currentActivity) && (
-          <View className="mx-3 mb-2 rounded-xl border border-[#147D644D] bg-[#147D641F] px-2.5 py-2 flex-row items-center justify-between">
-            <AppText variant="caption" className="text-[#147D64] font-bold">
+          <View
+            style={[
+              styles.streamingBanner,
+              {
+                borderColor: `${C.primary}4D`,
+                backgroundColor: C.primarySurface,
+              }
+            ]}
+          >
+            <AppText variant="caption" style={[styles.streamingBannerText, { color: C.primary }]}>
               {currentActivity
                 ? `${currentActivity.agent_names?.join(', ') || 'Agent'} · ${currentActivity.activity}`
                 : t('chat.streaming', { defaultValue: 'Generating response...' })}
             </AppText>
             <ScalePressable onPress={stopStreaming} accessibilityRole="button">
-              <AppText variant="caption" className="text-[#147D64] font-bold">
+              <AppText variant="caption" style={[styles.streamingBannerText, { color: C.primary }]}>
                 {t('chat.stop', { defaultValue: 'Stop' })}
               </AppText>
             </ScalePressable>
@@ -715,3 +713,20 @@ export default function ChatRoomScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  streamingBanner: {
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  streamingBannerText: {
+    fontWeight: 'bold',
+  },
+});
