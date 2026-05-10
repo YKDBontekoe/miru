@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.dependencies import get_resolve_steam_user_use_case
+from app.api.v1.integrations_schemas import SteamUserResponse
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.infrastructure.external.steam import get_player_summaries, resolve_vanity_url
+from app.domain.integrations.use_cases.resolve_steam_user import (
+    ResolveSteamUserUseCase,
+    SteamUserNotFoundError,
+)
 
 router = APIRouter(tags=["Integrations"])
 
 
 @router.get(
     "/steam/resolve-user",
+    response_model=SteamUserResponse,
     summary="Resolve Steam user",
     description="Resolve a Steam username or ID and return the Steam64 ID and persona name. Requires authentication.",
     responses={
@@ -30,23 +38,13 @@ router = APIRouter(tags=["Integrations"])
 async def resolve_steam_user(
     username: str,
     user_id: CurrentUser,
-) -> dict[str, str]:
+    use_case: Annotated[ResolveSteamUserUseCase, Depends(get_resolve_steam_user_use_case)],
+) -> SteamUserResponse:
     """Resolve a Steam username or ID and return the Steam64 ID and persona name."""
-    steam_id = None
-
-    # Check if it's already a 17-digit numeric string
-    if username.isdigit() and len(username) == 17:
-        steam_id = username
-    else:
-        steam_id = await resolve_vanity_url(username)
-
-    if not steam_id:
-        raise HTTPException(status_code=404, detail="Steam user not found")
-
-    # Get the persona name to confirm and return to UI
-    summaries = await get_player_summaries([steam_id])
-    persona_name = "Unknown"
-    if summaries:
-        persona_name = summaries[0].get("personaname", "Unknown")
-
-    return {"steam_id": steam_id, "persona_name": persona_name}
+    try:
+        user_entity = await use_case.execute(username)
+        return SteamUserResponse(
+            steam_id=user_entity.steam_id, persona_name=user_entity.persona_name
+        )
+    except SteamUserNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Steam user not found") from e

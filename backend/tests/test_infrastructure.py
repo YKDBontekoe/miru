@@ -302,7 +302,7 @@ def test_resolve_steam_user_with_numeric_id(client) -> None:  # type: ignore[no-
 
     with (
         patch(
-            "app.api.v1.integrations.get_player_summaries",
+            "app.infrastructure.external.steam_client.SteamClient.get_player_summaries",
             new=AsyncMock(return_value=[{"personaname": "TestPlayer"}]),
         ),
     ):
@@ -321,11 +321,11 @@ def test_resolve_steam_user_with_vanity_url(client) -> None:  # type: ignore[no-
 
     with (
         patch(
-            "app.api.v1.integrations.resolve_vanity_url",
+            "app.infrastructure.external.steam_client.SteamClient.resolve_vanity_url",
             new=AsyncMock(return_value="76561198000000001"),
         ),
         patch(
-            "app.api.v1.integrations.get_player_summaries",
+            "app.infrastructure.external.steam_client.SteamClient.get_player_summaries",
             new=AsyncMock(return_value=[{"personaname": "VanityPlayer"}]),
         ),
     ):
@@ -343,7 +343,7 @@ def test_resolve_steam_user_not_found(client) -> None:  # type: ignore[no-untype
     from tests.conftest import auth_headers
 
     with patch(
-        "app.api.v1.integrations.resolve_vanity_url",
+        "app.infrastructure.external.steam_client.SteamClient.resolve_vanity_url",
         new=AsyncMock(return_value=None),
     ):
         response = client.get(
@@ -358,11 +358,11 @@ def test_resolve_steam_user_no_summaries(client) -> None:  # type: ignore[no-unt
 
     with (
         patch(
-            "app.api.v1.integrations.resolve_vanity_url",
+            "app.infrastructure.external.steam_client.SteamClient.resolve_vanity_url",
             new=AsyncMock(return_value="76561198000000002"),
         ),
         patch(
-            "app.api.v1.integrations.get_player_summaries",
+            "app.infrastructure.external.steam_client.SteamClient.get_player_summaries",
             new=AsyncMock(return_value=[]),
         ),
     ):
