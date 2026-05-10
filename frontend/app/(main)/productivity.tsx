@@ -1,16 +1,16 @@
 import React, { useCallback } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { theme } from '../../src/core/theme';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import {
   RenderItemData,
   useProductivityViewModel,
-} from '../../src/hooks/viewmodels/useProductivityViewModel';
+} from '@/hooks/viewmodels/useProductivityViewModel';
 import {
   ProductivityEventCard,
   ProductivityFilters,
@@ -18,8 +18,8 @@ import {
   ProductivityListEmpty,
   ProductivityTabs,
   ProductivityTodayPlan,
-} from '../../src/components/productivity/ProductivityWidgets';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+} from '@/components/productivity/ProductivityWidgets';
+import { CalendarEvent, Note, Task } from '@/core/models';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -124,13 +124,15 @@ export default function ProductivityScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityListEmpty
-            t={t}
-            searchQuery={searchQuery}
-            activeTab={activeTab}
-            onShowCreateNote={() => setShowCreateNote(true)}
-            onShowCreateTask={() => setShowCreateTask(true)}
-          />
+          isLoading ? null : (
+            <ProductivityListEmpty
+              t={t}
+              searchQuery={searchQuery}
+              activeTab={activeTab}
+              onShowCreateNote={() => setShowCreateNote(true)}
+              onShowCreateTask={() => setShowCreateTask(true)}
+            />
+          )
         }
       />
 

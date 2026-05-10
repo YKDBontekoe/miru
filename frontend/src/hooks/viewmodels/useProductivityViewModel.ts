@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
-import { CalendarEvent, Note, Task } from '../../core/models';
-import { useProductivityStore } from '../../store/useProductivityStore';
+import { CalendarEvent, Note, Task } from '@/core/models';
+import { useProductivityStore } from '@/store/useProductivityStore';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -219,6 +219,17 @@ export function useProductivityViewModel() {
       return dueDate >= start && dueDate < end;
     });
 
+    const upcomingTasks = filteredTasks.filter((task) => {
+      if (task.completed || !task.due_date) return false;
+      const dueDate = new Date(task.due_date);
+      return dueDate >= end;
+    });
+
+    const noDueTasks = filteredTasks.filter((task) => {
+      if (task.completed) return false;
+      return !task.due_date || isNaN(new Date(task.due_date).getTime());
+    });
+
     const upcomingEvents = filteredEvents.filter((event) => {
       const startTime = new Date(event.start_time);
       return startTime >= start && startTime < weekEnd;
@@ -235,6 +246,18 @@ export function useProductivityViewModel() {
         type: 'task' as const,
         item: task,
         id: `today-${task.id}`,
+        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
+      })),
+      ...upcomingTasks.map((task) => ({
+        type: 'task' as const,
+        item: task,
+        id: `upcoming-${task.id}`,
+        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
+      })),
+      ...noDueTasks.map((task) => ({
+        type: 'task' as const,
+        item: task,
+        id: `nodue-${task.id}`,
         date: task.due_date ? new Date(task.due_date).getTime() : undefined,
       })),
       ...upcomingEvents.map((event) => ({
@@ -263,23 +286,43 @@ export function useProductivityViewModel() {
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
-    const nextTasks = prioritizedTasks.slice(0, 3);
-    const nextEvents = [...filteredEvents]
+    const allPendingTasks = tasks.filter((t) => !t.completed);
+    const sortedTasks = [...allPendingTasks].sort((a, b) => {
+      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      return aDue - bDue;
+    });
+
+    const nextTasks = sortedTasks.slice(0, 3);
+    const nextEvents = [...events]
       .filter((event) => new Date(event.end_time) >= now)
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
       .slice(0, 3);
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(
+        t('productivity.plan.overdue_start', { count: taskPriorityCounts.overdue }) ||
+          `1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`
+      );
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(
+        t('productivity.plan.no_overdue') ||
+          '1) No overdue tasks: start with highest-impact open work.'
+      );
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      const taskTitles = nextTasks.map((task) => task.title).join(', ');
+      lines.push(
+        t('productivity.plan.focus_block', { tasks: taskTitles }) ||
+          `2) Focus block: ${taskTitles}.`
+      );
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(
+        t('productivity.plan.no_pending') ||
+          '2) Focus block: no pending tasks, use this for planning or review.'
+      );
     }
 
     if (nextEvents.length > 0) {
@@ -291,14 +334,20 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(
+        t('productivity.plan.calendar_checkpoints', { events: eventLine }) ||
+          `3) Calendar checkpoints at ${eventLine}.`
+      );
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(
+        t('productivity.plan.light_calendar') ||
+          '3) Calendar is light: reserve time for deep work and wrap-up.'
+      );
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [events, i18n.language, t, taskPriorityCounts.overdue, tasks]);
 
   return {
     t,

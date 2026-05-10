@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { debounce } from 'lodash';
+import { useEffect, useMemo, useState } from 'react';
 import { TFunction } from 'i18next';
-import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { AppText } from '@/components/AppText';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { Tab, TaskPriority } from '../../hooks/viewmodels/useProductivityViewModel';
-import { CalendarEvent } from '../../core/models';
+import { Tab, TaskPriority } from '@/hooks/viewmodels/useProductivityViewModel';
+import { CalendarEvent } from '@/core/models';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -53,61 +55,91 @@ export const ProductivityHeader = React.memo(
     onGeneratePlan,
     onShowCreateNote,
     onShowCreateTask,
-  }: ProductivityHeaderProps) => (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerRow}>
-        <View>
-          <AppText variant="h1" style={styles.headerTitle}>
-            {t('productivity.title') || 'Workspace'}
-          </AppText>
-          <AppText style={styles.headerSubtitle}>
-            {pendingTasksCount === 0
-              ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
-              : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
-                `You have ${pendingTasksCount} tasks pending.`}
-          </AppText>
+  }: ProductivityHeaderProps) => {
+    const [localSearch, setLocalSearch] = useState(searchQuery);
+
+    const debouncedSetSearchQuery = useMemo(
+      () => debounce((v: string) => setSearchQuery(v), 300),
+      [setSearchQuery]
+    );
+
+    useEffect(() => {
+      return () => {
+        debouncedSetSearchQuery.cancel();
+      };
+    }, [debouncedSetSearchQuery]);
+
+    useEffect(() => {
+      setLocalSearch(searchQuery);
+    }, [searchQuery]);
+
+    const handleSearchChange = (text: string) => {
+      setLocalSearch(text);
+      debouncedSetSearchQuery(text);
+    };
+
+    return (
+      <View style={styles.headerContainer}>
+        <View style={styles.headerRow}>
+          <View>
+            <AppText variant="h1" style={styles.headerTitle}>
+              {t('productivity.title') || 'Workspace'}
+            </AppText>
+            <AppText style={styles.headerSubtitle}>
+              {pendingTasksCount === 0
+                ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
+                : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
+                  `You have ${pendingTasksCount} tasks pending.`}
+            </AppText>
+          </View>
+
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={onGeneratePlan}
+              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Generate plan"
+            >
+              <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
+            </Pressable>
+            <Pressable
+              onPress={onShowCreateNote}
+              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create note"
+            >
+              <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
+            </Pressable>
+            <Pressable
+              onPress={onShowCreateTask}
+              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Create task"
+            >
+              <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
+            </Pressable>
+          </View>
         </View>
 
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={onGeneratePlan}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
-          </Pressable>
-          <Pressable
-            onPress={onShowCreateNote}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
-          </Pressable>
-          <Pressable
-            onPress={onShowCreateTask}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
-          </Pressable>
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={18}
+            color={T.onSurface.mutedLight}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            value={localSearch}
+            onChangeText={handleSearchChange}
+            placeholder={t('productivity.search') || 'Search notes & tasks...'}
+            placeholderTextColor={T.onSurface.disabledLight}
+            style={styles.searchInput}
+            clearButtonMode="while-editing"
+          />
         </View>
       </View>
-
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={18}
-          color={T.onSurface.mutedLight}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder={t('productivity.search') || 'Search notes & tasks...'}
-          placeholderTextColor={T.onSurface.disabledLight}
-          style={styles.searchInput}
-          clearButtonMode="while-editing"
-        />
-      </View>
-    </View>
-  )
+    );
+  }
 );
 
 ProductivityHeader.displayName = 'ProductivityHeader';
@@ -250,7 +282,11 @@ export const ProductivityTodayPlan = React.memo(
       <View style={styles.planContainer}>
         <View style={styles.planHeader}>
           <AppText style={styles.planTitle}>Today plan</AppText>
-          <Pressable onPress={() => setTodayPlan(null)}>
+          <Pressable
+            onPress={() => setTodayPlan(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss plan"
+          >
             <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
           </Pressable>
         </View>
