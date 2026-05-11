@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime
-from uuid import UUID
-
 from typing import Annotated, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
@@ -32,7 +31,7 @@ class WSSendMessageMessage(WSBaseMessage):
     type: Literal["send_message"]
     room_id: UUID
     content: str = Field(..., max_length=10000)
-    clientTempId: str | None = Field(None, max_length=255)
+    client_temp_id: str | None = Field(None, max_length=255, alias="clientTempId")
 
 
 ClientWSMessage = Annotated[

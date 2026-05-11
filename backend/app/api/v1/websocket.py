@@ -181,7 +181,7 @@ async def websocket_chat_hub(
                     )
                     continue
 
-                client_temp_id = msg.clientTempId
+                client_temp_id = msg.client_temp_id
                 # Fire-and-forget — the hub pushes results back asynchronously
                 asyncio.create_task(
                     _handle_send_message(service, user_id, room_id, content, client_temp_id, lang)
