@@ -3,9 +3,42 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, TypeAdapter, field_validator
+
+
+class WSBaseMessage(BaseModel):
+    pass
+
+
+class WSPingMessage(WSBaseMessage):
+    type: Literal["ping"]
+
+
+class WSJoinRoomMessage(WSBaseMessage):
+    type: Literal["join_room"]
+    room_id: UUID
+
+
+class WSLeaveRoomMessage(WSBaseMessage):
+    type: Literal["leave_room"]
+    room_id: UUID
+
+
+class WSSendMessageMessage(WSBaseMessage):
+    type: Literal["send_message"]
+    room_id: UUID
+    content: str = Field(..., max_length=10000)
+    client_temp_id: str | None = Field(None, max_length=255, alias="clientTempId")
+
+
+ClientWSMessage = Annotated[
+    WSPingMessage | WSJoinRoomMessage | WSLeaveRoomMessage | WSSendMessageMessage,
+    Field(discriminator="type"),
+]
+ClientWSMessageAdapter = TypeAdapter(ClientWSMessage)
 
 
 class RoomCreate(BaseModel):

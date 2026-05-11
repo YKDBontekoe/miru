@@ -28,9 +28,11 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from pydantic import ValidationError
 
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
+from app.domain.chat.dtos import ClientWSMessageAdapter
 from app.domain.chat.service import ChatService
 from app.infrastructure.database.supabase import get_supabase
 from app.infrastructure.repositories.agent_repo import AgentRepository
@@ -135,74 +137,32 @@ async def websocket_chat_hub(
             raw = await websocket.receive_text()
 
             try:
-                msg: dict = json.loads(raw)
-            except json.JSONDecodeError:
+                msg = ClientWSMessageAdapter.validate_json(raw)
+            except (json.JSONDecodeError, ValidationError) as e:
+                logger.warning("WS validation failed: %s", e)
                 await chat_hub.send_to_user(
-                    user_id, {"type": "error", "data": {"message": "Invalid JSON"}}
+                    user_id, {"type": "error", "data": {"message": "Invalid JSON or schema"}}
                 )
                 continue
 
-            msg_type = msg.get("type")
-
-            if msg_type == "ping":
+            if msg.type == "ping":
                 await chat_hub.send_to_user(user_id, {"type": "pong"})
 
-            elif msg_type == "join_room":
-                try:
-                    room_id = UUID(msg["room_id"])
-                except (KeyError, ValueError):
-                    await chat_hub.send_to_user(
-                        user_id,
-                        {
-                            "type": "error",
-                            "action": "join_room",
-                            "data": {
-                                "message": "invalid room_id",
-                                "room_id": msg.get("room_id"),
-                            },
-                        },
-                    )
-                    continue
+            elif msg.type == "join_room":
+                room_id = msg.room_id
                 chat_hub.join_room(user_id, room_id)
                 await chat_hub.send_to_user(
                     user_id, {"type": "joined_room", "room_id": str(room_id)}
                 )
 
-            elif msg_type == "leave_room":
-                try:
-                    room_id = UUID(msg["room_id"])
-                except (KeyError, ValueError):
-                    await chat_hub.send_to_user(
-                        user_id,
-                        {
-                            "type": "error",
-                            "action": "leave_room",
-                            "data": {
-                                "message": "invalid room_id",
-                                "room_id": msg.get("room_id"),
-                            },
-                        },
-                    )
-                    continue
+            elif msg.type == "leave_room":
+                room_id = msg.room_id
                 chat_hub.leave_room(user_id, room_id)
 
-            elif msg_type == "send_message":
-                try:
-                    room_id = UUID(msg["room_id"])
-                    content = str(msg.get("content", "")).strip()
-                except (KeyError, ValueError):
-                    await chat_hub.send_to_user(
-                        user_id,
-                        {
-                            "type": "error",
-                            "action": "send_message",
-                            "data": {
-                                "message": "invalid room_id",
-                                "room_id": msg.get("room_id"),
-                            },
-                        },
-                    )
-                    continue
+            elif msg.type == "send_message":
+                room_id = msg.room_id
+                content = msg.content.strip()
+
                 if not content:
                     continue
 
@@ -221,7 +181,7 @@ async def websocket_chat_hub(
                     )
                     continue
 
-                client_temp_id: str | None = msg.get("clientTempId") or None
+                client_temp_id = msg.client_temp_id
                 # Fire-and-forget — the hub pushes results back asynchronously
                 asyncio.create_task(
                     _handle_send_message(service, user_id, room_id, content, client_temp_id, lang)
