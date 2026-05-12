@@ -209,6 +209,7 @@ def test_get_room_summaries_endpoint_empty(client: TestClient, authed_headers: d
     finally:
         app.dependency_overrides.clear()
 
+
 def test_list_rooms_endpoint(client: TestClient, authed_headers: dict) -> None:
     user_id = uuid4()
     app.dependency_overrides[get_current_user] = lambda: user_id
@@ -439,12 +440,16 @@ def test_remove_agent_from_room_endpoint_success(client: TestClient, authed_head
         )
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
-        mock_service.remove_agent_from_room.assert_called_once_with(room_id, agent_id, user_id=user_id)
+        mock_service.remove_agent_from_room.assert_called_once_with(
+            room_id, agent_id, user_id=user_id
+        )
     finally:
         app.dependency_overrides.clear()
 
 
-def test_remove_agent_from_room_endpoint_not_found(client: TestClient, authed_headers: dict) -> None:
+def test_remove_agent_from_room_endpoint_not_found(
+    client: TestClient, authed_headers: dict
+) -> None:
     user_id = uuid4()
     room_id = uuid4()
     agent_id = uuid4()
@@ -493,7 +498,9 @@ def test_get_room_messages_endpoint_success(client: TestClient, authed_headers: 
         body = response.json()
         assert len(body) == 1
         assert body[0]["content"] == "Hello"
-        mock_service.get_room_messages.assert_called_once_with(room_id, user_id=user_id, limit=50, before_id=None)
+        mock_service.get_room_messages.assert_called_once_with(
+            room_id, user_id=user_id, limit=50, before_id=None
+        )
     finally:
         app.dependency_overrides.clear()
 
