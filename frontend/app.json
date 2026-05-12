@@ -18,7 +18,16 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": false
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            },
+            "10.0.2.2": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
         }
       }
     },
@@ -31,7 +40,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.miru.app"
+      "package": "com.miru.app",
+      "networkSecurityConfig": "@xml/network_security_config"
     },
     "web": {
       "favicon": "./assets/favicon.png"

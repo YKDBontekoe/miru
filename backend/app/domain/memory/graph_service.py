@@ -71,12 +71,13 @@ class GraphExtractionService:
             return
 
         try:
-            async with in_transaction():
+            async with in_transaction() as tx:
                 # 1. Upsert Nodes
                 node_map: dict[str, MemoryGraphNode] = {}
                 for entity in extraction.entities:
                     # Atomic get_or_create to prevent race conditions
                     node, created = await MemoryGraphNode.get_or_create(
+                        using_db=tx,
                         user_id=user_id,
                         name=entity.name,
                         defaults={
@@ -87,7 +88,7 @@ class GraphExtractionService:
                     # Append description if it's new information
                     if not created and entity.description not in str(node.description):
                         node.description = f"{node.description}\n{entity.description}".strip()
-                        await node.save()
+                        await node.save(using_db=tx)
 
                     node_map[entity.name.lower()] = node
 
@@ -99,6 +100,7 @@ class GraphExtractionService:
                     if source_node and target_node:
                         # Atomic get_or_create to prevent race conditions
                         edge, created = await MemoryGraphEdge.get_or_create(
+                            using_db=tx,
                             source_node=source_node,
                             target_node=target_node,
                             relationship=rel.relationship,
@@ -110,7 +112,7 @@ class GraphExtractionService:
                         if not created:
                             # Strengthen existing relationship
                             edge.weight = min(1.0, edge.weight + 0.1)
-                            await edge.save()
+                            await edge.save(using_db=tx)
 
         except Exception:
             logger.warning("Failed to store graph elements", exc_info=True)
