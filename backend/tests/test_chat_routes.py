@@ -208,3 +208,384 @@ def test_get_room_summaries_endpoint_empty(client: TestClient, authed_headers: d
         mock_service.list_room_summaries.assert_called_once_with(user_id, limit=50, before_id=None)
     finally:
         app.dependency_overrides.clear()
+
+def test_list_rooms_endpoint(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.list_rooms.return_value = []
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/v1/rooms", headers=authed_headers)
+        assert response.status_code == 200
+        assert response.json() == []
+        mock_service.list_rooms.assert_called_once_with(user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_create_room_endpoint(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.create_room.return_value = {
+        "id": room_id,
+        "name": "New Room",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+    }
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.post(
+            "/api/v1/rooms",
+            json={"name": "New Room"},
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["name"] == "New Room"
+        mock_service.create_room.assert_called_once_with("New Room", user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_chat_route_missing_message(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.post(
+            "/api/v1/chat",
+            json={"message": ""},
+            headers=authed_headers,
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"]["error"] == "message_required"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_run_crew_route_missing_message(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.post(
+            "/api/v1/crew",
+            json={"message": ""},
+            headers=authed_headers,
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"]["error"] == "message_required"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_update_room_endpoint(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.update_room.return_value = {
+        "id": room_id,
+        "name": "Updated Room",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+    }
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.patch(
+            f"/api/v1/rooms/{room_id}",
+            json={"name": "Updated Room"},
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["name"] == "Updated Room"
+        mock_service.update_room.assert_called_once_with(room_id, "Updated Room", user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_delete_room_endpoint(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.delete_room.return_value = True
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}",
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+        mock_service.delete_room.assert_called_once_with(room_id, user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_add_agent_to_room_endpoint_success(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    agent_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.add_agent_to_room.return_value = True
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.post(
+            f"/api/v1/rooms/{room_id}/agents",
+            json={"agent_id": str(agent_id)},
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+        mock_service.add_agent_to_room.assert_called_once_with(room_id, agent_id, user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_add_agent_to_room_endpoint_not_found(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    agent_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.add_agent_to_room.return_value = None
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.post(
+            f"/api/v1/rooms/{room_id}/agents",
+            json={"agent_id": str(agent_id)},
+            headers=authed_headers,
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"]["error"] == "room_not_found"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_room_agents_endpoint_success(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    agent_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.list_room_agents.return_value = [
+        {
+            "id": agent_id,
+            "name": "Test Agent",
+            "personality": "Helpful",
+            "description": "desc",
+            "type": "custom",
+            "system_prompt": "prompt",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
+            "user_id": user_id,
+            "capabilities": [],
+            "message_count": 0,
+        }
+    ]
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.get(
+            f"/api/v1/rooms/{room_id}/agents",
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        assert body[0]["name"] == "Test Agent"
+        mock_service.list_room_agents.assert_called_once_with(room_id, user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_remove_agent_from_room_endpoint_success(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    agent_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.remove_agent_from_room.return_value = True
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}/agents/{agent_id}",
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+        mock_service.remove_agent_from_room.assert_called_once_with(room_id, agent_id, user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_remove_agent_from_room_endpoint_not_found(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    agent_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.remove_agent_from_room.return_value = False
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}/agents/{agent_id}",
+            headers=authed_headers,
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"]["error"] == "agent_not_in_room"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_room_messages_endpoint_success(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    message_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.get_room_messages.return_value = [
+        {
+            "id": message_id,
+            "room_id": room_id,
+            "role": "user",
+            "content": "Hello",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z",
+        }
+    ]
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.get(
+            f"/api/v1/rooms/{room_id}/messages",
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body) == 1
+        assert body[0]["content"] == "Hello"
+        mock_service.get_room_messages.assert_called_once_with(room_id, user_id=user_id, limit=50, before_id=None)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_update_message_endpoint_success(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    message_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.update_message.return_value = {
+        "id": message_id,
+        "room_id": room_id,
+        "role": "user",
+        "content": "Updated",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+    }
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.patch(
+            f"/api/v1/rooms/{room_id}/messages/{message_id}",
+            json={"content": "Updated"},
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["content"] == "Updated"
+        mock_service.update_message.assert_called_once_with(message_id, "Updated", user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_update_room_endpoint_not_found(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.update_room.return_value = None
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.patch(
+            f"/api/v1/rooms/{room_id}",
+            json={"name": "Updated Room"},
+            headers=authed_headers,
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"]["error"] == "room_not_found"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_delete_message_endpoint_success(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    message_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.delete_message.return_value = True
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}/messages/{message_id}",
+            headers=authed_headers,
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+        mock_service.delete_message.assert_called_once_with(message_id, user_id=user_id)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_delete_room_endpoint_not_found(client: TestClient, authed_headers: dict) -> None:
+    user_id = uuid4()
+    room_id = uuid4()
+    app.dependency_overrides[get_current_user] = lambda: user_id
+
+    mock_service = AsyncMock(spec=ChatService)
+    mock_service.delete_room.return_value = False
+    app.dependency_overrides[get_chat_service] = lambda: mock_service
+
+    try:
+        response = client.delete(
+            f"/api/v1/rooms/{room_id}",
+            headers=authed_headers,
+        )
+        assert response.status_code == 404
+        assert response.json()["detail"]["error"] == "room_not_found"
+    finally:
+        app.dependency_overrides.clear()
