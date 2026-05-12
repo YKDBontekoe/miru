@@ -4,6 +4,7 @@ import logging
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from tortoise.transactions import in_transaction
 
 from app.domain.memory.models import MemoryGraphEdge, MemoryGraphNode
 
@@ -70,45 +71,46 @@ class GraphExtractionService:
             return
 
         try:
-            # 1. Upsert Nodes
-            node_map: dict[str, MemoryGraphNode] = {}
-            for entity in extraction.entities:
-                # Atomic get_or_create to prevent race conditions
-                node, created = await MemoryGraphNode.get_or_create(
-                    user_id=user_id,
-                    name=entity.name,
-                    defaults={
-                        "entity_type": entity.entity_type,
-                        "description": entity.description,
-                    },
-                )
-                # Append description if it's new information
-                if not created and entity.description not in str(node.description):
-                    node.description = f"{node.description}\n{entity.description}".strip()
-                    await node.save()
-
-                node_map[entity.name.lower()] = node
-
-            # 2. Upsert Edges
-            for rel in extraction.relationships:
-                source_node = node_map.get(rel.source.lower())
-                target_node = node_map.get(rel.target.lower())
-
-                if source_node and target_node:
+            async with in_transaction():
+                # 1. Upsert Nodes
+                node_map: dict[str, MemoryGraphNode] = {}
+                for entity in extraction.entities:
                     # Atomic get_or_create to prevent race conditions
-                    edge, created = await MemoryGraphEdge.get_or_create(
-                        source_node=source_node,
-                        target_node=target_node,
-                        relationship=rel.relationship,
+                    node, created = await MemoryGraphNode.get_or_create(
+                        user_id=user_id,
+                        name=entity.name,
                         defaults={
-                            "weight": rel.weight,
+                            "entity_type": entity.entity_type,
+                            "description": entity.description,
                         },
                     )
+                    # Append description if it's new information
+                    if not created and entity.description not in str(node.description):
+                        node.description = f"{node.description}\n{entity.description}".strip()
+                        await node.save()
 
-                    if not created:
-                        # Strengthen existing relationship
-                        edge.weight = min(1.0, edge.weight + 0.1)
-                        await edge.save()
+                    node_map[entity.name.lower()] = node
+
+                # 2. Upsert Edges
+                for rel in extraction.relationships:
+                    source_node = node_map.get(rel.source.lower())
+                    target_node = node_map.get(rel.target.lower())
+
+                    if source_node and target_node:
+                        # Atomic get_or_create to prevent race conditions
+                        edge, created = await MemoryGraphEdge.get_or_create(
+                            source_node=source_node,
+                            target_node=target_node,
+                            relationship=rel.relationship,
+                            defaults={
+                                "weight": rel.weight,
+                            },
+                        )
+
+                        if not created:
+                            # Strengthen existing relationship
+                            edge.weight = min(1.0, edge.weight + 0.1)
+                            await edge.save()
 
         except Exception:
             logger.warning("Failed to store graph elements", exc_info=True)
