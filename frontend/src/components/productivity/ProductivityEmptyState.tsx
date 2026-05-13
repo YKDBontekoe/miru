@@ -1,9 +1,9 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
-import { theme } from '@/core/theme';
+
 import { useTheme } from '@/hooks/useTheme';
 import { Tab } from '@/hooks/viewmodels/useProductivityViewModel';
 
@@ -24,8 +24,8 @@ export const ProductivityEmptyState = React.memo(function ProductivityEmptyState
   const { C } = useTheme();
 
   return (
-    <View style={styles.emptyContainer}>
-      <View style={[styles.emptyIconCircle, { backgroundColor: C.primarySurface }]}>
+    <View className="items-center py-20">
+      <View className="w-20 h-20 rounded-full items-center justify-center mb-6" style={{ backgroundColor: C.primarySurface }}>
         <Ionicons
           name={
             activeTab === 'notes'
@@ -40,53 +40,48 @@ export const ProductivityEmptyState = React.memo(function ProductivityEmptyState
           color={C.primary}
         />
       </View>
-      <AppText variant="h3" style={[styles.emptyTitle, { color: C.text }]}>
+      <AppText variant="h3" className="mb-2 text-center" style={{ color: C.text }}>
         {searchQuery
-          ? t('productivity.no_matches') || 'No matches found'
+          ? t('productivity.no_matches', 'No matches found')
           : activeTab === 'notes'
-            ? t('productivity.no_notes') || 'No Notes'
+            ? t('productivity.no_notes', 'No Notes')
             : activeTab === 'tasks'
-              ? t('productivity.no_tasks') || 'No Tasks'
+              ? t('productivity.no_tasks', 'No Tasks')
               : activeTab === 'today'
-                ? t('productivity.nothing_urgent_today')
-                : t('productivity.workspace_clear') || 'Your workspace is clear'}
+                ? t('productivity.nothing_urgent_today', 'Nothing urgent today')
+                : t('productivity.workspace_clear', 'Your workspace is clear')}
       </AppText>
-      <AppText style={[styles.emptySubtitle, { color: C.subtext }]}>
+      <AppText className="text-center mb-8 px-10 leading-6" style={{ color: C.subtext }}>
         {searchQuery
-          ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
+          ? t('productivity.try_adjust_search', 'Try adjusting your search terms.')
           : activeTab === 'today'
-            ? t('productivity.today_empty_detail')
-            : t('productivity.capture_thoughts') ||
-              'Capture your thoughts and track what needs to get done.'}
+            ? t('productivity.today_empty_detail', 'Take a moment to plan your day.')
+            : t('productivity.capture_thoughts', 'Capture your thoughts and track what needs to get done.')}
       </AppText>
 
       {!searchQuery && (
-        <View style={styles.emptyActions}>
+        <View className="flex-row gap-4">
           {(activeTab === 'all' || activeTab === 'notes') && (
             <Pressable
               onPress={onCreateNote}
+              className="flex-row items-center rounded-xl py-4 px-6 shadow-md"
               style={({ pressed }) => [
-                styles.emptyButton,
                 { backgroundColor: C.primary },
                 pressed && { opacity: 0.8 },
               ]}
             >
-              <Ionicons name="add" size={18} color="#FFFFFF" style={styles.iconMargin} />
-              <AppText style={styles.emptyButtonText}>
-                {t('productivity.newNote') || 'New Note'}
+              <Ionicons name="add" size={18} color="#FFFFFF" className="mr-1.5" />
+              <AppText className="text-white font-bold text-[15px]">
+                {t('productivity.newNote', 'New Note')}
               </AppText>
             </Pressable>
           )}
           {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
             <Pressable
               onPress={onCreateTask}
+              className={`flex-row items-center rounded-xl py-4 px-6 ${activeTab === 'all' || activeTab === 'today' ? (Platform.OS === 'ios' ? 'shadow-none' : 'elevation-0') : 'shadow-md'}`}
               style={({ pressed }) => [
-                styles.emptyButton,
-                (activeTab === 'all' || activeTab === 'today') && [
-                  styles.emptyButtonSecondary,
-                  { backgroundColor: C.primarySurface },
-                ],
-                !(activeTab === 'all' || activeTab === 'today') && { backgroundColor: C.primary },
+                (activeTab === 'all' || activeTab === 'today') ? { backgroundColor: C.primarySurface } : { backgroundColor: C.primary },
                 pressed && { opacity: 0.8 },
               ]}
             >
@@ -94,16 +89,17 @@ export const ProductivityEmptyState = React.memo(function ProductivityEmptyState
                 name="add"
                 size={18}
                 color={activeTab === 'all' || activeTab === 'today' ? C.primary : '#FFFFFF'}
-                style={styles.iconMargin}
+                className="mr-1.5"
               />
               <AppText
+                className="font-bold text-[15px]"
                 style={
                   activeTab === 'all' || activeTab === 'today'
-                    ? [styles.emptyButtonTextSecondary, { color: C.primary }]
-                    : styles.emptyButtonText
+                    ? { color: C.primary }
+                    : { color: '#FFFFFF' }
                 }
               >
-                {t('productivity.new_task')}
+                {t('productivity.new_task', 'New Task')}
               </AppText>
             </Pressable>
           )}
@@ -111,60 +107,4 @@ export const ProductivityEmptyState = React.memo(function ProductivityEmptyState
       )}
     </View>
   );
-});
-
-const styles = StyleSheet.create({
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  emptyTitle: {
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.xxxl,
-    lineHeight: 22,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-  },
-  emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: theme.borderRadius.xl,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.xl,
-    ...theme.elevation.md,
-  },
-  emptyButtonSecondary: {
-    ...Platform.select({
-      ios: { shadowOpacity: 0, elevation: 0 },
-      android: { elevation: 0 },
-      default: { elevation: 0 },
-    }),
-  },
-  emptyButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  emptyButtonTextSecondary: {
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  iconMargin: {
-    marginEnd: 6,
-  },
 });

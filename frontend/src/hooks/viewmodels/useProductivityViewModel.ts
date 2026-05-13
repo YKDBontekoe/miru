@@ -53,17 +53,28 @@ export function useProductivityViewModel() {
     };
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
+  const handleOpenParam = useCallback(
+    (paramValue: string | string[] | undefined, paramKey: string, setter: (val: boolean) => void) => {
+      if (paramValue === '1' || paramValue === 'true') {
+        setter(true);
+        const nextParams = Object.fromEntries(
+          Object.entries(params).filter(
+            ([key, value]) => key !== paramKey && typeof value === 'string'
+          )
+        );
+        router.replace({ pathname, params: nextParams });
+      }
+    },
+    [params, pathname, router]
+  );
+
   useEffect(() => {
-    if (openCreateTask === '1' || openCreateTask === 'true') {
-      setShowCreateTask(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
-        )
-      );
-      router.replace({ pathname, params: nextParams });
-    }
-  }, [openCreateTask, params, pathname, router]);
+    handleOpenParam(openCreateTask, 'openCreateTask', setShowCreateTask);
+  }, [openCreateTask]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    handleOpenParam(openCreateNote, 'openCreateNote', setShowCreateNote);
+  }, [openCreateNote]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
@@ -248,18 +259,23 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
-      ? todayData.filter((entry) => {
+  const dataToRender = useMemo<RenderItemData[]>(() => {
+    switch (activeTab) {
+      case 'today':
+        return todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
           return getTaskPriority(entry.item as Task) === taskPriority;
-        })
-      : activeTab === 'all'
-        ? mixedData
-        : activeTab === 'notes'
-          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
-          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+        });
+      case 'all':
+        return mixedData;
+      case 'notes':
+        return filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }));
+      case 'tasks':
+      default:
+        return prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+    }
+  }, [activeTab, todayData, taskPriority, getTaskPriority, mixedData, filteredNotes, prioritizedTasks]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -271,15 +287,15 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(t('productivity.plan.overdue_tasks', { count: taskPriorityCounts.overdue }));
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(t('productivity.plan.no_overdue_tasks', '1) No overdue tasks: start with highest-impact open work.'));
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      lines.push(t('productivity.plan.focus_block', { tasks: nextTasks.map((task) => task.title).join(', ') }));
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(t('productivity.plan.no_focus_block', '2) Focus block: no pending tasks, use this for planning or review.'));
     }
 
     if (nextEvents.length > 0) {
@@ -291,9 +307,9 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(t('productivity.plan.calendar_checkpoints', { times: eventLine }));
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(t('productivity.plan.no_events', '3) Calendar is light: reserve time for deep work and wrap-up.'));
     }
 
     setTodayPlan(lines.join('\n'));

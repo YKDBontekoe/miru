@@ -1,8 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
-import { theme } from '@/core/theme';
+
 import { useTheme } from '@/hooks/useTheme';
 import { Tab, TaskPriority } from '@/hooks/viewmodels/useProductivityViewModel';
 
@@ -27,30 +27,24 @@ export const ProductivityTabs = React.memo(function ProductivityTabs({
   return (
     <>
       <View
-        style={[
-          styles.tabsContainer,
-          { backgroundColor: C.surfaceHigh, borderColor: C.border },
-        ]}
+        className="flex-row rounded-xl p-1 mx-6 mt-6 mb-4 border"
+        style={{ backgroundColor: C.surfaceHigh, borderColor: C.border }}
       >
         {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
           <Pressable
             key={tab}
             onPress={() => setActiveTab(tab)}
             style={({ pressed }) => [
-              styles.tabButton,
-              activeTab === tab && [styles.tabButtonActive, { backgroundColor: C.surface }],
+              activeTab === tab && { backgroundColor: C.surface },
               pressed && activeTab !== tab && { opacity: 0.6 },
             ]}
           >
             <AppText
-              style={[
-                styles.tabText,
-                { color: activeTab === tab ? C.text : C.subtext },
-                activeTab === tab && styles.tabTextActive,
-              ]}
+              className={`text-[14px] ${activeTab === tab ? 'font-bold' : 'font-medium'}`}
+              style={{ color: activeTab === tab ? C.text : C.subtext }}
             >
               {tab === 'today'
-                ? t('productivity.today')
+                ? t('productivity.today') || 'Today'
                 : tab === 'all'
                   ? t('productivity.all') || 'All'
                   : tab === 'notes'
@@ -62,7 +56,7 @@ export const ProductivityTabs = React.memo(function ProductivityTabs({
       </View>
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View style={styles.priorityContainer}>
+        <View className="flex-row flex-wrap mx-6 mb-2">
           {(
             [
               {
@@ -96,8 +90,8 @@ export const ProductivityTabs = React.memo(function ProductivityTabs({
             <Pressable
               key={option.key}
               onPress={() => setTaskPriority(option.key)}
+              className="rounded-xl border px-2.5 py-1.5 mr-2 mb-2"
               style={({ pressed }) => [
-                styles.priorityButton,
                 {
                   borderColor: taskPriority === option.key ? C.primary : C.border,
                   backgroundColor:
@@ -108,10 +102,8 @@ export const ProductivityTabs = React.memo(function ProductivityTabs({
             >
               <AppText
                 variant="caption"
-                style={[
-                  styles.priorityText,
-                  { color: taskPriority === option.key ? C.primary : C.subtext },
-                ]}
+                className="font-bold"
+                style={{ color: taskPriority === option.key ? C.primary : C.subtext }}
               >
                 {option.label}
               </AppText>
@@ -121,50 +113,4 @@ export const ProductivityTabs = React.memo(function ProductivityTabs({
       )}
     </>
   );
-});
-
-const styles = StyleSheet.create({
-  tabsContainer: {
-    flexDirection: 'row',
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xs,
-    marginHorizontal: theme.spacing.xl,
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: theme.spacing.sm,
-    alignItems: 'center',
-    borderRadius: theme.borderRadius.lg,
-    backgroundColor: 'transparent',
-  },
-  tabButtonActive: {
-    ...theme.elevation.sm,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    fontWeight: '700',
-  },
-  priorityContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: theme.spacing.xl,
-    marginBottom: theme.spacing.sm,
-  },
-  priorityButton: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  priorityText: {
-    fontWeight: '700',
-  },
 });

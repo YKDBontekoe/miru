@@ -1,27 +1,29 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { ProductivityHeader } from '../../src/components/productivity/ProductivityHeader';
-import { ProductivityTabs } from '../../src/components/productivity/ProductivityTabs';
-import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
-import { TodayPlanBanner } from '../../src/components/productivity/TodayPlanBanner';
-import { theme } from '../../src/core/theme';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { AppText } from '@/components/AppText';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { ProductivityHeader } from '@/components/productivity/ProductivityHeader';
+import { ProductivityTabs } from '@/components/productivity/ProductivityTabs';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
+import { TodayPlanBanner } from '@/components/productivity/TodayPlanBanner';
+import { theme } from '@/core/theme';
+import { CalendarEvent, Note, Task } from '@/core/models';
 import {
   RenderItemData,
   useProductivityViewModel,
-} from '../../src/hooks/viewmodels/useProductivityViewModel';
-import { useTheme } from '../../src/hooks/useTheme';
+} from '@/hooks/viewmodels/useProductivityViewModel';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function ProductivityScreen() {
-  const { state, actions, i18n } = useProductivityViewModel();
+  const { state, actions: rawActions, i18n } = useProductivityViewModel();
   const { C } = useTheme();
+
+  const actions = useMemo(() => rawActions, [rawActions]);
 
   const renderItem = useCallback(
     ({ item }: { item: RenderItemData }) => {
@@ -110,12 +112,18 @@ export default function ProductivityScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={state.activeTab}
-            searchQuery={state.searchQuery}
-            onCreateNote={() => actions.setShowCreateNote(true)}
-            onCreateTask={() => actions.setShowCreateTask(true)}
-          />
+          state.isLoading ? (
+            <View style={{ padding: 40, alignItems: 'center' }}>
+              <AppText>Loading...</AppText>
+            </View>
+          ) : (
+            <ProductivityEmptyState
+              activeTab={state.activeTab}
+              searchQuery={state.searchQuery}
+              onCreateNote={() => actions.setShowCreateNote(true)}
+              onCreateTask={() => actions.setShowCreateTask(true)}
+            />
+          )
         }
       />
 
