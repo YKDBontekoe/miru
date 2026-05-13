@@ -31,6 +31,7 @@ class Task(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY tasks_owner_all ON public.tasks FOR ALL USING (auth.uid() = user_id);",
+            "ALTER TABLE public.tasks ADD CONSTRAINT tasks_title_not_empty CHECK (char_length(trim(title)) > 0);",
         ]
 
 
@@ -66,6 +67,7 @@ class Note(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY notes_owner_all ON public.notes FOR ALL USING (auth.uid() = user_id);",
+            "ALTER TABLE public.notes ADD CONSTRAINT notes_title_not_empty CHECK (char_length(trim(title)) > 0);",
         ]
 
 

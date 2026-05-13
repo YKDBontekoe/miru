@@ -151,8 +151,9 @@ class AgentService:
                 await AgentIntegration.bulk_create(agent_integrations)
 
         # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
-        assert refetched is not None
+        refetched = await self.repo.get_by_id(agent.pk, user_id=user_id)
+        if refetched is None:
+            raise ValueError(f"Failed to refetch newly created agent {agent.pk}")
         return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
@@ -186,8 +187,8 @@ class AgentService:
         If ``capabilities`` or ``integrations`` are supplied the M2M relations are
         replaced and the system prompt is rebuilt to reflect the new configuration.
         """
-        agent = await self.repo.get_by_id(agent_id)
-        if not agent or str(agent.user_id) != str(user_id):
+        agent = await self.repo.get_by_id(agent_id, user_id=user_id)
+        if not agent:
             return None
 
         fields = data.model_dump(exclude_none=True)

@@ -16,7 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ykdbonte.miru.dev",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
       }
     },
     "android": {
@@ -42,6 +45,9 @@
           "ios": {
             "deploymentTarget": "15.1",
             "useFrameworks": "static"
+          },
+          "android": {
+            "usesCleartextTraffic": false
           }
         }
       ]
