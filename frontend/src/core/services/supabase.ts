@@ -19,6 +19,7 @@ const supabaseAnonKey =
 let wsPolyfill: any;
 if (Platform.OS === 'web' && typeof window === 'undefined') {
   if (typeof global.WebSocket === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     wsPolyfill = require('ws');
   }
 }

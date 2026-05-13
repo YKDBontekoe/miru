@@ -7,6 +7,10 @@ if (typeof global.WebSocket === 'undefined') {
   global.WebSocket = require('ws');
 }
 
+if (typeof global.setImmediate === 'undefined') {
+  global.setImmediate = require('setimmediate');
+}
+
 // Mock environment variables for Supabase
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-key';
