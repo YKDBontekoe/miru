@@ -3,7 +3,9 @@
 delete global.ReadableStream;
 
 // Polyfill WebSocket for Node < 22 without requiring local imports in components
-global.WebSocket = require('ws');
+if (typeof global.WebSocket === 'undefined') {
+  global.WebSocket = require('ws');
+}
 
 // Mock environment variables for Supabase
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
