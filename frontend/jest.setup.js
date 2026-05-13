@@ -2,6 +2,9 @@
 // with Expo's ReadableStream polyfill which doesn't support cancellation
 delete global.ReadableStream;
 
+// Polyfill WebSocket for Node < 22 without requiring local imports in components
+global.WebSocket = require('ws');
+
 // Mock environment variables for Supabase
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-key';
