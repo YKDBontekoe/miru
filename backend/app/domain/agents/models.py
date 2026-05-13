@@ -37,6 +37,8 @@ class Agent(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.agents ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY agents_owner_all ON public.agents FOR ALL USING (auth.uid() = user_id);",
+            "ALTER TABLE public.agents ADD CONSTRAINT agents_name_not_empty CHECK (char_length(trim(name)) > 0);",
+            "ALTER TABLE public.agents ADD CONSTRAINT agents_status_check CHECK (status IN ('active', 'inactive'));",
         ]
 
 

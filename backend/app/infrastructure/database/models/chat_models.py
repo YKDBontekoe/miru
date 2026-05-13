@@ -26,6 +26,7 @@ class ChatRoom(SupabaseModel):
         sql_policies = [
             "ALTER TABLE public.chat_rooms ENABLE ROW LEVEL SECURITY;",
             "CREATE POLICY chat_rooms_owner_all ON public.chat_rooms FOR ALL USING (auth.uid() = user_id);",
+            "ALTER TABLE public.chat_rooms ADD CONSTRAINT chat_rooms_name_not_empty CHECK (char_length(trim(name)) > 0);",
         ]
 
 
