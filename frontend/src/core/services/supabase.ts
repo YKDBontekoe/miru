@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SecureLocalStorage } from './storage';
-import { AppState, Platform } from 'react-native';
-import ws from 'ws';
+import { AppState } from 'react-native';
 
 const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL &&
@@ -24,8 +23,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
-  // In node.js (like Jest environment for older node versions) we need to provide the ws package natively
-  ...(Platform.OS === 'web' && typeof window === 'undefined' ? { transport: ws } : {}),
 });
 
 AppState.addEventListener('change', (state) => {
