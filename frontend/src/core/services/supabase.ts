@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SecureLocalStorage } from './storage';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL &&
@@ -16,6 +16,14 @@ const supabaseAnonKey =
     ? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY.trim()
     : 'your-anon-key';
 
+let wsPolyfill: any;
+if (Platform.OS === 'web' && typeof window === 'undefined') {
+  if (typeof global.WebSocket === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    wsPolyfill = require('ws');
+  }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: SecureLocalStorage,
@@ -23,6 +31,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  ...(wsPolyfill ? { realtime: { transport: wsPolyfill } } : {}),
 });
 
 AppState.addEventListener('change', (state) => {
