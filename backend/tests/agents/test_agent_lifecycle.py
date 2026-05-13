@@ -164,7 +164,7 @@ async def test_update_agent_repo_returns_none():
     user_id = get_deterministic_uuid()
     agent_data = AgentCreate(name="Test Agent", personality="Helpful")
     initial_agent = await service.create_agent(agent_data, user_id)
-    with patch.object(repo, "update_agent", new_callable=AsyncMock) as mock_update:
+    with patch.object(repo, "update_agent_with_relations", new_callable=AsyncMock) as mock_update:
         mock_update.return_value = None
         update_data = AgentUpdate(name="Updated Agent")
         response = await service.update_agent(str(initial_agent.id), user_id, update_data)
