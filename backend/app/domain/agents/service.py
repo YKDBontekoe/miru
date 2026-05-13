@@ -152,7 +152,8 @@ class AgentService:
 
         # Refetch with relations so the response is fully populated.
         refetched = await self.repo.get_by_id(agent.pk, user_id=user_id)
-        assert refetched is not None
+        if refetched is None:
+            raise ValueError(f"Failed to refetch newly created agent {agent.pk}")
         return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:

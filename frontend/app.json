@@ -30,8 +30,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.miru.app",
-      "usesCleartextTraffic": false
+      "package": "com.miru.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -46,6 +45,9 @@
           "ios": {
             "deploymentTarget": "15.1",
             "useFrameworks": "static"
+          },
+          "android": {
+            "usesCleartextTraffic": false
           }
         }
       ]

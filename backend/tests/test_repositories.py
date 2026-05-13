@@ -36,13 +36,13 @@ class TestAgentRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_returns_none_for_unknown(self) -> None:
         repo = AgentRepository()
-        result = await repo.get_by_id(uuid4())
+        result = await repo.get_by_id(uuid4(), require_ownership=False)
         assert result is None
 
     @pytest.mark.asyncio
     async def test_get_by_id_accepts_str(self) -> None:
         repo = AgentRepository()
-        result = await repo.get_by_id(str(uuid4()))
+        result = await repo.get_by_id(str(uuid4()), require_ownership=False)
         assert result is None
 
     @pytest.mark.asyncio

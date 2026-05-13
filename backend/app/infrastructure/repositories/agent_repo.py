@@ -30,12 +30,20 @@ class AgentRepository:
         """List all available integrations."""
         return await Integration.exclude(status="disabled").all()
 
-    async def get_by_id(self, agent_id: UUID | str, user_id: UUID | str | None = None) -> Agent | None:
+    async def get_by_id(
+        self,
+        agent_id: UUID | str,
+        user_id: UUID | str | None = None,
+        require_ownership: bool = True,
+    ) -> Agent | None:
         """Fetch a single agent by ID, with capabilities prefetched. Optionally enforce ownership."""
+        if require_ownership and user_id is None:
+            raise ValueError("user_id must be provided when require_ownership is True")
+
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
 
-        filters = {"id": agent_id}
+        filters: dict[str, object] = {"id": agent_id, "deleted_at__isnull": True}
         if user_id is not None:
             if isinstance(user_id, str):
                 user_id = UUID(user_id)
@@ -66,7 +74,7 @@ class AgentRepository:
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
-        agent = await self.get_by_id(agent_id)
+        agent = await self.get_by_id(agent_id, require_ownership=False)
         if agent:
             agent.mood = mood
             await agent.save()
@@ -111,7 +119,7 @@ class AgentRepository:
 
     async def increment_message_count(self, agent_id: UUID | str) -> None:
         """Increment an agent's message count."""
-        agent = await self.get_by_id(agent_id)
+        agent = await self.get_by_id(agent_id, require_ownership=False)
         if agent:
             agent.message_count += 1
             await agent.save()
