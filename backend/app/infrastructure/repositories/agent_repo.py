@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from tortoise.transactions import in_transaction
@@ -39,7 +40,7 @@ class AgentRepository:
             "capabilities", "agent_integrations__integration"
         )
 
-    async def create_agent_with_relations(self, user_id: UUID | str, **fields: object) -> Agent:
+    async def create_agent_with_relations(self, user_id: UUID | str, **fields: Any) -> Agent:
         """Create a new agent with capabilities and integrations."""
         if isinstance(user_id, str):
             user_id = UUID(user_id)
@@ -109,7 +110,7 @@ class AgentRepository:
     )
 
     async def update_agent(
-        self, agent_id: UUID | str, user_id: UUID | str, **fields: object
+        self, agent_id: UUID | str, user_id: UUID | str, **fields: Any
     ) -> Agent | None:
         """Update an agent's fields. Only updates the owner's agent."""
         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
@@ -130,7 +131,7 @@ class AgentRepository:
         return agent
 
     async def update_agent_with_relations(
-        self, agent_id: UUID | str, user_id: UUID | str, **fields: object
+        self, agent_id: UUID | str, user_id: UUID | str, **fields: Any
     ) -> Agent | None:
         """Update an agent's fields, capabilities, and integrations."""
         if isinstance(agent_id, str):
