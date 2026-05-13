@@ -10,6 +10,7 @@ from tortoise.transactions import in_transaction
 
 from app.domain.agents.models import (
     Agent,
+    AgentIntegration,
     AgentTemplate,
     Capability,
     Integration,
@@ -37,6 +38,45 @@ class AgentRepository:
         return await Agent.get_or_none(id=agent_id).prefetch_related(
             "capabilities", "agent_integrations__integration"
         )
+
+    async def create_agent_with_relations(self, user_id: UUID | str, **fields: object) -> Agent:
+        """Create a new agent with capabilities and integrations."""
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+
+        capability_ids = fields.pop("capabilities", [])
+        integration_ids = fields.pop("integrations", [])
+        integration_configs = fields.pop("integration_configs", {})
+
+        # Ensure only allowed model fields remain in fields dict
+        model_fields = {k: v for k, v in fields.items() if k in self._ALLOWED_AGENT_FIELDS}
+        model_fields["user_id"] = user_id
+
+        async with in_transaction():
+            agent = await Agent.create(**model_fields)
+
+            if capability_ids:
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.add(*caps)
+
+            if integration_ids:
+                integrations = await Integration.filter(id__in=integration_ids)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
+        # Explicitly refetch to eagerly load the M2M relations correctly
+        refetched = await self.get_by_id(agent.pk)
+        assert refetched is not None
+        return refetched
 
     async def list_by_user(self, user_id: UUID | str) -> list[Agent]:
         """List all agents for a user, excluding soft-deleted ones."""
@@ -88,6 +128,60 @@ class AgentRepository:
                     setattr(agent, key, value)
             await agent.save()
         return agent
+
+    async def update_agent_with_relations(
+        self, agent_id: UUID | str, user_id: UUID | str, **fields: object
+    ) -> Agent | None:
+        """Update an agent's fields, capabilities, and integrations."""
+        if isinstance(agent_id, str):
+            agent_id = UUID(agent_id)
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+
+        new_capability_ids = fields.pop("capabilities", None)
+        new_integration_ids = fields.pop("integrations", None)
+        new_integration_configs = fields.pop("integration_configs", None) or {}
+
+        # Ensure only allowed fields remain for normal updates
+        unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
+        if unknown:
+            raise ValueError(f"update_agent received unknown fields: {unknown}")
+
+        async with in_transaction():
+            agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
+                "capabilities", "agent_integrations__integration"
+            )
+            if not agent:
+                return None
+
+            if new_capability_ids is not None:
+                caps = await Capability.filter(id__in=new_capability_ids)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
+
+            if new_integration_ids is not None:
+                await AgentIntegration.filter(agent=agent).delete()
+                integrations = await Integration.filter(id__in=new_integration_ids)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=new_integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
+            for key, value in fields.items():
+                if value is not None:
+                    setattr(agent, key, value)
+            await agent.save()
+
+        # Explicitly refetch to eagerly load the M2M relations correctly
+        return await self.get_by_id(agent.pk)
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:
         """Soft-delete an agent by setting deleted_at. Only deletes the owner's agent."""
