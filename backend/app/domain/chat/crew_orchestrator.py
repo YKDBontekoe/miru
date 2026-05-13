@@ -68,7 +68,7 @@ class CrewOrchestrator:
     """Handles the creation and execution of CrewAI tasks and agents."""
 
     @staticmethod
-    def get_crew_llm() -> _OpenRouterLLM:
+    def get_crew_llm() -> LLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
         return _OpenRouterLLM(
