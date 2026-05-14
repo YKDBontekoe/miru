@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
@@ -15,7 +15,6 @@ import { theme } from '@/core/theme';
 import { CalendarEvent, Note, Task } from '@/core/models';
 import { RenderItemData, useProductivityViewModel } from '@/hooks/viewmodels/useProductivityViewModel';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { Pressable } from 'react-native';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -32,25 +31,32 @@ const T = {
   transparent: 'transparent',
 };
 const S = theme.spacing;
-const R = theme.borderRadius;
 
-const renderItem = ({ item, extraData }: { item: RenderItemData, extraData: any }) => {
-  const vm = extraData;
+interface RenderItemDeps {
+  confirmDelete: (action: () => Promise<void>) => void;
+  deleteNote: (id: string) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  toggleTask: (id: string) => Promise<void>;
+  language: string;
+}
+
+const renderItem = ({ item, extraData }: { item: RenderItemData, extraData: RenderItemDeps }) => {
+  const deps = extraData;
   if (item.type === 'note') {
     const note = item.item as Note;
-    return <NoteCard note={note} onDelete={() => vm.confirmDelete(() => vm.deleteNote(note.id))} />;
+    return <NoteCard note={note} onDelete={() => deps.confirmDelete(() => deps.deleteNote(note.id))} />;
   }
   if (item.type === 'event') {
     const event = item.item as CalendarEvent;
     return (
-      <View style={styles.eventCard}>
-        <View style={styles.eventIcon}>
-          <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
+      <View className="flex-row items-center bg-surface border border-border rounded-xl p-4 mb-3 shadow-sm">
+        <View className="w-8 h-8 rounded-lg bg-primarySoft items-center justify-center mr-4">
+          <Ionicons name="calendar-outline" size={16} className="text-primary" />
         </View>
-        <View style={styles.eventBody}>
-          <AppText style={styles.eventTitle}>{event.title}</AppText>
-          <AppText style={styles.eventMeta}>
-            {new Intl.DateTimeFormat(vm.i18n.language, {
+        <View className="flex-1">
+          <AppText className="text-text font-bold text-[15px]">{event.title}</AppText>
+          <AppText className="text-muted mt-0.5 text-[13px]">
+            {new Intl.DateTimeFormat(deps.language, {
               weekday: 'short',
               month: 'short',
               day: 'numeric',
@@ -67,8 +73,8 @@ const renderItem = ({ item, extraData }: { item: RenderItemData, extraData: any 
   return (
     <TaskCard
       task={task}
-      onToggle={() => vm.toggleTask(task.id)}
-      onDelete={() => vm.confirmDelete(() => vm.deleteTask(task.id))}
+      onToggle={() => deps.toggleTask(task.id)}
+      onDelete={() => deps.confirmDelete(() => deps.deleteTask(task.id))}
     />
   );
 };
@@ -77,8 +83,17 @@ export default function ProductivityScreen() {
   const vm = useProductivityViewModel();
 
   const handleRenderItem = useCallback(
-    ({ item }: { item: RenderItemData }) => renderItem({ item, extraData: vm }),
-    [vm]
+    ({ item }: { item: RenderItemData }) => renderItem({
+      item,
+      extraData: {
+        confirmDelete: vm.confirmDelete,
+        deleteNote: vm.deleteNote,
+        deleteTask: vm.deleteTask,
+        toggleTask: vm.toggleTask,
+        language: vm.i18n.language,
+      }
+    }),
+    [vm.confirmDelete, vm.deleteNote, vm.deleteTask, vm.toggleTask, vm.i18n.language]
   );
 
   return (
@@ -106,10 +121,16 @@ export default function ProductivityScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        extraData={vm}
+        extraData={{
+          confirmDelete: vm.confirmDelete,
+          deleteNote: vm.deleteNote,
+          deleteTask: vm.deleteTask,
+          toggleTask: vm.toggleTask,
+          language: vm.i18n.language,
+        }}
         refreshControl={
           <RefreshControl
-            refreshing={vm.isLoading && vm.dataToRender.length > 0}
+            refreshing={vm.isLoading}
             onRefresh={vm.handleRefresh}
             tintColor={T.primary.DEFAULT}
           />
@@ -117,24 +138,34 @@ export default function ProductivityScreen() {
         renderItem={handleRenderItem}
         ListHeaderComponent={
           vm.activeTab === 'today' && vm.todayPlan ? (
-            <View style={styles.todayPlanContainer}>
-              <View style={styles.todayPlanHeader}>
-                <AppText style={styles.todayPlanTitle}>Today plan</AppText>
-                <Pressable onPress={() => vm.setTodayPlan(null)}>
-                  <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
+            <View className="rounded-xl bg-primarySoft border border-border p-4 mb-3">
+              <View className="flex-row justify-between items-center">
+                <AppText className="text-text font-bold text-[15px]">Today plan</AppText>
+                <Pressable
+                  onPress={() => vm.setTodayPlan(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss today plan"
+                >
+                  <Ionicons name="close" size={16} className="text-muted" />
                 </Pressable>
               </View>
-              <AppText style={styles.todayPlanBody}>{vm.todayPlan}</AppText>
+              <AppText className="text-muted mt-2 leading-5">{vm.todayPlan}</AppText>
             </View>
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={vm.activeTab}
-            searchQuery={vm.searchQuery}
-            setShowCreateNote={vm.setShowCreateNote}
-            setShowCreateTask={vm.setShowCreateTask}
-          />
+          vm.isLoading ? (
+            <View style={{ paddingVertical: 40 }}>
+              <ActivityIndicator size="large" color={T.primary.DEFAULT} />
+            </View>
+          ) : (
+            <ProductivityEmptyState
+              activeTab={vm.activeTab}
+              searchQuery={vm.searchQuery}
+              setShowCreateNote={vm.setShowCreateNote}
+              setShowCreateTask={vm.setShowCreateTask}
+            />
+          )
         }
       />
 
@@ -161,61 +192,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: S.xl,
     paddingBottom: 100,
     paddingTop: S.sm,
-  },
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface.light,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: T.onSurface.mutedLight,
-    marginTop: 2,
-    fontSize: 13,
-  },
-  todayPlanContainer: {
-    borderRadius: R.xl,
-    backgroundColor: T.primary.surfaceLight,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    padding: S.lg,
-    marginBottom: S.md,
-  },
-  todayPlanHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  todayPlanTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  todayPlanBody: {
-    color: T.onSurface.mutedLight,
-    marginTop: 8,
-    lineHeight: 20,
   },
 });

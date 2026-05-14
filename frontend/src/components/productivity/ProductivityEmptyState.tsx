@@ -85,7 +85,7 @@ export function ProductivityEmptyState({
               onPress={() => setShowCreateNote(true)}
               style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
             >
-              <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
+              <Ionicons name="add" size={18} color={T.white} className="mr-1.5" />
               <AppText style={styles.emptyButtonText}>
                 {t('productivity.newNote') || 'New Note'}
               </AppText>
@@ -104,7 +104,7 @@ export function ProductivityEmptyState({
                 name="add"
                 size={18}
                 color={activeTab === 'all' || activeTab === 'today' ? T.primary.DEFAULT : T.white}
-                style={{ marginEnd: 6 }}
+                className="mr-1.5"
               />
               <AppText
                 style={

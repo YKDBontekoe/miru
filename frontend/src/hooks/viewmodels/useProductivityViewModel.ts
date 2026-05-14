@@ -85,7 +85,7 @@ export function useProductivityViewModel() {
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   const confirmDelete = useCallback(
-    (action: () => Promise<void>) =>
+    (action: () => Promise<void>) => {
       Alert.alert(
         t('productivity.delete') || 'Delete',
         t('productivity.are_you_sure') || 'Are you sure?',
@@ -94,10 +94,18 @@ export function useProductivityViewModel() {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: () => {
+              action().catch((err) => {
+                Alert.alert(
+                  t('common.error') || 'Error',
+                  t('productivity.delete_error') || 'Failed to delete. Please try again.'
+                );
+              });
+            },
           },
         ]
-      ),
+      );
+    },
     [t]
   );
 
@@ -249,8 +257,8 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender: RenderItemData[] = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -261,6 +269,15 @@ export function useProductivityViewModel() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [
+    activeTab,
+    todayData,
+    mixedData,
+    filteredNotes,
+    prioritizedTasks,
+    taskPriority,
+    getTaskPriority,
+  ]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -270,36 +287,66 @@ export function useProductivityViewModel() {
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
       .slice(0, 3);
 
+    const safeLocale = (i18n.language && i18n.language.trim() !== '') ? i18n.language : 'en';
+
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(
+        t('productivity.today.recover_overdue', {
+          defaultValue: `1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`,
+          count: taskPriorityCounts.overdue,
+        })
+      );
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(
+        t('productivity.today.no_overdue', {
+          defaultValue: '1) No overdue tasks: start with highest-impact open work.',
+        })
+      );
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      const tasksList = nextTasks.map((task) => task.title).join(', ');
+      lines.push(
+        t('productivity.today.focus_block', {
+          defaultValue: `2) Focus block: ${tasksList}.`,
+          tasks: tasksList,
+        })
+      );
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(
+        t('productivity.today.no_tasks', {
+          defaultValue: '2) Focus block: no pending tasks, use this for planning or review.',
+        })
+      );
     }
 
     if (nextEvents.length > 0) {
-      const eventLine = nextEvents
+      const eventTimes = nextEvents
         .map((event) =>
-          new Intl.DateTimeFormat(i18n.language, {
+          new Intl.DateTimeFormat(safeLocale, {
             hour: '2-digit',
             minute: '2-digit',
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(
+        t('productivity.today.calendar_checkpoints', {
+          defaultValue: `3) Calendar checkpoints at ${eventTimes}.`,
+          times: eventTimes,
+        })
+      );
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(
+        t('productivity.today.calendar_light', {
+          defaultValue: '3) Calendar is light: reserve time for deep work and wrap-up.',
+        })
+      );
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue, t]);
 
   return {
     t,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +43,23 @@ export function ProductivityHeader({
   setShowCreateTask,
 }: ProductivityHeaderProps) {
   const { t } = useTranslation();
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(localQuery);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localQuery, setSearchQuery]);
+
+  useEffect(() => {
+    if (searchQuery === '') {
+      setLocalQuery('');
+    }
+  }, [searchQuery]);
 
   return (
     <View style={styles.headerContainer}>
@@ -89,8 +106,8 @@ export function ProductivityHeader({
           style={styles.searchIcon}
         />
         <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+          value={localQuery}
+          onChangeText={setLocalQuery}
           placeholder={t('productivity.search') || 'Search notes & tasks...'}
           placeholderTextColor={T.onSurface.disabledLight}
           style={styles.searchInput}
