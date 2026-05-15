@@ -269,18 +269,22 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
-      ? todayData.filter((entry) => {
-          if (entry.type !== 'task') return true;
-          if (taskPriority === 'all') return true;
-          return getTaskPriority(entry.item as Task) === taskPriority;
-        })
-      : activeTab === 'all'
-        ? mixedData
-        : activeTab === 'notes'
-          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
-          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  const dataToRender: RenderItemData[] = useMemo(() => {
+    if (activeTab === 'today') {
+      return todayData.filter((entry) => {
+        if (entry.type !== 'task') return true;
+        if (taskPriority === 'all') return true;
+        return getTaskPriority(entry.item as Task) === taskPriority;
+      });
+    }
+    if (activeTab === 'all') {
+      return mixedData;
+    }
+    if (activeTab === 'notes') {
+      return filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }));
+    }
+    return prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [activeTab, todayData, mixedData, filteredNotes, prioritizedTasks, taskPriority, getTaskPriority]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();

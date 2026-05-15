@@ -8,12 +8,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
+import { AppText } from '@/components/AppText';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { RenderItemData, useProductivityViewModel } from '@/hooks/viewmodels/useProductivityViewModel';
@@ -154,18 +154,24 @@ export default function ProductivityScreen() {
           <View className="flex-row gap-sm">
             <Pressable
               onPress={generateTodayPlan}
+              accessibilityRole="button"
+              accessibilityLabel={t('productivity.actions.generate_plan') || 'Generate Plan'}
               className="w-10 h-10 rounded-full bg-primary-surfaceLight items-center justify-center active:opacity-70"
             >
               <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
               onPress={() => setShowCreateNote(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('productivity.actions.create_note') || 'Create Note'}
               className="w-10 h-10 rounded-full bg-primary-surfaceLight items-center justify-center active:opacity-70"
             >
               <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
               onPress={() => setShowCreateTask(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('productivity.actions.create_task') || 'Create Task'}
               className="w-10 h-10 rounded-full bg-primary-surfaceLight items-center justify-center active:opacity-70"
             >
               <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
@@ -268,8 +274,14 @@ export default function ProductivityScreen() {
           activeTab === 'today' && todayPlan ? (
             <View className="rounded-xl bg-primary-surfaceLight border border-border-light p-lg mb-md">
               <View className="flex-row justify-between items-center">
-                <AppText className="text-onSurface-light font-bold text-[15px]">Today plan</AppText>
-                <Pressable onPress={() => setTodayPlan(null)}>
+                <AppText className="text-onSurface-light font-bold text-[15px]">
+                  {t('productivity.plan.title') || 'Today plan'}
+                </AppText>
+                <Pressable
+                  onPress={() => setTodayPlan(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('productivity.actions.dismiss') || 'Dismiss'}
+                >
                   <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
                 </Pressable>
               </View>
@@ -278,12 +290,14 @@ export default function ProductivityScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={activeTab}
-            searchQuery={searchQuery}
-            setShowCreateNote={setShowCreateNote}
-            setShowCreateTask={setShowCreateTask}
-          />
+          !isLoading && dataToRender.length === 0 ? (
+            <ProductivityEmptyState
+              activeTab={activeTab}
+              searchQuery={searchQuery}
+              setShowCreateNote={setShowCreateNote}
+              setShowCreateTask={setShowCreateTask}
+            />
+          ) : null
         }
       />
 
