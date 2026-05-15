@@ -84,7 +84,7 @@ export function useProductivityViewModel() {
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   const confirmDelete = useCallback(
-    (action: () => Promise<void>) =>
+    (action: () => Promise<void>) => {
       Alert.alert(
         t('productivity.delete') || 'Delete',
         t('productivity.are_you_sure') || 'Are you sure?',
@@ -93,41 +93,60 @@ export function useProductivityViewModel() {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: async () => {
+              try {
+                await action();
+              } catch {
+                Alert.alert(
+                  t('errors.operation_failed') || 'Operation failed',
+                  t('errors.try_again') || 'Please try again later'
+                );
+              }
+            },
           },
         ]
-      ),
+      );
+    },
     [t]
   );
 
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return notes;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, debouncedSearchQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return tasks;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [debouncedSearchQuery, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return events;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, debouncedSearchQuery]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,
@@ -172,8 +191,10 @@ export function useProductivityViewModel() {
         ? tasksToRank
         : tasksToRank.filter((task) => getTaskPriority(task) === taskPriority);
     return [...pool].sort((a, b) => {
-      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const parsedA = a.due_date ? new Date(a.due_date).getTime() : NaN;
+      const parsedB = b.due_date ? new Date(b.due_date).getTime() : NaN;
+      const aDue = isNaN(parsedA) ? Number.MAX_SAFE_INTEGER : parsedA;
+      const bDue = isNaN(parsedB) ? Number.MAX_SAFE_INTEGER : parsedB;
       return aDue - bDue;
     });
   }, [filteredTasks, getTaskPriority, taskPriority]);
@@ -271,15 +292,15 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(t('productivity.plan.overdue', { count: taskPriorityCounts.overdue }) || `1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(t('productivity.plan.no_overdue') || '1) No overdue tasks: start with highest-impact open work.');
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      lines.push(t('productivity.plan.focus_block', { tasks: nextTasks.map((task) => task.title).join(', ') }) || `2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(t('productivity.plan.no_focus') || '2) Focus block: no pending tasks, use this for planning or review.');
     }
 
     if (nextEvents.length > 0) {
@@ -291,14 +312,14 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(t('productivity.plan.calendar', { times: eventLine }) || `3) Calendar checkpoints at ${eventLine}.`);
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(t('productivity.plan.light_calendar') || '3) Calendar is light: reserve time for deep work and wrap-up.');
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue, t]);
 
   return {
     t,

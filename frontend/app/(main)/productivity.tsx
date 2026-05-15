@@ -1,23 +1,19 @@
 import React, { useCallback } from 'react';
 import {
   FlatList,
-
   Pressable,
   RefreshControl,
-  StyleSheet,
   TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
 import { AppText } from '../../src/components/AppText';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
 import { NoteCard } from '../../src/components/productivity/NoteCard';
 import { TaskCard } from '../../src/components/productivity/TaskCard';
 import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
-import { theme } from '../../src/core/theme';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { RenderItemData, useProductivityViewModel } from '@/hooks/viewmodels/useProductivityViewModel';
@@ -38,8 +34,6 @@ const T = {
   white: '#FFFFFF',
   transparent: 'transparent',
 };
-const S = theme.spacing;
-const R = theme.borderRadius;
 
 const renderItem = ({
   item,
@@ -66,13 +60,13 @@ const renderItem = ({
   if (item.type === 'event') {
     const event = item.item as CalendarEvent;
     return (
-      <View style={styles.eventCard}>
-        <View style={styles.eventIcon}>
+      <View className="flex-row items-center bg-surface-light border border-border-light rounded-xl p-lg mb-md shadow-sm">
+        <View className="w-8 h-8 rounded-lg bg-primary-surfaceLight items-center justify-center mr-md">
           <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
         </View>
-        <View style={styles.eventBody}>
-          <AppText style={styles.eventTitle}>{event.title}</AppText>
-          <AppText style={styles.eventMeta}>
+        <View className="flex-1">
+          <AppText className="text-onSurface-light font-bold text-[15px]">{event.title}</AppText>
+          <AppText className="text-onSurface-mutedLight mt-0.5 text-[13px]">
             {new Intl.DateTimeFormat(extraData.language, {
               weekday: 'short',
               month: 'short',
@@ -142,14 +136,14 @@ export default function ProductivityScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <View style={styles.headerRow}>
+    <SafeAreaView className="flex-1 bg-background-light">
+      <View className="px-xl pt-md pb-lg bg-surface-light shadow-sm z-10">
+        <View className="flex-row justify-between items-center mb-lg">
           <View>
-            <AppText variant="h1" style={styles.headerTitle}>
+            <AppText variant="h1" className="text-onSurface-light text-[28px] font-extrabold tracking-tight">
               {t('productivity.title') || 'Workspace'}
             </AppText>
-            <AppText style={styles.headerSubtitle}>
+            <AppText className="text-onSurface-mutedLight text-[14px] mt-xs">
               {pendingTasksCount === 0
                 ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
                 : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
@@ -157,60 +151,56 @@ export default function ProductivityScreen() {
             </AppText>
           </View>
 
-          <View style={styles.headerActions}>
+          <View className="flex-row gap-sm">
             <Pressable
               onPress={generateTodayPlan}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              className="w-10 h-10 rounded-full bg-primary-surfaceLight items-center justify-center active:opacity-70"
             >
               <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
               onPress={() => setShowCreateNote(true)}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              className="w-10 h-10 rounded-full bg-primary-surfaceLight items-center justify-center active:opacity-70"
             >
               <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
               onPress={() => setShowCreateTask(true)}
-              style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+              className="w-10 h-10 rounded-full bg-primary-surfaceLight items-center justify-center active:opacity-70"
             >
               <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
             </Pressable>
           </View>
         </View>
 
-        <View style={styles.searchContainer}>
+        <View className="flex-row items-center bg-background-light rounded-lg px-md h-11 border border-border-light">
           <Ionicons
             name="search"
             size={18}
             color={T.onSurface.mutedLight}
-            style={styles.searchIcon}
+            style={{ marginRight: 8 }}
           />
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder={t('productivity.search') || 'Search notes & tasks...'}
             placeholderTextColor={T.onSurface.disabledLight}
-            style={styles.searchInput}
+            className="flex-1 text-onSurface-light text-[16px] h-full"
             clearButtonMode="while-editing"
           />
         </View>
       </View>
 
-      <View style={styles.tabsContainer}>
+      <View className="flex-row bg-surface-highLight rounded-xl p-xs mx-xl mt-lg mb-md border border-border-light">
         {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
           <Pressable
             key={tab}
             onPress={() => setActiveTab(tab)}
-            style={({ pressed }) => [
-              styles.tabButton,
-              activeTab === tab && styles.tabButtonActive,
-              pressed && activeTab !== tab && { opacity: 0.6 },
-            ]}
+            className={`flex-1 py-sm items-center rounded-lg active:opacity-60 ${activeTab === tab ? 'bg-surface-light shadow-sm' : 'bg-transparent'}`}
           >
-            <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+            <AppText className={`text-[14px] ${activeTab === tab ? 'font-bold text-onSurface-light' : 'font-medium text-onSurface-mutedLight'}`}>
               {tab === 'today'
-                ? t('productivity.today')
+                ? t('productivity.today') || 'Today'
                 : tab === 'all'
                   ? t('productivity.all') || 'All'
                   : tab === 'notes'
@@ -222,7 +212,7 @@ export default function ProductivityScreen() {
       </View>
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View style={styles.priorityFilterContainer}>
+        <View className="flex-row flex-wrap mx-xl mb-sm">
           {(
             [
               { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
@@ -247,20 +237,11 @@ export default function ProductivityScreen() {
             <Pressable
               key={option.key}
               onPress={() => setTaskPriority(option.key)}
-              style={({ pressed }) => [
-                styles.priorityPillBase,
-                taskPriority === option.key ? styles.priorityPillActive : styles.priorityPillInactive,
-                pressed && { opacity: 0.8 },
-              ]}
+              className={`rounded-xl border px-2.5 py-1.5 mr-2 mb-2 active:opacity-80 ${taskPriority === option.key ? 'border-primary bg-primary-surfaceLight' : 'border-border-light bg-surface-light'}`}
             >
               <AppText
                 variant="caption"
-                style={[
-                  styles.priorityPillTextBase,
-                  taskPriority === option.key
-                    ? styles.priorityPillTextActive
-                    : styles.priorityPillTextInactive,
-                ]}
+                className={`font-bold ${taskPriority === option.key ? 'text-primary' : 'text-onSurface-mutedLight'}`}
               >
                 {option.label}
               </AppText>
@@ -273,7 +254,7 @@ export default function ProductivityScreen() {
         data={dataToRender}
         extraData={{ confirmDelete, deleteNote, deleteTask, toggleTask, language: i18n.language }}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -285,14 +266,14 @@ export default function ProductivityScreen() {
         renderItem={renderItemWrapper}
         ListHeaderComponent={
           activeTab === 'today' && todayPlan ? (
-            <View style={styles.todayPlanContainer}>
-              <View style={styles.todayPlanHeader}>
-                <AppText style={styles.todayPlanTitle}>Today plan</AppText>
+            <View className="rounded-xl bg-primary-surfaceLight border border-border-light p-lg mb-md">
+              <View className="flex-row justify-between items-center">
+                <AppText className="text-onSurface-light font-bold text-[15px]">Today plan</AppText>
                 <Pressable onPress={() => setTodayPlan(null)}>
                   <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
                 </Pressable>
               </View>
-              <AppText style={styles.todayPlanText}>{todayPlan}</AppText>
+              <AppText className="text-onSurface-mutedLight mt-2 leading-relaxed">{todayPlan}</AppText>
             </View>
           ) : null
         }
@@ -319,189 +300,3 @@ export default function ProductivityScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: T.background.light,
-  },
-  headerContainer: {
-    paddingHorizontal: S.xl,
-    paddingTop: S.md,
-    paddingBottom: S.lg,
-    backgroundColor: T.surface.light,
-    ...theme.elevation.sm,
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: S.lg,
-  },
-  headerTitle: {
-    color: T.onSurface.light,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    color: T.onSurface.mutedLight,
-    fontSize: 14,
-    marginTop: S.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: S.sm,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: R.full,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.background.light,
-    borderRadius: R.lg,
-    paddingHorizontal: S.md,
-    height: 44,
-    borderWidth: 1,
-    borderColor: T.border.light,
-  },
-  searchIcon: {
-    marginRight: S.sm,
-  },
-  searchInput: {
-    flex: 1,
-    color: T.onSurface.light,
-    fontSize: 16,
-    height: '100%',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: T.surface.highLight,
-    borderRadius: R.xl,
-    padding: S.xs,
-    marginHorizontal: S.xl,
-    marginTop: S.lg,
-    marginBottom: S.md,
-    borderWidth: 1,
-    borderColor: T.border.light,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: S.sm,
-    alignItems: 'center',
-    borderRadius: R.lg,
-    backgroundColor: T.transparent,
-  },
-  tabButtonActive: {
-    backgroundColor: T.surface.light,
-    ...theme.elevation.sm,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: T.onSurface.mutedLight,
-  },
-  tabTextActive: {
-    fontWeight: '700',
-    color: T.onSurface.light,
-  },
-  priorityFilterContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: S.xl,
-    marginBottom: S.sm,
-  },
-  priorityPillBase: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  priorityPillActive: {
-    borderColor: T.primary.DEFAULT,
-    backgroundColor: T.primary.surfaceLight,
-  },
-  priorityPillInactive: {
-    borderColor: T.border.light,
-    backgroundColor: T.surface.light,
-  },
-  priorityPillTextBase: {
-    fontWeight: '700',
-  },
-  priorityPillTextActive: {
-    color: T.primary.DEFAULT,
-  },
-  priorityPillTextInactive: {
-    color: T.onSurface.mutedLight,
-  },
-  todayPlanContainer: {
-    borderRadius: R.xl,
-    backgroundColor: T.primary.surfaceLight,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    padding: S.lg,
-    marginBottom: S.md,
-  },
-  todayPlanHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  todayPlanTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  todayPlanText: {
-    color: T.onSurface.mutedLight,
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  listContent: {
-    paddingHorizontal: S.xl,
-    paddingBottom: 100,
-    paddingTop: S.sm,
-  },
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface.light,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: T.onSurface.mutedLight,
-    marginTop: 2,
-    fontSize: 13,
-  },
-});
