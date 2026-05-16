@@ -4,6 +4,7 @@ import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CalendarEvent, Note, Task } from '@/core/models';
 import { useProductivityStore } from '@/store/useProductivityStore';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -25,10 +26,12 @@ export function useProductivityViewModel() {
 
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
+
+  const searchQuery = useDebounce(searchInput, 300);
 
   const {
     notes,
@@ -193,8 +196,16 @@ export function useProductivityViewModel() {
         date: new Date(task.created_at).getTime(),
       });
     });
+    filteredEvents.forEach((event) => {
+      data.push({
+        type: 'event',
+        item: event,
+        id: `event-${event.id}`,
+        date: new Date(event.start_time).getTime(),
+      });
+    });
     return data.sort((a, b) => (b.date || 0) - (a.date || 0));
-  }, [filteredNotes, filteredTasks]);
+  }, [filteredEvents, filteredNotes, filteredTasks]);
 
   const todayData = useMemo(() => {
     const now = new Date();
@@ -303,7 +314,8 @@ export function useProductivityViewModel() {
     taskPriority,
     setTaskPriority,
     searchQuery,
-    setSearchQuery,
+    searchInput,
+    setSearchInput,
     showCreateNote,
     setShowCreateNote,
     showCreateTask,
