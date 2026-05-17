@@ -26,6 +26,14 @@ export function useProductivityViewModel() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
@@ -56,11 +64,8 @@ export function useProductivityViewModel() {
   useEffect(() => {
     if (openCreateTask === '1' || openCreateTask === 'true') {
       setShowCreateTask(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
-        )
-      );
+      const nextParams = { ...params };
+      delete nextParams.openCreateTask;
       router.replace({ pathname, params: nextParams });
     }
   }, [openCreateTask, params, pathname, router]);
@@ -68,11 +73,8 @@ export function useProductivityViewModel() {
   useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
       setShowCreateNote(true);
-      const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
-        )
-      );
+      const nextParams = { ...params };
+      delete nextParams.openCreateNote;
       router.replace({ pathname, params: nextParams });
     }
   }, [openCreateNote, params, pathname, router]);
@@ -93,7 +95,11 @@ export function useProductivityViewModel() {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: () => {
+              void action().catch(() => {
+                Alert.alert(t('productivity.delete_failed') || 'Delete failed');
+              });
+            },
           },
         ]
       ),
@@ -101,33 +107,33 @@ export function useProductivityViewModel() {
   );
 
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return notes;
+    const lowerQ = debouncedQuery.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, debouncedQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return tasks;
+    const lowerQ = debouncedQuery.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [debouncedQuery, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return events;
+    const lowerQ = debouncedQuery.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, debouncedQuery]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,
@@ -221,7 +227,7 @@ export function useProductivityViewModel() {
 
     const upcomingEvents = filteredEvents.filter((event) => {
       const startTime = new Date(event.start_time);
-      return startTime >= start && startTime < weekEnd;
+      return startTime >= start && startTime < weekEnd && new Date(event.end_time) >= new Date();
     });
 
     const items: RenderItemData[] = [
@@ -248,8 +254,8 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender: RenderItemData[] = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -260,18 +266,37 @@ export function useProductivityViewModel() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [activeTab, todayData, mixedData, filteredNotes, prioritizedTasks, taskPriority, getTaskPriority]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
-    const nextTasks = prioritizedTasks.slice(0, 3);
-    const nextEvents = [...filteredEvents]
-      .filter((event) => new Date(event.end_time) >= now)
+
+    // Get full unfiltered datasets
+    const openTasks = tasks.filter(t => !t.completed);
+
+    // Get all events
+    const upcomingFullEvents = events.filter((event) => new Date(event.end_time) >= now);
+
+    // Calculate full priority counts
+    const fullCounts = { overdue: 0 };
+    openTasks.forEach(t => {
+      if (getTaskPriority(t) === 'overdue') fullCounts.overdue += 1;
+    });
+
+    const fullPrioritizedTasks = [...openTasks].sort((a, b) => {
+      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      return aDue - bDue;
+    });
+
+    const nextTasks = fullPrioritizedTasks.slice(0, 3);
+    const nextEvents = [...upcomingFullEvents]
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
       .slice(0, 3);
 
     const lines: string[] = [];
-    if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+    if (fullCounts.overdue > 0) {
+      lines.push(`1) Recover overdue: start with ${fullCounts.overdue} overdue task(s).`);
     } else {
       lines.push('1) No overdue tasks: start with highest-impact open work.');
     }
@@ -298,7 +323,7 @@ export function useProductivityViewModel() {
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [events, getTaskPriority, i18n.language, tasks]);
 
   return {
     t,
