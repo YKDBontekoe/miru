@@ -72,6 +72,7 @@ export const theme = {
     inputBarStopSquare: 14,
     inputBarMinHeight: 44,
     inputBarMaxHeight: 130,
+    heroCardPadding: 18,
   },
   borderRadius: {
     none: 0,
@@ -157,5 +158,14 @@ export const theme = {
       shadowRadius: 16,
       elevation: 12,
     },
+  },
+};
+
+export const BUBBLE_DECORATIONS = {
+  topRight: {
+    size: 132,
+  },
+  bottomRight: {
+    size: 148,
   },
 };

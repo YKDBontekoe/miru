@@ -1,5 +1,12 @@
 import { HOME_CORE_COLORS, HOME_CORE_SHADOW } from '@/core/design/homeCoreTheme';
 
+export const OPACITY = {
+  bubbleOverlay: 'rgba(255, 255, 255, 0.1)',
+  bubbleSubtle: 'rgba(255, 255, 255, 0.05)',
+  heroText: 'rgba(255, 255, 255, 0.8)',
+  primaryBorder: '73',
+};
+
 export const DESIGN_TOKENS = {
   colors: {
     pageBg: HOME_CORE_COLORS.bg,
