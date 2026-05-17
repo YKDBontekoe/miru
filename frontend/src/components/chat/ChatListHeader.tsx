@@ -1,23 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { theme } from '@/core/theme';
 import { Agent } from '@/core/models';
-
-const C = {
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  deep: DESIGN_TOKENS.colors.deep,
-  border: DESIGN_TOKENS.colors.border,
-  text: DESIGN_TOKENS.colors.text,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  primary: DESIGN_TOKENS.colors.primary,
-  primarySoft: DESIGN_TOKENS.colors.primarySoft,
-};
 
 type SortMode = 'recent' | 'mentions' | 'tasks';
 
@@ -67,44 +56,44 @@ export function ChatListHeader({
 
   return (
     <>
-      <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
-        <View className="absolute -right-[26px] -top-[24px] w-[132px] h-[132px] rounded-full bg-white/10" />
-        <View className="absolute right-[36px] -bottom-[48px] w-[148px] h-[148px] rounded-full bg-white/5" />
-        <AppText variant="caption" className="text-white/80 mb-1">
+      <View style={styles.heroCard}>
+        <View style={styles.heroBubbleTopRight} />
+        <View style={styles.heroBubbleBottomRight} />
+        <AppText variant="caption" style={styles.heroSubtitle}>
           {t('chat.title', 'Miru')}
         </AppText>
-        <AppText variant="h2" className="text-white font-bold mb-1.5">
+        <AppText variant="h2" style={styles.heroTitle}>
           {t('chat.chats', 'Chats')}
         </AppText>
-        <AppText variant="bodySm" className="text-white/80">
+        <AppText variant="bodySm" style={styles.heroDescription}>
           {t('chat.design_subtitle', 'Search, pin, and continue the right conversation fast.')}
         </AppText>
       </View>
 
-      <View className="bg-white rounded-3xl border border-[#DDE8E0] p-[14px] mb-3 shadow-md">
-        <View className="flex-row items-center rounded-[14px] border border-[#DDE8E0] bg-[#ECF5F0] px-2.5 mb-2.5">
-          <Ionicons name="search" size={16} color={C.muted} />
+      <View style={styles.filterCard}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={theme.spacing.lg} color={DESIGN_TOKENS.colors.muted} />
           <TextInput
             value={localQuery}
             onChangeText={setLocalQuery}
             placeholder={t('chat.search_placeholder', 'Search chats')}
-            placeholderTextColor={C.faint}
-            className="flex-1 h-[42px] text-[14px] ml-2 text-[#13251C]"
+            placeholderTextColor={DESIGN_TOKENS.colors.faint}
+            style={styles.searchInput}
             accessibilityLabel={t('chat.search_placeholder', 'Search chats')}
           />
           {localQuery ? (
             <ScalePressable
               onPress={() => setLocalQuery('')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: theme.spacing.sm, bottom: theme.spacing.sm, left: theme.spacing.sm, right: theme.spacing.sm }}
               accessibilityRole="button"
               accessibilityLabel={t('common.close', 'Close')}
             >
-              <Ionicons name="close-circle" size={16} color={C.faint} />
+              <Ionicons name="close-circle" size={theme.spacing.lg} color={DESIGN_TOKENS.colors.faint} />
             </ScalePressable>
           ) : null}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {(
             [
               ['recent', t('chat.filter_recent', 'Recent')],
@@ -117,15 +106,11 @@ export function ChatListHeader({
               <ScalePressable
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
-                className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
-                }`}
+                style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}
               >
                 <AppText
                   variant="caption"
-                  className={`font-bold ${selected ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+                  style={[styles.pillText, selected ? styles.pillTextSelected : styles.pillTextDefault]}
                 >
                   {label}
                 </AppText>
@@ -141,11 +126,9 @@ export function ChatListHeader({
             <ScalePressable
               key={label}
               onPress={onToggle}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-              }`}
+              style={[styles.pill, active ? styles.pillSelected : styles.pillDefault]}
             >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
+              <AppText variant="caption" style={[styles.pillText, active ? styles.pillTextSelected : styles.pillTextDefault]}>
                 {label}
               </AppText>
             </ScalePressable>
@@ -154,12 +137,12 @@ export function ChatListHeader({
       </View>
 
       {agents.length > 0 ? (
-        <View className="bg-white rounded-3xl border border-[#DDE8E0] py-[14px] mb-3 shadow-md">
-          <View className="flex-row justify-between items-center px-4 mb-2.5">
-            <AppText variant="h3" className="text-[#13251C] font-bold">
+        <View style={styles.personasCard}>
+          <View style={styles.personasHeader}>
+            <AppText variant="h3" style={styles.personasTitle}>
               {t('chat.personas', 'Personas')}
             </AppText>
-            <AppText variant="caption" className="text-[#5A7467] font-bold">
+            <AppText variant="caption" style={styles.personasCount}>
               {activeFilterCount > 0
                 ? t('chat.active_filters', { count: activeFilterCount, defaultValue: '{{count}} filters' })
                 : agents.length}
@@ -168,23 +151,21 @@ export function ChatListHeader({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-4"
+            contentContainerStyle={styles.scrollContent}
           >
             <ScalePressable
               onPress={() => onSelectAgent(null)}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-              }`}
+              style={[styles.pill, selectedAgentId ? styles.pillDefault : styles.pillSelected]}
             >
               <AppText
                 variant="caption"
-                className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+                style={[styles.pillText, selectedAgentId ? styles.pillTextDefault : styles.pillTextSelected]}
               >
                 {t('chat.all_agents', 'All')}
               </AppText>
             </ScalePressable>
             {agents.map((item) => (
-              <View key={item.id} style={{ marginRight: 8 }}>
+              <View key={item.id} style={styles.agentPillWrapper}>
                 <AgentPill
                   agent={item}
                   onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -195,14 +176,158 @@ export function ChatListHeader({
         </View>
       ) : null}
 
-      <View className="mb-3 mt-0.5 flex-row justify-between items-center">
-        <AppText variant="h3" className="text-[#13251C] font-bold">
+      <View style={styles.listHeader}>
+        <AppText variant="h3" style={styles.listTitle}>
           {t('chat.chats', 'Chats')}
         </AppText>
-        <AppText variant="caption" className="text-[#5A7467]">
+        <AppText variant="caption" style={styles.listCount}>
           {roomCount}
         </AppText>
       </View>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  heroCard: {
+    backgroundColor: DESIGN_TOKENS.colors.deep,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg + 2,
+    marginBottom: theme.spacing.bubblePaddingH,
+    overflow: 'hidden',
+    ...DESIGN_TOKENS.shadow,
+  },
+  heroBubbleTopRight: {
+    position: 'absolute',
+    right: -26,
+    top: -24,
+    width: 132,
+    height: 132,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  heroBubbleBottomRight: {
+    position: 'absolute',
+    right: theme.spacing.bubbleTimestampIndent,
+    bottom: -48,
+    width: 148,
+    height: 148,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  heroSubtitle: {
+    ...theme.typography.caption,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: theme.spacing.xs,
+  },
+  heroTitle: {
+    ...theme.typography.h2,
+    color: DESIGN_TOKENS.colors.white,
+    fontWeight: '700',
+    marginBottom: theme.spacing.xs + 2,
+  },
+  heroDescription: {
+    ...theme.typography.bodySm,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  filterCard: {
+    backgroundColor: DESIGN_TOKENS.colors.white,
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: DESIGN_TOKENS.colors.border,
+    padding: theme.spacing.bubblePaddingH,
+    marginBottom: theme.spacing.md,
+    ...DESIGN_TOKENS.shadow,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.md + 2,
+    borderWidth: 1,
+    borderColor: DESIGN_TOKENS.colors.border,
+    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+    paddingHorizontal: theme.spacing.bubblePaddingV,
+    marginBottom: theme.spacing.bubblePaddingV,
+  },
+  searchInput: {
+    flex: 1,
+    height: theme.spacing.inputBarMinHeight - 2,
+    ...theme.typography.bodySm,
+    marginLeft: theme.spacing.sm,
+    color: DESIGN_TOKENS.colors.text,
+  },
+  scrollContent: {
+    paddingHorizontal: theme.spacing.lg,
+  },
+  pill: {
+    marginRight: theme.spacing.sm,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderWidth: 1,
+  },
+  pillSelected: {
+    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
+    borderColor: `${DESIGN_TOKENS.colors.primary}73`,
+  },
+  pillDefault: {
+    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+    borderColor: DESIGN_TOKENS.colors.border,
+  },
+  pillText: {
+    ...theme.typography.caption,
+    fontWeight: '700',
+  },
+  pillTextSelected: {
+    color: DESIGN_TOKENS.colors.primary,
+  },
+  pillTextDefault: {
+    color: DESIGN_TOKENS.colors.muted,
+  },
+  personasCard: {
+    backgroundColor: DESIGN_TOKENS.colors.white,
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: DESIGN_TOKENS.colors.border,
+    paddingVertical: theme.spacing.bubblePaddingH,
+    marginBottom: theme.spacing.md,
+    ...DESIGN_TOKENS.shadow,
+  },
+  personasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.bubblePaddingV,
+    paddingHorizontal: theme.spacing.bubblePaddingH,
+  },
+  personasTitle: {
+    ...theme.typography.h3,
+    color: DESIGN_TOKENS.colors.text,
+    fontWeight: '700',
+  },
+  personasCount: {
+    ...theme.typography.caption,
+    color: DESIGN_TOKENS.colors.muted,
+    fontWeight: '700',
+  },
+  agentPillWrapper: {
+    marginRight: theme.spacing.sm,
+  },
+  listHeader: {
+    marginBottom: theme.spacing.md,
+    marginTop: theme.spacing.xxs,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.bubblePaddingH,
+  },
+  listTitle: {
+    ...theme.typography.h3,
+    color: DESIGN_TOKENS.colors.text,
+    fontWeight: '700',
+  },
+  listCount: {
+    ...theme.typography.caption,
+    color: DESIGN_TOKENS.colors.muted,
+  },
+});
