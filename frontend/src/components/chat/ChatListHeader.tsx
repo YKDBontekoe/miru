@@ -67,7 +67,7 @@ export function ChatListHeader({
 
   return (
     <>
-      <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
+      <View className="rounded-[28px] p-[18px] mb-[14px] overflow-hidden shadow-md" style={{ backgroundColor: C.deep }}>
         <View className="absolute -right-[26px] -top-[24px] w-[132px] h-[132px] rounded-full bg-white/10" />
         <View className="absolute right-[36px] -bottom-[48px] w-[148px] h-[148px] rounded-full bg-white/5" />
         <AppText variant="caption" className="text-white/80 mb-1">
@@ -81,15 +81,16 @@ export function ChatListHeader({
         </AppText>
       </View>
 
-      <View className="bg-white rounded-3xl border border-[#DDE8E0] p-[14px] mb-3 shadow-md">
-        <View className="flex-row items-center rounded-[14px] border border-[#DDE8E0] bg-[#ECF5F0] px-2.5 mb-2.5">
+      <View className="bg-white rounded-3xl border p-[14px] mb-3 shadow-md" style={{ borderColor: C.border }}>
+        <View className="flex-row items-center rounded-[14px] border px-2.5 mb-2.5" style={{ borderColor: C.border, backgroundColor: C.surfaceHigh }}>
           <Ionicons name="search" size={16} color={C.muted} />
           <TextInput
             value={localQuery}
             onChangeText={setLocalQuery}
             placeholder={t('chat.search_placeholder', 'Search chats')}
             placeholderTextColor={C.faint}
-            className="flex-1 h-[42px] text-[14px] ml-2 text-[#13251C]"
+            className="flex-1 h-[42px] text-[14px] ml-2"
+            style={{ color: C.text }}
             accessibilityLabel={t('chat.search_placeholder', 'Search chats')}
           />
           {localQuery ? (
@@ -117,15 +118,16 @@ export function ChatListHeader({
               <ScalePressable
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
-                className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
-                }`}
+                className="me-2 rounded-full px-3 py-2 border"
+                style={{
+                  backgroundColor: selected ? C.primarySoft : C.surfaceHigh,
+                  borderColor: selected ? `${C.primary}73` : C.border,
+                }}
               >
                 <AppText
                   variant="caption"
-                  className={`font-bold ${selected ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+                  className="font-bold"
+                  style={{ color: selected ? C.primary : C.muted }}
                 >
                   {label}
                 </AppText>
@@ -141,11 +143,17 @@ export function ChatListHeader({
             <ScalePressable
               key={label}
               onPress={onToggle}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-              }`}
+              className="me-2 rounded-full px-3 py-2 border"
+              style={{
+                backgroundColor: active ? C.primarySoft : C.surfaceHigh,
+                borderColor: active ? `${C.primary}73` : C.border,
+              }}
             >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
+              <AppText
+                variant="caption"
+                className="font-bold"
+                style={{ color: active ? C.primary : C.muted }}
+              >
                 {label}
               </AppText>
             </ScalePressable>
@@ -154,12 +162,12 @@ export function ChatListHeader({
       </View>
 
       {agents.length > 0 ? (
-        <View className="bg-white rounded-3xl border border-[#DDE8E0] py-[14px] mb-3 shadow-md">
+        <View className="bg-white rounded-3xl border py-[14px] mb-3 shadow-md" style={{ borderColor: C.border }}>
           <View className="flex-row justify-between items-center px-4 mb-2.5">
-            <AppText variant="h3" className="text-[#13251C] font-bold">
+            <AppText variant="h3" className="font-bold" style={{ color: C.text }}>
               {t('chat.personas', 'Personas')}
             </AppText>
-            <AppText variant="caption" className="text-[#5A7467] font-bold">
+            <AppText variant="caption" className="font-bold" style={{ color: C.muted }}>
               {activeFilterCount > 0
                 ? t('chat.active_filters', { count: activeFilterCount, defaultValue: '{{count}} filters' })
                 : agents.length}
@@ -172,13 +180,16 @@ export function ChatListHeader({
           >
             <ScalePressable
               onPress={() => onSelectAgent(null)}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-              }`}
+              className="me-2 rounded-full px-3 py-2 border"
+              style={{
+                backgroundColor: selectedAgentId ? C.surfaceHigh : C.primarySoft,
+                borderColor: selectedAgentId ? C.border : `${C.primary}73`,
+              }}
             >
               <AppText
                 variant="caption"
-                className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+                className="font-bold"
+                style={{ color: selectedAgentId ? C.muted : C.primary }}
               >
                 {t('chat.all_agents', 'All')}
               </AppText>
@@ -196,10 +207,10 @@ export function ChatListHeader({
       ) : null}
 
       <View className="mb-3 mt-0.5 flex-row justify-between items-center">
-        <AppText variant="h3" className="text-[#13251C] font-bold">
+        <AppText variant="h3" className="font-bold" style={{ color: C.text }}>
           {t('chat.chats', 'Chats')}
         </AppText>
-        <AppText variant="caption" className="text-[#5A7467]">
+        <AppText variant="caption" style={{ color: C.muted }}>
           {roomCount}
         </AppText>
       </View>

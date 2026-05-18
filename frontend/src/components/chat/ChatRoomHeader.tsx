@@ -8,10 +8,12 @@ import { Agent } from '@/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
+  surfaceSoft: DESIGN_TOKENS.colors.surfaceSoft,
+  border: DESIGN_TOKENS.colors.border,
   text: DESIGN_TOKENS.colors.text,
   muted: DESIGN_TOKENS.colors.muted,
   primary: DESIGN_TOKENS.colors.primary,
+  primarySoft: DESIGN_TOKENS.colors.primarySoft,
 };
 
 interface ChatRoomHeaderProps {
@@ -34,7 +36,7 @@ export const ChatRoomHeader = ({
   const { t } = useTranslation();
 
   return (
-    <View className="flex-row items-center px-3.5 py-2.5 gap-2 border-b border-[#DDE8E0] bg-white">
+    <View className="flex-row items-center px-3.5 py-2.5 gap-2 border-b bg-white" style={{ borderColor: C.border }}>
       <ScalePressable
         onPress={onBack}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -44,7 +46,7 @@ export const ChatRoomHeader = ({
         <Ionicons name="chevron-back" size={26} color={C.text} />
       </ScalePressable>
 
-      <View className="w-9 h-9 rounded-[10px] items-center justify-center bg-[#DDF4EB] border border-[#147D6455]">
+      <View className="w-9 h-9 rounded-[10px] items-center justify-center border" style={{ backgroundColor: C.primarySoft, borderColor: `${C.primary}55` }}>
         <AppText className="font-bold text-base" style={{ color: C.primary }}>
           {(room?.name?.charAt(0) || '?').toUpperCase()}
         </AppText>
@@ -85,7 +87,8 @@ export const ChatRoomHeader = ({
           })}
           {roomAgents.length > 3 && (
             <View
-              className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center -ms-[9px] z-0 bg-[#ECF5F0]"
+              className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center -ms-[9px] z-0"
+              style={{ backgroundColor: C.surfaceSoft }}
             >
               <AppText className="text-[10px] font-bold" style={{ color: C.muted }}>
                 +{roomAgents.length - 3}
@@ -97,7 +100,8 @@ export const ChatRoomHeader = ({
 
       <ScalePressable
         onPress={onManageAgentsPress}
-        className="w-8 h-8 rounded-2xl items-center justify-center bg-[#ECF5F0] border border-[#DDE8E0]"
+        className="w-8 h-8 rounded-2xl items-center justify-center border"
+        style={{ backgroundColor: C.surfaceSoft, borderColor: C.border }}
         accessibilityRole="button"
         accessibilityLabel={t('chat.manage_agents', { defaultValue: 'Manage agents' })}
       >
