@@ -73,7 +73,7 @@ const renderSortItem = ({ item }: { item: { mode: SortMode, label: string, sortM
 };
 
 const renderAgentItem = ({ item }: { item: { agent: Agent, selectedAgentId: string | null, onSelectAgent: (id: string | null) => void } }) => (
-  <View style={{ marginRight: 8 }}>
+  <View className="mr-2">
     <AgentPill
       agent={item.agent}
       onPress={() => item.onSelectAgent(item.selectedAgentId === item.agent.id ? null : item.agent.id)}
@@ -121,8 +121,8 @@ export function ChatListHeader({
 
   const allFilters = useMemo(() => {
     return [
-      ...sortModes.map(sm => ({ type: 'sort' as const, ...sm })),
-      ...filterModes.map(fm => ({ type: 'filter' as const, ...fm }))
+      ...sortModes.map(sm => ({ type: 'sort' as const, id: `sort:${sm.mode}`, ...sm })),
+      ...filterModes.map(fm => ({ type: 'filter' as const, id: `filter:${fm.label}`, ...fm }))
     ];
   }, [sortModes, filterModes]);
 
@@ -196,7 +196,7 @@ export function ChatListHeader({
           horizontal
           showsHorizontalScrollIndicator={false}
           data={allFilters}
-          keyExtractor={(item, index) => item.type === 'sort' ? item.mode : item.label}
+          keyExtractor={(item) => item.id}
           renderItem={renderCombinedItem}
           extraData={{ sortMode, recentOnly, unreadOnly }}
         />

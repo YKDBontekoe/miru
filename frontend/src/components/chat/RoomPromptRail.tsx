@@ -114,21 +114,21 @@ export function RoomPromptRail({
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
+          className="px-3"
           data={promptItems}
-          keyExtractor={(item) => item.action.id}
+          keyExtractor={(item, index) => `${item.action.id}-${index}`}
           renderItem={renderPromptItem}
           ListHeaderComponent={renderPromptHeader}
-          extraData={{ isStreaming }}
+          extraData={isStreaming}
         />
 
         {contextItems.length > 0 ? (
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 }}
+            className="px-3 pt-2"
             data={contextItems}
-            keyExtractor={(item) => item.value}
+            keyExtractor={(item, index) => `${item.value}-${index}`}
             renderItem={renderContextActionItem}
           />
         ) : null}
