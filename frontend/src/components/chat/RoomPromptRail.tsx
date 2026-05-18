@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { Pressable, FlatList, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 
@@ -23,6 +23,39 @@ interface RoomPromptRailProps {
   onContextPress?: (value: string) => void;
 }
 
+const renderPromptItem = ({ item }: { item: { action: PromptItem, isStreaming: boolean, onPromptPress: (text: string) => void, onPromptLongPress: (prompt: PromptItem) => void } }) => (
+  <Pressable
+    onPress={() => item.onPromptPress(item.action.text)}
+    onLongPress={() => item.onPromptLongPress(item.action)}
+    className={`mr-2 rounded-full px-3 py-2 border ${
+      item.action.pinned
+        ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
+        : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
+    } ${item.isStreaming ? 'opacity-60' : 'opacity-100'}`}
+    disabled={item.isStreaming}
+  >
+    <AppText
+      className={`text-xs font-bold ${
+        item.action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
+      }`}
+    >
+      {item.action.pinned ? '★ ' : ''}
+      {item.action.text}
+    </AppText>
+  </Pressable>
+);
+
+const renderContextActionItem = ({ item }: { item: { value: string, onContextPress: (value: string) => void } }) => (
+  <Pressable
+    onPress={() => item.onContextPress(item.value)}
+    className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+  >
+    <AppText variant="caption" className="text-[#5A7467] font-bold">
+      {item.value}
+    </AppText>
+  </Pressable>
+);
+
 export function RoomPromptRail({
   prompts,
   isStreaming,
@@ -38,6 +71,32 @@ export function RoomPromptRail({
 }: RoomPromptRailProps) {
   const { t } = useTranslation();
 
+  const promptItems = useMemo(() => {
+    return prompts.map(action => ({
+      action,
+      isStreaming,
+      onPromptPress,
+      onPromptLongPress
+    }));
+  }, [prompts, isStreaming, onPromptPress, onPromptLongPress]);
+
+  const contextItems = useMemo(() => {
+    if (!contextActions || !onContextPress) return [];
+    return contextActions.map(value => ({ value, onContextPress }));
+  }, [contextActions, onContextPress]);
+
+  const renderPromptHeader = useCallback(() => (
+    <Pressable
+      onPress={onSave}
+      className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
+        isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
+      }`}
+      disabled={isStreaming || !canSave}
+    >
+      <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
+    </Pressable>
+  ), [onSave, isStreaming, canSave, saveLabel]);
+
   return (
     <View className="px-3 pb-2">
       <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
@@ -52,63 +111,26 @@ export function RoomPromptRail({
           ) : null}
         </View>
 
-        <ScrollView
+        <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
-        >
-          <Pressable
-            onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
-            disabled={isStreaming || !canSave}
-          >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
-          </Pressable>
+          contentContainerStyle={{ paddingHorizontal: 12 }}
+          data={promptItems}
+          keyExtractor={(item) => item.action.id}
+          renderItem={renderPromptItem}
+          ListHeaderComponent={renderPromptHeader}
+          extraData={{ isStreaming }}
+        />
 
-          {prompts.map((action) => (
-            <Pressable
-              key={action.id}
-              onPress={() => onPromptPress(action.text)}
-              onLongPress={() => onPromptLongPress(action)}
-              className={`mr-2 rounded-full px-3 py-2 border ${
-                action.pinned
-                  ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
-                  : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
-              } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
-              disabled={isStreaming}
-            >
-              <AppText
-                className={`text-xs font-bold ${
-                  action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-                }`}
-              >
-                {action.pinned ? '★ ' : ''}
-                {action.text}
-              </AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {contextActions && contextActions.length > 0 && onContextPress ? (
-          <ScrollView
+        {contextItems.length > 0 ? (
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
-          >
-            {contextActions.map((value) => (
-              <Pressable
-                key={value}
-                onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
-              >
-                <AppText variant="caption" className="text-[#5A7467] font-bold">
-                  {value}
-                </AppText>
-              </Pressable>
-            ))}
-          </ScrollView>
+            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 }}
+            data={contextItems}
+            keyExtractor={(item) => item.value}
+            renderItem={renderContextActionItem}
+          />
         ) : null}
       </View>
     </View>
