@@ -39,8 +39,8 @@ interface ChatListHeaderProps {
 }
 
 type FilterItemType =
-  | { type: 'sort'; mode: SortMode; label: string; selected: boolean; onPress: () => void }
-  | { type: 'toggle'; label: string; active: boolean; onPress: () => void };
+  | { type: 'sort'; mode: SortMode; label: string; selected: boolean; onPress: () => void; id: string }
+  | { type: 'toggle'; label: string; active: boolean; onPress: () => void; id: string };
 
 interface FilterItemData {
   item: FilterItemType;
@@ -75,7 +75,7 @@ interface AgentItemData {
 const renderAgentItem = ({ item: data }: { item: AgentItemData }) => {
   const { item: agent, selectedAgentId, onSelectAgent } = data;
   return (
-    <View style={{ marginRight: 8 }}>
+    <View className="mr-2">
       <AgentPill
         agent={agent}
         onPress={() => onSelectAgent(selectedAgentId === agent.id ? null : agent.id)}
@@ -119,6 +119,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
         label: t('chat.filter_recent', 'Recent'),
         selected: sortMode === 'recent',
         onPress: () => onChangeSortMode('recent'),
+        id: 'sort_recent',
       },
       {
         type: 'sort',
@@ -126,6 +127,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
         label: t('chat.filter_mentions', 'Mentions'),
         selected: sortMode === 'mentions',
         onPress: () => onChangeSortMode('mentions'),
+        id: 'sort_mentions',
       },
       {
         type: 'sort',
@@ -133,18 +135,21 @@ export const ChatListHeader = React.memo(function ChatListHeader({
         label: t('chat.filter_tasks', 'Tasks'),
         selected: sortMode === 'tasks',
         onPress: () => onChangeSortMode('tasks'),
+        id: 'sort_tasks',
       },
       {
         type: 'toggle',
         label: t('chat.recent_only', '7d'),
         active: recentOnly,
         onPress: onToggleRecentOnly,
+        id: 'toggle_recent_only',
       },
       {
         type: 'toggle',
         label: t('chat.unread_only', 'Unread'),
         active: unreadOnly,
         onPress: onToggleUnreadOnly,
+        id: 'toggle_unread_only',
       },
     ];
     return data.map(item => ({ item }));
@@ -158,7 +163,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
     }));
   }, [agents, selectedAgentId, onSelectAgent]);
 
-  const keyExtractorFilter = useCallback((data: FilterItemData) => data.item.label, []);
+  const keyExtractorFilter = useCallback((data: FilterItemData) => data.item.id, []);
   const keyExtractorAgent = useCallback((data: AgentItemData) => data.item.id, []);
 
   const ListHeaderComponentAgents = useCallback(() => (
