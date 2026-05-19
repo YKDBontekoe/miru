@@ -122,8 +122,23 @@ class AgentRepository:
         integration_configs: dict | None = None,
         **fields: object,
     ) -> tuple[Agent | None, list[str]]:
-        """Update an agent's fields and relations. Only updates the owner's agent.
-        Returns the updated agent and its effective capability IDs."""
+        """Update an agent's fields and relations.
+
+        Only updates the owner's agent. Handles replacing capability
+        and integration many-to-many relationships safely.
+
+        Args:
+            agent_id: The ID of the agent to update.
+            user_id: The ID of the user that owns the agent.
+            capabilities: The list of capability IDs to replace existing ones.
+            integrations: The list of integration IDs to replace existing ones.
+            integration_configs: Configuration dicts mapped by integration ID.
+            **fields: Arbitrary model fields allowed for updating.
+
+        Returns:
+            tuple[Agent | None, list[str]]: A tuple containing the updated Agent
+                instance (or None if not found), and the list of effective capability IDs.
+        """
         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
         if unknown:
             raise ValueError(f"update_agent received unknown fields: {unknown}")
@@ -145,7 +160,7 @@ class AgentRepository:
                 await agent.capabilities.clear()
                 if caps:
                     await agent.capabilities.add(*caps)
-                effective_cap_ids = capabilities
+                effective_cap_ids = [str(c.id) for c in caps]
             else:
                 effective_cap_ids = [
                     str(c_id)

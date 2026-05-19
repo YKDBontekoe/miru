@@ -1,12 +1,37 @@
 --- backend/app/infrastructure/repositories/agent_repo.py
 +++ backend/app/infrastructure/repositories/agent_repo.py
-@@ -99,7 +99,8 @@
-             if agent_integrations:
-                 await AgentIntegration.bulk_create(agent_integrations)
-
--        return await self.get_by_id(agent.pk)
-+        refetched = await self.get_by_id(agent.pk)
-+        return refetched if refetched is not None else agent
-
-     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
-         """Update an agent's mood."""
+@@ -122,8 +122,23 @@
+         integration_configs: dict | None = None,
+         **fields: object,
+     ) -> tuple[Agent | None, list[str]]:
+-        """Update an agent's fields and relations. Only updates the owner's agent.
+-        Returns the updated agent and its effective capability IDs."""
++        """Update an agent's fields and relations.
++
++        Only updates the owner's agent. Handles replacing capability
++        and integration many-to-many relationships safely.
++
++        Args:
++            agent_id: The ID of the agent to update.
++            user_id: The ID of the user that owns the agent.
++            capabilities: The list of capability IDs to replace existing ones.
++            integrations: The list of integration IDs to replace existing ones.
++            integration_configs: Configuration dicts mapped by integration ID.
++            **fields: Arbitrary model fields allowed for updating.
++
++        Returns:
++            tuple[Agent | None, list[str]]: A tuple containing the updated Agent
++                instance (or None if not found), and the list of effective capability IDs.
++        """
+         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
+         if unknown:
+             raise ValueError(f"update_agent received unknown fields: {unknown}")
+@@ -147,7 +162,7 @@
+                 await agent.capabilities.clear()
+                 if caps:
+                     await agent.capabilities.add(*caps)
+-                effective_cap_ids = capabilities
++                effective_cap_ids = [str(c.id) for c in caps]
+             else:
+                 effective_cap_ids = [
+                     str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
