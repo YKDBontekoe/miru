@@ -99,7 +99,8 @@ class AgentRepository:
             if agent_integrations:
                 await AgentIntegration.bulk_create(agent_integrations)
 
-        return await self.get_by_id(agent.pk)
+        refetched = await self.get_by_id(agent.pk)
+        return refetched if refetched is not None else agent
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
