@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Platform,
   Pressable,
@@ -94,9 +95,11 @@ const ProductivityListItem = React.memo(function ProductivityListItem({
 const TodayPlanHeader = ({
   todayPlan,
   setTodayPlan,
+  t,
 }: {
   todayPlan: string | null;
   setTodayPlan: (plan: string | null) => void;
+  t: (key: string, options?: any) => string;
 }) => {
   if (!todayPlan) return null;
   return (
@@ -118,9 +121,13 @@ const TodayPlanHeader = ({
         }}
       >
         <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
-          Today plan
+          {t('productivity.today_plan') || 'Today plan'}
         </AppText>
-        <Pressable onPress={() => setTodayPlan(null)}>
+        <Pressable
+          onPress={() => setTodayPlan(null)}
+          accessibilityRole="button"
+          accessibilityLabel={t('settings.actions.dismiss') || 'Dismiss'}
+        >
           <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
         </Pressable>
       </View>
@@ -424,17 +431,23 @@ export default function ProductivityScreen() {
         )}
         ListHeaderComponent={
           activeTab === 'today' ? (
-            <TodayPlanHeader todayPlan={todayPlan} setTodayPlan={setTodayPlan} />
+            <TodayPlanHeader todayPlan={todayPlan} setTodayPlan={setTodayPlan} t={t} />
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={activeTab}
-            searchQuery={searchQuery}
-            setShowCreateNote={setShowCreateNote}
-            setShowCreateTask={setShowCreateTask}
-            t={t}
-          />
+          isLoading ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator size="large" color={T.primary.DEFAULT} />
+            </View>
+          ) : (
+            <ProductivityEmptyState
+              activeTab={activeTab}
+              searchQuery={searchQuery}
+              setShowCreateNote={setShowCreateNote}
+              setShowCreateTask={setShowCreateTask}
+              t={t}
+            />
+          )
         }
       />
 
