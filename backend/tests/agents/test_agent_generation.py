@@ -33,9 +33,9 @@ async def test_update_mood_success():
     llm_mock = AsyncMock()
     service = AgentService(repo, llm_mock)
     mock_completion = llm_mock.structured_completion
-        mock_completion.return_value = MoodResponse(mood="Happy")
-        await service.update_mood(agent_id, "User said something nice")
-        repo.update_mood.assert_called_once_with(agent_id, "Happy")
+    mock_completion.return_value = MoodResponse(mood="Happy")
+    await service.update_mood(agent_id, "User said something nice")
+    repo.update_mood.assert_called_once_with(agent_id, "Happy")
 
 
 @pytest.mark.asyncio
@@ -46,9 +46,9 @@ async def test_update_mood_invalid_mood():
     llm_mock = AsyncMock()
     service = AgentService(repo, llm_mock)
     mock_completion = llm_mock.structured_completion
-        mock_completion.return_value = MoodResponse(mood="UnknownMood")
-        await service.update_mood(agent_id, "User said something weird")
-        repo.update_mood.assert_called_once_with(agent_id, "Neutral")
+    mock_completion.return_value = MoodResponse(mood="UnknownMood")
+    await service.update_mood(agent_id, "User said something weird")
+    repo.update_mood.assert_called_once_with(agent_id, "Neutral")
 
 
 @pytest.mark.asyncio
@@ -59,9 +59,9 @@ async def test_update_mood_exception():
     llm_mock = AsyncMock()
     service = AgentService(repo, llm_mock)
     mock_completion = llm_mock.structured_completion
-        mock_completion.side_effect = Exception("API Error")
-        await service.update_mood(agent_id, "User said something")
-        repo.update_mood.assert_not_called()
+    mock_completion.side_effect = Exception("API Error")
+    await service.update_mood(agent_id, "User said something")
+    repo.update_mood.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -79,9 +79,9 @@ async def test_generate_agent_profile():
     llm_mock = AsyncMock()
     service = AgentService(repo, llm_mock)
     mock_completion = llm_mock.structured_completion
-        mock_completion.return_value = mock_response
-        response = await service.generate_agent_profile("creative artist")
-        assert response.name == "Generated Agent"
+    mock_completion.return_value = mock_response
+    response = await service.generate_agent_profile("creative artist")
+    assert response.name == "Generated Agent"
 
 
 @pytest.mark.asyncio
@@ -111,6 +111,6 @@ async def test_generate_agent_profile_chaos_timeout():
     llm_mock = AsyncMock()
     service = AgentService(repo, llm_mock)
     mock_completion = llm_mock.structured_completion
-        mock_completion.side_effect = TimeoutError("LLM API Timeout")
-        with pytest.raises(TimeoutError):
-            await service.generate_agent_profile("impossible keywords")
+    mock_completion.side_effect = TimeoutError("LLM API Timeout")
+    with pytest.raises(TimeoutError):
+        await service.generate_agent_profile("impossible keywords")
