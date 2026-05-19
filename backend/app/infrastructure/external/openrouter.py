@@ -190,3 +190,14 @@ async def structured_completion(
 async def embed(text: str) -> list[float]:
     client = get_openrouter_client()
     return await client.embed(text, get_settings().embedding_model)
+
+
+class OpenRouterLLMAdapter:
+    """Adapter to provide the OpenRouterClient functionality through the LLMInterface."""
+
+    async def structured_completion(
+        self,
+        messages: list[ChatCompletionMessageParam],
+        response_model: type[T],
+    ) -> T:
+        return await structured_completion(messages=messages, response_model=response_model)

@@ -124,7 +124,7 @@ async def test_agent_service_caching() -> None:
     mock_repo.list_capabilities = AsyncMock(return_value=[Capability(id="cap1", name="Cap 1")])
     mock_repo.list_integrations = AsyncMock(return_value=[Integration(id="int1", type="Int 1")])
 
-    service = AgentService(repo=mock_repo)
+    service = AgentService(repo=mock_repo, llm_client=AsyncMock())
 
     # First call: hits repo
     caps1 = await service.list_capabilities()

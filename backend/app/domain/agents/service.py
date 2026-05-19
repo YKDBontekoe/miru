@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -14,25 +13,33 @@ from app.domain.agents.schemas import (
     AgentUpdate,
     MoodResponse,
 )
-from app.infrastructure.external.openrouter import structured_completion
 
 if TYPE_CHECKING:
     from uuid import UUID
 
     from openai.types.chat import ChatCompletionMessageParam
 
+    from app.domain.agents.llm_interface import LLMInterface
+    from app.domain.agents.models import Agent, Capability, Integration
     from app.infrastructure.repositories.agent_repo import AgentRepository
 
 logger = logging.getLogger(__name__)
 
 
-def _build_agent_response(agent: Agent) -> AgentResponse:
+def _build_agent_response(
+    agent: Agent,
+    effective_cap_ids: list[str] | None = None,
+) -> AgentResponse:
     """Construct an AgentResponse from a prefetched Agent ORM instance.
 
     Assumes ``capabilities`` and ``agent_integrations__integration`` have been
     prefetched on the agent before calling this function.
     """
-    cap_ids: list[str] = [cap.pk for cap in agent.capabilities.related_objects]
+    if effective_cap_ids is not None:
+        cap_ids = effective_cap_ids
+    else:
+        cap_ids = [cap.pk for cap in agent.capabilities.related_objects]
+
     integration_ids: list[str] = [
         ai.integration_id for ai in agent.agent_integrations if ai.enabled
     ]
@@ -58,8 +65,9 @@ def _build_agent_response(agent: Agent) -> AgentResponse:
 
 
 class AgentService:
-    def __init__(self, repo: AgentRepository):
+    def __init__(self, repo: AgentRepository, llm_client: LLMInterface):
         self.repo = repo
+        self.llm_client = llm_client
         self._cached_capabilities: list[Capability] | None = None
         self._cached_integrations: list[Integration] | None = None
 
@@ -123,37 +131,18 @@ class AgentService:
             capability_ids=agent_data.capabilities,
         )
 
-        agent = await Agent.create(
+        agent = await self.repo.create_agent_with_relations(
             user_id=user_id,
             name=agent_data.name,
             personality=agent_data.personality,
+            system_prompt=system_prompt,
             description=agent_data.description,
             goals=agent_data.goals,
-            system_prompt=system_prompt,
+            capability_ids=agent_data.capabilities,
+            integration_ids=agent_data.integrations,
+            integration_configs=agent_data.integration_configs,
         )
-
-        if agent_data.capabilities:
-            caps = await Capability.filter(id__in=agent_data.capabilities)
-            await agent.capabilities.add(*caps)
-
-        if agent_data.integrations:
-            integrations = await Integration.filter(id__in=agent_data.integrations)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=agent_data.integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
-
-        # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
-        assert refetched is not None
-        return _build_agent_response(refetched)
+        return _build_agent_response(agent)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
         """List all agents for a user."""
@@ -173,7 +162,7 @@ class AgentService:
             {"role": "user", "content": f"Keywords: {keywords}"},
         ]
 
-        return await structured_completion(
+        return await self.llm_client.structured_completion(
             messages=messages,
             response_model=AgentGenerationResponse,
         )
@@ -191,37 +180,14 @@ class AgentService:
             return None
 
         fields = data.model_dump(exclude_none=True)
+        capabilities = fields.pop("capabilities", None)
+        integrations = fields.pop("integrations", None)
+        integration_configs = fields.pop("integration_configs", None)
 
-        # --- capabilities ---
-        new_capability_ids: list[str] | None = fields.pop("capabilities", None)
-        if new_capability_ids is not None:
-            caps = await Capability.filter(id__in=new_capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
-            effective_cap_ids = new_capability_ids
+        if capabilities is not None:
+            effective_cap_ids = capabilities
         else:
-            effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
-            ]
-
-        # --- integrations ---
-        new_integration_ids: list[str] | None = fields.pop("integrations", None)
-        new_integration_configs: dict = fields.pop("integration_configs", None) or {}
-        if new_integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=new_integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=new_integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            effective_cap_ids = [str(cap.pk) for cap in agent.capabilities.related_objects]
 
         # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
@@ -238,10 +204,19 @@ class AgentService:
         )
         fields["system_prompt"] = updated_prompt
 
-        updated = await self.repo.update_agent(agent_id, user_id, **fields)
+        updated, effective_cap_ids = await self.repo.update_agent(
+            agent_id,
+            user_id,
+            capabilities=capabilities,
+            integrations=integrations,
+            integration_configs=integration_configs,
+            **fields,
+        )
+
         if not updated:
             return None
-        return _build_agent_response(updated)
+
+        return _build_agent_response(updated, effective_cap_ids)
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID) -> bool:
         """Soft-delete an agent owned by user_id."""
@@ -271,7 +246,7 @@ class AgentService:
             return
         mood_list = ", ".join(self._VALID_MOODS)
         try:
-            response = await structured_completion(
+            response = await self.llm_client.structured_completion(
                 messages=[
                     {
                         "role": "system",

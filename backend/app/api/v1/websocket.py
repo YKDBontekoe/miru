@@ -123,12 +123,14 @@ async def websocket_chat_hub(
         await chat_hub.connect(websocket, user_id)
         await chat_hub.send_to_user(user_id, {"type": "connected", "user_id": str(user_id)})
 
+        from app.infrastructure.external.openrouter import OpenRouterLLMAdapter
+
         agent_repo = AgentRepository()
         service = ChatService(
             chat_repo=ChatRepository(),
             agent_repo=agent_repo,
             memory_repo=MemoryRepository(),
-            agent_service=AgentService(repo=agent_repo),
+            agent_service=AgentService(repo=agent_repo, llm_client=OpenRouterLLMAdapter()),
         )
 
         while True:
