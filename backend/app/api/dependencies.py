@@ -70,10 +70,23 @@ def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) ->
 
 
 def get_steam_client() -> SteamClient:
+    """Return an instantiated Steam API client.
+
+    Returns:
+        SteamClient: An implementation of the SteamClient interface (SteamAPIClient).
+    """
     return SteamAPIClient()
 
 
 def get_resolve_steam_user_use_case(
     client: Annotated[SteamClient, Depends(get_steam_client)],
 ) -> ResolveSteamUserUseCase:
+    """Return the use case for resolving a Steam user, with injected dependencies.
+
+    Args:
+        client: The injected SteamClient interface.
+
+    Returns:
+        ResolveSteamUserUseCase: The instantiated use case.
+    """
     return ResolveSteamUserUseCase(client)

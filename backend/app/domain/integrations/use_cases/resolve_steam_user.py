@@ -9,7 +9,7 @@ from app.domain.integrations.interfaces.steam_client import SteamClient
 class ResolveSteamUserUseCase:
     """Use case to resolve a Steam username or ID."""
 
-    def __init__(self, steam_client: SteamClient):
+    def __init__(self, steam_client: SteamClient) -> None:
         self.steam_client = steam_client
 
     async def execute(self, username: str) -> SteamUser | None:
