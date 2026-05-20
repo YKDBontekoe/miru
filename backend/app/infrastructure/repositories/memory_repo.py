@@ -81,6 +81,22 @@ class MemoryRepository:
             source_id=from_id, target_id=to_id, relationship_type=rel_type
         )
 
+    async def bulk_create_relationships(
+        self,
+        from_id: UUID,
+        to_ids: list[UUID],
+        rel_type: str = "RELATED_TO",
+    ) -> None:
+        """Bulk create relationships between a source memory and multiple target memories."""
+        if not to_ids:
+            return
+
+        relationships = [
+            MemoryRelationship(source_id=from_id, target_id=to_id, relationship_type=rel_type)
+            for to_id in to_ids
+        ]
+        await MemoryRelationship.bulk_create(relationships)
+
     async def find_related(self, memory_id: UUID, rel_type: str | None = None) -> list[Memory]:
         """Find related memories."""
         q = MemoryRelationship.filter(Q(source_id=memory_id) | Q(target_id=memory_id))
