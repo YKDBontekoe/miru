@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
-  Alert,
   FlatList,
   Platform,
   Pressable,
@@ -18,10 +17,11 @@ import { CreateNoteModal } from '../../src/components/productivity/CreateNoteMod
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
 import { NoteCard } from '../../src/components/productivity/NoteCard';
 import { TaskCard } from '../../src/components/productivity/TaskCard';
+import { EventCard } from '../../src/components/productivity/EventCard';
 import { theme } from '../../src/core/theme';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
-import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { RenderItemData, useProductivityViewModel } from '../../src/hooks/useProductivityViewModel';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -42,56 +42,77 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
-type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
+const renderItem = ({
+  item,
+  extraData,
+}: {
+  item: RenderItemData;
+  extraData: {
+    confirmDelete: (action: () => Promise<void>) => void;
+    deleteNote: (id: string) => Promise<void>;
+    deleteTask: (id: string) => Promise<void>;
+    toggleTask: (id: string) => Promise<void>;
+  };
+}) => {
+  if (item.type === 'note') {
+    const note = item.item as Note;
+    return (
+      <NoteCard
+        note={note}
+        onDelete={() => extraData.confirmDelete(() => extraData.deleteNote(note.id))}
+      />
+    );
+  }
+  if (item.type === 'event') {
+    const event = item.item as CalendarEvent;
+    return <EventCard event={event} />;
+  }
 
-type RenderItemData = {
-  date?: number;
-  type: 'note' | 'task' | 'event';
-  item: Note | Task | CalendarEvent;
-  id: string;
+  const task = item.item as Task;
+  return (
+    <TaskCard
+      task={task}
+      onToggle={() => extraData.toggleTask(task.id)}
+      onDelete={() => extraData.confirmDelete(() => extraData.deleteTask(task.id))}
+    />
+  );
 };
 
 export default function ProductivityScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
   const openCreateTask = params.openCreateTask;
   const openCreateNote = params.openCreateNote;
-  const [activeTab, setActiveTab] = useState<Tab>('today');
-  const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateNote, setShowCreateNote] = useState(false);
-  const [showCreateTask, setShowCreateTask] = useState(false);
-  const [todayPlan, setTodayPlan] = useState<string | null>(null);
 
-  const {
-    notes,
-    tasks,
-    events,
-    fetchNotes,
-    fetchTasks,
-    fetchEvents,
-    isLoading,
-    deleteNote,
-    deleteTask,
-    toggleTask,
-  } = useProductivityStore();
+  const { state, actions } = useProductivityViewModel();
+  const [inputValue, setInputValue] = React.useState(state.searchQuery);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchNotes(controller.signal);
-    fetchTasks(controller.signal);
-    fetchEvents(controller.signal);
+  const debounceTimer = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleChange = React.useCallback(
+    (text: string) => {
+      setInputValue(text);
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      debounceTimer.current = setTimeout(() => {
+        actions.setSearchQuery(text);
+      }, 300);
+    },
+    [actions]
+  );
+
+  React.useEffect(() => {
     return () => {
-      controller.abort();
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  }, [fetchEvents, fetchNotes, fetchTasks]);
+  }, []);
 
   useEffect(() => {
     if (openCreateTask === '1' || openCreateTask === 'true') {
-      setShowCreateTask(true);
+      actions.setShowCreateTask(true);
       const nextParams = Object.fromEntries(
         Object.entries(params).filter(
           ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
@@ -99,11 +120,11 @@ export default function ProductivityScreen() {
       );
       router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateTask, params, pathname, router]);
+  }, [openCreateTask, params, pathname, router, actions, actions.setShowCreateTask]);
 
   useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
-      setShowCreateNote(true);
+      actions.setShowCreateNote(true);
       const nextParams = Object.fromEntries(
         Object.entries(params).filter(
           ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
@@ -111,270 +132,20 @@ export default function ProductivityScreen() {
       );
       router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateNote, params, pathname, router]);
+  }, [openCreateNote, params, pathname, router, actions, actions.setShowCreateNote]);
 
-  const handleRefresh = useCallback(() => {
-    fetchNotes();
-    fetchTasks();
-    fetchEvents();
-  }, [fetchEvents, fetchNotes, fetchTasks]);
-
-  const confirmDelete = useCallback(
-    (action: () => Promise<void>) =>
-      Alert.alert(
-        t('productivity.delete') || 'Delete',
-        t('productivity.are_you_sure') || 'Are you sure?',
-        [
-          { text: t('settings.actions.cancel') || 'Cancel', style: 'cancel' },
-          {
-            text: t('settings.actions.delete') || 'Delete',
-            style: 'destructive',
-            onPress: () => action(),
-          },
-        ]
-      ),
-    [t]
-  );
-
-  const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
-    return notes.filter(
-      (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
-    );
-  }, [notes, searchQuery]);
-
-  const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
-    return tasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(lowerQ) ||
-        (task.description?.toLowerCase().includes(lowerQ) ?? false)
-    );
-  }, [searchQuery, tasks]);
-
-  const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
-    return events.filter(
-      (event) =>
-        event.title.toLowerCase().includes(lowerQ) ||
-        (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
-        (event.location?.toLowerCase().includes(lowerQ) ?? false)
-    );
-  }, [events, searchQuery]);
-
-  const pendingTasksCount = useMemo(
-    () => filteredTasks.filter((task) => !task.completed).length,
-    [filteredTasks]
-  );
-
-  const getTaskPriority = useCallback((task: Task): Exclude<TaskPriority, 'all'> => {
-    if (!task.due_date) return 'no_due';
-    const now = new Date();
-    const due = new Date(task.due_date);
-    if (isNaN(due.getTime())) return 'no_due';
-    const dayStart = new Date(now);
-    dayStart.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(dayStart);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (due < dayStart) return 'overdue';
-    if (due >= dayStart && due < tomorrow) return 'today';
-    return 'upcoming';
-  }, []);
-
-  const taskPriorityCounts = useMemo(() => {
-    const counts: Record<TaskPriority, number> = {
-      all: 0,
-      overdue: 0,
-      today: 0,
-      upcoming: 0,
-      no_due: 0,
-    };
-    filteredTasks
-      .filter((task) => !task.completed)
-      .forEach((task) => {
-        counts.all += 1;
-        counts[getTaskPriority(task)] += 1;
-      });
-    return counts;
-  }, [filteredTasks, getTaskPriority]);
-
-  const prioritizedTasks = useMemo(() => {
-    const tasksToRank = filteredTasks.filter((task) => !task.completed);
-    const pool =
-      taskPriority === 'all'
-        ? tasksToRank
-        : tasksToRank.filter((task) => getTaskPriority(task) === taskPriority);
-    return [...pool].sort((a, b) => {
-      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-      return aDue - bDue;
-    });
-  }, [filteredTasks, getTaskPriority, taskPriority]);
-
-  const mixedData = useMemo(() => {
-    const data: RenderItemData[] = [];
-    filteredNotes.forEach((note) => {
-      data.push({
-        type: 'note',
-        item: note,
-        id: `note-${note.id}`,
-        date: new Date(note.created_at).getTime(),
-      });
-    });
-    filteredTasks.forEach((task) => {
-      data.push({
-        type: 'task',
-        item: task,
-        id: `task-${task.id}`,
-        date: new Date(task.created_at).getTime(),
-      });
-    });
-    return data.sort((a, b) => (b.date || 0) - (a.date || 0));
-  }, [filteredNotes, filteredTasks]);
-
-  const todayData = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    const weekEnd = new Date(start);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-
-    const overdueTasks = filteredTasks.filter((task) => {
-      if (task.completed || !task.due_date) return false;
-      return new Date(task.due_date) < start;
-    });
-
-    const dueTodayTasks = filteredTasks.filter((task) => {
-      if (task.completed || !task.due_date) return false;
-      const dueDate = new Date(task.due_date);
-      return dueDate >= start && dueDate < end;
-    });
-
-    const upcomingEvents = filteredEvents.filter((event) => {
-      const startTime = new Date(event.start_time);
-      return startTime >= start && startTime < weekEnd;
-    });
-
-    const items: RenderItemData[] = [
-      ...overdueTasks.map((task) => ({
-        type: 'task' as const,
-        item: task,
-        id: `overdue-${task.id}`,
-        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
-      })),
-      ...dueTodayTasks.map((task) => ({
-        type: 'task' as const,
-        item: task,
-        id: `today-${task.id}`,
-        date: task.due_date ? new Date(task.due_date).getTime() : undefined,
-      })),
-      ...upcomingEvents.map((event) => ({
-        type: 'event' as const,
-        item: event,
-        id: `event-${event.id}`,
-        date: new Date(event.start_time).getTime(),
-      })),
-    ];
-
-    return items.sort((a, b) => (a.date || 0) - (b.date || 0));
-  }, [filteredEvents, filteredTasks]);
-
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
-      ? todayData.filter((entry) => {
-          if (entry.type !== 'task') return true;
-          if (taskPriority === 'all') return true;
-          return getTaskPriority(entry.item as Task) === taskPriority;
-        })
-      : activeTab === 'all'
-        ? mixedData
-        : activeTab === 'notes'
-          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
-          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
-
-  const generateTodayPlan = useCallback(() => {
-    const now = new Date();
-    const nextTasks = prioritizedTasks.slice(0, 3);
-    const nextEvents = [...filteredEvents]
-      .filter((event) => new Date(event.end_time) >= now)
-      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-      .slice(0, 3);
-
-    const lines: string[] = [];
-    if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
-    } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
-    }
-
-    if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
-    } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
-    }
-
-    if (nextEvents.length > 0) {
-      const eventLine = nextEvents
-        .map((event) =>
-          new Intl.DateTimeFormat(i18n.language, {
-            hour: '2-digit',
-            minute: '2-digit',
-          }).format(new Date(event.start_time))
-        )
-        .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
-    } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
-    }
-
-    setTodayPlan(lines.join('\n'));
-    setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
-
-  const renderItem = useCallback(
-    ({ item }: { item: RenderItemData }) => {
-      if (item.type === 'note') {
-        const note = item.item as Note;
-        return <NoteCard note={note} onDelete={() => confirmDelete(() => deleteNote(note.id))} />;
-      }
-      if (item.type === 'event') {
-        const event = item.item as CalendarEvent;
-        return (
-          <View style={styles.eventCard}>
-            <View style={styles.eventIcon}>
-              <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
-            </View>
-            <View style={styles.eventBody}>
-              <AppText style={styles.eventTitle}>{event.title}</AppText>
-              <AppText style={styles.eventMeta}>
-                {new Intl.DateTimeFormat(i18n.language, {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: event.is_all_day ? undefined : '2-digit',
-                  minute: event.is_all_day ? undefined : '2-digit',
-                }).format(new Date(event.start_time))}
-              </AppText>
-            </View>
-          </View>
-        );
-      }
-
-      const task = item.item as Task;
-      return (
-        <TaskCard
-          task={task}
-          onToggle={() => toggleTask(task.id)}
-          onDelete={() => confirmDelete(() => deleteTask(task.id))}
-        />
-      );
-    },
-    [confirmDelete, deleteNote, deleteTask, i18n.language, toggleTask]
+  const memoizedRenderItem = useCallback(
+    (props: { item: RenderItemData }) =>
+      renderItem({
+        item: props.item,
+        extraData: {
+          confirmDelete: actions.confirmDelete,
+          deleteNote: actions.deleteNote,
+          deleteTask: actions.deleteTask,
+          toggleTask: actions.toggleTask,
+        },
+      }),
+    [actions.confirmDelete, actions.deleteNote, actions.deleteTask, actions.toggleTask]
   );
 
   return (
@@ -386,28 +157,28 @@ export default function ProductivityScreen() {
               {t('productivity.title') || 'Workspace'}
             </AppText>
             <AppText style={styles.headerSubtitle}>
-              {pendingTasksCount === 0
+              {state.pendingTasksCount === 0
                 ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
-                : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
-                  `You have ${pendingTasksCount} tasks pending.`}
+                : t('productivity.header.subtitle.pending', { count: state.pendingTasksCount }) ||
+                  `You have ${state.pendingTasksCount} tasks pending.`}
             </AppText>
           </View>
 
           <View style={styles.headerActions}>
             <Pressable
-              onPress={generateTodayPlan}
+              onPress={actions.generateTodayPlan}
               style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
             >
               <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
-              onPress={() => setShowCreateNote(true)}
+              onPress={() => actions.setShowCreateNote(true)}
               style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
             >
               <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
             </Pressable>
             <Pressable
-              onPress={() => setShowCreateTask(true)}
+              onPress={() => actions.setShowCreateTask(true)}
               style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
             >
               <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
@@ -423,8 +194,8 @@ export default function ProductivityScreen() {
             style={styles.searchIcon}
           />
           <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={inputValue}
+            onChangeText={handleChange}
             placeholder={t('productivity.search') || 'Search notes & tasks...'}
             placeholderTextColor={T.onSurface.disabledLight}
             style={styles.searchInput}
@@ -437,14 +208,14 @@ export default function ProductivityScreen() {
         {(['today', 'all', 'notes', 'tasks'] as const).map((tab) => (
           <Pressable
             key={tab}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => actions.setActiveTab(tab)}
             style={({ pressed }) => [
               styles.tabButton,
-              activeTab === tab && styles.tabButtonActive,
-              pressed && activeTab !== tab && { opacity: 0.6 },
+              state.activeTab === tab && styles.tabButtonActive,
+              pressed && state.activeTab !== tab && { opacity: 0.6 },
             ]}
           >
-            <AppText style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+            <AppText style={[styles.tabText, state.activeTab === tab && styles.tabTextActive]}>
               {tab === 'today'
                 ? t('productivity.today')
                 : tab === 'all'
@@ -457,7 +228,7 @@ export default function ProductivityScreen() {
         ))}
       </View>
 
-      {(activeTab === 'tasks' || activeTab === 'today') && (
+      {(state.activeTab === 'tasks' || state.activeTab === 'today') && (
         <View
           style={{
             flexDirection: 'row',
@@ -468,35 +239,44 @@ export default function ProductivityScreen() {
         >
           {(
             [
-              { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
+              {
+                key: 'all',
+                label: t('productivity.priority.all', { count: state.taskPriorityCounts.all }),
+              },
               {
                 key: 'overdue',
-                label: t('productivity.priority.overdue', { count: taskPriorityCounts.overdue }),
+                label: t('productivity.priority.overdue', {
+                  count: state.taskPriorityCounts.overdue,
+                }),
               },
               {
                 key: 'today',
-                label: t('productivity.priority.today', { count: taskPriorityCounts.today }),
+                label: t('productivity.priority.today', { count: state.taskPriorityCounts.today }),
               },
               {
                 key: 'upcoming',
-                label: t('productivity.priority.upcoming', { count: taskPriorityCounts.upcoming }),
+                label: t('productivity.priority.upcoming', {
+                  count: state.taskPriorityCounts.upcoming,
+                }),
               },
               {
                 key: 'no_due',
-                label: t('productivity.priority.no_due', { count: taskPriorityCounts.no_due }),
+                label: t('productivity.priority.no_due', {
+                  count: state.taskPriorityCounts.no_due,
+                }),
               },
             ] as const
           ).map((option) => (
             <Pressable
               key={option.key}
-              onPress={() => setTaskPriority(option.key)}
+              onPress={() => actions.setTaskPriority(option.key)}
               style={({ pressed }) => [
                 {
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
+                  borderColor: state.taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
                   backgroundColor:
-                    taskPriority === option.key ? T.primary.surfaceLight : T.surface.light,
+                    state.taskPriority === option.key ? T.primary.surfaceLight : T.surface.light,
                   paddingHorizontal: 10,
                   paddingVertical: 6,
                   marginRight: 8,
@@ -508,7 +288,7 @@ export default function ProductivityScreen() {
               <AppText
                 variant="caption"
                 style={{
-                  color: taskPriority === option.key ? T.primary.DEFAULT : T.onSurface.mutedLight,
+                  color: state.taskPriority === option.key ? T.primary.DEFAULT : T.onSurface.mutedLight,
                   fontWeight: '700',
                 }}
               >
@@ -519,21 +299,34 @@ export default function ProductivityScreen() {
         </View>
       )}
 
+      {state.hasError ? (
+        <View style={styles.emptyContainer}>
+          <AppText style={{ color: T.onSurface.light, marginBottom: S.md }}>
+            {state.errorMessage}
+          </AppText>
+          <Pressable
+            onPress={actions.handleRefresh}
+            style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+          >
+            <AppText style={styles.emptyButtonText}>Retry</AppText>
+          </Pressable>
+        </View>
+      ) : (
       <FlatList
-        data={dataToRender}
+        data={state.dataToRender}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading && dataToRender.length > 0}
-            onRefresh={handleRefresh}
+            refreshing={state.isLoading && state.dataToRender.length > 0}
+            onRefresh={actions.handleRefresh}
             tintColor={T.primary.DEFAULT}
           />
         }
-        renderItem={renderItem}
+        renderItem={memoizedRenderItem}
         ListHeaderComponent={
-          activeTab === 'today' && todayPlan ? (
+          state.activeTab === 'today' && state.todayPlan ? (
             <View
               style={{
                 borderRadius: R.xl,
@@ -554,12 +347,12 @@ export default function ProductivityScreen() {
                 <AppText style={{ color: T.onSurface.light, fontWeight: '700', fontSize: 15 }}>
                   Today plan
                 </AppText>
-                <Pressable onPress={() => setTodayPlan(null)}>
+                <Pressable onPress={() => actions.setTodayPlan(null)}>
                   <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
                 </Pressable>
               </View>
               <AppText style={{ color: T.onSurface.mutedLight, marginTop: 8, lineHeight: 20 }}>
-                {todayPlan}
+                {state.todayPlan}
               </AppText>
             </View>
           ) : null
@@ -569,11 +362,11 @@ export default function ProductivityScreen() {
             <View style={styles.emptyIconCircle}>
               <Ionicons
                 name={
-                  activeTab === 'notes'
+                  state.activeTab === 'notes'
                     ? 'document-text'
-                    : activeTab === 'tasks'
+                    : state.activeTab === 'tasks'
                       ? 'checkbox'
-                      : activeTab === 'today'
+                      : state.activeTab === 'today'
                         ? 'sunny-outline'
                         : 'planet'
                 }
@@ -582,30 +375,30 @@ export default function ProductivityScreen() {
               />
             </View>
             <AppText variant="h3" style={styles.emptyTitle}>
-              {searchQuery
+              {state.searchQuery
                 ? t('productivity.no_matches') || 'No matches found'
-                : activeTab === 'notes'
+                : state.activeTab === 'notes'
                   ? t('productivity.no_notes') || 'No Notes'
-                  : activeTab === 'tasks'
+                  : state.activeTab === 'tasks'
                     ? t('productivity.no_tasks') || 'No Tasks'
-                    : activeTab === 'today'
+                    : state.activeTab === 'today'
                       ? t('productivity.nothing_urgent_today')
                       : t('productivity.workspace_clear') || 'Your workspace is clear'}
             </AppText>
             <AppText style={styles.emptySubtitle}>
-              {searchQuery
+              {state.searchQuery
                 ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-                : activeTab === 'today'
+                : state.activeTab === 'today'
                   ? t('productivity.today_empty_detail')
                   : t('productivity.capture_thoughts') ||
                     'Capture your thoughts and track what needs to get done.'}
             </AppText>
 
-            {!searchQuery && (
+            {!state.searchQuery && (
               <View style={styles.emptyActions}>
-                {(activeTab === 'all' || activeTab === 'notes') && (
+                {(state.activeTab === 'all' || state.activeTab === 'notes') && (
                   <Pressable
-                    onPress={() => setShowCreateNote(true)}
+                    onPress={() => actions.setShowCreateNote(true)}
                     style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
                   >
                     <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
@@ -614,12 +407,13 @@ export default function ProductivityScreen() {
                     </AppText>
                   </Pressable>
                 )}
-                {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
+                {(state.activeTab === 'all' || state.activeTab === 'tasks' || state.activeTab === 'today') && (
                   <Pressable
-                    onPress={() => setShowCreateTask(true)}
+                    onPress={() => actions.setShowCreateTask(true)}
                     style={({ pressed }) => [
                       styles.emptyButton,
-                      (activeTab === 'all' || activeTab === 'today') && styles.emptyButtonSecondary,
+                      (state.activeTab === 'all' || state.activeTab === 'today') &&
+                        styles.emptyButtonSecondary,
                       pressed && { opacity: 0.8 },
                     ]}
                   >
@@ -627,13 +421,15 @@ export default function ProductivityScreen() {
                       name="add"
                       size={18}
                       color={
-                        activeTab === 'all' || activeTab === 'today' ? T.primary.DEFAULT : T.white
+                        state.activeTab === 'all' || state.activeTab === 'today'
+                          ? T.primary.DEFAULT
+                          : T.white
                       }
                       style={{ marginEnd: 6 }}
                     />
                     <AppText
                       style={
-                        activeTab === 'all' || activeTab === 'today'
+                        state.activeTab === 'all' || state.activeTab === 'today'
                           ? styles.emptyButtonTextSecondary
                           : styles.emptyButtonText
                       }
@@ -647,16 +443,17 @@ export default function ProductivityScreen() {
           </View>
         }
       />
+      )}
 
       <CreateNoteModal
-        visible={showCreateNote}
-        onClose={() => setShowCreateNote(false)}
-        onCreated={fetchNotes}
+        visible={state.showCreateNote}
+        onClose={() => actions.setShowCreateNote(false)}
+        onCreated={actions.fetchNotes}
       />
       <CreateTaskModal
-        visible={showCreateTask}
-        onClose={() => setShowCreateTask(false)}
-        onCreated={fetchTasks}
+        visible={state.showCreateTask}
+        onClose={() => actions.setShowCreateTask(false)}
+        onCreated={actions.fetchTasks}
       />
     </SafeAreaView>
   );
@@ -758,39 +555,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: S.xl,
     paddingBottom: 100,
     paddingTop: S.sm,
-  },
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface.light,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: T.onSurface.mutedLight,
-    marginTop: 2,
-    fontSize: 13,
   },
   emptyContainer: {
     alignItems: 'center',
