@@ -107,6 +107,7 @@ class SteamAPIClient(SteamClient):
             logger.exception("Error resolving Steam vanity URL")
             return None
 
+
 # To maintain backwards compatibility with existing standalone function calls
 # we can instantiate a default client here and re-export the methods as standalone functions
 # for existing usages.
