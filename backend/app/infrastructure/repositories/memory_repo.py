@@ -87,13 +87,26 @@ class MemoryRepository:
         to_ids: list[UUID],
         rel_type: str = "RELATED_TO",
     ) -> None:
-        """Bulk create relationships between a source memory and multiple target memories."""
+        """Bulk create relationships between a source memory and multiple target memories.
+
+        Args:
+            from_id: The UUID of the source memory.
+            to_ids: A list of UUIDs for the target memories.
+            rel_type: The string representing the relationship type. Defaults to 'RELATED_TO'.
+
+        Returns:
+            None
+        """
         if not to_ids:
+            return
+
+        unique_targets = {t for t in to_ids if t is not None and t != from_id}
+        if not unique_targets:
             return
 
         relationships = [
             MemoryRelationship(source_id=from_id, target_id=to_id, relationship_type=rel_type)
-            for to_id in to_ids
+            for to_id in unique_targets
         ]
         await MemoryRelationship.bulk_create(relationships)
 
