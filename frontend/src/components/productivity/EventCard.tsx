@@ -1,14 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { CalendarEvent } from '../../core/models';
-import { theme } from '../../core/theme';
-import { useTheme } from '../../hooks/useTheme';
-
-const S = theme.spacing;
-const R = theme.borderRadius;
+import { AppText } from '@/components/AppText';
+import { CalendarEvent } from '@/core/models';
+import { theme } from '@/core/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface Props {
   event: CalendarEvent;
@@ -18,58 +15,27 @@ export const EventCard = React.memo(({ event }: Props) => {
   const { i18n } = useTranslation();
   const { C } = useTheme();
 
-  const styles = React.useMemo(
-    () =>
-      StyleSheet.create({
-        eventCard: {
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: C.surface,
-          borderWidth: 1,
-          borderColor: C.border,
-          borderRadius: R.xl,
-          padding: S.lg,
-          marginBottom: S.md,
-          ...Platform.select({
-            ios: theme.elevation.sm as any,
-            android: { elevation: 1 },
-            default: { elevation: 1 },
-          }),
-        },
-        eventIcon: {
-          width: 32,
-          height: 32,
-          borderRadius: R.lg,
-          backgroundColor: C.primarySurface,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: S.md,
-        },
-        eventBody: {
-          flex: 1,
-        },
-        eventTitle: {
-          color: C.text,
-          fontWeight: '700',
-          fontSize: 15,
-        },
-        eventMeta: {
-          color: C.muted,
-          marginTop: 2,
-          fontSize: 13,
-        },
-      }),
-    [C.border, C.muted, C.primarySurface, C.surface, C.text]
-  );
-
   return (
-    <View style={styles.eventCard}>
-      <View style={styles.eventIcon}>
+    <View
+      className="flex-row items-center rounded-xl p-4 mb-4 border"
+      style={[
+        { backgroundColor: C.surface, borderColor: C.border },
+        Platform.select({
+          ios: theme.elevation.sm as any,
+          android: { elevation: 1 },
+          default: { elevation: 1 },
+        })
+      ]}
+    >
+      <View
+        className="w-8 h-8 rounded-lg items-center justify-center mr-4"
+        style={{ backgroundColor: C.primarySurface }}
+      >
         <Ionicons name="calendar-outline" size={16} color={C.primary} />
       </View>
-      <View style={styles.eventBody}>
-        <AppText style={styles.eventTitle}>{event.title}</AppText>
-        <AppText style={styles.eventMeta}>
+      <View className="flex-1">
+        <AppText className="font-bold text-[15px]" style={{ color: C.text }}>{event.title}</AppText>
+        <AppText className="mt-0.5 text-[13px]" style={{ color: C.muted }}>
           {new Intl.DateTimeFormat(i18n.language, {
             weekday: 'short',
             month: 'short',

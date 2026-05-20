@@ -34,6 +34,9 @@ export function useProductivityViewModel() {
     deleteNote,
     deleteTask,
     toggleTask,
+    errorNotes,
+    errorTasks,
+    errorEvents,
   } = useProductivityStore();
 
   useEffect(() => {
@@ -249,15 +252,15 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(t('plan.recover_overdue', { count: taskPriorityCounts.overdue }));
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(t('plan.no_overdue'));
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      lines.push(t('plan.focus_block', { tasks: nextTasks.map((task) => task.title).join(', ') }));
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(t('plan.no_focus_block'));
     }
 
     if (nextEvents.length > 0) {
@@ -269,14 +272,14 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(t('plan.calendar_checkpoints', { times: eventLine }));
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(t('plan.no_calendar_checkpoints'));
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue, t]);
 
   return {
     state: {
@@ -287,6 +290,8 @@ export function useProductivityViewModel() {
       showCreateTask,
       todayPlan,
       isLoading,
+      hasError: !!(errorNotes || errorTasks || errorEvents),
+      errorMessage: errorNotes || errorTasks || errorEvents,
       pendingTasksCount,
       taskPriorityCounts,
       dataToRender,

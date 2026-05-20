@@ -87,6 +87,28 @@ export default function ProductivityScreen() {
   const openCreateNote = params.openCreateNote;
 
   const { state, actions } = useProductivityViewModel();
+  const [inputValue, setInputValue] = React.useState(state.searchQuery);
+
+  const debounceTimer = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleChange = React.useCallback(
+    (text: string) => {
+      setInputValue(text);
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      debounceTimer.current = setTimeout(() => {
+        actions.setSearchQuery(text);
+      }, 300);
+    },
+    [actions]
+  );
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (openCreateTask === '1' || openCreateTask === 'true') {
@@ -98,7 +120,7 @@ export default function ProductivityScreen() {
       );
       router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateTask, params, pathname, router, actions]);
+  }, [openCreateTask, params, pathname, router, actions, actions.setShowCreateTask]);
 
   useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
@@ -110,7 +132,7 @@ export default function ProductivityScreen() {
       );
       router.replace({ pathname, params: nextParams });
     }
-  }, [openCreateNote, params, pathname, router, actions]);
+  }, [openCreateNote, params, pathname, router, actions, actions.setShowCreateNote]);
 
   const memoizedRenderItem = useCallback(
     (props: { item: RenderItemData }) =>
@@ -172,8 +194,8 @@ export default function ProductivityScreen() {
             style={styles.searchIcon}
           />
           <TextInput
-            value={state.searchQuery}
-            onChangeText={actions.setSearchQuery}
+            value={inputValue}
+            onChangeText={handleChange}
             placeholder={t('productivity.search') || 'Search notes & tasks...'}
             placeholderTextColor={T.onSurface.disabledLight}
             style={styles.searchInput}
@@ -277,6 +299,19 @@ export default function ProductivityScreen() {
         </View>
       )}
 
+      {state.hasError ? (
+        <View style={styles.emptyContainer}>
+          <AppText style={{ color: T.onSurface.light, marginBottom: S.md }}>
+            {state.errorMessage}
+          </AppText>
+          <Pressable
+            onPress={actions.handleRefresh}
+            style={({ pressed }) => [styles.emptyButton, pressed && { opacity: 0.8 }]}
+          >
+            <AppText style={styles.emptyButtonText}>Retry</AppText>
+          </Pressable>
+        </View>
+      ) : (
       <FlatList
         data={state.dataToRender}
         keyExtractor={(item) => item.id}
@@ -408,6 +443,7 @@ export default function ProductivityScreen() {
           </View>
         }
       />
+      )}
 
       <CreateNoteModal
         visible={state.showCreateNote}

@@ -1,3 +1,4 @@
+# Plan
 1. **Decompose `frontend/app/(main)/productivity.tsx` (God Class)**
    - The file is 858 lines long and handles fetching, complex filtering, grouping logic, and multiple rendering parts for notes, tasks, and events.
    - I will extract the business/state logic into a dedicated custom hook `frontend/src/hooks/useProductivityViewModel.ts`.
