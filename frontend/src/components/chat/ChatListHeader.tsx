@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { FlatList, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -110,7 +110,7 @@ export function ChatListHeader({
   }, [sortMode, onChangeSortMode]);
 
   const renderAgentItem = useCallback(({ item }: { item: Agent }) => (
-    <View style={{ marginRight: 8 }}>
+    <View className="mr-2">
       <AgentPill
         agent={item}
         onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}

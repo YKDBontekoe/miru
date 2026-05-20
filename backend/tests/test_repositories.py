@@ -280,6 +280,25 @@ class TestMemoryRepository:
         assert rel is not None
 
     @pytest.mark.asyncio
+    async def test_bulk_create_relationships(self) -> None:
+        repo = MemoryRepository()
+        user_id = uuid4()
+        m1 = Memory(content="Source", user_id=user_id, embedding=[0.1])
+        m2 = Memory(content="Target 1", user_id=user_id, embedding=[0.2])
+        m3 = Memory(content="Target 2", user_id=user_id, embedding=[0.3])
+        await repo.insert_memory(m1)
+        await repo.insert_memory(m2)
+        await repo.insert_memory(m3)
+
+        await repo.bulk_create_relationships(m1.id, [m2.id, m3.id])
+
+        related = await repo.find_related(m1.id)
+        assert len(related) == 2
+
+        # Test empty to_ids
+        await repo.bulk_create_relationships(m1.id, [])
+
+    @pytest.mark.asyncio
     async def test_find_related_no_relationships(self) -> None:
         repo = MemoryRepository()
         user_id = uuid4()
