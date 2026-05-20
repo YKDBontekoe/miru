@@ -62,10 +62,9 @@ class MemoryService:
         # 3. Handle Relationships
         if related_to:
             try:
-                for rid in related_to:
-                    await self.repo.create_relationship(memory_id, rid)
-            except Exception as e:
-                logger.warning(f"Relationship creation failed: {e}")
+                await self.repo.bulk_create_relationships(memory_id, related_to)
+            except Exception:
+                logger.exception("Relationship creation failed for memory_id=%s related_to=%s", memory_id, related_to)
 
         # 4. Trigger intelligent graph extraction in the background
         if u_id:
