@@ -6,6 +6,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Application configuration loaded from environment variables or .env file.
+
+    Key configuration groups:
+    - API keys: openrouter_api_key
+    - Supabase: supabase_url, supabase_key, supabase_service_role_key (backend-only), supabase_jwt_secret
+    - Database: database_url, database_ssl
+    - Models: embedding_model, default_chat_model
+    - WebAuthn: webauthn_rp_id, webauthn_expected_origin
+    - Networking: cors_allowed_origins
+    - Third-party APIs: tavily_api_key, steam_api_key
+    - Telemetry/Notifications: sentry_dsn, azure_notification_hub_name
+    """
+
     openrouter_api_key: str
     # Supabase configuration (replaces local PostgreSQL)
     supabase_url: str
@@ -37,7 +50,7 @@ class Settings(BaseSettings):
     # e.g. "https://miru.app,https://www.miru.app"
     webauthn_expected_origin: str = "http://localhost"
     # Comma-separated allowed CORS origins — tighten in production
-    cors_allowed_origins: str = "*"
+    cors_allowed_origins: str = "http://localhost"
     # Tavily Search API key for web search capabilities
     tavily_api_key: str | None = None
     # Steam Web API key for Steam games integration
@@ -63,4 +76,4 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()  # ty: ignore[missing-argument]  # pydantic-settings loads from env
+    return Settings()  # type: ignore[call-arg]  # pydantic-settings loads from env
