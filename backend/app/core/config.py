@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     - Third-party APIs: tavily_api_key, steam_api_key
     - Telemetry/Notifications: sentry_dsn, azure_notification_hub_name
     """
+
     openrouter_api_key: str
     # Supabase configuration (replaces local PostgreSQL)
     supabase_url: str
