@@ -115,27 +115,29 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
           ) : null}
         </View>
 
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
-          data={promptItems}
-          renderItem={(props) => renderPromptItem({ ...props, extraData: promptExtraData })}
-          keyExtractor={(item) => item.id}
-          extraData={promptExtraData}
-        />
+        <View className="px-3">
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={promptItems}
+            renderItem={(props) => renderPromptItem({ ...props, extraData: promptExtraData })}
+            keyExtractor={(item) => item.id}
+            extraData={promptExtraData}
+          />
+        </View>
 
         {contextActions && contextActions.length > 0 && onContextPress ? (
           <View className="pt-2">
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 12 }}
-              data={contextActions}
-              renderItem={(props) => renderContextItem({ ...props, extraData: contextExtraData })}
-              keyExtractor={(item) => item}
-              extraData={contextExtraData}
-            />
+            <View className="px-3">
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={contextActions}
+                renderItem={(props) => renderContextItem({ ...props, extraData: contextExtraData })}
+                keyExtractor={(item) => item}
+                extraData={contextExtraData}
+              />
+            </View>
           </View>
         ) : null}
       </View>

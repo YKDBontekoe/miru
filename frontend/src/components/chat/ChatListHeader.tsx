@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState, useMemo } from 'react';
 import { FlatList, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -39,8 +39,8 @@ interface ChatListHeaderProps {
 }
 
 type FilterItem =
-  | { type: 'sort'; mode: SortMode; label: string }
-  | { type: 'toggle'; active: boolean; onToggle: () => void; label: string };
+  | { id: string; type: 'sort'; mode: SortMode; label: string }
+  | { id: string; type: 'toggle'; active: boolean; onToggle: () => void; label: string };
 
 const renderFilterItem = ({ item, extraData }: { item: FilterItem; extraData: any }) => {
   const { sortMode, onChangeSortMode } = extraData;
@@ -91,7 +91,7 @@ const renderAgentItem = ({ item, extraData }: { item: Agent | { id: 'all'; isAll
     );
   }
   return (
-    <View style={{ marginRight: 8 }}>
+    <View className="mr-2">
       <AgentPill
         agent={item as Agent}
         onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -128,11 +128,11 @@ export const ChatListHeader = React.memo(function ChatListHeader({
   }, [localQuery, onChangeQuery]);
 
   const filterItems = useMemo<FilterItem[]>(() => [
-    { type: 'sort', mode: 'recent', label: t('chat.filter_recent', 'Recent') },
-    { type: 'sort', mode: 'mentions', label: t('chat.filter_mentions', 'Mentions') },
-    { type: 'sort', mode: 'tasks', label: t('chat.filter_tasks', 'Tasks') },
-    { type: 'toggle', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
-    { type: 'toggle', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
+    { id: 'sort:recent', type: 'sort', mode: 'recent', label: t('chat.filter_recent', 'Recent') },
+    { id: 'sort:mentions', type: 'sort', mode: 'mentions', label: t('chat.filter_mentions', 'Mentions') },
+    { id: 'sort:tasks', type: 'sort', mode: 'tasks', label: t('chat.filter_tasks', 'Tasks') },
+    { id: 'toggle:recent', type: 'toggle', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
+    { id: 'toggle:unread', type: 'toggle', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
   ], [t, recentOnly, onToggleRecentOnly, unreadOnly, onToggleUnreadOnly]);
 
   const filterExtraData = useMemo(() => ({ sortMode, onChangeSortMode }), [sortMode, onChangeSortMode]);
@@ -185,7 +185,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
           showsHorizontalScrollIndicator={false}
           data={filterItems}
           renderItem={(props) => renderFilterItem({ ...props, extraData: filterExtraData })}
-          keyExtractor={(item) => item.type === 'sort' ? item.mode : item.label}
+          keyExtractor={(item) => item.id}
           extraData={filterExtraData}
         />
       </View>
