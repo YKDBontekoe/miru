@@ -12,8 +12,8 @@ from uuid import UUID
 from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
+    from app.domain.agents.repository import AgentRepositoryInterface
     from app.infrastructure.database.models.agent_models import Agent
-    from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class ChatWebSocketBroadcaster:
     """Handles broadcasting events and messages over WebSocket to chat rooms."""
 
-    def __init__(self, chat_repo: ChatRepository, agent_repo: AgentRepository):
+    def __init__(self, chat_repo: ChatRepository, agent_repo: AgentRepositoryInterface):
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
 

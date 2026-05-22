@@ -1,0 +1,10 @@
+--- backend/app/domain/chat/background_service.py
++++ backend/app/domain/chat/background_service.py
+@@ -32,6 +32,7 @@
+
+     def __init__(
+         self,
++        agent_repo: AgentRepositoryInterface,
+         memory_repo: MemoryRepository,
+         agent_service: AgentService,
+         chat_repo: Any,

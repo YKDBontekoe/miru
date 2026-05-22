@@ -45,7 +45,7 @@ from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPla
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from app.infrastructure.database.models.agent_models import Agent
+    from app.domain.agents.entities import AgentEntity
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class CrewOrchestrator:
         )
 
     @staticmethod
-    def get_agent_tools(agent: Agent, user_id: UUID, origin_message_id: UUID | None = None) -> list:
+    def get_agent_tools(agent: AgentEntity, user_id: UUID, origin_message_id: UUID | None = None) -> list:
         """Build the tool list for an agent from its prefetched integrations."""
         tools = []
         for ai in getattr(agent, "agent_integrations", []):
@@ -143,7 +143,7 @@ class CrewOrchestrator:
 
     @staticmethod
     def create_crew_agents(
-        db_agents: list[Agent],
+        db_agents: list[AgentEntity],
         llm: LLM,
         user_id: UUID,
         allow_delegation: bool = False,
@@ -188,7 +188,7 @@ class CrewOrchestrator:
 
     @staticmethod
     async def execute_crew_task(
-        room_agents: list[Agent],
+        room_agents: list[AgentEntity],
         user_message: str,
         user_id: UUID,
         user_msg_id: UUID | None = None,
