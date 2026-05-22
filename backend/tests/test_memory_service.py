@@ -67,7 +67,7 @@ async def test_store_memory_success(service):
         # Verify relationships were created
         relationships = await MemoryRelationship.filter(source_id=memory_id).all()
         assert len(relationships) == 2
-        target_ids = {r.target_id for r in relationships}
+        target_ids = {getattr(r, "target_id") for r in relationships}  # noqa: B009
         assert target_ids == {related_id1, related_id2}
 
         mock_create_task.assert_called()
@@ -160,8 +160,8 @@ async def test_get_memory_graph(service):
 
     assert len(graph["nodes"]) == 2
     assert len(graph["edges"]) == 1
-    assert graph["edges"][0].source_id == m1.id
-    assert graph["edges"][0].target_id == m2.id
+    assert getattr(graph["edges"][0], "source_id") == m1.id  # noqa: B009
+    assert getattr(graph["edges"][0], "target_id") == m2.id  # noqa: B009
 
 
 @pytest.mark.asyncio
