@@ -22,17 +22,25 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 
 @pytest.fixture
-def repo():
+def repo() -> MemoryRepository:
+    """Returns a fresh MemoryRepository instance for testing.
+
+    Provides isolated in-memory database interaction per test.
+    """
     return MemoryRepository()
 
 
 @pytest.fixture
-def service(repo):
+def service(repo: MemoryRepository) -> MemoryService:
+    """Returns a MemoryService constructed with the testing repository.
+
+    The service relies on the isolated repository lifecycle for its state.
+    """
     return MemoryService(repo)
 
 
 @pytest.mark.asyncio
-async def test_store_memory_success(service):
+async def test_store_memory_success(service: MemoryService) -> None:
     content = "Test memory"
     user_id = uuid4()
     related_id1 = uuid4()
@@ -51,6 +59,11 @@ async def test_store_memory_success(service):
         patch("asyncio.create_task") as mock_create_task,
         patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
     ):
+        import asyncio
+        future: asyncio.Future[None] = asyncio.Future()
+        future.set_result(None)
+        mock_create_task.return_value = future
+
         # Simulate no existing deduplications
         mock_match.return_value = []
 
@@ -74,14 +87,14 @@ async def test_store_memory_success(service):
 
 
 @pytest.mark.asyncio
-async def test_store_memory_empty(service):
+async def test_store_memory_empty(service: MemoryService) -> None:
     # No DB mocking, tests fast exit logic
     res = await service.store_memory("   ")
     assert res is None
 
 
 @pytest.mark.asyncio
-async def test_store_memory_deduplicated(service):
+async def test_store_memory_deduplicated(service: MemoryService) -> None:
     content = "Test memory deduplicated"
     user_id = uuid4()
 
@@ -105,7 +118,7 @@ async def test_store_memory_deduplicated(service):
 
 
 @pytest.mark.asyncio
-async def test_store_memory_relationship_error(service):
+async def test_store_memory_relationship_error(service: MemoryService) -> None:
     content = "Test memory relationship error"
     user_id = uuid4()
 
@@ -113,7 +126,14 @@ async def test_store_memory_relationship_error(service):
         patch("app.domain.memory.service.embed", return_value=[0.1] * 1536),
         patch.object(service.repo, "match_memories", new_callable=AsyncMock) as mock_match,
         patch.object(service.repo, "create_relationship", new_callable=AsyncMock) as mock_rel,
+        patch("asyncio.create_task") as mock_create_task,
+        patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
     ):
+        import asyncio
+        future: asyncio.Future[None] = asyncio.Future()
+        future.set_result(None)
+        mock_create_task.return_value = future
+
         mock_match.return_value = []
         mock_rel.side_effect = Exception("DB constraint failed")
 
@@ -126,7 +146,7 @@ async def test_store_memory_relationship_error(service):
 
 
 @pytest.mark.asyncio
-async def test_store_memory_graph_task_error(service):
+async def test_store_memory_graph_task_error(service: MemoryService) -> None:
     content = "Test memory relationship error"
     user_id = uuid4()
 
@@ -134,6 +154,7 @@ async def test_store_memory_graph_task_error(service):
         patch("app.domain.memory.service.embed", return_value=[0.1] * 1536),
         patch.object(service.repo, "match_memories", new_callable=AsyncMock) as mock_match,
         patch("asyncio.create_task", side_effect=Exception("Task error")),
+        patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
     ):
         mock_match.return_value = []
 
@@ -144,7 +165,7 @@ async def test_store_memory_graph_task_error(service):
 
 
 @pytest.mark.asyncio
-async def test_get_memory_graph(service):
+async def test_get_memory_graph(service: MemoryService) -> None:
     user_id = uuid4()
 
     # Setup DB
@@ -165,14 +186,14 @@ async def test_get_memory_graph(service):
 
 
 @pytest.mark.asyncio
-async def test_get_memory_graph_empty(service):
+async def test_get_memory_graph_empty(service: MemoryService) -> None:
     graph = await service.get_memory_graph(uuid4())
     assert graph["nodes"] == []
     assert graph["edges"] == []
 
 
 @pytest.mark.asyncio
-async def test_retrieve_memories(service):
+async def test_retrieve_memories(service: MemoryService) -> None:
     user_id = uuid4()
 
     # We must mock match_memories because it relies on PostgreSQL pgvector SQL functions
@@ -191,7 +212,7 @@ async def test_retrieve_memories(service):
 
 
 @pytest.mark.asyncio
-async def test_retrieve_memories_empty_query(service):
+async def test_retrieve_memories_empty_query(service: MemoryService) -> None:
     # Tests that when query is empty, we don't call embed, we use default zeros
     with (
         patch("app.domain.memory.service.embed") as mock_embed,
