@@ -9,6 +9,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.domain.agents.entities import AgentEntity
 from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
@@ -178,10 +179,10 @@ class ChatWebSocketBroadcaster:
     async def persist_and_broadcast_agent_response(
         self,
         room_id: UUID,
-        room_agents: list[Agent],
+        room_agents: list[AgentEntity],
         result_text: str,
         agent_names: list[str],
-    ) -> list[Agent]:
+    ) -> list[AgentEntity]:
         """Save the agent response(s) and broadcast to room.
 
         For multi-agent rooms the transcript is split into individual per-agent

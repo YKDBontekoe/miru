@@ -26,10 +26,10 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
+    from app.domain.agents.entities import AgentEntity
     from app.domain.agents.repository import AgentRepositoryInterface
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
-    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -110,7 +110,7 @@ class ChatService:
         self, user_id: UUID, limit: int = 50, before_id: UUID | None = None
     ) -> list[RoomSummaryResponse]:
         """List rooms with agent and latest-message summaries for the current user."""
-        rooms = await self.chat_repo.list_rooms(user_id, limit=limit, before_id=before_id)
+        rooms = await self.chat_repo.list_rooms(user_id)
         if not rooms:
             return []
 
@@ -162,7 +162,7 @@ class ChatService:
             return False
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent] | None:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[AgentEntity] | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             return None
         return await self.chat_repo.list_room_agents(room_id)
