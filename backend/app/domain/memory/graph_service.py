@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from uuid import UUID
+from xml.sax.saxutils import escape
 
 from pydantic import BaseModel, Field
 
@@ -52,7 +53,7 @@ class GraphExtractionService:
                     },
                     {
                         "role": "user",
-                        "content": text,
+                        "content": f"<text>\n{escape(text)}\n</text>",
                     },
                 ],
                 response_model=GraphExtractionSchema,

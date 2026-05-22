@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from typing import TYPE_CHECKING, Any
+from xml.sax.saxutils import escape
 
 from pydantic import BaseModel
 
@@ -152,11 +153,11 @@ class ChatBackgroundService:
                 },
                 {
                     "role": "user",
-                    "content": f"CURRENT SUMMARY:\n{current_summary}",
+                    "content": f"CURRENT SUMMARY:\n<current_summary>\n{escape(current_summary)}\n</current_summary>",
                 },
                 {
                     "role": "user",
-                    "content": f"LATEST MESSAGES:\n{transcript}",
+                    "content": f"LATEST MESSAGES:\n<latest_messages>\n{escape(transcript)}\n</latest_messages>",
                 },
             ]
 
