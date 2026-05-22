@@ -6,14 +6,19 @@ from __future__ import annotations
 # Prompt templates
 # ---------------------------------------------------------------------------
 
-HISTORY_PREFIX = "Recent conversation history (for context only — do not repeat it):\n<history>\n{history}\n</history>\n\n"
+HISTORY_PREFIX = (
+    "Recent conversation history (for context only — do not repeat it):\n"
+    "<history>\n{history}\n</history>\n\n"
+)
 
 MEMORY_PREFIX = (
     "Relevant memories from past conversations (background context — do not repeat verbatim):\n"
     "<memories>\n{memories}\n</memories>\n\n"
 )
 
-SUMMARY_PREFIX = "Summary of the older parts of this conversation:\n<summary>\n{summary}\n</summary>\n\n"
+SUMMARY_PREFIX = (
+    "Summary of the older parts of this conversation:\n<summary>\n{summary}\n</summary>\n\n"
+)
 
 MULTI_AGENT_PROMPT = (
     "{summary_section}"

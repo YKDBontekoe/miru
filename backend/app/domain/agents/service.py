@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+from xml.sax.saxutils import escape
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
@@ -97,10 +98,12 @@ class AgentService:
             ),
         ]
         if description:
-            sections.append(f"<description>\n{description}\n</description>")
-        sections.append(f"\nPersonality & Behavior:\n<personality>\n{personality}\n</personality>")
+            sections.append(f"<description>\n{escape(description)}\n</description>")
+        sections.append(
+            f"\nPersonality & Behavior:\n<personality>\n{escape(personality)}\n</personality>"
+        )
         if goals:
-            goal_list = "\n".join(f"- {g}" for g in goals)
+            goal_list = "\n".join(f"- {escape(g)}" for g in goals)
             sections.append(f"\nYour Goals:\n<goals>\n{goal_list}\n</goals>")
         if capability_ids:
             all_caps = await self.list_capabilities()
@@ -170,7 +173,7 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords:\n<keywords>\n{keywords}\n</keywords>"},
+            {"role": "user", "content": f"Keywords:\n<keywords>\n{escape(keywords)}\n</keywords>"},
         ]
 
         return await structured_completion(
