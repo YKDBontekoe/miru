@@ -9,7 +9,7 @@ from app.domain.productivity.models import Note
 
 @pytest.mark.asyncio
 async def test_create_note(async_client, mock_user_id, override_get_current_user):
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agent_models import Agent
 
     agent = await Agent.create(
         user_id=mock_user_id, name="Test Agent", description="Test", personality="Test"

@@ -81,7 +81,7 @@ async def initialize_tortoise() -> AsyncGenerator[None, None]:
         "apps": {
             "models": {
                 "models": [
-                    "app.domain.agents.models",
+                    "app.infrastructure.database.models.agent_models",
                     "app.infrastructure.database.models.chat_models",
                     "app.domain.memory.models",
                     "app.domain.agent_tools.models",

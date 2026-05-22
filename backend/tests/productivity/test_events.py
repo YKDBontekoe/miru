@@ -11,7 +11,7 @@ from app.domain.productivity.models import CalendarEvent
 async def test_create_event(async_client, mock_user_id, override_get_current_user):
     from datetime import UTC, datetime, timedelta
 
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     now = datetime.now(UTC)
@@ -124,7 +124,7 @@ async def test_delete_event(async_client, mock_user_id, override_get_current_use
 async def test_list_events_with_relations(async_client, mock_user_id, override_get_current_user):
     from datetime import UTC, datetime, timedelta
 
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     now = datetime.now(UTC)

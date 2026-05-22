@@ -9,11 +9,12 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.domain.agents.entities import AgentEntity
 from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
-    from app.domain.agents.models import Agent
-    from app.infrastructure.repositories.agent_repo import AgentRepository
+    from app.domain.agents.repository import AgentRepositoryInterface
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.repositories.chat_repo import ChatRepository
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ChatWebSocketBroadcaster:
     """Handles broadcasting events and messages over WebSocket to chat rooms."""
 
-    def __init__(self, chat_repo: ChatRepository, agent_repo: AgentRepository):
+    def __init__(self, chat_repo: ChatRepository, agent_repo: AgentRepositoryInterface):
         self.chat_repo = chat_repo
         self.agent_repo = agent_repo
 
@@ -178,10 +179,10 @@ class ChatWebSocketBroadcaster:
     async def persist_and_broadcast_agent_response(
         self,
         room_id: UUID,
-        room_agents: list[Agent],
+        room_agents: list[AgentEntity],
         result_text: str,
         agent_names: list[str],
-    ) -> list[Agent]:
+    ) -> list[AgentEntity]:
         """Save the agent response(s) and broadcast to room.
 
         For multi-agent rooms the transcript is split into individual per-agent

@@ -26,10 +26,10 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.domain.agents.models import Agent
+    from app.domain.agents.entities import AgentEntity
+    from app.domain.agents.repository import AgentRepositoryInterface
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
-    from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -77,7 +77,7 @@ class ChatService:
     def __init__(
         self,
         chat_repo: ChatRepository,
-        agent_repo: AgentRepository,
+        agent_repo: AgentRepositoryInterface,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
         bg_service: ChatBackgroundService | None = None,
@@ -110,7 +110,7 @@ class ChatService:
         self, user_id: UUID, limit: int = 50, before_id: UUID | None = None
     ) -> list[RoomSummaryResponse]:
         """List rooms with agent and latest-message summaries for the current user."""
-        rooms = await self.chat_repo.list_rooms(user_id, limit=limit, before_id=before_id)
+        rooms = await self.chat_repo.list_rooms(user_id)
         if not rooms:
             return []
 
@@ -162,7 +162,7 @@ class ChatService:
             return False
         return await self.chat_repo.remove_agent_from_room(room_id, agent_id)
 
-    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[Agent] | None:
+    async def list_room_agents(self, room_id: UUID, user_id: UUID) -> list[AgentEntity] | None:
         if not await self.chat_repo.room_belongs_to_user(room_id, user_id):
             return None
         return await self.chat_repo.list_room_agents(room_id)
@@ -207,12 +207,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
-        db_agents = await self.agent_repo.list_by_user(user_id)
-        if not db_agents:
+        room_agents = await self.agent_repo.list_by_user(user_id)
+        if not room_agents:
             yield "No agents available. Please create one first."
             return
 
-        agent = db_agents[0]
+        agent = room_agents[0]
         model_name = get_settings().default_chat_model
 
         messages: list[ChatCompletionMessageParam] = [
@@ -255,12 +255,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> dict[str, str]:
         """Execute a full CrewAI orchestration and return a structured result."""
-        db_agents = await self.agent_repo.list_by_user(user_id)
-        if not db_agents:
+        room_agents = await self.agent_repo.list_by_user(user_id)
+        if not room_agents:
             return {"task_type": "error", "result": "No agents available."}
 
         result = await CrewOrchestrator.execute_crew_task(
-            room_agents=db_agents,
+            room_agents=room_agents,
             user_message=user_message,
             user_id=user_id,
             accept_language=accept_language,
