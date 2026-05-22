@@ -60,6 +60,7 @@ async def test_store_memory_success(service: MemoryService) -> None:
         patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
     ):
         import asyncio
+
         future: asyncio.Future[None] = asyncio.Future()
         future.set_result(None)
         mock_create_task.return_value = future
@@ -130,6 +131,7 @@ async def test_store_memory_relationship_error(service: MemoryService) -> None:
         patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph"),
     ):
         import asyncio
+
         future: asyncio.Future[None] = asyncio.Future()
         future.set_result(None)
         mock_create_task.return_value = future
