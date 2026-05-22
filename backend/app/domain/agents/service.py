@@ -97,11 +97,11 @@ class AgentService:
             ),
         ]
         if description:
-            sections.append(description)
-        sections.append(f"\nPersonality & Behavior:\n{personality}")
+            sections.append(f"<description>\n{description}\n</description>")
+        sections.append(f"\nPersonality & Behavior:\n<personality>\n{personality}\n</personality>")
         if goals:
             goal_list = "\n".join(f"- {g}" for g in goals)
-            sections.append(f"\nYour Goals:\n{goal_list}")
+            sections.append(f"\nYour Goals:\n<goals>\n{goal_list}\n</goals>")
         if capability_ids:
             all_caps = await self.list_capabilities()
             cap_names = [c.name for c in all_caps if c.id in capability_ids]
@@ -170,7 +170,7 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {"role": "user", "content": f"Keywords:\n<keywords>\n{keywords}\n</keywords>"},
         ]
 
         return await structured_completion(

@@ -152,11 +152,11 @@ class ChatBackgroundService:
                 },
                 {
                     "role": "user",
-                    "content": f"CURRENT SUMMARY:\n{current_summary}",
+                    "content": f"CURRENT SUMMARY:\n<current_summary>\n{current_summary}\n</current_summary>",
                 },
                 {
                     "role": "user",
-                    "content": f"LATEST MESSAGES:\n{transcript}",
+                    "content": f"LATEST MESSAGES:\n<latest_messages>\n{transcript}\n</latest_messages>",
                 },
             ]
 
