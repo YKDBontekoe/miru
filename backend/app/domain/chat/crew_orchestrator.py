@@ -79,7 +79,9 @@ class CrewOrchestrator:
         )
 
     @staticmethod
-    def get_agent_tools(agent: AgentEntity, user_id: UUID, origin_message_id: UUID | None = None) -> list:
+    def get_agent_tools(
+        agent: AgentEntity, user_id: UUID, origin_message_id: UUID | None = None
+    ) -> list:
         """Build the tool list for an agent from its prefetched integrations."""
         tools = []
         for ai in getattr(agent, "agent_integrations", []):

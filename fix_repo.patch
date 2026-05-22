@@ -1,0 +1,41 @@
+--- backend/app/infrastructure/repositories/chat_repo.py
++++ backend/app/infrastructure/repositories/chat_repo.py
+@@ -10,6 +10,8 @@
+
+ from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
+ from app.infrastructure.database.models.agent_models import Agent
++from app.domain.agents.entities import AgentEntity
++from app.infrastructure.repositories.agent_repo import _map_agent_to_entity
+ from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom, ChatRoomAgent
+
+
+@@ -102,11 +104,22 @@
+         deleted_count = await ChatRoomAgent.filter(room_id=room_id, agent_id=agent_id).delete()
+         return deleted_count > 0
+
+-    async def list_room_agents(self, room_id: UUID) -> list[Agent]:
++    async def list_room_agents(self, room_id: UUID) -> list[AgentEntity]:
+         """Fetch all agents associated with a room, with integrations prefetched."""
+         assocs = await ChatRoomAgent.filter(room_id=room_id).prefetch_related(
+             "agent__capabilities", "agent__agent_integrations__integration"
+         )
+-        return [assoc.agent for assoc in assocs]
++
++        entities = []
++        for assoc in assocs:
++            agent = assoc.agent
++            entity = _map_agent_to_entity(agent)
++            if hasattr(agent, "capabilities"):
++                entity.capability_ids = [cap.pk for cap in getattr(agent, "capabilities")]
++            if hasattr(agent, "agent_integrations"):
++                entity.integration_ids = [
++                    ai.integration_id for ai in getattr(agent, "agent_integrations") if getattr(ai, "enabled", True)
++                ]
++                entity.integration_configs = {
++                    ai.integration_id: getattr(ai, "config", {}) for ai in getattr(agent, "agent_integrations") if getattr(ai, "enabled", True) and getattr(ai, "config", {})
++                }
++            entities.append(entity)
++        return entities
+
+     # ---------------------------------------------------------------------------
+     # MESSAGES

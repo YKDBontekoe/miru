@@ -1,0 +1,14 @@
+--- backend/app/infrastructure/repositories/chat_repo.py
++++ backend/app/infrastructure/repositories/chat_repo.py
+@@ -207,11 +207,9 @@
+         if not msg:
+             return False
+
+-        if user_id is not None:
+-            # Must own the message OR own the room
+-            if msg.user_id != user_id and msg.room.user_id != user_id:
+-                return False
++        if user_id is not None and msg.user_id != user_id and msg.room.user_id != user_id:
++            return False
+
+         from datetime import UTC, datetime

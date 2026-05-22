@@ -1,0 +1,27 @@
+--- backend/tests/test_repositories.py
++++ backend/tests/test_repositories.py
+@@ -163,8 +163,8 @@
+         repo = ChatRepository()
+         user_id = uuid4()
+         room = await repo.create_room("Save Msg", user_id)
+-        from app.domain.chat.dtos import ChatMessageCreate
+-        msg = ChatMessageCreate(room_id=room.id, user_id=user_id, content="Hello")
++        from app.infrastructure.database.models.chat_models import ChatMessage
++        msg = ChatMessage(room_id=room.id, user_id=user_id, content="Hello")
+         saved = await repo.create_message(msg)
+         assert saved.content == "Hello"
+         assert saved.id is not None
+
+     @pytest.mark.asyncio
+     async def test_touch_room_updates_timestamp(self) -> None:
+@@ -173,8 +173,8 @@
+         user_id = uuid4()
+         room = await repo.create_room("Touch Room", user_id)
+         original_updated_at = room.updated_at
+-        from app.domain.chat.dtos import ChatMessageCreate
+-        await repo.create_message(ChatMessageCreate(room_id=room.id, user_id=user_id, content="Touch"))
++        from app.infrastructure.database.models.chat_models import ChatMessage
++        await repo.create_message(ChatMessage(room_id=room.id, user_id=user_id, content="Touch"))
+         refreshed = await repo.get_room(room.id)
+         assert refreshed is not None
+         assert refreshed.updated_at >= original_updated_at

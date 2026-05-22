@@ -207,12 +207,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
-        db_agents = await self.agent_repo.list_by_user(user_id)
-        if not db_agents:
+        room_agents = await self.agent_repo.list_by_user(user_id)
+        if not room_agents:
             yield "No agents available. Please create one first."
             return
 
-        agent = db_agents[0]
+        agent = room_agents[0]
         model_name = get_settings().default_chat_model
 
         messages: list[ChatCompletionMessageParam] = [
@@ -255,12 +255,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> dict[str, str]:
         """Execute a full CrewAI orchestration and return a structured result."""
-        db_agents = await self.agent_repo.list_by_user(user_id)
-        if not db_agents:
+        room_agents = await self.agent_repo.list_by_user(user_id)
+        if not room_agents:
             return {"task_type": "error", "result": "No agents available."}
 
         result = await CrewOrchestrator.execute_crew_task(
-            room_agents=db_agents,
+            room_agents=room_agents,
             user_message=user_message,
             user_id=user_id,
             accept_language=accept_language,

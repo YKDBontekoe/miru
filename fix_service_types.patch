@@ -1,0 +1,11 @@
+--- backend/app/domain/chat/service.py
++++ backend/app/domain/chat/service.py
+@@ -359,7 +359,7 @@
+         # Pass to crew orchestrator if we have agents in the room
+         if room_agents:
+             result_text = await CrewOrchestrator.execute_crew_task(
+-                room_agents=room_agents,
++                room_agents=db_agents,
+                 user_message=user_message,
+                 user_id=user_id,
+                 room_id=room_id,
