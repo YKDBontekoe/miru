@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 

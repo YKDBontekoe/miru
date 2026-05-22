@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import get_current_user
-from app.domain.agents.models import Agent
+from app.domain.agents.entities import AgentEntity
 from app.domain.agents.service import _build_agent_response
 from app.main import app
 
@@ -24,20 +24,33 @@ def test_create_agent_route(client: TestClient) -> None:
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
-    # Create Agent instance carefully (Tortoise M2M handling)
     now = datetime(2025, 1, 1, 12, 0)
-    agent = Agent(
-        id=UUID("12345678-1234-5678-1234-567812345678"),
-        user_id=user_id,
-        name="Bot",
-        personality="Friendly",
-        goals=[],
-        created_at=now,
-        updated_at=now,
-    )
+    agent_response = MagicMock()
+    agent_response.id = UUID("12345678-1234-5678-1234-567812345678")
+    agent_response.name = "Bot"
+    agent_response.personality = "Friendly"
+    agent_response.model_dump = MagicMock(return_value={"name": "Bot"})
+    # Important: The route directly returns the response of create_agent.
+    # For a FastAPI endpoint to serialize a mocked model correctly, it's easier
+    # to mock it to return a dictionary or let Pydantic handle it via a true object.
+    # We will use a proper dictionary to avoid Pydantic serialization errors on MagicMock.
 
-    # Mock the return value of the service
-    mock_service.create_agent = AsyncMock(return_value=agent)
+    mock_service.create_agent = AsyncMock(
+        return_value={
+            "id": "12345678-1234-5678-1234-567812345678",
+            "name": "Bot",
+            "personality": "Friendly",
+            "goals": [],
+            "capabilities": [],
+            "integrations": [],
+            "integration_configs": {},
+            "message_count": 0,
+            "status": "active",
+            "mood": "Neutral",
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+    )
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service
@@ -70,35 +83,23 @@ def test_get_agents_route(client: TestClient) -> None:
 def test_build_agent_response_without_avatar() -> None:
     """Test that agent response is built correctly without an avatar_url field."""
     now = datetime(2025, 1, 1, 12, 0)
-    agent = MagicMock()
-    agent.pk = UUID("12345678-1234-5678-1234-567812345678")
-    agent.user_id = UUID("12345678-1234-5678-1234-567812345678")
-    agent.name = "Test Agent"
-    agent.personality = "Test Personality"
-    agent.description = "Test Description"
-    agent.system_prompt = "Test Prompt"
-    agent.status = "active"
-    agent.mood = "Neutral"
-    agent.goals = ["Goal 1", "Goal 2"]
-    agent.message_count = 0
-    agent.created_at = now
-    agent.updated_at = now
-
-    # Mock prefetched relations
-    cap1 = MagicMock()
-    cap1.pk = "cap1"
-    cap2 = MagicMock()
-    cap2.pk = "cap2"
-
-    caps_mock = MagicMock()
-    caps_mock.related_objects = [cap1, cap2]
-    agent.capabilities = caps_mock
-
-    integration_mock = MagicMock()
-    integration_mock.integration_id = "steam"
-    integration_mock.enabled = True
-    integration_mock.config = {"steam_id": "123"}
-    agent.agent_integrations = [integration_mock]
+    agent = AgentEntity(
+        id=UUID("12345678-1234-5678-1234-567812345678"),
+        user_id=UUID("12345678-1234-5678-1234-567812345678"),
+        name="Test Agent",
+        personality="Test Personality",
+        description="Test Description",
+        system_prompt="Test Prompt",
+        status="active",
+        mood="Neutral",
+        goals=["Goal 1", "Goal 2"],
+        message_count=0,
+        capability_ids=["cap1", "cap2"],
+        integration_ids=["steam"],
+        integration_configs={"steam": {"steam_id": "123"}},
+        created_at=now,
+        updated_at=now,
+    )
 
     response = _build_agent_response(agent)
 
@@ -117,12 +118,18 @@ def test_build_agent_response_without_avatar() -> None:
 
 @pytest.mark.asyncio
 async def test_agent_service_caching() -> None:
-    from app.domain.agents.models import Capability, Integration
+    from app.domain.agents.entities import CapabilityEntity, IntegrationEntity
     from app.domain.agents.service import AgentService
 
     mock_repo = MagicMock()
-    mock_repo.list_capabilities = AsyncMock(return_value=[Capability(id="cap1", name="Cap 1")])
-    mock_repo.list_integrations = AsyncMock(return_value=[Integration(id="int1", type="Int 1")])
+    mock_repo.list_capabilities = AsyncMock(
+        return_value=[CapabilityEntity(id="cap1", name="Cap 1", description="desc", icon="icon")]
+    )
+    mock_repo.list_integrations = AsyncMock(
+        return_value=[
+            IntegrationEntity(id="int1", display_name="Int 1", description="desc", icon="icon")
+        ]
+    )
 
     service = AgentService(repo=mock_repo)
 
@@ -175,7 +182,7 @@ def test_create_agent_route_contract(client: TestClient) -> None:
     )
 
     # The endpoint returns what the service returns
-    mock_service.create_agent = AsyncMock(return_value=agent_response)
+    mock_service.create_agent = AsyncMock(return_value=agent_response.model_dump(mode="json"))
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service

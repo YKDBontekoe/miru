@@ -17,7 +17,7 @@ async def clear_productivity_db() -> AsyncGenerator[None]:
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     await Agent.all().delete()
@@ -27,7 +27,7 @@ async def clear_productivity_db() -> AsyncGenerator[None]:
     await Task.all().delete()
     await Note.all().delete()
     await CalendarEvent.all().delete()
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom
 
     await Agent.all().delete()

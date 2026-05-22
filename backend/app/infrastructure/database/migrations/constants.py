@@ -36,7 +36,7 @@ SNAPSHOT_FILE = MIGRATIONS_DIR / ".schema_snapshot"
 # All application models — keep this list in sync with TORTOISE_ORM
 # ---------------------------------------------------------------------------
 ALL_MODEL_MODULES = [
-    "app.domain.agents.models",
+    "app.infrastructure.database.models.agent_models",
     "app.infrastructure.database.models.auth_models",
     "app.infrastructure.database.models.chat_models",
     "app.domain.memory.models",

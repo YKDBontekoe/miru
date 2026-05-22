@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.domain.agents.repository import AgentRepositoryInterface
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
@@ -21,7 +22,7 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 # ---------------------------------------------------------------------------
 
 
-def get_agent_repo() -> AgentRepository:
+def get_agent_repo() -> AgentRepositoryInterface:
     return AgentRepository()
 
 
@@ -43,13 +44,15 @@ def get_auth_repo(db: SupabaseClient) -> AuthRepository:
 # ---------------------------------------------------------------------------
 
 
-def get_agent_service(repo: Annotated[AgentRepository, Depends(get_agent_repo)]) -> AgentService:
+def get_agent_service(
+    repo: Annotated[AgentRepositoryInterface, Depends(get_agent_repo)],
+) -> AgentService:
     return AgentService(repo)
 
 
 def get_chat_service(
     chat_repo: Annotated[ChatRepository, Depends(get_chat_repo)],
-    agent_repo: Annotated[AgentRepository, Depends(get_agent_repo)],
+    agent_repo: Annotated[AgentRepositoryInterface, Depends(get_agent_repo)],
     memory_repo: Annotated[MemoryRepository, Depends(get_memory_repo)],
     agent_service: Annotated[AgentService, Depends(get_agent_service)],
 ) -> ChatService:

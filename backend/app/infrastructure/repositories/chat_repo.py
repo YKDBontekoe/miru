@@ -9,8 +9,8 @@ from uuid import UUID
 from tortoise import Tortoise
 from tortoise.expressions import Q
 
-from app.domain.agents.models import Agent
 from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
+from app.infrastructure.database.models.agent_models import Agent
 from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom, ChatRoomAgent
 
 

@@ -45,7 +45,7 @@ from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPla
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from app.domain.agents.models import Agent
+    from app.infrastructure.database.models.agent_models import Agent
 
 logger = logging.getLogger(__name__)
 

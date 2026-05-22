@@ -26,10 +26,10 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
-    from app.domain.agents.models import Agent
+    from app.domain.agents.repository import AgentRepositoryInterface
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
-    from app.infrastructure.repositories.agent_repo import AgentRepository
+    from app.infrastructure.database.models.agent_models import Agent
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -77,7 +77,7 @@ class ChatService:
     def __init__(
         self,
         chat_repo: ChatRepository,
-        agent_repo: AgentRepository,
+        agent_repo: AgentRepositoryInterface,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
         bg_service: ChatBackgroundService | None = None,
