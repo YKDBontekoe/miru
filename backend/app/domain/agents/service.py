@@ -189,9 +189,11 @@ class AgentService:
         if new_capability_ids is not None:
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [
-                str(cap.id) for cap in agent.capabilities.related_objects
-            ] if agent.capabilities.related_objects else []
+            effective_cap_ids = (
+                [str(cap.id) for cap in agent.capabilities.related_objects]
+                if agent.capabilities.related_objects
+                else []
+            )
 
         # --- integrations ---
         new_integration_ids: list[str] | None = fields.pop("integrations", None)
