@@ -276,6 +276,7 @@ class AgentService:
         mood_list = ", ".join(self._VALID_MOODS)
 
         import xml.sax.saxutils
+
         escaped_history = xml.sax.saxutils.escape(recent_history)
 
         try:

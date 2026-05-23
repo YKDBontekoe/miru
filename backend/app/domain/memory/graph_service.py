@@ -41,6 +41,7 @@ class GraphExtractionService:
     async def extract_graph_from_text(text: str) -> GraphExtractionSchema | None:
         """Use LLM structured output to extract graph nodes and edges from text."""
         import xml.sax.saxutils
+
         escaped_text = xml.sax.saxutils.escape(text)
         try:
             from app.infrastructure.external.openrouter import structured_completion

@@ -142,6 +142,7 @@ class ChatBackgroundService:
             current_summary = room.summary or "No previous summary."
 
             import xml.sax.saxutils
+
             escaped_transcript = xml.sax.saxutils.escape(transcript)
 
             messages: list[ChatCompletionMessageParam] = [
