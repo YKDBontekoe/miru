@@ -68,6 +68,8 @@ const MemoizedPromptItem = memo(({
   );
 });
 
+MemoizedPromptItem.displayName = 'MemoizedPromptItem';
+
 const MemoizedContextAction = memo(({
   value,
   onPress,
@@ -88,6 +90,8 @@ const MemoizedContextAction = memo(({
     </View>
   );
 });
+
+MemoizedContextAction.displayName = 'MemoizedContextAction';
 
 export function RoomPromptRail({
   prompts,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, TextInput, View, FlatList, ListRenderItemInfo, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
@@ -57,6 +57,8 @@ const AgentItem = memo(({ item, isSelected, onPress }: { item: Agent, isSelected
     </View>
   );
 });
+
+AgentItem.displayName = 'AgentItem';
 
 export function ChatListHeader({
   t,
