@@ -198,6 +198,7 @@ All routes are under `/api/v1` and require a Supabase JWT Bearer token (except h
 | Prefix | Description |
 |--------|-------------|
 | `GET /health` | Health check |
+| `WS /api/v1/ws/chat` | WebSocket chat hub (requires `token`, optional `lang` query params) |
 | `/api/v1/agents` | Agent CRUD |
 | `/api/v1/agents/capabilities` | List available capabilities |
 | `/api/v1/agents/integrations` | List available integrations |
