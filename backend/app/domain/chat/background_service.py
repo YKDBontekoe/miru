@@ -141,6 +141,9 @@ class ChatBackgroundService:
             # Build the prompt messages
             current_summary = room.summary or "No previous summary."
 
+            import xml.sax.saxutils
+            escaped_transcript = xml.sax.saxutils.escape(transcript)
+
             messages: list[ChatCompletionMessageParam] = [
                 {
                     "role": "system",
@@ -156,7 +159,7 @@ class ChatBackgroundService:
                 },
                 {
                     "role": "user",
-                    "content": f"LATEST MESSAGES:\n{transcript}",
+                    "content": f"LATEST MESSAGES:\n<transcript>\n{escaped_transcript}\n</transcript>",
                 },
             ]
 

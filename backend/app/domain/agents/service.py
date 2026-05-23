@@ -162,6 +162,10 @@ class AgentService:
 
     async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
         """Use Instructor to generate a validated agent profile."""
+        import xml.sax.saxutils
+
+        escaped_keywords = xml.sax.saxutils.escape(keywords)
+
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
@@ -170,7 +174,7 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {"role": "user", "content": f"Keywords: <keywords>{escaped_keywords}</keywords>"},
         ]
 
         return await structured_completion(
@@ -270,6 +274,10 @@ class AgentService:
         if not recent_history.strip():
             return
         mood_list = ", ".join(self._VALID_MOODS)
+
+        import xml.sax.saxutils
+        escaped_history = xml.sax.saxutils.escape(recent_history)
+
         try:
             response = await structured_completion(
                 messages=[
@@ -281,7 +289,7 @@ class AgentService:
                             f"{mood_list}."
                         ),
                     },
-                    {"role": "user", "content": recent_history},
+                    {"role": "user", "content": f"<history>{escaped_history}</history>"},
                 ],
                 response_model=MoodResponse,
             )

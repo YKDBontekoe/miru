@@ -176,6 +176,9 @@ class CrewOrchestrator:
         """Format conversation history into a compact context string."""
         if not history:
             return ""
+
+        import xml.sax.saxutils
+
         lines = []
         for entry in history[-10:]:  # cap at last 10 turns to keep prompt size reasonable
             role = entry.get("role", "")
@@ -183,7 +186,8 @@ class CrewOrchestrator:
             if not content:
                 continue
             prefix = "User" if role == "user" else entry.get("name", "Agent")
-            lines.append(f"{prefix}: {content}")
+            escaped_content = xml.sax.saxutils.escape(content)
+            lines.append(f"{prefix}: {escaped_content}")
         return "\n".join(lines)
 
     @staticmethod
@@ -211,6 +215,8 @@ class CrewOrchestrator:
             logger.error("Cannot execute CrewAI task: room_agents list is empty.")
             raise ValueError("No agents available to execute the task.")
 
+        import xml.sax.saxutils
+
         is_multi = len(room_agents) > 1
         llm = CrewOrchestrator.get_crew_llm()
         crew_agents = CrewOrchestrator.create_crew_agents(
@@ -232,6 +238,8 @@ class CrewOrchestrator:
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
+
+        user_message = xml.sax.saxutils.escape(user_message)
 
         kwargs = {}
         if step_callback:
