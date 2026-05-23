@@ -52,10 +52,41 @@ class AgentRepository:
         """List agent templates (paginated)."""
         return await AgentTemplate.all().offset(skip).limit(limit)
 
-    async def create(self, agent: Agent) -> Agent:
-        """Create a new agent."""
-        await agent.save()
-        return agent
+    async def create_agent(
+        self,
+        agent_data: dict,
+        capability_ids: list[str] | None = None,
+        integration_configs: dict | None = None,
+    ) -> Agent:
+        """Create a new agent with capabilities and integrations."""
+        async with in_transaction():
+            agent = await Agent.create(**agent_data)
+
+            if capability_ids:
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.add(*caps)
+
+            if integration_configs:
+                integration_ids = list(integration_configs.keys())
+                integrations = await Integration.filter(id__in=integration_ids)
+                from app.domain.agents.models import AgentIntegration
+
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
+        refetched = await self.get_by_id(agent.pk)
+        if refetched is None:
+            raise RuntimeError(f"Expected agent refetch to succeed for id {agent.pk}")
+        return refetched
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
         """Update an agent's mood."""
@@ -71,7 +102,11 @@ class AgentRepository:
     async def update_agent(
         self, agent_id: UUID | str, user_id: UUID | str, **fields: object
     ) -> Agent | None:
-        """Update an agent's fields. Only updates the owner's agent."""
+        """Update an agent's fields. Only updates the owner's agent. Handles M2M relation updates if provided."""
+        # Pop relational updates if any
+        capability_ids = fields.pop("capability_ids", None)
+        integration_configs = fields.pop("integration_configs", None)
+
         unknown = set(fields) - self._ALLOWED_AGENT_FIELDS
         if unknown:
             raise ValueError(f"update_agent received unknown fields: {unknown}")
@@ -82,12 +117,46 @@ class AgentRepository:
         agent = await Agent.get_or_none(id=agent_id, user_id=user_id).prefetch_related(
             "capabilities", "agent_integrations__integration"
         )
-        if agent:
+        if not agent:
+            return None
+
+        async with in_transaction():
+            # Update standard fields
             for key, value in fields.items():
                 if value is not None:
                     setattr(agent, key, value)
             await agent.save()
-        return agent
+
+            # Update M2M relations if provided
+            if isinstance(capability_ids, list):
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
+
+            if isinstance(integration_configs, dict):
+                from app.domain.agents.models import AgentIntegration
+
+                await AgentIntegration.filter(agent=agent).delete()
+                integration_ids = list(integration_configs.keys())
+                integrations = await Integration.filter(id__in=integration_ids)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
+
+        # Re-fetch agent to guarantee relationships are refreshed
+        refetched = await self.get_by_id(agent_id)
+        if refetched is None:
+            raise RuntimeError(f"Expected agent refetch to succeed for id {agent.pk}")
+        return refetched
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:
         """Soft-delete an agent by setting deleted_at. Only deletes the owner's agent."""

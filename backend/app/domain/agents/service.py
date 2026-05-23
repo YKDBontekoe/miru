@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
+from app.domain.agents.models import Agent, Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerationResponse,
@@ -123,36 +123,29 @@ class AgentService:
             capability_ids=agent_data.capabilities,
         )
 
-        agent = await Agent.create(
-            user_id=user_id,
-            name=agent_data.name,
-            personality=agent_data.personality,
-            description=agent_data.description,
-            goals=agent_data.goals,
-            system_prompt=system_prompt,
+        agent_dict = {
+            "user_id": user_id,
+            "name": agent_data.name,
+            "personality": agent_data.personality,
+            "description": agent_data.description,
+            "goals": agent_data.goals,
+            "system_prompt": system_prompt,
+        }
+
+        integration_configs = None
+        if agent_data.integrations:
+            local_integration_configs = agent_data.integration_configs or {}
+            integration_configs = {
+                str(integration_id): local_integration_configs.get(str(integration_id), {})
+                for integration_id in agent_data.integrations
+            }
+
+        refetched = await self.repo.create_agent(
+            agent_data=agent_dict,
+            capability_ids=agent_data.capabilities,
+            integration_configs=integration_configs,
         )
 
-        if agent_data.capabilities:
-            caps = await Capability.filter(id__in=agent_data.capabilities)
-            await agent.capabilities.add(*caps)
-
-        if agent_data.integrations:
-            integrations = await Integration.filter(id__in=agent_data.integrations)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=agent_data.integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
-
-        # Refetch with relations so the response is fully populated.
-        refetched = await self.repo.get_by_id(agent.pk)
-        assert refetched is not None
         return _build_agent_response(refetched)
 
     async def list_agents(self, user_id: UUID) -> list[AgentResponse]:
@@ -195,33 +188,23 @@ class AgentService:
         # --- capabilities ---
         new_capability_ids: list[str] | None = fields.pop("capabilities", None)
         if new_capability_ids is not None:
-            caps = await Capability.filter(id__in=new_capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
-            ]
+            effective_cap_ids = (
+                [str(cap.id) for cap in agent.capabilities.related_objects]
+                if agent.capabilities.related_objects
+                else []
+            )
 
         # --- integrations ---
         new_integration_ids: list[str] | None = fields.pop("integrations", None)
         new_integration_configs: dict = fields.pop("integration_configs", None) or {}
+        integration_configs = None
         if new_integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=new_integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=new_integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            integration_configs = {
+                str(integration_id): new_integration_configs.get(str(integration_id), {})
+                for integration_id in new_integration_ids
+            }
 
         # Merge profile fields with current values so build_system_prompt has full context
         name = fields.get("name", agent.name)
@@ -237,6 +220,12 @@ class AgentService:
             capability_ids=effective_cap_ids or None,
         )
         fields["system_prompt"] = updated_prompt
+
+        # pass relations to update_agent
+        if new_capability_ids is not None:
+            fields["capability_ids"] = new_capability_ids
+        if integration_configs is not None:
+            fields["integration_configs"] = integration_configs
 
         updated = await self.repo.update_agent(agent_id, user_id, **fields)
         if not updated:
