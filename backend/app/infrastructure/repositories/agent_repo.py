@@ -59,31 +59,33 @@ class AgentRepository:
         integration_configs: dict | None = None,
     ) -> Agent:
         """Create a new agent with capabilities and integrations."""
-        agent = await Agent.create(**agent_data)
+        async with in_transaction():
+            agent = await Agent.create(**agent_data)
 
-        if capability_ids:
-            caps = await Capability.filter(id__in=capability_ids)
-            await agent.capabilities.add(*caps)
+            if capability_ids:
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.add(*caps)
 
-        if integration_configs:
-            integration_ids = list(integration_configs.keys())
-            integrations = await Integration.filter(id__in=integration_ids)
-            from app.domain.agents.models import AgentIntegration
+            if integration_configs:
+                integration_ids = list(integration_configs.keys())
+                integrations = await Integration.filter(id__in=integration_ids)
+                from app.domain.agents.models import AgentIntegration
 
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
         refetched = await self.get_by_id(agent.pk)
-        assert refetched is not None
+        if refetched is None:
+            raise RuntimeError(f"Expected agent refetch to succeed for id {agent.pk}")
         return refetched
 
     async def update_mood(self, agent_id: UUID | str, mood: str) -> None:
@@ -118,40 +120,42 @@ class AgentRepository:
         if not agent:
             return None
 
-        # Update standard fields
-        for key, value in fields.items():
-            if value is not None:
-                setattr(agent, key, value)
-        await agent.save()
+        async with in_transaction():
+            # Update standard fields
+            for key, value in fields.items():
+                if value is not None:
+                    setattr(agent, key, value)
+            await agent.save()
 
-        # Update M2M relations if provided
-        if capability_ids is not None:
-            caps = await Capability.filter(id__in=capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
+            # Update M2M relations if provided
+            if isinstance(capability_ids, list):
+                caps = await Capability.filter(id__in=capability_ids)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
 
-        if integration_configs is not None:
-            from app.domain.agents.models import AgentIntegration
+            if isinstance(integration_configs, dict):
+                from app.domain.agents.models import AgentIntegration
 
-            await AgentIntegration.filter(agent=agent).delete()
-            integration_ids = list(integration_configs.keys())
-            integrations = await Integration.filter(id__in=integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+                await AgentIntegration.filter(agent=agent).delete()
+                integration_ids = list(integration_configs.keys())
+                integrations = await Integration.filter(id__in=integration_ids)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
         # Re-fetch agent to guarantee relationships are refreshed
         refetched = await self.get_by_id(agent_id)
-        assert refetched is not None
+        if refetched is None:
+            raise RuntimeError(f"Expected agent refetch to succeed for id {agent.pk}")
         return refetched
 
     async def delete_agent(self, agent_id: UUID | str, user_id: UUID | str) -> bool:

@@ -134,8 +134,9 @@ class AgentService:
 
         integration_configs = None
         if agent_data.integrations:
+            local_integration_configs = agent_data.integration_configs or {}
             integration_configs = {
-                str(integration_id): agent_data.integration_configs.get(str(integration_id), {})
+                str(integration_id): local_integration_configs.get(str(integration_id), {})
                 for integration_id in agent_data.integrations
             }
 
