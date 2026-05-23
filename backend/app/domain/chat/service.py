@@ -215,6 +215,8 @@ class ChatService:
         agent = db_agents[0]
         model_name = get_settings().default_chat_model
 
+        import xml.sax.saxutils
+
         messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": agent.personality}
         ]
@@ -225,7 +227,10 @@ class ChatService:
                     "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
                 }
             )
-        messages.append({"role": "user", "content": user_message})
+
+        escaped_msg = xml.sax.saxutils.escape(user_message)
+        wrapped_msg = f"<user_input>{escaped_msg}</user_input>"
+        messages.append({"role": "user", "content": wrapped_msg})
 
         try:
             response = await stream_chat(
