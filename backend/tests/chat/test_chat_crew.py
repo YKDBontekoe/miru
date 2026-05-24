@@ -10,6 +10,17 @@ from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.service import ChatService
 
 
+def test_format_history_sanitizes_xml() -> None:
+    history = [
+        {"role": "user", "name": "User", "content": "<script>alert(1)</script>"},
+        {"role": "agent", "name": "Agent <Malicious>", "content": "Normal text"},
+        {"role": "user", "name": "User", "content": ""},
+        {"role": "agent", "name": "Agent", "content": "   "},
+    ]
+    result = CrewOrchestrator.format_history(history)
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in result
+    assert "Agent &lt;Malicious&gt;" in result
+
 def test_get_agent_tools() -> None:
     agent1 = MagicMock()
     agent1.id = uuid4()
