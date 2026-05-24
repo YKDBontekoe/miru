@@ -38,6 +38,7 @@ export function useProductivityViewModel() {
     fetchTasks,
     fetchEvents,
     isLoading,
+    error,
     deleteNote,
     deleteTask,
     toggleTask,
@@ -54,25 +55,29 @@ export function useProductivityViewModel() {
   }, [fetchEvents, fetchNotes, fetchTasks]);
 
   useEffect(() => {
-    if (openCreateTask === '1' || openCreateTask === 'true') {
+    const shouldOpenTask = Array.isArray(openCreateTask)
+      ? openCreateTask.includes('1') || openCreateTask.includes('true')
+      : openCreateTask === '1' || openCreateTask === 'true';
+
+    if (shouldOpenTask) {
       setShowCreateTask(true);
       const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateTask' && typeof value === 'string'
-        )
-      );
+        Object.entries(params).filter(([key, _]) => key !== 'openCreateTask')
+      ) as Record<string, string | string[]>;
       router.replace({ pathname, params: nextParams });
     }
   }, [openCreateTask, params, pathname, router]);
 
   useEffect(() => {
-    if (openCreateNote === '1' || openCreateNote === 'true') {
+    const shouldOpenNote = Array.isArray(openCreateNote)
+      ? openCreateNote.includes('1') || openCreateNote.includes('true')
+      : openCreateNote === '1' || openCreateNote === 'true';
+
+    if (shouldOpenNote) {
       setShowCreateNote(true);
       const nextParams = Object.fromEntries(
-        Object.entries(params).filter(
-          ([key, value]) => key !== 'openCreateNote' && typeof value === 'string'
-        )
-      );
+        Object.entries(params).filter(([key, _]) => key !== 'openCreateNote')
+      ) as Record<string, string | string[]>;
       router.replace({ pathname, params: nextParams });
     }
   }, [openCreateNote, params, pathname, router]);
@@ -136,15 +141,17 @@ export function useProductivityViewModel() {
 
   const getTaskPriority = useCallback((task: Task): Exclude<TaskPriority, 'all'> => {
     if (!task.due_date) return 'no_due';
-    const now = new Date();
     const due = new Date(task.due_date);
     if (isNaN(due.getTime())) return 'no_due';
-    const dayStart = new Date(now);
-    dayStart.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(dayStart);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (due < dayStart) return 'overdue';
-    if (due >= dayStart && due < tomorrow) return 'today';
+
+    const now = new Date();
+
+    // Convert both to YYYY-MM-DD for stable comparison
+    const dueStr = `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(due.getDate()).padStart(2, '0')}`;
+    const nowStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (dueStr < nowStr) return 'overdue';
+    if (dueStr === nowStr) return 'today';
     return 'upcoming';
   }, []);
 
@@ -271,15 +278,26 @@ export function useProductivityViewModel() {
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(
+        t('todayPlan.recoverOverdue', { count: taskPriorityCounts.overdue }) ||
+          `1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`
+      );
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(
+        t('todayPlan.noOverdue') || '1) No overdue tasks: start with highest-impact open work.'
+      );
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      const tasksStr = nextTasks.map((task) => task.title).join(', ');
+      lines.push(
+        t('todayPlan.focusBlockItems', { tasks: tasksStr }) || `2) Focus block: ${tasksStr}.`
+      );
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(
+        t('todayPlan.focusBlockEmpty') ||
+          '2) Focus block: no pending tasks, use this for planning or review.'
+      );
     }
 
     if (nextEvents.length > 0) {
@@ -291,14 +309,20 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(
+        t('todayPlan.calendarCheckpoints', { times: eventLine }) ||
+          `3) Calendar checkpoints at ${eventLine}.`
+      );
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(
+        t('todayPlan.calendarLight') ||
+          '3) Calendar is light: reserve time for deep work and wrap-up.'
+      );
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue, t]);
 
   return {
     t,
@@ -316,6 +340,7 @@ export function useProductivityViewModel() {
     todayPlan,
     setTodayPlan,
     isLoading,
+    error,
     dataToRender,
     pendingTasksCount,
     taskPriorityCounts,

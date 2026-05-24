@@ -1,26 +1,19 @@
-import React from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
-import { theme } from '@/core/theme';
+import { useDebounce } from '@/hooks/useDebounce';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
-  background: { light: DESIGN_TOKENS.colors.pageBg },
-  surface: { light: DESIGN_TOKENS.colors.surface, highLight: DESIGN_TOKENS.colors.surfaceSoft },
-  border: { light: DESIGN_TOKENS.colors.border },
   onSurface: {
-    light: DESIGN_TOKENS.colors.text,
-    mutedLight: DESIGN_TOKENS.colors.muted,
     disabledLight: DESIGN_TOKENS.colors.faint,
+    mutedLight: DESIGN_TOKENS.colors.muted,
   },
   primary: {
     DEFAULT: DESIGN_TOKENS.colors.primary,
-    surfaceLight: DESIGN_TOKENS.colors.primarySoft,
   },
 };
-const S = theme.spacing;
-const R = theme.borderRadius;
 
 type ProductivityHeaderProps = {
   t: (key: string, options?: any) => string;
@@ -41,14 +34,21 @@ export const ProductivityHeader: React.FC<ProductivityHeaderProps> = ({
   onShowCreateNote,
   onShowCreateTask,
 }) => {
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debouncedSearch = useDebounce(localSearch, 300);
+
+  useEffect(() => {
+    setSearchQuery(debouncedSearch);
+  }, [debouncedSearch, setSearchQuery]);
+
   return (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerRow}>
+    <View className="z-10 bg-surface px-6 pb-6 pt-4 shadow-sm">
+      <View className="mb-6 flex-row items-center justify-between">
         <View>
-          <AppText variant="h1" style={styles.headerTitle}>
+          <AppText variant="h1" className="text-3xl font-extrabold tracking-tight text-text">
             {t('productivity.title') || 'Workspace'}
           </AppText>
-          <AppText style={styles.headerSubtitle}>
+          <AppText className="mt-1 text-sm text-muted">
             {pendingTasksCount === 0
               ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
               : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
@@ -56,103 +56,48 @@ export const ProductivityHeader: React.FC<ProductivityHeaderProps> = ({
           </AppText>
         </View>
 
-        <View style={styles.headerActions}>
+        <View className="flex-row gap-2">
           <Pressable
             onPress={onGenerateTodayPlan}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            className="h-10 w-10 items-center justify-center rounded-full bg-primarySoft active:opacity-70"
+            accessibilityRole="button"
+            accessible={true}
+            accessibilityLabel="Generate today's plan"
           >
             <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
             onPress={onShowCreateNote}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            className="h-10 w-10 items-center justify-center rounded-full bg-primarySoft active:opacity-70"
+            accessibilityRole="button"
+            accessible={true}
+            accessibilityLabel="Create note"
           >
             <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
             onPress={onShowCreateTask}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            className="h-10 w-10 items-center justify-center rounded-full bg-primarySoft active:opacity-70"
+            accessibilityRole="button"
+            accessible={true}
+            accessibilityLabel="Create task"
           >
             <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
           </Pressable>
         </View>
       </View>
 
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={18}
-          color={T.onSurface.mutedLight}
-          style={styles.searchIcon}
-        />
+      <View className="h-11 flex-row items-center rounded-lg border border-border bg-pageBg px-4">
+        <Ionicons name="search" size={18} color={T.onSurface.mutedLight} className="mr-2" />
         <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+          value={localSearch}
+          onChangeText={setLocalSearch}
           placeholder={t('productivity.search') || 'Search notes & tasks...'}
           placeholderTextColor={T.onSurface.disabledLight}
-          style={styles.searchInput}
+          className="flex-1 text-base text-text"
           clearButtonMode="while-editing"
         />
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    paddingHorizontal: S.xl,
-    paddingTop: S.md,
-    paddingBottom: S.lg,
-    backgroundColor: T.surface.light,
-    ...theme.elevation.sm,
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: S.lg,
-  },
-  headerTitle: {
-    color: T.onSurface.light,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    color: T.onSurface.mutedLight,
-    fontSize: 14,
-    marginTop: S.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: S.sm,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: R.full,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.background.light,
-    borderRadius: R.lg,
-    paddingHorizontal: S.md,
-    height: 44,
-    borderWidth: 1,
-    borderColor: T.border.light,
-  },
-  searchIcon: {
-    marginRight: S.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: T.onSurface.light,
-    height: '100%',
-  },
-});

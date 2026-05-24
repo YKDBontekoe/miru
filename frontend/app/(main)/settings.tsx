@@ -394,7 +394,7 @@ export default function SettingsScreen() {
     Alert.alert(t('settings.deleteAllTitle'), t('settings.deleteAllMessage'), [
       { text: t('settings.actions.cancel'), style: 'cancel' },
       {
-        text: t('settings.actions.delete') || 'Delete',
+        text: t('settings.actions.delete'),
         style: 'destructive',
         onPress: async () => {
           try {

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { FlatList, RefreshControl, StyleSheet } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
@@ -15,6 +15,7 @@ import { TaskPriorityFilters } from '@/features/productivity/TaskPriorityFilters
 import { ProductivityEmptyState } from '@/features/productivity/ProductivityEmptyState';
 import { TodayPlanCard } from '@/features/productivity/TodayPlanCard';
 import { ProductivityRenderItem } from '@/features/productivity/ProductivityRenderItem';
+import { AppText } from '@/components/AppText';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -41,6 +42,7 @@ export default function ProductivityScreen() {
     todayPlan,
     setTodayPlan,
     isLoading,
+    error,
     dataToRender,
     pendingTasksCount,
     taskPriorityCounts,
@@ -105,16 +107,51 @@ export default function ProductivityScreen() {
         }
         renderItem={renderItem}
         ListHeaderComponent={
-          <TodayPlanCard activeTab={activeTab} todayPlan={todayPlan} setTodayPlan={setTodayPlan} />
-        }
-        ListEmptyComponent={
-          <ProductivityEmptyState
+          <TodayPlanCard
             t={t}
             activeTab={activeTab}
-            searchQuery={searchQuery}
-            onShowCreateNote={() => setShowCreateNote(true)}
-            onShowCreateTask={() => setShowCreateTask(true)}
+            todayPlan={todayPlan}
+            setTodayPlan={setTodayPlan}
           />
+        }
+        ListEmptyComponent={
+          error ? (
+            <View style={{ padding: S.xl, alignItems: 'center', marginTop: S.xl }}>
+              <AppText
+                style={{
+                  color: DESIGN_TOKENS.colors.destructive,
+                  textAlign: 'center',
+                  marginBottom: S.md,
+                }}
+              >
+                {error}
+              </AppText>
+              <Pressable
+                onPress={handleRefresh}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: DESIGN_TOKENS.colors.primary,
+                    paddingHorizontal: S.lg,
+                    paddingVertical: S.sm,
+                    borderRadius: theme.borderRadius.md,
+                  },
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <AppText style={{ color: '#FFF', fontWeight: '600' }}>
+                  {t('common.retry') || 'Retry'}
+                </AppText>
+              </Pressable>
+            </View>
+          ) : (
+            <ProductivityEmptyState
+              t={t}
+              activeTab={activeTab}
+              searchQuery={searchQuery}
+              onShowCreateNote={() => setShowCreateNote(true)}
+              onShowCreateTask={() => setShowCreateTask(true)}
+            />
+          )
         }
       />
 

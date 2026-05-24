@@ -21,12 +21,14 @@ const S = theme.spacing;
 const R = theme.borderRadius;
 
 type TodayPlanCardProps = {
+  t: (key: string, options?: any) => string;
   activeTab: Tab;
   todayPlan: string | null;
   setTodayPlan: (plan: string | null) => void;
 };
 
 export const TodayPlanCard: React.FC<TodayPlanCardProps> = ({
+  t,
   activeTab,
   todayPlan,
   setTodayPlan,
@@ -36,7 +38,7 @@ export const TodayPlanCard: React.FC<TodayPlanCardProps> = ({
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <AppText style={styles.title}>Today plan</AppText>
+        <AppText style={styles.title}>{t('productivity.todayPlan') || 'Today plan'}</AppText>
         <Pressable onPress={() => setTodayPlan(null)}>
           <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
         </Pressable>

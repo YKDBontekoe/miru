@@ -360,7 +360,23 @@ export default function ChatListScreen() {
       </View>
 
       {metaError || hubError ? (
-        <ChatInlineBanner text={metaError ?? hubError ?? ''} tone="error" />
+        <ChatInlineBanner
+          text={
+            metaError
+              ? metaError
+              : hubError
+                ? (() => {
+                    const str = hubError.toLowerCase();
+                    if (str.includes('network') || str.includes('connect'))
+                      return t('chat.error_network') || 'Connection issue';
+                    if (str.includes('timeout') || str.includes('service'))
+                      return t('chat.error_service') || 'Service unavailable';
+                    return t('chat.error_generic') || 'Something went wrong';
+                  })()
+                : ''
+          }
+          tone="error"
+        />
       ) : null}
 
       <FlatList
