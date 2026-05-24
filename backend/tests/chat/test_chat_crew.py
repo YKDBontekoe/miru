@@ -21,6 +21,7 @@ def test_format_history_sanitizes_xml() -> None:
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in result
     assert "Agent &lt;Malicious&gt;" in result
 
+
 def test_get_agent_tools() -> None:
     agent1 = MagicMock()
     agent1.id = uuid4()
