@@ -21,134 +21,42 @@ export interface EmptyStateProps {
  * @param {EmptyStateProps} props - The properties for the component.
  * @returns {JSX.Element} The rendered empty state view.
  */
-const createStyles = (C: ThemeColors) =>
-  StyleSheet.create({
-  searchContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive + theme.spacing.sm, // equivalent to 56
-  },
-  searchIconCircle: {
-    width: theme.spacing.colossal,
-    height: theme.spacing.colossal,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: C.surfaceHigh,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  searchTitle: {
-    color: C.text,
-    ...theme.typography.body,
-    fontWeight: '600',
-    marginBottom: theme.spacing.sm,
-  },
-  searchSubtitle: {
-    color: C.muted,
-    textAlign: 'center',
-    ...theme.typography.bodySm,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive + theme.spacing.sm,
-    paddingHorizontal: theme.spacing.xxl,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: `${C.primary}12`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.xl,
-    borderWidth: 1,
-    borderColor: `${C.primary}20`,
-  },
-  emptyTitle: {
-    color: C.text,
-    ...theme.typography.h3,
-    fontWeight: '700',
-    marginBottom: theme.spacing.sm,
-  },
-  emptySubtitle: {
-    color: C.muted,
-    textAlign: 'center',
-    ...theme.typography.bodySm,
-    lineHeight: theme.typography.bodySm.fontSize * 1.5,
-    marginBottom: theme.spacing.avatar,
-  },
-  createButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.primary,
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: theme.spacing.sm + theme.spacing.xs, // equivalent to 14
-    paddingHorizontal: theme.spacing.avatar, // equivalent to 28
-    marginBottom: theme.spacing.md,
-    ...theme.elevation.md,
-    shadowColor: C.primary,
-  },
-  createButtonIcon: {
-    marginEnd: theme.spacing.sm,
-  },
-    createButtonText: {
-      ...theme.typography.body,
-      color: theme.colors.white,
-      fontWeight: '700',
-  },
-  browseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    padding: theme.spacing.sm,
-  },
-    browseButtonText: {
-      color: C.muted,
-      ...theme.typography.bodySm,
-    },
-  });
-
 export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, onBrowse }) => {
   const { C } = useTheme();
-  const styles = React.useMemo(() => createStyles(C), [C]);
 
   if (searchQuery.trim()) {
     return (
-      <Animated.View entering={FadeIn.duration(300)} style={styles.searchContainer}>
-        <View style={styles.searchIconCircle}>
+      <Animated.View entering={FadeIn.duration(300)} className="items-center py-14">
+        <View className="mb-4 h-12 w-12 items-center justify-center rounded-full border border-border bg-surfaceSoft">
           <Ionicons name="search" size={26} color={C.faint} />
         </View>
-        <AppText style={styles.searchTitle}>No matches</AppText>
-        <AppText style={styles.searchSubtitle}>Try a different search term.</AppText>
+        <AppText className="mb-2 text-base font-semibold text-text">No matches</AppText>
+        <AppText className="text-center text-sm text-muted">Try a different search term.</AppText>
       </Animated.View>
     );
   }
 
   return (
-    <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
-      <View style={styles.emptyIconCircle}>
+    <Animated.View entering={FadeIn.duration(400)} className="items-center px-10 py-14">
+      <View className="mb-8 h-20 w-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
         <Ionicons name="people" size={36} color={`${C.primary}90`} />
       </View>
-      <AppText style={styles.emptyTitle}>No personas yet</AppText>
-      <AppText style={styles.emptySubtitle}>
+      <AppText className="mb-2 text-xl font-bold text-text">No personas yet</AppText>
+      <AppText className="mb-7 text-center text-sm leading-relaxed text-muted">
         Create your first AI persona or start from a template.
       </AppText>
+
       <ScalePressable onPress={onCreate}>
-        <View style={styles.createButtonContainer}>
-          <Ionicons
-            name="sparkles"
-            size={17}
-            color={theme.colors.white}
-            style={styles.createButtonIcon}
-          />
-          <AppText style={styles.createButtonText}>Create Persona</AppText>
+        <View className="mb-4 flex-row items-center rounded-lg bg-primary px-7 py-3.5 shadow-md shadow-primary">
+          <Ionicons name="sparkles" size={17} color={theme.colors.white} className="mr-2" />
+          <AppText className="text-base font-bold text-white">Create Persona</AppText>
         </View>
       </ScalePressable>
+
       <ScalePressable onPress={onBrowse}>
-        <View style={styles.browseButton}>
+        <View className="flex-row items-center gap-2 p-2">
           <Ionicons name="albums-outline" size={15} color={C.muted} />
-          <AppText style={styles.browseButtonText}>Browse templates</AppText>
+          <AppText className="text-sm text-muted">Browse Templates</AppText>
         </View>
       </ScalePressable>
     </Animated.View>

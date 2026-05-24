@@ -7,6 +7,7 @@
     "settings": "Settings"
   },
   "settings": {
+    "actions": { "delete": "Delete", "cancel": "Cancel" },
     "title": "Settings",
     "sections": {
       "account": "Account",
@@ -282,14 +283,21 @@
       "work": "Work",
       "planning": "Planning",
       "creative": "Creative"
-    }
-    ,
+    },
     "templatesComingSoon": "Templates coming soon",
     "templatesComingSoonDesc": "Pre-built personas will be available here.",
     "noTemplatesInCategory": "No templates in this category",
     "tryAnotherCategory": "Try another category."
   },
   "productivity": {
+    "todayPlan": {
+      "recoverOverdue": "1) Recover overdue: start with {{count}} overdue task(s).",
+      "noOverdue": "1) No overdue tasks: start with highest-impact open work.",
+      "focusBlockItems": "2) Focus block: {{tasks}}.",
+      "focusBlockEmpty": "2) Focus block: no pending tasks, use this for planning or review.",
+      "calendarCheckpoints": "3) Calendar checkpoints at {{times}}.",
+      "calendarLight": "3) Calendar is light: reserve time for deep work and wrap-up."
+    },
     "title_required": "Title required",
     "enter_title": "Please enter a title for your note.",
     "error": "Error",

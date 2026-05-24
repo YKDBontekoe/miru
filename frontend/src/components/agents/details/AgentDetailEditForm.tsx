@@ -9,7 +9,17 @@ import { haptic } from '@/utils/haptics';
 import { Agent } from '@/core/models';
 
 const EditGoalBadge = React.memo(
-  ({ goal, index, onRemove, iconColor }: { goal: string; index: number; onRemove: (index: number) => void; iconColor?: string }) => (
+  ({
+    goal,
+    index,
+    onRemove,
+    iconColor,
+  }: {
+    goal: string;
+    index: number;
+    onRemove: (index: number) => void;
+    iconColor?: string;
+  }) => (
     <ScalePressable
       onPress={() => onRemove(index)}
       className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
@@ -59,9 +69,12 @@ export function AgentDetailEditForm({
     }
   };
 
-  const removeGoal = useCallback((idx: number) => {
-    setEditGoals((gs) => gs.filter((_, gIdx) => gIdx !== idx));
-  }, [setEditGoals]);
+  const removeGoal = useCallback(
+    (idx: number) => {
+      setEditGoals((gs) => gs.filter((_, gIdx) => gIdx !== idx));
+    },
+    [setEditGoals]
+  );
 
   return (
     <Animated.View entering={FadeIn.duration(200)}>
@@ -116,13 +129,7 @@ export function AgentDetailEditForm({
       {editGoals.length > 0 && (
         <View className="flex-row flex-wrap gap-2 mb-3.5">
           {editGoals.map((g, i) => (
-            <EditGoalBadge
-              key={i}
-              goal={g}
-              index={i}
-              onRemove={removeGoal}
-              iconColor={C.primary}
-            />
+            <EditGoalBadge key={i} goal={g} index={i} onRemove={removeGoal} iconColor={C.primary} />
           ))}
         </View>
       )}
