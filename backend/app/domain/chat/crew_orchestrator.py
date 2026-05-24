@@ -184,7 +184,9 @@ class CrewOrchestrator:
             if not content:
                 continue
             content = xml.sax.saxutils.escape(content)
-            prefix = "User" if role == "user" else entry.get("name", "Agent")
+            raw_name = entry.get("name", "Agent")
+            safe_name = xml.sax.saxutils.escape(raw_name)
+            prefix = "User" if role == "user" else safe_name
             lines.append(f"{prefix}: {content}")
         return "\n".join(lines)
 
