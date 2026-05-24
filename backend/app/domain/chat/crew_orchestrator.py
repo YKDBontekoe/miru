@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import xml.sax.saxutils
 from typing import TYPE_CHECKING, Any, cast
 
 import crewai
@@ -182,7 +183,10 @@ class CrewOrchestrator:
             content = entry.get("content", "").strip()
             if not content:
                 continue
-            prefix = "User" if role == "user" else entry.get("name", "Agent")
+            content = xml.sax.saxutils.escape(content)
+            raw_name = entry.get("name", "Agent")
+            safe_name = xml.sax.saxutils.escape(raw_name)
+            prefix = "User" if role == "user" else safe_name
             lines.append(f"{prefix}: {content}")
         return "\n".join(lines)
 
@@ -230,8 +234,18 @@ class CrewOrchestrator:
 
         history_text = CrewOrchestrator.format_history(conversation_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
-        memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
-        summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
+
+        safe_memory_context = xml.sax.saxutils.escape(memory_context) if memory_context else ""
+        memory_section = (
+            MEMORY_PREFIX.format(memories=safe_memory_context) if safe_memory_context else ""
+        )
+
+        safe_room_summary = xml.sax.saxutils.escape(room_summary) if room_summary else ""
+        summary_section = (
+            SUMMARY_PREFIX.format(summary=safe_room_summary) if safe_room_summary else ""
+        )
+
+        safe_user_message = xml.sax.saxutils.escape(user_message)
 
         kwargs = {}
         if step_callback:
@@ -244,7 +258,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
@@ -262,7 +276,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
