@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Coroutine
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -86,14 +88,14 @@ async def test_store_memory_success(mock_embed: MagicMock, monkeypatch: pytest.M
     # Pre-insert related memory manually
     await Memory.create(id=related_id, content="related", embedding=[0.1] * 1536, user_id=user_id)
 
-    async def fake_match_memories(*args, **kwargs):
+    async def fake_match_memories(*args: Any, **kwargs: Any) -> list[Memory]:
         return []
 
     # Patch SQLite-unsupported match_memories method (because of pgvector)
     monkeypatch.setattr(repo, "match_memories", fake_match_memories)
 
     # Patch create_task to prevent background coroutine unawaited warnings
-    def side_effect_create_task(coro):
+    def side_effect_create_task(coro: Coroutine[Any, Any, Any]) -> MagicMock:
         coro.close()
         return MagicMock()
 
@@ -136,7 +138,7 @@ async def test_store_memory_already_exists_deduplication(
 
     existing_mem = Memory(id=TEST_MEM2_ID, content="Exists", embedding=[0.1] * 1536)
 
-    async def fake_match_memories(*args, **kwargs):
+    async def fake_match_memories(*args: Any, **kwargs: Any) -> list[Memory]:
         return [existing_mem]
 
     monkeypatch.setattr(repo, "match_memories", fake_match_memories)
@@ -157,18 +159,18 @@ async def test_store_memory_relationship_creation_fails(
     user_id = TEST_USER_ID
     related_id = TEST_MEM3_ID
 
-    async def fake_match_memories(*args, **kwargs):
+    async def fake_match_memories(*args: Any, **kwargs: Any) -> list[Memory]:
         return []
 
     monkeypatch.setattr(repo, "match_memories", fake_match_memories)
 
-    def side_effect_create_task(coro):
+    def side_effect_create_task(coro: Coroutine[Any, Any, Any]) -> MagicMock:
         coro.close()
         return MagicMock()
 
     monkeypatch.setattr("asyncio.create_task", side_effect_create_task)
 
-    async def fake_create_relationship(*args, **kwargs):
+    async def fake_create_relationship(*args: Any, **kwargs: Any) -> MemoryRelationship:
         raise Exception("DB Error")
 
     monkeypatch.setattr(repo, "create_relationship", fake_create_relationship)
@@ -196,12 +198,12 @@ async def test_store_memory_background_task_fails(
     mock_embed.return_value = [0.1] * 1536
     user_id = TEST_USER_ID
 
-    async def fake_match_memories(*args, **kwargs):
+    async def fake_match_memories(*args: Any, **kwargs: Any) -> list[Memory]:
         return []
 
     monkeypatch.setattr(repo, "match_memories", fake_match_memories)
 
-    def side_effect_create_task(coro):
+    def side_effect_create_task(coro: Coroutine[Any, Any, Any]) -> MagicMock:
         coro.close()
         raise Exception("Task Error")
 
@@ -260,7 +262,7 @@ async def test_retrieve_memories_with_query(
     user_id = TEST_USER_ID
     mem = Memory(id=TEST_MEM1_ID, content="A retrieved memory", embedding=[0.1] * 1536)
 
-    async def fake_match_memories(*args, **kwargs):
+    async def fake_match_memories(*args: Any, **kwargs: Any) -> list[Memory]:
         return [mem]
 
     monkeypatch.setattr(repo, "match_memories", fake_match_memories)
@@ -282,7 +284,7 @@ async def test_retrieve_memories_empty_query(
 
     user_id = TEST_USER_ID
 
-    async def fake_match_memories(*args, **kwargs):
+    async def fake_match_memories(*args: Any, **kwargs: Any) -> list[Memory]:
         return []
 
     monkeypatch.setattr(repo, "match_memories", fake_match_memories)
