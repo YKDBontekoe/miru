@@ -73,8 +73,7 @@ export const ProductivityEmptyState: React.FC<ProductivityEmptyStateProps> = ({
           ? t('productivity.try_adjust_search') ?? 'Try adjusting your search terms.'
           : activeTab === 'today'
             ? t('productivity.today_empty_detail') ?? 'Enjoy the rest of your day, or get ahead on upcoming tasks.'
-            : t('productivity.capture_thoughts') ||
-              'Capture your thoughts and track what needs to get done.'}
+            : t('productivity.capture_thoughts') ?? 'Capture your thoughts and track what needs to get done.'}
       </AppText>
 
       {!searchQuery && (
@@ -82,7 +81,7 @@ export const ProductivityEmptyState: React.FC<ProductivityEmptyStateProps> = ({
           {(activeTab === 'all' || activeTab === 'notes') && (
             <Pressable
               onPress={() => setShowCreateNote(true)}
-              className={({ pressed }) => `flex-row items-center bg-blue-600 rounded-2xl py-3 px-5 shadow-md ${pressed ? 'opacity-80' : ''}`}
+              className="flex-row items-center bg-blue-600 rounded-2xl py-3 px-5 shadow-md active:opacity-80"
             >
               <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
               <AppText className="text-white font-bold text-[15px]">
@@ -93,7 +92,7 @@ export const ProductivityEmptyState: React.FC<ProductivityEmptyStateProps> = ({
           {(activeTab === 'all' || activeTab === 'tasks' || activeTab === 'today') && (
             <Pressable
               onPress={() => setShowCreateTask(true)}
-              className={({ pressed }) => `flex-row items-center rounded-2xl py-3 px-5 ${(activeTab === 'all' || activeTab === 'today') ? 'bg-blue-50 shadow-none' : 'bg-blue-600 shadow-md'} ${pressed ? 'opacity-80' : ''}`}
+              className={`flex-row items-center rounded-2xl py-3 px-5 ${(activeTab === 'all' || activeTab === 'today') ? 'bg-blue-50 shadow-none' : 'bg-blue-600 shadow-md'} active:opacity-80`}
             >
               <Ionicons
                 name="add"
