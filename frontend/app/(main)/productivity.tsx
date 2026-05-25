@@ -10,20 +10,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { EventCard } from '../../src/components/productivity/EventCard';
-import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
-import { theme } from '../../src/core/theme';
+import { AppText } from '@/components/AppText';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { EventCard } from '@/components/productivity/EventCard';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
+import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { CalendarEvent, Note, Task } from '@/core/models';
 import {
   RenderItemData,
   useProductivityViewModel,
-} from '../../src/hooks/useProductivityViewModel';
+} from '@/hooks/useProductivityViewModel';
 
 const T = {
   background: { light: DESIGN_TOKENS.colors.pageBg },
@@ -44,7 +44,7 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-export default function ProductivityScreen() {
+export const ProductivityScreen = () => {
   const {
     t,
     activeTab,
@@ -177,14 +177,7 @@ export default function ProductivityScreen() {
       </View>
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            marginHorizontal: S.xl,
-            marginBottom: S.sm,
-          }}
-        >
+        <View className="flex-row flex-wrap mx-5 mb-2">
           {(
             [
               { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
@@ -405,3 +398,5 @@ const styles = StyleSheet.create({
     paddingTop: S.sm,
   },
 });
+
+export default ProductivityScreen;

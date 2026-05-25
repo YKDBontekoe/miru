@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
+import { AppText } from '@/components/AppText';
 import { CalendarEvent } from '@/core/models';
 import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
@@ -29,17 +29,17 @@ interface EventCardProps {
 /**
  * A component to display a calendar event in the productivity lists.
  */
-export function EventCard({ event }: EventCardProps) {
+export const EventCard = ({ event }: EventCardProps) => {
   const { i18n } = useTranslation();
 
   return (
-    <View style={styles.eventCard}>
-      <View style={styles.eventIcon}>
+    <View className="flex-row items-center bg-white border border-gray-200 rounded-2xl p-4 mb-3 shadow-sm">
+      <View className="w-8 h-8 rounded-2xl bg-blue-50 items-center justify-center mr-3">
         <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
       </View>
-      <View style={styles.eventBody}>
-        <AppText style={styles.eventTitle}>{event.title}</AppText>
-        <AppText style={styles.eventMeta}>
+      <View className="flex-1">
+        <AppText className="text-gray-900 font-bold text-[15px]">{event.title}</AppText>
+        <AppText className="text-gray-500 mt-0.5 text-[13px]">
           {new Intl.DateTimeFormat(i18n.language, {
             weekday: 'short',
             month: 'short',
@@ -52,39 +52,3 @@ export function EventCard({ event }: EventCardProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface.light,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: T.onSurface.mutedLight,
-    marginTop: 2,
-    fontSize: 13,
-  },
-});

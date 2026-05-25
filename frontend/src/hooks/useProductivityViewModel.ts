@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useProductivityStore } from '@/store/useProductivityStore';
+import { useDebounce } from '@/hooks/useDebounce';
 import { CalendarEvent, Note, Task } from '@/core/models';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
@@ -29,7 +30,8 @@ export function useProductivityViewModel() {
 
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [inputQuery, setInputQuery] = useState('');
+  const debouncedQuery = useDebounce(inputQuery, 300);
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
@@ -97,7 +99,13 @@ export function useProductivityViewModel() {
           {
             text: t('settings.actions.delete') || 'Delete',
             style: 'destructive',
-            onPress: () => action(),
+            onPress: async () => {
+              try {
+                await action();
+              } catch (error) {
+                Alert.alert('Error', 'Failed to delete item.');
+              }
+            },
           },
         ]
       ),
@@ -105,33 +113,33 @@ export function useProductivityViewModel() {
   );
 
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return notes;
+    const lowerQ = debouncedQuery.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, debouncedQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return tasks;
+    const lowerQ = debouncedQuery.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [debouncedQuery, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return events;
+    const lowerQ = debouncedQuery.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, debouncedQuery]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,
@@ -141,7 +149,11 @@ export function useProductivityViewModel() {
   const getTaskPriority = useCallback((task: Task): Exclude<TaskPriority, 'all'> => {
     if (!task.due_date) return 'no_due';
     const now = new Date();
-    const due = new Date(task.due_date);
+    let due = new Date(task.due_date);
+    if (task.due_date.includes('-') && task.due_date.length === 10) {
+      const [year, month, day] = task.due_date.split('-').map(Number);
+      due = new Date(year, month - 1, day);
+    }
     if (isNaN(due.getTime())) return 'no_due';
     const dayStart = new Date(now);
     dayStart.setHours(0, 0, 0, 0);
@@ -176,8 +188,18 @@ export function useProductivityViewModel() {
         ? tasksToRank
         : tasksToRank.filter((task) => getTaskPriority(task) === taskPriority);
     return [...pool].sort((a, b) => {
-      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      let aDueObj = a.due_date ? new Date(a.due_date) : null;
+      if (a.due_date && a.due_date.length === 10) {
+        const [year, month, day] = a.due_date.split('-').map(Number);
+        aDueObj = new Date(year, month - 1, day);
+      }
+      let bDueObj = b.due_date ? new Date(b.due_date) : null;
+      if (b.due_date && b.due_date.length === 10) {
+        const [year, month, day] = b.due_date.split('-').map(Number);
+        bDueObj = new Date(year, month - 1, day);
+      }
+      const aDue = aDueObj ? aDueObj.getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = bDueObj ? bDueObj.getTime() : Number.MAX_SAFE_INTEGER;
       return aDue - bDue;
     });
   }, [filteredTasks, getTaskPriority, taskPriority]);
@@ -324,8 +346,8 @@ export function useProductivityViewModel() {
     setActiveTab,
     taskPriority,
     setTaskPriority,
-    searchQuery,
-    setSearchQuery,
+    searchQuery: inputQuery,
+    setSearchQuery: setInputQuery,
     showCreateNote,
     setShowCreateNote,
     showCreateTask,
