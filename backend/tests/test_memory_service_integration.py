@@ -16,11 +16,24 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 @pytest.fixture
 def memory_repo() -> MemoryRepository:
+    """Create and return a MemoryRepository instance.
+
+    Returns:
+        MemoryRepository: The instantiated repository.
+    """
     return MemoryRepository()
 
 
 @pytest.fixture
 def memory_service(memory_repo: MemoryRepository) -> MemoryService:
+    """Create and return a MemoryService instance.
+
+    Args:
+        memory_repo: The repository to inject.
+
+    Returns:
+        MemoryService: The instantiated service.
+    """
     return MemoryService(memory_repo)
 
 
@@ -30,6 +43,11 @@ def memory_service(memory_repo: MemoryRepository) -> MemoryService:
 async def test_store_memory_creates_new_memory_and_triggers_graph(
     memory_service: MemoryService,
 ) -> None:
+    """Verify storing a new memory persists and triggers graph extraction.
+
+    Args:
+        memory_service: The service to test.
+    """
     # Arrange
     user_id = UUID("267d2b96-6be3-45e2-b482-eb575dc26e98")
     content = "I really enjoy playing the guitar."
@@ -72,6 +90,11 @@ async def test_store_memory_creates_new_memory_and_triggers_graph(
 
 @pytest.mark.asyncio
 async def test_store_memory_deduplication(memory_service: MemoryService) -> None:
+    """Verify storing a duplicate memory returns early and skips insert.
+
+    Args:
+        memory_service: The service to test.
+    """
     # Arrange
     user_id = UUID("ea62c5d2-5642-4377-9afa-af0d345b8099")
     content = "I really enjoy playing the guitar."
@@ -108,6 +131,11 @@ async def test_store_memory_deduplication(memory_service: MemoryService) -> None
 
 # TEST(miru-agent): refactor-required
 async def test_store_memory_creates_relationships(memory_service: MemoryService) -> None:
+    """Verify storing a memory creates the expected relationships.
+
+    Args:
+        memory_service: The service to test.
+    """
     # Arrange
     user_id = UUID("ba2c070d-f245-4fd9-af82-9350c9b38656")
     content = "This memory is related."
@@ -149,7 +177,7 @@ async def test_store_memory_creates_relationships(memory_service: MemoryService)
         relationships = await MemoryRelationship.filter(source_id=memory_id).all()
         assert len(relationships) == 2
 
-        target_ids = {rel.target_id for rel in relationships}
+        target_ids = {getattr(rel, "target_id") for rel in relationships}  # noqa: B009
         assert related_memory_1.id in target_ids
         assert related_memory_2.id in target_ids
 
@@ -204,6 +232,11 @@ async def test_store_memory_handles_relationship_creation_error(
 
 @pytest.mark.asyncio
 async def test_retrieve_memories_calls_match_memories(memory_service: MemoryService) -> None:
+    """Verify retrieving memories delegates to match_memories correctly.
+
+    Args:
+        memory_service: The service to test.
+    """
     # Arrange
     user_id = UUID("c7290d2a-6d7a-4f24-a1b2-5cea08b77064")
     query = "Search query"
@@ -236,6 +269,11 @@ async def test_retrieve_memories_calls_match_memories(memory_service: MemoryServ
 
 @pytest.mark.asyncio
 async def test_get_memory_graph_returns_nodes_and_edges(memory_service: MemoryService) -> None:
+    """Verify fetching the memory graph returns nodes and edges.
+
+    Args:
+        memory_service: The service to test.
+    """
     # Arrange
     user_id = UUID("192b48b6-043f-46dd-b697-df6367feb0b7")
 

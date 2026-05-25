@@ -39,7 +39,7 @@ async def test_extract_graph_from_text_exception() -> None:
         with patch("app.domain.memory.graph_service.logger.warning") as mock_logger:
             result = await GraphExtractionService.extract_graph_from_text("Alice is a friend")
             assert result is None
-            mock_logger.assert_called_once()
+            mock_logger.assert_called_once_with("Graph extraction failed", exc_info=True)
 
 
 @pytest.mark.asyncio
@@ -98,6 +98,7 @@ async def test_process_and_store_graph_success() -> None:
             await GraphExtractionService.process_and_store_graph("text", user_id)
 
             assert mock_node_create.call_count == 2
+            assert mock_node_create.call_args_list[0].kwargs["user_id"] == user_id
             assert mock_edge_create.call_count == 1
             mock_edge.save.assert_called_once()
             assert mock_edge.weight == 0.6
@@ -130,6 +131,7 @@ async def test_process_and_store_graph_success_appends_description() -> None:
             await GraphExtractionService.process_and_store_graph("text", user_id)
 
             assert mock_node_create.call_count == 1
+            assert mock_node_create.call_args_list[0].kwargs["user_id"] == user_id
             # Description should be appended
             assert mock_node_alice.description == "A friend\nA coworker"
             mock_node_alice.save.assert_called_once()
@@ -161,6 +163,4 @@ async def test_process_and_store_graph_handles_exception() -> None:
             await GraphExtractionService.process_and_store_graph("text", user_id)
 
             # It should catch the exception and log it
-            mock_logger.assert_called_once()
-            call_args = mock_logger.call_args[0]
-            assert "Failed to store graph elements" in call_args[0]
+            mock_logger.assert_called_once_with("Failed to store graph elements", exc_info=True)
