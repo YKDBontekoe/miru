@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,6 +9,7 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
+import { theme } from '@/core/theme';
 
 interface TypingIndicatorProps {
   dotColor?: string;
@@ -43,8 +44,11 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
 
   return (
     <Animated.View
-      style={[{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }, animatedStyle]}
-      className="mx-[2px]"
+      style={[
+        styles.dot,
+        { backgroundColor: color },
+        animatedStyle
+      ]}
     />
   );
 };
@@ -56,12 +60,30 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
  *
  * @param props.dotColor - The color of the animated dots (defaults to a neutral gray).
  */
-export function TypingIndicator({ dotColor = '#A0A0B0' }: TypingIndicatorProps) {
+export function TypingIndicator({ dotColor }: TypingIndicatorProps) {
+  const defaultColor = theme.colors.onSurface.mutedDark;
+  const activeColor = dotColor || defaultColor;
+
   return (
-    <View className="flex-row items-center h-4 px-xs">
-      <Dot delay={0} color={dotColor} />
-      <Dot delay={150} color={dotColor} />
-      <Dot delay={300} color={dotColor} />
+    <View style={styles.container}>
+      <Dot delay={0} color={activeColor} />
+      <Dot delay={150} color={activeColor} />
+      <Dot delay={300} color={activeColor} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xs,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: theme.borderRadius.full,
+    marginHorizontal: 2,
+  },
+});
