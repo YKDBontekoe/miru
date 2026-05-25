@@ -27,7 +27,7 @@ const MESSAGES = [
  *
  * Features pulsing animations and cycling loading messages.
  */
-export function BackendSplash() {
+export const BackendSplash = () => {
   const [messageIndex, setMessageIndex] = useState(0);
 
   // Rotate messages
@@ -85,13 +85,15 @@ export function BackendSplash() {
     transform: [{ translateY: translateY.value }],
   }));
 
+  const primaryColor = theme.colors.primary.DEFAULT;
+
   return (
     <View style={styles.container}>
       <Animated.View style={styles.contentContainer}>
         <View style={styles.iconWrapper}>
           <Animated.View style={[styles.pulsingRing, ringStyle]} />
           <Animated.View style={iconStyle}>
-            <Ionicons name="sparkles" size={64} color={theme.colors.primary.DEFAULT} />
+            <Ionicons name="sparkles" size={64} color={primaryColor} />
           </Animated.View>
         </View>
 
@@ -100,7 +102,11 @@ export function BackendSplash() {
             Miru
           </AppText>
           <View style={styles.loadingRow}>
-            <ActivityIndicator size="small" color={theme.colors.primary.DEFAULT} style={styles.loader} />
+            <ActivityIndicator
+              size="small"
+              color={primaryColor}
+              style={styles.loader}
+            />
             <Animated.View key={messageIndex}>
               <AppText color="muted" style={styles.messageText}>
                 {MESSAGES[messageIndex]}
@@ -111,7 +117,7 @@ export function BackendSplash() {
       </Animated.View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -138,18 +144,15 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.primary.surfaceLight,
     borderWidth: 2,
-    borderColor: 'rgba(37, 99, 235, 0.3)', // primary with 30% opacity
+    borderColor: `${theme.colors.primary.DEFAULT}4D`, // primary with 30% alpha (hex 4D)
   },
   textContainer: {
     alignItems: 'center',
     height: 100,
   },
   title: {
-    fontSize: theme.typography.h1.fontSize,
-    fontWeight: '800',
     color: theme.colors.surface.dark,
     marginBottom: theme.spacing.lg,
-    letterSpacing: -0.5,
   },
   loadingRow: {
     flexDirection: 'row',

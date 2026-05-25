@@ -199,7 +199,7 @@ export function ChatListHeader({
               </AppText>
             </ScalePressable>
             {agents.map((item) => (
-              <View key={item.id} style={{ marginRight: theme.spacing.sm }}>
+              <View key={item.id} style={styles.agentPillWrapper}>
                 <AgentPill
                   agent={item}
                   onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     width: 132,
     height: 132,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: DESIGN_TOKENS.colors.overlayWhite10,
   },
   heroCircleBottomRight: {
     position: 'absolute',
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     width: 148,
     height: 148,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: DESIGN_TOKENS.colors.overlayWhite05,
   },
   heroPreTitle: {
     color: 'rgba(255, 255, 255, 0.8)',
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   filterPillSelected: {
     backgroundColor: DESIGN_TOKENS.colors.primarySoft,
-    borderColor: `${DESIGN_TOKENS.colors.primary}73`,
+    borderColor: `${DESIGN_TOKENS.colors.primary}73`, // 73 is ~45% hex opacity
   },
   filterPillUnselected: {
     backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
@@ -356,5 +356,8 @@ const styles = StyleSheet.create({
   },
   listHeaderCountText: {
     color: DESIGN_TOKENS.colors.muted,
+  },
+  agentPillWrapper: {
+    marginRight: theme.spacing.sm,
   },
 });

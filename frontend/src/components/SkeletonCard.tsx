@@ -13,17 +13,19 @@ import { useTheme } from '../hooks/useTheme';
 import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
-function ShimmerBox({
-  width,
-  height = 12,
-  borderRadius = 6,
-  delay = 0,
-}: {
+interface ShimmerBoxProps {
   width: number | `${number}%`;
   height?: number;
   borderRadius?: number;
   delay?: number;
-}) {
+}
+
+const ShimmerBox: React.FC<ShimmerBoxProps> = ({
+  width,
+  height = 12,
+  borderRadius = 6,
+  delay = 0,
+}) => {
   const { isDark } = useTheme();
   const opacity = useSharedValue(1);
 
@@ -41,6 +43,10 @@ function ShimmerBox({
 
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
+  const bgColor = isDark
+    ? theme.colors.surface.highestDark
+    : theme.colors.surface.highestLight;
+
   return (
     <Animated.View
       style={[
@@ -48,15 +54,15 @@ function ShimmerBox({
           width,
           height,
           borderRadius,
-          backgroundColor: isDark ? theme.colors.surface.highestDark : theme.colors.surface.highestLight,
+          backgroundColor: bgColor,
         },
         animStyle,
       ]}
     />
   );
-}
+};
 
-export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
+export const SkeletonAgentCard: React.FC<{ index?: number }> = ({ index = 0 }) => {
   const { C } = useTheme();
   const baseDelay = index * 120;
 
@@ -112,7 +118,7 @@ const styles = StyleSheet.create({
   },
   tagsRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: theme.spacing.sm,
   },
   rightCol: {
     alignItems: 'flex-end',

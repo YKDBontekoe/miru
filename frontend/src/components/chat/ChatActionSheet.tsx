@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: DESIGN_TOKENS.colors.overlay,
   },
   sheetContainer: {
     backgroundColor: DESIGN_TOKENS.colors.white,

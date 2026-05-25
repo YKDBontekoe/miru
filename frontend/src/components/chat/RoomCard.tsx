@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     borderColor: DESIGN_TOKENS.colors.border,
   },
   containerUnread: {
-    borderColor: `${DESIGN_TOKENS.colors.primary}73`, // Primary color with 45% opacity
+    borderColor: `${DESIGN_TOKENS.colors.primary}73`, // 73 is ~45% hex opacity
   },
   avatar: {
     width: theme.spacing.massive,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     marginEnd: theme.spacing.bubblePaddingH,
     backgroundColor: DESIGN_TOKENS.colors.primarySoft,
     borderWidth: 1,
-    borderColor: `${DESIGN_TOKENS.colors.primary}38`, // Primary color with 22% opacity
+    borderColor: `${DESIGN_TOKENS.colors.primary}38`, // 38 is ~22% hex opacity
   },
   avatarText: {
     fontSize: theme.typography.h3.fontSize,

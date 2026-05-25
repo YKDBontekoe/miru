@@ -60,9 +60,9 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
  *
  * @param props.dotColor - The color of the animated dots (defaults to a neutral gray).
  */
-export function TypingIndicator({ dotColor }: TypingIndicatorProps) {
+export const TypingIndicator = ({ dotColor }: TypingIndicatorProps) => {
   const defaultColor = theme.colors.onSurface.mutedDark;
-  const activeColor = dotColor || defaultColor;
+  const activeColor = dotColor ?? defaultColor;
 
   return (
     <View style={styles.container}>
@@ -71,7 +71,7 @@ export function TypingIndicator({ dotColor }: TypingIndicatorProps) {
       <Dot delay={300} color={activeColor} />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
