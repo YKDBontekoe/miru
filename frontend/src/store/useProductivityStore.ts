@@ -40,7 +40,8 @@ interface ProductivityState {
  *
  * Side Effects:
  * - Mutates backend state via `ApiService` CRUD operations.
- * - Manages optimistic updates for tasks to ensure a snappy user experience.
+ * - Performs synchronous task updates: waits for ApiService responses before mutating local state
+ *   (e.g., in createTask, toggleTask, and deleteTask).
  */
 export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],

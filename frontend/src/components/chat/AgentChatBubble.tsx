@@ -30,9 +30,11 @@ interface AgentChatBubbleProps {
  *
  * @param props.text - The message content to render as Markdown.
  * @param props.status - The current delivery status (sent, error, streaming).
- * @param props.agentName - The name of the agent, used for generating an avatar and accent color.
+ * @param props.agentName - The name of the agent, used for generating an avatar
+ *                          and accent color.
  * @param props.timestamp - The optional ISO string representing when the message was sent.
- * @param props.onRetry - An optional callback triggered when the retry button is pressed in an error state.
+ * @param props.onRetry - An optional callback triggered when the retry button
+ *                        is pressed in an error state.
  */
 export const AgentChatBubble = ({
   text,

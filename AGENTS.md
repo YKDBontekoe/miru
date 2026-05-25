@@ -75,7 +75,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 ### 2. CodeRabbit
 
-// DOCS(miru-agent): prompt mismatch
+<!-- DOCS(miru-agent): prompt mismatch -->
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
