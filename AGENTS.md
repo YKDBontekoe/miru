@@ -75,11 +75,12 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 ### 2. CodeRabbit
 
+// DOCS(miru-agent): prompt mismatch
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
 - Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
-**Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
+**Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it adds the `ai-approved` label but does NOT add `ready-to-merge`. Zero findings on one review pass does not mean the PR is safe to merge — a human must still approve.
 
 ## Project Structure
 

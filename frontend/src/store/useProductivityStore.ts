@@ -35,7 +35,12 @@ interface ProductivityState {
  * State includes:
  * - `notes`: Array of Note objects.
  * - `tasks`: Array of Task objects.
+ * - `events`: Array of CalendarEvent objects.
  * - `isLoading`: Boolean flag indicating if a fetch operation is in progress.
+ *
+ * Side Effects:
+ * - Mutates backend state via `ApiService` CRUD operations.
+ * - Manages optimistic updates for tasks to ensure a snappy user experience.
  */
 export const useProductivityStore = create<ProductivityState>((set, get) => ({
   notes: [],
