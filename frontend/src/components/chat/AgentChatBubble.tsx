@@ -20,6 +20,22 @@ interface AgentChatBubbleProps {
   onRetry?: () => void;
 }
 
+/**
+ * Renders a chat message bubble for an AI agent.
+ *
+ * Supports Markdown rendering for the message content, displays an avatar
+ * based on the agent's name, and optionally shows a typing indicator
+ * when the message is streaming. It also handles error states and provides
+ * a retry mechanism if the message fails to send.
+ *
+ * @param props.text - The message content to render as Markdown.
+ * @param props.status - The current delivery status (sent, error, streaming).
+ * @param props.agentName - The name of the agent, used for generating an avatar
+ *                          and accent color.
+ * @param props.timestamp - The optional ISO string representing when the message was sent.
+ * @param props.onRetry - An optional callback triggered when the retry button
+ *                        is pressed in an error state.
+ */
 export const AgentChatBubble = ({
   text,
   status = MessageStatus.sent,
