@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,6 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
+import { theme } from '@/core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const MESSAGES = [
   'Waking up the AI...',
@@ -25,7 +27,7 @@ const MESSAGES = [
  *
  * Features pulsing animations and cycling loading messages.
  */
-export function BackendSplash() {
+export const BackendSplash = () => {
   const [messageIndex, setMessageIndex] = useState(0);
 
   // Rotate messages
@@ -83,30 +85,30 @@ export function BackendSplash() {
     transform: [{ translateY: translateY.value }],
   }));
 
+  const primaryColor = theme.colors.primary.DEFAULT;
+
   return (
-    <View className="flex-1 bg-white items-center justify-center">
-      <Animated.View className="items-center justify-center">
-        <View className="w-40 h-40 items-center justify-center mb-10">
-          <Animated.View
-            className="absolute w-32 h-32 rounded-full bg-blue-50 border-2 border-blue-600/30"
-            style={ringStyle}
-          />
+    <View style={styles.container}>
+      <Animated.View style={styles.contentContainer}>
+        <View style={styles.iconWrapper}>
+          <Animated.View style={[styles.pulsingRing, ringStyle]} />
           <Animated.View style={iconStyle}>
-            <Ionicons name="sparkles" size={64} color="#2563EB" />
+            <Ionicons name="sparkles" size={64} color={primaryColor} />
           </Animated.View>
         </View>
 
-        <View className="items-center h-25">
-          <AppText
-            variant="h2"
-            className="text-3xl font-extrabold text-[#1E1E28] mb-4 tracking-tight"
-          >
+        <View style={styles.textContainer}>
+          <AppText variant="h2" style={styles.title}>
             Miru
           </AppText>
-          <View className="flex-row items-center justify-center">
-            <ActivityIndicator size="small" color="#2563EB" className="mr-2" />
+          <View style={styles.loadingRow}>
+            <ActivityIndicator
+              size="small"
+              color={primaryColor}
+              style={styles.loader}
+            />
             <Animated.View key={messageIndex}>
-              <AppText color="muted" className="text-base font-medium">
+              <AppText color="muted" style={styles.messageText}>
                 {MESSAGES[messageIndex]}
               </AppText>
             </Animated.View>
@@ -115,4 +117,53 @@ export function BackendSplash() {
       </Animated.View>
     </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: DESIGN_TOKENS.colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapper: {
+    width: 160,
+    height: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.huge,
+  },
+  pulsingRing: {
+    position: 'absolute',
+    width: 128,
+    height: 128,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.primary.surfaceLight,
+    borderWidth: 2,
+    borderColor: `${theme.colors.primary.DEFAULT}4D`, // primary with 30% alpha (hex 4D)
+  },
+  textContainer: {
+    alignItems: 'center',
+    height: 100,
+  },
+  title: {
+    color: theme.colors.surface.dark,
+    marginBottom: theme.spacing.lg,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loader: {
+    marginRight: theme.spacing.sm,
+  },
+  messageText: {
+    fontSize: theme.typography.body.fontSize,
+    fontWeight: '500',
+  },
+});

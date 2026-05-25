@@ -20,6 +20,9 @@ export const DESIGN_TOKENS = {
     destructiveBorder: '#F4D1D1',
     white: '#FFFFFF',
     transparent: 'transparent',
+    overlay: 'rgba(0, 0, 0, 0.35)',
+    overlayWhite05: 'rgba(255, 255, 255, 0.05)',
+    overlayWhite10: 'rgba(255, 255, 255, 0.1)',
   },
   radius: {
     xs: 8,
