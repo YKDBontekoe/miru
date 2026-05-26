@@ -228,10 +228,19 @@ class CrewOrchestrator:
             else ""
         )
 
+        from xml.sax.saxutils import escape
+
+        safe_user_message = escape(user_message)
+
         history_text = CrewOrchestrator.format_history(conversation_history)
-        history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
-        memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
-        summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
+        safe_history = escape(history_text) if history_text else ""
+        history_section = HISTORY_PREFIX.format(history=safe_history) if safe_history else ""
+
+        safe_memory = escape(memory_context) if memory_context else ""
+        memory_section = MEMORY_PREFIX.format(memories=safe_memory) if safe_memory else ""
+
+        safe_summary = escape(room_summary) if room_summary else ""
+        summary_section = SUMMARY_PREFIX.format(summary=safe_summary) if safe_summary else ""
 
         kwargs = {}
         if step_callback:
@@ -244,7 +253,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
@@ -262,7 +271,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=safe_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
