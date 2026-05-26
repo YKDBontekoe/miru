@@ -149,7 +149,7 @@ class ProductivityRepository(IProductivityRepository):
             # Re-fetch after save to get completely fresh instance for mapping
             # This is important for tortoise ORM update_fields behavior and test assertions
             task = await Task.get_or_none(id=task_id, user_id=user_id)
-            return _map_task(task)
+            return _map_task(task) if task else None
 
     async def delete_task(self, user_id: UUID, task_id: UUID) -> int:
         async with handle_db_errors("delete task"):
@@ -208,7 +208,7 @@ class ProductivityRepository(IProductivityRepository):
             note = await Note.get_or_none(id=note_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
-            return _map_note(note)
+            return _map_note(note) if note else None
 
     async def delete_note(self, user_id: UUID, note_id: UUID) -> int:
         async with handle_db_errors("delete note"):
@@ -274,7 +274,7 @@ class ProductivityRepository(IProductivityRepository):
             event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
-            return _map_event(event)
+            return _map_event(event) if event else None
 
     async def delete_event(self, user_id: UUID, event_id: UUID) -> int:
         async with handle_db_errors("delete calendar event"):
