@@ -88,8 +88,13 @@ class AgentService:
         capability_ids: list[str] | None = None,
     ) -> str:
         """Build a rich system prompt from agent profile fields."""
+        from xml.sax.saxutils import escape
+
+        safe_name = escape(name)
+        safe_personality = escape(personality)
+
         sections = [
-            f"You are {name}.",
+            f"You are <agent_name>{safe_name}</agent_name>.",
             (
                 "Respond naturally and concisely like a real person in a chat. "
                 "Never introduce yourself, announce your capabilities, or explain what you can do "
@@ -97,11 +102,13 @@ class AgentService:
             ),
         ]
         if description:
-            sections.append(description)
-        sections.append(f"\nPersonality & Behavior:\n{personality}")
+            safe_description = escape(description)
+            sections.append(f"<description>{safe_description}</description>")
+        sections.append(f"\nPersonality & Behavior:\n<personality>{safe_personality}</personality>")
         if goals:
-            goal_list = "\n".join(f"- {g}" for g in goals)
-            sections.append(f"\nYour Goals:\n{goal_list}")
+            safe_goals = [escape(g) for g in goals]
+            goal_list = "\n".join(f"- {g}" for g in safe_goals)
+            sections.append(f"\nYour Goals:\n<goals>\n{goal_list}\n</goals>")
         if capability_ids:
             all_caps = await self.list_capabilities()
             cap_names = [c.name for c in all_caps if c.id in capability_ids]
