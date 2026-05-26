@@ -6,7 +6,10 @@ from __future__ import annotations
 # Prompt templates
 # ---------------------------------------------------------------------------
 
-HISTORY_PREFIX = "Recent conversation history (for context only — do not repeat it):\n<history>\n{history}\n</history>\n\n"
+HISTORY_PREFIX = (
+    "Recent conversation history (for context only — do not repeat it):\n"
+    "<history>\n{history}\n</history>\n\n"
+)
 
 MEMORY_PREFIX = (
     "Relevant memories from past conversations (background context — do not repeat verbatim):\n"

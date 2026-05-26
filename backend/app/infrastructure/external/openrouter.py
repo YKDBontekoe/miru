@@ -71,6 +71,28 @@ class OpenRouterClient:
         reraise=True,
     )
     async def embed(self, text: str | list[str], model: str) -> list[float] | list[list[float]]:
+        """Generate embeddings for the given text.
+
+        Args:
+            text: A single string or a list of strings to embed.
+            model: The ID of the embedding model to use.
+
+        Returns:
+            If `text` is a string, returns a single list[float] representing the embedding.
+            If `text` is a list[str], returns a list[list[float]] representing batch embeddings.
+
+        Raises:
+            openai.APIConnectionError: If connection fails.
+            openai.RateLimitError: If rate limited.
+            openai.InternalServerError: On server-side errors.
+            openai.APITimeoutError: If the request times out.
+
+        Examples:
+            >>> await client.embed("hello", "model-id")
+            [0.1, 0.2, 0.3]
+            >>> await client.embed(["hello", "world"], "model-id")
+            [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+        """
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
@@ -204,5 +226,25 @@ async def embed(text: list[str]) -> list[list[float]]: ...
 
 
 async def embed(text: str | list[str]) -> list[float] | list[list[float]]:
+    """Generate embeddings using the default client and default model settings.
+
+    Args:
+        text: A single string or a list of strings to embed.
+
+    Returns:
+        A list[float] if a single string is passed, or a list[list[float]] for batch inputs.
+
+    Raises:
+        openai.APIConnectionError: If connection fails.
+        openai.RateLimitError: If rate limited.
+        openai.InternalServerError: On server-side errors.
+        openai.APITimeoutError: If the request times out.
+
+    Examples:
+        >>> await embed("test string")
+        [0.1, 0.2, ...]
+        >>> await embed(["test string 1", "test string 2"])
+        [[0.1, ...], [0.4, ...]]
+    """
     client = get_openrouter_client()
     return await client.embed(text, get_settings().embedding_model)
