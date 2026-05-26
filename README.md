@@ -140,6 +140,7 @@ See [`backend/.env.example`](backend/.env.example) for the full list. Key variab
 | `WEBAUTHN_RP_ID` | Yes | Passkey relying party ID (`localhost` for dev) |
 | `WEBAUTHN_RP_NAME` | Yes | Human-readable name for passkeys (e.g., Miru) |
 | `WEBAUTHN_EXPECTED_ORIGIN` | Yes | Comma-separated allowed origins (e.g., http://localhost) |
+| `CORS_ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins for CORS (e.g., *) |
 | `TAVILY_API_KEY` | No | Tavily API key for agent web search |
 
 ## Project Structure
