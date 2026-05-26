@@ -336,13 +336,17 @@ class ChatService:
             from app.infrastructure.external.openrouter import embed  # noqa: PLC0415
 
             query_vector = await embed(user_message)
+            if isinstance(query_vector[0], list):
+                query_vector = query_vector[0]  # Should not happen since we passed a single str
+
             memories = await self.memory_repo.match_memories(
-                vector=query_vector,
+                vector=query_vector,  # type: ignore
                 threshold=0.75,
                 count=5,
                 user_id=user_id,
                 room_id=room_id,
             )
+
             if memories:
                 memory_context = "\n".join(f"- {m.content}" for m in memories)
         except Exception:

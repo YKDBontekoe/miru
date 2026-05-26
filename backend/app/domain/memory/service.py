@@ -37,14 +37,15 @@ class MemoryService:
         if not content:
             return None
 
-        vector = await embed(content)
+        vector_res = await embed(content)
+        vector = vector_res[0] if isinstance(vector_res[0], list) else vector_res
 
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
 
         # 1. Deduplication check
-        existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
+        existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)  # type: ignore
         if existing:
             return None
 
@@ -117,7 +118,7 @@ class MemoryService:
 
         # Parallel deduplication with batching to avoid connection pool exhaustion
         async def check_dedup(idx, content, vector):
-            existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
+            existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)  # type: ignore
             if existing:
                 return None
             return (idx, content, vector)
@@ -209,9 +210,17 @@ class MemoryService:
         room_id: UUID | str | None = None,
     ) -> list[Memory]:
         """Fetch similar memories from the vector store."""
-        vector = await embed(query) if query else [0.0] * 1536  # Default vector for blank list
+        if query:
+            vector_res = await embed(query)
+            vector: list[float] = vector_res[0] if isinstance(vector_res[0], list) else vector_res  # type: ignore
+        else:
+            vector: list[float] = [0.0] * 1536  # type: ignore
+
+        if not isinstance(vector, list) or (vector and isinstance(vector[0], list)):
+            vector = list(vector)  # type: ignore
+
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
 
-        return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
+        return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)  # type: ignore

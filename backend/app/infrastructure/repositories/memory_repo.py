@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from tortoise import Tortoise
@@ -43,7 +44,7 @@ class MemoryRepository:
 
     async def match_memories(
         self,
-        vector: list[float],
+        vector: Any,
         threshold: float,
         count: int,
         user_id: UUID | None = None,
