@@ -139,10 +139,17 @@ class ProductivityRepository(IProductivityRepository):
             task = await Task.get_or_none(id=task_id, user_id=user_id)
             if not task:
                 return None
+
             for field, value in valid_keys.items():
                 setattr(task, field, value)
-            await task.save(update_fields=list(valid_keys.keys()))
-            return _map_task(task)
+
+            if valid_keys:
+                await task.save(update_fields=list(valid_keys.keys()))
+
+            # Re-fetch after save to get completely fresh instance for mapping
+            # This is important for tortoise ORM update_fields behavior and test assertions
+            task = await Task.get_or_none(id=task_id, user_id=user_id)
+            return _map_task(task) if task else None
 
     async def delete_task(self, user_id: UUID, task_id: UUID) -> int:
         async with handle_db_errors("delete task"):
@@ -190,10 +197,18 @@ class ProductivityRepository(IProductivityRepository):
             )
             if not note:
                 return None
+
             for field, value in valid_keys.items():
                 setattr(note, field, value)
-            await note.save(update_fields=list(valid_keys.keys()))
-            return _map_note(note)
+
+            if valid_keys:
+                await note.save(update_fields=list(valid_keys.keys()))
+
+            # Fetch again to ensure relations and fresh fields are properly loaded
+            note = await Note.get_or_none(id=note_id, user_id=user_id).prefetch_related(
+                "agent", "origin_message"
+            )
+            return _map_note(note) if note else None
 
     async def delete_note(self, user_id: UUID, note_id: UUID) -> int:
         async with handle_db_errors("delete note"):
@@ -241,15 +256,25 @@ class ProductivityRepository(IProductivityRepository):
 
     async def update_event(
         self, user_id: UUID, event_id: UUID, valid_keys: dict
-    ) -> CalendarEventEntity:
+    ) -> CalendarEventEntity | None:
         async with handle_db_errors("update calendar event"):
-            event = await CalendarEvent.get(id=event_id, user_id=user_id).prefetch_related(
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
+            if not event:
+                return None
+
             for field, value in valid_keys.items():
                 setattr(event, field, value)
-            await event.save(update_fields=list(valid_keys.keys()))
-            return _map_event(event)
+
+            if valid_keys:
+                await event.save(update_fields=list(valid_keys.keys()))
+
+            # Fetch again to ensure relations and fresh fields are properly loaded
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
+                "agent", "origin_message"
+            )
+            return _map_event(event) if event else None
 
     async def delete_event(self, user_id: UUID, event_id: UUID) -> int:
         async with handle_db_errors("delete calendar event"):
