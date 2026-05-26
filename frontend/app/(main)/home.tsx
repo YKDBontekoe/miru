@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { FlatList, Platform, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -235,11 +235,14 @@ export default function HomeScreen() {
                 </AppText>
               </View>
             ) : (
-              sortedPendingTasks
-                .slice(0, 4)
-                .map((task) => (
-                  <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />
-                ))
+              <FlatList
+                data={sortedPendingTasks.slice(0, 4)}
+                keyExtractor={(task) => task.id}
+                scrollEnabled={false}
+                renderItem={({ item: task }) => (
+                  <HomeTaskRow task={task} onToggle={() => toggleTask(task.id)} />
+                )}
+              />
             )}
           </HomeSurfaceCard>
 
@@ -268,29 +271,33 @@ export default function HomeScreen() {
                 </AppText>
               </View>
             ) : (
-              upcomingEvents.map((event) => (
-                <View
-                  key={event.id}
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText
-                    variant="bodySm"
-                    style={{ color: HOME_COLORS.text, fontWeight: '700' }}
-                    numberOfLines={1}
+              <FlatList
+                data={upcomingEvents}
+                keyExtractor={(event) => event.id}
+                scrollEnabled={false}
+                renderItem={({ item: event }) => (
+                  <View
+                    style={{
+                      borderRadius: 16,
+                      backgroundColor: HOME_COLORS.softSurface,
+                      padding: 12,
+                      marginBottom: 8,
+                    }}
                   >
-                    {event.title}
-                  </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
-                    {formatTimeRange(event, i18n.language)}
-                    {event.location ? ` · ${event.location}` : ''}
-                  </AppText>
-                </View>
-              ))
+                    <AppText
+                      variant="bodySm"
+                      style={{ color: HOME_COLORS.text, fontWeight: '700' }}
+                      numberOfLines={1}
+                    >
+                      {event.title}
+                    </AppText>
+                    <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+                      {formatTimeRange(event, i18n.language)}
+                      {event.location ? ` · ${event.location}` : ''}
+                    </AppText>
+                  </View>
+                )}
+              />
             )}
           </HomeSurfaceCard>
 
@@ -301,14 +308,18 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.see_all')}
                 onAction={() => router.push('/(main)/chat')}
               />
-              {recentRooms.map((room) => (
-                <HomeChatRow
-                  key={room.id}
-                  room={room}
-                  onPress={() => router.push(`/(main)/chat/${room.id}`)}
-                  t={t}
-                />
-              ))}
+              <FlatList
+                data={recentRooms}
+                keyExtractor={(room) => room.id}
+                scrollEnabled={false}
+                renderItem={({ item: room }) => (
+                  <HomeChatRow
+                    room={room}
+                    onPress={() => router.push(`/(main)/chat/${room.id}`)}
+                    t={t}
+                  />
+                )}
+              />
             </HomeSurfaceCard>
           ) : null}
 
@@ -322,13 +333,15 @@ export default function HomeScreen() {
               <View
                 style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}
               >
-                {agents.slice(0, 4).map((agent) => (
-                  <HomeAgentBadge
-                    key={agent.id}
-                    agent={agent}
-                    onPress={() => router.push('/(main)/agents')}
-                  />
-                ))}
+                <FlatList
+                  data={agents.slice(0, 4)}
+                  keyExtractor={(agent) => agent.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  renderItem={({ item: agent }) => (
+                    <HomeAgentBadge agent={agent} onPress={() => router.push('/(main)/agents')} />
+                  )}
+                />
               </View>
             </HomeSurfaceCard>
           ) : null}

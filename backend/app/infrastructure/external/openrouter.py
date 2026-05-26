@@ -64,13 +64,17 @@ class OpenRouterClient:
         ),
         reraise=True,
     )
-    async def embed(self, text: str, model: str) -> list[float]:
+    async def embed(self, text: str | list[str], model: str) -> list[float] | list[list[float]]:
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
             encoding_format="float",
         )
-        return response.data[0].embedding
+        return (
+            [data.embedding for data in response.data]
+            if isinstance(text, list)
+            else response.data[0].embedding
+        )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -187,6 +191,6 @@ async def structured_completion(
         raise
 
 
-async def embed(text: str) -> list[float]:
+async def embed(text: str | list[str]) -> list[float] | list[list[float]]:
     client = get_openrouter_client()
     return await client.embed(text, get_settings().embedding_model)
