@@ -19,6 +19,13 @@ class MemoryRepository:
         await memory.save()
         return memory
 
+    async def bulk_insert_memories(self, memories: list[Memory]) -> list[Memory]:
+        """Insert multiple memories in a single batch."""
+        if not memories:
+            return []
+        await Memory.bulk_create(memories)
+        return memories
+
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a memory. Optionally enforce ownership."""
         filters: dict = {"id": memory_id}
