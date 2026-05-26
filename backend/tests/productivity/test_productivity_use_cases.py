@@ -1,15 +1,19 @@
-import uuid
-import pytest
-from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
-from app.domain.productivity.schemas import TaskUpdate, NoteUpdate, CalendarEventUpdate
-from app.domain.productivity.entities import TaskEntity, NoteEntity, CalendarEventEntity
-from unittest.mock import AsyncMock, MagicMock
 import datetime
+import uuid
+from unittest.mock import AsyncMock
+
+import pytest
+
+from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
+from app.domain.productivity.schemas import CalendarEventUpdate, NoteUpdate, TaskUpdate
+from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase
+
 
 @pytest.fixture
 def use_case():
     repo = AsyncMock()
     return ManageProductivityUseCase(repo)
+
 
 @pytest.mark.asyncio
 async def test_update_task_no_valid_keys(use_case):
@@ -24,7 +28,7 @@ async def test_update_task_no_valid_keys(use_case):
         due_date=None,
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
-        deleted_at=None
+        deleted_at=None,
     )
     use_case._repo.get_task.return_value = task
 
@@ -32,6 +36,7 @@ async def test_update_task_no_valid_keys(use_case):
     update_data = TaskUpdate()
     result = await use_case.update_task(user_id, task_id, update_data)
     assert result == task
+
 
 @pytest.mark.asyncio
 async def test_update_note_no_valid_keys(use_case):
@@ -48,13 +53,14 @@ async def test_update_note_no_valid_keys(use_case):
         origin_context=None,
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
-        deleted_at=None
+        deleted_at=None,
     )
     use_case._repo.get_note.return_value = note
 
     update_data = NoteUpdate()
     result = await use_case.update_note(user_id, note_id, update_data)
     assert result == note
+
 
 @pytest.mark.asyncio
 async def test_update_event_no_valid_keys(use_case):
@@ -75,7 +81,7 @@ async def test_update_event_no_valid_keys(use_case):
         origin_context=None,
         created_at=now,
         updated_at=now,
-        deleted_at=None
+        deleted_at=None,
     )
     use_case._repo.get_event.return_value = event
 
