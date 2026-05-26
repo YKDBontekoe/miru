@@ -10,10 +10,11 @@ from app.domain.memory.service import MemoryService
 
 
 @pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
 @patch("app.domain.memory.document_service.DocumentService.extract_text")
 @patch("app.domain.memory.document_service.DocumentService.chunk_text")
 async def test_store_document_memory(
-    mock_chunk_text: MagicMock, mock_extract_text: MagicMock
+    mock_chunk_text: MagicMock, mock_extract_text: MagicMock, mock_embed: AsyncMock
 ) -> None:
     mock_repo = AsyncMock()
     service = MemoryService(mock_repo)
@@ -21,15 +22,21 @@ async def test_store_document_memory(
     mock_extract_text.return_value = "Fake document text"
     mock_chunk_text.return_value = ["chunk 1", "chunk 2"]
 
-    # We need to mock store_memory inside the service
-    with patch.object(service, "store_memory", new_callable=AsyncMock) as mock_store_memory:
-        mock_store_memory.side_effect = [uuid4(), uuid4(), uuid4()]
+    # We mock the repository
+    mock_embed.return_value = [[0.1], [0.2], [0.3]]
+    mock_repo.match_memories.side_effect = [None, None, None]  # No existing memories
 
-        file_obj = io.BytesIO(b"fake data")
-        memory_ids = await service.store_document_memory(file_obj, "test.pdf", "application/pdf")
+    mock_memory1, mock_memory2, mock_memory3 = MagicMock(), MagicMock(), MagicMock()
+    mock_memory1.id = uuid4()
+    mock_memory2.id = uuid4()
+    mock_memory3.id = uuid4()
+    mock_repo.bulk_insert_memories.return_value = [mock_memory1, mock_memory2, mock_memory3]
 
-        assert len(memory_ids) == 2
-        assert mock_store_memory.call_count == 3  # 1 for intro, 2 for chunks
+    file_obj = io.BytesIO(b"fake data")
+    memory_ids = await service.store_document_memory(file_obj, "test.pdf", "application/pdf")
+
+    assert len(memory_ids) == 2
+    mock_repo.bulk_insert_memories.assert_awaited_once()
 
 
 @pytest.mark.asyncio

@@ -1,11 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, TextInput, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { Agent } from '@/core/models';
+
+const SORT_MODES: [SortMode, string, string][] = [
+  ['recent', 'chat.filter_recent', 'Recent'],
+  ['mentions', 'chat.filter_mentions', 'Mentions'],
+  ['tasks', 'chat.filter_tasks', 'Tasks'],
+];
+
+const styles = StyleSheet.create({
+  filterChip: {
+    marginRight: 8,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  filterChipActive: {
+    backgroundColor: '#DDF4EB',
+    borderColor: '#147D6473',
+  },
+  filterChipInactive: {
+    backgroundColor: '#ECF5F0',
+    borderColor: '#DDE8E0',
+  },
+  agentPillWrapper: {
+    marginRight: 8,
+  },
+});
 
 const C = {
   surface: DESIGN_TOKENS.colors.surface,
@@ -38,7 +65,7 @@ interface ChatListHeaderProps {
   roomCount: number;
 }
 
-export function ChatListHeader({
+export const ChatListHeader = memo(function ChatListHeader({
   t,
   query,
   onChangeQuery,
@@ -105,51 +132,56 @@ export function ChatListHeader({
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {(
-            [
-              ['recent', t('chat.filter_recent', 'Recent')],
-              ['mentions', t('chat.filter_mentions', 'Mentions')],
-              ['tasks', t('chat.filter_tasks', 'Tasks')],
-            ] as [SortMode, string][]
-          ).map(([mode, label]) => {
+          {SORT_MODES.map(([mode, txKey, fallback]) => {
             const selected = sortMode === mode;
             return (
               <ScalePressable
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
-                className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
-                }`}
+                style={[
+                  styles.filterChip,
+                  selected ? styles.filterChipActive : styles.filterChipInactive,
+                ]}
               >
                 <AppText
                   variant="caption"
                   className={`font-bold ${selected ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
                 >
-                  {label}
+                  {t(txKey, fallback)}
                 </AppText>
               </ScalePressable>
             );
           })}
-          {(
-            [
-              [recentOnly, onToggleRecentOnly, t('chat.recent_only', '7d')],
-              [unreadOnly, onToggleUnreadOnly, t('chat.unread_only', 'Unread')],
-            ] as const
-          ).map(([active, onToggle, label]) => (
-            <ScalePressable
-              key={label}
-              onPress={onToggle}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-              }`}
+          <ScalePressable
+            key="recentOnly"
+            onPress={onToggleRecentOnly}
+            style={[
+              styles.filterChip,
+              recentOnly ? styles.filterChipActive : styles.filterChipInactive,
+            ]}
+          >
+            <AppText
+              variant="caption"
+              className={`font-bold ${recentOnly ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
             >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
-                {label}
-              </AppText>
-            </ScalePressable>
-          ))}
+              {t('chat.recent_only', '7d')}
+            </AppText>
+          </ScalePressable>
+          <ScalePressable
+            key="unreadOnly"
+            onPress={onToggleUnreadOnly}
+            style={[
+              styles.filterChip,
+              unreadOnly ? styles.filterChipActive : styles.filterChipInactive,
+            ]}
+          >
+            <AppText
+              variant="caption"
+              className={`font-bold ${unreadOnly ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+            >
+              {t('chat.unread_only', 'Unread')}
+            </AppText>
+          </ScalePressable>
         </ScrollView>
       </View>
 
@@ -161,37 +193,45 @@ export function ChatListHeader({
             </AppText>
             <AppText variant="caption" className="text-[#5A7467] font-bold">
               {activeFilterCount > 0
-                ? t('chat.active_filters', { count: activeFilterCount, defaultValue: '{{count}} filters' })
+                ? t('chat.active_filters', {
+                    count: activeFilterCount,
+                    defaultValue: '{{count}} filters',
+                  })
                 : agents.length}
             </AppText>
           </View>
-          <ScrollView
+
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-4"
-          >
-            <ScalePressable
-              onPress={() => onSelectAgent(null)}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-              }`}
-            >
-              <AppText
-                variant="caption"
-                className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            data={agents}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={
+              <ScalePressable
+                onPress={() => onSelectAgent(null)}
+                style={[
+                  styles.filterChip,
+                  selectedAgentId === null ? styles.filterChipActive : styles.filterChipInactive,
+                ]}
               >
-                {t('chat.all_agents', 'All')}
-              </AppText>
-            </ScalePressable>
-            {agents.map((item) => (
-              <View key={item.id} style={{ marginRight: 8 }}>
+                <AppText
+                  variant="caption"
+                  className={`font-bold ${selectedAgentId === null ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+                >
+                  {t('chat.all_agents', 'All')}
+                </AppText>
+              </ScalePressable>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.agentPillWrapper}>
                 <AgentPill
                   agent={item}
                   onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
                 />
               </View>
-            ))}
-          </ScrollView>
+            )}
+          />
         </View>
       ) : null}
 
@@ -205,4 +245,4 @@ export function ChatListHeader({
       </View>
     </>
   );
-}
+});

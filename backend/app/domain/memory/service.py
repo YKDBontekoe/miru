@@ -37,14 +37,15 @@ class MemoryService:
         if not content:
             return None
 
-        vector = await embed(content)
+        vector_res = await embed(content)
+        vector = vector_res[0] if isinstance(vector_res[0], list) else vector_res
 
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
 
         # 1. Deduplication check
-        existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
+        existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)  # type: ignore
         if existing:
             return None
 
@@ -93,34 +94,83 @@ class MemoryService:
     ) -> list[UUID]:
         """Process an uploaded document, chunk it, and store as memory."""
         import asyncio
+        import uuid
 
         text = await asyncio.to_thread(DocumentService.extract_text, file, filename, content_type)
         if not text:
             return []
 
+        u_id = UUID(str(user_id)) if user_id else None
+        a_id = UUID(str(agent_id)) if agent_id else None
+        r_id = UUID(str(room_id)) if room_id else None
+
         # Summarize (optional/basic format)
         intro_content = f"Document: {filename}\nType: {content_type}\nSummary: Contains extracted text from this file."
-        await self.store_memory(
-            content=intro_content,
-            user_id=user_id,
-            agent_id=agent_id,
-            room_id=room_id,
-        )
 
         chunks = await asyncio.to_thread(DocumentService.chunk_text, text)
-        memory_ids = []
-        for i, chunk in enumerate(chunks):
-            chunk_content = f"[From document: {filename}, part {i + 1}]\n{chunk}"
-            mid = await self.store_memory(
-                content=chunk_content,
-                user_id=user_id,
-                agent_id=agent_id,
-                room_id=room_id,
-            )
-            if mid:
-                memory_ids.append(mid)
 
-        return memory_ids
+        all_contents = [intro_content]
+        for i, chunk in enumerate(chunks):
+            all_contents.append(f"[From document: {filename}, part {i + 1}]\n{chunk}")
+
+        # Batch embed all contents
+        vectors = await embed(all_contents)
+
+        # Parallel deduplication with batching to avoid connection pool exhaustion
+        async def check_dedup(idx, content, vector):
+            existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)  # type: ignore
+            if existing:
+                return None
+            return (idx, content, vector)
+
+        valid_entries = []
+        batch_size = 5
+
+        for i in range(0, len(all_contents), batch_size):
+            batch_contents = all_contents[i : i + batch_size]
+            batch_vectors = vectors[i : i + batch_size]
+
+            batch_results = await asyncio.gather(
+                *(
+                    check_dedup(i + j, c, v)
+                    for j, (c, v) in enumerate(zip(batch_contents, batch_vectors, strict=False))
+                )
+            )
+            valid_entries.extend([res for res in batch_results if res is not None])
+
+        # Internal exact-match deduplication
+        seen_contents = set()
+        unique_entries = []
+        for _idx, content, vector in valid_entries:
+            if content not in seen_contents:
+                seen_contents.add(content)
+                unique_entries.append((_idx, content, vector))
+
+        if not unique_entries:
+            return []
+
+        # Bulk create memories
+        memories_to_insert = []
+        chunk_memory_ids = []
+
+        for idx, c, v in unique_entries:
+            new_id = uuid.uuid4()
+            memories_to_insert.append(
+                Memory(
+                    id=new_id,
+                    content=c,
+                    embedding=v,
+                    user_id=u_id,
+                    agent_id=a_id,
+                    room_id=r_id,
+                )
+            )
+            # Only return IDs for the chunks (index > 0)
+            if idx > 0:
+                chunk_memory_ids.append(new_id)
+
+        await self.repo.bulk_insert_memories(memories_to_insert)
+        return chunk_memory_ids
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a single memory and its relationships by delegating to the repository layer.
@@ -160,9 +210,17 @@ class MemoryService:
         room_id: UUID | str | None = None,
     ) -> list[Memory]:
         """Fetch similar memories from the vector store."""
-        vector = await embed(query) if query else [0.0] * 1536  # Default vector for blank list
+        if query:
+            vector_res = await embed(query)
+            vector: list[float] = vector_res[0] if isinstance(vector_res[0], list) else vector_res  # type: ignore
+        else:
+            vector: list[float] = [0.0] * 1536  # type: ignore
+
+        if not isinstance(vector, list) or (vector and isinstance(vector[0], list)):
+            vector = list(vector)  # type: ignore
+
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
 
-        return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)
+        return await self.repo.match_memories(vector, 0.0, TOP_K, u_id, a_id, r_id)  # type: ignore

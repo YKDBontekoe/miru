@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { memo, useCallback, useMemo } from 'react';
+import { Pressable, FlatList, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 
@@ -23,7 +23,48 @@ interface RoomPromptRailProps {
   onContextPress?: (value: string) => void;
 }
 
-export function RoomPromptRail({
+const styles = StyleSheet.create({
+  container: { paddingHorizontal: 12, paddingBottom: 8 },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#DDE8E0',
+    backgroundColor: '#white',
+    paddingVertical: 8,
+  },
+  header: { paddingHorizontal: 12, marginBottom: 6, flexDirection: 'row', alignItems: 'center' },
+  listContent: { paddingHorizontal: 12 },
+  saveButton: {
+    marginRight: 8,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    backgroundColor: '#DDF4EB',
+    borderColor: '#147D6455',
+  },
+  promptButton: {
+    marginRight: 8,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  promptPinned: { backgroundColor: '#DDF4EB', borderColor: '#147D6455' },
+  promptUnpinned: { backgroundColor: '#ECF5F0', borderColor: '#DDE8E0' },
+  contextList: { paddingHorizontal: 12, paddingTop: 8 },
+  contextButton: {
+    marginRight: 8,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: '#ECF5F0',
+    borderWidth: 1,
+    borderColor: '#DDE8E0',
+  },
+});
+
+export const RoomPromptRail = memo(function RoomPromptRail({
   prompts,
   isStreaming,
   saveLabel,
@@ -52,24 +93,25 @@ export function RoomPromptRail({
           ) : null}
         </View>
 
-        <ScrollView
+        <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
-        >
-          <Pressable
-            onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
-            disabled={isStreaming || !canSave}
-          >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
-          </Pressable>
-
-          {prompts.map((action) => (
+          contentContainerStyle={{ paddingHorizontal: 12 }}
+          data={prompts}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={
             <Pressable
-              key={action.id}
+              onPress={onSave}
+              className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
+                isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
+              }`}
+              disabled={isStreaming || !canSave}
+            >
+              <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
+            </Pressable>
+          }
+          renderItem={({ item: action }) => (
+            <Pressable
               onPress={() => onPromptPress(action.text)}
               onLongPress={() => onPromptLongPress(action)}
               className={`mr-2 rounded-full px-3 py-2 border ${
@@ -88,18 +130,18 @@ export function RoomPromptRail({
                 {action.text}
               </AppText>
             </Pressable>
-          ))}
-        </ScrollView>
+          )}
+        />
 
         {contextActions && contextActions.length > 0 && onContextPress ? (
-          <ScrollView
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
-          >
-            {contextActions.map((value) => (
+            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 }}
+            data={contextActions}
+            keyExtractor={(item) => item}
+            renderItem={({ item: value }) => (
               <Pressable
-                key={value}
                 onPress={() => onContextPress(value)}
                 className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
               >
@@ -107,10 +149,10 @@ export function RoomPromptRail({
                   {value}
                 </AppText>
               </Pressable>
-            ))}
-          </ScrollView>
+            )}
+          />
         ) : null}
       </View>
     </View>
   );
-}
+});

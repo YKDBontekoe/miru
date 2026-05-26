@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from tortoise import Tortoise
@@ -18,6 +19,13 @@ class MemoryRepository:
         """Insert a new memory record."""
         await memory.save()
         return memory
+
+    async def bulk_insert_memories(self, memories: list[Memory]) -> list[Memory]:
+        """Insert multiple memories in a single batch."""
+        if not memories:
+            return []
+        await Memory.bulk_create(memories)
+        return memories
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a memory. Optionally enforce ownership."""
@@ -36,7 +44,7 @@ class MemoryRepository:
 
     async def match_memories(
         self,
-        vector: list[float],
+        vector: Any,
         threshold: float,
         count: int,
         user_id: UUID | None = None,
