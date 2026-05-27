@@ -259,6 +259,9 @@ class ProductivityRepository(IProductivityRepository):
                     id=event_id, user_id=user_id
                 ).prefetch_related("agent", "origin_message")
 
+                if not event:
+                    return None
+
             return _map_event(event)
 
     async def delete_event(self, user_id: UUID, event_id: UUID) -> int:
