@@ -10,10 +10,11 @@ from app.domain.memory.service import MemoryService
 
 
 @pytest.mark.asyncio
+@patch("app.domain.memory.service.embed")
 @patch("app.domain.memory.document_service.DocumentService.extract_text")
 @patch("app.domain.memory.document_service.DocumentService.chunk_text")
 async def test_store_document_memory(
-    mock_chunk_text: MagicMock, mock_extract_text: MagicMock
+    mock_chunk_text: MagicMock, mock_extract_text: MagicMock, mock_embed: AsyncMock
 ) -> None:
     mock_repo = AsyncMock()
     service = MemoryService(mock_repo)
@@ -21,15 +22,54 @@ async def test_store_document_memory(
     mock_extract_text.return_value = "Fake document text"
     mock_chunk_text.return_value = ["chunk 1", "chunk 2"]
 
-    # We need to mock store_memory inside the service
-    with patch.object(service, "store_memory", new_callable=AsyncMock) as mock_store_memory:
-        mock_store_memory.side_effect = [uuid4(), uuid4(), uuid4()]
+    # Mock embeddings response, length should match unique chunks (3 here)
+    mock_embed.return_value = [[0.1] * 1536, [0.2] * 1536, [0.3] * 1536]
 
-        file_obj = io.BytesIO(b"fake data")
-        memory_ids = await service.store_document_memory(file_obj, "test.pdf", "application/pdf")
+    # No existing exact matches
+    mock_repo.match_memories.return_value = []
 
-        assert len(memory_ids) == 2
-        assert mock_store_memory.call_count == 3  # 1 for intro, 2 for chunks
+    # Mock returning inserted objects
+    class MockInserted:
+        def __init__(self) -> None:
+            self.id = uuid4()
+            self.content = "fake content"
+
+    mock_repo.bulk_insert_memories.return_value = [MockInserted(), MockInserted(), MockInserted()]
+
+    file_obj = io.BytesIO(b"fake data")
+
+    with (
+        patch(
+            "app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph",
+            new_callable=AsyncMock,
+        ),
+        patch("asyncio.create_task") as mock_create_task,
+    ):
+        # Helper to execute the coroutine that `create_task` was called with
+        def mock_create_task_side_effect(coro):
+            import asyncio
+
+            return (
+                asyncio.get_event_loop().run_until_complete(coro)
+                if not asyncio.get_event_loop().is_running()
+                else coro.send(None)
+            )
+
+        # Actually we just want to suppress the warning, let's just make it do nothing and close the coro
+        def safe_create_task(coro):
+            coro.close()
+            return MagicMock()
+
+        mock_create_task.side_effect = safe_create_task
+
+        memory_ids = await service.store_document_memory(
+            file_obj, "test.pdf", "application/pdf", user_id=uuid4()
+        )
+
+        assert len(memory_ids) == 3
+        assert mock_embed.call_count == 1
+        mock_repo.bulk_insert_memories.assert_called_once()
+        assert mock_create_task.call_count == 3
 
 
 @pytest.mark.asyncio

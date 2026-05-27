@@ -16,8 +16,35 @@ class MemoryRepository:
 
     async def insert_memory(self, memory: Memory) -> Memory:
         """Insert a new memory record."""
+        import uuid
+
+        if not memory.id:
+            memory.id = uuid.uuid4()
         await memory.save()
         return memory
+
+    async def bulk_insert_memories(self, memories: list[Memory]) -> list[Memory]:
+        """Insert multiple memory records efficiently.
+
+        Args:
+            memories: A list of Memory objects to insert. Missing IDs will be auto-generated.
+
+        Returns:
+            list[Memory]: The list of inserted Memory objects with IDs assigned.
+
+        Notes:
+            Leverages Tortoise ORM's bulk_create for performance. Generates UUIDs manually
+            so returned objects contain accurate identifiers prior to database defaults.
+        """
+        if not memories:
+            return []
+        import uuid
+
+        for m in memories:
+            if not m.id:
+                m.id = uuid.uuid4()
+        await Memory.bulk_create(memories)
+        return memories
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a memory. Optionally enforce ownership."""
