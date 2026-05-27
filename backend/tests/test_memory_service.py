@@ -32,15 +32,54 @@ async def test_store_document_memory(
     class MockInserted:
         def __init__(self) -> None:
             self.id = uuid4()
+            self.content = "fake content"
 
     mock_repo.bulk_insert_memories.return_value = [MockInserted(), MockInserted(), MockInserted()]
 
     file_obj = io.BytesIO(b"fake data")
-    memory_ids = await service.store_document_memory(file_obj, "test.pdf", "application/pdf")
 
-    assert len(memory_ids) == 3
-    assert mock_embed.call_count == 1
-    mock_repo.bulk_insert_memories.assert_called_once()
+    # Mock returning inserted objects
+    class MockInserted:
+        def __init__(self) -> None:
+            self.id = uuid4()
+            self.content = "fake content"
+
+    mock_repo.bulk_insert_memories.return_value = [MockInserted(), MockInserted(), MockInserted()]
+
+    file_obj = io.BytesIO(b"fake data")
+
+    with (
+        patch(
+            "app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph",
+            new_callable=AsyncMock,
+        ),
+        patch("asyncio.create_task") as mock_create_task,
+    ):
+        # Helper to execute the coroutine that `create_task` was called with
+        def mock_create_task_side_effect(coro):
+            import asyncio
+
+            return (
+                asyncio.get_event_loop().run_until_complete(coro)
+                if not asyncio.get_event_loop().is_running()
+                else coro.send(None)
+            )
+
+        # Actually we just want to suppress the warning, let's just make it do nothing and close the coro
+        def safe_create_task(coro):
+            coro.close()
+            return MagicMock()
+
+        mock_create_task.side_effect = safe_create_task
+
+        memory_ids = await service.store_document_memory(
+            file_obj, "test.pdf", "application/pdf", user_id=uuid4()
+        )
+
+        assert len(memory_ids) == 3
+        assert mock_embed.call_count == 1
+        mock_repo.bulk_insert_memories.assert_called_once()
+        assert mock_create_task.call_count == 3
 
 
 @pytest.mark.asyncio
