@@ -255,9 +255,9 @@ class ProductivityRepository(IProductivityRepository):
                 await event.save(update_fields=list(valid_keys.keys()))
 
                 # Refetch to ensure models and relations are fresh
-                event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
-                    "agent", "origin_message"
-                )
+                event = await CalendarEvent.get_or_none(
+                    id=event_id, user_id=user_id
+                ).prefetch_related("agent", "origin_message")
 
             return _map_event(event)
 
