@@ -34,7 +34,7 @@ type ProductivityListItemProps = {
 };
 
 export const ProductivityListItem = memo(
-  ({ item, deleteNote, toggleTask, deleteTask, confirmDelete }: ProductivityListItemProps) => {
+  function ProductivityListItem({ item, deleteNote, toggleTask, deleteTask, confirmDelete }: ProductivityListItemProps) {
     const { i18n } = useTranslation();
 
     if (item.type === 'note') {

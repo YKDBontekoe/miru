@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
 import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
