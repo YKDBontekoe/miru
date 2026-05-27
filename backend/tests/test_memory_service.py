@@ -38,16 +38,6 @@ async def test_store_document_memory(
 
     file_obj = io.BytesIO(b"fake data")
 
-    # Mock returning inserted objects
-    class MockInserted:
-        def __init__(self) -> None:
-            self.id = uuid4()
-            self.content = "fake content"
-
-    mock_repo.bulk_insert_memories.return_value = [MockInserted(), MockInserted(), MockInserted()]
-
-    file_obj = io.BytesIO(b"fake data")
-
     with (
         patch(
             "app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph",
