@@ -16,8 +16,24 @@ class MemoryRepository:
 
     async def insert_memory(self, memory: Memory) -> Memory:
         """Insert a new memory record."""
+        import uuid
+
+        if not memory.id:
+            memory.id = uuid.uuid4()
         await memory.save()
         return memory
+
+    async def bulk_insert_memories(self, memories: list[Memory]) -> list[Memory]:
+        """Insert multiple memory records efficiently."""
+        if not memories:
+            return []
+        import uuid
+
+        for m in memories:
+            if not m.id:
+                m.id = uuid.uuid4()
+        await Memory.bulk_create(memories)
+        return memories
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a memory. Optionally enforce ownership."""

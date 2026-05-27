@@ -98,29 +98,51 @@ class MemoryService:
         if not text:
             return []
 
-        # Summarize (optional/basic format)
+        u_id = UUID(str(user_id)) if user_id else None
+        a_id = UUID(str(agent_id)) if agent_id else None
+        r_id = UUID(str(room_id)) if room_id else None
+
+        # Prepare summary and chunks
         intro_content = f"Document: {filename}\nType: {content_type}\nSummary: Contains extracted text from this file."
-        await self.store_memory(
-            content=intro_content,
-            user_id=user_id,
-            agent_id=agent_id,
-            room_id=room_id,
-        )
-
         chunks = await asyncio.to_thread(DocumentService.chunk_text, text)
-        memory_ids = []
-        for i, chunk in enumerate(chunks):
-            chunk_content = f"[From document: {filename}, part {i + 1}]\n{chunk}"
-            mid = await self.store_memory(
-                content=chunk_content,
-                user_id=user_id,
-                agent_id=agent_id,
-                room_id=room_id,
-            )
-            if mid:
-                memory_ids.append(mid)
 
-        return memory_ids
+        all_contents = [intro_content] + [
+            f"[From document: {filename}, part {i + 1}]\n{chunk}" for i, chunk in enumerate(chunks)
+        ]
+
+        # Exact-match deduplication early on to avoid embedding identical strings
+        unique_contents = list(dict.fromkeys(all_contents))
+
+        # Batch embed all unique chunks
+        embeddings = await embed(unique_contents)
+
+        async def check_dedup(idx: int, vec: list[float], txt: str) -> Memory | None:
+            existing = await self.repo.match_memories(vec, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
+            if existing:
+                return None
+            return Memory(
+                content=txt,
+                embedding=vec,
+                user_id=u_id,
+                agent_id=a_id,
+                room_id=r_id,
+            )
+
+        # Parallel semantic deduplication
+        tasks = [
+            check_dedup(i, vec, txt)
+            for i, (vec, txt) in enumerate(zip(embeddings, unique_contents, strict=False))
+        ]
+        results = await asyncio.gather(*tasks)
+
+        memories_to_insert = [m for m in results if m is not None]
+
+        if not memories_to_insert:
+            return []
+
+        # Batch insert
+        inserted = await self.repo.bulk_insert_memories(memories_to_insert)
+        return [m.id for m in inserted]
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a single memory and its relationships by delegating to the repository layer.
