@@ -24,7 +24,18 @@ class MemoryRepository:
         return memory
 
     async def bulk_insert_memories(self, memories: list[Memory]) -> list[Memory]:
-        """Insert multiple memory records efficiently."""
+        """Insert multiple memory records efficiently.
+
+        Args:
+            memories: A list of Memory objects to insert. Missing IDs will be auto-generated.
+
+        Returns:
+            list[Memory]: The list of inserted Memory objects with IDs assigned.
+
+        Notes:
+            Leverages Tortoise ORM's bulk_create for performance. Generates UUIDs manually
+            so returned objects contain accurate identifiers prior to database defaults.
+        """
         if not memories:
             return []
         import uuid

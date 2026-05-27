@@ -65,6 +65,25 @@ class OpenRouterClient:
         reraise=True,
     )
     async def embed(self, text: str | list[str], model: str) -> list[float] | list[list[float]]:
+        """Fetch embeddings for the given text.
+
+        Args:
+            text: The string or list of strings to embed. If a string is provided, returns
+                a single list of floats. If a list of strings is provided, returns a list
+                of float lists.
+            model: The embedding model to use.
+
+        Returns:
+            list[float] | list[list[float]]: The embedding vector(s).
+
+        Raises:
+            openai.APIConnectionError: If the API request fails or times out.
+            openai.RateLimitError: If rate limits are exceeded.
+
+        Example:
+            >>> client.embed("Hello world", "text-embedding-3-small")
+            [0.01, 0.02, ...]
+        """
         response = await self.openai_client.embeddings.create(
             model=model,
             input=text,
@@ -198,5 +217,20 @@ async def embed(text: list[str]) -> list[list[float]]: ...
 
 
 async def embed(text: str | list[str]) -> list[float] | list[list[float]]:
+    """Fetch embeddings using the default embedding model.
+
+    Args:
+        text: The string or list of strings to embed.
+
+    Returns:
+        list[float] | list[list[float]]: The embedding vector(s).
+
+    Raises:
+        Exception: Re-raises any underlying client exceptions.
+
+    Example:
+        >>> await embed(["chunk 1", "chunk 2"])
+        [[0.1, ...], [0.2, ...]]
+    """
     client = get_openrouter_client()
     return await client.embed(text, get_settings().embedding_model)

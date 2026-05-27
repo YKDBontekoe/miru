@@ -30,7 +30,7 @@ async def test_store_document_memory(
 
     # Mock returning inserted objects
     class MockInserted:
-        def __init__(self):
+        def __init__(self) -> None:
             self.id = uuid4()
 
     mock_repo.bulk_insert_memories.return_value = [MockInserted(), MockInserted(), MockInserted()]
