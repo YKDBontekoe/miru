@@ -241,11 +241,13 @@ class ProductivityRepository(IProductivityRepository):
 
     async def update_event(
         self, user_id: UUID, event_id: UUID, valid_keys: dict
-    ) -> CalendarEventEntity:
+    ) -> CalendarEventEntity | None:
         async with handle_db_errors("update calendar event"):
-            event = await CalendarEvent.get(id=event_id, user_id=user_id).prefetch_related(
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
+            if not event:
+                return None
             for field, value in valid_keys.items():
                 setattr(event, field, value)
             await event.save(update_fields=list(valid_keys.keys()))
