@@ -16,6 +16,7 @@ TEST_RELATED_ID = UUID("00000000-0000-0000-0000-000000000002")
 
 @pytest.mark.asyncio
 async def test_store_memory_success() -> None:
+    """Verifies that storing a new memory successfully saves to DB, creates relationships, and extracts graphs."""
     # TEST(miru-agent): refactor-required
     repo = MemoryRepository()
     service = MemoryService(repo)
@@ -58,6 +59,7 @@ async def test_store_memory_success() -> None:
 
 @pytest.mark.asyncio
 async def test_store_memory_empty() -> None:
+    """Verifies that attempting to store an empty string returns None without DB side effects."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -67,6 +69,7 @@ async def test_store_memory_empty() -> None:
 
 @pytest.mark.asyncio
 async def test_store_memory_deduplication() -> None:
+    """Verifies that an identical existing memory is detected and bypasses the DB insert."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -89,6 +92,7 @@ async def test_store_memory_deduplication() -> None:
 
 @pytest.mark.asyncio
 async def test_store_memory_relationship_exception() -> None:
+    """Verifies that a failure during relationship creation logs a warning but still stores the memory."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -120,6 +124,7 @@ async def test_store_memory_relationship_exception() -> None:
 
 @pytest.mark.asyncio
 async def test_store_memory_graph_trigger_exception() -> None:
+    """Verifies that a failure to trigger background graph extraction logs a warning but still stores the memory."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -148,6 +153,7 @@ async def test_store_memory_graph_trigger_exception() -> None:
 
 @pytest.mark.asyncio
 async def test_get_memory_graph_empty() -> None:
+    """Verifies that retrieving a memory graph for a user with no memories returns an empty structure."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -157,6 +163,7 @@ async def test_get_memory_graph_empty() -> None:
 
 @pytest.mark.asyncio
 async def test_get_memory_graph_populated() -> None:
+    """Verifies that the retrieved memory graph correctly maps stored nodes and relationships."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -174,6 +181,7 @@ async def test_get_memory_graph_populated() -> None:
 
 @pytest.mark.asyncio
 async def test_retrieve_memories() -> None:
+    """Verifies that memory retrieval functions correctly with both populated and empty string queries."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
