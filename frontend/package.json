@@ -8,11 +8,12 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
-    "lint": "eslint .",
+    "lint": "npm run check-prettier && eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check-prettier": "node scripts/check-prettier.js"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
