@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { TextInput, View, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -49,15 +49,16 @@ const FilterItemCell = React.memo(({
 }) => (
   <ScalePressable
     onPress={onPress}
-    className={`me-2 rounded-full px-3 py-2 border ${
-      active
-        ? 'bg-[#DDF4EB] border-[#147D6473]'
-        : 'bg-[#ECF5F0] border-[#DDE8E0]'
-    }`}
+    className="me-2 rounded-full px-3 py-2 border"
+    style={{
+      backgroundColor: active ? C.primarySoft : C.surfaceHigh,
+      borderColor: active ? `${C.primary}73` : C.border,
+    }}
   >
     <AppText
       variant="caption"
-      className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+      className="font-bold"
+      style={{ color: active ? C.primary : C.deep }}
     >
       {label}
     </AppText>
@@ -73,7 +74,7 @@ const AgentItemCell = React.memo(({
   selectedAgentId: string | null;
   onSelectAgent: (agentId: string | null) => void;
 }) => (
-  <View style={{ marginRight: 8 }}>
+  <View className="mr-2">
     <AgentPill
       agent={agent}
       onPress={() => onSelectAgent(selectedAgentId === agent.id ? null : agent.id)}
@@ -108,29 +109,33 @@ export const ChatListHeader = React.memo(({
     return () => clearTimeout(timer);
   }, [localQuery, onChangeQuery]);
 
-  const filterItems = useMemo(() => [
-    { id: 'sort-recent', type: 'sort' as const, mode: 'recent' as SortMode, label: t('chat.filter_recent', 'Recent') },
-    { id: 'sort-mentions', type: 'sort' as const, mode: 'mentions' as SortMode, label: t('chat.filter_mentions', 'Mentions') },
-    { id: 'sort-tasks', type: 'sort' as const, mode: 'tasks' as SortMode, label: t('chat.filter_tasks', 'Tasks') },
-    { id: 'filter-recent', type: 'filter' as const, active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
-    { id: 'filter-unread', type: 'filter' as const, active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
+  type FilterItem =
+    | { type: 'sort'; mode: SortMode; label: string; id: string }
+    | { type: 'filter'; active: boolean; onToggle: () => void; label: string; id: string };
+
+  const filterItems = useMemo<FilterItem[]>(() => [
+    { id: 'sort-recent', type: 'sort', mode: 'recent', label: t('chat.filter_recent', 'Recent') },
+    { id: 'sort-mentions', type: 'sort', mode: 'mentions', label: t('chat.filter_mentions', 'Mentions') },
+    { id: 'sort-tasks', type: 'sort', mode: 'tasks', label: t('chat.filter_tasks', 'Tasks') },
+    { id: 'filter-recent', type: 'filter', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
+    { id: 'filter-unread', type: 'filter', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
   ], [t, recentOnly, onToggleRecentOnly, unreadOnly, onToggleUnreadOnly]);
 
-  const renderFilterItem = useCallback(({ item }: { item: typeof filterItems[0] }) => {
+  const renderFilterItem = useCallback(({ item }: { item: FilterItem }) => {
     if (item.type === 'sort') {
       return (
         <FilterItemCell
           label={item.label}
           active={sortMode === item.mode}
-          onPress={() => onChangeSortMode(item.mode!)}
+          onPress={() => onChangeSortMode(item.mode)}
         />
       );
     } else {
       return (
         <FilterItemCell
           label={item.label}
-          active={item.active!}
-          onPress={item.onToggle!}
+          active={item.active}
+          onPress={item.onToggle}
         />
       );
     }
@@ -231,7 +236,7 @@ export const ChatListHeader = React.memo(({
             data={agents}
             renderItem={renderAgentItem}
             keyExtractor={agentKeyExtractor}
-            ListHeaderComponent={<AllAgentsHeader />}
+            ListHeaderComponent={AllAgentsHeader}
           />
         </View>
       ) : null}
