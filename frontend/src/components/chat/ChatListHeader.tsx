@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { TextInput, View, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, TextInput, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -38,7 +38,51 @@ interface ChatListHeaderProps {
   roomCount: number;
 }
 
-export function ChatListHeader({
+const FilterItemCell = React.memo(({
+  label,
+  active,
+  onPress
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) => (
+  <ScalePressable
+    onPress={onPress}
+    className="me-2 rounded-full px-3 py-2 border"
+    style={{
+      backgroundColor: active ? C.primarySoft : C.surfaceHigh,
+      borderColor: active ? `${C.primary}73` : C.border,
+    }}
+  >
+    <AppText
+      variant="caption"
+      className="font-bold"
+      style={{ color: active ? C.primary : C.deep }}
+    >
+      {label}
+    </AppText>
+  </ScalePressable>
+));
+
+const AgentItemCell = React.memo(({
+  agent,
+  selectedAgentId,
+  onSelectAgent
+}: {
+  agent: Agent;
+  selectedAgentId: string | null;
+  onSelectAgent: (agentId: string | null) => void;
+}) => (
+  <View className="mr-2">
+    <AgentPill
+      agent={agent}
+      onPress={() => onSelectAgent(selectedAgentId === agent.id ? null : agent.id)}
+    />
+  </View>
+));
+
+export const ChatListHeader = React.memo(({
   t,
   query,
   onChangeQuery,
@@ -53,7 +97,7 @@ export function ChatListHeader({
   onSelectAgent,
   activeFilterCount,
   roomCount,
-}: ChatListHeaderProps) {
+}: ChatListHeaderProps) => {
   const [localQuery, setLocalQuery] = useState(query);
 
   useEffect(() => {
@@ -64,6 +108,66 @@ export function ChatListHeader({
     const timer = setTimeout(() => onChangeQuery(localQuery), 300);
     return () => clearTimeout(timer);
   }, [localQuery, onChangeQuery]);
+
+  type FilterItem =
+    | { type: 'sort'; mode: SortMode; label: string; id: string }
+    | { type: 'filter'; active: boolean; onToggle: () => void; label: string; id: string };
+
+  const filterItems = useMemo<FilterItem[]>(() => [
+    { id: 'sort-recent', type: 'sort', mode: 'recent', label: t('chat.filter_recent', 'Recent') },
+    { id: 'sort-mentions', type: 'sort', mode: 'mentions', label: t('chat.filter_mentions', 'Mentions') },
+    { id: 'sort-tasks', type: 'sort', mode: 'tasks', label: t('chat.filter_tasks', 'Tasks') },
+    { id: 'filter-recent', type: 'filter', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
+    { id: 'filter-unread', type: 'filter', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
+  ], [t, recentOnly, onToggleRecentOnly, unreadOnly, onToggleUnreadOnly]);
+
+  const renderFilterItem = useCallback(({ item }: { item: FilterItem }) => {
+    if (item.type === 'sort') {
+      return (
+        <FilterItemCell
+          label={item.label}
+          active={sortMode === item.mode}
+          onPress={() => onChangeSortMode(item.mode)}
+        />
+      );
+    } else {
+      return (
+        <FilterItemCell
+          label={item.label}
+          active={item.active}
+          onPress={item.onToggle}
+        />
+      );
+    }
+  }, [sortMode, onChangeSortMode]);
+
+  const filterKeyExtractor = useCallback((item: typeof filterItems[0]) => item.id, []);
+
+  const renderAgentItem = useCallback(({ item }: { item: Agent }) => (
+    <AgentItemCell
+      agent={item}
+      selectedAgentId={selectedAgentId}
+      onSelectAgent={onSelectAgent}
+    />
+  ), [selectedAgentId, onSelectAgent]);
+
+  const agentKeyExtractor = useCallback((item: Agent) => item.id, []);
+
+  const AllAgentsHeader = useCallback(() => (
+    <ScalePressable
+      onPress={() => onSelectAgent(null)}
+      className={`me-2 rounded-full px-3 py-2 border ${
+        selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
+      }`}
+    >
+      <AppText
+        variant="caption"
+        className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+      >
+        {t('chat.all_agents', 'All')}
+      </AppText>
+    </ScalePressable>
+  ), [onSelectAgent, selectedAgentId, t]);
 
   return (
     <>
@@ -104,53 +208,13 @@ export function ChatListHeader({
           ) : null}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {(
-            [
-              ['recent', t('chat.filter_recent', 'Recent')],
-              ['mentions', t('chat.filter_mentions', 'Mentions')],
-              ['tasks', t('chat.filter_tasks', 'Tasks')],
-            ] as [SortMode, string][]
-          ).map(([mode, label]) => {
-            const selected = sortMode === mode;
-            return (
-              <ScalePressable
-                key={mode}
-                onPress={() => onChangeSortMode(mode)}
-                className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
-                }`}
-              >
-                <AppText
-                  variant="caption"
-                  className={`font-bold ${selected ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
-                >
-                  {label}
-                </AppText>
-              </ScalePressable>
-            );
-          })}
-          {(
-            [
-              [recentOnly, onToggleRecentOnly, t('chat.recent_only', '7d')],
-              [unreadOnly, onToggleUnreadOnly, t('chat.unread_only', 'Unread')],
-            ] as const
-          ).map(([active, onToggle, label]) => (
-            <ScalePressable
-              key={label}
-              onPress={onToggle}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-              }`}
-            >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
-                {label}
-              </AppText>
-            </ScalePressable>
-          ))}
-        </ScrollView>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={filterItems}
+          renderItem={renderFilterItem}
+          keyExtractor={filterKeyExtractor}
+        />
       </View>
 
       {agents.length > 0 ? (
@@ -165,33 +229,15 @@ export function ChatListHeader({
                 : agents.length}
             </AppText>
           </View>
-          <ScrollView
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="px-4"
-          >
-            <ScalePressable
-              onPress={() => onSelectAgent(null)}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-              }`}
-            >
-              <AppText
-                variant="caption"
-                className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
-              >
-                {t('chat.all_agents', 'All')}
-              </AppText>
-            </ScalePressable>
-            {agents.map((item) => (
-              <View key={item.id} style={{ marginRight: 8 }}>
-                <AgentPill
-                  agent={item}
-                  onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
-                />
-              </View>
-            ))}
-          </ScrollView>
+            data={agents}
+            renderItem={renderAgentItem}
+            keyExtractor={agentKeyExtractor}
+            ListHeaderComponent={AllAgentsHeader}
+          />
         </View>
       ) : null}
 
@@ -205,4 +251,7 @@ export function ChatListHeader({
       </View>
     </>
   );
-}
+});
+FilterItemCell.displayName = 'FilterItemCell';
+AgentItemCell.displayName = 'AgentItemCell';
+ChatListHeader.displayName = 'ChatListHeader';
