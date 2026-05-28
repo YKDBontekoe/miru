@@ -376,3 +376,17 @@ def test_delete_memory_endpoint_with_user_id(
         response = client.delete(f"/api/v1/memory/{memory_id}", headers=authed_headers)
         assert response.status_code == 200
         mock_delete.assert_awaited_once_with(memory_id, user_id=UUID(str(test_user_id)))
+
+
+def test_delete_memory_endpoint_not_found(
+    client: TestClient, authed_headers: dict, test_user_id: UUID
+) -> None:
+    memory_id = uuid4()
+    with patch(
+        "app.domain.memory.service.MemoryService.delete_memory", new_callable=AsyncMock
+    ) as mock_delete:
+        mock_delete.return_value = False
+        response = client.delete(f"/api/v1/memory/{memory_id}", headers=authed_headers)
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Memory not found"}
+        mock_delete.assert_awaited_once_with(memory_id, user_id=UUID(str(test_user_id)))
