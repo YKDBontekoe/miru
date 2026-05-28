@@ -94,9 +94,3 @@ jest.mock('react-native-reanimated', () => {
 
 // Global mock for alert
 jest.spyOn(require('react-native').Alert, 'alert');
-
-// Mock WebSocket for Supabase Realtime in Jest
-const ws = require('ws');
-if (typeof WebSocket === 'undefined') {
-  global.WebSocket = ws;
-}

@@ -71,12 +71,12 @@ class CrewOrchestrator:
     def get_crew_llm() -> _OpenRouterLLM:
         """Build a CrewAI LLM instance backed by OpenRouter."""
         settings = get_settings()
-        return cast("_OpenRouterLLM", _OpenRouterLLM(
+        return _OpenRouterLLM(
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
             additional_drop_params=["tool_choice"],
-        ))
+        )
 
     @staticmethod
     def get_agent_tools(agent: Agent, user_id: UUID, origin_message_id: UUID | None = None) -> list:
@@ -233,7 +233,7 @@ class CrewOrchestrator:
         memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
         summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
 
-        kwargs: dict[str, Any] = {}
+        kwargs = {}
         if step_callback:
             kwargs["step_callback"] = step_callback
             kwargs["verbose"] = True
