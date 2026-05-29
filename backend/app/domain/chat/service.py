@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import typing
 from typing import TYPE_CHECKING
 
 import openai
@@ -335,7 +336,7 @@ class ChatService:
         try:
             from app.infrastructure.external.openrouter import embed  # noqa: PLC0415
 
-            query_vector = await embed(user_message)
+            query_vector = typing.cast('list[float]', await embed(user_message))
             memories = await self.memory_repo.match_memories(
                 vector=query_vector,
                 threshold=0.75,
