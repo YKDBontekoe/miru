@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import logging
+import typing
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -37,14 +38,14 @@ class MemoryService:
         if not content:
             return None
 
-        vector = await embed(content)
+        vector = typing.cast('list[float]', await embed(content))
 
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
 
         # 1. Deduplication check
-        existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
+        existing = await self.repo.match_memories(typing.cast('list[float]', vector), DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
         if existing:
             return None
 
@@ -114,7 +115,7 @@ class MemoryService:
             all_contents.append(f"[From document: {filename}, part {i + 1}]\n{chunk}")
 
         # 2. Batch embed
-        embeddings = await embed(all_contents)
+        embeddings = typing.cast('list[list[float]]', await embed(all_contents))
 
         # 3. Parallel semantic dedup and internal exact match dedup
         seen_contents = set()
@@ -125,7 +126,7 @@ class MemoryService:
                 return None
             seen_contents.add(content)
 
-            existing = await self.repo.match_memories(vector, DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
+            existing = await self.repo.match_memories(typing.cast('list[float]', vector), DEDUP_THRESHOLD, 1, u_id, a_id, r_id)
             if existing:
                 return None
 
@@ -192,7 +193,7 @@ class MemoryService:
         room_id: UUID | str | None = None,
     ) -> list[Memory]:
         """Fetch similar memories from the vector store."""
-        vector = await embed(query) if query else [0.0] * 1536  # Default vector for blank list
+        vector = typing.cast('list[float]', await embed(query)) if query else [0.0] * 1536  # Default vector for blank list
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
