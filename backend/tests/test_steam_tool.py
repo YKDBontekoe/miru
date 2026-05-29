@@ -54,7 +54,10 @@ async def test_steam_player_summary_tool_not_found(
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.SteamClient.get_owned_games", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.external.steam_tool.SteamClient.get_owned_games",
+    new_callable=AsyncMock,
+)
 async def test_steam_owned_games_tool(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test fetching owned games."""
     mock_get_games.return_value = [
@@ -73,7 +76,10 @@ async def test_steam_owned_games_tool(mock_get_games: typing.Any, steam_id: str)
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.SteamClient.get_owned_games", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.external.steam_tool.SteamClient.get_owned_games",
+    new_callable=AsyncMock,
+)
 async def test_steam_owned_games_tool_empty(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test handling when profile has no games or is private."""
     mock_get_games.return_value = []
@@ -99,7 +105,10 @@ async def test_steam_player_summary_tool_exception(
 
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.external.steam_tool.SteamClient.get_owned_games", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.external.steam_tool.SteamClient.get_owned_games",
+    new_callable=AsyncMock,
+)
 async def test_steam_owned_games_tool_exception(mock_get_games: typing.Any, steam_id: str) -> None:
     mock_get_games.side_effect = Exception("API error")
     tool = SteamOwnedGamesTool(steam_id=steam_id)
@@ -127,7 +136,10 @@ def test_steam_player_summary_tool_sync(mock_get_summaries: typing.Any, steam_id
     assert "Online" in result
 
 
-@patch("app.infrastructure.external.steam_tool.SteamClient.get_owned_games", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.external.steam_tool.SteamClient.get_owned_games",
+    new_callable=AsyncMock,
+)
 def test_steam_owned_games_tool_sync(mock_get_games: typing.Any, steam_id: str) -> None:
     """Test sync tool execution for owned games."""
     mock_get_games.return_value = [

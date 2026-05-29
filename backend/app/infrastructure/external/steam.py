@@ -103,6 +103,26 @@ class SteamClient(SteamClientInterface):
             if data.get("response", {}).get("success") == 1:
                 return str(data["response"]["steamid"])
             return None
+        except httpx.HTTPStatusError:
+            logger.exception("Steam API returned error status resolving vanity URL")
+            return None
+        except httpx.RequestError:
+            logger.exception("Failed to fetch Steam vanity URL resolution")
+            return None
+        except Exception:
+            logger.exception("Unexpected error resolving Steam vanity URL")
+            return None
+        url = f"{STEAM_API_BASE}/ISteamUser/ResolveVanityURL/v0001/"
+        params = {
+            "key": settings.steam_api_key,
+            "vanityurl": vanityurl,
+        }
+
+        try:
+            data = await self._get_async(url, params)
+            if data.get("response", {}).get("success") == 1:
+                return str(data["response"]["steamid"])
+            return None
         except Exception:
             logger.exception("Error resolving Steam vanity URL")
             return None

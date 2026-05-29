@@ -176,3 +176,29 @@ async def test_resolve_vanity_url_exception(mock_settings: typing.Any) -> None:
     with patch.object(client, "_get_async", side_effect=Exception("Unexpected error")):
         steam_id = await client.resolve_vanity_url("robinwalker")
         assert steam_id is None
+
+
+@pytest.mark.asyncio
+async def test_get_player_summaries_request_error(mock_settings: typing.Any) -> None:
+    import httpx
+
+    client = SteamClient()
+
+    with patch.object(
+        client, "_get_async", side_effect=httpx.RequestError("Network Error", request=MagicMock())
+    ):
+        summaries = await client.get_player_summaries(["76561197960435530"])
+        assert summaries == []
+
+
+@pytest.mark.asyncio
+async def test_get_owned_games_request_error(mock_settings: typing.Any) -> None:
+    import httpx
+
+    client = SteamClient()
+
+    with patch.object(
+        client, "_get_async", side_effect=httpx.RequestError("Network Error", request=MagicMock())
+    ):
+        games = await client.get_owned_games("76561197960435530")
+        assert games == []

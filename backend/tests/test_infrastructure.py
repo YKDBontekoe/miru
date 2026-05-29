@@ -298,18 +298,25 @@ def test_get_supabase_creates_client_when_none() -> None:
 
 
 def test_resolve_steam_user_with_numeric_id(client) -> None:  # type: ignore[no-untyped-def]
+    from app.domain.integrations.use_cases import SteamUserDTO
     from tests.conftest import auth_headers
 
-    with (
-        patch(
-            "app.infrastructure.external.steam.SteamClient.get_player_summaries",
-            new=AsyncMock(return_value=[{"personaname": "TestPlayer"}]),
-        ),
-    ):
+    mock_use_case = MagicMock()
+    mock_use_case.execute = AsyncMock(
+        return_value=SteamUserDTO(steam_id="12345678901234567", persona_name="TestPlayer")
+    )
+
+    from app.api.dependencies import get_resolve_steam_user_use_case
+    from app.main import app
+
+    app.dependency_overrides[get_resolve_steam_user_use_case] = lambda: mock_use_case
+    try:
         response = client.get(
             "/api/v1/integrations/steam/resolve-user?username=12345678901234567",
             headers=auth_headers(),
         )
+    finally:
+        app.dependency_overrides.pop(get_resolve_steam_user_use_case, None)
     assert response.status_code == 200
     data = response.json()
     assert data["steam_id"] == "12345678901234567"
@@ -317,22 +324,24 @@ def test_resolve_steam_user_with_numeric_id(client) -> None:  # type: ignore[no-
 
 
 def test_resolve_steam_user_with_vanity_url(client) -> None:  # type: ignore[no-untyped-def]
+    from app.domain.integrations.use_cases import SteamUserDTO
     from tests.conftest import auth_headers
 
-    with (
-        patch(
-            "app.infrastructure.external.steam.SteamClient.resolve_vanity_url",
-            new=AsyncMock(return_value="76561198000000001"),
-        ),
-        patch(
-            "app.infrastructure.external.steam.SteamClient.get_player_summaries",
-            new=AsyncMock(return_value=[{"personaname": "VanityPlayer"}]),
-        ),
-    ):
+    mock_use_case = MagicMock()
+    mock_use_case.execute = AsyncMock(
+        return_value=SteamUserDTO(steam_id="76561198000000001", persona_name="VanityPlayer")
+    )
+
+    from app.api.dependencies import get_resolve_steam_user_use_case
+    from app.main import app
+
+    app.dependency_overrides[get_resolve_steam_user_use_case] = lambda: mock_use_case
+    try:
         response = client.get(
-            "/api/v1/integrations/steam/resolve-user?username=myvanity",
-            headers=auth_headers(),
+            "/api/v1/integrations/steam/resolve-user?username=myvanity", headers=auth_headers()
         )
+    finally:
+        app.dependency_overrides.pop(get_resolve_steam_user_use_case, None)
     assert response.status_code == 200
     data = response.json()
     assert data["steam_id"] == "76561198000000001"
@@ -342,34 +351,42 @@ def test_resolve_steam_user_with_vanity_url(client) -> None:  # type: ignore[no-
 def test_resolve_steam_user_not_found(client) -> None:  # type: ignore[no-untyped-def]
     from tests.conftest import auth_headers
 
-    with patch(
-        "app.infrastructure.external.steam.SteamClient.resolve_vanity_url",
-        new=AsyncMock(return_value=None),
-    ):
+    mock_use_case = MagicMock()
+    mock_use_case.execute = AsyncMock(return_value=None)
+
+    from app.api.dependencies import get_resolve_steam_user_use_case
+    from app.main import app
+
+    app.dependency_overrides[get_resolve_steam_user_use_case] = lambda: mock_use_case
+    try:
         response = client.get(
-            "/api/v1/integrations/steam/resolve-user?username=notfound",
-            headers=auth_headers(),
+            "/api/v1/integrations/steam/resolve-user?username=notfound", headers=auth_headers()
         )
+    finally:
+        app.dependency_overrides.pop(get_resolve_steam_user_use_case, None)
     assert response.status_code == 404
+    assert response.json()["detail"]["error"] == "steam_user_not_found"
 
 
 def test_resolve_steam_user_no_summaries(client) -> None:  # type: ignore[no-untyped-def]
+    from app.domain.integrations.use_cases import SteamUserDTO
     from tests.conftest import auth_headers
 
-    with (
-        patch(
-            "app.infrastructure.external.steam.SteamClient.resolve_vanity_url",
-            new=AsyncMock(return_value="76561198000000002"),
-        ),
-        patch(
-            "app.infrastructure.external.steam.SteamClient.get_player_summaries",
-            new=AsyncMock(return_value=[]),
-        ),
-    ):
+    mock_use_case = MagicMock()
+    mock_use_case.execute = AsyncMock(
+        return_value=SteamUserDTO(steam_id="76561198000000002", persona_name="Unknown")
+    )
+
+    from app.api.dependencies import get_resolve_steam_user_use_case
+    from app.main import app
+
+    app.dependency_overrides[get_resolve_steam_user_use_case] = lambda: mock_use_case
+    try:
         response = client.get(
-            "/api/v1/integrations/steam/resolve-user?username=noavatar",
-            headers=auth_headers(),
+            "/api/v1/integrations/steam/resolve-user?username=noavatar", headers=auth_headers()
         )
+    finally:
+        app.dependency_overrides.pop(get_resolve_steam_user_use_case, None)
     assert response.status_code == 200
     assert response.json()["persona_name"] == "Unknown"
 
