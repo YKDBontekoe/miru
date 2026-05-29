@@ -113,7 +113,33 @@ class TestChatRepository:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_delete_memory_with_user_id(self) -> None:
+    async def test_delete_memory_with_user_id_success(self) -> None:
+        """Verify successful deletion of a memory when the correct user_id is provided.
+
+        Args:
+            self: The test class instance.
+
+        Returns:
+            None
+        """
+        repo = MemoryRepository()
+        user_id = uuid4()
+        memory = Memory(content="To delete with user", user_id=user_id, embedding=[0.0])
+        await repo.insert_memory(memory)
+
+        result_owner = await repo.delete_memory(memory.id, user_id=user_id)
+        assert result_owner is True
+
+    @pytest.mark.asyncio
+    async def test_delete_memory_returns_false_for_wrong_user_id(self) -> None:
+        """Verify that memory deletion returns False when a wrong user_id is provided.
+
+        Args:
+            self: The test class instance.
+
+        Returns:
+            None
+        """
         repo = MemoryRepository()
         user_id = uuid4()
         other_user_id = uuid4()
@@ -122,9 +148,6 @@ class TestChatRepository:
 
         result_other = await repo.delete_memory(memory.id, user_id=other_user_id)
         assert result_other is False
-
-        result_owner = await repo.delete_memory(memory.id, user_id=user_id)
-        assert result_owner is True
 
     @pytest.mark.asyncio
     async def test_create_and_delete_room(self) -> None:
