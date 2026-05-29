@@ -192,3 +192,58 @@ async def test_delete_event_not_found_or_forbidden(
     assert response.status_code == 404
     response = await async_client.delete(f"/api/v1/productivity/events/{uuid.uuid4()}")
     assert response.status_code == 404
+
+@pytest.mark.asyncio
+async def test_create_event_invalid_time_range_error(async_client, override_get_current_user):
+    from datetime import UTC, datetime, timedelta
+    from app.domain.productivity.use_cases.manage_productivity import InvalidTimeRangeError
+    from app.api.v1.productivity.calendar_events import get_productivity_use_case
+    from unittest.mock import AsyncMock
+    import uuid
+
+    mock_use_case = AsyncMock()
+    mock_use_case.create_event.side_effect = InvalidTimeRangeError("Invalid time range")
+
+    from app.main import app
+    app.dependency_overrides[get_productivity_use_case] = lambda: mock_use_case
+
+    now = datetime.now(UTC)
+    response = await async_client.post(
+        "/api/v1/productivity/events",
+        json={
+            "title": "Invalid Event",
+            "start_time": now.isoformat(),
+            "end_time": (now + timedelta(hours=1)).isoformat(),
+        },
+    )
+    app.dependency_overrides.clear()
+    assert response.status_code == 400
+    assert response.json()["detail"]["message"] == "Invalid time range"
+
+
+@pytest.mark.asyncio
+async def test_update_event_invalid_time_range_error(async_client, mock_user_id, override_get_current_user):
+    from datetime import UTC, datetime, timedelta
+    from app.domain.productivity.use_cases.manage_productivity import InvalidTimeRangeError
+    from app.api.v1.productivity.calendar_events import get_productivity_use_case
+    from unittest.mock import AsyncMock
+    from app.domain.productivity.models import CalendarEvent
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+    )
+
+    mock_use_case = AsyncMock()
+    mock_use_case.update_event.side_effect = InvalidTimeRangeError("Invalid time range")
+
+    from app.main import app
+    app.dependency_overrides[get_productivity_use_case] = lambda: mock_use_case
+
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}",
+        json={"title": "Updated Event"}
+    )
+    app.dependency_overrides.clear()
+    assert response.status_code == 400
+    assert response.json()["detail"]["message"] == "Invalid time range"

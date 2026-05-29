@@ -237,3 +237,45 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room = AsyncMock()
         await chat_service.run_room_chat_ws(room_id, user_message, user_id)
         mock_hub.broadcast_to_room.assert_awaited_once()
+
+@pytest.mark.asyncio
+async def test_websocket_endpoint_runtime_error_connection(
+    client, test_user_id
+):
+    import uuid
+    from unittest.mock import AsyncMock, patch
+
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = test_user_id
+        with patch("starlette.websockets.WebSocket.receive_text") as mock_receive:
+            mock_receive.side_effect = RuntimeError(
+                'WebSocket is not connected. Need to call "accept" first.'
+            )
+            with (
+                patch("app.api.v1.websocket.ChatService"),
+                patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect,
+            ):
+                with client.websocket_connect("/api/v1/ws/chat?token=valid"):
+                    pass
+                mock_disconnect.assert_called_once_with(test_user_id)
+
+@pytest.mark.asyncio
+async def test_websocket_broadcaster_suppressed_exception(client, test_user_id):
+    from unittest.mock import AsyncMock, patch
+    import uuid
+    from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
+
+    broadcaster = ChatWebSocketBroadcaster(AsyncMock(), AsyncMock())
+
+    # Force an exception inside the step_callback execution by making chat_hub.broadcast_to_room raise
+    with patch("app.infrastructure.websocket.manager.chat_hub.broadcast_to_room") as mock_broadcast:
+        mock_broadcast.side_effect = Exception("Test broadcast failed")
+
+        callback = broadcaster.create_step_callback(uuid.uuid4(), ["AgentName"])
+
+        # Should not raise exception
+        class OutputMock:
+            tool = "test_tool"
+            agent = "AgentName"
+
+        callback(OutputMock())
