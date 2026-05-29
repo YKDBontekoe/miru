@@ -31,7 +31,7 @@ async def handle_db_errors(action: str) -> AsyncGenerator[None, None]:
         raise_api_error(
             status_code=400,
             error="validation_error",
-            message=str(e),
+            message="Validation error occurred",
         )
     except (
         IntegrityError,

@@ -68,6 +68,6 @@ async def send_notification(
     except ValueError as e:
         raise HTTPException(
             status_code=400,
-            detail={"error": "invalid_user_id", "message": str(e)},
+            detail={"error": "invalid_user_id", "message": "Invalid user ID"},
         ) from e
     return {"status": "success"}

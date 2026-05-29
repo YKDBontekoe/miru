@@ -128,7 +128,6 @@ class ChatWebSocketBroadcaster:
                         "acting_name": acting_name,
                         "activity": activity,
                         "detail": detail,
-                        "exception": str(e),
                     },
                 )
 
