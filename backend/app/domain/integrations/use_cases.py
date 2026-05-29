@@ -10,6 +10,7 @@ from app.domain.integrations.interfaces import SteamClientInterface
 @dataclass
 class SteamUserDTO:
     """Data transfer object for a resolved Steam user."""
+
     steam_id: str
     persona_name: str
 
