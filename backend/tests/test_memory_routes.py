@@ -381,6 +381,16 @@ def test_delete_memory_endpoint_with_user_id(
 def test_delete_memory_endpoint_with_wrong_user_id(
     client: TestClient, authed_headers: dict, test_user_id: UUID
 ) -> None:
+    """Verify that deleting a memory with a wrong user id returns 404.
+
+    Args:
+        client: TestClient instance for making requests.
+        authed_headers: dict containing authorization headers.
+        test_user_id: UUID of the authenticated user.
+
+    Returns:
+        None
+    """
     memory_id = uuid4()
     with patch(
         "app.domain.memory.service.MemoryService.delete_memory", new_callable=AsyncMock
