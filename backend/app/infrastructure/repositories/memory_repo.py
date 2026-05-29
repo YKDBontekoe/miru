@@ -30,6 +30,13 @@ class MemoryRepository:
             return True
         return False
 
+    async def bulk_insert_memories(self, memories: list[Memory]) -> list[Memory]:
+        """Bulk insert multiple memories."""
+        if not memories:
+            return []
+        await Memory.bulk_create(memories)
+        return memories
+
     async def list_all_memories(self, user_id: UUID, limit: int = 100) -> list[Memory]:
         """Fetch all memories for a user (no vector match)."""
         return await Memory.filter(user_id=user_id).limit(limit).all()

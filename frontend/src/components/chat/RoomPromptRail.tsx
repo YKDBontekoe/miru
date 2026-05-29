@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import React, { memo, useCallback } from 'react';
+import { Pressable, FlatList, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 
@@ -23,7 +23,56 @@ interface RoomPromptRailProps {
   onContextPress?: (value: string) => void;
 }
 
-export function RoomPromptRail({
+const renderContextAction = ({ item, onContextPress }: { item: string, onContextPress?: (value: string) => void }) => (
+  <Pressable
+    onPress={() => onContextPress?.(item)}
+    style={styles.contextActionItem}
+  >
+    <AppText variant="caption" style={styles.contextActionText}>
+      {item}
+    </AppText>
+  </Pressable>
+);
+
+const renderPromptItem = ({
+  item,
+  isStreaming,
+  onPromptPress,
+  onPromptLongPress
+}: {
+  item: PromptItem | { isSaveBtn: true };
+  isStreaming: boolean;
+  onPromptPress: (text: string) => void;
+  onPromptLongPress: (prompt: PromptItem) => void;
+}) => {
+  if ('isSaveBtn' in item) {
+    return null; // The save button is handled in ListHeaderComponent
+  }
+  return (
+    <Pressable
+      onPress={() => onPromptPress(item.text)}
+      onLongPress={() => onPromptLongPress(item)}
+      style={[
+        styles.promptItem,
+        item.pinned ? styles.promptItemPinned : styles.promptItemUnpinned,
+        isStreaming && styles.opacity60
+      ]}
+      disabled={isStreaming}
+    >
+      <AppText
+        style={[
+          styles.promptItemText,
+          item.pinned ? styles.promptTextPinned : styles.promptTextUnpinned
+        ]}
+      >
+        {item.pinned ? '★ ' : ''}
+        {item.text}
+      </AppText>
+    </Pressable>
+  );
+};
+
+export const RoomPromptRail = memo(({
   prompts,
   isStreaming,
   saveLabel,
@@ -35,82 +84,168 @@ export function RoomPromptRail({
   onPromptLongPress,
   contextActions,
   onContextPress,
-}: RoomPromptRailProps) {
+}: RoomPromptRailProps) => {
   const { t } = useTranslation();
 
+  const handleRenderContextAction = useCallback(
+    ({ item }: { item: string }) => renderContextAction({ item, onContextPress }),
+    [onContextPress]
+  );
+
+  const handleRenderPromptItem = useCallback(
+    ({ item }: { item: PromptItem }) => renderPromptItem({ item, isStreaming, onPromptPress, onPromptLongPress }),
+    [isStreaming, onPromptPress, onPromptLongPress]
+  );
+
   return (
-    <View className="px-3 pb-2">
-      <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
-        <View className="px-3 mb-1.5 flex-row items-center">
-          <AppText variant="caption" className="text-[#5A7467] font-bold flex-1">
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <View style={styles.header}>
+          <AppText variant="caption" style={styles.headingText}>
             {heading}
           </AppText>
           {isEditing ? (
-            <AppText variant="caption" className="text-[#147D64] font-bold">
+            <AppText variant="caption" style={styles.editingText}>
               {t('chat.editing', { defaultValue: 'Editing' })}
             </AppText>
           ) : null}
         </View>
 
-        <ScrollView
+        <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
-        >
-          <Pressable
-            onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
-            disabled={isStreaming || !canSave}
-          >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
-          </Pressable>
-
-          {prompts.map((action) => (
+          contentContainerStyle={styles.promptsList}
+          data={prompts}
+          keyExtractor={(item) => item.id}
+          renderItem={handleRenderPromptItem}
+          ListHeaderComponent={
             <Pressable
-              key={action.id}
-              onPress={() => onPromptPress(action.text)}
-              onLongPress={() => onPromptLongPress(action)}
-              className={`mr-2 rounded-full px-3 py-2 border ${
-                action.pinned
-                  ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
-                  : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
-              } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
-              disabled={isStreaming}
+              onPress={onSave}
+              style={[
+                styles.saveButton,
+                isStreaming || !canSave ? styles.opacity50 : styles.opacity100
+              ]}
+              disabled={isStreaming || !canSave}
             >
-              <AppText
-                className={`text-xs font-bold ${
-                  action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-                }`}
-              >
-                {action.pinned ? '★ ' : ''}
-                {action.text}
-              </AppText>
+              <AppText style={styles.saveButtonText}>{saveLabel}</AppText>
             </Pressable>
-          ))}
-        </ScrollView>
+          }
+        />
 
         {contextActions && contextActions.length > 0 && onContextPress ? (
-          <ScrollView
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
-          >
-            {contextActions.map((value) => (
-              <Pressable
-                key={value}
-                onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
-              >
-                <AppText variant="caption" className="text-[#5A7467] font-bold">
-                  {value}
-                </AppText>
-              </Pressable>
-            ))}
-          </ScrollView>
+            contentContainerStyle={styles.contextActionsList}
+            data={contextActions}
+            keyExtractor={(item) => item}
+            renderItem={handleRenderContextAction}
+          />
         ) : null}
       </View>
     </View>
   );
-}
+});
+RoomPromptRail.displayName = 'RoomPromptRail';
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#DDE8E0',
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  header: {
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headingText: {
+    color: '#5A7467',
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  editingText: {
+    color: '#147D64',
+    fontWeight: 'bold',
+  },
+  promptsList: {
+    paddingHorizontal: 12,
+  },
+  saveButton: {
+    marginRight: 8,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    backgroundColor: '#DDF4EB',
+    borderColor: '#147D6455',
+  },
+  opacity50: {
+    opacity: 0.5,
+  },
+  opacity60: {
+    opacity: 0.6,
+  },
+  opacity100: {
+    opacity: 1,
+  },
+  saveButtonText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#147D64',
+  },
+  promptItem: {
+    marginRight: 8,
+    borderRadius: 9999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+  },
+  promptItemPinned: {
+    backgroundColor: '#DDF4EB',
+    borderColor: '#147D6455',
+  },
+  promptItemUnpinned: {
+    backgroundColor: '#ECF5F0',
+    borderColor: '#DDE8E0',
+  },
+  promptItemText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  promptTextPinned: {
+    color: '#147D64',
+  },
+  promptTextUnpinned: {
+    color: '#13251C',
+  },
+  contextActionsList: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+  },
+  contextActionItem: {
+    marginRight: 8,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: '#ECF5F0',
+    borderWidth: 1,
+    borderColor: '#DDE8E0',
+  },
+  contextActionText: {
+    color: '#5A7467',
+    fontWeight: 'bold',
+  },
+});
