@@ -140,7 +140,10 @@ class MemoryService:
                 room_id=r_id,
             )
 
-        tasks = [check_dedup(i, c, v) for i, (c, v) in enumerate(zip(all_contents, embeddings, strict=True))]
+        tasks = [
+            check_dedup(i, c, v)
+            for i, (c, v) in enumerate(zip(all_contents, embeddings, strict=True))
+        ]
         results = await asyncio.gather(*tasks)
 
         to_insert = [m for m in results if m is not None]
