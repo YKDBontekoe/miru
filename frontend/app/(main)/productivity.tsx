@@ -61,6 +61,10 @@ export default function ProductivityScreen() {
     fetchTasks,
     fetchEvents,
     isLoading,
+    error,
+    errorNotes,
+    errorTasks,
+    errorEvents,
     deleteNote,
     deleteTask,
     toggleTask,
@@ -204,6 +208,17 @@ export default function ProductivityScreen() {
         />
       )}
 
+      {error || errorNotes || errorTasks || errorEvents ? (
+        <View style={styles.errorContainer}>
+          <AppText style={styles.errorText}>
+            {error || errorNotes || errorTasks || errorEvents}
+          </AppText>
+          <Pressable onPress={handleRefresh} style={styles.retryButton}>
+            <AppText style={styles.retryText}>{t('settings.actions.retry') || 'Retry'}</AppText>
+          </Pressable>
+        </View>
+      ) : null}
+
       <FlatList
         data={dataToRender}
         keyExtractor={(item) => item.id}
@@ -211,7 +226,7 @@ export default function ProductivityScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading && dataToRender.length > 0}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
             tintColor={T.primary.DEFAULT}
           />
@@ -286,5 +301,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: S.xl,
     paddingBottom: 100,
     paddingTop: S.sm,
+  },
+  errorContainer: {
+    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+    padding: S.md,
+    marginHorizontal: S.xl,
+    marginBottom: S.sm,
+    borderRadius: R.lg,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  errorText: {
+    color: theme.colors.status.error,
+    flex: 1,
+  },
+  retryButton: {
+    backgroundColor: DESIGN_TOKENS.colors.primary,
+    paddingHorizontal: S.md,
+    paddingVertical: S.sm,
+    borderRadius: R.md,
+    marginLeft: S.md,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });

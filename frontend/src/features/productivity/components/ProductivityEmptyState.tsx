@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { Tab } from '../hooks/useProductivityViewModel';
 
 const T = {
   primary: {
@@ -20,8 +21,6 @@ const T = {
 
 const S = theme.spacing;
 const R = theme.borderRadius;
-
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
 
 interface ProductivityEmptyStateProps {
   activeTab: Tab;
@@ -84,7 +83,7 @@ export function ProductivityEmptyState({
             >
               <Ionicons name="add" size={18} color={T.white} style={{ marginEnd: 6 }} />
               <AppText style={styles.emptyButtonText}>
-                {t('productivity.newNote') || 'New Note'}
+                {t('productivity.new_note') || 'New Note'}
               </AppText>
             </Pressable>
           )}

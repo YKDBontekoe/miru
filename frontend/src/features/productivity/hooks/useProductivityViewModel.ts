@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarEvent, Note, Task } from '@/core/models';
 import { TaskPriority } from '../components/PriorityChips';
@@ -18,38 +18,46 @@ export function useProductivityViewModel() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
 
   const { notes, tasks, events } = useProductivityStore();
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return notes;
+    const lowerQ = debouncedQuery.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, debouncedQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return tasks;
+    const lowerQ = debouncedQuery.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [debouncedQuery, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedQuery) return events;
+    const lowerQ = debouncedQuery.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, debouncedQuery]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,
@@ -78,14 +86,31 @@ export function useProductivityViewModel() {
       upcoming: 0,
       no_due: 0,
     };
-    filteredTasks
-      .filter((task) => !task.completed)
-      .forEach((task) => {
-        counts.all += 1;
-        counts[getTaskPriority(task)] += 1;
+
+    // When activeTab is today, only count tasks that are overdue or due today
+    // We recreate the same logic used for todayData to keep counts consistent
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    let sourceTasks = filteredTasks.filter((task) => !task.completed);
+
+    if (activeTab === 'today') {
+      sourceTasks = sourceTasks.filter((task) => {
+        if (!task.due_date) return false;
+        const dueDate = new Date(task.due_date);
+        return dueDate < end; // Includes both overdue and due today
       });
+    }
+
+    sourceTasks.forEach((task) => {
+      counts.all += 1;
+      counts[getTaskPriority(task)] += 1;
+    });
     return counts;
-  }, [filteredTasks, getTaskPriority]);
+  }, [filteredTasks, getTaskPriority, activeTab]);
 
   const prioritizedTasks = useMemo(() => {
     const tasksToRank = filteredTasks.filter((task) => !task.completed);
@@ -170,8 +195,8 @@ export function useProductivityViewModel() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -182,6 +207,15 @@ export function useProductivityViewModel() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [
+    activeTab,
+    todayData,
+    taskPriority,
+    mixedData,
+    filteredNotes,
+    prioritizedTasks,
+    getTaskPriority,
+  ]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
@@ -192,16 +226,36 @@ export function useProductivityViewModel() {
       .slice(0, 3);
 
     const lines: string[] = [];
+    const { t } = i18n;
+
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(
+        t('productivity.plan.recover_overdue', {
+          count: taskPriorityCounts.overdue,
+          defaultValue: `1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`,
+        })
+      );
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(
+        t('productivity.plan.no_overdue', {
+          defaultValue: '1) No overdue tasks: start with highest-impact open work.',
+        })
+      );
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      lines.push(
+        t('productivity.plan.focus_block', {
+          tasks: nextTasks.map((task) => task.title).join(', '),
+          defaultValue: `2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`,
+        })
+      );
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(
+        t('productivity.plan.no_focus', {
+          defaultValue: '2) Focus block: no pending tasks, use this for planning or review.',
+        })
+      );
     }
 
     if (nextEvents.length > 0) {
@@ -213,14 +267,23 @@ export function useProductivityViewModel() {
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(
+        t('productivity.plan.calendar_checkpoints', {
+          times: eventLine,
+          defaultValue: `3) Calendar checkpoints at ${eventLine}.`,
+        })
+      );
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(
+        t('productivity.plan.calendar_light', {
+          defaultValue: '3) Calendar is light: reserve time for deep work and wrap-up.',
+        })
+      );
     }
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, i18n, prioritizedTasks, taskPriorityCounts.overdue]);
 
   return {
     activeTab,
