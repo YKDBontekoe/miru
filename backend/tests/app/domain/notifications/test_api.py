@@ -42,3 +42,20 @@ def test_send_notification_endpoint(client, authed_headers):
     )
     assert response.status_code == 202
     assert response.json() == {"status": "success"}
+
+def test_send_notification_endpoint_error(client, authed_headers):
+    # simulate a use_case ValueError failure directly inside test
+    from unittest.mock import AsyncMock, patch
+    from app.api.v1.notifications import get_send_notification_use_case
+
+    mock_use_case = AsyncMock()
+    mock_use_case.execute.side_effect = ValueError("Invalid")
+
+    app.dependency_overrides[get_send_notification_use_case] = lambda: mock_use_case
+    response = client.post(
+        "/api/v1/notifications/send",
+        json={"message": "Test message", "title": "Test Title"},
+        headers=authed_headers,
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"]["message"] == "Invalid user ID"

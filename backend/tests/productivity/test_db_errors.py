@@ -60,3 +60,38 @@ async def test_handle_db_errors_action_mapping():
         async with handle_db_errors("list notes"):
             raise IntegrityError("mock error")
     assert "listing notes" in exc_info.value.detail["message"]
+@pytest.mark.asyncio
+async def test_handle_db_errors_value_error():
+    from app.infrastructure.database.utils import handle_db_errors
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc:
+        async with handle_db_errors("test validation"):
+            raise ValueError("Test Error")
+
+    assert exc.value.status_code == 400
+    assert exc.value.detail["message"] == "Validation error occurred"
+@pytest.mark.asyncio
+async def test_handle_db_errors_integrity_error():
+    from app.infrastructure.database.utils import handle_db_errors
+    from fastapi import HTTPException
+    from tortoise.exceptions import IntegrityError
+
+    with pytest.raises(HTTPException) as exc:
+        async with handle_db_errors("test creation"):
+            raise IntegrityError("Test Integrity Error")
+
+    assert exc.value.status_code == 500
+    assert exc.value.detail["message"] == "Database error occurred while testing creation"
+
+@pytest.mark.asyncio
+async def test_handle_db_errors_general_error():
+    from app.infrastructure.database.utils import handle_db_errors
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc:
+        async with handle_db_errors("test execution"):
+            raise Exception("General Execution Error")
+
+    assert exc.value.status_code == 500
+    assert exc.value.detail["message"] == "Internal server error"
