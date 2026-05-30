@@ -1,6 +1,8 @@
 import React from 'react';
-import { StyleProp, View, ViewStyle } from 'react-native';
+import { StyleProp, View, ViewStyle, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { theme } from '@/core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
@@ -17,20 +19,13 @@ export function HomeSectionHeader({
   onAction?: () => void;
 }) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}
-    >
-      <AppText variant="h3" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+    <View style={styles.sectionHeaderContainer}>
+      <AppText variant="h3" style={styles.sectionHeaderTitle}>
         {title}
       </AppText>
       {actionLabel && onAction ? (
         <ScalePressable onPress={onAction}>
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '700' }}>
+          <AppText variant="bodySm" style={styles.sectionHeaderAction}>
             {actionLabel}
           </AppText>
         </ScalePressable>
@@ -47,20 +42,7 @@ export function HomeSurfaceCard({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View
-      style={[
-        {
-          backgroundColor: HOME_COLORS.surface,
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: HOME_COLORS.border,
-          padding: 16,
-          marginBottom: 14,
-          ...HOME_SHADOW,
-        },
-        style,
-      ]}
-    >
+    <View style={[styles.surfaceCardContainer, style]}>
       {children}
     </View>
   );
@@ -78,31 +60,12 @@ export function HomeActionTile({
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        width: '48.5%',
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        borderRadius: 18,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 10,
-      }}
+      style={styles.actionTileContainer}
     >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 12,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
-        }}
-      >
+      <View style={styles.actionTileIconContainer}>
         <Ionicons name={icon} size={18} color={HOME_COLORS.primary} />
       </View>
-      <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+      <AppText variant="bodySm" style={styles.actionTileLabel}>
         {label}
       </AppText>
     </ScalePressable>
@@ -125,53 +88,35 @@ export function HomeTaskRow({
   return (
     <ScalePressable
       onPress={onToggle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        paddingHorizontal: 12,
-        paddingVertical: 11,
-        marginBottom: 8,
-      }}
+      style={styles.taskRowContainer}
     >
       <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: task.completed ? HOME_COLORS.primary : '#8FB7A7',
-          backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
+        style={[
+          styles.taskRowCheckboxContainer,
+          {
+            borderColor: task.completed ? HOME_COLORS.primary : DESIGN_TOKENS.colors.faint,
+            backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
+          }
+        ]}
       >
-        {task.completed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+        {task.completed ? <Ionicons name="checkmark" size={14} color={DESIGN_TOKENS.colors.white} /> : null}
       </View>
       <AppText
         variant="bodySm"
         numberOfLines={1}
-        style={{
-          flex: 1,
-          color: task.completed ? HOME_COLORS.muted : HOME_COLORS.text,
-          textDecorationLine: task.completed ? 'line-through' : 'none',
-          fontWeight: '600',
-        }}
+        style={[
+          styles.taskRowTitle,
+          {
+            color: task.completed ? HOME_COLORS.muted : HOME_COLORS.text,
+            textDecorationLine: task.completed ? 'line-through' : 'none',
+          }
+        ]}
       >
         {task.title}
       </AppText>
       {dueText ? (
-        <View
-          style={{
-            borderRadius: 12,
-            backgroundColor: HOME_COLORS.accentSoft,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#9E5817', fontWeight: '700' }}>
+        <View style={styles.taskRowDueBadge}>
+          <AppText variant="caption" style={styles.taskRowDueBadgeText}>
             {dueText}
           </AppText>
         </View>
@@ -192,41 +137,23 @@ export function HomeChatRow({
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 8,
-      }}
+      style={styles.chatRowContainer}
     >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 11,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
-      >
-        <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+      <View style={styles.chatRowAvatarContainer}>
+        <AppText variant="bodySm" style={styles.chatRowAvatarText}>
           {room.name[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
-      <View style={{ flex: 1, paddingRight: 8 }}>
-        <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+      <View style={styles.chatRowContent}>
+        <AppText variant="bodySm" numberOfLines={1} style={styles.chatRowTitle}>
           {room.name}
         </AppText>
-        <AppText variant="caption" numberOfLines={1} style={{ color: HOME_COLORS.muted }}>
+        <AppText variant="caption" numberOfLines={1} style={styles.chatRowSubtitle}>
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginBottom: 2 }}>
+      <View style={styles.chatRowEndContainer}>
+        <AppText variant="caption" style={styles.chatRowTime}>
           {relativeTimeFromNow(room.updated_at, t)}
         </AppText>
         <Ionicons name="chevron-forward" size={14} color={HOME_COLORS.muted} />
@@ -245,39 +172,21 @@ export function HomeAgentBadge({
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        backgroundColor: HOME_COLORS.surface,
-        padding: 10,
-        width: '48.5%',
-        marginBottom: 10,
-      }}
+      style={styles.agentBadgeContainer}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-        <View
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 10,
-            backgroundColor: HOME_COLORS.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 8,
-          }}
-        >
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+      <View style={styles.agentBadgeHeaderRow}>
+        <View style={styles.agentBadgeAvatarContainer}>
+          <AppText variant="bodySm" style={styles.agentBadgeAvatarText}>
             {agent.name?.[0]?.toUpperCase() ?? '?'}
           </AppText>
         </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+        <View style={styles.agentBadgeTitleContainer}>
+          <AppText variant="bodySm" numberOfLines={1} style={styles.agentBadgeTitle}>
             {agent.name}
           </AppText>
         </View>
       </View>
-      <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+      <AppText variant="caption" style={styles.agentBadgeSubtitle}>
         {agent.message_count} {agent.message_count === 1 ? 'message' : 'messages'}
       </AppText>
     </ScalePressable>
@@ -304,92 +213,38 @@ export function HomeHeroCard({
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   return (
-    <View
-      style={{
-        borderRadius: 28,
-        backgroundColor: HOME_COLORS.deep,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        marginBottom: 14,
-        overflow: 'hidden',
-        ...HOME_SHADOW,
-      }}
-    >
-      <View
-        style={{
-          position: 'absolute',
-          width: 180,
-          height: 180,
-          borderRadius: 999,
-          backgroundColor: '#2BA98A',
-          opacity: 0.26,
-          top: -90,
-          right: -40,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          width: 120,
-          height: 120,
-          borderRadius: 999,
-          backgroundColor: '#F0B470',
-          opacity: 0.22,
-          bottom: -44,
-          left: -24,
-        }}
-      />
+    <View style={styles.heroCardContainer}>
+      <View style={styles.heroCardCircleTopRightPrimary} />
+      <View style={styles.heroCardCircleBottomLeftAccent} />
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 16,
-        }}
-      >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText variant="bodySm" style={{ color: '#CDE9DF', fontWeight: '600' }}>
+      <View style={styles.heroCardHeaderRow}>
+        <View style={styles.heroCardHeaderTextContainer}>
+          <AppText variant="bodySm" style={styles.heroCardGreeting}>
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} style={styles.heroCardFirstName}>
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: '#CDE9DF' }}>
+          <AppText variant="caption" style={styles.heroCardDateText}>
             {dateText}
           </AppText>
         </View>
         <ScalePressable
           onPress={onSettingsPress}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: '#2D6A58',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={styles.heroCardSettingsBtn}
         >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={styles.heroCardInitials}>
             {initials}
           </AppText>
         </ScalePressable>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+      <View style={styles.heroCardStatsRow}>
+        <View style={styles.heroCardStatBox}>
+          <AppText variant="caption" style={styles.heroCardStatLabel}>
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={styles.heroCardStatValue}>
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
@@ -398,19 +253,11 @@ export function HomeHeroCard({
               : t('home.hero.no_deadlines', { defaultValue: 'No deadlines today' })}
           </AppText>
         </View>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+        <View style={styles.heroCardStatBox}>
+          <AppText variant="caption" style={styles.heroCardStatLabel}>
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={styles.heroCardStatValue}>
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>
@@ -418,3 +265,242 @@ export function HomeHeroCard({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  sectionHeaderTitle: {
+    color: HOME_COLORS.text,
+    fontWeight: '700',
+  },
+  sectionHeaderAction: {
+    color: HOME_COLORS.primary,
+    fontWeight: '700',
+  },
+  surfaceCardContainer: {
+    backgroundColor: HOME_COLORS.surface,
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: HOME_COLORS.border,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    ...HOME_SHADOW,
+  },
+  actionTileContainer: {
+    width: '48.5%',
+    borderWidth: 1,
+    borderColor: HOME_COLORS.border,
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: HOME_COLORS.softSurface,
+    marginBottom: theme.spacing.sm,
+  },
+  actionTileIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  actionTileLabel: {
+    color: HOME_COLORS.text,
+    fontWeight: '700',
+  },
+  taskRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: HOME_COLORS.softSurface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  taskRowCheckboxContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  taskRowTitle: {
+    flex: 1,
+    fontWeight: '600',
+  },
+  taskRowDueBadge: {
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.accentSoft,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  taskRowDueBadgeText: {
+    color: HOME_COLORS.accent,
+    fontWeight: '700',
+  },
+  chatRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: HOME_COLORS.softSurface,
+    marginBottom: theme.spacing.sm,
+  },
+  chatRowAvatarContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  chatRowAvatarText: {
+    color: HOME_COLORS.primary,
+    fontWeight: '800',
+  },
+  chatRowContent: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
+  },
+  chatRowTitle: {
+    color: HOME_COLORS.text,
+    fontWeight: '700',
+  },
+  chatRowSubtitle: {
+    color: HOME_COLORS.muted,
+  },
+  chatRowEndContainer: {
+    alignItems: 'flex-end',
+  },
+  chatRowTime: {
+    color: HOME_COLORS.muted,
+    marginBottom: theme.spacing.xxs,
+  },
+  agentBadgeContainer: {
+    borderRadius: theme.borderRadius.xl,
+    borderWidth: 1,
+    borderColor: HOME_COLORS.border,
+    backgroundColor: HOME_COLORS.surface,
+    padding: theme.spacing.md,
+    width: '48.5%',
+    marginBottom: theme.spacing.sm,
+  },
+  agentBadgeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  agentBadgeAvatarContainer: {
+    width: 30,
+    height: 30,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  agentBadgeAvatarText: {
+    color: HOME_COLORS.primary,
+    fontWeight: '800',
+  },
+  agentBadgeTitleContainer: {
+    flex: 1,
+  },
+  agentBadgeTitle: {
+    color: HOME_COLORS.text,
+    fontWeight: '700',
+  },
+  agentBadgeSubtitle: {
+    color: HOME_COLORS.muted,
+  },
+  heroCardContainer: {
+    borderRadius: theme.borderRadius.xxl,
+    backgroundColor: HOME_COLORS.deep,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
+    overflow: 'hidden',
+    ...HOME_SHADOW,
+  },
+  heroCardCircleTopRightPrimary: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 999,
+    opacity: 0.26,
+    top: -90,
+    right: -40,
+    backgroundColor: HOME_COLORS.primary,
+  },
+  heroCardCircleBottomLeftAccent: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 999,
+    opacity: 0.22,
+    bottom: -44,
+    left: -24,
+    backgroundColor: HOME_COLORS.accent,
+  },
+  heroCardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.lg,
+  },
+  heroCardHeaderTextContainer: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
+  },
+  heroCardGreeting: {
+    color: HOME_COLORS.primarySoft,
+    fontWeight: '600',
+  },
+  heroCardFirstName: {
+    color: DESIGN_TOKENS.colors.white,
+    fontWeight: '700',
+  },
+  heroCardDateText: {
+    color: HOME_COLORS.primarySoft,
+  },
+  heroCardSettingsBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: HOME_COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCardInitials: {
+    color: DESIGN_TOKENS.colors.white,
+    fontWeight: '700',
+  },
+  heroCardStatsRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  heroCardStatBox: {
+    flex: 1,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+  },
+  heroCardStatLabel: {
+    color: HOME_COLORS.primarySoft,
+    marginBottom: theme.spacing.xxs,
+  },
+  heroCardStatValue: {
+    color: DESIGN_TOKENS.colors.white,
+    fontWeight: '700',
+  },
+});
