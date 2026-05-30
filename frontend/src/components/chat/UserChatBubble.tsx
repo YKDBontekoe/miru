@@ -11,6 +11,14 @@ interface UserChatBubbleProps {
   timestamp?: string;
 }
 
+/**
+ * Renders a chat bubble for messages sent by the user.
+ *
+ * Messages are right-aligned, use the primary theme color, and support displaying an optional timestamp.
+ *
+ * @param props.text - The plain text message content.
+ * @param props.timestamp - Optional ISO string timestamp to display below the message.
+ */
 export const UserChatBubble = ({ text, timestamp }: UserChatBubbleProps) => {
   const { i18n } = useTranslation();
   const { colorScheme } = useColorScheme();

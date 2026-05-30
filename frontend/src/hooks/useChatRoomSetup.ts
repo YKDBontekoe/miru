@@ -6,6 +6,20 @@ import { ApiService } from '@/core/api/ApiService';
 import { getApiErrorMessage } from '@/core/api/errors';
 import { Agent } from '@/core/models';
 
+/**
+ * Custom hook to manage the lifecycle and state of a chat room.
+ *
+ * This hook handles fetching initial messages and agents, connecting to the real-time WebSocket
+ * chat hub, and joining/leaving the room based on the provided `roomId`.
+ *
+ * @param roomId - The UUID of the chat room to set up, or undefined if not available.
+ *
+ * @returns An object containing:
+ * - `roomAgents`: The list of agents currently in the room.
+ * - `setRoomAgents`: Setter for the agents list.
+ * - `roomAgentsError`: Error message if fetching agents failed.
+ * - `refetchRoomAgents`: Function to retry fetching room agents.
+ */
 export function useChatRoomSetup(roomId: string | undefined) {
   const { t } = useTranslation();
   const fetchMessages = useChatStore((s) => s.fetchMessages);
