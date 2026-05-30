@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, cast
+from xml.sax.saxutils import escape
 
 import crewai
 from crewai import LLM, Crew, Process, Task
@@ -183,7 +184,9 @@ class CrewOrchestrator:
             if not content:
                 continue
             prefix = "User" if role == "user" else entry.get("name", "Agent")
-            lines.append(f"{prefix}: {content}")
+            escaped_prefix = escape(prefix)
+            escaped_content = escape(content)
+            lines.append(f"{escaped_prefix}: {escaped_content}")
         return "\n".join(lines)
 
     @staticmethod
@@ -230,8 +233,14 @@ class CrewOrchestrator:
 
         history_text = CrewOrchestrator.format_history(conversation_history)
         history_section = HISTORY_PREFIX.format(history=history_text) if history_text else ""
-        memory_section = MEMORY_PREFIX.format(memories=memory_context) if memory_context else ""
-        summary_section = SUMMARY_PREFIX.format(summary=room_summary) if room_summary else ""
+
+        escaped_memory = escape(memory_context) if memory_context else ""
+        memory_section = MEMORY_PREFIX.format(memories=escaped_memory) if escaped_memory else ""
+
+        escaped_summary = escape(room_summary) if room_summary else ""
+        summary_section = SUMMARY_PREFIX.format(summary=escaped_summary) if escaped_summary else ""
+
+        escaped_user_message = escape(user_message)
 
         kwargs = {}
         if step_callback:
@@ -244,7 +253,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=escaped_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
@@ -262,7 +271,7 @@ class CrewOrchestrator:
                     summary_section=summary_section,
                     memory_section=memory_section,
                     history_section=history_section,
-                    user_message=user_message,
+                    user_message=escaped_user_message,
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import TYPE_CHECKING
+from xml.sax.saxutils import escape
 
 import openai
 
@@ -225,7 +226,11 @@ class ChatService:
                     "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
                 }
             )
-        messages.append({"role": "user", "content": user_message})
+
+        escaped_user_message = escape(user_message)
+        messages.append(
+            {"role": "user", "content": f"<user_input>\n{escaped_user_message}\n</user_input>"}
+        )
 
         try:
             response = await stream_chat(

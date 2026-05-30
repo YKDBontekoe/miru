@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from uuid import UUID
+from xml.sax.saxutils import escape
 
 from pydantic import BaseModel, Field
 
@@ -44,6 +45,7 @@ class GraphExtractionService:
             from app.infrastructure.external.openrouter import structured_completion
 
             # Using gpt-4o-mini for fast/cheap structured extraction
+            escaped_text = escape(text)
             return await structured_completion(
                 messages=[
                     {
@@ -52,7 +54,7 @@ class GraphExtractionService:
                     },
                     {
                         "role": "user",
-                        "content": text,
+                        "content": f"<text>\n{escaped_text}\n</text>",
                     },
                 ],
                 response_model=GraphExtractionSchema,
