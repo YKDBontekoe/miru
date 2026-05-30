@@ -38,6 +38,27 @@ interface ChatListHeaderProps {
   roomCount: number;
 }
 
+/**
+ * A header component for the chat list screen.
+ *
+ * Provides search functionality, sorting/filtering pills (Recent, Mentions, Tasks, Unread),
+ * and a horizontal scrollable list of available agents to filter chats by persona.
+ *
+ * @param props.t - Translation function.
+ * @param props.query - The current search query string.
+ * @param props.onChangeQuery - Callback fired when the search query changes (debounced internally).
+ * @param props.sortMode - The current sort mode ('recent', 'mentions', 'tasks').
+ * @param props.onChangeSortMode - Callback fired when the sort mode changes.
+ * @param props.recentOnly - Whether the '7d' (recent) filter is active.
+ * @param props.unreadOnly - Whether the 'Unread' filter is active.
+ * @param props.onToggleRecentOnly - Callback fired to toggle the recent filter.
+ * @param props.onToggleUnreadOnly - Callback fired to toggle the unread filter.
+ * @param props.agents - List of available agents for filtering.
+ * @param props.selectedAgentId - ID of the currently selected agent filter, or null if none.
+ * @param props.onSelectAgent - Callback fired when an agent pill is selected.
+ * @param props.activeFilterCount - The total number of active filters.
+ * @param props.roomCount - The total number of chat rooms matching the current filters.
+ */
 export function ChatListHeader({
   t,
   query,
