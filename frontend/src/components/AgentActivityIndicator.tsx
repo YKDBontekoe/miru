@@ -7,7 +7,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { theme } from '../core/theme';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -79,11 +80,11 @@ function activityLabel(activity: AgentActivityData['activity']): string {
 function activityColor(activity: AgentActivityData['activity']): string {
   switch (activity) {
     case 'thinking':
-      return '#2563EB';
+      return theme.colors.primary.DEFAULT;
     case 'using_tool':
-      return '#7C3AED';
+      return theme.colors.status.info;
     case 'done':
-      return '#059669';
+      return theme.colors.status.success;
   }
 }
 
@@ -114,33 +115,20 @@ export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        gap: 8,
-      }}
+      style={styles.container}
     >
       {/* Agent avatar chip */}
-      <View
-        style={{
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          borderRadius: 10,
-          backgroundColor: `${color}15`,
-          borderWidth: 1,
-          borderColor: `${color}30`,
-        }}
-      >
-        <AppText style={{ fontSize: 11, fontWeight: '600', color }}>{names}</AppText>
+      <View style={styles.chipContainer}>
+        <View style={[styles.chipBackground, { backgroundColor: color, opacity: 0.15 }]} />
+        <View style={[styles.chipBorder, { borderColor: color, opacity: 0.3 }]} />
+        <AppText variant="caption" style={[styles.chipText, { color }]}>{names}</AppText>
       </View>
 
       {/* Status label */}
-      <AppText style={{ fontSize: 12, color: '#6E6E80' }}>{label}</AppText>
+      <AppText variant="caption" style={styles.statusLabel}>{label}</AppText>
 
       {/* Animated dots */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={styles.dotsContainer}>
         <Dot delay={0} color={color} />
         <Dot delay={140} color={color} />
         <Dot delay={280} color={color} />
@@ -148,10 +136,50 @@ export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps
 
       {/* Optional tool/detail text */}
       {activity.activity === 'using_tool' && !!activity.detail && (
-        <AppText style={{ fontSize: 11, color: '#9E9EAF', flex: 1 }} numberOfLines={1}>
+        <AppText variant="caption" style={styles.detailText} numberOfLines={1}>
           {activity.detail}
         </AppText>
       )}
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.bubblePaddingH,
+    paddingVertical: theme.spacing.bubblePaddingV,
+    gap: theme.spacing.sm,
+  },
+  chipContainer: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipBackground: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  chipBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.md,
+  },
+  chipText: {
+    fontWeight: '600',
+  },
+  statusLabel: {
+    color: theme.colors.onSurface.mutedLight,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailText: {
+    color: theme.colors.onSurface.disabledLight,
+    flex: 1,
+  },
+});
