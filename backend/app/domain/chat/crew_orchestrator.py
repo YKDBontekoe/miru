@@ -184,7 +184,9 @@ class CrewOrchestrator:
             if not content:
                 continue
             prefix = "User" if role == "user" else entry.get("name", "Agent")
-            lines.append(f"{prefix}: {escape(content)}")
+            escaped_prefix = escape(prefix)
+            escaped_content = escape(content)
+            lines.append(f"{escaped_prefix}: {escaped_content}")
         return "\n".join(lines)
 
     @staticmethod
