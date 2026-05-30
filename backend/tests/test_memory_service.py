@@ -91,7 +91,7 @@ async def test_store_memory_success(
         # Verify relationship creation
         relationships = await MemoryRelationship.filter(source_id=result_id).all()
         assert len(relationships) == 1
-        assert relationships[0].target_id == related_id
+        assert getattr(relationships[0], "target_id") == related_id  # noqa: B009
 
         # Verify background task scheduling
         mock_create_task.assert_called_once()
@@ -179,8 +179,8 @@ async def test_get_memory_graph_success() -> None:
     assert len(result["nodes"]) == 2
     assert len(result["edges"]) == 1
     assert result["nodes"][0].content in ["Node 1", "Node 2"]
-    assert result["edges"][0].source_id == mem1_id
-    assert result["edges"][0].target_id == mem2_id
+    assert getattr(result["edges"][0], "source_id") == mem1_id  # noqa: B009
+    assert getattr(result["edges"][0], "target_id") == mem2_id  # noqa: B009
 
 
 @pytest.mark.asyncio
@@ -198,43 +198,49 @@ async def test_get_memory_graph_empty() -> None:
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
 async def test_retrieve_memories_with_query(mock_embed: AsyncMock) -> None:
-    mock_repo = AsyncMock()
-    service = MemoryService(mock_repo)
+    from app.domain.memory.models import Memory
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+    repo = MemoryRepository()
+    service = MemoryService(repo)
 
     mock_embed.return_value = [0.5] * 1536
-    mock_repo.match_memories.return_value = [{"id": uuid4()}]
 
-    user_id = uuid4()
-    agent_id = uuid4()
-    room_id = uuid4()
+    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match:
+        mock_match.return_value = [Memory(id=uuid4(), content="mocked matching memory")]
 
-    result = await service.retrieve_memories(
-        query="test query",
-        user_id=user_id,
-        agent_id=agent_id,
-        room_id=room_id,
-    )
+        user_id = uuid4()
+        agent_id = uuid4()
+        room_id = uuid4()
 
-    assert len(result) == 1
-    mock_embed.assert_called_once_with("test query")
-    mock_repo.match_memories.assert_awaited_once_with(
-        [0.5] * 1536, 0.0, 5, user_id, agent_id, room_id
-    )
+        result = await service.retrieve_memories(
+            query="test query",
+            user_id=user_id,
+            agent_id=agent_id,
+            room_id=room_id,
+        )
+
+        assert len(result) == 1
+        mock_embed.assert_called_once_with("test query")
+        mock_match.assert_awaited_once_with([0.5] * 1536, 0.0, 5, user_id, agent_id, room_id)
 
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
 async def test_retrieve_memories_empty_query(mock_embed: AsyncMock) -> None:
-    mock_repo = AsyncMock()
-    service = MemoryService(mock_repo)
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
 
-    mock_repo.match_memories.return_value = []
+    repo = MemoryRepository()
+    service = MemoryService(repo)
 
-    result = await service.retrieve_memories(query="")
+    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match:
+        mock_match.return_value = []
 
-    assert len(result) == 0
-    mock_embed.assert_not_called()
-    mock_repo.match_memories.assert_awaited_once_with([0.0] * 1536, 0.0, 5, None, None, None)
+        result = await service.retrieve_memories(query="")
+
+        assert len(result) == 0
+        mock_embed.assert_not_called()
+        mock_match.assert_awaited_once_with([0.0] * 1536, 0.0, 5, None, None, None)
 
 
 @pytest.mark.asyncio
@@ -243,8 +249,10 @@ async def test_retrieve_memories_empty_query(mock_embed: AsyncMock) -> None:
 async def test_store_document_memory(
     mock_chunk_text: MagicMock, mock_extract_text: MagicMock
 ) -> None:
-    mock_repo = AsyncMock()
-    service = MemoryService(mock_repo)
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+    repo = MemoryRepository()
+    service = MemoryService(repo)
 
     mock_extract_text.return_value = "Fake document text"
     mock_chunk_text.return_value = ["chunk 1", "chunk 2"]
@@ -263,8 +271,10 @@ async def test_store_document_memory(
 @pytest.mark.asyncio
 @patch("app.domain.memory.document_service.DocumentService.extract_text")
 async def test_store_document_memory_empty(mock_extract_text: MagicMock) -> None:
-    mock_repo = AsyncMock()
-    service = MemoryService(mock_repo)
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+    repo = MemoryRepository()
+    service = MemoryService(repo)
 
     mock_extract_text.return_value = ""
 
@@ -276,18 +286,21 @@ async def test_store_document_memory_empty(mock_extract_text: MagicMock) -> None
 
 @pytest.mark.asyncio
 async def test_delete_memory_ownership() -> None:
-    mock_repo = AsyncMock()
-    service = MemoryService(mock_repo)
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+    repo = MemoryRepository()
+    service = MemoryService(repo)
     memory_id = uuid4()
     user_id = uuid4()
 
-    mock_repo.delete_memory.return_value = True
-    result = await service.delete_memory(memory_id, user_id)
-    assert result is True
-    mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)
+    with patch.object(repo, "delete_memory", new_callable=AsyncMock) as mock_delete:
+        mock_delete.return_value = True
+        result = await service.delete_memory(memory_id, user_id)
+        assert result is True
+        mock_delete.assert_awaited_once_with(memory_id, user_id=user_id)
 
-    mock_repo.delete_memory.reset_mock()
-    mock_repo.delete_memory.return_value = False
-    result_fail = await service.delete_memory(memory_id, user_id)
-    assert result_fail is False
-    mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)
+        mock_delete.reset_mock()
+        mock_delete.return_value = False
+        result_fail = await service.delete_memory(memory_id, user_id)
+        assert result_fail is False
+        mock_delete.assert_awaited_once_with(memory_id, user_id=user_id)
