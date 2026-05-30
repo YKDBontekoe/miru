@@ -25,8 +25,8 @@ async def test_store_memory_empty_content() -> None:
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
 async def test_store_memory_deduplicated(mock_embed: AsyncMock) -> None:
-    from app.infrastructure.repositories.memory_repo import MemoryRepository
     from app.domain.memory.models import Memory
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
 
     repo = MemoryRepository()
     service = MemoryService(repo)
@@ -105,7 +105,6 @@ async def test_store_memory_chaos_relationship_failure(
     mock_logger: MagicMock, mock_embed: AsyncMock
 ) -> None:
     from app.infrastructure.repositories.memory_repo import MemoryRepository
-    from app.domain.memory.models import Memory
 
     repo = MemoryRepository()
     service = MemoryService(repo)
@@ -134,7 +133,6 @@ async def test_store_memory_chaos_background_task_failure(
     mock_create_task: MagicMock, mock_logger: MagicMock, mock_embed: AsyncMock
 ) -> None:
     from app.infrastructure.repositories.memory_repo import MemoryRepository
-    from app.domain.memory.models import Memory
 
     repo = MemoryRepository()
     service = MemoryService(repo)
