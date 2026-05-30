@@ -129,7 +129,7 @@ export const ChatListHeader = React.memo(({
   ), [selectedAgentId, onSelectAgent, t]);
 
   const renderAgentItem = useCallback(({ item }: { item: Agent }) => (
-    <View style={{ marginRight: 8 }}>
+    <View className="mr-2">
       <AgentPill
         agent={item}
         onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
