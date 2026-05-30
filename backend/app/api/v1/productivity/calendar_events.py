@@ -51,8 +51,10 @@ async def create_event(
     try:
         event = await use_case.create_event(user_id, event_data)
         return CalendarEventResponse.model_validate(event)
-    except InvalidTimeRangeError as e:
-        raise_api_error(status_code=400, error="invalid_time_range", message=str(e))
+    except InvalidTimeRangeError:
+        raise_api_error(
+            status_code=400, error="invalid_time_range", message="Invalid time range provided."
+        )
 
 
 @router.get(
@@ -134,8 +136,10 @@ async def update_event(
             error="calendar_event_not_found",
             message="Calendar event not found.",
         )
-    except InvalidTimeRangeError as e:
-        raise_api_error(status_code=400, error="invalid_time_range", message=str(e))
+    except InvalidTimeRangeError:
+        raise_api_error(
+            status_code=400, error="invalid_time_range", message="Invalid time range provided."
+        )
 
 
 @router.delete(

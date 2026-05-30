@@ -83,7 +83,12 @@ def test_list_memories_route_network_error(client: TestClient) -> None:
     response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_list_memories_route_timeout_error(client: TestClient) -> None:
@@ -102,7 +107,12 @@ def test_list_memories_route_timeout_error(client: TestClient) -> None:
     response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_get_memory_graph_network_error(client: TestClient) -> None:
@@ -121,7 +131,12 @@ def test_get_memory_graph_network_error(client: TestClient) -> None:
     response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_get_memory_graph_timeout_error(client: TestClient) -> None:
@@ -140,7 +155,12 @@ def test_get_memory_graph_timeout_error(client: TestClient) -> None:
     response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_get_memory_graph_oserror(client: TestClient) -> None:
@@ -155,7 +175,12 @@ def test_get_memory_graph_oserror(client: TestClient) -> None:
     response = client.get("/api/v1/memory/graph", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_store_memory_route_timeout_error(client: TestClient) -> None:
@@ -178,7 +203,12 @@ def test_store_memory_route_timeout_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_list_memories_route_oserror(client: TestClient) -> None:
@@ -193,7 +223,12 @@ def test_list_memories_route_oserror(client: TestClient) -> None:
     response = client.get("/api/v1/memory", headers={"Authorization": "Bearer fake_token"})
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_upload_document_service_timeout(client: TestClient) -> None:
@@ -217,7 +252,12 @@ def test_upload_document_service_timeout(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_store_memory_route_network_error(client: TestClient) -> None:
@@ -240,7 +280,12 @@ def test_store_memory_route_network_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_store_memory_route_oserror(client: TestClient) -> None:
@@ -259,7 +304,12 @@ def test_store_memory_route_oserror(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_upload_document(client: TestClient) -> None:
@@ -301,7 +351,9 @@ def test_upload_document_unexpected_error(client: TestClient) -> None:
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "Failed to process document"}
+    assert response.json() == {
+        "detail": {"error": "internal_server_error", "message": "Failed to process document"}
+    }
 
 
 def test_upload_document_service_unavailable(client: TestClient) -> None:
@@ -325,7 +377,12 @@ def test_upload_document_service_unavailable(client: TestClient) -> None:
     )
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Upstream AI service is currently unreachable"}
+    assert response.json() == {
+        "detail": {
+            "error": "service_unavailable",
+            "message": "Upstream AI service is currently unreachable",
+        }
+    }
 
 
 def test_upload_document_invalid_type(client: TestClient) -> None:
@@ -343,7 +400,7 @@ def test_upload_document_invalid_type(client: TestClient) -> None:
     )
 
     assert response.status_code == 415
-    assert "Unsupported file type" in response.json()["detail"]
+    assert "Unsupported file type" in response.json()["detail"]["message"]
 
 
 def test_upload_document_too_large(client: TestClient) -> None:
@@ -362,7 +419,7 @@ def test_upload_document_too_large(client: TestClient) -> None:
     )
 
     assert response.status_code == 413
-    assert "File too large" in response.json()["detail"]
+    assert "File too large" in response.json()["detail"]["message"]
 
 
 def test_delete_memory_endpoint_with_user_id(
