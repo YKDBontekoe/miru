@@ -8,7 +8,6 @@
 
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '../core/theme';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -20,6 +19,7 @@ import Animated, {
   FadeOut,
   Easing,
 } from 'react-native-reanimated';
+import { theme } from '../core/theme';
 import { AppText } from './AppText';
 import type { AgentActivityData } from '../core/services/ChatHubService';
 
@@ -55,7 +55,8 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
   return (
     <Animated.View
       style={[
-        { width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, marginHorizontal: 2 },
+        styles.dot,
+        { backgroundColor: color },
         style,
       ]}
     />
@@ -145,6 +146,12 @@ export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps
 }
 
 const styles = StyleSheet.create({
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginHorizontal: 2,
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',

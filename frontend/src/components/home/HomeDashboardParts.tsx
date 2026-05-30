@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleProp, View, ViewStyle, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
@@ -214,8 +214,8 @@ export function HomeHeroCard({
 }) {
   return (
     <View style={styles.heroCardContainer}>
-      <View style={[styles.heroCardCircleTopRight, { backgroundColor: HOME_COLORS.primary }]} />
-      <View style={[styles.heroCardCircleBottomLeft, { backgroundColor: HOME_COLORS.accent }]} />
+      <View style={styles.heroCardCircleTopRightPrimary} />
+      <View style={styles.heroCardCircleBottomLeftAccent} />
 
       <View style={styles.heroCardHeaderRow}>
         <View style={styles.heroCardHeaderTextContainer}>
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...HOME_SHADOW,
   },
-  heroCardCircleTopRight: {
+  heroCardCircleTopRightPrimary: {
     position: 'absolute',
     width: 180,
     height: 180,
@@ -439,8 +439,9 @@ const styles = StyleSheet.create({
     opacity: 0.26,
     top: -90,
     right: -40,
+    backgroundColor: HOME_COLORS.primary,
   },
-  heroCardCircleBottomLeft: {
+  heroCardCircleBottomLeftAccent: {
     position: 'absolute',
     width: 120,
     height: 120,
@@ -448,6 +449,7 @@ const styles = StyleSheet.create({
     opacity: 0.22,
     bottom: -44,
     left: -24,
+    backgroundColor: HOME_COLORS.accent,
   },
   heroCardHeaderRow: {
     flexDirection: 'row',
