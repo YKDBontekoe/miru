@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+from xml.sax.saxutils import escape
 
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
@@ -162,6 +163,7 @@ class AgentService:
 
     async def generate_agent_profile(self, keywords: str) -> AgentGenerationResponse:
         """Use Instructor to generate a validated agent profile."""
+        escaped_keywords = escape(keywords)
         messages: list[ChatCompletionMessageParam] = [
             {
                 "role": "system",
@@ -170,7 +172,7 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {"role": "user", "content": f"Keywords:\n<keywords>\n{escaped_keywords}\n</keywords>"},
         ]
 
         return await structured_completion(
@@ -270,6 +272,7 @@ class AgentService:
         if not recent_history.strip():
             return
         mood_list = ", ".join(self._VALID_MOODS)
+        escaped_history = escape(recent_history)
         try:
             response = await structured_completion(
                 messages=[
@@ -281,7 +284,10 @@ class AgentService:
                             f"{mood_list}."
                         ),
                     },
-                    {"role": "user", "content": recent_history},
+                    {
+                        "role": "user",
+                        "content": f"<recent_history>\n{escaped_history}\n</recent_history>",
+                    },
                 ],
                 response_model=MoodResponse,
             )
