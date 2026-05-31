@@ -308,8 +308,8 @@ class ChatService:
             )
             if memories:
                 return "\n".join(f"- {memory_record.content}" for memory_record in memories)
-        except openai.OpenAIError:
-            logger.warning("Memory retrieval failed for room=%s, proceeding without", room_id)
+        except Exception as e:
+            logger.warning("Memory retrieval failed for room=%s, proceeding without: %s", room_id, str(e))
         return None
 
     def _dispatch_background_tasks(

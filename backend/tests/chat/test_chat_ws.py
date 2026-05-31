@@ -251,12 +251,13 @@ async def test_run_room_chat_ws_memory_context_success(chat_service: ChatService
 
         mock_memory = MagicMock()
         mock_memory.content = "User loves pizza."
-        chat_service.memory_repo.match_memories = AsyncMock(return_value=[mock_memory])
+        with patch.object(
+            chat_service.memory_repo, "match_memories", new=AsyncMock(return_value=[mock_memory])
+        ) as mock_match:
+            result = await chat_service._retrieve_memory_context("I like pizza", user_id, room_id)
 
-        result = await chat_service._retrieve_memory_context("I like pizza", user_id, room_id)
-
-        assert result == "- User loves pizza."
-        chat_service.memory_repo.match_memories.assert_called_once()
+            assert result == "- User loves pizza."
+            mock_match.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -304,3 +305,26 @@ async def test_run_room_chat_ws_error(chat_service: ChatService) -> None:
         m_exec.side_effect = Exception("Test error")
         await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
         assert mock_hub.broadcast_to_room.call_count >= 2
+        calls = mock_hub.broadcast_to_room.call_args_list
+        assert any("agent_activity" in str(c) for c in calls)
+        assert any("error" in str(c) for c in calls)
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_memory_context_repo_error(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    with patch(
+        "app.infrastructure.external.openrouter.embed", new_callable=AsyncMock
+    ) as mock_embed:
+        mock_embed.return_value = [0.1, 0.2, 0.3]
+
+        with patch.object(
+            chat_service.memory_repo,
+            "match_memories",
+            new=AsyncMock(side_effect=Exception("DB error")),
+        ):
+            result = await chat_service._retrieve_memory_context("I like pizza", user_id, room_id)
+
+            assert result is None
