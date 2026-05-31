@@ -104,3 +104,126 @@ async def test_store_memory(mock_embed: AsyncMock) -> None:
     mock_embed.return_value = [0.1] * 1536
     mock_repo.match_memories.return_value = [MagicMock()]
     assert await service.store_memory("test") is None
+
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
+async def test_store_memory_success(mock_embed: AsyncMock) -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+
+    mock_embed.return_value = [0.1] * 1536
+    mock_repo.match_memories.return_value = []
+
+    memory_mock = MagicMock()
+    memory_mock.id = uuid4()
+    mock_repo.insert_memory.return_value = memory_mock
+
+    result = await service.store_memory("test new memory")
+    assert result == memory_mock.id
+    mock_repo.insert_memory.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_get_memory_graph() -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+    user_id = uuid4()
+
+    # Empty
+    mock_repo.list_all_memories.return_value = []
+    res = await service.get_memory_graph(user_id)
+    assert res == {"nodes": [], "edges": []}
+
+    # With data
+    memory_mock = MagicMock()
+    memory_mock.id = uuid4()
+    mock_repo.list_all_memories.return_value = [memory_mock]
+    mock_repo.get_relationships_subgraph.return_value = [
+        {"source": memory_mock.id, "target": uuid4()}
+    ]
+
+    res = await service.get_memory_graph(user_id)
+    assert len(res["nodes"]) == 1
+    assert len(res["edges"]) == 1
+
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
+@patch(
+    "app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph",
+    new_callable=AsyncMock,
+)
+@patch("asyncio.create_task")
+async def test_store_memory_with_graph_extraction(
+    mock_create_task: MagicMock, mock_process_graph: AsyncMock, mock_embed: AsyncMock
+) -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+
+    mock_embed.return_value = [0.1] * 1536
+    mock_repo.match_memories.return_value = []
+
+    memory_mock = MagicMock()
+    memory_mock.id = uuid4()
+    mock_repo.insert_memory.return_value = memory_mock
+
+    user_id = uuid4()
+
+    result = await service.store_memory(
+        "test new memory related", user_id=user_id, related_to=[uuid4(), uuid4()]
+    )
+
+    assert result == memory_mock.id
+    mock_repo.insert_memory.assert_awaited_once()
+    assert mock_repo.create_relationship.call_count == 2
+    mock_create_task.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
+async def test_store_memory_create_relationship_error(mock_embed: AsyncMock) -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+
+    mock_embed.return_value = [0.1] * 1536
+    mock_repo.match_memories.return_value = []
+
+    memory_mock = MagicMock()
+    memory_mock.id = uuid4()
+    mock_repo.insert_memory.return_value = memory_mock
+    mock_repo.create_relationship.side_effect = Exception("DB error")
+
+    result = await service.store_memory("test new memory related", related_to=[uuid4()])
+
+    assert result == memory_mock.id
+    mock_repo.insert_memory.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
+@patch(
+    "app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph",
+    new_callable=AsyncMock,
+)
+@patch("asyncio.create_task")
+async def test_store_memory_graph_extraction_error(
+    mock_create_task: MagicMock, mock_process_graph: AsyncMock, mock_embed: AsyncMock
+) -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+
+    mock_embed.return_value = [0.1] * 1536
+    mock_repo.match_memories.return_value = []
+
+    memory_mock = MagicMock()
+    memory_mock.id = uuid4()
+    mock_repo.insert_memory.return_value = memory_mock
+
+    mock_create_task.side_effect = Exception("Failed to start task")
+    user_id = uuid4()
+
+    result = await service.store_memory("test new memory graph extract error", user_id=user_id)
+
+    assert result == memory_mock.id
+    mock_repo.insert_memory.assert_awaited_once()
