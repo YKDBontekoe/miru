@@ -237,3 +237,94 @@ async def test_run_room_chat_ws_unauthorized(chat_service: ChatService) -> None:
         mock_hub.broadcast_to_room = AsyncMock()
         await chat_service.run_room_chat_ws(room_id, user_message, user_id)
         mock_hub.broadcast_to_room.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_memory_context_success(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    with patch(
+        "app.infrastructure.external.openrouter.embed", new_callable=AsyncMock
+    ) as mock_embed:
+        mock_embed.return_value = [0.1, 0.2, 0.3]
+
+        mock_memory = MagicMock()
+        mock_memory.content = "User loves pizza."
+        with patch.object(
+            chat_service.memory_repo, "match_memories", new=AsyncMock(return_value=[mock_memory])
+        ) as mock_match:
+            result = await chat_service._retrieve_memory_context("I like pizza", user_id, room_id)
+
+            assert result == "- User loves pizza."
+            mock_match.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_memory_context_error(chat_service: ChatService) -> None:
+    import openai
+
+    room_id = uuid4()
+    user_id = uuid4()
+
+    with patch(
+        "app.infrastructure.external.openrouter.embed", new_callable=AsyncMock
+    ) as mock_embed:
+        mock_embed.side_effect = openai.OpenAIError("API Down")
+
+        result = await chat_service._retrieve_memory_context("I like pizza", user_id, room_id)
+
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_error(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+    typing.cast("AsyncMock", chat_service.chat_repo.list_room_agents).return_value = [
+        MagicMock(id=uuid4(), name="Agent1")
+    ]
+    with (
+        patch.object(
+            chat_service.ws_broadcaster,
+            "handle_message_persistence_and_broadcast",
+            new_callable=AsyncMock,
+        ) as m_persist,
+        patch.object(
+            chat_service.ws_broadcaster, "broadcast_thinking_status", new_callable=AsyncMock
+        ),
+        patch.object(chat_service.ws_broadcaster, "create_step_callback", return_value=MagicMock()),
+        patch(
+            "app.domain.chat.crew_orchestrator.CrewOrchestrator.execute_crew_task",
+            new_callable=AsyncMock,
+        ) as m_exec,
+        patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub,
+    ):
+        mock_hub.broadcast_to_room = AsyncMock()
+        m_persist.return_value = MagicMock(id=uuid4())
+        m_exec.side_effect = Exception("Test error")
+        await chat_service.run_room_chat_ws(room_id, "Hello", user_id)
+        assert mock_hub.broadcast_to_room.call_count >= 2
+        calls = mock_hub.broadcast_to_room.call_args_list
+        assert any("agent_activity" in str(c) for c in calls)
+        assert any("error" in str(c) for c in calls)
+
+
+@pytest.mark.asyncio
+async def test_run_room_chat_ws_memory_context_repo_error(chat_service: ChatService) -> None:
+    room_id = uuid4()
+    user_id = uuid4()
+
+    with patch(
+        "app.infrastructure.external.openrouter.embed", new_callable=AsyncMock
+    ) as mock_embed:
+        mock_embed.return_value = [0.1, 0.2, 0.3]
+
+        with patch.object(
+            chat_service.memory_repo,
+            "match_memories",
+            new=AsyncMock(side_effect=Exception("DB error")),
+        ):
+            result = await chat_service._retrieve_memory_context("I like pizza", user_id, room_id)
+
+            assert result is None

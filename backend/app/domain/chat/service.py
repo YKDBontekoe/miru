@@ -36,6 +36,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 CONVERSATION_HISTORY_LIMIT = 30
+MEMORY_SIMILARITY_THRESHOLD = 0.75
+MEMORY_MATCH_COUNT = 5
 
 
 def _extract_marker_flags(message: ChatMessageEntity | None) -> tuple[bool, bool]:
@@ -207,12 +209,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> AsyncIterator[str]:
         """A simple non-room chat stream for general queries using the first available agent."""
-        db_agents = await self.agent_repo.list_by_user(user_id)
-        if not db_agents:
+        user_agents = await self.agent_repo.list_by_user(user_id)
+        if not user_agents:
             yield "No agents available. Please create one first."
             return
 
-        agent = db_agents[0]
+        agent = user_agents[0]
         model_name = get_settings().default_chat_model
 
         messages: list[ChatCompletionMessageParam] = [
@@ -255,12 +257,12 @@ class ChatService:
         self, user_message: str, user_id: UUID, accept_language: str | None = None
     ) -> dict[str, str]:
         """Execute a full CrewAI orchestration and return a structured result."""
-        db_agents = await self.agent_repo.list_by_user(user_id)
-        if not db_agents:
+        user_agents = await self.agent_repo.list_by_user(user_id)
+        if not user_agents:
             return {"task_type": "error", "result": "No agents available."}
 
         result = await CrewOrchestrator.execute_crew_task(
-            room_agents=db_agents,
+            room_agents=user_agents,
             user_message=user_message,
             user_id=user_id,
             accept_language=accept_language,
@@ -278,17 +280,69 @@ class ChatService:
         the real agent name instead of the generic "Agent" fallback.
         """
         history = []
-        for m in messages:
-            if m.user_id:
-                history.append({"role": "user", "name": "User", "content": m.content})
-            elif m.agent_id:
-                name = (agent_by_id or {}).get(m.agent_id, "Agent")
-                history.append({"role": "agent", "name": name, "content": m.content})
+        for message_entity in messages:
+            if message_entity.user_id:
+                history.append({"role": "user", "name": "User", "content": message_entity.content})
+            elif message_entity.agent_id:
+                name = (agent_by_id or {}).get(message_entity.agent_id, "Agent")
+                history.append({"role": "agent", "name": name, "content": message_entity.content})
         return history
 
     async def user_in_room(self, user_id: UUID, room_id: UUID) -> bool:
         """Return True if *user_id* owns the room (authorised to send messages)."""
         return await self.chat_repo.room_belongs_to_user(room_id, user_id)
+
+    async def _retrieve_memory_context(
+        self, user_message: str, user_id: UUID, room_id: UUID
+    ) -> str | None:
+        try:
+            from app.infrastructure.external.openrouter import embed  # noqa: PLC0415
+
+            query_vector = await embed(user_message)
+            memories = await self.memory_repo.match_memories(
+                vector=query_vector,
+                threshold=MEMORY_SIMILARITY_THRESHOLD,
+                count=MEMORY_MATCH_COUNT,
+                user_id=user_id,
+                room_id=room_id,
+            )
+            if memories:
+                return "\n".join(f"- {memory_record.content}" for memory_record in memories)
+        except Exception as e:
+            logger.warning("Memory retrieval failed for room=%s, proceeding without: %s", room_id, str(e))
+        return None
+
+    def _dispatch_background_tasks(
+        self,
+        user_id: UUID,
+        room_id: UUID,
+        user_message: str,
+        conversation_history: list[dict],
+        responded_agents: list[Agent],
+        result_text: str,
+        agent_names: list[str],
+    ) -> None:
+        history_text = CrewOrchestrator.format_history(conversation_history)
+        recent_context = f"{history_text}\nUser: {user_message}\n{result_text}".strip()
+
+        for agent in responded_agents:
+            asyncio.create_task(  # noqa: RUF006
+                self.bg_service.update_mood_background(agent.id, recent_context)
+            )
+            asyncio.create_task(  # noqa: RUF006
+                self.bg_service.update_affinity_background(user_id, agent.id)
+            )
+
+        asyncio.create_task(  # noqa: RUF006
+            self.bg_service.store_memories_background(
+                user_id, room_id, user_message, responded_agents, result_text, agent_names
+            )
+        )
+
+        if len(conversation_history) >= CONVERSATION_HISTORY_LIMIT - 5:
+            asyncio.create_task(  # noqa: RUF006
+                self.bg_service.update_room_summary_background(room_id, conversation_history)
+            )
 
     async def run_room_chat_ws(
         self,
@@ -331,22 +385,7 @@ class ChatService:
             return
 
         # 4. Retrieve relevant memories via vector similarity for extra context.
-        memory_context: str | None = None
-        try:
-            from app.infrastructure.external.openrouter import embed  # noqa: PLC0415
-
-            query_vector = await embed(user_message)
-            memories = await self.memory_repo.match_memories(
-                vector=query_vector,
-                threshold=0.75,
-                count=5,
-                user_id=user_id,
-                room_id=room_id,
-            )
-            if memories:
-                memory_context = "\n".join(f"- {m.content}" for m in memories)
-        except Exception:
-            logger.warning("Memory retrieval failed for room=%s, proceeding without", room_id)
+        memory_context = await self._retrieve_memory_context(user_message, user_id, room_id)
 
         # 5. Broadcast thinking indicator and create step callback.
         agent_names = [a.name for a in room_agents]
@@ -389,28 +428,15 @@ class ChatService:
             )
 
             # 7. Fire background tasks: mood update, affinity, and memory storage.
-            history_text = CrewOrchestrator.format_history(conversation_history)
-            recent_context = f"{history_text}\nUser: {user_message}\n{result_text}".strip()
-
-            for agent in responded_agents:
-                asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_mood_background(agent.id, recent_context)
-                )
-                asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_affinity_background(user_id, agent.id)
-                )
-
-            asyncio.create_task(  # noqa: RUF006
-                self.bg_service.store_memories_background(
-                    user_id, room_id, user_message, responded_agents, result_text, agent_names
-                )
+            self._dispatch_background_tasks(
+                user_id=user_id,
+                room_id=room_id,
+                user_message=user_message,
+                conversation_history=conversation_history,
+                responded_agents=responded_agents,
+                result_text=result_text,
+                agent_names=agent_names,
             )
-
-            # Fire background task to update room summary if conversation gets long
-            if len(conversation_history) >= CONVERSATION_HISTORY_LIMIT - 5:
-                asyncio.create_task(  # noqa: RUF006
-                    self.bg_service.update_room_summary_background(room_id, conversation_history)
-                )
 
         except Exception:
             logger.exception("Failed processing crew task for room=%s", room_id)
