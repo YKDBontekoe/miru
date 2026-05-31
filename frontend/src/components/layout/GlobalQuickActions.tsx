@@ -15,7 +15,7 @@ type QuickAction = {
   route: string;
 };
 
-export function GlobalQuickActions() {
+export const GlobalQuickActions = React.memo(() => {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -148,4 +148,6 @@ export function GlobalQuickActions() {
       </Modal>
     </>
   );
-}
+});
+
+GlobalQuickActions.displayName = 'GlobalQuickActions';
