@@ -63,3 +63,44 @@ async def test_delete_memory_ownership() -> None:
     result_fail = await service.delete_memory(memory_id, user_id)
     assert result_fail is False
     mock_repo.delete_memory.assert_awaited_once_with(memory_id, user_id=user_id)
+
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
+async def test_retrieve_memories(mock_embed: AsyncMock) -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+
+    # test with query
+    mock_embed.return_value = [0.1] * 1536
+    mock_repo.match_memories.return_value = []
+
+    result = await service.retrieve_memories(
+        "test query", user_id="00000000-0000-0000-0000-000000000001"
+    )
+    assert result == []
+    mock_repo.match_memories.assert_awaited()
+    assert mock_embed.call_count == 1
+
+    # test without query
+    mock_repo.match_memories.reset_mock()
+    mock_embed.reset_mock()
+    result = await service.retrieve_memories("", user_id="00000000-0000-0000-0000-000000000001")
+    assert result == []
+    mock_repo.match_memories.assert_awaited()
+    assert mock_embed.call_count == 0
+
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
+async def test_store_memory(mock_embed: AsyncMock) -> None:
+    mock_repo = AsyncMock()
+    service = MemoryService(mock_repo)
+
+    # Empty content
+    assert await service.store_memory("") is None
+
+    # deduplication
+    mock_embed.return_value = [0.1] * 1536
+    mock_repo.match_memories.return_value = [MagicMock()]
+    assert await service.store_memory("test") is None
