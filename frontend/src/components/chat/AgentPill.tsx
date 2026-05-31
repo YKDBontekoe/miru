@@ -1,10 +1,12 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
 import { getAgentColor } from '@/utils/colors';
 import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export interface AgentPillProps {
   /** The agent data to display. */
@@ -23,23 +25,18 @@ export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
   const initial = agent?.name ? agent.name[0].toUpperCase() : '?';
 
   return (
-    <ScalePressable onPress={onPress} className="w-[72px] items-center me-3">
-      <View
-        className="w-[52px] h-[52px] rounded-full items-center justify-center mb-1.5 border-[1.5px]"
-        style={{
-          backgroundColor: `${color}18`,
-          borderColor: `${color}40`,
-        }}
-      >
-        <AppText className="text-[20px] font-bold" style={{ color }}>
+    <ScalePressable onPress={onPress} style={styles.container}>
+      <View style={styles.avatarContainer}>
+        <View style={[styles.avatarBackground, { backgroundColor: color }]} />
+        <View style={[styles.avatarBorder, { borderColor: color }]} />
+        <AppText variant="h3" style={[styles.initialText, { color }]}>
           {initial}
         </AppText>
       </View>
       <AppText
         variant="caption"
         numberOfLines={1}
-        className="text-center text-[11px]"
-        style={{ color: C.muted }}
+        style={[styles.nameText, { color: C.muted }]}
       >
         {agent.name}
       </AppText>
@@ -48,3 +45,36 @@ export const AgentPill = React.memo(({ agent, onPress }: AgentPillProps) => {
 });
 
 AgentPill.displayName = 'AgentPill';
+
+const styles = StyleSheet.create({
+  container: {
+    width: 72,
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  avatarContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  avatarBackground: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    opacity: 0.1,
+  },
+  avatarBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    borderWidth: 1.5,
+    opacity: 0.25,
+  },
+  initialText: {
+    fontWeight: 'bold',
+  },
+  nameText: {
+    textAlign: 'center',
+  },
+});

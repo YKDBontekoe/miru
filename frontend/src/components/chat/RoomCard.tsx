@@ -1,11 +1,12 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { ChatRoom } from '@/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { theme } from '@/core/theme';
 
 const C = {
   surface: DESIGN_TOKENS.colors.surface,
@@ -14,6 +15,8 @@ const C = {
   faint: DESIGN_TOKENS.colors.faint,
   primary: DESIGN_TOKENS.colors.primary,
   primarySurface: DESIGN_TOKENS.colors.primarySoft,
+  border: DESIGN_TOKENS.colors.border,
+  white: DESIGN_TOKENS.colors.white,
 };
 
 export interface RoomCardProps {
@@ -74,12 +77,11 @@ export const RoomCard = React.memo(
       /\s+/g,
       ' '
     );
-    const cardBorderClass = unread ? 'border-[#147D6473]' : 'border-[#DDE8E0]';
 
     return (
       <ScalePressable
         onPress={onPress}
-        className={`flex-row items-center rounded-[20px] p-[14px] mb-[10px] bg-white border shadow-md ${cardBorderClass}`}
+        style={styles.container}
         accessibilityRole="button"
         accessibilityLabel={t('chat.room_accessibility', {
           defaultValue: '{{name}}{{suffix}}',
@@ -87,38 +89,40 @@ export const RoomCard = React.memo(
           suffix: unread ? `, ${t('chat.unread', { defaultValue: 'unread' })}` : '',
         })}
       >
-        <View className="w-12 h-12 rounded-[14px] items-center justify-center me-[14px] bg-[#DDF4EB] border border-[#147D6438]">
-          <AppText className="text-[20px] font-bold text-[#147D64]">{initial}</AppText>
+        <View style={unread ? styles.containerBorderUnread : styles.containerBorderRead} />
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatarBorder} />
+          <AppText variant="h3" style={styles.avatarText}>{initial}</AppText>
         </View>
-        <View className="flex-1 pe-2">
-          <View className="flex-row items-center mb-[3px]">
-            <AppText className="text-[15px] font-semibold flex-1 text-[#13251C]" numberOfLines={1}>
+        <View style={styles.contentContainer}>
+          <View style={styles.titleRow}>
+            <AppText variant="h3" style={styles.titleText} numberOfLines={1}>
               {room.name}
             </AppText>
             {pinned ? <Ionicons name="bookmark" size={14} color={C.primary} /> : null}
           </View>
-          <AppText variant="caption" className="text-[12px] mb-[3px] text-[#5A7467]" numberOfLines={2}>
+          <AppText variant="caption" style={styles.previewText} numberOfLines={2}>
             {preview}
           </AppText>
-          <View className="flex-row items-center">
-            <Ionicons name="people-outline" size={12} color={C.muted} className="me-1" />
-            <AppText variant="caption" className="text-[12px] text-[#5A7467]" numberOfLines={1}>
+          <View style={styles.membersRow}>
+            <Ionicons name="people-outline" size={12} color={C.muted} style={styles.membersIcon} />
+            <AppText variant="caption" style={styles.membersText} numberOfLines={1}>
               {memberLabel()}
             </AppText>
           </View>
         </View>
-        <View className="items-end">
+        <View style={styles.rightContainer}>
           {updatedLabel ? (
-            <AppText variant="caption" className="text-[#5A7467] mb-[3px]">
+            <AppText variant="caption" style={styles.timeText}>
               {updatedLabel}
             </AppText>
           ) : null}
-          {unread ? <View className="w-[9px] h-[9px] rounded-full mb-1.5 bg-[#147D64]" /> : null}
-          <View className="flex-row items-center">
+          {unread ? <View style={styles.unreadDot} /> : null}
+          <View style={styles.actionsRow}>
             {onTogglePin ? (
               <ScalePressable
                 onPress={onTogglePin}
-                className="w-7 h-7 rounded-full items-center justify-center me-1 bg-[#DDF4EB]"
+                style={styles.pinButton}
                 accessibilityRole="button"
                 accessibilityLabel={
                   pinned
@@ -142,3 +146,110 @@ export const RoomCard = React.memo(
 );
 
 RoomCard.displayName = 'RoomCard';
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: DESIGN_TOKENS.radius.lg,
+    padding: 14,
+    marginBottom: 10,
+    backgroundColor: C.white,
+    ...Platform.select({
+      ios: theme.elevation.md,
+      android: {
+        ...theme.elevation.md,
+        elevation: theme.elevation.md.elevation,
+        shadowColor: DESIGN_TOKENS.colors.deep,
+      },
+    }),
+  },
+  containerBorderRead: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: DESIGN_TOKENS.radius.lg,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  containerBorderUnread: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: DESIGN_TOKENS.radius.lg,
+    borderWidth: 1,
+    borderColor: C.primary,
+    opacity: 0.45,
+  },
+  avatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: DESIGN_TOKENS.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+    backgroundColor: C.primarySurface,
+  },
+  avatarBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: DESIGN_TOKENS.radius.md,
+    borderWidth: 1,
+    borderColor: C.primary,
+    opacity: 0.22, // 38 in hex is about 22%
+  },
+  avatarText: {
+    fontWeight: 'bold',
+    color: C.primary,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  titleText: {
+    flex: 1,
+    fontWeight: '600',
+    color: C.text,
+  },
+  previewText: {
+    marginBottom: 3,
+    color: C.muted,
+  },
+  membersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  membersIcon: {
+    marginRight: theme.spacing.xs,
+  },
+  membersText: {
+    color: C.muted,
+  },
+  rightContainer: {
+    alignItems: 'flex-end',
+  },
+  timeText: {
+    color: C.muted,
+    marginBottom: 3,
+  },
+  unreadDot: {
+    width: 9,
+    height: 9,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    marginBottom: 6,
+    backgroundColor: C.primary,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pinButton: {
+    width: 28,
+    height: 28,
+    borderRadius: DESIGN_TOKENS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.xs,
+    backgroundColor: C.primarySurface,
+  },
+});
