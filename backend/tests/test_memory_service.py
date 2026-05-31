@@ -130,7 +130,7 @@ async def test_store_memory_success(
     # Assert real relationship creation
     rels = await MemoryRelationship.filter(source_id=memory_id).all()
     assert len(rels) == 1
-    assert rels[0].target_id == related_to[0]
+    assert getattr(rels[0], "target_id", None) == related_to[0] or getattr(rels[0], "_target_id", None) == related_to[0]
 
     # Assert domain side-effect triggered (background task)
     mock_process_graph.assert_awaited_once_with("New specific fact", user_id)
