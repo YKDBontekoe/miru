@@ -438,8 +438,8 @@ class ChatService:
                 agent_names=agent_names,
             )
 
-        except Exception as e:
-            logger.exception("Failed processing crew task for room=%s: %s", room_id, str(e))
+        except Exception:
+            logger.exception("Failed processing crew task for room=%s", room_id)
             await chat_hub.broadcast_to_room(
                 room_id,
                 {
