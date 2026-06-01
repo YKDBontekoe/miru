@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, TextInput, View, FlatList, ListRenderItemInfo } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -65,8 +65,10 @@ export const ChatListHeader = React.memo(({
     return () => clearTimeout(timer);
   }, [localQuery, onChangeQuery]);
 
+  const SYNTHETIC_ALL_ID = '__synthetic_all__';
+
   const agentListData = useMemo(
-    () => [{ id: 'all', isAllItem: true } as const, ...agents],
+    () => [{ id: SYNTHETIC_ALL_ID, isAllItem: true } as const, ...agents],
     [agents]
   );
 
@@ -203,7 +205,7 @@ export const ChatListHeader = React.memo(({
           </View>
           <FlatList
             data={agentListData}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => 'isAllItem' in item && item.isAllItem ? SYNTHETIC_ALL_ID : item.id}
             renderItem={renderAgentItem}
             horizontal
             showsHorizontalScrollIndicator={false}

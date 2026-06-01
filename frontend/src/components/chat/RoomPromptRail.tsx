@@ -38,8 +38,10 @@ export const RoomPromptRail = React.memo(({
 }: RoomPromptRailProps) => {
   const { t } = useTranslation();
 
+  const SYNTHETIC_SAVE_BTN_ID = '__synthetic:save-btn';
+
   const promptListData = useMemo(
-    () => [{ id: 'save-btn', isSaveBtn: true } as const, ...prompts],
+    () => [{ id: SYNTHETIC_SAVE_BTN_ID, isSaveBtn: true } as const, ...prompts],
     [prompts]
   );
 
@@ -114,7 +116,7 @@ export const RoomPromptRail = React.memo(({
 
         <FlatList
           data={promptListData}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => ('isSaveBtn' in item && item.isSaveBtn) ? SYNTHETIC_SAVE_BTN_ID : item.id}
           renderItem={renderPromptItem}
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -124,7 +126,7 @@ export const RoomPromptRail = React.memo(({
         {contextActions && contextActions.length > 0 && onContextPress ? (
           <FlatList
             data={contextActions}
-            keyExtractor={(item) => item}
+            keyExtractor={(item, index) => `${item}:${index}`}
             renderItem={renderContextItem}
             horizontal
             showsHorizontalScrollIndicator={false}
