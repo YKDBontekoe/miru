@@ -161,7 +161,9 @@ class MemoryService:
         room_id: UUID | str | None = None,
     ) -> list[Memory]:
         """Fetch similar memories from the vector store."""
-        vector = await embed(query) if query else list(_DEFAULT_VECTOR)  # Default vector for blank list
+        vector = (
+            await embed(query) if query else list(_DEFAULT_VECTOR)
+        )  # Default vector for blank list
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
