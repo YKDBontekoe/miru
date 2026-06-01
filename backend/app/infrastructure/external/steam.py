@@ -41,23 +41,22 @@ class SteamClient(ISteamClient):
             "steamids": ",".join(steam_ids),
         }
 
+        import json
+
         try:
             data = await self._get_async(url, params)
             return list(data.get("response", {}).get("players", []))
-        except httpx.HTTPStatusError:
-            logger.exception("Steam API returned error status for player summaries")
-            return []
-        except httpx.RequestError:
-            logger.exception("Failed to fetch Steam player summaries")
-            return []
-        except Exception:
-            logger.exception("Unexpected error fetching Steam player summaries")
+        except (httpx.RequestError, json.JSONDecodeError, ValueError, KeyError):
+            logger.exception("Expected error fetching Steam player summaries")
             return []
 
     async def get_owned_games(
         self, steam_id: str, include_appinfo: bool = True, include_played_free_games: bool = True
     ) -> list[dict[str, Any]]:
         """Fetch owned games for a Steam user."""
+        if not steam_id:
+            return []
+
         settings = get_settings()
         if not settings.steam_api_key:
             logger.warning("Steam API key not configured")
@@ -72,17 +71,13 @@ class SteamClient(ISteamClient):
             "format": "json",
         }
 
+        import json
+
         try:
             data = await self._get_async(url, params)
             return list(data.get("response", {}).get("games", []))
-        except httpx.HTTPStatusError:
-            logger.exception("Steam API returned error status for owned games")
-            return []
-        except httpx.RequestError:
-            logger.exception("Failed to fetch Steam owned games")
-            return []
-        except Exception:
-            logger.exception("Unexpected error fetching Steam owned games")
+        except (httpx.RequestError, json.JSONDecodeError, ValueError, KeyError):
+            logger.exception("Expected error fetching Steam owned games")
             return []
 
     async def resolve_vanity_url(self, vanityurl: str) -> str | None:
@@ -98,11 +93,13 @@ class SteamClient(ISteamClient):
             "vanityurl": vanityurl,
         }
 
+        import json
+
         try:
             data = await self._get_async(url, params)
             if data.get("response", {}).get("success") == 1:
                 return str(data["response"]["steamid"])
             return None
-        except Exception:
-            logger.exception("Error resolving Steam vanity URL")
+        except (httpx.RequestError, json.JSONDecodeError, ValueError, KeyError):
+            logger.exception("Expected error resolving Steam vanity URL")
             return None

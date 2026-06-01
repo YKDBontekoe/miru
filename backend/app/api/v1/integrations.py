@@ -38,6 +38,9 @@ async def resolve_steam_user(
     """Resolve a Steam username or ID and return the Steam64 ID and persona name."""
     result = await use_case.execute(username)
     if not result:
-        raise HTTPException(status_code=404, detail="Steam user not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "steam_user_not_found", "message": "Steam user not found"},
+        )
 
     return result

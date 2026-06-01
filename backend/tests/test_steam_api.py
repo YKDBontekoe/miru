@@ -1,5 +1,7 @@
 """Tests for Steam Web API client."""
 
+from __future__ import annotations
+
 import typing
 from unittest.mock import MagicMock, patch
 
@@ -65,77 +67,44 @@ async def test_get_owned_games(mock_settings: typing.Any) -> None:
 async def test_get_player_summaries_no_key() -> None:
     with patch("app.infrastructure.external.steam.get_settings") as mock:
         mock.return_value.steam_api_key = None
-        client = SteamClient()
-        summaries = await client.get_player_summaries(["76561197960435530"])
-        assert summaries == []
+        with patch("app.infrastructure.external.steam.SteamClient._get_async") as mock_get_async:
+            client = SteamClient()
+            summaries = await client.get_player_summaries(["76561197960435530"])
+            assert summaries == []
+            mock_get_async.assert_not_called()
 
 
-@pytest.mark.asyncio
-async def test_get_player_summaries_http_error(mock_settings: typing.Any) -> None:
-    import httpx
-
-    with patch(
-        "app.infrastructure.external.steam.SteamClient._get_async",
-        side_effect=httpx.HTTPStatusError(
-            "403 Forbidden", request=MagicMock(), response=MagicMock()
-        ),
-    ):
-        client = SteamClient()
-        summaries = await client.get_player_summaries(["76561197960435530"])
-        assert summaries == []
-
-
-@pytest.mark.asyncio
-async def test_get_player_summaries_exception(mock_settings: typing.Any) -> None:
-    with patch(
-        "app.infrastructure.external.steam.SteamClient._get_async",
-        side_effect=Exception("Unexpected error"),
-    ):
-        client = SteamClient()
-        summaries = await client.get_player_summaries(["76561197960435530"])
-        assert summaries == []
 
 
 @pytest.mark.asyncio
 async def test_get_player_summaries_no_ids(mock_settings: typing.Any) -> None:
-    client = SteamClient()
-    summaries = await client.get_player_summaries([])
-    assert summaries == []
-
-
-@pytest.mark.asyncio
-async def test_get_owned_games_http_error(mock_settings: typing.Any) -> None:
-    import httpx
-
-    with patch(
-        "app.infrastructure.external.steam.SteamClient._get_async",
-        side_effect=httpx.HTTPStatusError(
-            "403 Forbidden", request=MagicMock(), response=MagicMock()
-        ),
-    ):
+    with patch("app.infrastructure.external.steam.SteamClient._get_async") as mock_get_async:
         client = SteamClient()
-        games = await client.get_owned_games("76561197960435530")
-        assert games == []
+        summaries = await client.get_player_summaries([])
+        assert summaries == []
+        mock_get_async.assert_not_called()
 
 
-@pytest.mark.asyncio
-async def test_get_owned_games_exception(mock_settings: typing.Any) -> None:
-    with patch(
-        "app.infrastructure.external.steam.SteamClient._get_async",
-        side_effect=Exception("Unexpected error"),
-    ):
-        client = SteamClient()
-        games = await client.get_owned_games("76561197960435530")
-        assert games == []
 
 
 @pytest.mark.asyncio
 async def test_get_owned_games_no_key() -> None:
     with patch("app.infrastructure.external.steam.get_settings") as mock:
         mock.return_value.steam_api_key = None
+        with patch("app.infrastructure.external.steam.SteamClient._get_async") as mock_get_async:
+            client = SteamClient()
+            games = await client.get_owned_games("76561197960435530")
+            assert games == []
+            mock_get_async.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_owned_games_no_id(mock_settings: typing.Any) -> None:
+    with patch("app.infrastructure.external.steam.SteamClient._get_async") as mock_get_async:
         client = SteamClient()
-        games = await client.get_owned_games("76561197960435530")
+        games = await client.get_owned_games("")
         assert games == []
+        mock_get_async.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -154,6 +123,32 @@ async def test_resolve_vanity_url_success(mock_settings: typing.Any) -> None:
         _, params = mock_get.call_args[0]
         assert params["vanityurl"] == vanity_url
         assert params["key"] == "test_steam_key"
+
+
+@pytest.mark.asyncio
+async def test_get_player_summaries_request_error(mock_settings: typing.Any) -> None:
+    import httpx
+
+    with patch(
+        "app.infrastructure.external.steam.SteamClient._get_async",
+        side_effect=httpx.RequestError("Request failed", request=MagicMock()),
+    ):
+        client = SteamClient()
+        summaries = await client.get_player_summaries(["76561197960435530"])
+        assert summaries == []
+
+
+@pytest.mark.asyncio
+async def test_get_owned_games_request_error(mock_settings: typing.Any) -> None:
+    import httpx
+
+    with patch(
+        "app.infrastructure.external.steam.SteamClient._get_async",
+        side_effect=httpx.RequestError("Request failed", request=MagicMock()),
+    ):
+        client = SteamClient()
+        games = await client.get_owned_games("76561197960435530")
+        assert games == []
 
 
 @pytest.mark.asyncio
@@ -180,12 +175,3 @@ async def test_resolve_vanity_url_no_key() -> None:
         assert steam_id is None
 
 
-@pytest.mark.asyncio
-async def test_resolve_vanity_url_exception(mock_settings: typing.Any) -> None:
-    with patch(
-        "app.infrastructure.external.steam.SteamClient._get_async",
-        side_effect=Exception("Unexpected error"),
-    ):
-        client = SteamClient()
-        steam_id = await client.resolve_vanity_url("robinwalker")
-        assert steam_id is None

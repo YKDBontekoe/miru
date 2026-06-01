@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 
+import httpx
 import nest_asyncio
 from crewai.tools import BaseTool
 from pydantic import Field, PrivateAttr
@@ -64,8 +65,14 @@ class SteamPlayerSummaryTool(BaseTool):
                 result["currently_playing"] = summary["gameextrainfo"]
 
             return json.dumps(result, indent=2)
-        except Exception as e:
-            return f"Error fetching player summary: {e!s}"
+        except httpx.RequestError:
+            return "Error fetching player summary"
+        except Exception:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Unexpected error fetching player summary for %s", self.steam_id)
+            return "Error fetching player summary"
 
 
 class SteamOwnedGamesTool(BaseTool):
@@ -107,5 +114,11 @@ class SteamOwnedGamesTool(BaseTool):
 
             total_games = len(games)
             return f"Total games owned: {total_games}. Top 10 most played:\n" + "\n".join(results)
-        except Exception as e:
-            return f"Error fetching owned games: {e!s}"
+        except httpx.RequestError:
+            return "Error fetching owned games"
+        except Exception:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Unexpected error fetching owned games for %s", self.steam_id)
+            return "Error fetching owned games"
