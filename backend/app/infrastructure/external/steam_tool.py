@@ -7,9 +7,10 @@ import json
 
 import nest_asyncio
 from crewai.tools import BaseTool
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
-from app.infrastructure.external.steam import get_owned_games, get_player_summaries
+from app.domain.integrations.interfaces.steam_client import ISteamClient
+from app.infrastructure.external.steam import SteamClient
 
 
 class SteamPlayerSummaryTool(BaseTool):
@@ -23,6 +24,7 @@ class SteamPlayerSummaryTool(BaseTool):
     )
 
     steam_id: str = Field(..., description="The 17-digit Steam64 ID of the user.")
+    _steam_client: ISteamClient = PrivateAttr(default_factory=SteamClient)
 
     def _run(self) -> str:
         """Run the tool synchronously."""
@@ -36,7 +38,7 @@ class SteamPlayerSummaryTool(BaseTool):
     async def _arun(self) -> str:
         """Async implementation of the tool."""
         try:
-            summaries = await get_player_summaries([self.steam_id])
+            summaries = await self._steam_client.get_player_summaries([self.steam_id])
             if not summaries:
                 return f"No player found for Steam ID: {self.steam_id}"
 
@@ -76,6 +78,7 @@ class SteamOwnedGamesTool(BaseTool):
     )
 
     steam_id: str = Field(..., description="The 17-digit Steam64 ID of the user.")
+    _steam_client: ISteamClient = PrivateAttr(default_factory=SteamClient)
 
     def _run(self) -> str:
         """Run the tool synchronously."""
@@ -88,7 +91,7 @@ class SteamOwnedGamesTool(BaseTool):
 
     async def _arun(self) -> str:
         try:
-            games = await get_owned_games(self.steam_id)
+            games = await self._steam_client.get_owned_games(self.steam_id)
             if not games:
                 return f"No games found or profile is private for Steam ID: {self.steam_id}"
 
