@@ -74,8 +74,6 @@ async def test_get_player_summaries_no_key() -> None:
             mock_get_async.assert_not_called()
 
 
-
-
 @pytest.mark.asyncio
 async def test_get_player_summaries_no_ids(mock_settings: typing.Any) -> None:
     with patch("app.infrastructure.external.steam.SteamClient._get_async") as mock_get_async:
@@ -83,8 +81,6 @@ async def test_get_player_summaries_no_ids(mock_settings: typing.Any) -> None:
         summaries = await client.get_player_summaries([])
         assert summaries == []
         mock_get_async.assert_not_called()
-
-
 
 
 @pytest.mark.asyncio
@@ -173,5 +169,3 @@ async def test_resolve_vanity_url_no_key() -> None:
         client = SteamClient()
         steam_id = await client.resolve_vanity_url("robinwalker")
         assert steam_id is None
-
-
