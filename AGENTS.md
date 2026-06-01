@@ -74,6 +74,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Note on Prompt:** Jules is instructed to strictly follow project architecture and code style: 100-char lines, type hints/explicit types, double quotes for Python, single quotes for TypeScript, specific import orders (`stdlib` → `third-party` → `first-party`), use `str | None` not `Optional[str]`, use `const` for components/internal functions, include `from __future__ import annotations`, log errors with context (`logger.exception()`), and structure domains in `backend/app/domain/<domain>/` and routes in `backend/app/api/v1/`.
 
 ### 2. CodeRabbit
+// DOCS(miru-agent): prompt mismatch
 
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
@@ -112,8 +113,9 @@ backend/
         graph_service.py # Graph logic
         document_service.py # Document processing logic
       notifications/
-        api/         # Push notification endpoints
-        services.py  # Token registration service
+        schemas.py   # Pydantic schemas for notifications
+        interfaces/  # Interface boundaries for dependencies
+        use_cases/   # Application logic orchestrating notification domain
       productivity/
         models.py    # Task, Note, CalendarEvent Tortoise ORM models
         schemas.py   # Task, Note, CalendarEvent Pydantic schemas
