@@ -63,6 +63,7 @@ class MemoryService:
         # 3. Handle Relationships
         if related_to:
             import asyncio
+
             try:
                 await asyncio.gather(
                     *(self.repo.create_relationship(memory_id, rid) for rid in related_to)
@@ -121,9 +122,7 @@ class MemoryService:
                 room_id=room_id,
             )
 
-        results = await asyncio.gather(
-            *(_store_chunk(i, chunk) for i, chunk in enumerate(chunks))
-        )
+        results = await asyncio.gather(*(_store_chunk(i, chunk) for i, chunk in enumerate(chunks)))
 
         return [mid for mid in results if mid is not None]
 
