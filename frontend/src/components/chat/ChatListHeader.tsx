@@ -67,17 +67,17 @@ FilterItemComponent.displayName = 'FilterItemComponent';
 
 const AgentItemComponent = React.memo(({
   item,
-  selectedAgentId,
+  isSelected,
   onSelectAgent,
 }: {
   item: Agent;
-  selectedAgentId: string | null;
+  isSelected: boolean;
   onSelectAgent: (id: string | null) => void;
 }) => (
-  <View style={{ marginRight: 8 }}>
+  <View className="mr-2">
     <AgentPill
       agent={item}
-      onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
+      onPress={() => onSelectAgent(isSelected ? null : item.id)}
     />
   </View>
 ));
@@ -194,7 +194,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
       return (
         <AgentItemComponent
           item={item}
-          selectedAgentId={selectedAgentId}
+          isSelected={selectedAgentId === item.id}
           onSelectAgent={onSelectAgent}
         />
       );
@@ -202,7 +202,9 @@ export const ChatListHeader = React.memo(function ChatListHeader({
     [selectedAgentId, onSelectAgent, t]
   );
 
-  const agentKeyExtractor = useCallback((item: typeof agentsData[number]) => item.id, []);
+  const agentKeyExtractor = useCallback((item: typeof agentsData[number]) => {
+    return 'isAllItem' in item ? 'synthetic:all' : item.id;
+  }, []);
 
   return (
     <>

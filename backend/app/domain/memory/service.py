@@ -113,18 +113,20 @@ class MemoryService:
 
         chunks = await asyncio.to_thread(DocumentService.chunk_text, text)
 
-        async def _store_chunk(i: int, chunk: str) -> UUID | None:
+        memory_ids = []
+        for i, chunk in enumerate(chunks):
             chunk_content = f"[From document: {filename}, part {i + 1}]\n{chunk}"
-            return await self.store_memory(
+            # Awaiting sequentially to prevent vector deduplication race conditions
+            mid = await self.store_memory(
                 content=chunk_content,
                 user_id=user_id,
                 agent_id=agent_id,
                 room_id=room_id,
             )
+            if mid:
+                memory_ids.append(mid)
 
-        results = await asyncio.gather(*(_store_chunk(i, chunk) for i, chunk in enumerate(chunks)))
-
-        return [mid for mid in results if mid is not None]
+        return memory_ids
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a single memory and its relationships by delegating to the repository layer.

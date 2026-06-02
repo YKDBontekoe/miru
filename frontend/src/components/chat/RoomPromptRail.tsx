@@ -29,6 +29,9 @@ const PromptItemComponent = React.memo(({
         : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
     } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
     disabled={isStreaming}
+    accessibilityRole="button"
+    accessibilityLabel={action.text}
+    accessibilityState={{ disabled: isStreaming }}
   >
     <AppText
       className={`text-xs font-bold ${
@@ -43,18 +46,20 @@ const PromptItemComponent = React.memo(({
 PromptItemComponent.displayName = 'PromptItemComponent';
 
 const ContextActionComponent = React.memo(({
-  value,
+  label,
   onPress,
 }: {
-  value: string;
+  label: string;
   onPress: (value: string) => void;
 }) => (
   <Pressable
-    onPress={() => onPress(value)}
+    onPress={() => onPress(label)}
     className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+    accessibilityRole="button"
+    accessibilityLabel={label}
   >
     <AppText variant="caption" className="text-[#5A7467] font-bold">
-      {value}
+      {label}
     </AppText>
   </Pressable>
 ));
@@ -99,6 +104,9 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
               isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
             }`}
             disabled={isStreaming || !canSave}
+            accessibilityRole="button"
+            accessibilityLabel={saveLabel}
+            accessibilityState={{ disabled: isStreaming || !canSave }}
           >
             <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
           </Pressable>
@@ -124,11 +132,16 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
     return ['save_button' as const, ...prompts];
   }, [prompts]);
 
+  const contextActionsData = useMemo(() => {
+    if (!contextActions) return [];
+    return contextActions.map((label, index) => ({ id: `context-${index}-${label}`, label }));
+  }, [contextActions]);
+
   const renderContextAction = useCallback(
-    ({ item }: { item: string }) => {
+    ({ item }: { item: { id: string; label: string } }) => {
       return (
         <ContextActionComponent
-          value={item}
+          label={item.label}
           onPress={onContextPress!}
         />
       );
@@ -136,7 +149,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
     [onContextPress]
   );
 
-  const contextActionKeyExtractor = useCallback((item: string) => item, []);
+  const contextActionKeyExtractor = useCallback((item: { id: string; label: string }) => item.id, []);
 
   return (
     <View className="px-3 pb-2">
@@ -161,12 +174,12 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
           renderItem={renderPrompt}
         />
 
-        {contextActions && contextActions.length > 0 && onContextPress ? (
+        {contextActionsData.length > 0 && onContextPress ? (
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="px-3 pt-2"
-            data={contextActions}
+            data={contextActionsData}
             keyExtractor={contextActionKeyExtractor}
             renderItem={renderContextAction}
           />

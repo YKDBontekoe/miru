@@ -202,11 +202,16 @@ async def test_retrieve_memories_no_query() -> None:
 
     mock_repo.match_memories.return_value = ["memory1"]
 
-    result = await service.retrieve_memories(query="")
-    assert result == ["memory1"]
-    # assert embed was not called and default vector was used
-    # This is slightly hard to assert exactly without mocking embed, but we can verify match_memories was called correctly
-    mock_repo.match_memories.assert_awaited_once()
+    from app.domain.memory.service import DEFAULT_VECTOR, TOP_K
+
+    with patch("app.domain.memory.service.embed", new_callable=AsyncMock) as mock_embed:
+        result = await service.retrieve_memories(query="")
+        assert result == ["memory1"]
+
+        mock_embed.assert_not_awaited()
+        mock_repo.match_memories.assert_awaited_once_with(
+            DEFAULT_VECTOR, 0.0, TOP_K, None, None, None
+        )
 
 
 @pytest.mark.asyncio
