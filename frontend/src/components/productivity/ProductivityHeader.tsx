@@ -1,0 +1,141 @@
+import React from 'react';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { T, S, R } from './productivityStyles';
+import { AppText } from '../../components/AppText';
+import { theme } from '../../core/theme';
+
+interface ProductivityHeaderProps {
+  t: (key: string, options?: any) => string;
+  pendingTasksCount: number;
+  searchQuery: string;
+  onSearchChange: (text: string) => void;
+  onGeneratePlan: () => void;
+  onShowCreateNote: () => void;
+  onShowCreateTask: () => void;
+}
+
+export const ProductivityHeader: React.FC<ProductivityHeaderProps> = ({
+  t,
+  pendingTasksCount,
+  searchQuery,
+  onSearchChange,
+  onGeneratePlan,
+  onShowCreateNote,
+  onShowCreateTask,
+}) => {
+  return (
+    <View style={styles.headerContainer}>
+      <View style={styles.headerRow}>
+        <View>
+          <AppText variant="h1" style={styles.headerTitle}>
+            {t('productivity.title') || 'Workspace'}
+          </AppText>
+          <AppText style={styles.headerSubtitle}>
+            {pendingTasksCount === 0
+              ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
+              : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
+                `You have ${pendingTasksCount} tasks pending.`}
+          </AppText>
+        </View>
+
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={onGeneratePlan}
+            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
+          </Pressable>
+          <Pressable
+            onPress={onShowCreateNote}
+            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
+          </Pressable>
+          <Pressable
+            onPress={onShowCreateTask}
+            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search"
+          size={18}
+          color={T.onSurface.mutedLight}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          value={searchQuery}
+          onChangeText={onSearchChange}
+          placeholder={t('productivity.search') || 'Search notes & tasks...'}
+          placeholderTextColor={T.onSurface.disabledLight}
+          style={styles.searchInput}
+          clearButtonMode="while-editing"
+        />
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    paddingHorizontal: S.xl,
+    paddingTop: S.md,
+    paddingBottom: S.lg,
+    backgroundColor: T.surface.light,
+    ...theme.elevation.sm,
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: S.lg,
+  },
+  headerTitle: {
+    color: T.onSurface.light,
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    color: T.onSurface.mutedLight,
+    fontSize: 14,
+    marginTop: S.xs,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: S.sm,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: R.full,
+    backgroundColor: T.primary.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.background.light,
+    borderRadius: R.lg,
+    paddingHorizontal: S.md,
+    height: 44,
+    borderWidth: 1,
+    borderColor: T.border.light,
+  },
+  searchIcon: {
+    marginRight: S.sm,
+  },
+  searchInput: {
+    flex: 1,
+    color: T.onSurface.light,
+    fontSize: 16,
+    height: '100%',
+  },
+});

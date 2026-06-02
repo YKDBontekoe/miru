@@ -1,0 +1,5 @@
+Debt Identified: ProductivityScreen is a God Component (~850 lines) handling UI state, routing constraints, data fetching, data transformations/sorting across multiple domains (Tasks, Notes, Events), and large blocks of rendering logic (Header, Empty State, Lists).
+
+Refactored Code: Extracted the entire `useProductivityViewModel` custom hook for state and business logic. Decoupled nested components by extracting `ProductivityEmptyState` and `ProductivityHeader` into the `frontend/src/components/productivity/` sub-package. Refactored `ProductivityScreen` to act strictly as a dumb component composing these parts.
+
+Structural Note: Ensures SOLID principles by removing business and filtering logic from the UI layer. Reduces the file size of `ProductivityScreen` to ~330 lines, isolates side-effects to the View Model, and makes large UI pieces like Header and Empty State reusable and independently testable.
