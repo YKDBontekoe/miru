@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 TOP_K = 5
 DEDUP_THRESHOLD = 0.97
+DEFAULT_VECTOR = [0.0] * 1536
 
 
 class MemoryService:
@@ -61,9 +62,11 @@ class MemoryService:
 
         # 3. Handle Relationships
         if related_to:
+            import asyncio
             try:
-                for rid in related_to:
-                    await self.repo.create_relationship(memory_id, rid)
+                await asyncio.gather(
+                    *(self.repo.create_relationship(memory_id, rid) for rid in related_to)
+                )
             except Exception as e:
                 logger.warning(f"Relationship creation failed: {e}")
 
@@ -108,19 +111,21 @@ class MemoryService:
         )
 
         chunks = await asyncio.to_thread(DocumentService.chunk_text, text)
-        memory_ids = []
-        for i, chunk in enumerate(chunks):
+
+        async def _store_chunk(i: int, chunk: str) -> UUID | None:
             chunk_content = f"[From document: {filename}, part {i + 1}]\n{chunk}"
-            mid = await self.store_memory(
+            return await self.store_memory(
                 content=chunk_content,
                 user_id=user_id,
                 agent_id=agent_id,
                 room_id=room_id,
             )
-            if mid:
-                memory_ids.append(mid)
 
-        return memory_ids
+        results = await asyncio.gather(
+            *(_store_chunk(i, chunk) for i, chunk in enumerate(chunks))
+        )
+
+        return [mid for mid in results if mid is not None]
 
     async def delete_memory(self, memory_id: UUID, user_id: UUID | None = None) -> bool:
         """Delete a single memory and its relationships by delegating to the repository layer.
@@ -160,7 +165,7 @@ class MemoryService:
         room_id: UUID | str | None = None,
     ) -> list[Memory]:
         """Fetch similar memories from the vector store."""
-        vector = await embed(query) if query else [0.0] * 1536  # Default vector for blank list
+        vector = await embed(query) if query else DEFAULT_VECTOR  # Default vector for blank list
         u_id = UUID(str(user_id)) if user_id else None
         a_id = UUID(str(agent_id)) if agent_id else None
         r_id = UUID(str(room_id)) if room_id else None
