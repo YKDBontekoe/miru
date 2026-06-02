@@ -1,4 +1,6 @@
-from uuid import UUID
+from __future__ import annotations
+
+from uuid import UUID, uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -16,7 +18,7 @@ from app.main import app
 
 
 @pytest.mark.asyncio
-async def test_capabilities_integration(authed_headers: dict) -> None:
+async def test_capabilities_integration(authed_headers: dict[str, str]) -> None:
     # Setup - real data
     await Capability.create(id="test_cap", name="Test Cap", description="Test Cap", icon="icon")
 
@@ -33,7 +35,7 @@ async def test_capabilities_integration(authed_headers: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_integrations_integration(authed_headers: dict) -> None:
+async def test_integrations_integration(authed_headers: dict[str, str]) -> None:
     # Setup
     await Integration.create(
         id="test_int",
@@ -56,10 +58,8 @@ async def test_integrations_integration(authed_headers: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_templates_integration(authed_headers: dict) -> None:
+async def test_templates_integration(authed_headers: dict[str, str]) -> None:
     # Setup
-    from uuid import uuid4
-
     await AgentTemplate.create(
         id=uuid4(), name="Test Temp", description="Test Temp", personality="Fun", goals=[]
     )
@@ -77,7 +77,7 @@ async def test_templates_integration(authed_headers: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_agent_integration(authed_headers: dict, test_user_id: str) -> None:
+async def test_create_agent_integration(authed_headers: dict[str, str], test_user_id: str) -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         create_payload = {
             "name": "Integration Bot Create",
@@ -103,9 +103,7 @@ async def test_create_agent_integration(authed_headers: dict, test_user_id: str)
 
 
 @pytest.mark.asyncio
-async def test_list_agents_integration(authed_headers: dict, test_user_id: str) -> None:
-    from uuid import uuid4
-
+async def test_list_agents_integration(authed_headers: dict[str, str], test_user_id: str) -> None:
     # Seed Database
     await Agent.create(
         id=uuid4(), user_id=UUID(test_user_id), name="List Bot", personality="Fun", goals=[]
@@ -124,9 +122,7 @@ async def test_list_agents_integration(authed_headers: dict, test_user_id: str) 
 
 
 @pytest.mark.asyncio
-async def test_update_agent_integration(authed_headers: dict, test_user_id: str) -> None:
-    from uuid import uuid4
-
+async def test_update_agent_integration(authed_headers: dict[str, str], test_user_id: str) -> None:
     # Seed Database
     agent_id = uuid4()
     await Agent.create(
@@ -149,9 +145,7 @@ async def test_update_agent_integration(authed_headers: dict, test_user_id: str)
 
 
 @pytest.mark.asyncio
-async def test_delete_agent_integration(authed_headers: dict, test_user_id: str) -> None:
-    from uuid import uuid4
-
+async def test_delete_agent_integration(authed_headers: dict[str, str], test_user_id: str) -> None:
     # Seed Database
     agent_id = uuid4()
     await Agent.create(
@@ -163,7 +157,7 @@ async def test_delete_agent_integration(authed_headers: dict, test_user_id: str)
 
     assert response.status_code == 200
 
-    # Verify side effect directly via DB - since soft delete is used in repo, check if deleted_at is set or if list_by_user omits it. Wait, the domain logic uses a soft delete!
+    # Verify soft-delete behavior: confirm deleted_at is set or that AgentsRepository.list_by_user omits the record.
     db_agent = await Agent.get_or_none(id=agent_id)
     assert db_agent is not None
     assert db_agent.deleted_at is not None

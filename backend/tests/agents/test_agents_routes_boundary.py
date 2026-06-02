@@ -1,33 +1,53 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
 import pytest
-from fastapi.testclient import TestClient
+
+if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_agent_service
 from app.core.security.auth import get_current_user
-from app.domain.agents.models import Agent
+from app.domain.agents.schemas import AgentResponse
 from app.domain.agents.service import _build_agent_response
 from app.main import app
 
 
 def test_create_agent_route(client: TestClient) -> None:
+    """Test the POST /api/v1/agents endpoint creates an agent successfully.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
     now = datetime(2025, 1, 1, 12, 0)
-    agent = Agent(
+    agent_response = AgentResponse(
         id=UUID("12345678-1234-5678-1234-567812345678"),
-        user_id=user_id,
         name="Bot",
         personality="Friendly",
+        description=None,
+        system_prompt="system prompt",
+        status="active",
+        mood="Neutral",
         goals=[],
+        capabilities=[],
+        integrations=[],
+        integration_configs={},
+        message_count=0,
         created_at=now,
         updated_at=now,
     )
 
-    mock_service.create_agent = AsyncMock(return_value=agent)
+    mock_service.create_agent = AsyncMock(return_value=agent_response)
 
     app.dependency_overrides[get_current_user] = lambda: user_id
     app.dependency_overrides[get_agent_service] = lambda: mock_service
@@ -40,9 +60,18 @@ def test_create_agent_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["name"] == "Bot"
+    app.dependency_overrides.clear()
 
 
 def test_get_agents_route(client: TestClient) -> None:
+    """Test the GET /api/v1/agents endpoint retrieves agents successfully.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -55,9 +84,15 @@ def test_get_agents_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    app.dependency_overrides.clear()
 
 
 def test_build_agent_response_without_avatar() -> None:
+    """Test that agent response is built correctly without an avatar_url field.
+
+    Returns:
+        None
+    """
     now = datetime(2025, 1, 1, 12, 0)
     agent = MagicMock()
     agent.pk = UUID("12345678-1234-5678-1234-567812345678")
@@ -90,11 +125,31 @@ def test_build_agent_response_without_avatar() -> None:
 
     response = _build_agent_response(agent)
 
+    assert response.id == agent.pk
     assert response.name == "Test Agent"
+    assert response.personality == "Test Personality"
+    assert response.description == "Test Description"
+    assert response.system_prompt == "Test Prompt"
+    assert response.status == "active"
+    assert response.mood == "Neutral"
+    assert response.goals == ["Goal 1", "Goal 2"]
+    assert len(response.capabilities) == 2
+    assert response.capabilities[0] == "cap1"
+    assert response.capabilities[1] == "cap2"
+    assert len(response.integrations) == 1
+    assert response.integrations[0] == "steam"
+    assert response.message_count == 0
+    assert response.created_at == now
+    assert response.updated_at == now
 
 
 @pytest.mark.asyncio
 async def test_agent_service_caching() -> None:
+    """Test that agent capabilities and integrations caching behavior functions correctly.
+
+    Returns:
+        None
+    """
     from app.domain.agents.models import Capability, Integration
     from app.domain.agents.service import AgentService
 
@@ -122,6 +177,14 @@ async def test_agent_service_caching() -> None:
 
 
 def test_create_agent_route_contract(client: TestClient) -> None:
+    """Test the POST /api/v1/agents endpoint payload contract schema.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     from app.domain.agents.schemas import AgentResponse
 
     mock_service = MagicMock()
@@ -167,9 +230,18 @@ def test_create_agent_route_contract(client: TestClient) -> None:
 
     parsed_response = AgentResponse.model_validate(response.json())
     assert parsed_response.id == agent_id
+    app.dependency_overrides.clear()
 
 
 def test_list_capabilities_route(client: TestClient) -> None:
+    """Test the GET /api/v1/agents/capabilities endpoint retrieves data successfully.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -184,9 +256,18 @@ def test_list_capabilities_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    app.dependency_overrides.clear()
 
 
 def test_list_integrations_route(client: TestClient) -> None:
+    """Test the GET /api/v1/agents/integrations endpoint retrieves data successfully.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -201,9 +282,18 @@ def test_list_integrations_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    app.dependency_overrides.clear()
 
 
 def test_list_templates_route(client: TestClient) -> None:
+    """Test the GET /api/v1/agents/templates endpoint retrieves data successfully.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -218,9 +308,18 @@ def test_list_templates_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == []
+    app.dependency_overrides.clear()
 
 
 def test_generate_agent_route(client: TestClient) -> None:
+    """Test the POST /api/v1/agents/generate endpoint returns correct generated schemas.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -248,9 +347,18 @@ def test_generate_agent_route(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["name"] == "Gen Agent"
+    app.dependency_overrides.clear()
 
 
 def test_update_agent_route_success(client: TestClient) -> None:
+    """Test the PATCH /api/v1/agents/{agent_id} endpoint handles updates.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
     agent_id = UUID("87654321-4321-8765-4321-876543210987")
@@ -288,9 +396,18 @@ def test_update_agent_route_success(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["name"] == "Updated Agent"
+    app.dependency_overrides.clear()
 
 
 def test_update_agent_route_not_found(client: TestClient) -> None:
+    """Test the PATCH /api/v1/agents/{agent_id} endpoint handles missing agents appropriately.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
     agent_id = UUID("87654321-4321-8765-4321-876543210987")
@@ -308,9 +425,18 @@ def test_update_agent_route_not_found(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"]["error"] == "agent_not_found"
+    app.dependency_overrides.clear()
 
 
 def test_delete_agent_route_success(client: TestClient) -> None:
+    """Test the DELETE /api/v1/agents/{agent_id} endpoint deletes an agent.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
     agent_id = UUID("87654321-4321-8765-4321-876543210987")
@@ -327,9 +453,18 @@ def test_delete_agent_route_success(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+    app.dependency_overrides.clear()
 
 
 def test_delete_agent_route_not_found(client: TestClient) -> None:
+    """Test the DELETE /api/v1/agents/{agent_id} endpoint handles missing agents correctly.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
     agent_id = UUID("87654321-4321-8765-4321-876543210987")
@@ -346,9 +481,18 @@ def test_delete_agent_route_not_found(client: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"]["error"] == "agent_not_found"
+    app.dependency_overrides.clear()
 
 
 def test_delete_agent_chaos_invalid_uuid(client: TestClient) -> None:
+    """Test that DELETE requests with invalid UUID formats throw HTTP 422 immediately.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -361,9 +505,18 @@ def test_delete_agent_chaos_invalid_uuid(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+    app.dependency_overrides.clear()
 
 
 def test_generate_agent_chaos_missing_keywords(client: TestClient) -> None:
+    """Test that POST /api/v1/agents/generate validates missing payload structure strictly.
+
+    Args:
+        client: The test client instance.
+
+    Returns:
+        None
+    """
     mock_service = MagicMock()
     user_id = UUID("12345678-1234-5678-1234-567812345678")
 
@@ -377,3 +530,4 @@ def test_generate_agent_chaos_missing_keywords(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+    app.dependency_overrides.clear()
