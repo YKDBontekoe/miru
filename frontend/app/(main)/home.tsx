@@ -15,8 +15,9 @@ import {
   HomeSectionHeader,
   HomeSurfaceCard,
   HomeTaskRow,
-} from '@/components/home/HomeDashboardParts';
-import { HomeNewChatModal } from '@/components/home';
+  HomeNewChatModal,
+} from '@/components/home';
+
 import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';

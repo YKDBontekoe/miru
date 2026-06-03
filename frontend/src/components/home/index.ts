@@ -5,3 +5,8 @@ export * from './HomeRecentChatRow';
 export * from './HomeTaskRow';
 export * from './HomeAgentChip';
 export * from './HomeNewChatModal';
+export * from './dashboard/HomeSurfaceCard';
+export * from './dashboard/HomeActionTile';
+export * from './dashboard/HomeChatRow';
+export * from './dashboard/HomeAgentBadge';
+export * from './dashboard/HomeHeroCard';
