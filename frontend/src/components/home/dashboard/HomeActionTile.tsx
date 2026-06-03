@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
-
 import { HOME_COLORS } from '../homeTheme';
 
 export function HomeActionTile({
@@ -18,26 +17,16 @@ export function HomeActionTile({
   return (
     <ScalePressable
       onPress={onPress}
+      className="w-[48.5%] border rounded-[18px] py-[14px] px-3 mb-2.5"
       style={{
-        width: '48.5%',
-        borderWidth: 1,
         borderColor: HOME_COLORS.border,
-        borderRadius: 18,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
         backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 10,
       }}
     >
       <View
+        className="w-[34px] h-[34px] rounded-xl items-center justify-center mb-2"
         style={{
-          width: 34,
-          height: 34,
-          borderRadius: 12,
           backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
         }}
       >
         <Ionicons name={icon} size={18} color={HOME_COLORS.primary} />

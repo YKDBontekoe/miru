@@ -299,7 +299,7 @@ export default function HomeScreen() {
                 {agents
                   .slice(0, 4)
                   .map((agent) => (
-                    <HomeAgentBadge
+                    <HomeAgentBadge t={t}
                       key={agent.id}
                       agent={agent}
                       onPress={() => router.push('/(main)/agents')}

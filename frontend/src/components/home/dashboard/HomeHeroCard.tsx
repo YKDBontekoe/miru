@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 
-import { HOME_COLORS, HOME_SHADOW } from '../homeTheme';
+import { HOME_COLORS, HOME_SHADOW, HERO_COLORS } from '../homeTheme';
 
 export function HomeHeroCard({
   greeting,
@@ -27,91 +27,61 @@ export function HomeHeroCard({
 }) {
   return (
     <View
+      className="rounded-[28px] px-[18px] py-[18px] mb-[14px] overflow-hidden"
       style={{
-        borderRadius: 28,
         backgroundColor: HOME_COLORS.deep,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        marginBottom: 14,
-        overflow: 'hidden',
         ...HOME_SHADOW,
       }}
     >
       <View
+        className="absolute w-[180px] h-[180px] rounded-full opacity-25 -top-[90px] -right-[40px]"
         style={{
-          position: 'absolute',
-          width: 180,
-          height: 180,
-          borderRadius: 999,
-          backgroundColor: '#2BA98A',
-          opacity: 0.26,
-          top: -90,
-          right: -40,
+          backgroundColor: HERO_COLORS.circleGreen,
         }}
       />
       <View
+        className="absolute w-[120px] h-[120px] rounded-full opacity-25 -bottom-[44px] -left-[24px]"
         style={{
-          position: 'absolute',
-          width: 120,
-          height: 120,
-          borderRadius: 999,
-          backgroundColor: '#F0B470',
-          opacity: 0.22,
-          bottom: -44,
-          left: -24,
+          backgroundColor: HERO_COLORS.circleOrange,
         }}
       />
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 16,
-        }}
-      >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText variant="bodySm" style={{ color: '#CDE9DF', fontWeight: '600' }}>
+      <View className="flex-row justify-between items-start mb-4">
+        <View className="flex-1 pr-2">
+          <AppText variant="bodySm" style={{ color: HERO_COLORS.textLight, fontWeight: '600' }}>
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} style={{ color: HERO_COLORS.textWhite, fontWeight: '700' }}>
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: '#CDE9DF' }}>
+          <AppText variant="caption" style={{ color: HERO_COLORS.textLight }}>
             {dateText}
           </AppText>
         </View>
         <ScalePressable
           onPress={onSettingsPress}
+          className="w-[44px] h-[44px] rounded-[22px] items-center justify-center"
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: '#2D6A58',
-            alignItems: 'center',
-            justifyContent: 'center',
+            backgroundColor: HERO_COLORS.avatarBg,
           }}
         >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HERO_COLORS.textWhite, fontWeight: '700' }}>
             {initials}
           </AppText>
         </ScalePressable>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View className="flex-row gap-2">
         <View
+          className="flex-1 rounded-[14px] py-2.5 px-2.5"
           style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
+            backgroundColor: HERO_COLORS.statBg,
           }}
         >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+          <AppText variant="caption" style={{ color: HERO_COLORS.textLight, marginBottom: 2 }}>
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HERO_COLORS.textWhite, fontWeight: '700' }}>
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
@@ -121,18 +91,15 @@ export function HomeHeroCard({
           </AppText>
         </View>
         <View
+          className="flex-1 rounded-[14px] py-2.5 px-2.5"
           style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
+            backgroundColor: HERO_COLORS.statBg,
           }}
         >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+          <AppText variant="caption" style={{ color: HERO_COLORS.textLight, marginBottom: 2 }}>
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HERO_COLORS.textWhite, fontWeight: '700' }}>
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>

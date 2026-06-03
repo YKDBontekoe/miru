@@ -19,32 +19,22 @@ export function HomeChatRow({
   return (
     <ScalePressable
       onPress={onPress}
+      className="flex-row items-center px-3 py-3 rounded-2xl mb-2"
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderRadius: 16,
         backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 8,
       }}
     >
       <View
+        className="w-[34px] h-[34px] rounded-[11px] items-center justify-center mr-[10px]"
         style={{
-          width: 34,
-          height: 34,
-          borderRadius: 11,
           backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
         }}
       >
         <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
           {room.name[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
-      <View style={{ flex: 1, paddingRight: 8 }}>
+      <View className="flex-1 pr-2">
         <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
           {room.name}
         </AppText>
@@ -52,7 +42,7 @@ export function HomeChatRow({
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
+      <View className="items-end">
         <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginBottom: 2 }}>
           {relativeTimeFromNow(room.updated_at, t)}
         </AppText>
