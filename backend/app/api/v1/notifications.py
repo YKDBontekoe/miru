@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
 
+from fastapi import APIRouter, Depends, status
+
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser
 from app.domain.notifications.interfaces.notification_client import INotificationClient
 from app.domain.notifications.schemas import NotificationRequest
 from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
 from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["notifications"])
 
@@ -66,8 +71,10 @@ async def send_notification(
     try:
         await use_case.execute(str(user_id), request.message, request.title)
     except ValueError as e:
-        raise HTTPException(
+        logger.exception("Failed to send notification", exc_info=e)
+        raise_api_error(
             status_code=400,
-            detail={"error": "invalid_user_id", "message": str(e)},
-        ) from e
+            error="invalid_user_id",
+            message="Invalid user ID provided",
+        )
     return {"status": "success"}
