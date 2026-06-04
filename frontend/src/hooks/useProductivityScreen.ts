@@ -145,8 +145,16 @@ export function useProductivityScreen() {
         date: new Date(task.created_at).getTime(),
       });
     });
+    filteredEvents.forEach((event) => {
+      data.push({
+        type: 'event',
+        item: event,
+        id: `event-${event.id}`,
+        date: new Date(event.start_time).getTime(),
+      });
+    });
     return data.sort((a, b) => (b.date || 0) - (a.date || 0));
-  }, [filteredNotes, filteredTasks]);
+  }, [filteredNotes, filteredTasks, filteredEvents]);
 
   const todayData = useMemo(() => {
     const now = new Date();
@@ -197,12 +205,24 @@ export function useProductivityScreen() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
+  const effectiveTaskPriority = useMemo(() => {
+    if (activeTab === 'today') {
+      const supportedPriorities = new Set(
+        todayData.filter((i) => i.type === 'task').map((t) => getTaskPriority(t.item as Task))
+      );
+      if (taskPriority !== 'all' && !supportedPriorities.has(taskPriority)) {
+        return 'all';
+      }
+    }
+    return taskPriority;
+  }, [activeTab, getTaskPriority, taskPriority, todayData]);
+
   const dataToRender: RenderItemData[] =
     activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
-          if (taskPriority === 'all') return true;
-          return getTaskPriority(entry.item as Task) === taskPriority;
+          if (effectiveTaskPriority === 'all') return true;
+          return getTaskPriority(entry.item as Task) === effectiveTaskPriority;
         })
       : activeTab === 'all'
         ? mixedData
@@ -212,7 +232,14 @@ export function useProductivityScreen() {
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();
-    const nextTasks = prioritizedTasks.slice(0, 3);
+    const allOpenPrioritizedTasks = [...filteredTasks.filter((task) => !task.completed)].sort(
+      (a, b) => {
+        const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        return aDue - bDue;
+      }
+    );
+    const nextTasks = allOpenPrioritizedTasks.slice(0, 3);
     const nextEvents = [...filteredEvents]
       .filter((event) => new Date(event.end_time) >= now)
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
@@ -247,12 +274,12 @@ export function useProductivityScreen() {
 
     setTodayPlan(lines.join('\n'));
     setActiveTab('today');
-  }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
+  }, [filteredEvents, filteredTasks, i18n.language, taskPriorityCounts.overdue]);
 
   return {
     activeTab,
     setActiveTab,
-    taskPriority,
+    taskPriority: effectiveTaskPriority,
     setTaskPriority,
     searchQuery,
     setSearchQuery,

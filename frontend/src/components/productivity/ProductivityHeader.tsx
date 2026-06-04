@@ -1,29 +1,18 @@
-import React from 'react';
-import { View, StyleSheet, Pressable, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Pressable, TextInput, PressableStateCallbackType } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
-const S = theme.spacing;
-const R = theme.borderRadius;
-
 const T = {
-  background: { light: DESIGN_TOKENS.colors.pageBg },
-  surface: { light: DESIGN_TOKENS.colors.surface, highLight: DESIGN_TOKENS.colors.surfaceSoft },
-  border: { light: DESIGN_TOKENS.colors.border },
   onSurface: {
-    light: DESIGN_TOKENS.colors.text,
     mutedLight: DESIGN_TOKENS.colors.muted,
     disabledLight: DESIGN_TOKENS.colors.faint,
   },
   primary: {
     DEFAULT: DESIGN_TOKENS.colors.primary,
-    surfaceLight: DESIGN_TOKENS.colors.primarySoft,
   },
-  white: '#FFFFFF',
-  transparent: 'transparent',
 };
 
 interface Props {
@@ -44,15 +33,33 @@ export const ProductivityHeader = React.memo(({
   onShowCreateTask,
 }: Props) => {
   const { t } = useTranslation();
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setSearchQuery(localSearch);
+    }, 300);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [localSearch, setSearchQuery]);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
 
   return (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerRow}>
+    <View className="px-6 pt-4 pb-5 bg-surface shadow-sm z-10 elevation-sm">
+      <View className="flex-row justify-between items-center mb-5">
         <View>
-          <AppText variant="h1" style={styles.headerTitle}>
+          <AppText variant="h1" className="text-text text-[28px] font-extrabold tracking-tight">
             {t('productivity.title') || 'Workspace'}
           </AppText>
-          <AppText style={styles.headerSubtitle}>
+          <AppText className="text-muted text-[14px] mt-1">
             {pendingTasksCount === 0
               ? t('productivity.header.subtitle.empty') || "You're all caught up for today."
               : t('productivity.header.subtitle.pending', { count: pendingTasksCount }) ||
@@ -60,41 +67,50 @@ export const ProductivityHeader = React.memo(({
           </AppText>
         </View>
 
-        <View style={styles.headerActions}>
+        <View className="flex-row gap-2">
           <Pressable
             onPress={onGeneratePlan}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Generate plan"
+            style={({ pressed }: PressableStateCallbackType) => [pressed ? { opacity: 0.7 } : undefined]}
+            className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
           >
             <Ionicons name="sparkles" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
             onPress={onShowCreateNote}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Create note"
+            style={({ pressed }: PressableStateCallbackType) => [pressed ? { opacity: 0.7 } : undefined]}
+            className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
           >
             <Ionicons name="document-text" size={20} color={T.primary.DEFAULT} />
           </Pressable>
           <Pressable
             onPress={onShowCreateTask}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Create task"
+            style={({ pressed }: PressableStateCallbackType) => [pressed ? { opacity: 0.7 } : undefined]}
+            className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
           >
             <Ionicons name="checkbox" size={20} color={T.primary.DEFAULT} />
           </Pressable>
         </View>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View className="flex-row items-center bg-page rounded-lg px-3 h-11 border border-border">
         <Ionicons
           name="search"
           size={18}
           color={T.onSurface.mutedLight}
-          style={styles.searchIcon}
+          style={{ marginRight: 8 }}
         />
         <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+          value={localSearch}
+          onChangeText={setLocalSearch}
           placeholder={t('productivity.search') || 'Search notes & tasks...'}
           placeholderTextColor={T.onSurface.disabledLight}
-          style={styles.searchInput}
+          className="flex-1 text-text text-[16px] h-full"
           clearButtonMode="while-editing"
         />
       </View>
@@ -103,62 +119,3 @@ export const ProductivityHeader = React.memo(({
 });
 
 ProductivityHeader.displayName = 'ProductivityHeader';
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    paddingHorizontal: S.xl,
-    paddingTop: S.md,
-    paddingBottom: S.lg,
-    backgroundColor: T.surface.light,
-    ...theme.elevation.sm,
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: S.lg,
-  },
-  headerTitle: {
-    color: T.onSurface.light,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    color: T.onSurface.mutedLight,
-    fontSize: 14,
-    marginTop: S.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: S.sm,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: R.full,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.background.light,
-    borderRadius: R.lg,
-    paddingHorizontal: S.md,
-    height: 44,
-    borderWidth: 1,
-    borderColor: T.border.light,
-  },
-  searchIcon: {
-    marginRight: S.sm,
-  },
-  searchInput: {
-    flex: 1,
-    color: T.onSurface.light,
-    fontSize: 16,
-    height: '100%',
-  },
-});

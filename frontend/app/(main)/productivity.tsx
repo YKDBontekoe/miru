@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -200,12 +201,18 @@ export default function ProductivityScreen() {
           />
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={activeTab}
-            searchQuery={searchQuery}
-            onShowCreateNote={() => setShowCreateNote(true)}
-            onShowCreateTask={() => setShowCreateTask(true)}
-          />
+          isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={T.primary.DEFAULT} />
+            </View>
+          ) : (
+            <ProductivityEmptyState
+              activeTab={activeTab}
+              searchQuery={searchQuery}
+              onShowCreateNote={() => setShowCreateNote(true)}
+              onShowCreateTask={() => setShowCreateTask(true)}
+            />
+          )
         }
       />
 
@@ -265,5 +272,10 @@ const styles = StyleSheet.create({
     color: T.onSurface.mutedLight,
     marginTop: 2,
     fontSize: 13,
+  },
+  loadingContainer: {
+    paddingVertical: S.massive,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
