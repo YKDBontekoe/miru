@@ -40,7 +40,7 @@ async def list_memories(
     try:
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
-    except (APIConnectionError, APITimeoutError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
             status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable"
         )
@@ -64,7 +64,7 @@ async def get_memory_graph(
     """Fetch the memory graph for the current user."""
     try:
         return await service.get_memory_graph(user_id)
-    except (APIConnectionError, APITimeoutError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
             status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable"
         )
@@ -91,7 +91,7 @@ async def store_memory(
     try:
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
-    except (APIConnectionError, APITimeoutError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
             status_code=503,
             error="service_unavailable",
@@ -165,7 +165,7 @@ async def upload_document(
             "message": f"Document processed and stored in {len(memory_ids)} chunks.",
             "memory_ids": [str(m) for m in memory_ids],
         }
-    except (APIConnectionError, APITimeoutError, OSError) as e:
+    except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
             status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable"
         )
