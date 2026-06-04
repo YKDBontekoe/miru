@@ -7,10 +7,11 @@ import logging
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from openai import APIConnectionError, APITimeoutError
 
 from app.api.dependencies import get_memory_service
+from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.memory.models import Memory
 from app.domain.memory.schemas import MemoryRequest, MemoryResponse  # noqa: TCH001
@@ -39,10 +40,12 @@ async def list_memories(
     try:
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
-    except (APIConnectionError, APITimeoutError, OSError) as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    except (APIConnectionError, APITimeoutError, OSError):
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
+        )
 
 
 @router.get(
@@ -63,10 +66,12 @@ async def get_memory_graph(
     """Fetch the memory graph for the current user."""
     try:
         return await service.get_memory_graph(user_id)
-    except (APIConnectionError, APITimeoutError, OSError) as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    except (APIConnectionError, APITimeoutError, OSError):
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
+        )
 
 
 @router.post(
@@ -90,11 +95,12 @@ async def store_memory(
     try:
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
-    except (APIConnectionError, APITimeoutError, OSError) as e:
-        raise HTTPException(
+    except (APIConnectionError, APITimeoutError, OSError):
+        raise_api_error(
             status_code=503,
-            detail="Upstream AI service is currently unreachable",
-        ) from e
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
+        )
 
 
 @router.post(
@@ -131,9 +137,10 @@ async def upload_document(
     }
     content_type = file.content_type or "application/octet-stream"
     if content_type not in allowed_types:
-        raise HTTPException(
+        raise_api_error(
             status_code=415,
-            detail=f"Unsupported file type: {content_type}. Must be text, PDF, DOCX, or Image.",
+            error="unsupported_media_type",
+            message=f"Unsupported file type: {content_type}. Must be text, PDF, DOCX, or Image.",
         )
 
     # 2. Validate max size (e.g. 10MB limit)
@@ -142,9 +149,10 @@ async def upload_document(
     while chunk := await file.read(1024 * 1024):
         content += chunk
         if len(content) > max_file_size:
-            raise HTTPException(
+            raise_api_error(
                 status_code=413,
-                detail="File too large. Maximum allowed size is 10MB.",
+                error="payload_too_large",
+                message="File too large. Maximum allowed size is 10MB.",
             )
 
     try:
@@ -161,13 +169,17 @@ async def upload_document(
             "message": f"Document processed and stored in {len(memory_ids)} chunks.",
             "memory_ids": [str(m) for m in memory_ids],
         }
-    except (APIConnectionError, APITimeoutError, OSError) as e:
-        raise HTTPException(
-            status_code=503, detail="Upstream AI service is currently unreachable"
-        ) from e
+    except (APIConnectionError, APITimeoutError, OSError):
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
+        )
     except Exception:
         logger.exception("Failed to process document")
-        raise HTTPException(status_code=500, detail="Failed to process document") from None
+        raise_api_error(
+            status_code=500, error="internal_server_error", message="Failed to process document"
+        )
 
 
 @router.delete(
@@ -189,5 +201,5 @@ async def delete_memory(
     """Delete a memory."""
     success = await service.delete_memory(memory_id, user_id=user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Memory not found")
+        raise_api_error(status_code=404, error="not_found", message="Memory not found")
     return {"status": "ok"}
