@@ -351,6 +351,7 @@ def test_resolve_steam_user_not_found(client) -> None:  # type: ignore[no-untype
             headers=auth_headers(),
         )
     assert response.status_code == 404
+    assert response.json()["detail"]["message"] == "Steam user not found"
 
 
 def test_resolve_steam_user_no_summaries(client) -> None:  # type: ignore[no-untyped-def]
