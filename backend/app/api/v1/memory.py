@@ -42,7 +42,9 @@ async def list_memories(
         return {"memories": memories}
     except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
-            status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable"
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
         )
 
 
@@ -66,7 +68,9 @@ async def get_memory_graph(
         return await service.get_memory_graph(user_id)
     except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
-            status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable"
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
         )
 
 
@@ -167,11 +171,15 @@ async def upload_document(
         }
     except (APIConnectionError, APITimeoutError, OSError):
         raise_api_error(
-            status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable"
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable",
         )
     except Exception:
         logger.exception("Failed to process document")
-        raise_api_error(status_code=500, error="internal_server_error", message="Failed to process document")
+        raise_api_error(
+            status_code=500, error="internal_server_error", message="Failed to process document"
+        )
 
 
 @router.delete(
