@@ -1,18 +1,8 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import {
-  View,
-  FlatList,
-  RefreshControl,
-  TextInput,
-  Alert,
-  ActionSheetIOS,
-  Platform,
-} from 'react-native';
+import { View, FlatList, RefreshControl, Alert, ActionSheetIOS, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { useTranslation } from 'react-i18next';
 import { AppText } from '../../src/components/AppText';
 import { SkeletonAgentCard } from '../../src/components/SkeletonCard';
 import { Snackbar } from '../../src/components/Snackbar';
@@ -22,15 +12,15 @@ import { CreateAgentSheet } from '../../src/components/agents/CreateAgentSheet';
 import { AgentDetailSheet } from '../../src/components/agents/AgentDetailSheet';
 import { AgentCard, AgentGridCard } from '../../src/components/agents/AgentCard';
 import { EmptyState } from '../../src/components/agents/EmptyState';
+import { AgentsHeader } from '@/components/agents/AgentsHeader';
+import { AgentsFilters } from '@/components/agents/AgentsFilters';
 import { useAgentStore, AgentTemplate } from '../../src/store/useAgentStore';
 import { useChatStore } from '../../src/store/useChatStore';
 import { haptic } from '../../src/utils/haptics';
 import { Agent } from '../../src/core/models';
-import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export default function AgentsScreen() {
-  const { t } = useTranslation();
   const C = {
     bg: DESIGN_TOKENS.colors.pageBg,
     surface: DESIGN_TOKENS.colors.surface,
@@ -308,266 +298,30 @@ export default function AgentsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
-        >
-          <View>
-            <AppText
-              style={{ fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
-            >
-              Personas
-            </AppText>
-            <AppText style={{ color: C.muted, fontSize: 13, marginTop: 1 }}>
-              {agents.length === 0
-                ? 'Your AI companions'
-                : `${agents.length} persona${agents.length !== 1 ? 's' : ''}`}
-            </AppText>
-          </View>
+      {/* ── Header ── */}
+      <AgentsHeader
+        agentsCount={agents.length}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onShowTemplates={() => setShowTemplates(true)}
+        onShowCreate={() => setShowCreateSheet(true)}
+      />
 
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            {/* View toggle */}
-            {agents.length > 0 && (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  backgroundColor: C.surfaceHigh,
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                  overflow: 'hidden',
-                }}
-              >
-                {(['list', 'grid'] as const).map((mode) => (
-                  <ScalePressable
-                    key={mode}
-                    onPress={() => {
-                      haptic.selection();
-                      setViewMode(mode);
-                    }}
-                    style={{
-                      padding: 7,
-                      backgroundColor: viewMode === mode ? C.primary : 'transparent',
-                    }}
-                  >
-                    <Ionicons
-                      name={mode === 'list' ? 'list' : 'grid'}
-                      size={15}
-                      color={viewMode === mode ? 'white' : C.muted}
-                    />
-                  </ScalePressable>
-                ))}
-              </View>
-            )}
-
-            {/* Templates */}
-            {agents.length > 0 && (
-              <ScalePressable
-                onPress={() => {
-                  haptic.light();
-                  setShowTemplates(true);
-                }}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  backgroundColor: C.surfaceHigh,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Ionicons name="albums-outline" size={17} color={C.muted} />
-              </ScalePressable>
-            )}
-
-            {/* New button */}
-            <ScalePressable
-              onPress={() => {
-                haptic.light();
-                setShowCreateSheet(true);
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: C.primary,
-                  borderRadius: 14,
-                  paddingHorizontal: 16,
-                  paddingVertical: 10,
-                  shadowColor: C.primary,
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 6,
-                  elevation: 3,
-                }}
-              >
-                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 4 }} />
-                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>New</AppText>
-              </View>
-            </ScalePressable>
-          </View>
-        </View>
-
-        {/* Search */}
-        {agents.length > 0 && (
-          <Animated.View entering={FadeIn.delay(200).duration(300)}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: C.surface,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: C.border,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-              }}
-            >
-              <Ionicons name="search" size={15} color={C.faint} style={{ marginEnd: 8 }} />
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search personas…"
-                placeholderTextColor={C.faint}
-                style={{ flex: 1, color: C.text, fontSize: 14 }}
-              />
-              {searchQuery.length > 0 && (
-                <ScalePressable onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={16} color={C.faint} />
-                </ScalePressable>
-              )}
-            </View>
-
-            <View style={{ flexDirection: 'row', marginTop: 10 }}>
-              {(
-                [
-                  { key: 'all', label: t('agents.filter.all') },
-                  { key: 'pinned', label: t('agents.filter.pinned') },
-                  { key: 'active', label: t('agents.filter.active') },
-                ] as const
-              ).map((option) => (
-                <ScalePressable
-                  key={option.key}
-                  onPress={() => setFilterMode(option.key)}
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: filterMode === option.key ? C.primary : C.surfaceHigh,
-                    borderWidth: 1,
-                    borderColor: filterMode === option.key ? C.primary : C.border,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                  }}
-                >
-                  <AppText
-                    variant="caption"
-                    style={{
-                      color: filterMode === option.key ? 'white' : C.muted,
-                      fontWeight: '700',
-                    }}
-                  >
-                    {option.label}
-                  </AppText>
-                </ScalePressable>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: 'row', marginTop: 8 }}>
-              {(
-                [
-                  { key: 'recent', label: t('agents.sort.recent') },
-                  { key: 'messages', label: t('agents.sort.messages') },
-                  { key: 'name', label: t('agents.sort.name') },
-                ] as const
-              ).map((option) => (
-                <ScalePressable
-                  key={option.key}
-                  onPress={() => setSortMode(option.key)}
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: sortMode === option.key ? C.primary : C.surface,
-                    borderWidth: 1,
-                    borderColor: sortMode === option.key ? C.primary : C.border,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                  }}
-                >
-                  <AppText
-                    variant="caption"
-                    style={{
-                      color: sortMode === option.key ? 'white' : C.muted,
-                      fontWeight: '700',
-                    }}
-                  >
-                    {option.label}
-                  </AppText>
-                </ScalePressable>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
-              {(
-                [
-                  {
-                    key: 'all',
-                    label: t('agents.template.all', { count: categoryCount.all }),
-                  },
-                  {
-                    key: 'work',
-                    label: t('agents.template.work', { count: categoryCount.work }),
-                  },
-                  {
-                    key: 'planning',
-                    label: t('agents.template.planning', { count: categoryCount.planning }),
-                  },
-                  {
-                    key: 'creative',
-                    label: t('agents.template.creative', { count: categoryCount.creative }),
-                  },
-                ] as const
-              ).map((option) => (
-                <ScalePressable
-                  key={option.key}
-                  onPress={() => {
-                    setTemplateCategory(option.key);
-                    setShowTemplates(true);
-                  }}
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: templateCategory === option.key ? C.primary : C.surface,
-                    borderWidth: 1,
-                    borderColor: templateCategory === option.key ? C.primary : C.border,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <AppText
-                    variant="caption"
-                    style={{
-                      color: templateCategory === option.key ? 'white' : C.muted,
-                      fontWeight: '700',
-                    }}
-                  >
-                    {option.label}
-                  </AppText>
-                </ScalePressable>
-              ))}
-            </View>
-          </Animated.View>
-        )}
-      </View>
-
+      {/* ── Filters ── */}
+      {agents.length > 0 && (
+        <AgentsFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterMode={filterMode}
+          onFilterModeChange={setFilterMode}
+          sortMode={sortMode}
+          onSortModeChange={setSortMode}
+          templateCategory={templateCategory}
+          onTemplateCategoryChange={setTemplateCategory}
+          categoryCount={categoryCount}
+          onShowTemplates={() => setShowTemplates(true)}
+        />
+      )}
       {/* ── Pinned strip ── */}
       {pinnedAgents.length > 0 && !debouncedQuery && filterMode === 'all' && (
         <Animated.View entering={FadeIn.duration(300)} style={{ marginBottom: 6 }}>

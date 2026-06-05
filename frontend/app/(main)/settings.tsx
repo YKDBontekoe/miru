@@ -6,7 +6,6 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
-  Modal,
   Platform,
   Share,
 } from 'react-native';
@@ -23,8 +22,7 @@ import { useChatStore } from '@/store/useChatStore';
 import { Memory } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
-
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+import { SectionHeader, SettingRow, MemoryItem, LanguagePickerModal } from '@/components/settings';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -46,236 +44,6 @@ const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English', nativeLabel: 'English' },
   { code: 'nl', label: 'Dutch', nativeLabel: 'Nederlands' },
 ];
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <AppText
-      style={{
-        textTransform: 'uppercase',
-        letterSpacing: 1.2,
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.muted,
-        marginBottom: 10,
-        marginTop: 8,
-      }}
-    >
-      {title}
-    </AppText>
-  );
-}
-
-function SettingRow({
-  icon,
-  iconColor,
-  title,
-  subtitle,
-  onPress,
-  rightElement,
-  destructive,
-}: {
-  icon: IoniconsName;
-  iconColor?: string;
-  title: string;
-  subtitle?: string;
-  onPress?: () => void;
-  rightElement?: React.ReactNode;
-  destructive?: boolean;
-}) {
-  const Wrapper = onPress ? ScalePressable : View;
-  const wrapperProps = onPress ? { onPress } : {};
-
-  return (
-    <Wrapper
-      {...(wrapperProps as any)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: destructive ? C.destructiveSurface : C.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: destructive ? C.destructiveBorder : C.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 3,
-        elevation: 1,
-      }}
-    >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
-          borderWidth: 1,
-          borderColor: destructive ? C.destructiveBorder : C.border,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 12,
-        }}
-      >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={destructive ? C.destructive : (iconColor ?? C.muted)}
-        />
-      </View>
-      <View style={{ flex: 1 }}>
-        <AppText
-          style={{ fontSize: 15, fontWeight: '500', color: destructive ? C.destructive : C.text }}
-        >
-          {title}
-        </AppText>
-        {subtitle && (
-          <AppText variant="caption" style={{ color: C.muted, marginTop: 2, fontSize: 12 }}>
-            {subtitle}
-          </AppText>
-        )}
-      </View>
-      {rightElement ??
-        (onPress && !destructive ? (
-          <Ionicons name="chevron-forward" size={16} color={C.faint} />
-        ) : null)}
-    </Wrapper>
-  );
-}
-
-const MemoryItem = React.memo(function MemoryItem({
-  memory,
-  onDelete,
-}: {
-  memory: Memory;
-  onDelete: () => void;
-}) {
-  const { i18n } = useTranslation();
-  const date = React.useMemo(() => {
-    return new Intl.DateTimeFormat(i18n.language, {
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(memory.created_at));
-  }, [i18n.language, memory.created_at]);
-  return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: C.border,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-      }}
-    >
-      <View
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: C.primary,
-          marginTop: 6,
-          marginEnd: 12,
-        }}
-      />
-      <View style={{ flex: 1 }}>
-        <AppText style={{ lineHeight: 20, fontSize: 14, color: C.text }}>{memory.content}</AppText>
-        <AppText variant="caption" style={{ color: C.muted, marginTop: 4, fontSize: 11 }}>
-          {date}
-        </AppText>
-      </View>
-      <ScalePressable
-        onPress={onDelete}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginStart: 8 }}
-      >
-        <Ionicons name="close" size={16} color={C.faint} />
-      </ScalePressable>
-    </View>
-  );
-});
-
-// ─── Language picker modal ────────────────────────────────────────────────────
-function LanguagePickerModal({
-  visible,
-  currentLang,
-  onSelect,
-  onClose,
-}: {
-  visible: boolean;
-  currentLang: string;
-  onSelect: (code: string) => void;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 20,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
-              {t('settings.items.language')}
-            </AppText>
-            <ScalePressable onPress={onClose}>
-              <Ionicons name="close-circle" size={26} color={C.faint} />
-            </ScalePressable>
-          </View>
-          {SUPPORTED_LANGUAGES.map((lang) => {
-            const isSelected = currentLang.startsWith(lang.code);
-            return (
-              <ScalePressable
-                key={lang.code}
-                onPress={() => onSelect(lang.code)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: isSelected ? C.primarySurface : C.surfaceHigh,
-                  borderRadius: 14,
-                  padding: 16,
-                  marginBottom: 10,
-                  borderWidth: 1,
-                  borderColor: isSelected ? `${C.primary}40` : C.border,
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <AppText
-                    style={{
-                      fontSize: 15,
-                      fontWeight: '600',
-                      color: isSelected ? C.primary : C.text,
-                    }}
-                  >
-                    {lang.nativeLabel}
-                  </AppText>
-                  <AppText style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                    {lang.label}
-                  </AppText>
-                </View>
-                {isSelected && <Ionicons name="checkmark-circle" size={22} color={C.primary} />}
-              </ScalePressable>
-            );
-          })}
-        </View>
-      </View>
-    </Modal>
-  );
-}
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -391,49 +159,45 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAllData = () => {
-    Alert.alert(
-      t('settings.deleteAllTitle'),
-      t('settings.deleteAllMessage'),
-      [
-        { text: t('settings.actions.cancel'), style: 'cancel' },
-        {
-          text: t('settings.actions.delete') || 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const results = await Promise.allSettled([
-                ...memories.map((memory) => deleteMemory(memory.id)),
-                ...notes.map((note) => deleteNote(note.id)),
-                ...tasks.map((task) => deleteTask(task.id)),
-              ]);
-              await Promise.all([fetchMemories(), fetchNotes(), fetchTasks()]);
-              const failed = results
-                .map((result, index) => ({ result, index }))
-                .filter((entry) => entry.result.status === 'rejected')
-                .map((entry) => {
-                  const memoryCount = memories.length;
-                  const noteCount = notes.length;
-                  if (entry.index < memoryCount) return memories[entry.index]?.id ?? 'memory';
-                  if (entry.index < memoryCount + noteCount) {
-                    return notes[entry.index - memoryCount]?.id ?? 'note';
-                  }
-                  return tasks[entry.index - memoryCount - noteCount]?.id ?? 'task';
-                });
-              if (failed.length === 0) {
-                Alert.alert(t('settings.actions.done'), t('settings.actions.removedAllData'));
-                return;
-              }
-              Alert.alert(
-                t('settings.actions.error'),
-                `${t('settings.actions.removeDataFailed')} (${failed.length})\n${failed.join(', ')}`
-              );
-            } catch {
-              Alert.alert(t('settings.actions.error'), t('settings.actions.removeDataFailed'));
+    Alert.alert(t('settings.deleteAllTitle'), t('settings.deleteAllMessage'), [
+      { text: t('settings.actions.cancel'), style: 'cancel' },
+      {
+        text: t('settings.actions.delete') || 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const results = await Promise.allSettled([
+              ...memories.map((memory) => deleteMemory(memory.id)),
+              ...notes.map((note) => deleteNote(note.id)),
+              ...tasks.map((task) => deleteTask(task.id)),
+            ]);
+            await Promise.all([fetchMemories(), fetchNotes(), fetchTasks()]);
+            const failed = results
+              .map((result, index) => ({ result, index }))
+              .filter((entry) => entry.result.status === 'rejected')
+              .map((entry) => {
+                const memoryCount = memories.length;
+                const noteCount = notes.length;
+                if (entry.index < memoryCount) return memories[entry.index]?.id ?? 'memory';
+                if (entry.index < memoryCount + noteCount) {
+                  return notes[entry.index - memoryCount]?.id ?? 'note';
+                }
+                return tasks[entry.index - memoryCount - noteCount]?.id ?? 'task';
+              });
+            if (failed.length === 0) {
+              Alert.alert(t('settings.actions.done'), t('settings.actions.removedAllData'));
+              return;
             }
-          },
+            Alert.alert(
+              t('settings.actions.error'),
+              `${t('settings.actions.removeDataFailed')} (${failed.length})\n${failed.join(', ')}`
+            );
+          } catch {
+            Alert.alert(t('settings.actions.error'), t('settings.actions.removeDataFailed'));
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
