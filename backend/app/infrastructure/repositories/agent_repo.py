@@ -30,11 +30,18 @@ class AgentRepository:
         """List all available integrations."""
         return await Integration.exclude(status="disabled").all()
 
-    async def get_by_id(self, agent_id: UUID | str) -> Agent | None:
+    async def get_by_id(self, agent_id: UUID | str, user_id: UUID | str | None = None) -> Agent | None:
         """Fetch a single agent by ID, with capabilities prefetched."""
         if isinstance(agent_id, str):
             agent_id = UUID(agent_id)
-        return await Agent.get_or_none(id=agent_id).prefetch_related(
+
+        filters: dict = {"id": agent_id}
+        if user_id:
+            if isinstance(user_id, str):
+                user_id = UUID(user_id)
+            filters["user_id"] = user_id
+
+        return await Agent.get_or_none(**filters).prefetch_related(
             "capabilities", "agent_integrations__integration"
         )
 
