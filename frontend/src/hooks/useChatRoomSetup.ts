@@ -6,6 +6,18 @@ import { ApiService } from '@/core/api/ApiService';
 import { getApiErrorMessage } from '@/core/api/errors';
 import { Agent } from '@/core/models';
 
+/**
+ * Custom hook to initialize and manage a chat room's setup.
+ *
+ * Responsibilities:
+ * - Fetches initial messages and agents for the given `roomId`.
+ * - Establishes a connection to the WebSocket chat hub.
+ * - Handles joining and leaving the room based on the component lifecycle.
+ * - Manages the state of agents specific to the room and any related errors.
+ *
+ * @param roomId - The unique identifier for the chat room. If undefined, the setup logic is skipped.
+ * @returns An object containing `roomAgents`, `setRoomAgents`, `roomAgentsError`, and a `refetchRoomAgents` callback.
+ */
 export function useChatRoomSetup(roomId: string | undefined) {
   const { t } = useTranslation();
   const fetchMessages = useChatStore((s) => s.fetchMessages);
