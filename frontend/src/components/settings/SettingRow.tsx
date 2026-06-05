@@ -1,25 +1,19 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const C = {
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  border: DESIGN_TOKENS.colors.border,
-  text: DESIGN_TOKENS.colors.text,
   muted: DESIGN_TOKENS.colors.muted,
   faint: DESIGN_TOKENS.colors.faint,
   destructive: DESIGN_TOKENS.colors.destructive,
-  destructiveSurface: DESIGN_TOKENS.colors.destructiveSurface,
-  destructiveBorder: DESIGN_TOKENS.colors.destructiveBorder,
 };
 
-export function SettingRow({
+export const SettingRow = ({
   icon,
   iconColor,
   title,
@@ -35,41 +29,15 @@ export function SettingRow({
   onPress?: () => void;
   rightElement?: React.ReactNode;
   destructive?: boolean;
-}) {
-  const Wrapper = onPress ? ScalePressable : View;
-  const wrapperProps = onPress ? { onPress } : {};
-
-  return (
-    <Wrapper
-      {...(wrapperProps as any)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: destructive ? C.destructiveSurface : C.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: destructive ? C.destructiveBorder : C.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.03,
-        shadowRadius: 3,
-        elevation: 1,
-      }}
-    >
+}) => {
+  const content = (
+    <>
       <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: destructive ? C.destructiveSurface : C.surfaceHigh,
-          borderWidth: 1,
-          borderColor: destructive ? C.destructiveBorder : C.border,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginEnd: 12,
-        }}
+        className={`w-9 h-9 rounded-[10px] border items-center justify-center mr-3 ${
+          destructive
+            ? 'bg-destructiveSurface border-destructiveBorder'
+            : 'bg-surfaceSoft border-border'
+        }`}
       >
         <Ionicons
           name={icon}
@@ -77,14 +45,14 @@ export function SettingRow({
           color={destructive ? C.destructive : (iconColor ?? C.muted)}
         />
       </View>
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
         <AppText
-          style={{ fontSize: 15, fontWeight: '500', color: destructive ? C.destructive : C.text }}
+          className={`text-[15px] font-medium ${destructive ? 'text-destructive' : 'text-text'}`}
         >
           {title}
         </AppText>
         {subtitle && (
-          <AppText variant="caption" style={{ color: C.muted, marginTop: 2, fontSize: 12 }}>
+          <AppText variant="caption" className="text-muted mt-0.5 text-xs">
             {subtitle}
           </AppText>
         )}
@@ -93,6 +61,20 @@ export function SettingRow({
         (onPress && !destructive ? (
           <Ionicons name="chevron-forward" size={16} color={C.faint} />
         ) : null)}
-    </Wrapper>
+    </>
   );
-}
+
+  const containerClasses = `flex-row items-center rounded-[14px] p-3.5 mb-2 border shadow-sm shadow-black/5 elevation-sm ${
+    destructive ? 'bg-destructiveSurface border-destructiveBorder' : 'bg-surface border-border'
+  }`;
+
+  if (onPress) {
+    return (
+      <ScalePressable onPress={onPress} className={containerClasses}>
+        {content}
+      </ScalePressable>
+    );
+  }
+
+  return <View className={containerClasses}>{content}</View>;
+};

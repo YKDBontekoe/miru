@@ -3,8 +3,8 @@ import { View, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
@@ -54,27 +54,16 @@ export function AgentsFilters({
   const { t } = useTranslation();
 
   return (
-    <Animated.View entering={FadeIn.delay(200).duration(300)} style={{ paddingHorizontal: 20 }}>
+    <Animated.View entering={FadeIn.delay(200).duration(300)} className="px-5">
       {/* Search */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: C.surface,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: C.border,
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-        }}
-      >
-        <Ionicons name="search" size={15} color={C.faint} style={{ marginEnd: 8 }} />
+      <View className="flex-row items-center bg-surface rounded-xl border border-border px-3 py-2.5">
+        <Ionicons name="search" size={15} color={C.faint} className="mr-2" />
         <TextInput
           value={searchQuery}
           onChangeText={onSearchChange}
           placeholder="Search personas…"
           placeholderTextColor={C.faint}
-          style={{ flex: 1, color: C.text, fontSize: 14 }}
+          className="flex-1 text-text text-sm"
         />
         {searchQuery.length > 0 && (
           <ScalePressable onPress={() => onSearchChange('')}>
@@ -84,7 +73,7 @@ export function AgentsFilters({
       </View>
 
       {/* Primary Filters */}
-      <View style={{ flexDirection: 'row', marginTop: 10 }}>
+      <View className="flex-row mt-2.5">
         {(
           [
             { key: 'all', label: t('agents.filter.all') },
@@ -95,22 +84,15 @@ export function AgentsFilters({
           <ScalePressable
             key={option.key}
             onPress={() => onFilterModeChange(option.key)}
-            style={{
-              borderRadius: 12,
-              backgroundColor: filterMode === option.key ? C.primary : C.surfaceHigh,
-              borderWidth: 1,
-              borderColor: filterMode === option.key ? C.primary : C.border,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              marginRight: 8,
-            }}
+            className={`rounded-xl border px-2.5 py-1.5 mr-2 ${
+              filterMode === option.key
+                ? 'bg-primary border-primary'
+                : 'bg-surfaceSoft border-border'
+            }`}
           >
             <AppText
               variant="caption"
-              style={{
-                color: filterMode === option.key ? 'white' : C.muted,
-                fontWeight: '700',
-              }}
+              className={`font-bold ${filterMode === option.key ? 'text-white' : 'text-muted'}`}
             >
               {option.label}
             </AppText>
@@ -119,7 +101,7 @@ export function AgentsFilters({
       </View>
 
       {/* Sort Options */}
-      <View style={{ flexDirection: 'row', marginTop: 8 }}>
+      <View className="flex-row mt-2">
         {(
           [
             { key: 'recent', label: t('agents.sort.recent') },
@@ -130,22 +112,13 @@ export function AgentsFilters({
           <ScalePressable
             key={option.key}
             onPress={() => onSortModeChange(option.key)}
-            style={{
-              borderRadius: 12,
-              backgroundColor: sortMode === option.key ? C.primary : C.surface,
-              borderWidth: 1,
-              borderColor: sortMode === option.key ? C.primary : C.border,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              marginRight: 8,
-            }}
+            className={`rounded-xl border px-2.5 py-1.5 mr-2 ${
+              sortMode === option.key ? 'bg-primary border-primary' : 'bg-surface border-border'
+            }`}
           >
             <AppText
               variant="caption"
-              style={{
-                color: sortMode === option.key ? 'white' : C.muted,
-                fontWeight: '700',
-              }}
+              className={`font-bold ${sortMode === option.key ? 'text-white' : 'text-muted'}`}
             >
               {option.label}
             </AppText>
@@ -154,7 +127,7 @@ export function AgentsFilters({
       </View>
 
       {/* Template Categories */}
-      <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
+      <View className="flex-row mt-2 flex-wrap">
         {(
           [
             {
@@ -181,23 +154,15 @@ export function AgentsFilters({
               onTemplateCategoryChange(option.key);
               onShowTemplates();
             }}
-            style={{
-              borderRadius: 12,
-              backgroundColor: templateCategory === option.key ? C.primary : C.surface,
-              borderWidth: 1,
-              borderColor: templateCategory === option.key ? C.primary : C.border,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              marginRight: 8,
-              marginBottom: 8,
-            }}
+            className={`rounded-xl border px-2.5 py-1.5 mr-2 mb-2 ${
+              templateCategory === option.key
+                ? 'bg-primary border-primary'
+                : 'bg-surface border-border'
+            }`}
           >
             <AppText
               variant="caption"
-              style={{
-                color: templateCategory === option.key ? 'white' : C.muted,
-                fontWeight: '700',
-              }}
+              className={`font-bold ${templateCategory === option.key ? 'text-white' : 'text-muted'}`}
             >
               {option.label}
             </AppText>

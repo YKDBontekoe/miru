@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../../AppText';
@@ -159,18 +159,7 @@ const styles = StyleSheet.create({
   },
   emptyButtonSecondary: {
     backgroundColor: T.primary.surfaceLight,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
-        elevation: 0,
-      },
-      android: {
-        elevation: 0,
-      },
-      default: {
-        elevation: 0,
-      },
-    }),
+    elevation: 0,
   },
   emptyButtonText: {
     color: T.white,

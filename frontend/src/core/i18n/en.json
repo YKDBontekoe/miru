@@ -288,6 +288,9 @@
     "noTemplatesInCategory": "No templates in this category",
     "tryAnotherCategory": "Try another category."
   },
+  "workspace": {
+    "todayPlan": "Today plan"
+  },
   "productivity": {
     "title_required": "Title required",
     "enter_title": "Please enter a title for your note.",

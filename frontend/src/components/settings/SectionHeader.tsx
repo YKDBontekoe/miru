@@ -1,25 +1,10 @@
 import React from 'react';
-import { AppText } from '../AppText';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { AppText } from '@/components/AppText';
 
-const C = {
-  muted: DESIGN_TOKENS.colors.muted,
-};
-
-export function SectionHeader({ title }: { title: string }) {
+export const SectionHeader: React.FC<{ title: string }> = ({ title }) => {
   return (
-    <AppText
-      style={{
-        textTransform: 'uppercase',
-        letterSpacing: 1.2,
-        fontSize: 11,
-        fontWeight: '700',
-        color: C.muted,
-        marginBottom: 10,
-        marginTop: 8,
-      }}
-    >
+    <AppText className="uppercase tracking-[1.2px] text-[11px] font-bold text-muted mb-2.5 mt-2">
       {title}
     </AppText>
   );
-}
+};

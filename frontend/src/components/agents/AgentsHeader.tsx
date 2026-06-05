@@ -1,9 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
-import { haptic } from '../../utils/haptics';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { haptic } from '@/utils/haptics';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
@@ -30,39 +30,23 @@ export function AgentsHeader({
   onShowCreate,
 }: AgentsHeaderProps) {
   return (
-    <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
-      >
+    <View className="px-5 pt-2 pb-2.5">
+      <View className="flex-row justify-between items-center mb-3">
         <View>
-          <AppText style={{ fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}>
+          <AppText className="text-[28px] font-extrabold text-text tracking-tight">
             Personas
           </AppText>
-          <AppText style={{ color: C.muted, fontSize: 13, marginTop: 1 }}>
+          <AppText className="text-muted text-[13px] mt-px">
             {agentsCount === 0
               ? 'Your AI companions'
               : `${agentsCount} persona${agentsCount !== 1 ? 's' : ''}`}
           </AppText>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+        <View className="flex-row gap-2 items-center">
           {/* View toggle */}
           {agentsCount > 0 && (
-            <View
-              style={{
-                flexDirection: 'row',
-                backgroundColor: C.surfaceHigh,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: C.border,
-                overflow: 'hidden',
-              }}
-            >
+            <View className="flex-row bg-surfaceSoft rounded-xl border border-border overflow-hidden">
               {(['list', 'grid'] as const).map((mode) => (
                 <ScalePressable
                   key={mode}
@@ -70,10 +54,7 @@ export function AgentsHeader({
                     haptic.selection();
                     onViewModeChange(mode);
                   }}
-                  style={{
-                    padding: 7,
-                    backgroundColor: viewMode === mode ? C.primary : 'transparent',
-                  }}
+                  className={`p-2 ${viewMode === mode ? 'bg-primary' : 'bg-transparent'}`}
                 >
                   <Ionicons
                     name={mode === 'list' ? 'list' : 'grid'}
@@ -92,16 +73,7 @@ export function AgentsHeader({
                 haptic.light();
                 onShowTemplates();
               }}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                backgroundColor: C.surfaceHigh,
-                borderWidth: 1,
-                borderColor: C.border,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className="w-9 h-9 rounded-xl bg-surfaceSoft border border-border items-center justify-center"
             >
               <Ionicons name="albums-outline" size={17} color={C.muted} />
             </ScalePressable>
@@ -114,23 +86,9 @@ export function AgentsHeader({
               onShowCreate();
             }}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: C.primary,
-                borderRadius: 14,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                shadowColor: C.primary,
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.25,
-                shadowRadius: 6,
-                elevation: 3,
-              }}
-            >
-              <Ionicons name="add" size={18} color="white" style={{ marginEnd: 4 }} />
-              <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>New</AppText>
+            <View className="flex-row items-center bg-primary rounded-2xl px-4 py-2.5 shadow-sm shadow-primary/25 elevation-sm">
+              <Ionicons name="add" size={18} color="white" className="mr-1" />
+              <AppText className="text-white font-bold text-sm">New</AppText>
             </View>
           </ScalePressable>
         </View>

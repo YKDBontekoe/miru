@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { SUPPORTED_LANGUAGES } from '@/core/i18n/constants';
 
 const C = {
   surface: DESIGN_TOKENS.colors.surface,
@@ -16,12 +17,7 @@ const C = {
   primarySurface: DESIGN_TOKENS.colors.primarySoft,
 };
 
-const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', nativeLabel: 'English' },
-  { code: 'nl', label: 'Dutch', nativeLabel: 'Nederlands' },
-];
-
-export function LanguagePickerModal({
+export const LanguagePickerModal = ({
   visible,
   currentLang,
   onSelect,
@@ -31,29 +27,15 @@ export function LanguagePickerModal({
   currentLang: string;
   onSelect: (code: string) => void;
   onClose: () => void;
-}) {
+}) => {
   const { t } = useTranslation();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-        <View
-          style={{
-            backgroundColor: C.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 20,
-            }}
-          >
-            <AppText variant="h2" style={{ color: C.text }}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View className="flex-1 justify-end bg-black/40">
+        <View className="bg-surface rounded-t-[28px] p-6">
+          <View className="flex-row justify-between items-center mb-5">
+            <AppText variant="h2" className="text-text">
               {t('settings.items.language')}
             </AppText>
             <ScalePressable onPress={onClose}>
@@ -66,24 +48,15 @@ export function LanguagePickerModal({
               <ScalePressable
                 key={lang.code}
                 onPress={() => onSelect(lang.code)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: isSelected ? C.primarySurface : C.surfaceHigh,
-                  borderRadius: 14,
-                  padding: 16,
-                  marginBottom: 8,
-                  borderWidth: 1,
-                  borderColor: isSelected ? C.primary : 'transparent',
-                }}
+                className={`flex-row items-center rounded-[14px] p-4 mb-2 border ${
+                  isSelected ? 'bg-primarySoft border-primary' : 'bg-surfaceSoft border-transparent'
+                }`}
               >
-                <View style={{ flex: 1 }}>
-                  <AppText style={{ fontSize: 16, fontWeight: '600', color: C.text }}>
+                <View className="flex-1">
+                  <AppText className="text-base font-semibold text-text">
                     {lang.nativeLabel}
                   </AppText>
-                  <AppText style={{ fontSize: 13, color: C.faint, marginTop: 2 }}>
-                    {lang.label}
-                  </AppText>
+                  <AppText className="text-[13px] text-faint mt-0.5">{lang.label}</AppText>
                 </View>
                 {isSelected && <Ionicons name="checkmark-circle" size={24} color={C.primary} />}
               </ScalePressable>
@@ -93,4 +66,4 @@ export function LanguagePickerModal({
       </View>
     </Modal>
   );
-}
+};

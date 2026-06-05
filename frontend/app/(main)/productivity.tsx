@@ -47,6 +47,7 @@ export default function ProductivityScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showCreateNote, setShowCreateNote] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
@@ -87,6 +88,13 @@ export default function ProductivityScreen() {
   }, [openCreateTask, params, pathname, router]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     if (openCreateNote === '1' || openCreateNote === 'true') {
       setShowCreateNote(true);
       const nextParams = Object.fromEntries(
@@ -122,33 +130,33 @@ export default function ProductivityScreen() {
   );
 
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return notes;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return notes;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return notes.filter(
       (n) => n.title.toLowerCase().includes(lowerQ) || n.content.toLowerCase().includes(lowerQ)
     );
-  }, [notes, searchQuery]);
+  }, [notes, debouncedSearchQuery]);
 
   const filteredTasks = useMemo(() => {
-    if (!searchQuery) return tasks;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return tasks;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return tasks.filter(
       (task) =>
         task.title.toLowerCase().includes(lowerQ) ||
         (task.description?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [searchQuery, tasks]);
+  }, [debouncedSearchQuery, tasks]);
 
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerQ = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return events;
+    const lowerQ = debouncedSearchQuery.toLowerCase();
     return events.filter(
       (event) =>
         event.title.toLowerCase().includes(lowerQ) ||
         (event.description?.toLowerCase().includes(lowerQ) ?? false) ||
         (event.location?.toLowerCase().includes(lowerQ) ?? false)
     );
-  }, [events, searchQuery]);
+  }, [events, debouncedSearchQuery]);
 
   const pendingTasksCount = useMemo(
     () => filteredTasks.filter((task) => !task.completed).length,

@@ -288,6 +288,9 @@
     "noTemplatesInCategory": "Geen templates in deze categorie",
     "tryAnotherCategory": "Probeer een andere categorie."
   },
+  "workspace": {
+    "todayPlan": "Planning voor vandaag"
+  },
   "productivity": {
     "title_required": "Titel vereist",
     "enter_title": "Voer een titel in voor je notitie.",

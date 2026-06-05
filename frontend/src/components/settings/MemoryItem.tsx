@@ -2,9 +2,9 @@ import React from 'react';
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../AppText';
-import { Memory } from '../../core/models';
-import { ScalePressable } from '../ScalePressable';
+import { AppText } from '@/components/AppText';
+import { Memory } from '@/core/models';
+import { ScalePressable } from '@/components/ScalePressable';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const C = {
@@ -25,6 +25,9 @@ export const MemoryItem = React.memo(function MemoryItem({
 }) {
   const { i18n } = useTranslation();
   const date = React.useMemo(() => {
+    if (!memory.created_at || isNaN(new Date(memory.created_at).getTime())) {
+      return '';
+    }
     return new Intl.DateTimeFormat(i18n.language, {
       month: 'short',
       day: 'numeric',
@@ -32,38 +35,18 @@ export const MemoryItem = React.memo(function MemoryItem({
   }, [i18n.language, memory.created_at]);
 
   return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 12,
-        padding: 14,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: C.border,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-      }}
-    >
-      <View
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: C.primary,
-          marginTop: 6,
-          marginEnd: 12,
-        }}
-      />
-      <View style={{ flex: 1 }}>
-        <AppText style={{ lineHeight: 20, fontSize: 14, color: C.text }}>{memory.content}</AppText>
-        <AppText variant="caption" style={{ color: C.muted, marginTop: 4, fontSize: 11 }}>
+    <View className="bg-surface rounded-xl p-3.5 mb-2 border border-border flex-row items-start">
+      <View className="w-2 h-2 rounded-full bg-primary mt-1.5 mr-3" />
+      <View className="flex-1">
+        <AppText className="leading-5 text-sm text-text">{memory.content}</AppText>
+        <AppText variant="caption" className="text-muted mt-1 text-[11px]">
           {date}
         </AppText>
       </View>
       <ScalePressable
         onPress={onDelete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{ marginStart: 8 }}
+        className="ml-2"
       >
         <Ionicons name="close" size={16} color={C.faint} />
       </ScalePressable>

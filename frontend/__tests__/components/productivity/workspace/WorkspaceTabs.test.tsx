@@ -11,9 +11,7 @@ jest.mock('react-i18next', () => ({
 describe('WorkspaceTabs', () => {
   it('renders all tabs and handles presses', () => {
     const onTabChange = jest.fn();
-    const { getByText } = render(
-      <WorkspaceTabs activeTab="today" onTabChange={onTabChange} />
-    );
+    const { getByText } = render(<WorkspaceTabs activeTab="today" onTabChange={onTabChange} />);
 
     expect(getByText('productivity.today')).toBeTruthy();
     expect(getByText('productivity.all')).toBeTruthy();
