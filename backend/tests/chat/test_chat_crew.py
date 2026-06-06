@@ -238,7 +238,7 @@ async def test_crew_orchestrator_raises_exception() -> None:
         mock_crew_instance.kickoff_async = AsyncMock(side_effect=Exception("Test Exception"))
         mock_crew_cls.return_value = mock_crew_instance
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Test Exception"):
             await CrewOrchestrator.execute_crew_task(
                 room_agents,
                 "Hello",
