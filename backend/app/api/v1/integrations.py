@@ -2,12 +2,24 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.infrastructure.external.steam import get_player_summaries, resolve_vanity_url
+from app.domain.integrations.interfaces.steam_client import ISteamClient
+from app.domain.integrations.use_cases.resolve_steam_user import ResolveSteamUserUseCase
+from app.infrastructure.external.steam_client import SteamClient
 
 router = APIRouter(tags=["Integrations"])
+
+
+def get_steam_client() -> ISteamClient:
+    return SteamClient()
+
+
+def get_resolve_steam_user_use_case(
+    steam_client: ISteamClient = Depends(get_steam_client),
+) -> ResolveSteamUserUseCase:
+    return ResolveSteamUserUseCase(steam_client)
 
 
 @router.get(
@@ -30,23 +42,10 @@ router = APIRouter(tags=["Integrations"])
 async def resolve_steam_user(
     username: str,
     user_id: CurrentUser,
+    use_case: ResolveSteamUserUseCase = Depends(get_resolve_steam_user_use_case),
 ) -> dict[str, str]:
     """Resolve a Steam username or ID and return the Steam64 ID and persona name."""
-    steam_id = None
-
-    # Check if it's already a 17-digit numeric string
-    if username.isdigit() and len(username) == 17:
-        steam_id = username
-    else:
-        steam_id = await resolve_vanity_url(username)
-
-    if not steam_id:
-        raise HTTPException(status_code=404, detail="Steam user not found")
-
-    # Get the persona name to confirm and return to UI
-    summaries = await get_player_summaries([steam_id])
-    persona_name = "Unknown"
-    if summaries:
-        persona_name = summaries[0].get("personaname", "Unknown")
-
-    return {"steam_id": steam_id, "persona_name": persona_name}
+    try:
+        return await use_case.execute(username)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
