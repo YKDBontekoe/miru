@@ -309,4 +309,4 @@ class CrewOrchestrator:
                 segments=[AgentResponseSegment(agent_name="Agent", message=str(result))]
             )
 
-        return cast("CrewAIResponse", result.pydantic)
+        return cast("CrewAIResponse", getattr(result, "pydantic", None))
