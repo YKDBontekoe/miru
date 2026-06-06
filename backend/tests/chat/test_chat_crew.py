@@ -265,3 +265,59 @@ async def test_crew_orchestrator_cancelled_exception() -> None:
                 "Hello",
                 uuid4()
             )
+
+def test_get_agent_tools_steam_valid() -> None:
+    agent = MagicMock()
+    agent.id = uuid4()
+    mock_ai = MagicMock()
+    mock_ai.integration_id = "steam"
+    mock_ai.enabled = True
+    mock_ai.config = {"steam_id": "12345"}
+    agent.agent_integrations = [mock_ai]
+    user_id = uuid4()
+    tools = CrewOrchestrator.get_agent_tools(agent, user_id)
+    tool_types = [type(t).__name__ for t in tools]
+    assert "SteamOwnedGamesTool" in tool_types
+    assert "SteamPlayerSummaryTool" in tool_types
+
+def test_get_agent_tools_spotify_valid() -> None:
+    agent = MagicMock()
+    agent.id = uuid4()
+    mock_ai = MagicMock()
+    mock_ai.integration_id = "spotify"
+    mock_ai.enabled = True
+    mock_ai.config = {"access_token": "token"}
+    agent.agent_integrations = [mock_ai]
+    user_id = uuid4()
+    tools = CrewOrchestrator.get_agent_tools(agent, user_id)
+    tool_types = [type(t).__name__ for t in tools]
+    assert "SpotifyCurrentlyPlayingTool" in tool_types
+
+def test_get_agent_tools_discord_valid() -> None:
+    agent = MagicMock()
+    agent.id = uuid4()
+    mock_ai = MagicMock()
+    mock_ai.integration_id = "discord"
+    mock_ai.enabled = True
+    mock_ai.config = {"bot_token": "token", "guild_id": "123", "channel_id": "456", "content": "hi"}
+    agent.agent_integrations = [mock_ai]
+    user_id = uuid4()
+    tools = CrewOrchestrator.get_agent_tools(agent, user_id)
+    tool_types = [type(t).__name__ for t in tools]
+    assert "DiscordGetServerInfoTool" in tool_types
+    assert "DiscordSendMessageTool" in tool_types
+
+@pytest.mark.asyncio
+async def test_get_crew_llm() -> None:
+    llm = CrewOrchestrator.get_crew_llm()
+    assert llm.supports_function_calling() is True
+    pass
+
+@pytest.mark.asyncio
+async def test_crew_orchestrator_raises_value_error_empty_agents() -> None:
+    with pytest.raises(ValueError, match="No agents available to execute the task."):
+        await CrewOrchestrator.execute_crew_task(
+            [],
+            "Hello",
+            uuid4()
+        )
