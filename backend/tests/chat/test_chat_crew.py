@@ -321,3 +321,16 @@ async def test_crew_orchestrator_raises_value_error_empty_agents() -> None:
             "Hello",
             uuid4()
         )
+
+def test_format_history_empty() -> None:
+    assert CrewOrchestrator.format_history(None) == ""
+    assert CrewOrchestrator.format_history([]) == ""
+
+def test_format_history_valid() -> None:
+    history = [
+        {"role": "user", "content": "hello"},
+        {"role": "agent", "name": "Agent1", "content": "hi"},
+        {"role": "user", "content": ""},  # Should be skipped
+    ]
+    formatted = CrewOrchestrator.format_history(history)
+    assert formatted == "User: hello\nAgent1: hi"
