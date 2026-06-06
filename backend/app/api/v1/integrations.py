@@ -13,12 +13,25 @@ router = APIRouter(tags=["Integrations"])
 
 
 def get_steam_client() -> ISteamClient:
+    """Dependency provider for the Steam client.
+
+    Returns:
+        ISteamClient: A concrete implementation of the Steam client.
+    """
     return SteamClient()
 
 
 def get_resolve_steam_user_use_case(
     steam_client: ISteamClient = Depends(get_steam_client),
 ) -> ResolveSteamUserUseCase:
+    """Dependency provider for the resolve Steam user use case.
+
+    Args:
+        steam_client (ISteamClient): The Steam client obtained via Depends.
+
+    Returns:
+        ResolveSteamUserUseCase: An instance of the use case configured with the client.
+    """
     return ResolveSteamUserUseCase(steam_client)
 
 

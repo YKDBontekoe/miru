@@ -22,7 +22,14 @@ class SteamClient(ISteamClient):
             return resp.json()
 
     async def get_player_summaries(self, steam_ids: list[str]) -> list[dict[str, Any]]:
-        """Fetch player summaries from Steam Web API."""
+        """Fetch player summaries from Steam Web API.
+
+        Args:
+            steam_ids (list[str]): List of Steam64 IDs to fetch summaries for.
+
+        Returns:
+            list[dict[str, Any]]: List of player summary dictionaries.
+        """
         settings = get_settings()
         if not settings.steam_api_key:
             logger.warning("Steam API key not configured")
@@ -39,7 +46,7 @@ class SteamClient(ISteamClient):
 
         try:
             data = await self._get_async(url, params)
-            return list(data.get("response", {}).get("players", []))
+            return data.get("response", {}).get("players", [])
         except httpx.HTTPStatusError:
             logger.exception("Steam API returned error status for player summaries")
             return []
@@ -53,7 +60,16 @@ class SteamClient(ISteamClient):
     async def get_owned_games(
         self, steam_id: str, include_appinfo: bool = True, include_played_free_games: bool = True
     ) -> list[dict[str, Any]]:
-        """Fetch owned games for a Steam user."""
+        """Fetch owned games for a Steam user.
+
+        Args:
+            steam_id (str): Steam64 ID of the user.
+            include_appinfo (bool): Whether to include application information. Default True.
+            include_played_free_games (bool): Whether to include free games played. Default True.
+
+        Returns:
+            list[dict[str, Any]]: List of owned game dictionaries.
+        """
         settings = get_settings()
         if not settings.steam_api_key:
             logger.warning("Steam API key not configured")
@@ -70,7 +86,7 @@ class SteamClient(ISteamClient):
 
         try:
             data = await self._get_async(url, params)
-            return list(data.get("response", {}).get("games", []))
+            return data.get("response", {}).get("games", [])
         except httpx.HTTPStatusError:
             logger.exception("Steam API returned error status for owned games")
             return []
@@ -82,7 +98,14 @@ class SteamClient(ISteamClient):
             return []
 
     async def resolve_vanity_url(self, vanityurl: str) -> str | None:
-        """Resolve a Steam vanity URL to a 64-bit Steam ID."""
+        """Resolve a Steam vanity URL to a 64-bit Steam ID.
+
+        Args:
+            vanityurl (str): The vanity URL to resolve.
+
+        Returns:
+            str | None: A 64-bit Steam ID as a str or None if resolution fails.
+        """
         settings = get_settings()
         if not settings.steam_api_key:
             logger.warning("Steam API key not configured")
@@ -98,6 +121,12 @@ class SteamClient(ISteamClient):
             data = await self._get_async(url, params)
             if data.get("response", {}).get("success") == 1:
                 return str(data["response"]["steamid"])
+            return None
+        except httpx.HTTPStatusError:
+            logger.exception("Steam API returned error status for resolving vanity URL")
+            return None
+        except httpx.RequestError:
+            logger.exception("Failed to resolve Steam vanity URL")
             return None
         except Exception:
             logger.exception("Error resolving Steam vanity URL")
