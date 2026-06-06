@@ -266,7 +266,9 @@ class ChatService:
             accept_language=accept_language,
         )
 
-        return {"task_type": "general", "result": result}
+        # For the non-room endpoint, just concatenate the messages
+        combined_result = "\n".join(seg.message for seg in result.segments)
+        return {"task_type": "general", "result": combined_result}
 
     @staticmethod
     def _build_history(
@@ -358,7 +360,7 @@ class ChatService:
             room = await self.chat_repo.get_room(room_id)
             room_summary = room.summary if room else None
 
-            result_text = await CrewOrchestrator.execute_crew_task(
+            result = await CrewOrchestrator.execute_crew_task(
                 room_agents=room_agents,
                 user_message=user_message,
                 user_id=user_id,
@@ -372,7 +374,7 @@ class ChatService:
 
             # 6. Persist + broadcast — returns only the agents that actually responded.
             responded_agents = await self.ws_broadcaster.persist_and_broadcast_agent_response(
-                room_id, room_agents, result_text, agent_names
+                room_id, room_agents, result, agent_names
             )
 
             await chat_hub.broadcast_to_room(
@@ -390,7 +392,8 @@ class ChatService:
 
             # 7. Fire background tasks: mood update, affinity, and memory storage.
             history_text = CrewOrchestrator.format_history(conversation_history)
-            recent_context = f"{history_text}\nUser: {user_message}\n{result_text}".strip()
+            combined_result = "\n".join(seg.message for seg in result.segments)
+            recent_context = f"{history_text}\nUser: {user_message}\n{combined_result}".strip()
 
             for agent in responded_agents:
                 asyncio.create_task(  # noqa: RUF006
@@ -402,7 +405,7 @@ class ChatService:
 
             asyncio.create_task(  # noqa: RUF006
                 self.bg_service.store_memories_background(
-                    user_id, room_id, user_message, responded_agents, result_text, agent_names
+                    user_id, room_id, user_message, responded_agents, result, agent_names
                 )
             )
 

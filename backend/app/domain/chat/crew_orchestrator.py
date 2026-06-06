@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import crewai
 from crewai import LLM, Crew, Process, Task
+from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.domain.agent_tools.productivity_tools import (
@@ -48,6 +49,17 @@ if TYPE_CHECKING:
     from app.domain.agents.models import Agent
 
 logger = logging.getLogger(__name__)
+
+
+class AgentResponseSegment(BaseModel):
+    agent_name: str = Field(..., description="The name of the agent who is responding")
+    message: str = Field(..., description="The message content from the agent")
+
+
+class CrewAIResponse(BaseModel):
+    segments: list[AgentResponseSegment] = Field(
+        ..., description="List of responses from the participating agents"
+    )
 
 
 class _OpenRouterLLM(LLM):
@@ -197,7 +209,7 @@ class CrewOrchestrator:
         conversation_history: list[dict] | None = None,
         memory_context: str | None = None,
         room_summary: str | None = None,
-    ) -> str:
+    ) -> CrewAIResponse:
         """Build and execute the CrewAI task.
 
         ``conversation_history`` is a list of ``{"role": "user"|"agent", "name": str,
@@ -248,6 +260,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=CrewAIResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -266,6 +279,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=CrewAIResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +303,10 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        if not result or not getattr(result, "pydantic", None):
+            logger.error("CrewAI returned no structured output. Falling back to generic structure.")
+            return CrewAIResponse(
+                segments=[AgentResponseSegment(agent_name="Agent", message=str(result))]
+            )
+
+        return cast("CrewAIResponse", result.pydantic)

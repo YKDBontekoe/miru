@@ -155,7 +155,7 @@ async def test_execute_crew_task(
             MagicMock(),
             accept_language="ja-JP",
         )
-        assert result == "Result"
+        assert result.segments[0].message == "Result"
 
 
 @pytest.mark.asyncio
@@ -193,4 +193,4 @@ async def test_execute_crew_task_multi(
             MagicMock(),
             accept_language="hi-IN",
         )
-        assert result == "ResultMulti"
+        assert result.segments[0].message == "ResultMulti"
