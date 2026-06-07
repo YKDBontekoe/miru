@@ -9,15 +9,15 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
 import {
   HomeActionTile,
-  HomeAgentBadge,
-  HomeChatRow,
-  HomeHeroCard,
-  HomeSectionHeader,
   HomeSurfaceCard,
-  HomeTaskRow,
-} from '@/components/home/HomeDashboardParts';
-import { HomeNewChatModal } from '@/components/home';
-import { HOME_COLORS } from '@/components/home/homeTheme';
+} from '@/components/home/HomeCard';
+import { HomeAgentBadge } from '@/components/home/HomeAgentBadge';
+import { HomeChatRow } from '@/components/home/HomeRecentChatRow';
+import { HomeHeroCard } from '@/components/home/HomeHeroCard';
+import { HomeSectionHeader } from '@/components/home/HomeSectionHeader';
+import { HomeTaskRow } from '@/components/home/HomeTaskRow';
+import { HomeNewChatModal } from "@/components/home";
+import { HOME_COLORS } from "@/components/home/homeTheme";
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
