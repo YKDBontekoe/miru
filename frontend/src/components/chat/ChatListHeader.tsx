@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback, memo } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { FlatList, ScrollView, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -66,7 +66,7 @@ export const ChatListHeader = memo(function ChatListHeader({
   }, [localQuery, onChangeQuery]);
 
   const agentsData = useMemo(() => {
-    return [{ id: 'all', isAllItem: true } as const, ...agents];
+    return [{ id: '__synthetic_all__', isAllItem: true } as const, ...agents];
   }, [agents]);
 
   const renderAgentItem = useCallback(
@@ -89,7 +89,7 @@ export const ChatListHeader = memo(function ChatListHeader({
         );
       }
       return (
-        <View style={{ marginRight: 8 }}>
+        <View className="mr-2">
           <AgentPill
             agent={item as Agent}
             onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}

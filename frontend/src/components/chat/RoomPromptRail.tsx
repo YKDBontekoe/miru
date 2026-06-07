@@ -39,7 +39,7 @@ export const RoomPromptRail = memo(function RoomPromptRail({
   const { t } = useTranslation();
 
   const promptsData = useMemo(() => {
-    return [{ id: 'save', isSave: true } as const, ...prompts];
+    return [{ id: '__synthetic_save__', isSave: true } as const, ...prompts];
   }, [prompts]);
 
   const renderPromptItem = useCallback(
@@ -130,7 +130,7 @@ export const RoomPromptRail = memo(function RoomPromptRail({
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="px-3 pt-2"
             data={contextActions}
-            keyExtractor={(item) => item}
+            keyExtractor={(item, index) => `${item}-${index}`}
             renderItem={renderContextAction}
             extraData={onContextPress}
           />
