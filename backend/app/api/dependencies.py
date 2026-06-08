@@ -39,6 +39,10 @@ def get_auth_repo(db: SupabaseClient) -> AuthRepository:
     return AuthRepository(db)
 
 
+# Global singleton instance of the JWT verifier to reuse the PyJWKClient cache
+_jwt_verifier = SupabaseJWTVerifier()
+
+
 # ---------------------------------------------------------------------------
 # Service factories
 # ---------------------------------------------------------------------------
@@ -64,4 +68,4 @@ def get_memory_service(
 
 
 def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo, SupabaseJWTVerifier())
+    return AuthService(repo, _jwt_verifier)

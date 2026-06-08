@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import jwt
 import pytest
@@ -19,51 +19,67 @@ from tests.conftest import make_jwt
 
 
 @pytest.mark.asyncio
-async def test_decode_valid_jwt() -> None:
-    """A valid JWT with a known secret decodes successfully."""
+async def test_auth_service_decode_delegates() -> None:
+    """AuthService delegates token decoding to the injected TokenVerifierProtocol."""
     from app.domain.auth.service import AuthService
-    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
+    mock_verifier = AsyncMock()
+    mock_payload = JWTPayload(
+        sub="00000000-0000-0000-0000-000000000000",
+        role="authenticated",
+        exp=9999999999,
+        iat=1234567890,
+    )
+    mock_verifier.decode_token.return_value = mock_payload
+
+    service = AuthService(AuthRepository(MagicMock()), mock_verifier)
+    payload = await service.decode_jwt("dummy_token")
+
+    assert payload == mock_payload
+    mock_verifier.decode_token.assert_called_once_with("dummy_token")
+
+
+@pytest.mark.asyncio
+async def test_verifier_valid_jwt() -> None:
+    """SupabaseJWTVerifier decodes a valid JWT successfully."""
+    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
+
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()), SupabaseJWTVerifier())
-    payload = await service.decode_jwt(token)
+    verifier = SupabaseJWTVerifier()
+    payload = await verifier.decode_token(token)
 
     assert isinstance(payload, JWTPayload)
     assert payload.role == "authenticated"
 
 
 @pytest.mark.asyncio
-async def test_decode_expired_jwt_raises_401() -> None:
-    """An expired JWT raises an error."""
-    from app.domain.auth.service import AuthService
+async def test_verifier_expired_jwt_raises() -> None:
+    """SupabaseJWTVerifier raises an error for an expired JWT."""
     from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
-    from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()), SupabaseJWTVerifier())
+    verifier = SupabaseJWTVerifier()
 
     with pytest.raises(jwt.ExpiredSignatureError):
-        await service.decode_jwt(token)
+        await verifier.decode_token(token)
 
 
 @pytest.mark.asyncio
-async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureFixture) -> None:
-    """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
+async def test_verifier_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """SupabaseJWTVerifier raises a DecodeError for invalid format and logs a warning."""
     import logging
 
-    from app.domain.auth.service import AuthService
     from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
-    from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()), SupabaseJWTVerifier())
+    verifier = SupabaseJWTVerifier()
 
     with (
         caplog.at_level(logging.WARNING),
         pytest.raises(jwt.DecodeError, match="Invalid token format"),
     ):
-        await service.decode_jwt(token)
+        await verifier.decode_token(token)
 
     assert any(
         record.levelname == "WARNING" and "JWT validation failed" in record.message
