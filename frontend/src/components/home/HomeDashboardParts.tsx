@@ -49,7 +49,7 @@ export function HomeSurfaceCard({
       style={[
         styles.surfaceCard,
         {
-          backgroundColor: C.surface,
+          backgroundColor: '#FFFFFF',
           borderColor: C.border,
           ...theme.elevation.sm,
         },
@@ -133,7 +133,7 @@ export function HomeTaskRow({
           },
         ]}
       >
-        {task.completed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+        {task.completed ? <Ionicons name="checkmark" size={14} color={C.surface} /> : null}
       </View>
       <AppText
         variant="bodySm"
@@ -232,7 +232,7 @@ export function HomeAgentBadge({
         styles.agentBadge,
         {
           borderColor: C.border,
-          backgroundColor: C.surface,
+          backgroundColor: '#FFFFFF',
         },
       ]}
     >
@@ -298,13 +298,13 @@ export function HomeHeroCard({
 
       <View style={styles.heroCardHeader}>
         <View style={styles.heroCardHeaderText}>
-          <AppText variant="bodySm" style={{ color: 'rgba(255,255,255,0.8)', fontWeight: '600' }}>
+          <AppText variant="bodySm" style={{ color: C.subtext, fontWeight: '600' }}>
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} style={{ color: C.surface, fontWeight: '700' }}>
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: 'rgba(255,255,255,0.8)' }}>
+          <AppText variant="caption" style={{ color: C.subtext }}>
             {dateText}
           </AppText>
         </View>
@@ -313,11 +313,11 @@ export function HomeHeroCard({
           style={[
             styles.heroCardAvatar,
             {
-              backgroundColor: 'rgba(255,255,255,0.2)',
+              backgroundColor: C.surfaceHigh,
             },
           ]}
         >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: C.surface, fontWeight: '700' }}>
             {initials}
           </AppText>
         </ScalePressable>
@@ -328,14 +328,14 @@ export function HomeHeroCard({
           style={[
             styles.heroCardStatBox,
             {
-              backgroundColor: 'rgba(0,0,0,0.15)',
+              backgroundColor: C.surfaceMid,
             },
           ]}
         >
-          <AppText variant="caption" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 2 }}>
+          <AppText variant="caption" style={{ color: C.subtext, marginBottom: 2 }}>
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: C.surface, fontWeight: '700' }}>
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
@@ -348,14 +348,14 @@ export function HomeHeroCard({
           style={[
             styles.heroCardStatBox,
             {
-              backgroundColor: 'rgba(0,0,0,0.15)',
+              backgroundColor: C.surfaceMid,
             },
           ]}
         >
-          <AppText variant="caption" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: 2 }}>
+          <AppText variant="caption" style={{ color: C.subtext, marginBottom: 2 }}>
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: C.surface, fontWeight: '700' }}>
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>

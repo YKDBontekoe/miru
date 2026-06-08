@@ -346,8 +346,8 @@ export default function HomeScreen() {
                     alignItems: 'center',
                   }}
                 >
-                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: theme.spacing.xs }} />
-                  <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                  <Ionicons name="add" size={18} color={C.surface} style={{ marginRight: theme.spacing.xs }} />
+                  <AppText variant="bodySm" style={{ color: C.surface, fontWeight: '700' }}>
                     {t('home.actions.start_chat')}
                   </AppText>
                 </ScalePressable>
