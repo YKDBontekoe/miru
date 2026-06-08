@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
+from uuid import UUID
 
 import jwt
 import pytest
@@ -26,7 +27,7 @@ async def test_auth_service_decode_delegates() -> None:
 
     mock_verifier = AsyncMock()
     mock_payload = JWTPayload(
-        sub="00000000-0000-0000-0000-000000000000",
+        sub=UUID("00000000-0000-0000-0000-000000000000"),
         role="authenticated",
         exp=9999999999,
         iat=1234567890,
@@ -63,6 +64,29 @@ async def test_verifier_expired_jwt_raises() -> None:
 
     with pytest.raises(jwt.ExpiredSignatureError):
         await verifier.decode_token(token)
+
+
+@pytest.mark.asyncio
+async def test_verifier_unexpected_exception_logs_error(caplog: pytest.LogCaptureFixture) -> None:
+    """SupabaseJWTVerifier handles unexpected Exceptions by logging an error and re-raising."""
+    import logging
+    from unittest.mock import patch
+
+    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
+
+    verifier = SupabaseJWTVerifier()
+
+    with (
+        patch("jwt.get_unverified_header", side_effect=ValueError("Unexpected explosion")),
+        caplog.at_level(logging.ERROR),
+        pytest.raises(ValueError, match="Unexpected explosion"),
+    ):
+        await verifier.decode_token("some.token")
+
+    assert any(
+        record.levelname == "ERROR" and "Unexpected error during JWT validation" in record.message
+        for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio
