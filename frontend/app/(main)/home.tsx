@@ -17,7 +17,8 @@ import {
   HomeTaskRow,
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
-import { HOME_COLORS } from '@/components/home/homeTheme';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const { user } = useAuthStore();
+  const { C } = useTheme();
   const { rooms, fetchRooms, isLoadingRooms } = useChatStore();
   const { agents, fetchAgents } = useAgentStore();
   const { tasks, events, fetchTasks, fetchEvents, toggleTask } = useProductivityStore();
@@ -99,8 +101,8 @@ export default function HomeScreen() {
 
   if (isLoadingRooms && rooms.length === 0) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+        <View style={{ paddingHorizontal: theme.spacing.xl, paddingTop: theme.spacing.md, paddingBottom: theme.spacing.xl }}>
           <SkeletonAgentCard index={0} />
           <SkeletonAgentCard index={1} />
           <SkeletonAgentCard index={2} />
@@ -110,17 +112,17 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: HOME_COLORS.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
         }
         contentContainerStyle={{
           paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
         }}
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View style={{ paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.lg }}>
           <HomeHeroCard
             greeting={greeting}
             firstName={firstName}
@@ -168,14 +170,14 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.manage')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View style={{ marginBottom: 10 }}>
+            <View style={{ marginBottom: theme.spacing.sm }}>
               <View
                 style={{
                   height: 8,
                   borderRadius: 8,
-                  backgroundColor: HOME_COLORS.softSurface,
+                  backgroundColor: C.surfaceHigh,
                   overflow: 'hidden',
-                  marginBottom: 10,
+                  marginBottom: theme.spacing.sm,
                 }}
               >
                 <View
@@ -183,15 +185,15 @@ export default function HomeScreen() {
                     width: `${completionRate}%`,
                     height: 8,
                     borderRadius: 8,
-                    backgroundColor: HOME_COLORS.primary,
+                    backgroundColor: C.primary,
                   }}
                 />
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                <AppText variant="caption" style={{ color: C.muted }}>
                   {t('home.focus.completed', { count: completedCount, defaultValue: '{{count}} completed' })}
                 </AppText>
-                <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+                <AppText variant="caption" style={{ color: C.muted }}>
                   {t('home.focus.remaining', {
                     count: sortedPendingTasks.length,
                     defaultValue: '{{count}} remaining',
@@ -204,16 +206,16 @@ export default function HomeScreen() {
               <View
                 style={{
                   borderRadius: 16,
-                  backgroundColor: HOME_COLORS.primarySoft,
-                  padding: 12,
+                  backgroundColor: C.primarySurface,
+                  padding: theme.spacing.md,
                   flexDirection: 'row',
                   alignItems: 'center',
                 }}
               >
-                <Ionicons name="checkmark-circle" size={20} color={HOME_COLORS.primary} />
+                <Ionicons name="checkmark-circle" size={20} color={C.primary} />
                 <AppText
                   variant="bodySm"
-                  style={{ marginLeft: 8, color: HOME_COLORS.text, fontWeight: '600' }}
+                  style={{ marginLeft: theme.spacing.sm, color: C.text, fontWeight: '600' }}
                 >
                   {t('home.tasks.caught_up')}
                 </AppText>
@@ -235,14 +237,14 @@ export default function HomeScreen() {
               <View
                 style={{
                   borderRadius: 16,
-                  backgroundColor: HOME_COLORS.accentSoft,
-                  padding: 12,
+                  backgroundColor: C.surfaceMid,
+                  padding: theme.spacing.md,
                   flexDirection: 'row',
                   alignItems: 'center',
                 }}
               >
-                <Ionicons name="sunny" size={18} color={HOME_COLORS.accent} />
-                <AppText variant="bodySm" style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}>
+                <Ionicons name="sunny" size={18} color={C.primary} />
+                <AppText variant="bodySm" style={{ marginLeft: theme.spacing.sm, color: C.text, fontWeight: '600' }}>
                   {t('home.events.none', { defaultValue: 'No upcoming events' })}
                 </AppText>
               </View>
@@ -252,15 +254,15 @@ export default function HomeScreen() {
                   key={event.id}
                   style={{
                     borderRadius: 16,
-                    backgroundColor: HOME_COLORS.softSurface,
-                    padding: 12,
-                    marginBottom: 8,
+                    backgroundColor: C.surfaceHigh,
+                    padding: theme.spacing.md,
+                    marginBottom: theme.spacing.sm,
                   }}
                 >
-                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
+                  <AppText variant="bodySm" style={{ color: C.text, fontWeight: '700' }} numberOfLines={1}>
                     {event.title}
                   </AppText>
-                  <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
+                  <AppText variant="caption" style={{ color: C.muted, marginTop: theme.spacing.xs }}>
                     {formatTimeRange(event, i18n.language)}
                     {event.location ? ` · ${event.location}` : ''}
                   </AppText>
@@ -309,27 +311,27 @@ export default function HomeScreen() {
           ) : null}
 
           {rooms.length === 0 && agents.length === 0 && tasks.length === 0 && !isLoadingRooms ? (
-            <HomeSurfaceCard style={{ backgroundColor: '#F7FBF8' }}>
-              <View style={{ alignItems: 'center', paddingVertical: 18 }}>
+            <HomeSurfaceCard style={{ backgroundColor: C.surfaceHigh }}>
+              <View style={{ alignItems: 'center', paddingVertical: theme.spacing.lg }}>
                 <View
                   style={{
                     width: 76,
                     height: 76,
                     borderRadius: 26,
-                    backgroundColor: HOME_COLORS.primarySoft,
+                    backgroundColor: C.primarySurface,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    marginBottom: 14,
+                    marginBottom: theme.spacing.md,
                   }}
                 >
-                  <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
+                  <Ionicons name="sparkles" size={30} color={C.primary} />
                 </View>
-                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
+                <AppText variant="h2" style={{ color: C.text, marginBottom: theme.spacing.sm, textAlign: 'center' }}>
                   {t('home.empty.title')}
                 </AppText>
                 <AppText
                   variant="bodySm"
-                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
+                  style={{ color: C.muted, textAlign: 'center', marginBottom: theme.spacing.lg, lineHeight: 20 }}
                 >
                   {t('home.empty.desc')}
                 </AppText>
@@ -337,14 +339,14 @@ export default function HomeScreen() {
                   onPress={() => setShowNewChat(true)}
                   style={{
                     borderRadius: 16,
-                    backgroundColor: HOME_COLORS.primary,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
+                    backgroundColor: C.primary,
+                    paddingHorizontal: theme.spacing.lg,
+                    paddingVertical: theme.spacing.md,
                     flexDirection: 'row',
                     alignItems: 'center',
                   }}
                 >
-                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: theme.spacing.xs }} />
                   <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
                     {t('home.actions.start_chat')}
                   </AppText>
