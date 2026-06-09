@@ -129,9 +129,7 @@ async def test_decode_jwt_jwks_error(caplog: pytest.LogCaptureFixture) -> None:
     ):
         await verifier.verify_token(token)
 
-    assert any(
-        "JWT validation failed: jwks failure" in record.message for record in caplog.records
-    )
+    assert any("JWT validation failed: jwks failure" in record.message for record in caplog.records)
 
 
 @pytest.mark.asyncio
@@ -170,3 +168,48 @@ def test_invalid_token_returns_401(client: TestClient) -> None:
         assert response.status_code == 401
     finally:
         app.dependency_overrides = {}
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_unexpected_error(caplog: pytest.LogCaptureFixture) -> None:
+    """get_current_user raises 500 APIError on non-JWT exception."""
+    verifier = MagicMock()
+    verifier.verify_token.side_effect = Exception("database down")
+
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="bad_token")
+
+    with caplog.at_level(logging.ERROR), pytest.raises(HTTPException) as exc_info:
+        await get_current_user(credentials=creds, token_verifier=verifier)
+
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail["error"] == "internal_server_error"
+    assert any(
+        "Unexpected error during token verification" in record.message for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_success() -> None:
+    """get_current_user successfully extracts user_id on valid token."""
+    verifier = MagicMock()
+
+    now = int(time.time())
+    fake_payload = JWTPayload(
+        sub="11111111-1111-1111-1111-111111111111",
+        role="authenticated",
+        iat=now,
+        exp=now + 3600,
+        iss="supabase",
+        aud="authenticated",
+    )
+
+    import asyncio
+
+    future = asyncio.Future()
+    future.set_result(fake_payload)
+    verifier.verify_token.return_value = future
+
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="good_token")
+
+    user_id = await get_current_user(credentials=creds, token_verifier=verifier)
+    assert str(user_id) == "11111111-1111-1111-1111-111111111111"
