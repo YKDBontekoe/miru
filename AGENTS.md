@@ -74,6 +74,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Note on Prompt:** Jules is instructed to strictly follow project architecture and code style: 100-char lines, type hints/explicit types, double quotes for Python, single quotes for TypeScript, specific import orders (`stdlib` → `third-party` → `first-party`), use `str | None` not `Optional[str]`, use `const` for components/internal functions, include `from __future__ import annotations`, log errors with context (`logger.exception()`), and structure domains in `backend/app/domain/<domain>/` and routes in `backend/app/api/v1/`.
 
 ### 2. CodeRabbit
+// DOCS(miru-agent): prompt mismatch - The canonical prompt defined in `.coderabbit.yaml` contains path-specific instructions (e.g., removing Flutter-only mentions, using Zustand for state) that are not fully documented in this roster. Ensure the docs are updated to match the instructions in `.coderabbit.yaml`.
 
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**

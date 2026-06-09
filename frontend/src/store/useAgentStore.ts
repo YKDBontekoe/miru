@@ -93,6 +93,14 @@ interface AgentState {
  *
  * It provides optimistic updates for creation and deletion to ensure the UI
  * responds instantly while the server request completes in the background.
+ *
+ * Optimistic update strategies:
+ * - `createAgent`: Instantly adds a placeholder agent with a temporary ID.
+ *   On server success, replaces the temporary agent with the real one.
+ *   On failure, rolls back the addition.
+ * - `deleteAgent`: Instantly removes the agent from local state. The actual
+ *   server deletion is deferred and must be triggered by `confirmDelete`,
+ *   allowing for an undo window.
  */
 export const useAgentStore = create<AgentState>((set, get) => ({
   agents: [],
