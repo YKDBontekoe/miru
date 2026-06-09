@@ -21,13 +21,12 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.domain.chat.dtos import ChatTranscript
 from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
     MEMORY_PREFIX,
-    MULTI_AGENT_EXPECTED_OUTPUT,
     MULTI_AGENT_PROMPT,
-    SINGLE_AGENT_EXPECTED_OUTPUT,
     SINGLE_AGENT_PROMPT,
     SUMMARY_PREFIX,
 )
@@ -197,7 +196,7 @@ class CrewOrchestrator:
         conversation_history: list[dict] | None = None,
         memory_context: str | None = None,
         room_summary: str | None = None,
-    ) -> str:
+    ) -> ChatTranscript:
         """Build and execute the CrewAI task.
 
         ``conversation_history`` is a list of ``{"role": "user"|"agent", "name": str,
@@ -247,7 +246,7 @@ class CrewOrchestrator:
                     user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
-                expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatTranscript,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -265,7 +264,7 @@ class CrewOrchestrator:
                     user_message=user_message,
                     locale_instruction=locale_instruction,
                 ),
-                expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=ChatTranscript,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +288,4 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        return cast(ChatTranscript, result.pydantic if result else None)
