@@ -68,3 +68,10 @@ class MessageUpdate(BaseModel):
         if not v.strip():
             raise ValueError("content must not be blank or whitespace only")
         return v.strip()
+
+class AgentResponseSegment(BaseModel):
+    agent_name: str
+    message: str
+
+class ChatTranscript(BaseModel):
+    responses: list[AgentResponseSegment]
