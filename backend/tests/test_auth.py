@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 
+from app.core.security.auth import SupabaseJWTVerifier, get_current_user
 from app.domain.auth.schemas import JWTPayload
 from app.infrastructure.database.supabase import get_supabase
 from app.main import app
@@ -21,12 +26,9 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
-
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
-    payload = await service.decode_jwt(token)
+    verifier = SupabaseJWTVerifier()
+    payload = await verifier.verify_token(token)
 
     assert isinstance(payload, JWTPayload)
     assert payload.role == "authenticated"
@@ -35,32 +37,24 @@ async def test_decode_valid_jwt() -> None:
 @pytest.mark.asyncio
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
-
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier()
 
     with pytest.raises(jwt.ExpiredSignatureError):
-        await service.decode_jwt(token)
+        await verifier.verify_token(token)
 
 
 @pytest.mark.asyncio
 async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureFixture) -> None:
     """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
-    import logging
-
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
-
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier()
 
     with (
         caplog.at_level(logging.WARNING),
         pytest.raises(jwt.DecodeError, match="Invalid token format"),
     ):
-        await service.decode_jwt(token)
+        await verifier.verify_token(token)
 
     assert any(
         record.levelname == "WARNING" and "JWT validation failed" in record.message
@@ -70,6 +64,87 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
         record.levelname == "ERROR" and "JWT validation failed" in record.message
         for record in caplog.records
     )
+
+
+@pytest.mark.asyncio
+async def test_decode_es256_jwt_via_jwks() -> None:
+    """An ES256 JWT uses PyJWKClient to fetch signing key."""
+    token = make_jwt()
+
+    with (
+        patch("jwt.get_unverified_header", return_value={"alg": "ES256"}),
+        patch("jwt.PyJWKClient.get_signing_key_from_jwt") as mock_get_key,
+    ):
+        mock_key = MagicMock()
+        mock_key.key = "fake_key"
+        mock_get_key.return_value = mock_key
+
+        now = int(time.time())
+        fake_payload = {
+            "sub": "11111111-1111-1111-1111-111111111111",
+            "role": "authenticated",
+            "iat": now,
+            "exp": now + 3600,
+            "iss": "supabase",
+            "aud": "authenticated",
+        }
+        with patch("jwt.decode", return_value=fake_payload):
+            verifier = SupabaseJWTVerifier()
+            payload = await verifier.verify_token(token)
+
+            assert isinstance(payload, JWTPayload)
+            assert str(payload.sub) == "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.mark.asyncio
+async def test_decode_jwt_invalid_token_error(caplog: pytest.LogCaptureFixture) -> None:
+    """jwt.InvalidTokenError is caught and logged."""
+    token = make_jwt()
+    verifier = SupabaseJWTVerifier()
+
+    with (
+        patch("jwt.decode", side_effect=jwt.InvalidTokenError("bad token")),
+        caplog.at_level(logging.WARNING),
+        pytest.raises(jwt.InvalidTokenError),
+    ):
+        await verifier.verify_token(token)
+
+    assert any("JWT validation failed: bad token" in record.message for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_decode_jwt_jwks_error(caplog: pytest.LogCaptureFixture) -> None:
+    """jwt.PyJWKClientError is caught and logged."""
+    token = make_jwt()
+    verifier = SupabaseJWTVerifier()
+
+    with (
+        patch("jwt.get_unverified_header", return_value={"alg": "ES256"}),
+        patch(
+            "jwt.PyJWKClient.get_signing_key_from_jwt",
+            side_effect=jwt.PyJWKClientError("jwks failure"),
+        ),
+        caplog.at_level(logging.WARNING),
+        pytest.raises(jwt.PyJWKClientError),
+    ):
+        await verifier.verify_token(token)
+
+    assert any("JWT validation failed: jwks failure" in record.message for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_invalid_token() -> None:
+    """get_current_user raises HTTPException on verification failure."""
+    verifier = MagicMock()
+    verifier.verify_token.side_effect = jwt.InvalidTokenError()
+
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="bad_token")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(credentials=creds, token_verifier=verifier)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail["error"] == "invalid_authentication_token"
 
 
 def test_memories_requires_auth(client: TestClient) -> None:
@@ -93,3 +168,48 @@ def test_invalid_token_returns_401(client: TestClient) -> None:
         assert response.status_code == 401
     finally:
         app.dependency_overrides = {}
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_unexpected_error(caplog: pytest.LogCaptureFixture) -> None:
+    """get_current_user raises 500 APIError on non-JWT exception."""
+    verifier = MagicMock()
+    verifier.verify_token.side_effect = Exception("database down")
+
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="bad_token")
+
+    with caplog.at_level(logging.ERROR), pytest.raises(HTTPException) as exc_info:
+        await get_current_user(credentials=creds, token_verifier=verifier)
+
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail["error"] == "internal_server_error"
+    assert any(
+        "Unexpected error during token verification" in record.message for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_success() -> None:
+    """get_current_user successfully extracts user_id on valid token."""
+    verifier = MagicMock()
+
+    now = int(time.time())
+    fake_payload = JWTPayload(
+        sub="11111111-1111-1111-1111-111111111111",
+        role="authenticated",
+        iat=now,
+        exp=now + 3600,
+        iss="supabase",
+        aud="authenticated",
+    )
+
+    import asyncio
+
+    future = asyncio.Future()
+    future.set_result(fake_payload)
+    verifier.verify_token.return_value = future
+
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="good_token")
+
+    user_id = await get_current_user(credentials=creds, token_verifier=verifier)
+    assert str(user_id) == "11111111-1111-1111-1111-111111111111"

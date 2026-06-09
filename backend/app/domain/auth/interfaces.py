@@ -6,6 +6,7 @@ from typing import Protocol
 from uuid import UUID
 
 from app.domain.auth.entities import Passkey, PasskeyCreate
+from app.domain.auth.schemas import JWTPayload
 
 
 class AuthRepositoryProtocol(Protocol):
@@ -27,4 +28,12 @@ class AuthRepositoryProtocol(Protocol):
 
     async def delete_passkey(self, passkey_id: str | UUID, user_id: str | UUID) -> bool:
         """Delete a passkey belonging to a user."""
+        ...
+
+
+class TokenVerifierProtocol(Protocol):
+    """Protocol for verifying authentication tokens."""
+
+    async def verify_token(self, token: str) -> JWTPayload:
+        """Verify an authentication token and return its payload."""
         ...
