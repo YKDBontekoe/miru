@@ -27,6 +27,7 @@ def get_token_verifier() -> SupabaseJWTVerifier:
         _token_verifier = SupabaseJWTVerifier()
     return _token_verifier
 
+
 # ---------------------------------------------------------------------------
 # Repository factories
 # ---------------------------------------------------------------------------
