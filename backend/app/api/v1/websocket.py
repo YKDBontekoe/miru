@@ -27,6 +27,7 @@ import json
 import logging
 from uuid import UUID
 
+import jwt
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 from app.api.dependencies import get_token_verifier
@@ -51,7 +52,7 @@ async def _verify_token(token: str) -> UUID | None:
         verifier = get_token_verifier()
         payload = await verifier.verify_token(token)
         return payload.sub
-    except Exception:
+    except jwt.PyJWTError:
         logger.warning("WS auth rejected: invalid token")
         return None
 

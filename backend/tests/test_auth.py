@@ -71,9 +71,10 @@ async def test_decode_es256_jwt_via_jwks() -> None:
     """An ES256 JWT uses PyJWKClient to fetch signing key."""
     token = make_jwt()
 
-    with patch("jwt.get_unverified_header", return_value={"alg": "ES256"}), \
-         patch("jwt.PyJWKClient.get_signing_key_from_jwt") as mock_get_key:
-
+    with (
+        patch("jwt.get_unverified_header", return_value={"alg": "ES256"}),
+        patch("jwt.PyJWKClient.get_signing_key_from_jwt") as mock_get_key,
+    ):
         mock_key = MagicMock()
         mock_key.key = "fake_key"
         mock_get_key.return_value = mock_key
@@ -85,7 +86,7 @@ async def test_decode_es256_jwt_via_jwks() -> None:
             "iat": now,
             "exp": now + 3600,
             "iss": "supabase",
-            "aud": "authenticated"
+            "aud": "authenticated",
         }
         with patch("jwt.decode", return_value=fake_payload):
             verifier = SupabaseJWTVerifier()
@@ -101,9 +102,11 @@ async def test_decode_jwt_invalid_token_error(caplog: pytest.LogCaptureFixture) 
     token = make_jwt()
     verifier = SupabaseJWTVerifier()
 
-    with patch("jwt.decode", side_effect=jwt.InvalidTokenError("bad token")), \
-         caplog.at_level(logging.WARNING), \
-         pytest.raises(jwt.InvalidTokenError):
+    with (
+        patch("jwt.decode", side_effect=jwt.InvalidTokenError("bad token")),
+        caplog.at_level(logging.WARNING),
+        pytest.raises(jwt.InvalidTokenError),
+    ):
         await verifier.verify_token(token)
 
     assert any("JWT validation failed: bad token" in record.message for record in caplog.records)
@@ -115,13 +118,20 @@ async def test_decode_jwt_jwks_error(caplog: pytest.LogCaptureFixture) -> None:
     token = make_jwt()
     verifier = SupabaseJWTVerifier()
 
-    with patch("jwt.get_unverified_header", return_value={"alg": "ES256"}), \
-         patch("jwt.PyJWKClient.get_signing_key_from_jwt", side_effect=jwt.PyJWKClientError("jwks failure")), \
-         caplog.at_level(logging.WARNING), \
-         pytest.raises(jwt.PyJWKClientError):
+    with (
+        patch("jwt.get_unverified_header", return_value={"alg": "ES256"}),
+        patch(
+            "jwt.PyJWKClient.get_signing_key_from_jwt",
+            side_effect=jwt.PyJWKClientError("jwks failure"),
+        ),
+        caplog.at_level(logging.WARNING),
+        pytest.raises(jwt.PyJWKClientError),
+    ):
         await verifier.verify_token(token)
 
-    assert any("JWT JWKS validation failed: jwks failure" in record.message for record in caplog.records)
+    assert any(
+        "JWT validation failed: jwks failure" in record.message for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio

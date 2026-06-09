@@ -39,9 +39,7 @@ class SupabaseJWTVerifier:
         try:
             try:
                 header = jwt.get_unverified_header(token)
-            except (jwt.DecodeError, Exception) as header_exc:
-                if not isinstance(header_exc, jwt.DecodeError):
-                    logger.warning("JWT validation failed: %s", header_exc)
+            except jwt.DecodeError as header_exc:
                 raise jwt.DecodeError("Invalid token format") from header_exc
 
             alg = header.get("alg")
@@ -63,17 +61,8 @@ class SupabaseJWTVerifier:
                     audience="authenticated",
                 )
             return JWTPayload(**payload)
-        except jwt.ExpiredSignatureError:
-            logger.warning("JWT validation failed: Signature expired")
-            raise
-        except jwt.DecodeError:
-            logger.warning("JWT validation failed: Decode error")
-            raise
-        except jwt.InvalidTokenError as exc:
+        except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError, jwt.PyJWKClientError) as exc:
             logger.warning("JWT validation failed: %s", exc)
-            raise
-        except jwt.PyJWKClientError as exc:
-            logger.warning("JWT JWKS validation failed: %s", exc)
             raise
 
 
@@ -84,11 +73,18 @@ async def get_current_user(
     """FastAPI dependency that validates the Bearer token and returns the user UUID."""
     try:
         payload = await token_verifier.verify_token(credentials.credentials)
-    except Exception:
+    except jwt.PyJWTError:
         raise_api_error(
             status_code=status.HTTP_401_UNAUTHORIZED,
             error="invalid_authentication_token",
             message="Invalid authentication token.",
+        )
+    except Exception:
+        logger.exception("Unexpected error during token verification")
+        raise_api_error(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error="internal_server_error",
+            message="An unexpected error occurred during authentication.",
         )
 
     # payload is now a JWTPayload model, use attribute access
