@@ -61,7 +61,12 @@ class SupabaseJWTVerifier:
                     audience="authenticated",
                 )
             return JWTPayload(**payload)
-        except (jwt.ExpiredSignatureError, jwt.DecodeError, jwt.InvalidTokenError, jwt.PyJWKClientError) as exc:
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+            jwt.PyJWKClientError,
+        ) as exc:
             logger.warning("JWT validation failed: %s", exc)
             raise
 
