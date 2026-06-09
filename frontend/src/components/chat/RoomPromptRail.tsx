@@ -38,8 +38,9 @@ export const RoomPromptRail = React.memo(function RoomPromptRailComponent({
 }: RoomPromptRailProps) {
   const { t } = useTranslation();
 
-  const promptsData = useMemo(() => prompts, [prompts]);
+
   const contextActionsData = useMemo(() => contextActions || [], [contextActions]);
+  const memoizedExtraData = useMemo(() => ({ isStreaming, canSave }), [isStreaming, canSave]);
 
   const renderPromptItem = useCallback(
     ({ item: action }: { item: PromptItem }) => (
@@ -110,14 +111,14 @@ export const RoomPromptRail = React.memo(function RoomPromptRailComponent({
         </View>
 
         <FlatList
-          data={promptsData}
+          data={prompts}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="px-3"
           keyExtractor={extractPromptKey}
           renderItem={renderPromptItem}
           ListHeaderComponent={renderSaveButton}
-          extraData={{ isStreaming, canSave }}
+          extraData={memoizedExtraData}
         />
 
         {contextActions && contextActions.length > 0 && onContextPress ? (

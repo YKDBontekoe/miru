@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { FlatList, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
