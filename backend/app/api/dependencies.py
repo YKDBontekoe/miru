@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from typing import Annotated
 
+import jwt
 from fastapi import Depends
 
 from app.domain.agents.service import AgentService
+from app.domain.auth.interfaces import TokenVerifierProtocol
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
@@ -15,6 +17,9 @@ from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+# Module-level singleton to ensure internal caches are reused
+_jwks_client: jwt.PyJWKClient | None = None
 
 # ---------------------------------------------------------------------------
 # Repository factories
@@ -36,6 +41,25 @@ def get_memory_repo() -> MemoryRepository:
 def get_auth_repo(db: SupabaseClient) -> AuthRepository:
     # AuthRepository still uses the Supabase client for passkey tables.
     return AuthRepository(db)
+
+
+# ---------------------------------------------------------------------------
+# Infrastructure factories
+# ---------------------------------------------------------------------------
+
+
+def get_token_verifier() -> TokenVerifierProtocol:
+    from app.core.security.auth import SupabaseJWTVerifier
+
+    global _jwks_client
+    if _jwks_client is None:
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+        _jwks_client = jwt.PyJWKClient(jwks_url)
+
+    return SupabaseJWTVerifier(jwks_client=_jwks_client)
 
 
 # ---------------------------------------------------------------------------
@@ -62,5 +86,7 @@ def get_memory_service(
     return MemoryService(repo)
 
 
-def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo)
+def get_auth_service(
+    repo: Annotated[AuthRepository, Depends(get_auth_repo)],
+) -> AuthService:
+    return AuthService(repo=repo)

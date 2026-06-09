@@ -21,12 +21,11 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.core.security.auth import SupabaseJWTVerifier
 
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
-    payload = await service.decode_jwt(token)
+    verifier = SupabaseJWTVerifier()
+    payload = await verifier.verify_token(token)
 
     assert isinstance(payload, JWTPayload)
     assert payload.role == "authenticated"
@@ -35,14 +34,13 @@ async def test_decode_valid_jwt() -> None:
 @pytest.mark.asyncio
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.core.security.auth import SupabaseJWTVerifier
 
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier()
 
     with pytest.raises(jwt.ExpiredSignatureError):
-        await service.decode_jwt(token)
+        await verifier.verify_token(token)
 
 
 @pytest.mark.asyncio
@@ -50,17 +48,16 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
     import logging
 
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.core.security.auth import SupabaseJWTVerifier
 
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier()
 
     with (
         caplog.at_level(logging.WARNING),
         pytest.raises(jwt.DecodeError, match="Invalid token format"),
     ):
-        await service.decode_jwt(token)
+        await verifier.verify_token(token)
 
     assert any(
         record.levelname == "WARNING" and "JWT validation failed" in record.message
