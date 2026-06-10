@@ -302,6 +302,7 @@ class CrewOrchestrator:
                     return pydantic_output.model_dump_json()
                 # fallback for unknown pydantic-like objects or very old pydantic versions
                 import json
+
                 if hasattr(pydantic_output, "model_dump"):
                     return json.dumps(pydantic_output.model_dump())
                 if hasattr(pydantic_output, "dict"):

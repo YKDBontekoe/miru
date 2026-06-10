@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import uuid
 from collections.abc import Callable
@@ -141,8 +142,6 @@ class ChatWebSocketBroadcaster:
         Expects JSON string representing MultiAgentTaskOutput or SingleAgentTaskOutput.
         Falls back to returning the full string if JSON parsing fails.
         """
-        import json
-
         text = result_text.strip()
         if not text:
             return []
@@ -175,8 +174,12 @@ class ChatWebSocketBroadcaster:
                 # SingleAgentTaskOutput format
                 if "response" in parsed and isinstance(parsed["response"], str):
                     return [("", parsed["response"])]
-        except Exception as e:
-            logger.warning("Failed to parse agent JSON output: %s", str(e))
+        except (json.JSONDecodeError, ValueError, KeyError, TypeError):
+            snippet = text[:100] + ("..." if len(text) > 100 else "")
+            logger.exception("Failed to parse agent JSON output. Snippet: %s", snippet)
+        except Exception:
+            snippet = text[:100] + ("..." if len(text) > 100 else "")
+            logger.exception("Unexpected error parsing agent JSON output. Snippet: %s", snippet)
 
         # Fallback if JSON parsing fails or schema didn't match
         return [("", result_text.strip())]
