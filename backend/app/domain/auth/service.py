@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    def __init__(self, repo: AuthRepositoryProtocol, token_verifier: "TokenVerifierProtocol") -> None:
+    def __init__(self, repo: AuthRepositoryProtocol, token_verifier: TokenVerifierProtocol) -> None:
         self.repo = repo
         self.token_verifier = token_verifier
 
