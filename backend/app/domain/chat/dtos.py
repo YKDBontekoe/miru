@@ -69,12 +69,15 @@ class MessageUpdate(BaseModel):
             raise ValueError("content must not be blank or whitespace only")
         return v.strip()
 
+
 class AgentResponseSegment(BaseModel):
     agent_name: str = Field(description="The exact name of the agent who is responding")
     message: str = Field(description="The response content from the agent")
 
+
 class MultiAgentTaskOutput(BaseModel):
     responses: list[AgentResponseSegment] = Field(description="List of responses from agents")
+
 
 class SingleAgentTaskOutput(BaseModel):
     response: str = Field(description="The direct response from the agent")

@@ -21,11 +21,11 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
-from app.domain.chat.language import resolve_language
 from app.domain.chat.dtos import (
     MultiAgentTaskOutput,
     SingleAgentTaskOutput,
 )
+from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
     MEMORY_PREFIX,

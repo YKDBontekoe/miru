@@ -50,4 +50,6 @@ MULTI_AGENT_EXPECTED_OUTPUT = (
     "Agents should be concise and natural, not self-promotional."
 )
 
-SINGLE_AGENT_EXPECTED_OUTPUT = "A strict JSON object containing a direct, helpful response to the user's message."
+SINGLE_AGENT_EXPECTED_OUTPUT = (
+    "A strict JSON object containing a direct, helpful response to the user's message."
+)
