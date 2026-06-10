@@ -297,7 +297,15 @@ class CrewOrchestrator:
 
         if result:
             if hasattr(result, "pydantic") and result.pydantic:
-                return result.pydantic.model_dump_json()
+                pydantic_output: Any = result.pydantic
+                if hasattr(pydantic_output, "model_dump_json"):
+                    return pydantic_output.model_dump_json()
+                # fallback for unknown pydantic-like objects or very old pydantic versions
+                import json
+                if hasattr(pydantic_output, "model_dump"):
+                    return json.dumps(pydantic_output.model_dump())
+                if hasattr(pydantic_output, "dict"):
+                    return json.dumps(pydantic_output.dict())
             elif hasattr(result, "raw") and result.raw:
                 return str(result.raw)
 
