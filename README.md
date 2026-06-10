@@ -205,6 +205,7 @@ All routes are under `/api/v1` and require a Supabase JWT Bearer token (except h
 | `/api/v1/agents/generate` | Use AI to generate an agent persona |
 | `/api/v1/auth` | Passkey registration and login (WebAuthn) |
 | `/api/v1/rooms` | Chat rooms, messages, streaming responses |
+| `/api/v1/ws/chat` | WebSocket chat endpoint for real-time messaging |
 | `/api/v1/crew` | CrewAI multi-agent orchestration |
 | `/api/v1/memory` | Memory storage and retrieval |
 | `/api/v1/productivity` | Tasks, Notes, Calendar Events |

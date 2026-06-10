@@ -9,6 +9,13 @@ interface ScalePressableProps extends Omit<PressableProps, 'style'> {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+/**
+ * A pressable component that provides tactile feedback by slightly scaling down when pressed.
+ * Uses react-native-reanimated for smooth spring animations.
+ *
+ * @param {ScalePressableProps} props - The properties for the component.
+ * @returns {JSX.Element} The animated pressable wrapper.
+ */
 export const ScalePressable = ({
   children,
   style,
