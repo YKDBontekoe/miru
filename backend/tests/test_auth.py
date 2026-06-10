@@ -126,9 +126,10 @@ async def test_jwt_verifier_decodes_hs256() -> None:
 
 @pytest.mark.asyncio
 async def test_jwt_verifier_invalid_header_raises_decode_error() -> None:
-    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
-    from app.core.config import get_settings
     import jwt
+
+    from app.core.config import get_settings
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
 
     settings = get_settings()
     verifier = SupabaseJWTVerifier()
@@ -139,15 +140,14 @@ async def test_jwt_verifier_invalid_header_raises_decode_error() -> None:
 
 @pytest.mark.asyncio
 async def test_jwt_verifier_es256_missing_jwks_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
-    from app.core.config import get_settings
-    import jwt
-    import base64
     import json
 
-    settings = get_settings()
+    import jwt
+
     # Construct an ES256 token manually to bypass jwt.encode trying to parse the "secret" as an EC key
     import jwt.utils
+
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     header = jwt.utils.base64url_encode(json.dumps({"alg": "ES256", "typ": "JWT"}).encode()).decode()
     payload = jwt.utils.base64url_encode(json.dumps({"sub": "00000000-0000-0000-0000-000000000000"}).encode()).decode()
     signature = jwt.utils.base64url_encode(b"fakesignature").decode()
