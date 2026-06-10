@@ -104,8 +104,9 @@ async def test_decode_unexpected_error_logs_exception(caplog: pytest.LogCaptureF
 @pytest.mark.asyncio
 async def test_jwt_verifier_decodes_hs256() -> None:
     import jwt
-    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
+
     from app.core.config import get_settings
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
 
     settings = get_settings()
     # Create an HS256 token
@@ -122,6 +123,47 @@ async def test_jwt_verifier_decodes_hs256() -> None:
     decoded = await verifier.verify_token(token)
     assert decoded.sub.hex == "00000000000000000000000000000000"
     assert decoded.role == "authenticated"
+
+@pytest.mark.asyncio
+async def test_jwt_verifier_invalid_header_raises_decode_error() -> None:
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
+    from app.core.config import get_settings
+    import jwt
+
+    settings = get_settings()
+    verifier = SupabaseJWTVerifier()
+
+    # Passing an object that cannot possibly be decoded to trigger the inner exception block
+    with pytest.raises(jwt.DecodeError, match="Invalid token format"):
+        verifier._decode_sync({"invalid": "token"}, settings)
+
+@pytest.mark.asyncio
+async def test_jwt_verifier_es256_missing_jwks_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
+    from app.core.config import get_settings
+    import jwt
+    import base64
+    import json
+
+    settings = get_settings()
+    # Construct an ES256 token manually to bypass jwt.encode trying to parse the "secret" as an EC key
+    import jwt.utils
+    header = jwt.utils.base64url_encode(json.dumps({"alg": "ES256", "typ": "JWT"}).encode()).decode()
+    payload = jwt.utils.base64url_encode(json.dumps({"sub": "00000000-0000-0000-0000-000000000000"}).encode()).decode()
+    signature = jwt.utils.base64url_encode(b"fakesignature").decode()
+    token = f"{header}.{payload}.{signature}"
+
+    verifier = SupabaseJWTVerifier()
+
+    # Mock PyJWKClient to throw an error since there's no actual JWKS endpoint
+    class MockJWKClient:
+        def get_signing_key_from_jwt(self, token):
+            raise jwt.PyJWKClientError("Failed to fetch")
+
+    monkeypatch.setattr(verifier, "_get_jwks_client", lambda: MockJWKClient())
+
+    with pytest.raises(ValueError, match="Invalid token: Failed to fetch"):
+        await verifier.verify_token(token)
 
 
 def test_memories_requires_auth(client: TestClient) -> None:
