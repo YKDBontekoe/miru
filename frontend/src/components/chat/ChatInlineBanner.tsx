@@ -9,7 +9,7 @@ interface ChatInlineBannerProps {
   tone?: 'error' | 'success' | 'info';
 }
 
-export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps) {
+export const ChatInlineBanner = ({ text, tone = 'info' }: ChatInlineBannerProps) => {
   const { C } = useTheme();
 
   const getToneColors = () => {
@@ -35,7 +35,7 @@ export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps)
       </AppText>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
