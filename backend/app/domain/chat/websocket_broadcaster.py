@@ -136,44 +136,50 @@ class ChatWebSocketBroadcaster:
 
     @staticmethod
     def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
-        """Parse a multi-agent transcript into (agent_name, message) pairs.
+        """Parse a structured JSON output into (agent_name, message) pairs.
 
-        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
-        Falls back to a single unnamed entry when the format cannot be parsed.
+        Expects JSON string representing MultiAgentTaskOutput or SingleAgentTaskOutput.
+        Falls back to returning the full string if JSON parsing fails.
         """
-        if not agent_names or len(agent_names) == 1:
-            return [("", result_text.strip())]
+        import json
 
-        # Build a set of known names (case-insensitive) for matching
-        name_set = {n.lower() for n in agent_names}
-        segments: list[tuple[str, str]] = []
-        current_name = ""
-        current_lines: list[str] = []
+        text = result_text.strip()
+        if not text:
+            return []
 
-        for line in result_text.splitlines():
-            # Detect "AgentName: ..." prefix
-            colon_pos = line.find(":")
-            if colon_pos > 0:
-                candidate = line[:colon_pos].strip()
-                if candidate.lower() in name_set:
-                    # Save previous segment
-                    if current_lines or current_name:
-                        segments.append((current_name, "\n".join(current_lines).strip()))
-                    current_name = candidate
-                    current_lines = [line[colon_pos + 1 :].strip()]
-                    continue
-            current_lines.append(line)
+        try:
+            # Handle potential markdown code blocks like ```json ... ```
+            if text.startswith("```"):
+                lines = text.splitlines()
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                text = "\n".join(lines).strip()
 
-        if current_lines or current_name:
-            segments.append((current_name, "\n".join(current_lines).strip()))
+            parsed = json.loads(text)
 
-        # Drop empty segments
-        segments = [(n, m) for n, m in segments if m]
-        return (
-            segments
-            if segments
-            else ([] if not result_text.strip() else [("", result_text.strip())])
-        )
+            if isinstance(parsed, dict):
+                # MultiAgentTaskOutput format
+                if "responses" in parsed and isinstance(parsed["responses"], list):
+                    segments: list[tuple[str, str]] = []
+                    for item in parsed["responses"]:
+                        if isinstance(item, dict):
+                            agent_name = item.get("agent_name", "")
+                            message = item.get("message", "")
+                            if message:
+                                segments.append((agent_name, message))
+                    if segments:
+                        return segments
+
+                # SingleAgentTaskOutput format
+                if "response" in parsed and isinstance(parsed["response"], str):
+                    return [("", parsed["response"])]
+        except Exception as e:
+            logger.warning("Failed to parse agent JSON output: %s", str(e))
+
+        # Fallback if JSON parsing fails or schema didn't match
+        return [("", result_text.strip())]
 
     async def persist_and_broadcast_agent_response(
         self,
