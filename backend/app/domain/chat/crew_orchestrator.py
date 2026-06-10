@@ -21,6 +21,10 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.domain.chat.dtos import (
+    MultiAgentTaskOutput,
+    SingleAgentTaskOutput,
+)
 from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
@@ -248,6 +252,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=MultiAgentTaskOutput,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -266,6 +271,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=SingleAgentTaskOutput,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -288,5 +294,20 @@ class CrewOrchestrator:
                     raise
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
+
+        if result:
+            if hasattr(result, "pydantic") and result.pydantic:
+                pydantic_output: Any = result.pydantic
+                if hasattr(pydantic_output, "model_dump_json"):
+                    return pydantic_output.model_dump_json()
+                # fallback for unknown pydantic-like objects or very old pydantic versions
+                import json
+
+                if hasattr(pydantic_output, "model_dump"):
+                    return json.dumps(pydantic_output.model_dump())
+                if hasattr(pydantic_output, "dict"):
+                    return json.dumps(pydantic_output.dict())
+            elif hasattr(result, "raw") and result.raw:
+                return str(result.raw)
 
         return str(result)
