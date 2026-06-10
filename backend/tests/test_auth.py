@@ -64,8 +64,39 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     ):
         await service.decode_jwt(token)
 
+@pytest.mark.asyncio
+async def test_decode_unexpected_error_logs_exception(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    import logging
+
+    from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
+    from app.infrastructure.repositories.auth_repo import AuthRepository
+
+    # Mock run_in_executor to raise a generic Exception
+    verifier = SupabaseJWTVerifier()
+
+    # We must patch asyncio.get_running_loop().run_in_executor correctly.
+    # The simplest way is to mock loop.run_in_executor on the object directly,
+    # but `asyncio.get_running_loop` returns the current loop.
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+
+    async def mock_run_in_executor(*args, **kwargs):
+        raise RuntimeError("Unexpected boom")
+
+    monkeypatch.setattr(loop, "run_in_executor", mock_run_in_executor)
+
+    service = AuthService(AuthRepository(MagicMock()), verifier)
+
+    with (
+        caplog.at_level(logging.ERROR),
+        pytest.raises(RuntimeError, match="Unexpected boom"),
+    ):
+        await service.decode_jwt("some.token")
+
     assert any(
-        record.levelname == "WARNING" and "JWT validation failed" in record.message
+        record.levelname == "ERROR" and "Unexpected error during JWT validation" in record.message
         for record in caplog.records
     )
     assert not any(
