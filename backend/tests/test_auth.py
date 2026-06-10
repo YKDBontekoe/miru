@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
-import jwt
 import pytest
 
 from app.domain.auth.schemas import JWTPayload
@@ -43,7 +42,7 @@ async def test_decode_expired_jwt_raises_401() -> None:
     token = make_jwt(expired=True)
     service = AuthService(AuthRepository(MagicMock()), SupabaseJWTVerifier())
 
-    with pytest.raises(jwt.ExpiredSignatureError):
+    with pytest.raises(ValueError, match="Invalid token: Signature has expired"):
         await service.decode_jwt(token)
 
 
@@ -61,7 +60,7 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
 
     with (
         caplog.at_level(logging.WARNING),
-        pytest.raises(jwt.DecodeError, match="Invalid token format"),
+        pytest.raises(ValueError, match="Invalid token: Invalid token format"),
     ):
         await service.decode_jwt(token)
 

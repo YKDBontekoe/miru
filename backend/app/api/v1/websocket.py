@@ -56,9 +56,12 @@ async def _verify_token(token: str) -> UUID | None:
         auth_service = AuthService(AuthRepository(get_supabase()), _jwt_verifier)
         payload = await auth_service.decode_jwt(token)
         return payload.sub
-    except Exception:
+    except ValueError:
         logger.warning("WS auth rejected: invalid token")
         return None
+    except Exception:
+        logger.exception("Unexpected error during WS auth")
+        raise
 
 
 # ---------------------------------------------------------------------------
