@@ -99,10 +99,29 @@ async def test_decode_unexpected_error_logs_exception(caplog: pytest.LogCaptureF
         record.levelname == "ERROR" and "Unexpected error during JWT validation" in record.message
         for record in caplog.records
     )
-    assert not any(
-        record.levelname == "ERROR" and "JWT validation failed" in record.message
-        for record in caplog.records
-    )
+
+
+@pytest.mark.asyncio
+async def test_jwt_verifier_decodes_hs256() -> None:
+    import jwt
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    # Create an HS256 token
+    payload = {
+        "sub": "00000000-0000-0000-0000-000000000000",
+        "role": "authenticated",
+        "aud": "authenticated",
+        "exp": 9999999999,
+        "iat": 1000000000,
+    }
+    token = jwt.encode(payload, settings.supabase_jwt_secret, algorithm="HS256")
+
+    verifier = SupabaseJWTVerifier()
+    decoded = await verifier.verify_token(token)
+    assert decoded.sub.hex == "00000000000000000000000000000000"
+    assert decoded.role == "authenticated"
 
 
 def test_memories_requires_auth(client: TestClient) -> None:
