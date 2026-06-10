@@ -12,6 +12,13 @@ interface PinnedChipProps {
   onPress: () => void;
 }
 
+/**
+ * A circular chip component representing a pinned agent.
+ * Displays the agent's initial with a star badge, used in horizontal scroll lists.
+ *
+ * @param {PinnedChipProps} props - The properties for the component.
+ * @returns {JSX.Element} The rendered pinned agent chip.
+ */
 export function PinnedChip({ agent, onPress }: PinnedChipProps) {
   const color = getAgentColor(agent.name);
   const { C } = useTheme();
