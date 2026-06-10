@@ -29,6 +29,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
+from app.api.dependencies import _jwt_verifier
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
@@ -52,7 +53,7 @@ logger = logging.getLogger(__name__)
 async def _verify_token(token: str) -> UUID | None:
     """Decode a Supabase JWT by delegating to AuthService.decode_jwt."""
     try:
-        auth_service = AuthService(AuthRepository(get_supabase()))
+        auth_service = AuthService(AuthRepository(get_supabase()), _jwt_verifier)
         payload = await auth_service.decode_jwt(token)
         return payload.sub
     except Exception:
