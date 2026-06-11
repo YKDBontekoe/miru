@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.infrastructure.external.steam import get_player_summaries, resolve_vanity_url
 
@@ -42,7 +41,7 @@ async def resolve_steam_user(
         steam_id = await resolve_vanity_url(username)
 
     if not steam_id:
-        raise_api_error(status_code=404, error="steam_user_not_found", message="Steam user not found.")
+        raise HTTPException(status_code=404, detail="Steam user not found")
 
     # Get the persona name to confirm and return to UI
     summaries = await get_player_summaries([steam_id])

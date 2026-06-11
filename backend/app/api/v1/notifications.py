@@ -66,6 +66,6 @@ async def send_notification(
     """
     try:
         await use_case.execute(str(user_id), request.message, request.title)
-    except ValueError as e:
+    except ValueError:
         raise_api_error(status_code=400, error="invalid_user_id", message="Invalid user ID provided.")
     return {"status": "success"}

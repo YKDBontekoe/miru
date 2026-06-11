@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_auth_service
-from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.auth.schemas import (
     PasskeyLoginOptionsRequest,
@@ -141,5 +140,5 @@ async def delete_passkey(
     """Delete a passkey."""
     deleted = await service.delete_passkey(passkey_id, user_id)
     if not deleted:
-        raise_api_error(status_code=404, error="passkey_not_found", message="Passkey not found.")
+        raise HTTPException(status_code=404, detail="Passkey not found")
     return {"status": "ok"}
