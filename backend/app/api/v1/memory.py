@@ -41,7 +41,11 @@ async def list_memories(
         memories = await service.retrieve_memories(query="", user_id=user_id)
         return {"memories": memories}
     except (APIConnectionError, APITimeoutError, OSError):
-        raise_api_error(status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable.")
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable.",
+        )
 
 
 @router.get(
@@ -63,7 +67,11 @@ async def get_memory_graph(
     try:
         return await service.get_memory_graph(user_id)
     except (APIConnectionError, APITimeoutError, OSError):
-        raise_api_error(status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable.")
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable.",
+        )
 
 
 @router.post(
@@ -88,7 +96,11 @@ async def store_memory(
         memory_id = await service.store_memory(content=data.message, user_id=user_id)
         return {"status": "ok", "id": str(memory_id)}
     except (APIConnectionError, APITimeoutError, OSError):
-        raise_api_error(status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable.")
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable.",
+        )
 
 
 @router.post(
@@ -125,7 +137,11 @@ async def upload_document(
     }
     content_type = file.content_type or "application/octet-stream"
     if content_type not in allowed_types:
-        raise_api_error(status_code=415, error="unsupported_file_type", message="Unsupported file type. Must be text, PDF, DOCX, or Image.")
+        raise_api_error(
+            status_code=415,
+            error="unsupported_file_type",
+            message="Unsupported file type. Must be text, PDF, DOCX, or Image.",
+        )
 
     # 2. Validate max size (e.g. 10MB limit)
     max_file_size = 10 * 1024 * 1024  # 10 MB
@@ -133,7 +149,11 @@ async def upload_document(
     while chunk := await file.read(1024 * 1024):
         content += chunk
         if len(content) > max_file_size:
-            raise_api_error(status_code=413, error="payload_too_large", message="File too large. Maximum allowed size is 10MB.")
+            raise_api_error(
+                status_code=413,
+                error="payload_too_large",
+                message="File too large. Maximum allowed size is 10MB.",
+            )
 
     try:
         file_obj = io.BytesIO(content)
@@ -150,10 +170,16 @@ async def upload_document(
             "memory_ids": [str(m) for m in memory_ids],
         }
     except (APIConnectionError, APITimeoutError, OSError):
-        raise_api_error(status_code=503, error="service_unavailable", message="Upstream AI service is currently unreachable.")
+        raise_api_error(
+            status_code=503,
+            error="service_unavailable",
+            message="Upstream AI service is currently unreachable.",
+        )
     except Exception:
         logger.exception("Failed to process document")
-        raise_api_error(status_code=500, error="internal_server_error", message="Failed to process document.")
+        raise_api_error(
+            status_code=500, error="internal_server_error", message="Failed to process document."
+        )
 
 
 @router.delete(
