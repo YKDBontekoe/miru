@@ -10,11 +10,15 @@ from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
+from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
 from app.infrastructure.database.supabase import SupabaseClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
+
+# Module-level singleton to reuse the internal JWKS cache
+_jwt_verifier = SupabaseJWTVerifier()
 
 # ---------------------------------------------------------------------------
 # Repository factories
@@ -63,4 +67,4 @@ def get_memory_service(
 
 
 def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo)
+    return AuthService(repo, token_verifier=_jwt_verifier)
