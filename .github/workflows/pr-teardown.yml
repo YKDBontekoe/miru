@@ -30,6 +30,8 @@ jobs:
         uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+          auth-type: SERVICE_PRINCIPAL
+          allow-no-subscriptions: true
 
       - name: Remove PR Label and Deactivate Revisions
         run: |
