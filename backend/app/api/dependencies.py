@@ -20,6 +20,12 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 # Module-level singleton to reuse the internal JWKS cache
 _jwt_verifier = SupabaseJWTVerifier()
 
+
+def get_jwt_verifier() -> SupabaseJWTVerifier:
+    """Returns the module-level JWT verifier singleton."""
+    return _jwt_verifier
+
+
 # ---------------------------------------------------------------------------
 # Repository factories
 # ---------------------------------------------------------------------------

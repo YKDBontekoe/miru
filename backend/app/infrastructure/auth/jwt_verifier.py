@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import jwt
@@ -46,7 +47,7 @@ class SupabaseJWTVerifier(TokenVerifierProtocol):
                 )
             else:
                 jwks_client = self._get_jwks_client()
-                signing_key = jwks_client.get_signing_key_from_jwt(token)
+                signing_key = await asyncio.to_thread(jwks_client.get_signing_key_from_jwt, token)
                 payload = jwt.decode(
                     token,
                     signing_key.key,
