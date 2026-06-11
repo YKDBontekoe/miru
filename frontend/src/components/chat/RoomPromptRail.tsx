@@ -1,7 +1,10 @@
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View, StyleSheet, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 interface PromptItem {
   id: string;
@@ -37,16 +40,25 @@ export function RoomPromptRail({
   onContextPress,
 }: RoomPromptRailProps) {
   const { t } = useTranslation();
+  const { C } = useTheme();
 
   return (
-    <View className="px-3 pb-2">
-      <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
-        <View className="px-3 mb-1.5 flex-row items-center">
-          <AppText variant="caption" className="text-[#5A7467] font-bold flex-1">
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.railCard,
+          {
+            backgroundColor: C.surface,
+            borderColor: C.border,
+          },
+        ]}
+      >
+        <View style={styles.headerRow}>
+          <AppText variant="caption" style={[styles.headingText, { color: C.muted }]}>
             {heading}
           </AppText>
           {isEditing ? (
-            <AppText variant="caption" className="text-[#147D64] font-bold">
+            <AppText variant="caption" style={[styles.editingText, { color: C.primary }]}>
               {t('chat.editing', { defaultValue: 'Editing' })}
             </AppText>
           ) : null}
@@ -55,39 +67,52 @@ export function RoomPromptRail({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
+          contentContainerStyle={styles.promptsScrollContent}
         >
-          <Pressable
+          <ScalePressable
             onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
+            style={[
+              styles.promptPill,
+              {
+                borderColor: C.primary,
+                backgroundColor: C.surface,
+                opacity: isStreaming || !canSave ? 0.5 : 1,
+              },
+            ]}
             disabled={isStreaming || !canSave}
           >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
-          </Pressable>
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: C.primary, opacity: 0.1 }]} />
+            <AppText style={[styles.promptPillText, { color: C.primary }]}>{saveLabel}</AppText>
+          </ScalePressable>
 
           {prompts.map((action) => (
-            <Pressable
+            <ScalePressable
               key={action.id}
               onPress={() => onPromptPress(action.text)}
               onLongPress={() => onPromptLongPress(action)}
-              className={`mr-2 rounded-full px-3 py-2 border ${
-                action.pinned
-                  ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
-                  : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
-              } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
+              style={[
+                styles.promptPill,
+                {
+                  borderColor: action.pinned ? C.primary : C.border,
+                  backgroundColor: action.pinned ? C.surface : C.surfaceHigh,
+                  opacity: isStreaming ? 0.6 : 1,
+                },
+              ]}
               disabled={isStreaming}
             >
+              {action.pinned ? (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: C.primary, opacity: 0.1 }]} />
+              ) : null}
               <AppText
-                className={`text-xs font-bold ${
-                  action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-                }`}
+                style={[
+                  styles.promptPillText,
+                  { color: action.pinned ? C.primary : C.text },
+                ]}
               >
                 {action.pinned ? '★ ' : ''}
                 {action.text}
               </AppText>
-            </Pressable>
+            </ScalePressable>
           ))}
         </ScrollView>
 
@@ -95,18 +120,24 @@ export function RoomPromptRail({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
+            contentContainerStyle={styles.contextScrollContent}
           >
             {contextActions.map((value) => (
-              <Pressable
+              <ScalePressable
                 key={value}
                 onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+                style={[
+                  styles.contextPill,
+                  {
+                    backgroundColor: C.surfaceHigh,
+                    borderColor: C.border,
+                  },
+                ]}
               >
-                <AppText variant="caption" className="text-[#5A7467] font-bold">
+                <AppText variant="caption" style={[styles.contextPillText, { color: C.muted }]}>
                   {value}
                 </AppText>
-              </Pressable>
+              </ScalePressable>
             ))}
           </ScrollView>
         ) : null}
@@ -114,3 +145,61 @@ export function RoomPromptRail({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  railCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingVertical: theme.spacing.sm,
+    ...Platform.select({
+      ios: theme.elevation.md,
+      android: theme.elevation.md,
+    }),
+  },
+  headerRow: {
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headingText: {
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  editingText: {
+    fontWeight: 'bold',
+  },
+  promptsScrollContent: {
+    paddingHorizontal: theme.spacing.md,
+  },
+  promptPill: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  promptPillText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  contextScrollContent: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+  },
+  contextPill: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: 1,
+  },
+  contextPillText: {
+    fontWeight: 'bold',
+  },
+});

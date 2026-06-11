@@ -1,27 +1,13 @@
 import React from 'react';
-import { View, Modal, SectionList } from 'react-native';
+import { View, Modal, SectionList, StyleSheet } from 'react-native';
 import Animated, { SlideInUp, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
-import { DESIGN_TOKENS } from '@/core/design/tokens';
-
-const C = {
-  bg: DESIGN_TOKENS.colors.pageBg,
-  surface: DESIGN_TOKENS.colors.surface,
-  surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-  border: DESIGN_TOKENS.colors.border,
-  text: DESIGN_TOKENS.colors.text,
-  muted: DESIGN_TOKENS.colors.muted,
-  faint: DESIGN_TOKENS.colors.faint,
-  primary: DESIGN_TOKENS.colors.primary,
-  primarySurface: DESIGN_TOKENS.colors.primarySoft,
-  destructive: DESIGN_TOKENS.colors.destructive,
-  destructiveSurface: DESIGN_TOKENS.colors.destructiveSurface,
-  destructiveBorder: DESIGN_TOKENS.colors.destructiveBorder,
-};
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 interface ManageAgentsModalProps {
   isVisible: boolean;
@@ -45,28 +31,27 @@ export const ManageAgentsModal = ({
   getAgentColor,
 }: ManageAgentsModalProps) => {
   const { t } = useTranslation();
+  const { C } = useTheme();
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-[rgba(0,0,0,0.4)]">
+      <View style={styles.overlay}>
         <Animated.View
           entering={SlideInUp.springify().damping(22)}
           exiting={SlideOutDown.duration(200)}
-          className="rounded-t-[32px] max-h-[72%]"
-          style={{ backgroundColor: C.surface }}
+          style={[styles.modalContent, { backgroundColor: C.surface }]}
         >
-          <View className="items-center pt-3 mb-0.5">
-            <View className="w-9 h-1 rounded-sm" style={{ backgroundColor: C.faint }} />
+          <View style={styles.handleContainer}>
+            <View style={[styles.handle, { backgroundColor: C.faint }]} />
           </View>
-          <View className="px-5 py-3.5">
-            <View className="flex-row justify-between items-center">
-              <AppText className="text-lg font-bold" style={{ color: C.text }}>
+          <View style={styles.header}>
+            <View style={styles.headerRow}>
+              <AppText style={[styles.headerTitle, { color: C.text }]}>
                 {t('chat.manage_agents', 'Manage Agents')}
               </AppText>
               <ScalePressable
                 onPress={onClose}
-                className="w-[30px] h-[30px] rounded-[15px] items-center justify-center"
-                style={{ backgroundColor: C.surfaceHigh }}
+                style={[styles.closeButton, { backgroundColor: C.surfaceHigh }]}
                 accessibilityRole="button"
                 accessibilityLabel={t('common.close', 'Close')}
               >
@@ -74,7 +59,7 @@ export const ManageAgentsModal = ({
               </ScalePressable>
             </View>
             {roomAgents.length > 0 && (
-              <AppText className="text-xs mt-[3px]" style={{ color: C.muted }}>
+              <AppText style={[styles.headerSubtitle, { color: C.muted }]}>
                 {t('manageAgents.activeHelper', {
                   defaultValue: '{{count}} active · tap an avatar in the header to manage',
                   count: roomAgents.length,
@@ -84,7 +69,7 @@ export const ManageAgentsModal = ({
           </View>
 
           <SectionList
-            className="px-5"
+            style={styles.sectionList}
             showsVerticalScrollIndicator={false}
             sections={[
               ...(roomAgents.length > 0
@@ -111,10 +96,11 @@ export const ManageAgentsModal = ({
               if (!title) return null;
               return (
                 <AppText
-                  className={`text-[11px] font-bold uppercase tracking-[0.8px] mb-2 ${
-                    type === 'available' && roomAgents.length > 0 ? 'mt-2' : ''
-                  }`}
-                  style={{ color: C.muted }}
+                  style={[
+                    styles.sectionTitle,
+                    { color: C.muted },
+                    type === 'available' && roomAgents.length > 0 && styles.sectionTitleMargin,
+                  ]}
                 >
                   {title}
                 </AppText>
@@ -123,22 +109,22 @@ export const ManageAgentsModal = ({
             ListFooterComponent={
               availableAgents.length === 0 ? (
                 agents.length === 0 ? (
-                  <View className="items-center py-9">
-                    <Ionicons name="people-outline" size={36} color={C.faint} className="mb-3" />
-                    <AppText className="text-center" style={{ color: C.muted }}>
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="people-outline" size={36} color={C.faint} style={styles.emptyIcon} />
+                    <AppText style={[styles.emptyText, { color: C.muted }]}>
                       {t('chat.no_agents_create', 'No agents created yet.')}
                     </AppText>
                   </View>
                 ) : (
-                  <View className="items-center py-9">
-                    <Ionicons name="people-outline" size={36} color={C.faint} className="mb-3" />
-                    <AppText className="text-center" style={{ color: C.muted }}>
+                  <View style={styles.emptyContainer}>
+                    <Ionicons name="people-outline" size={36} color={C.faint} style={styles.emptyIcon} />
+                    <AppText style={[styles.emptyText, { color: C.muted }]}>
                       {t('chat.no_more_agents_to_add', 'No more agents to add.')}
                     </AppText>
                   </View>
                 )
               ) : (
-                <View className="h-10" />
+                <View style={styles.spacer} />
               )
             }
             renderItem={({ item: agent, section }) => {
@@ -148,40 +134,44 @@ export const ManageAgentsModal = ({
               if (isInRoom) {
                 return (
                   <View
-                    className="flex-row items-center rounded-[14px] p-3 mb-2 border"
-                    style={{
-                      backgroundColor: `${color}08`,
-                      borderColor: `${color}25`,
-                    }}
+                    style={[
+                      styles.agentCard,
+                      { backgroundColor: C.surface, borderColor: C.surfaceHigh },
+                    ]}
                   >
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: color, opacity: 0.08 }]} />
                     <View
-                      className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
-                      style={{ backgroundColor: `${color}18` }}
+                      style={[
+                        styles.agentAvatar,
+                        { backgroundColor: C.surfaceHigh }
+                      ]}
                     >
-                      <AppText style={{ color }} className="font-bold text-[15px]">
+                      <View style={[StyleSheet.absoluteFill, { backgroundColor: color, opacity: 0.18 }]} />
+                      <AppText style={[styles.agentAvatarText, { color }]}>
                         {(agent.name?.charAt(0) || '?').toUpperCase()}
                       </AppText>
                     </View>
-                    <View className="flex-1">
-                      <AppText className="text-[14px] font-semibold" style={{ color: C.text }}>
+                    <View style={styles.agentInfo}>
+                      <AppText style={[styles.agentName, { color: C.text }]}>
                         {agent.name}
                       </AppText>
-                      <AppText className="text-[11px]" style={{ color: C.muted }} numberOfLines={1}>
+                      <AppText style={[styles.agentPersonality, { color: C.muted }]} numberOfLines={1}>
                         {agent.personality}
                       </AppText>
                     </View>
                     <ScalePressable
                       onPress={() => onRemoveAgent(agent.id)}
-                      className="rounded-lg px-2.5 py-1 flex-row items-center gap-1 border"
-                      style={{
-                        backgroundColor: C.destructiveSurface,
-                        borderColor: C.destructiveBorder,
-                      }}
+                      style={[
+                        styles.actionButton,
+                        {
+                          backgroundColor: C.dangerSurface,
+                          borderColor: C.dangerSurface, // Border color aligns with the design tokens
+                        },
+                      ]}
                     >
-                      <Ionicons name="remove" size={13} color={C.destructive} />
+                      <Ionicons name="remove" size={13} color={C.danger} />
                       <AppText
-                        className="text-xs font-semibold"
-                        style={{ color: C.destructive }}
+                        style={[styles.actionButtonText, { color: C.danger }]}
                       >
                         {t('manageAgents.remove', 'Remove')}
                       </AppText>
@@ -192,32 +182,39 @@ export const ManageAgentsModal = ({
 
               return (
                 <View
-                  className="flex-row items-center rounded-[14px] p-3 mb-2 border"
-                  style={{ backgroundColor: C.surface, borderColor: C.border }}
+                  style={[
+                    styles.agentCard,
+                    { backgroundColor: C.surface, borderColor: C.border },
+                  ]}
                 >
                   <View
-                    className="w-[38px] h-[38px] rounded-[19px] items-center justify-center me-3"
-                    style={{ backgroundColor: `${color}18` }}
+                    style={[
+                      styles.agentAvatar,
+                      { backgroundColor: C.surfaceHigh }
+                    ]}
                   >
-                    <AppText style={{ color }} className="font-bold text-[15px]">
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: color, opacity: 0.18 }]} />
+                    <AppText style={[styles.agentAvatarText, { color }]}>
                       {(agent.name?.charAt(0) || '?').toUpperCase()}
                     </AppText>
                   </View>
-                  <View className="flex-1">
-                    <AppText className="text-[14px] font-semibold" style={{ color: C.text }}>
+                  <View style={styles.agentInfo}>
+                    <AppText style={[styles.agentName, { color: C.text }]}>
                       {agent.name}
                     </AppText>
-                    <AppText className="text-[11px]" style={{ color: C.muted }} numberOfLines={1}>
+                    <AppText style={[styles.agentPersonality, { color: C.muted }]} numberOfLines={1}>
                       {agent.personality}
                     </AppText>
                   </View>
                   <ScalePressable
                     onPress={() => onAddAgent(agent.id)}
-                    className="rounded-lg px-2.5 py-1 flex-row items-center gap-1"
-                    style={{ backgroundColor: C.primarySurface }}
+                    style={[
+                      styles.actionButton,
+                      { backgroundColor: C.primarySurface, borderColor: C.primarySurface },
+                    ]}
                   >
                     <Ionicons name="add" size={13} color={C.primary} />
-                    <AppText className="text-[12px] font-semibold" style={{ color: C.primary }}>
+                    <AppText style={[styles.actionButtonText, { color: C.primary }]}>
                       {t('manageAgents.add', 'Add')}
                     </AppText>
                   </ScalePressable>
@@ -230,3 +227,122 @@ export const ManageAgentsModal = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    maxHeight: '72%',
+    overflow: 'hidden',
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: theme.spacing.md,
+    marginBottom: 2,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+  },
+  header: {
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: 14,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 3,
+  },
+  sectionList: {
+    paddingHorizontal: theme.spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: theme.spacing.sm,
+  },
+  sectionTitleMargin: {
+    marginTop: theme.spacing.sm,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 36,
+  },
+  emptyIcon: {
+    marginBottom: theme.spacing.md,
+  },
+  emptyText: {
+    textAlign: 'center',
+  },
+  spacer: {
+    height: 40,
+  },
+  agentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  agentAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: theme.spacing.sm,
+    overflow: 'hidden',
+  },
+  agentAvatarText: {
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  agentInfo: {
+    flex: 1,
+  },
+  agentName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  agentPersonality: {
+    fontSize: 11,
+  },
+  actionButton: {
+    borderRadius: theme.borderRadius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+  },
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
