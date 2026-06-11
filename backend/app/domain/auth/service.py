@@ -42,7 +42,7 @@ class AuthService:
         try:
             try:
                 header = jwt.get_unverified_header(token)
-            except Exception as header_exc:
+            except jwt.DecodeError as header_exc:
                 raise jwt.DecodeError("Invalid token format") from header_exc
 
             alg = header.get("alg")
@@ -64,7 +64,7 @@ class AuthService:
                     audience="authenticated",
                 )
             return JWTPayload(**payload)
-        except Exception as exc:
+        except jwt.PyJWTError as exc:
             logger.warning("JWT validation failed: %s", exc)
             raise
 
