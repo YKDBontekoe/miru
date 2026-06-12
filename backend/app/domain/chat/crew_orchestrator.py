@@ -21,7 +21,7 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
-from app.domain.chat.dtos import TranscriptResponse, SingleAgentResponse
+from app.domain.chat.dtos import SingleAgentResponse, TranscriptResponse
 from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
@@ -296,7 +296,9 @@ class CrewOrchestrator:
             pydantic_res = result.pydantic
             if is_multi:
                 # Convert the transcript to our expected format 'AgentName: message\n\nOtherAgent: message'
-                return "\n\n".join(f"{msg.agent_name}: {msg.message}" for msg in pydantic_res.messages)
+                return "\n\n".join(
+                    f"{msg.agent_name}: {msg.message}" for msg in pydantic_res.messages
+                )
             else:
                 return pydantic_res.message
 
