@@ -1,11 +1,12 @@
 import React from 'react';
-import { StyleProp, View, ViewStyle } from 'react-native';
+import { StyleProp, View, ViewStyle, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
 import { HOME_COLORS, HOME_SHADOW } from './homeTheme';
 import { relativeTimeFromNow } from './homeUtils';
+import { theme } from '@/core/theme';
 
 export function HomeSectionHeader({
   title,
@@ -17,14 +18,7 @@ export function HomeSectionHeader({
   onAction?: () => void;
 }) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}
-    >
+    <View style={styles.sectionHeader}>
       <AppText variant="h3" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
         {title}
       </AppText>
@@ -49,15 +43,8 @@ export function HomeSurfaceCard({
   return (
     <View
       style={[
-        {
-          backgroundColor: HOME_COLORS.surface,
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: HOME_COLORS.border,
-          padding: 16,
-          marginBottom: 14,
-          ...HOME_SHADOW,
-        },
+        styles.surfaceCard,
+        HOME_SHADOW,
         style,
       ]}
     >
@@ -76,30 +63,8 @@ export function HomeActionTile({
   onPress: () => void;
 }) {
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{
-        width: '48.5%',
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        borderRadius: 18,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 10,
-      }}
-    >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 12,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
-        }}
-      >
+    <ScalePressable onPress={onPress} style={styles.actionTile}>
+      <View style={styles.actionIconContainer}>
         <Ionicons name={icon} size={18} color={HOME_COLORS.primary} />
       </View>
       <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
@@ -123,32 +88,17 @@ export function HomeTaskRow({
       : null;
 
   return (
-    <ScalePressable
-      onPress={onToggle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        paddingHorizontal: 12,
-        paddingVertical: 11,
-        marginBottom: 8,
-      }}
-    >
+    <ScalePressable onPress={onToggle} style={styles.taskRow}>
       <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: task.completed ? HOME_COLORS.primary : '#8FB7A7',
-          backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
+        style={[
+          styles.taskCheckbox,
+          {
+            borderColor: task.completed ? HOME_COLORS.primary : HOME_COLORS.taskCheckBorder,
+            backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
+          },
+        ]}
       >
-        {task.completed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+        {task.completed ? <Ionicons name="checkmark" size={14} color={HOME_COLORS.taskCheckIcon} /> : null}
       </View>
       <AppText
         variant="bodySm"
@@ -163,15 +113,8 @@ export function HomeTaskRow({
         {task.title}
       </AppText>
       {dueText ? (
-        <View
-          style={{
-            borderRadius: 12,
-            backgroundColor: HOME_COLORS.accentSoft,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#9E5817', fontWeight: '700' }}>
+        <View style={styles.taskDueBadge}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.taskDueText, fontWeight: '700' }}>
             {dueText}
           </AppText>
         </View>
@@ -190,29 +133,8 @@ export function HomeChatRow({
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 8,
-      }}
-    >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 11,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
-      >
+    <ScalePressable onPress={onPress} style={styles.chatRow}>
+      <View style={styles.chatIconContainer}>
         <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
           {room.name[0]?.toUpperCase() ?? '?'}
         </AppText>
@@ -243,30 +165,9 @@ export function HomeAgentBadge({
   onPress: () => void;
 }) {
   return (
-    <ScalePressable
-      onPress={onPress}
-      style={{
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        backgroundColor: HOME_COLORS.surface,
-        padding: 10,
-        width: '48.5%',
-        marginBottom: 10,
-      }}
-    >
+    <ScalePressable onPress={onPress} style={styles.agentBadge}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-        <View
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 10,
-            backgroundColor: HOME_COLORS.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 8,
-          }}
-        >
+        <View style={styles.agentIconContainer}>
           <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
             {agent.name?.[0]?.toUpperCase() ?? '?'}
           </AppText>
@@ -304,24 +205,14 @@ export function HomeHeroCard({
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   return (
-    <View
-      style={{
-        borderRadius: 28,
-        backgroundColor: HOME_COLORS.deep,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        marginBottom: 14,
-        overflow: 'hidden',
-        ...HOME_SHADOW,
-      }}
-    >
+    <View style={[styles.heroCard, HOME_SHADOW]}>
       <View
         style={{
           position: 'absolute',
           width: 180,
           height: 180,
-          borderRadius: 999,
-          backgroundColor: '#2BA98A',
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: HOME_COLORS.heroGreenCircle,
           opacity: 0.26,
           top: -90,
           right: -40,
@@ -332,8 +223,8 @@ export function HomeHeroCard({
           position: 'absolute',
           width: 120,
           height: 120,
-          borderRadius: 999,
-          backgroundColor: '#F0B470',
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: HOME_COLORS.heroOrangeCircle,
           opacity: 0.22,
           bottom: -44,
           left: -24,
@@ -349,47 +240,29 @@ export function HomeHeroCard({
         }}
       >
         <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText variant="bodySm" style={{ color: '#CDE9DF', fontWeight: '600' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.heroTextSoft, fontWeight: '600' }}>
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} style={{ color: HOME_COLORS.heroTextStrong, fontWeight: '700' }}>
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: '#CDE9DF' }}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.heroTextSoft }}>
             {dateText}
           </AppText>
         </View>
-        <ScalePressable
-          onPress={onSettingsPress}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: '#2D6A58',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+        <ScalePressable onPress={onSettingsPress} style={styles.heroSettingsBtn}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.heroTextStrong, fontWeight: '700' }}>
             {initials}
           </AppText>
         </ScalePressable>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+        <View style={styles.heroStatCard}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.heroTextSoft, marginBottom: 2 }}>
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.heroTextStrong, fontWeight: '700' }}>
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
@@ -398,19 +271,11 @@ export function HomeHeroCard({
               : t('home.hero.no_deadlines', { defaultValue: 'No deadlines today' })}
           </AppText>
         </View>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+        <View style={styles.heroStatCard}>
+          <AppText variant="caption" style={{ color: HOME_COLORS.heroTextSoft, marginBottom: 2 }}>
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" style={{ color: HOME_COLORS.heroTextStrong, fontWeight: '700' }}>
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>
@@ -418,3 +283,122 @@ export function HomeHeroCard({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  surfaceCard: {
+    backgroundColor: HOME_COLORS.surface,
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: HOME_COLORS.border,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  actionTile: {
+    width: '48.5%',
+    borderWidth: 1,
+    borderColor: HOME_COLORS.border,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: HOME_COLORS.softSurface,
+    marginBottom: theme.spacing.sm,
+  },
+  actionIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: HOME_COLORS.softSurface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  taskCheckbox: {
+    width: theme.spacing.xxl,
+    height: theme.spacing.xxl,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  taskDueBadge: {
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.accentSoft,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  chatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: HOME_COLORS.softSurface,
+    marginBottom: theme.spacing.sm,
+  },
+  chatIconContainer: {
+    width: theme.spacing.xxxl + theme.spacing.xxs,
+    height: theme.spacing.xxxl + theme.spacing.xxs,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: HOME_COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  agentBadge: {
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: HOME_COLORS.border,
+    backgroundColor: HOME_COLORS.surface,
+    padding: theme.spacing.md,
+    width: '48.5%',
+    marginBottom: theme.spacing.sm,
+  },
+  agentIconContainer: {
+    width: theme.spacing.xxxl - theme.spacing.xxs,
+    height: theme.spacing.xxxl - theme.spacing.xxs,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: HOME_COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  heroCard: {
+    borderRadius: theme.borderRadius.xxl,
+    backgroundColor: HOME_COLORS.deep,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    overflow: 'hidden',
+  },
+  heroSettingsBtn: {
+    width: theme.spacing.inputBarButton,
+    height: theme.spacing.inputBarButton,
+    borderRadius: theme.borderRadius.xxl,
+    backgroundColor: HOME_COLORS.heroSettingsBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroStatCard: {
+    flex: 1,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: HOME_COLORS.heroStatBg,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+  },
+});
