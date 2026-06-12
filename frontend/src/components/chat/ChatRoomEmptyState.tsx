@@ -13,11 +13,12 @@ interface ChatRoomEmptyStateProps {
   onSuggestionPress?: (suggestion: string) => void;
 }
 
-export const ChatRoomEmptyState = React.memo(({
+export const ChatRoomEmptyState = React.memo(function ChatRoomEmptyState({
+
   roomAgents,
   suggestions = [],
   onSuggestionPress,
-}: ChatRoomEmptyStateProps) => {
+}: ChatRoomEmptyStateProps) {
   const { t } = useTranslation();
   const { C } = useTheme();
 
