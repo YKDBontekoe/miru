@@ -296,9 +296,16 @@ class CrewOrchestrator:
             pydantic_res = result.pydantic
             if is_multi:
                 # Convert the transcript to our expected format 'AgentName: message\n\nOtherAgent: message'
-                return "\n\n".join(
-                    f"{msg.agent_name}: {msg.message}" for msg in pydantic_res.messages
-                )
+                # Normalise agent names and handle fallback to previous speaker
+                name_set = {n.name.lower(): n.name for n in room_agents}
+                formatted_segments = []
+                current_name = room_agents[0].name
+                for msg in pydantic_res.messages:
+                    name_key = msg.agent_name.lower()
+                    if name_key in name_set:
+                        current_name = name_set[name_key]
+                    formatted_segments.append(f"{current_name}: {msg.message}")
+                return "\n\n".join(formatted_segments)
             else:
                 return pydantic_res.message
 
