@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import asyncio
+import logging
 
 import jwt
 
 from app.core.config import get_settings
 from app.domain.auth.schemas import JWTPayload
+
+logger = logging.getLogger(__name__)
 
 
 class SupabaseJWTVerifier:
@@ -34,7 +39,7 @@ class SupabaseJWTVerifier:
                     algorithms=["HS256"],
                     audience="authenticated",
                 )
-            else:
+            elif alg in ("ES256", "RS256"):
                 jwks_client = self._get_jwks_client()
                 # Wrap blocking call in to_thread
                 signing_key = await asyncio.to_thread(jwks_client.get_signing_key_from_jwt, token)
@@ -44,10 +49,12 @@ class SupabaseJWTVerifier:
                     algorithms=["ES256", "RS256"],
                     audience="authenticated",
                 )
+            else:
+                raise jwt.InvalidAlgorithmError(f"Unsupported algorithm: {alg}")
             return JWTPayload(**payload)
-        except Exception as exc:
-            import logging
-
-            logger = logging.getLogger(__name__)
+        except jwt.PyJWTError as exc:
             logger.warning("JWT validation failed: %s", exc)
+            raise
+        except Exception as exc:
+            logger.exception("JWT validation failed", exc_info=exc)
             raise
