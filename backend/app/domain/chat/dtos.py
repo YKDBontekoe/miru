@@ -59,6 +59,33 @@ class ChatRequest(BaseModel):
     use_crew: bool = False
 
 
+class AgentMessageSegment(BaseModel):
+    agent_name: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1)
+
+    @field_validator("agent_name", "message")
+    @classmethod
+    def must_not_be_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("must not be blank or whitespace only")
+        return v.strip()
+
+
+class TranscriptResponse(BaseModel):
+    messages: list[AgentMessageSegment] = Field(..., min_length=1)
+
+
+class SingleAgentResponse(BaseModel):
+    message: str = Field(..., min_length=1)
+
+    @field_validator("message")
+    @classmethod
+    def must_not_be_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("must not be blank or whitespace only")
+        return v.strip()
+
+
 class MessageUpdate(BaseModel):
     content: str = Field(..., min_length=1)
 
