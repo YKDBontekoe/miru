@@ -300,13 +300,19 @@ class CrewOrchestrator:
                 name_set = {n.name.lower(): n.name for n in room_agents}
                 formatted_segments = []
                 current_name = room_agents[0].name
-                for msg in pydantic_res.messages:
-                    name_key = msg.agent_name.lower()
-                    if name_key in name_set:
-                        current_name = name_set[name_key]
-                    formatted_segments.append(f"{current_name}: {msg.message}")
+                if getattr(pydantic_res, "messages", None):
+                    for msg in pydantic_res.messages:
+                        name_key = msg.agent_name.lower()
+                        if name_key in name_set:
+                            current_name = name_set[name_key]
+                            formatted_segments.append(f"{current_name}: {msg.message}")
+                        else:
+                            if formatted_segments:
+                                formatted_segments[-1] += f"\n\n{msg.message}"
+                            else:
+                                formatted_segments.append(f"{current_name}: {msg.message}")
                 return "\n\n".join(formatted_segments)
             else:
-                return pydantic_res.message
+                return getattr(pydantic_res, "message", "")
 
         return str(result)

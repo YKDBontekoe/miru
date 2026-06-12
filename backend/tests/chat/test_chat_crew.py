@@ -207,3 +207,51 @@ async def test_execute_crew_task_fallback_str(
             typing.cast("list[typing.Any]", room_agents), "Hello", uuid4()
         )
         assert result == "Fallback Result String"
+
+
+@pytest.mark.asyncio
+async def test_execute_crew_task_multi_with_unmatched_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    agent1 = MagicMock(
+        id=uuid4(), name="Agent1", personality="Good", description="desc", agent_integrations=[]
+    )
+    agent1.name = "Agent1"
+    agent2 = MagicMock(
+        id=uuid4(), name="Agent2", personality="Bad", description="desc", agent_integrations=[]
+    )
+    agent2.name = "Agent2"
+    room_agents = [agent1, agent2]
+
+    mock_llm = MagicMock()
+    monkeypatch.setattr(
+        "app.domain.chat.crew_orchestrator.CrewOrchestrator.get_crew_llm",
+        MagicMock(return_value=mock_llm),
+    )
+
+    with (
+        patch("app.domain.chat.crew_orchestrator.Task"),
+        patch("app.domain.chat.crew_orchestrator.Crew") as mock_crew_cls,
+        patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
+    ):
+        mock_crew_instance = MagicMock()
+        mock_result = MagicMock()
+        mock_result.pydantic = TranscriptResponse(
+            messages=[
+                AgentMessageSegment(agent_name="Agent1", message="Response1"),
+                AgentMessageSegment(agent_name="UnknownName", message="Response2"),
+            ]
+        )
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_result)
+        mock_crew_cls.return_value = mock_crew_instance
+
+        result = await CrewOrchestrator.execute_crew_task(
+            typing.cast("list[typing.Any]", room_agents),
+            "Hello",
+            uuid4(),
+            uuid4(),
+            MagicMock(),
+            accept_language="hi-IN",
+        )
+
+        assert result == "Agent1: Response1\n\nResponse2"
