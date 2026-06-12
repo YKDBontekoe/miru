@@ -47,6 +47,7 @@ class SupabaseJWTVerifier:
             return JWTPayload(**payload)
         except Exception as exc:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning("JWT validation failed: %s", exc)
             raise

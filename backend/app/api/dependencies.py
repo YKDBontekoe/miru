@@ -23,8 +23,10 @@ from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 _jwt_verifier = SupabaseJWTVerifier()
 
+
 def get_jwt_verifier() -> SupabaseJWTVerifier:
     return _jwt_verifier
+
 
 # ---------------------------------------------------------------------------
 # Repository factories
@@ -74,6 +76,6 @@ def get_memory_service(
 
 def get_auth_service(
     repo: Annotated[AuthRepository, Depends(get_auth_repo)],
-    verifier: Annotated[SupabaseJWTVerifier, Depends(get_jwt_verifier)]
+    verifier: Annotated[SupabaseJWTVerifier, Depends(get_jwt_verifier)],
 ) -> AuthService:
     return AuthService(repo, verifier)
