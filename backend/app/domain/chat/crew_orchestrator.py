@@ -21,6 +21,7 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.domain.chat.dtos import TranscriptResponse, SingleAgentResponse
 from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
@@ -248,6 +249,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=TranscriptResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -266,6 +268,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=SingleAgentResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -288,5 +291,13 @@ class CrewOrchestrator:
                     raise
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
+
+        if result and hasattr(result, "pydantic") and result.pydantic:
+            pydantic_res = result.pydantic
+            if is_multi:
+                # Convert the transcript to our expected format 'AgentName: message\n\nOtherAgent: message'
+                return "\n\n".join(f"{msg.agent_name}: {msg.message}" for msg in pydantic_res.messages)
+            else:
+                return pydantic_res.message
 
         return str(result)

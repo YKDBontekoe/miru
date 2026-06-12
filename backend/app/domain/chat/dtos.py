@@ -59,6 +59,19 @@ class ChatRequest(BaseModel):
     use_crew: bool = False
 
 
+class AgentMessageSegment(BaseModel):
+    agent_name: str
+    message: str
+
+
+class TranscriptResponse(BaseModel):
+    messages: list[AgentMessageSegment]
+
+
+class SingleAgentResponse(BaseModel):
+    message: str
+
+
 class MessageUpdate(BaseModel):
     content: str = Field(..., min_length=1)
 
