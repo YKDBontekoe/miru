@@ -310,8 +310,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   actionIconContainer: {
-    width: 34,
-    height: 34,
+    width: theme.spacing.xxxl + theme.spacing.xxs,
+    height: theme.spacing.xxxl + theme.spacing.xxs,
     borderRadius: theme.borderRadius.md,
     backgroundColor: HOME_COLORS.primarySoft,
     alignItems: 'center',
