@@ -12,6 +12,15 @@ export const HOME_CORE_COLORS = {
   accent: '#E28A2E',
   accentSoft: '#FDF1E1',
   deep: '#0F3D31',
+  taskCheckBorder: '#8FB7A7',
+  taskCheckIcon: '#FFFFFF',
+  taskDueText: '#9E5817',
+  heroGreenCircle: '#2BA98A',
+  heroOrangeCircle: '#F0B470',
+  heroTextSoft: '#CDE9DF',
+  heroTextStrong: '#FFFFFF',
+  heroSettingsBg: '#2D6A58',
+  heroStatBg: '#215445',
 } as const;
 
 export const HOME_CORE_SHADOW = Platform.select({

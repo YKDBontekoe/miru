@@ -7,7 +7,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,6 +21,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AppText } from './AppText';
 import type { AgentActivityData } from '../core/services/ChatHubService';
+import { useTheme, ThemeColors } from '../hooks/useTheme';
+import { theme } from '../core/theme';
 
 // ---------------------------------------------------------------------------
 // Bouncing dot (reused from TypingIndicator pattern)
@@ -54,7 +56,8 @@ const Dot = ({ delay, color }: { delay: number; color: string }) => {
   return (
     <Animated.View
       style={[
-        { width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, marginHorizontal: 2 },
+        styles.dot,
+        { backgroundColor: color },
         style,
       ]}
     />
@@ -76,14 +79,14 @@ function activityLabel(activity: AgentActivityData['activity']): string {
   }
 }
 
-function activityColor(activity: AgentActivityData['activity']): string {
+function activityColor(activity: AgentActivityData['activity'], C: ThemeColors): string {
   switch (activity) {
     case 'thinking':
-      return '#2563EB';
+      return C.primary;
     case 'using_tool':
-      return '#7C3AED';
+      return C.primarySurface;
     case 'done':
-      return '#059669';
+      return C.success;
   }
 }
 
@@ -106,7 +109,8 @@ interface AgentActivityIndicatorProps {
  *                         agent names, and optional detail.
  */
 export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps) {
-  const color = activityColor(activity.activity);
+  const { C } = useTheme();
+  const color = activityColor(activity.activity, C);
   const names = activity.agent_names.join(', ');
   const label = activityLabel(activity.activity);
 
@@ -114,33 +118,26 @@ export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        gap: 8,
-      }}
+      style={styles.container}
     >
       {/* Agent avatar chip */}
       <View
-        style={{
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          borderRadius: 10,
-          backgroundColor: `${color}15`,
-          borderWidth: 1,
-          borderColor: `${color}30`,
-        }}
+        style={[
+          styles.chip,
+          {
+            backgroundColor: `${color}15`,
+            borderColor: `${color}30`,
+          },
+        ]}
       >
-        <AppText style={{ fontSize: 11, fontWeight: '600', color }}>{names}</AppText>
+        <AppText style={[styles.avatarText, { color }]}>{names}</AppText>
       </View>
 
       {/* Status label */}
-      <AppText style={{ fontSize: 12, color: '#6E6E80' }}>{label}</AppText>
+      <AppText style={[styles.statusText, { color: C.muted }]}>{label}</AppText>
 
       {/* Animated dots */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={styles.dotsContainer}>
         <Dot delay={0} color={color} />
         <Dot delay={140} color={color} />
         <Dot delay={280} color={color} />
@@ -148,10 +145,47 @@ export function AgentActivityIndicator({ activity }: AgentActivityIndicatorProps
 
       {/* Optional tool/detail text */}
       {activity.activity === 'using_tool' && !!activity.detail && (
-        <AppText style={{ fontSize: 11, color: '#9E9EAF', flex: 1 }} numberOfLines={1}>
+        <AppText style={[styles.detailText, { color: C.subtext }]} numberOfLines={1}>
           {activity.detail}
         </AppText>
       )}
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.bubblePaddingH,
+    paddingVertical: theme.spacing.bubblePaddingV,
+    gap: theme.spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+  },
+  statusText: {
+    fontSize: theme.typography.caption.fontSize,
+  },
+  detailText: {
+    fontSize: theme.typography.caption.fontSize,
+    flex: 1,
+  },
+  avatarText: {
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: '600',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dot: {
+    width: theme.spacing.xs + 1,
+    height: theme.spacing.xs + 1,
+    borderRadius: theme.spacing.xs,
+    marginHorizontal: theme.spacing.xxs,
+  },
+});
