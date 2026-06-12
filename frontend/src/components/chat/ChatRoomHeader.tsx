@@ -23,14 +23,15 @@ interface ChatRoomHeaderProps {
   getAgentColor: (name: string) => string;
 }
 
-export const ChatRoomHeader = ({
+export const ChatRoomHeader = React.memo(function ChatRoomHeader({
+
   room,
   roomAgents,
   onBack,
   onQuickViewAgent,
   onManageAgentsPress,
   getAgentColor,
-}: ChatRoomHeaderProps) => {
+}: ChatRoomHeaderProps) {
   const { t } = useTranslation();
 
   return (
@@ -105,4 +106,4 @@ export const ChatRoomHeader = ({
       </ScalePressable>
     </View>
   );
-};
+});
