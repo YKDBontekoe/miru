@@ -295,24 +295,30 @@ class CrewOrchestrator:
         if result and hasattr(result, "pydantic") and result.pydantic:
             pydantic_res = result.pydantic
             if is_multi:
-                # Convert the transcript to our expected format 'AgentName: message\n\nOtherAgent: message'
-                # Normalise agent names and handle fallback to previous speaker
-                name_set = {n.name.lower(): n.name for n in room_agents}
-                formatted_segments = []
-                current_name = room_agents[0].name
-                if getattr(pydantic_res, "messages", None):
+                if isinstance(pydantic_res, TranscriptResponse):
+                    # Normalise agent names and handle fallback to previous speaker
+                    name_set = {n.name.lower(): n.name for n in room_agents}
+                    formatted_segments = []
+                    current_name = room_agents[0].name
                     for msg in pydantic_res.messages:
                         name_key = msg.agent_name.lower()
                         if name_key in name_set:
                             current_name = name_set[name_key]
                             formatted_segments.append(f"{current_name}: {msg.message}")
                         else:
+                            logger.error(
+                                "Agent name mismatch in CrewAI output. Hallucinated name: %s, Computed key: %s, Known keys: %s",
+                                msg.agent_name,
+                                name_key,
+                                list(name_set.keys()),
+                            )
                             if formatted_segments:
-                                formatted_segments[-1] += f"\n\n{msg.message}"
+                                formatted_segments[-1] += "\n\n" + msg.message
                             else:
                                 formatted_segments.append(f"{current_name}: {msg.message}")
-                return "\n\n".join(formatted_segments)
+                    return "\n\n".join(formatted_segments)
             else:
-                return getattr(pydantic_res, "message", "")
+                if isinstance(pydantic_res, SingleAgentResponse):
+                    return pydantic_res.message
 
         return str(result)
