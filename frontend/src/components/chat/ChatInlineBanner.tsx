@@ -1,6 +1,8 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { AppText } from '@/components/AppText';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { theme } from '@/core/theme';
 
 interface ChatInlineBannerProps {
   text: string;
@@ -9,26 +11,44 @@ interface ChatInlineBannerProps {
 
 const TONE_CLASSES = {
   error: {
-    box: 'border-[#B23A3A66] bg-[#B23A3A1F]',
-    text: 'text-[#B23A3A]',
+    backgroundColor: DESIGN_TOKENS.colors.destructiveSurface,
+    borderColor: DESIGN_TOKENS.colors.destructiveBorder,
+    color: DESIGN_TOKENS.colors.destructive,
   },
   success: {
-    box: 'border-[#147D6466] bg-[#147D641F]',
-    text: 'text-[#147D64]',
+    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
+    borderColor: `${DESIGN_TOKENS.colors.primary}66`,
+    color: DESIGN_TOKENS.colors.primary,
   },
   info: {
-    box: 'border-[#5A746766] bg-[#5A74671F]',
-    text: 'text-[#5A7467]',
+    backgroundColor: `${DESIGN_TOKENS.colors.muted}1F`,
+    borderColor: `${DESIGN_TOKENS.colors.muted}66`,
+    color: DESIGN_TOKENS.colors.muted,
   },
 } as const;
 
 export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps) {
-  const toneClass = TONE_CLASSES[tone];
+  const toneStyle = TONE_CLASSES[tone];
+
   return (
-    <View className={`mx-3 mb-2 rounded-xl border px-2.5 py-2 ${toneClass.box}`}>
-      <AppText variant="caption" className={`font-bold ${toneClass.text}`}>
+    <View style={[styles.container, { backgroundColor: toneStyle.backgroundColor, borderColor: toneStyle.borderColor }]}>
+      <AppText variant="caption" style={[styles.text, { color: toneStyle.color }]}>
         {text}
       </AppText>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  text: {
+    fontWeight: 'bold',
+  },
+});

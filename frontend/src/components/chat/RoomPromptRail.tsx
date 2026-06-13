@@ -1,7 +1,9 @@
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
+import { DESIGN_TOKENS } from '@/core/design/tokens';
+import { theme } from '@/core/theme';
 
 interface PromptItem {
   id: string;
@@ -39,14 +41,14 @@ export function RoomPromptRail({
   const { t } = useTranslation();
 
   return (
-    <View className="px-3 pb-2">
-      <View className="rounded-[18px] border border-[#DDE8E0] bg-white py-2 shadow-md">
-        <View className="px-3 mb-1.5 flex-row items-center">
-          <AppText variant="caption" className="text-[#5A7467] font-bold flex-1">
+    <View style={styles.container}>
+      <View style={styles.railCard}>
+        <View style={styles.headerRow}>
+          <AppText variant="caption" style={styles.headingText}>
             {heading}
           </AppText>
           {isEditing ? (
-            <AppText variant="caption" className="text-[#147D64] font-bold">
+            <AppText variant="caption" style={styles.editingText}>
               {t('chat.editing', { defaultValue: 'Editing' })}
             </AppText>
           ) : null}
@@ -55,16 +57,19 @@ export function RoomPromptRail({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="px-3"
+          contentContainerStyle={styles.scrollContent}
         >
           <Pressable
             onPress={onSave}
-            className={`mr-2 rounded-full px-3 py-2 border bg-[#DDF4EB] border-[#147D6455] ${
-              isStreaming || !canSave ? 'opacity-50' : 'opacity-100'
-            }`}
+            style={({ pressed }) => [
+              styles.promptItem,
+              styles.saveButton,
+              (isStreaming || !canSave) && styles.disabledOpacity,
+              pressed && styles.pressed,
+            ]}
             disabled={isStreaming || !canSave}
           >
-            <AppText className="text-xs font-bold text-[#147D64]">{saveLabel}</AppText>
+            <AppText style={styles.saveButtonText}>{saveLabel}</AppText>
           </Pressable>
 
           {prompts.map((action) => (
@@ -72,17 +77,19 @@ export function RoomPromptRail({
               key={action.id}
               onPress={() => onPromptPress(action.text)}
               onLongPress={() => onPromptLongPress(action)}
-              className={`mr-2 rounded-full px-3 py-2 border ${
-                action.pinned
-                  ? 'bg-[#DDF4EB] border-[#147D6455] text-[#147D64]'
-                  : 'bg-[#ECF5F0] border-[#DDE8E0] text-[#13251C]'
-              } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
+              style={({ pressed }) => [
+                styles.promptItem,
+                action.pinned ? styles.pinnedPrompt : styles.unpinnedPrompt,
+                isStreaming && styles.streamingOpacity,
+                pressed && styles.pressed,
+              ]}
               disabled={isStreaming}
             >
               <AppText
-                className={`text-xs font-bold ${
-                  action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-                }`}
+                style={[
+                  styles.promptText,
+                  action.pinned ? styles.pinnedPromptText : styles.unpinnedPromptText,
+                ]}
               >
                 {action.pinned ? '★ ' : ''}
                 {action.text}
@@ -95,15 +102,18 @@ export function RoomPromptRail({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerClassName="px-3 pt-2"
+            contentContainerStyle={styles.contextActionsScroll}
           >
             {contextActions.map((value) => (
               <Pressable
                 key={value}
                 onPress={() => onContextPress(value)}
-                className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
+                style={({ pressed }) => [
+                  styles.contextAction,
+                  pressed && styles.pressed,
+                ]}
               >
-                <AppText variant="caption" className="text-[#5A7467] font-bold">
+                <AppText variant="caption" style={styles.contextActionText}>
                   {value}
                 </AppText>
               </Pressable>
@@ -114,3 +124,97 @@ export function RoomPromptRail({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+  },
+  railCard: {
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: DESIGN_TOKENS.colors.border,
+    backgroundColor: DESIGN_TOKENS.colors.surface,
+    paddingVertical: theme.spacing.sm,
+    ...DESIGN_TOKENS.shadow,
+  },
+  headerRow: {
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headingText: {
+    color: DESIGN_TOKENS.colors.muted,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  editingText: {
+    color: DESIGN_TOKENS.colors.primary,
+    fontWeight: 'bold',
+  },
+  scrollContent: {
+    paddingHorizontal: theme.spacing.md,
+  },
+  promptItem: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderWidth: 1,
+  },
+  saveButton: {
+    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
+    borderColor: `${DESIGN_TOKENS.colors.primary}55`,
+  },
+  disabledOpacity: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: 'bold',
+    color: DESIGN_TOKENS.colors.primary,
+  },
+  pinnedPrompt: {
+    backgroundColor: DESIGN_TOKENS.colors.primarySoft,
+    borderColor: `${DESIGN_TOKENS.colors.primary}55`,
+  },
+  unpinnedPrompt: {
+    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+    borderColor: DESIGN_TOKENS.colors.border,
+  },
+  streamingOpacity: {
+    opacity: 0.6,
+  },
+  promptText: {
+    fontSize: theme.typography.caption.fontSize,
+    fontWeight: 'bold',
+  },
+  pinnedPromptText: {
+    color: DESIGN_TOKENS.colors.primary,
+  },
+  unpinnedPromptText: {
+    color: DESIGN_TOKENS.colors.text,
+  },
+  contextActionsScroll: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+  },
+  contextAction: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: DESIGN_TOKENS.colors.border,
+  },
+  contextActionText: {
+    color: DESIGN_TOKENS.colors.muted,
+    fontWeight: 'bold',
+  },
+  pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+});
