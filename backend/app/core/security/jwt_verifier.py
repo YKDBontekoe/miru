@@ -56,6 +56,9 @@ class SupabaseJWTVerifier:
                     audience="authenticated",
                 )
             return JWTPayload(**payload)
-        except Exception as exc:
+        except jwt.PyJWTError as exc:
             logger.warning("JWT validation failed: %s", exc)
+            raise
+        except Exception as exc:
+            logger.exception("Unexpected JWT verifier error while validating token: %s", exc)
             raise

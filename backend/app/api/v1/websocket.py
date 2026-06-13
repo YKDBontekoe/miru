@@ -28,10 +28,12 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi.security import HTTPAuthorizationCredentials
 
-from app.api.dependencies import get_jwt_verifier
+from app.core.security.auth import get_current_user
 from app.domain.agents.service import AgentService
 from app.domain.chat.service import ChatService
+from app.infrastructure.database.supabase import get_supabase
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -48,11 +50,14 @@ logger = logging.getLogger(__name__)
 
 
 async def _verify_token(token: str) -> UUID | None:
-    """Decode a Supabase JWT by delegating to the application's JWT verifier."""
+    """Decode a Supabase JWT by delegating to the central auth entrypoint."""
     try:
-        verifier = get_jwt_verifier()
-        payload = await verifier.verify_token(token)
-        return payload.sub
+        from app.api.dependencies import get_auth_repo, get_jwt_verifier
+        from app.domain.auth.service import AuthService
+
+        auth_service = AuthService(get_auth_repo(get_supabase()), get_jwt_verifier())
+        credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        return await get_current_user(credentials, auth_service)
     except Exception:
         logger.warning("WS auth rejected: invalid token")
         return None
