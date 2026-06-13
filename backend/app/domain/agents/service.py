@@ -15,6 +15,7 @@ from app.domain.agents.schemas import (
     MoodResponse,
 )
 from app.infrastructure.external.openrouter import structured_completion
+from tortoise.transactions import in_transaction
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -123,32 +124,33 @@ class AgentService:
             capability_ids=agent_data.capabilities,
         )
 
-        agent = await Agent.create(
-            user_id=user_id,
-            name=agent_data.name,
-            personality=agent_data.personality,
-            description=agent_data.description,
-            goals=agent_data.goals,
-            system_prompt=system_prompt,
-        )
+        async with in_transaction():
+            agent = await Agent.create(
+                user_id=user_id,
+                name=agent_data.name,
+                personality=agent_data.personality,
+                description=agent_data.description,
+                goals=agent_data.goals,
+                system_prompt=system_prompt,
+            )
 
-        if agent_data.capabilities:
-            caps = await Capability.filter(id__in=agent_data.capabilities)
-            await agent.capabilities.add(*caps)
+            if agent_data.capabilities:
+                caps = await Capability.filter(id__in=agent_data.capabilities)
+                await agent.capabilities.add(*caps)
 
-        if agent_data.integrations:
-            integrations = await Integration.filter(id__in=agent_data.integrations)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=agent_data.integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            if agent_data.integrations:
+                integrations = await Integration.filter(id__in=agent_data.integrations)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=agent_data.integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
         # Refetch with relations so the response is fully populated.
         refetched = await self.repo.get_by_id(agent.pk)
@@ -192,53 +194,55 @@ class AgentService:
 
         fields = data.model_dump(exclude_none=True)
 
-        # --- capabilities ---
-        new_capability_ids: list[str] | None = fields.pop("capabilities", None)
-        if new_capability_ids is not None:
-            caps = await Capability.filter(id__in=new_capability_ids)
-            await agent.capabilities.clear()
-            if caps:
-                await agent.capabilities.add(*caps)
-            effective_cap_ids = new_capability_ids
-        else:
-            effective_cap_ids = [
-                str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
-            ]
+        async with in_transaction():
+            # --- capabilities ---
+            new_capability_ids: list[str] | None = fields.pop("capabilities", None)
+            if new_capability_ids is not None:
+                caps = await Capability.filter(id__in=new_capability_ids)
+                await agent.capabilities.clear()
+                if caps:
+                    await agent.capabilities.add(*caps)
+                effective_cap_ids = new_capability_ids
+            else:
+                effective_cap_ids = [
+                    str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
+                ]
 
-        # --- integrations ---
-        new_integration_ids: list[str] | None = fields.pop("integrations", None)
-        new_integration_configs: dict = fields.pop("integration_configs", None) or {}
-        if new_integration_ids is not None:
-            await AgentIntegration.filter(agent=agent).delete()
-            integrations = await Integration.filter(id__in=new_integration_ids)
-            agent_integrations = [
-                AgentIntegration(
-                    agent=agent,
-                    integration=integration,
-                    config=new_integration_configs.get(str(integration.id), {}),
-                    enabled=True,
-                )
-                for integration in integrations
-            ]
-            if agent_integrations:
-                await AgentIntegration.bulk_create(agent_integrations)
+            # --- integrations ---
+            new_integration_ids: list[str] | None = fields.pop("integrations", None)
+            new_integration_configs: dict = fields.pop("integration_configs", None) or {}
+            if new_integration_ids is not None:
+                await AgentIntegration.filter(agent=agent).delete()
+                integrations = await Integration.filter(id__in=new_integration_ids)
+                agent_integrations = [
+                    AgentIntegration(
+                        agent=agent,
+                        integration=integration,
+                        config=new_integration_configs.get(str(integration.id), {}),
+                        enabled=True,
+                    )
+                    for integration in integrations
+                ]
+                if agent_integrations:
+                    await AgentIntegration.bulk_create(agent_integrations)
 
-        # Merge profile fields with current values so build_system_prompt has full context
-        name = fields.get("name", agent.name)
-        personality = fields.get("personality", agent.personality)
-        description = fields.get("description", agent.description)
-        goals = fields.get("goals", agent.goals)
+            # Merge profile fields with current values so build_system_prompt has full context
+            name = fields.get("name", agent.name)
+            personality = fields.get("personality", agent.personality)
+            description = fields.get("description", agent.description)
+            goals = fields.get("goals", agent.goals)
 
-        updated_prompt = await self.build_system_prompt(
-            name=name,
-            personality=personality,
-            description=description,
-            goals=goals,
-            capability_ids=effective_cap_ids or None,
-        )
-        fields["system_prompt"] = updated_prompt
+            updated_prompt = await self.build_system_prompt(
+                name=name,
+                personality=personality,
+                description=description,
+                goals=goals,
+                capability_ids=effective_cap_ids or None,
+            )
+            fields["system_prompt"] = updated_prompt
 
-        updated = await self.repo.update_agent(agent_id, user_id, **fields)
+            updated = await self.repo.update_agent(agent_id, user_id, **fields)
+
         if not updated:
             return None
         return _build_agent_response(updated)
