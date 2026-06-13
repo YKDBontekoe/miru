@@ -94,7 +94,7 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12 }}
+          contentContainerClassName="px-3"
           data={prompts}
           keyExtractor={(item) => item.id}
           extraData={isStreaming}
@@ -116,9 +116,9 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 }}
+            contentContainerClassName="px-3 pt-2"
             data={contextActions}
-            keyExtractor={(item) => item}
+            keyExtractor={(item, index) => `${item}-${index}`}
             renderItem={renderContextAction}
           />
         ) : null}

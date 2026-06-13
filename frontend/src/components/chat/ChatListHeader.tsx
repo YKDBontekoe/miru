@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { FlatList, ScrollView, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -58,7 +58,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
 
   const renderAgentPill = useCallback(
     ({ item }: { item: Agent }) => (
-      <View style={{ marginRight: 8 }}>
+      <View className="mr-2">
         <AgentPill
           agent={item}
           onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
@@ -182,7 +182,7 @@ export const ChatListHeader = React.memo(function ChatListHeader({
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16 }}
+              contentContainerClassName="px-4"
               data={memoizedAgents}
               keyExtractor={(item) => item.id}
               extraData={selectedAgentId}
