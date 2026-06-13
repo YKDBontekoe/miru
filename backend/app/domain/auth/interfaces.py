@@ -6,6 +6,15 @@ from typing import Protocol
 from uuid import UUID
 
 from app.domain.auth.entities import Passkey, PasskeyCreate
+from app.domain.auth.schemas import JWTPayload
+
+
+class TokenVerifierProtocol(Protocol):
+    """Protocol for verifying and decoding JWT tokens."""
+
+    async def decode_jwt(self, token: str) -> JWTPayload:
+        """Decode and verify a JWT."""
+        pass
 
 
 class AuthRepositoryProtocol(Protocol):
