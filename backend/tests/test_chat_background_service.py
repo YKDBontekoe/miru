@@ -146,12 +146,14 @@ async def test_update_room_summary_background_success(
     mock_room.summary = "old summary"
     background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
 
-    from app.domain.chat.background_service import RoomSummaryResponse
+    from app.domain.chat.background_service import BackgroundRoomSummaryResponse
 
     with patch(
         "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock
     ) as mock_structured_completion:
-        mock_structured_completion.return_value = RoomSummaryResponse(summary="new updated summary")
+        mock_structured_completion.return_value = BackgroundRoomSummaryResponse(
+            summary="new updated summary"
+        )
 
         await background_service.update_room_summary_background(room_id, history)
 
