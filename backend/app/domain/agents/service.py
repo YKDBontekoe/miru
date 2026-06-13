@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from tortoise.transactions import in_transaction
+
 from app.domain.agents.models import Agent, AgentIntegration, Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
@@ -15,7 +17,6 @@ from app.domain.agents.schemas import (
     MoodResponse,
 )
 from app.infrastructure.external.openrouter import structured_completion
-from tortoise.transactions import in_transaction
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -205,7 +206,8 @@ class AgentService:
                 effective_cap_ids = new_capability_ids
             else:
                 effective_cap_ids = [
-                    str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)
+                    str(c_id)
+                    for c_id in await agent.capabilities.all().values_list("id", flat=True)
                 ]
 
             # --- integrations ---
