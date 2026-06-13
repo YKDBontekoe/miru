@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class RoomSummaryResponse(BaseModel):
+class BackgroundRoomSummaryResponse(BaseModel):
     """Structured response model for room summaries."""
 
     summary: str
@@ -174,7 +174,7 @@ class ChatBackgroundService:
             response = await structured_completion(
                 model=model_name,  # Use a fast/cheap model for summarization
                 messages=messages,
-                response_model=RoomSummaryResponse,
+                response_model=BackgroundRoomSummaryResponse,
             )
 
             new_summary = response.summary.strip()
