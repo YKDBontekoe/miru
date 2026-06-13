@@ -27,7 +27,7 @@ const TONE_CLASSES = {
   },
 } as const;
 
-export function ChatInlineBanner({ text, tone = 'info' }: ChatInlineBannerProps) {
+export const ChatInlineBanner = ({ text, tone = 'info' }: ChatInlineBannerProps) => {
   const toneStyle = TONE_CLASSES[tone];
 
   return (

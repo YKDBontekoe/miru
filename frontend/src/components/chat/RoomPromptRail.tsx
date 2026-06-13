@@ -25,7 +25,7 @@ interface RoomPromptRailProps {
   onContextPress?: (value: string) => void;
 }
 
-export function RoomPromptRail({
+export const RoomPromptRail = ({
   prompts,
   isStreaming,
   saveLabel,
@@ -37,7 +37,7 @@ export function RoomPromptRail({
   onPromptLongPress,
   contextActions,
   onContextPress,
-}: RoomPromptRailProps) {
+}: RoomPromptRailProps) => {
   const { t } = useTranslation();
 
   return (
