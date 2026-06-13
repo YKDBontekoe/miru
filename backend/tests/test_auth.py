@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+import base64
+import json
+import uuid
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import jwt
 import pytest
 
+from app.core.security.jwt_verifier import SupabaseJWTVerifier
 from app.domain.auth.schemas import JWTPayload
+from app.domain.auth.service import AuthService
 from app.infrastructure.database.supabase import get_supabase
+from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.main import app
 
 if TYPE_CHECKING:
@@ -21,11 +27,11 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
+
+    verifier = SupabaseJWTVerifier()
+    service = AuthService(AuthRepository(MagicMock()), verifier)
     payload = await service.decode_jwt(token)
 
     assert isinstance(payload, JWTPayload)
@@ -35,11 +41,11 @@ async def test_decode_valid_jwt() -> None:
 @pytest.mark.asyncio
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+
+    verifier = SupabaseJWTVerifier()
+    service = AuthService(AuthRepository(MagicMock()), verifier)
 
     with pytest.raises(jwt.ExpiredSignatureError):
         await service.decode_jwt(token)
@@ -50,11 +56,10 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
     import logging
 
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
-
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+
+    verifier = SupabaseJWTVerifier()
+    service = AuthService(AuthRepository(MagicMock()), verifier)
 
     with (
         caplog.at_level(logging.WARNING),
@@ -93,3 +98,111 @@ def test_invalid_token_returns_401(client: TestClient) -> None:
         assert response.status_code == 401
     finally:
         app.dependency_overrides = {}
+
+
+@pytest.mark.asyncio
+async def test_decode_rs256_valid_jwt() -> None:
+    """An RS256 token is verified successfully using the JWKS client branch."""
+
+    # Create an RS256 token (we'll just use a dummy key and mock decode)
+    header_b64 = (
+        base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
+        .decode()
+        .rstrip("=")
+    )
+    payload_b64 = (
+        base64.urlsafe_b64encode(
+            json.dumps(
+                {
+                    "sub": "user_id",
+                    "role": "authenticated",
+                    "aud": "authenticated",
+                    "iss": "supabase",
+                    "exp": 1999999999,
+                    "iat": 1,
+                }
+            ).encode()
+        )
+        .decode()
+        .rstrip("=")
+    )
+    token = f"{header_b64}.{payload_b64}.c2lnbmF0dXJl"
+
+    verifier = SupabaseJWTVerifier()
+    service = AuthService(AuthRepository(MagicMock()), verifier)
+
+    with patch("jwt.PyJWKClient") as mock_jwk_client_class:
+        mock_jwks_client_instance = MagicMock()
+        mock_jwks_client_instance.get_signing_key_from_jwt.return_value = MagicMock(
+            key="public_key"
+        )
+        mock_jwk_client_class.return_value = mock_jwks_client_instance
+
+        with patch("asyncio.to_thread") as mock_to_thread:
+            # We mock to_thread to immediately return the result of get_signing_key_from_jwt
+            mock_to_thread.return_value = mock_jwks_client_instance.get_signing_key_from_jwt(token)
+
+            with patch("jwt.decode") as mock_jwt_decode:
+                mock_jwt_decode.return_value = {
+                    "sub": str(uuid.uuid4()),
+                    "role": "authenticated",
+                    "aud": "authenticated",
+                    "iss": "supabase",
+                    "exp": 1999999999,
+                    "iat": 1,
+                }
+
+                payload = await service.decode_jwt(token)
+
+                assert isinstance(payload, JWTPayload)
+                pass
+
+
+@pytest.mark.asyncio
+async def test_decode_rs256_invalid_jwt_raises_error() -> None:
+    """An RS256 token fails verification using the JWKS client branch when an error is raised."""
+    import jwt
+
+    # Create an RS256 token (we'll just use a dummy key and mock decode)
+    header_b64 = (
+        base64.urlsafe_b64encode(json.dumps({"alg": "RS256", "typ": "JWT"}).encode())
+        .decode()
+        .rstrip("=")
+    )
+    payload_b64 = (
+        base64.urlsafe_b64encode(
+            json.dumps(
+                {
+                    "sub": "user_id",
+                    "role": "authenticated",
+                    "aud": "authenticated",
+                    "iss": "supabase",
+                    "exp": 1999999999,
+                    "iat": 1,
+                }
+            ).encode()
+        )
+        .decode()
+        .rstrip("=")
+    )
+    token = f"{header_b64}.{payload_b64}.c2lnbmF0dXJl"
+
+    verifier = SupabaseJWTVerifier()
+    service = AuthService(AuthRepository(MagicMock()), verifier)
+
+    with patch("jwt.PyJWKClient") as mock_jwk_client_class:
+        mock_jwks_client_instance = MagicMock()
+        mock_jwks_client_instance.get_signing_key_from_jwt.side_effect = jwt.PyJWKClientError(
+            "Unable to fetch JWKS"
+        )
+        mock_jwk_client_class.return_value = mock_jwks_client_instance
+
+        with patch("asyncio.to_thread") as mock_to_thread:
+            # Re-raise the exception from the mock
+            async def mock_coro(*args, **kwargs):
+                raise jwt.PyJWKClientError("Unable to fetch JWKS")
+
+            mock_to_thread.side_effect = mock_coro
+
+            with pytest.raises(jwt.PyJWKClientError):
+                await service.decode_jwt(token)

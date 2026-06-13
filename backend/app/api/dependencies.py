@@ -6,7 +6,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.core.security.jwt_verifier import SupabaseJWTVerifier
 from app.domain.agents.service import AgentService
+from app.domain.auth.interfaces import TokenVerifierProtocol
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
@@ -62,5 +64,18 @@ def get_memory_service(
     return MemoryService(repo)
 
 
-def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo)
+_jwt_verifier: SupabaseJWTVerifier | None = None
+
+
+def get_jwt_verifier() -> TokenVerifierProtocol:
+    global _jwt_verifier
+    if _jwt_verifier is None:
+        _jwt_verifier = SupabaseJWTVerifier()
+    return _jwt_verifier
+
+
+def get_auth_service(
+    repo: Annotated[AuthRepository, Depends(get_auth_repo)],
+    token_verifier: Annotated[TokenVerifierProtocol, Depends(get_jwt_verifier)],
+) -> AuthService:
+    return AuthService(repo, token_verifier)
