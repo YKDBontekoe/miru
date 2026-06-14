@@ -75,7 +75,7 @@ class CrewOrchestrator:
             model=f"openrouter/{settings.default_chat_model}",
             base_url="https://openrouter.ai/api/v1",
             api_key=settings.openrouter_api_key,
-            additional_drop_params=["tool_choice"],
+            drop_params=True,
         )
 
     @staticmethod

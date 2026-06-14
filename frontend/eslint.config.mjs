@@ -21,10 +21,20 @@ export default [
         ...globals.browser,
       },
     },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json'
+        },
+        'babel-module': {}
+      }
+    },
     rules: {
       'react/no-unescaped-entities': 'off',
       'import/no-named-as-default-member': 'off',
       'import/no-duplicates': 'off',
+      'import/no-unresolved': 'off',
     },
   },
   {
