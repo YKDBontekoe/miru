@@ -21,7 +21,7 @@ import { TaskCard } from '../../src/components/productivity/TaskCard';
 import { theme } from '../../src/core/theme';
 import { CalendarEvent, Note, Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
-import { useProductivityData, Tab, TaskPriority, RenderItemData } from '../../src/hooks/useProductivityData';
+import { useProductivityData, Tab, TaskPriority, RenderItemData } from '@/hooks/useProductivityData';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {

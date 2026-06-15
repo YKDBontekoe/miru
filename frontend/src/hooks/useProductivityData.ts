@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Note, Task, CalendarEvent } from '../core/models';
-import { useProductivityStore } from '../store/useProductivityStore';
+import { Note, Task, CalendarEvent } from '@/core/models';
+import { useProductivityStore } from '@/store/useProductivityStore';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -211,15 +211,16 @@ export function useProductivityData({
 
     const lines: string[] = [];
     if (taskPriorityCounts.overdue > 0) {
-      lines.push(`1) Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`);
+      lines.push(`1) ${t('productivity.plan.recover_overdue', { count: taskPriorityCounts.overdue }) || `Recover overdue: start with ${taskPriorityCounts.overdue} overdue task(s).`}`);
     } else {
-      lines.push('1) No overdue tasks: start with highest-impact open work.');
+      lines.push(`1) ${t('productivity.plan.no_overdue') || 'No overdue tasks: start with highest-impact open work.'}`);
     }
 
     if (nextTasks.length > 0) {
-      lines.push(`2) Focus block: ${nextTasks.map((task) => task.title).join(', ')}.`);
+      const taskTitles = nextTasks.map((task) => task.title).join(', ');
+      lines.push(`2) ${t('productivity.plan.focus_block_tasks', { tasks: taskTitles }) || `Focus block: ${taskTitles}.`}`);
     } else {
-      lines.push('2) Focus block: no pending tasks, use this for planning or review.');
+      lines.push(`2) ${t('productivity.plan.focus_block_empty') || 'Focus block: no pending tasks, use this for planning or review.'}`);
     }
 
     if (nextEvents.length > 0) {
@@ -231,9 +232,9 @@ export function useProductivityData({
           }).format(new Date(event.start_time))
         )
         .join(', ');
-      lines.push(`3) Calendar checkpoints at ${eventLine}.`);
+      lines.push(`3) ${t('productivity.plan.calendar_checkpoints', { times: eventLine }) || `Calendar checkpoints at ${eventLine}.`}`);
     } else {
-      lines.push('3) Calendar is light: reserve time for deep work and wrap-up.');
+      lines.push(`3) ${t('productivity.plan.calendar_light') || 'Calendar is light: reserve time for deep work and wrap-up.'}`);
     }
 
     setTodayPlan(lines.join('\n'));
@@ -244,6 +245,7 @@ export function useProductivityData({
     prioritizedTasks,
     setActiveTab,
     setTodayPlan,
+    t,
     taskPriorityCounts.overdue,
   ]);
 
