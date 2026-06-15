@@ -107,7 +107,7 @@ export function RoomPromptRail({
           keyExtractor={(item) => item.id}
           renderItem={renderPromptItem}
           ListHeaderComponent={renderPromptHeader}
-          extraData={isStreaming}
+          extraData={[isStreaming, canSave, saveLabel]}
         />
 
         {contextActions && contextActions.length > 0 && onContextPress ? (
