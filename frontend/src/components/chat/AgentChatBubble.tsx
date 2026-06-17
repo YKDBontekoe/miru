@@ -27,10 +27,11 @@ interface AgentChatBubbleProps {
  * and error states with a retry button.
  *
  * @param props.text - The markdown content of the message.
- * @param props.status - The delivery status (sent, streaming, error).
- * @param props.agentName - The name of the agent, used for the avatar and display name.
- * @param props.timestamp - The ISO string timestamp to display.
- * @param props.onRetry - Callback function executed when the user taps retry on a failed message.
+ * @param [props.status=MessageStatus.sent] - The delivery status (sent, streaming, error).
+ * @param [props.agentName] - The name of the agent, used for the avatar and display name.
+ * @param [props.timestamp] - The ISO string timestamp to display.
+ * @param [props.onRetry] - Callback function executed when the user taps retry on a
+ *                          failed message.
  */
 export const AgentChatBubble = ({
   text,
