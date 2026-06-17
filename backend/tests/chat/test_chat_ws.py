@@ -133,7 +133,6 @@ async def test_create_step_callback(chat_service: ChatService) -> None:
 async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -> None:
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
-    agent_names = ["Agent1"]
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
 
@@ -159,7 +158,6 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
 async def test_persist_and_broadcast_agent_response_error(chat_service: ChatService) -> None:
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
-    agent_names = ["Agent1"]
     from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")

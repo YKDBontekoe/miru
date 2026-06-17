@@ -78,7 +78,6 @@ async def test_store_memories_background_success(background_service: ChatBackgro
     agent1.id = uuid.uuid4()
 
     responded_agents = [agent1]
-    agent_names = ["Agent1"]
 
     with (
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
@@ -102,7 +101,7 @@ async def test_store_memories_background_success(background_service: ChatBackgro
 async def test_store_memories_background_exception(
     background_service: ChatBackgroundService,
 ) -> None:
-    from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
+    from app.domain.chat.dtos import ChatCrewOutput
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
 
