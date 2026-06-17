@@ -293,7 +293,7 @@ class CrewOrchestrator:
                 await asyncio.sleep(2)
 
         if result and getattr(result, "pydantic", None):
-            return result.pydantic
+            return cast("ChatCrewOutput", getattr(result, "pydantic", None))
 
         # Fallback if structural parsing fails completely
         fallback_msg = str(result) if result else "An error occurred."
