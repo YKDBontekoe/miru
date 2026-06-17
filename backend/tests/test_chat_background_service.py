@@ -68,6 +68,7 @@ async def test_update_affinity_background_exception(
 @pytest.mark.asyncio
 async def test_store_memories_background_success(background_service: ChatBackgroundService) -> None:
     from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
+
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
     user_message = "Hello world"
@@ -102,6 +103,7 @@ async def test_store_memories_background_exception(
     background_service: ChatBackgroundService,
 ) -> None:
     from app.domain.chat.dtos import ChatCrewOutput
+
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
 

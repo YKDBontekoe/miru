@@ -143,6 +143,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             return msg
 
         from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
+
         typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
         typing.cast(
             "AsyncMock", chat_service.agent_repo.increment_message_count
@@ -159,6 +160,7 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
     from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
+
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")
     )
