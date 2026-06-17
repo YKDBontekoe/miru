@@ -71,15 +71,9 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
-**Note on Prompt:** Jules is instructed to strictly follow project architecture and code style: 100-char lines, type hints/explicit types, double quotes for Python, single quotes for TypeScript, specific import orders (`stdlib` → `third-party` → `first-party`), use `str | None` not `Optional[str]`, use `const` for components/internal functions, include `from __future__ import annotations`, log errors with context (`logger.exception()`), and structure domains in `backend/app/domain/<domain>/` and routes in `backend/app/api/v1/`.
-
-### 2. CodeRabbit
-
-**Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
-**Trigger Conditions:**
-- Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
-- Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
-**Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
+**Note on Prompt:** // DOCS(miru-agent): prompt mismatch. The prompt in
+`.github/workflows/ai-agents.yml` dynamically concatenates project constraints
+extracted by CodeRabbit. Refer to the "Code Style" section for exact rules.
 
 ## Project Structure
 

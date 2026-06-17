@@ -10,6 +10,7 @@ from app.infrastructure.external.steam import get_player_summaries, resolve_vani
 router = APIRouter(tags=["Integrations"])
 
 
+# DOCS(miru-agent): undocumented endpoint
 @router.get(
     "/steam/resolve-user",
     summary="Resolve Steam user",
