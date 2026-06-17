@@ -9,7 +9,6 @@ import jwt
 import pytest
 
 from app.domain.auth.schemas import JWTPayload
-from app.domain.auth.interfaces import TokenVerifierProtocol
 from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
 from app.infrastructure.database.supabase import get_supabase
 from app.main import app
