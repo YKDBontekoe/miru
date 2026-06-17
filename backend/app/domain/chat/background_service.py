@@ -98,18 +98,21 @@ class ChatBackgroundService:
                     if agent_name
                     else (responded_agents[0] if responded_agents else None)
                 )
-                agent_vector = await embed(content)
-                await self.memory_repo.insert_memory(
-                    Memory(
-                        id=uuid.uuid4(),
-                        user_id=user_id,
-                        agent_id=matched.id if matched else None,
-                        room_id=room_id,
-                        content=f"{agent_name or 'Agent'}: {content}",
-                        embedding=agent_vector,
-                        meta={"role": "agent", "agent_name": agent_name or ""},
+
+                # Only persist memory if the matched agent is actually in the responded_agents list
+                if matched and matched in responded_agents:
+                    agent_vector = await embed(content)
+                    await self.memory_repo.insert_memory(
+                        Memory(
+                            id=uuid.uuid4(),
+                            user_id=user_id,
+                            agent_id=matched.id if matched else None,
+                            room_id=room_id,
+                            content=f"{agent_name or 'Agent'}: {content}",
+                            embedding=agent_vector,
+                            meta={"role": "agent", "agent_name": agent_name or ""},
+                        )
                     )
-                )
         except Exception:
             logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
 

@@ -5,7 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.domain.chat.background_service import ChatBackgroundService
+from app.domain.chat.background_service import ChatBackgroundService, RoomSummaryResponse
+from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
 
 
 @pytest.fixture
@@ -67,8 +68,6 @@ async def test_update_affinity_background_exception(
 
 @pytest.mark.asyncio
 async def test_store_memories_background_success(background_service: ChatBackgroundService) -> None:
-    from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
-
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
     user_message = "Hello world"
@@ -102,12 +101,10 @@ async def test_store_memories_background_success(background_service: ChatBackgro
 async def test_store_memories_background_exception(
     background_service: ChatBackgroundService,
 ) -> None:
-    from app.domain.chat.dtos import ChatCrewOutput
-
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
 
-    result = ChatCrewOutput(messages=[])
+    result = ChatCrewOutput(messages=[AgentMessage(agent_name="Agent", message="Hi")])
 
     with (
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
@@ -145,8 +142,6 @@ async def test_update_room_summary_background_success(
     mock_room = MagicMock()
     mock_room.summary = "old summary"
     background_service.chat_repo.get_room = AsyncMock(return_value=mock_room)
-
-    from app.domain.chat.background_service import RoomSummaryResponse
 
     with patch(
         "app.infrastructure.external.openrouter.structured_completion", new_callable=AsyncMock

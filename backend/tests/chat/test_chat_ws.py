@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 from tortoise.exceptions import BaseORMException
 
+from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
 from app.domain.chat.service import ChatService
 
 
@@ -142,8 +143,6 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             msg.created_at = datetime.now()
             return msg
 
-        from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
-
         typing.cast("AsyncMock", chat_service.chat_repo.save_message).side_effect = _save_mock
         typing.cast(
             "AsyncMock", chat_service.agent_repo.increment_message_count
@@ -159,7 +158,6 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
 async def test_persist_and_broadcast_agent_response_error(chat_service: ChatService) -> None:
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
-    from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
 
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")

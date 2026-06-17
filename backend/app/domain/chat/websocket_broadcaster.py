@@ -162,6 +162,11 @@ class ChatWebSocketBroadcaster:
             agent_name = msg.agent_name
             content = msg.message
             matched_agent = agent_by_name.get(agent_name.lower())
+
+            # Reject messages with unmatched agent names if there are multiple agents in the room
+            if matched_agent is None and len(room_agents) > 1:
+                continue
+
             # Single-agent fallback: attribute the message to the only agent in the room.
             effective_agent = matched_agent or (room_agents[0] if len(room_agents) == 1 else None)
             agent_id_for_msg = effective_agent.id if effective_agent else None

@@ -71,11 +71,24 @@ class MessageUpdate(BaseModel):
 
 
 class AgentMessage(BaseModel):
-    agent_name: str = Field(description="The name of the agent speaking.")
-    message: str = Field(description="The response content from the agent.")
+    """Represents a single message from an agent in the chat.
+
+    Attributes:
+        agent_name: The name of the agent speaking.
+        message: The response content from the agent.
+    """
+
+    agent_name: str = Field(..., min_length=1, description="The name of the agent speaking.")
+    message: str = Field(..., min_length=1, description="The response content from the agent.")
 
 
 class ChatCrewOutput(BaseModel):
+    """The structured output format for a CrewAI orchestration task.
+
+    Attributes:
+        messages: A list of messages from the participating agents.
+    """
+
     messages: list[AgentMessage] = Field(
-        description="A list of messages from the participating agents."
+        ..., min_length=1, description="A list of messages from the participating agents."
     )

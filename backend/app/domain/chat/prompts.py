@@ -31,7 +31,8 @@ MULTI_AGENT_PROMPT = (
     "(tasks/notes/events) and propose a concrete plan. "
     "Before creating, updating, or deleting tasks/notes/events, confirm intent briefly unless "
     "the user explicitly asked you to perform the action now. "
-    "Return your response as a structured list of messages from the agents who actually responded.{locale_instruction}"
+    "Return your response as a JSON object with a 'messages' field containing the list of messages "
+    "from the agents who actually responded.{locale_instruction}"
 )
 
 SINGLE_AGENT_PROMPT = (
