@@ -31,8 +31,8 @@ MULTI_AGENT_PROMPT = (
     "(tasks/notes/events) and propose a concrete plan. "
     "Before creating, updating, or deleting tasks/notes/events, confirm intent briefly unless "
     "the user explicitly asked you to perform the action now. "
-    "Return a transcript of only the agents who actually responded, "
-    "formatted as 'AgentName: message' with one blank line between agents.{locale_instruction}"
+    "Return your response as a JSON object with a 'messages' field containing the list of messages "
+    "from the agents who actually responded.{locale_instruction}"
 )
 
 SINGLE_AGENT_PROMPT = (
@@ -43,13 +43,15 @@ SINGLE_AGENT_PROMPT = (
     "Respond naturally and helpfully as yourself. "
     "When relevant, be proactive about planning and converting intent into tasks/notes/events. "
     "Confirm before write actions unless the user explicitly requested immediate execution. "
-    "Do not introduce yourself or list your capabilities — just answer directly.{locale_instruction}"
+    "Do not introduce yourself or list your capabilities — just answer directly. "
+    "Return your response as a structured list containing your reply.{locale_instruction}"
 )
 
 MULTI_AGENT_EXPECTED_OUTPUT = (
-    "A chat transcript with only the relevant agents responding. "
-    "Format: 'AgentName: message' with one blank line between agents. "
+    "A structured list of messages from only the relevant agents responding. "
     "Agents should be concise and natural, not self-promotional."
 )
 
-SINGLE_AGENT_EXPECTED_OUTPUT = "A direct, helpful response to the user's message."
+SINGLE_AGENT_EXPECTED_OUTPUT = (
+    "A structured list containing the direct, helpful reply to the user's message."
+)

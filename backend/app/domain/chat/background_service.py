@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
+    from app.domain.chat.dtos import ChatCrewOutput
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -67,11 +68,9 @@ class ChatBackgroundService:
         room_id: UUID,
         user_message: str,
         responded_agents: list[Agent],
-        result_text: str,
-        agent_names: list[str],
+        result: ChatCrewOutput,
     ) -> None:
         """Embed and store the conversation turn as memories for future retrieval."""
-        from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
         from app.domain.memory.models import Memory
         from app.infrastructure.external.openrouter import embed
 
@@ -91,25 +90,29 @@ class ChatBackgroundService:
 
             # Store each agent response segment individually
             agent_by_name = {a.name.lower(): a for a in responded_agents}
-            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
-            for agent_name, content in segments:
+            for msg in result.messages:
+                agent_name = msg.agent_name
+                content = msg.message
                 matched = (
                     agent_by_name.get(agent_name.lower())
                     if agent_name
                     else (responded_agents[0] if responded_agents else None)
                 )
-                agent_vector = await embed(content)
-                await self.memory_repo.insert_memory(
-                    Memory(
-                        id=uuid.uuid4(),
-                        user_id=user_id,
-                        agent_id=matched.id if matched else None,
-                        room_id=room_id,
-                        content=f"{agent_name or 'Agent'}: {content}",
-                        embedding=agent_vector,
-                        meta={"role": "agent", "agent_name": agent_name or ""},
+
+                # Only persist memory if the matched agent is actually in the responded_agents list
+                if matched and matched in responded_agents:
+                    agent_vector = await embed(content)
+                    await self.memory_repo.insert_memory(
+                        Memory(
+                            id=uuid.uuid4(),
+                            user_id=user_id,
+                            agent_id=matched.id if matched else None,
+                            room_id=room_id,
+                            content=f"{agent_name or 'Agent'}: {content}",
+                            embedding=agent_vector,
+                            meta={"role": "agent", "agent_name": agent_name or ""},
+                        )
                     )
-                )
         except Exception:
             logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
 
