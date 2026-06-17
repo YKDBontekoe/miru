@@ -67,10 +67,11 @@ async def test_update_affinity_background_exception(
 
 @pytest.mark.asyncio
 async def test_store_memories_background_success(background_service: ChatBackgroundService) -> None:
+    from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
     user_message = "Hello world"
-    result_text = "Agent1: How can I help?"
+    result = ChatCrewOutput(messages=[AgentMessage(agent_name="Agent1", message="How can I help?")])
 
     agent1 = MagicMock()
     agent1.name = "Agent1"
@@ -80,12 +81,8 @@ async def test_store_memories_background_success(background_service: ChatBackgro
     agent_names = ["Agent1"]
 
     with (
-        patch(
-            "app.domain.chat.websocket_broadcaster.ChatWebSocketBroadcaster.parse_transcript"
-        ) as mock_parse,
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
     ):
-        mock_parse.return_value = [("Agent1", "How can I help?")]
         mock_embed.return_value = [0.1, 0.2, 0.3]
 
         await background_service.store_memories_background(
@@ -93,8 +90,7 @@ async def test_store_memories_background_success(background_service: ChatBackgro
             room_id,
             user_message,
             responded_agents,  # type: ignore
-            result_text,
-            agent_names,
+            result,
         )
 
         # 1 for user message, 1 for agent message
@@ -106,8 +102,11 @@ async def test_store_memories_background_success(background_service: ChatBackgro
 async def test_store_memories_background_exception(
     background_service: ChatBackgroundService,
 ) -> None:
+    from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
     user_id = uuid.uuid4()
     room_id = uuid.uuid4()
+
+    result = ChatCrewOutput(messages=[])
 
     with (
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
@@ -116,7 +115,7 @@ async def test_store_memories_background_exception(
         mock_embed.side_effect = Exception("Embed failed")
 
         # Should not raise
-        await background_service.store_memories_background(user_id, room_id, "Hello", [], "", [])
+        await background_service.store_memories_background(user_id, room_id, "Hello", [], result)
 
         mock_logger.assert_called_once()
 

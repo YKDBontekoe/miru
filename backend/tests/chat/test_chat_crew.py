@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
+from app.domain.chat.dtos import AgentMessage, ChatCrewOutput
 from app.domain.chat.service import ChatService
 
 
@@ -75,10 +76,17 @@ async def test_run_crew_task_has_single_agent(
         mock_crew_agent.role = "Test Agent"
         mock_agent_cls.return_value = mock_crew_agent
         mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+
+        mock_output = MagicMock()
+        mock_output.pydantic = ChatCrewOutput(
+            messages=[AgentMessage(agent_name="Test Agent", message="Crew output")]
+        )
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_output)
+
         mock_crew_cls.return_value = mock_crew_instance
         result = await chat_service.run_crew("hello", user_id, accept_language="es-ES")
         assert result["task_type"] == "general"
+        assert "Crew output" in result["result"]
 
 
 @pytest.mark.asyncio
@@ -117,10 +125,21 @@ async def test_run_crew_task_has_multiple_agents(
         mock_crew_agent2.role = "Agent 2"
         mock_agent_cls.side_effect = [mock_crew_agent1, mock_crew_agent2]
         mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Crew output")
+
+        mock_output = MagicMock()
+        mock_output.pydantic = ChatCrewOutput(
+            messages=[
+                AgentMessage(agent_name="Agent 1", message="Crew output 1"),
+                AgentMessage(agent_name="Agent 2", message="Crew output 2"),
+            ]
+        )
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_output)
+
         mock_crew_cls.return_value = mock_crew_instance
         result = await chat_service.run_crew("hello", user_id, accept_language="es-ES")
         assert result["task_type"] == "general"
+        assert "Crew output 1" in result["result"]
+        assert "Crew output 2" in result["result"]
 
 
 @pytest.mark.asyncio
@@ -145,7 +164,11 @@ async def test_execute_crew_task(
         patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
     ):
         mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="Result")
+        mock_output = MagicMock()
+        mock_output.pydantic = ChatCrewOutput(
+            messages=[AgentMessage(agent_name="Agent1", message="Result")]
+        )
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_output)
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
@@ -155,7 +178,8 @@ async def test_execute_crew_task(
             MagicMock(),
             accept_language="ja-JP",
         )
-        assert result == "Result"
+        assert isinstance(result, ChatCrewOutput)
+        assert result.messages[0].message == "Result"
 
 
 @pytest.mark.asyncio
@@ -183,7 +207,11 @@ async def test_execute_crew_task_multi(
         patch("app.domain.chat.crew_orchestrator.crewai.Agent"),
     ):
         mock_crew_instance = MagicMock()
-        mock_crew_instance.kickoff_async = AsyncMock(return_value="ResultMulti")
+        mock_output = MagicMock()
+        mock_output.pydantic = ChatCrewOutput(
+            messages=[AgentMessage(agent_name="Agent1", message="ResultMulti")]
+        )
+        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_output)
         mock_crew_cls.return_value = mock_crew_instance
         result = await CrewOrchestrator.execute_crew_task(
             typing.cast("list[typing.Any]", room_agents),
@@ -193,4 +221,5 @@ async def test_execute_crew_task_multi(
             MagicMock(),
             accept_language="hi-IN",
         )
-        assert result == "ResultMulti"
+        assert isinstance(result, ChatCrewOutput)
+        assert result.messages[0].message == "ResultMulti"

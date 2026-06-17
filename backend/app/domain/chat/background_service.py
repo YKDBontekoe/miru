@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
+    from app.domain.chat.dtos import ChatCrewOutput
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -67,11 +68,9 @@ class ChatBackgroundService:
         room_id: UUID,
         user_message: str,
         responded_agents: list[Agent],
-        result_text: str,
-        agent_names: list[str],
+        result: ChatCrewOutput,
     ) -> None:
         """Embed and store the conversation turn as memories for future retrieval."""
-        from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
         from app.domain.memory.models import Memory
         from app.infrastructure.external.openrouter import embed
 
@@ -91,8 +90,9 @@ class ChatBackgroundService:
 
             # Store each agent response segment individually
             agent_by_name = {a.name.lower(): a for a in responded_agents}
-            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
-            for agent_name, content in segments:
+            for msg in result.messages:
+                agent_name = msg.agent_name
+                content = msg.message
                 matched = (
                     agent_by_name.get(agent_name.lower())
                     if agent_name

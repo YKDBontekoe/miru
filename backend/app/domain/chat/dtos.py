@@ -68,3 +68,14 @@ class MessageUpdate(BaseModel):
         if not v.strip():
             raise ValueError("content must not be blank or whitespace only")
         return v.strip()
+
+
+class AgentMessage(BaseModel):
+    agent_name: str = Field(description="The name of the agent speaking.")
+    message: str = Field(description="The response content from the agent.")
+
+
+class ChatCrewOutput(BaseModel):
+    messages: list[AgentMessage] = Field(
+        description="A list of messages from the participating agents."
+    )
