@@ -68,3 +68,16 @@ class MessageUpdate(BaseModel):
         if not v.strip():
             raise ValueError("content must not be blank or whitespace only")
         return v.strip()
+
+
+class AgentMessage(BaseModel):
+    """A structured individual message from an agent."""
+
+    agent_name: str = Field(description="Name of the agent responding.")
+    text: str = Field(description="The response content.")
+
+
+class CrewResponse(BaseModel):
+    """The structured output schema for the entire CrewAI execution."""
+
+    responses: list[AgentMessage] = Field(description="List of responses from agents.")
