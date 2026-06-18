@@ -267,10 +267,12 @@ class ChatService:
         )
 
         # Convert the structured response back into a string format expected by the API route
-        formatted_result = "\n\n".join([
-            f"{msg.agent_name}: {msg.text}" if msg.agent_name else msg.text
-            for msg in result.responses
-        ])
+        formatted_result = "\n\n".join(
+            [
+                f"{msg.agent_name}: {msg.text}" if msg.agent_name else msg.text
+                for msg in result.responses
+            ]
+        )
 
         return {"task_type": "general", "result": formatted_result}
 
@@ -396,10 +398,12 @@ class ChatService:
 
             # 7. Fire background tasks: mood update, affinity, and memory storage.
             history_text = CrewOrchestrator.format_history(conversation_history)
-            formatted_result = "\n\n".join([
-                f"{msg.agent_name}: {msg.text}" if msg.agent_name else msg.text
-                for msg in result_data.responses
-            ])
+            formatted_result = "\n\n".join(
+                [
+                    f"{msg.agent_name}: {msg.text}" if msg.agent_name else msg.text
+                    for msg in result_data.responses
+                ]
+            )
             recent_context = f"{history_text}\nUser: {user_message}\n{formatted_result}".strip()
 
             for agent in responded_agents:

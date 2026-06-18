@@ -146,12 +146,24 @@ class ChatWebSocketBroadcaster:
         """
         if isinstance(result_data, CrewResponse):
             segments = []
+            # Gather any messages where agent_name is missing
+            unattributed_texts = []
             for msg in result_data.responses:
-                segments.append((msg.agent_name, msg.text.strip()))
-            return segments
+                if not msg.agent_name:
+                    unattributed_texts.append(msg.text.strip())
+                else:
+                    segments.append((msg.agent_name, msg.text.strip()))
 
-        # Fallback for raw string
-        result_text = str(result_data)
+            # If all messages had an agent_name, return segments directly
+            if not unattributed_texts:
+                return segments
+
+            # For unattributed texts, fallback to string parsing to try extracting patterns
+            result_text = "\n\n".join(unattributed_texts)
+        else:
+            # Fallback for raw string
+            result_text = str(result_data)
+            segments = []
         if not agent_names or len(agent_names) == 1:
             return [("", result_text.strip())]
 

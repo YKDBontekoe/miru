@@ -78,18 +78,16 @@ async def test_run_crew_task_has_single_agent(
 
         mock_crew_output = MagicMock()
         from app.domain.chat.dtos import AgentMessage, CrewResponse
-        mock_crew_output.pydantic = CrewResponse(responses=[AgentMessage(agent_name="Test Agent", text="Crew output")])
-        mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_output)
 
-
-        mock_crew_output = MagicMock()
-        from app.domain.chat.dtos import AgentMessage, CrewResponse
-        mock_crew_output.pydantic = CrewResponse(responses=[AgentMessage(agent_name="Agent 1", text="Crew output")])
+        mock_crew_output.pydantic = CrewResponse(
+            responses=[AgentMessage(agent_name="Test Agent", text="Crew output")]
+        )
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_output)
 
         mock_crew_cls.return_value = mock_crew_instance
         result = await chat_service.run_crew("hello", user_id, accept_language="es-ES")
         assert result["task_type"] == "general"
+        assert result["result"] == "Test Agent: Crew output"
 
 
 @pytest.mark.asyncio
@@ -159,7 +157,10 @@ async def test_execute_crew_task(
 
         mock_crew_output = MagicMock()
         from app.domain.chat.dtos import AgentMessage, CrewResponse
-        expected_response = CrewResponse(responses=[AgentMessage(agent_name="Agent1", text="Result")])
+
+        expected_response = CrewResponse(
+            responses=[AgentMessage(agent_name="Agent1", text="Result")]
+        )
         mock_crew_output.pydantic = expected_response
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_output)
 
@@ -204,7 +205,10 @@ async def test_execute_crew_task_multi(
 
         mock_crew_output = MagicMock()
         from app.domain.chat.dtos import AgentMessage, CrewResponse
-        expected_response = CrewResponse(responses=[AgentMessage(agent_name="Agent1", text="ResultMulti")])
+
+        expected_response = CrewResponse(
+            responses=[AgentMessage(agent_name="Agent1", text="ResultMulti")]
+        )
         mock_crew_output.pydantic = expected_response
         mock_crew_instance.kickoff_async = AsyncMock(return_value=mock_crew_output)
 

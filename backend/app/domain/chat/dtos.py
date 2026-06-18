@@ -74,10 +74,17 @@ class AgentMessage(BaseModel):
     """A structured individual message from an agent."""
 
     agent_name: str = Field(description="Name of the agent responding.")
-    text: str = Field(description="The response content.")
+    text: str = Field(..., min_length=1, description="The response content.")
+
+    @field_validator("text")
+    @classmethod
+    def text_must_not_be_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("text must not be blank or whitespace only")
+        return v.strip()
 
 
 class CrewResponse(BaseModel):
     """The structured output schema for the entire CrewAI execution."""
 
-    responses: list[AgentMessage] = Field(description="List of responses from agents.")
+    responses: list[AgentMessage] = Field(..., min_length=1, description="List of responses from agents.")

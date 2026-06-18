@@ -229,7 +229,10 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
         m_persist.return_value = MagicMock(id=uuid4())
 
         from app.domain.chat.dtos import AgentMessage, CrewResponse
-        m_exec.return_value = CrewResponse(responses=[AgentMessage(agent_name="Agent1", text="Result")])
+
+        m_exec.return_value = CrewResponse(
+            responses=[AgentMessage(agent_name="Agent1", text="Result")]
+        )
         m_agent_resp.return_value = []
         m_create_task.return_value = MagicMock()
         typing.cast("typing.Any", chat_service.bg_service).store_memories_background = MagicMock()
