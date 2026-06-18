@@ -1,6 +1,9 @@
 import uuid
+
 import pytest
+
 from app.infrastructure.repositories.productivity_repo import ProductivityRepository
+
 
 @pytest.mark.asyncio
 async def test_update_event_returns_none(initialize_tortoise):
