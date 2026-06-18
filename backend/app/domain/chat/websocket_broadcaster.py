@@ -9,6 +9,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from app.domain.chat.dtos import CrewResponse
 from app.domain.chat.entities import ChatMessageEntity
 
 if TYPE_CHECKING:
@@ -135,18 +136,40 @@ class ChatWebSocketBroadcaster:
         return _step_callback
 
     @staticmethod
-    def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
-        """Parse a multi-agent transcript into (agent_name, message) pairs.
+    def parse_transcript(
+        result_data: CrewResponse | str, agent_names: list[str]
+    ) -> list[tuple[str, str]]:
+        """Extract a list of (agent_name, message) pairs from the result.
 
-        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
-        Falls back to a single unnamed entry when the format cannot be parsed.
+        Prioritizes the structured `CrewResponse` if provided. Falls back
+        to string parsing only if `result_data` is a raw string.
         """
+        if isinstance(result_data, CrewResponse):
+            segments = []
+            # Gather any messages where agent_name is missing
+            unattributed_texts = []
+            for msg in result_data.responses:
+                if not msg.agent_name:
+                    unattributed_texts.append(msg.text.strip())
+                else:
+                    segments.append((msg.agent_name, msg.text.strip()))
+
+            # If all messages had an agent_name, return segments directly
+            if not unattributed_texts:
+                return segments
+
+            # For unattributed texts, fallback to string parsing to try extracting patterns
+            result_text = "\n\n".join(unattributed_texts)
+        else:
+            # Fallback for raw string
+            result_text = str(result_data)
+            segments = []
         if not agent_names or len(agent_names) == 1:
             return [("", result_text.strip())]
 
         # Build a set of known names (case-insensitive) for matching
         name_set = {n.lower() for n in agent_names}
-        segments: list[tuple[str, str]] = []
+        segments = []
         current_name = ""
         current_lines: list[str] = []
 
@@ -179,12 +202,12 @@ class ChatWebSocketBroadcaster:
         self,
         room_id: UUID,
         room_agents: list[Agent],
-        result_text: str,
+        result_data: CrewResponse | str,
         agent_names: list[str],
     ) -> list[Agent]:
         """Save the agent response(s) and broadcast to room.
 
-        For multi-agent rooms the transcript is split into individual per-agent
+        For multi-agent rooms the transcript is extracted into individual per-agent
         messages so each agent's reply appears in its own bubble.
 
         Returns the list of agents who actually produced a response segment so
@@ -195,7 +218,7 @@ class ChatWebSocketBroadcaster:
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         agent_by_name = {a.name.lower(): a for a in room_agents}
-        segments = self.parse_transcript(result_text, agent_names)
+        segments = self.parse_transcript(result_data, agent_names)
 
         responded: list[Agent] = []
 
