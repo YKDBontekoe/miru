@@ -87,4 +87,6 @@ class AgentMessage(BaseModel):
 class CrewResponse(BaseModel):
     """The structured output schema for the entire CrewAI execution."""
 
-    responses: list[AgentMessage] = Field(..., min_length=1, description="List of responses from agents.")
+    responses: list[AgentMessage] = Field(
+        ..., min_length=1, description="List of responses from agents."
+    )
