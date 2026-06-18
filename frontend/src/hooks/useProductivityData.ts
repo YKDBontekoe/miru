@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { CalendarEvent, Note, Task } from '../core/models';
 import { useTranslation } from 'react-i18next';
+import { CalendarEvent, Note, Task } from '@/core/models';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -106,8 +106,10 @@ export function useProductivityData({
         ? tasksToRank
         : tasksToRank.filter((task) => getTaskPriority(task) === taskPriority);
     return [...pool].sort((a, b) => {
-      const aDue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-      const bDue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const aDueTime = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const aDue = isNaN(aDueTime) ? Number.MAX_SAFE_INTEGER : aDueTime;
+      const bDueTime = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = isNaN(bDueTime) ? Number.MAX_SAFE_INTEGER : bDueTime;
       return aDue - bDue;
     });
   }, [filteredTasks, getTaskPriority, taskPriority]);
@@ -130,8 +132,16 @@ export function useProductivityData({
         date: new Date(task.created_at).getTime(),
       });
     });
+    filteredEvents.forEach((event) => {
+      data.push({
+        type: 'event',
+        item: event,
+        id: `event-${event.id}`,
+        date: new Date(event.start_time).getTime(),
+      });
+    });
     return data.sort((a, b) => (b.date || 0) - (a.date || 0));
-  }, [filteredNotes, filteredTasks]);
+  }, [filteredNotes, filteredTasks, filteredEvents]);
 
   const todayData = useMemo(() => {
     const now = new Date();
