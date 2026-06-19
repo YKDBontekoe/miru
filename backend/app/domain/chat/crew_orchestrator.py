@@ -292,4 +292,7 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return result.pydantic
+        if not result or not hasattr(result, "pydantic") or not result.pydantic:
+            raise RuntimeError("Crew task failed to return a valid output.")
+
+        return cast("ChatTranscript", result.pydantic)
