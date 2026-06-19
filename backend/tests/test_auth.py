@@ -26,6 +26,7 @@ async def test_decode_valid_jwt() -> None:
 
     token = make_jwt()
     from app.infrastructure.security.jwt_verifier import SupabaseJWTVerifier
+
     verifier = SupabaseJWTVerifier()
     service = AuthService(AuthRepository(MagicMock()), verifier)
     payload = await service.decode_jwt(token)
@@ -42,6 +43,7 @@ async def test_decode_expired_jwt_raises_401() -> None:
 
     token = make_jwt(expired=True)
     from app.infrastructure.security.jwt_verifier import SupabaseJWTVerifier
+
     verifier = SupabaseJWTVerifier()
     service = AuthService(AuthRepository(MagicMock()), verifier)
 
@@ -59,6 +61,7 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
 
     token = "invalid.token.format"
     from app.infrastructure.security.jwt_verifier import SupabaseJWTVerifier
+
     verifier = SupabaseJWTVerifier()
     service = AuthService(AuthRepository(MagicMock()), verifier)
 
