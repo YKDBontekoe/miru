@@ -80,12 +80,8 @@ async def test_store_memories_background_success(background_service: ChatBackgro
     agent_names = ["Agent1"]
 
     with (
-        patch(
-            "app.domain.chat.websocket_broadcaster.ChatWebSocketBroadcaster.parse_transcript"
-        ) as mock_parse,
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
     ):
-        mock_parse.return_value = [("Agent1", "How can I help?")]
         mock_embed.return_value = [0.1, 0.2, 0.3]
 
         await background_service.store_memories_background(

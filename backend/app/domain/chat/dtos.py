@@ -68,3 +68,21 @@ class MessageUpdate(BaseModel):
         if not v.strip():
             raise ValueError("content must not be blank or whitespace only")
         return v.strip()
+
+
+class AgentMessage(BaseModel):
+    """A single message from an agent."""
+
+    agent_name: str = Field(description="The name of the agent who is responding")
+    message: str = Field(description="The response content")
+
+
+class ChatTranscript(BaseModel):
+    """A transcript of responses from one or more agents."""
+
+    messages: list[AgentMessage] = Field(
+        description="The sequence of messages from the responding agents"
+    )
+
+    def __str__(self) -> str:
+        return "\n\n".join(f"{msg.agent_name}: {msg.message}" for msg in self.messages)
