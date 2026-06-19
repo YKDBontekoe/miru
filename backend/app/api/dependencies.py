@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.domain.agents.service import AgentService
+from app.domain.auth.interfaces import TokenVerifierProtocol
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
@@ -15,6 +16,7 @@ from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
+from app.infrastructure.security.jwt_verifier import SupabaseJWTVerifier
 
 # ---------------------------------------------------------------------------
 # Repository factories
@@ -36,6 +38,21 @@ def get_memory_repo() -> MemoryRepository:
 def get_auth_repo(db: SupabaseClient) -> AuthRepository:
     # AuthRepository still uses the Supabase client for passkey tables.
     return AuthRepository(db)
+
+
+# ---------------------------------------------------------------------------
+# Security & Auth singletons
+# ---------------------------------------------------------------------------
+
+_jwt_verifier: SupabaseJWTVerifier | None = None
+
+
+def get_jwt_verifier() -> TokenVerifierProtocol:
+    """Return the singleton JWT verifier."""
+    global _jwt_verifier
+    if _jwt_verifier is None:
+        _jwt_verifier = SupabaseJWTVerifier()
+    return _jwt_verifier
 
 
 # ---------------------------------------------------------------------------
@@ -62,5 +79,8 @@ def get_memory_service(
     return MemoryService(repo)
 
 
-def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo)
+def get_auth_service(
+    repo: Annotated[AuthRepository, Depends(get_auth_repo)],
+    verifier: Annotated[TokenVerifierProtocol, Depends(get_jwt_verifier)],
+) -> AuthService:
+    return AuthService(repo, verifier)
