@@ -7,6 +7,7 @@ from uuid import uuid4
 import pytest
 from tortoise.exceptions import BaseORMException
 
+from app.domain.chat.dtos import AgentMessage, ChatTranscript
 from app.domain.chat.service import ChatService
 
 
@@ -134,6 +135,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
     agent_names = ["Agent1"]
+    transcript = ChatTranscript(messages=[AgentMessage(agent_name="Agent1", message="Done!")])
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
 
@@ -148,7 +150,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
         responded = await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), transcript, agent_names
         )
         assert len(responded) == 1
 
@@ -158,12 +160,13 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
     agent_names = ["Agent1"]
+    transcript = ChatTranscript(messages=[AgentMessage(agent_name="Agent1", message="Done!")])
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")
     )
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), transcript, agent_names
         )
 
 
@@ -216,7 +219,9 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
     ):
         mock_hub.broadcast_to_room = AsyncMock()
         m_persist.return_value = MagicMock(id=uuid4())
-        m_exec.return_value = "Result"
+        m_exec.return_value = ChatTranscript(
+            messages=[AgentMessage(agent_name="Agent1", message="Result")]
+        )
         m_agent_resp.return_value = []
         m_create_task.return_value = MagicMock()
         typing.cast("typing.Any", chat_service.bg_service).store_memories_background = MagicMock()

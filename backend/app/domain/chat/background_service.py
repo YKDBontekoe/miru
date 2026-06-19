@@ -71,7 +71,6 @@ class ChatBackgroundService:
         agent_names: list[str],
     ) -> None:
         """Embed and store the conversation turn as memories for future retrieval."""
-        from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
         from app.domain.memory.models import Memory
         from app.infrastructure.external.openrouter import embed
 
@@ -89,25 +88,23 @@ class ChatBackgroundService:
                 )
             )
 
-            # Store each agent response segment individually
-            agent_by_name = {a.name.lower(): a for a in responded_agents}
-            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
-            for agent_name, content in segments:
-                matched = (
-                    agent_by_name.get(agent_name.lower())
-                    if agent_name
-                    else (responded_agents[0] if responded_agents else None)
-                )
-                agent_vector = await embed(content)
+            # Embed the entire response as one block
+            if result_text.strip():
+                agent_vector = await embed(result_text)
                 await self.memory_repo.insert_memory(
                     Memory(
                         id=uuid.uuid4(),
                         user_id=user_id,
-                        agent_id=matched.id if matched else None,
+                        agent_id=responded_agents[0].id if responded_agents else None,
                         room_id=room_id,
-                        content=f"{agent_name or 'Agent'}: {content}",
+                        content=f"Agent(s): {result_text}",
                         embedding=agent_vector,
-                        meta={"role": "agent", "agent_name": agent_name or ""},
+                        meta={
+                            "role": "agent",
+                            "agent_name": "Multiple"
+                            if len(responded_agents) > 1
+                            else (responded_agents[0].name if responded_agents else ""),
+                        },
                     )
                 )
         except Exception:
