@@ -293,6 +293,6 @@ class CrewOrchestrator:
                 await asyncio.sleep(2)
 
         if not result or not hasattr(result, "pydantic") or not result.pydantic:
-            raise RuntimeError("Crew task failed to return a valid output.")
+            raise RuntimeError("LLM output failed to match the ChatTranscript schema validation.")
 
         return cast("ChatTranscript", result.pydantic)

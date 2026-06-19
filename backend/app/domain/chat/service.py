@@ -266,7 +266,7 @@ class ChatService:
             accept_language=accept_language,
         )
 
-        result_str = "\n\n".join(f"{msg.agent_name}: {msg.message}" for msg in result.messages)
+        result_str = str(result)
 
         return {"task_type": "general", "result": result_str}
 
@@ -374,7 +374,7 @@ class ChatService:
 
             # 6. Persist + broadcast — returns only the agents that actually responded.
             responded_agents = await self.ws_broadcaster.persist_and_broadcast_agent_response(
-                room_id, room_agents, result, agent_names
+                room_id, room_agents, result
             )
 
             await chat_hub.broadcast_to_room(
@@ -392,7 +392,7 @@ class ChatService:
 
             # 7. Fire background tasks: mood update, affinity, and memory storage.
             history_text = CrewOrchestrator.format_history(conversation_history)
-            result_text = "\n\n".join(f"{msg.agent_name}: {msg.message}" for msg in result.messages)
+            result_text = str(result)
             recent_context = f"{history_text}\nUser: {user_message}\n{result_text}".strip()
 
             for agent in responded_agents:

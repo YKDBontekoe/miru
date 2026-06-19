@@ -134,7 +134,6 @@ async def test_create_step_callback(chat_service: ChatService) -> None:
 async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -> None:
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
-    agent_names = ["Agent1"]
     transcript = ChatTranscript(messages=[AgentMessage(agent_name="Agent1", message="Done!")])
     with patch("app.infrastructure.websocket.manager.chat_hub") as mock_hub:
         mock_hub.broadcast_to_room = AsyncMock()
@@ -150,7 +149,7 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
         responded = await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), transcript, agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), transcript
         )
         assert len(responded) == 1
 
@@ -159,14 +158,13 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
 async def test_persist_and_broadcast_agent_response_error(chat_service: ChatService) -> None:
     room_id = uuid4()
     room_agents = [MagicMock(id=uuid4(), name="Agent1")]
-    agent_names = ["Agent1"]
     transcript = ChatTranscript(messages=[AgentMessage(agent_name="Agent1", message="Done!")])
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")
     )
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), transcript, agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), transcript
         )
 
 

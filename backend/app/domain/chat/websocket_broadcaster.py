@@ -140,7 +140,6 @@ class ChatWebSocketBroadcaster:
         room_id: UUID,
         room_agents: list[Agent],
         result: ChatTranscript,
-        agent_names: list[str],
     ) -> list[Agent]:
         """Save the agent response(s) and broadcast to room.
 

@@ -83,3 +83,6 @@ class ChatTranscript(BaseModel):
     messages: list[AgentMessage] = Field(
         description="The sequence of messages from the responding agents"
     )
+
+    def __str__(self) -> str:
+        return "\n\n".join(f"{msg.agent_name}: {msg.message}" for msg in self.messages)
