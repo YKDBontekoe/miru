@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
-import { relativeTimeFromNow } from './homeUtils';
+import { relativeTimeFromNow } from '@/components/home/homeUtils';
 import { useTheme } from '@/hooks/useTheme';
 import { theme } from '@/core/theme';
 
