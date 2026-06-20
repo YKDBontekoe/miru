@@ -27,23 +27,14 @@ import { useChatStore } from '../../src/store/useChatStore';
 import { haptic } from '../../src/utils/haptics';
 import { Agent } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
-import { useTheme } from '../../src/hooks/useTheme';
-import { theme } from '../../src/core/theme';
+import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 import { StyleSheet } from 'react-native';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export default function AgentsScreen() {
   const { t } = useTranslation();
-  const C = {
-    bg: DESIGN_TOKENS.colors.pageBg,
-    surface: DESIGN_TOKENS.colors.surface,
-    surfaceHigh: DESIGN_TOKENS.colors.surfaceSoft,
-    border: DESIGN_TOKENS.colors.border,
-    text: DESIGN_TOKENS.colors.text,
-    muted: DESIGN_TOKENS.colors.muted,
-    faint: DESIGN_TOKENS.colors.faint,
-    primary: DESIGN_TOKENS.colors.primary,
-  };
+  const { C } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
@@ -348,7 +339,7 @@ export default function AgentsScreen() {
       paddingHorizontal: theme.spacing.xl,
       paddingBottom: theme.spacing.massive + (Platform.OS === 'ios' ? theme.spacing.xxxl : theme.spacing.lg) + theme.spacing.colossal,
     },
-  }), [C, theme]);
+  }), [C]);
 
   const SNACKBAR_DURATION = 4500;
 

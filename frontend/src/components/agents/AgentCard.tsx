@@ -38,116 +38,35 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   const level = Math.floor(item.message_count / 10) + 1;
   const xpProgress = (item.message_count % 10) / 10;
 
-  const styles = StyleSheet.create({
-    cardContainer: {
-      backgroundColor: C.surface,
-      borderRadius: 20,
-      marginBottom: theme.spacing.md,
-      ...theme.elevation.lg,
-      shadowColor: theme.colors.primary.DEFAULT,
-
-
-
-    },
-    innerContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: theme.spacing.md,
-      paddingEnd: theme.spacing.md,
-      paddingStart: theme.spacing.lg,
-    },
-    contentContainer: {
-      flex: 1,
-      marginStart: theme.spacing.md,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: theme.spacing.sm,
-      marginBottom: theme.spacing.xxs,
-    },
-    nameText: {
-      ...theme.typography.body,
-      fontWeight: '700',
-      color: C.text,
-    },
-    moodText: {
-      fontSize: theme.typography.caption.fontSize + 1,
-    },
-    personalityText: {
-      ...theme.typography.caption,
-      color: C.muted,
-      lineHeight: theme.typography.caption.fontSize * 1.4,
-    },
-    progressRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: theme.spacing.sm,
-      marginTop: theme.spacing.sm,
-    },
-    levelBadge: {
-      backgroundColor: `${color}15`,
-      borderRadius: theme.borderRadius.sm,
-      paddingHorizontal: theme.spacing.sm,
-      paddingVertical: 2,
-    },
-    levelText: {
-      color,
-      fontSize: theme.typography.caption.fontSize - 2,
-      fontWeight: '700',
-    },
-    progressBarContainer: {
-      flex: 1,
-      height: theme.spacing.xs - 1,
-      backgroundColor: `${color}18`,
-      borderRadius: theme.borderRadius.xs,
-      overflow: 'hidden',
-    },
-    progressBarFill: {
-      width: `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`,
-      height: theme.spacing.xs - 1,
-      backgroundColor: `${color}70`,
-      borderRadius: theme.borderRadius.xs,
-    },
-    rightContainer: {
-      alignItems: 'flex-end',
-      marginStart: theme.spacing.sm,
-    },
-    messageCountText: {
-      color: C.faint,
-      fontSize: theme.typography.caption.fontSize - 2,
-      marginBottom: theme.spacing.sm,
-    },
-  });
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).duration(300)}>
       <ScalePressable onPress={onPress} onLongPress={onLongPress}>
-        <View style={styles.cardContainer}>
-          <View style={styles.innerContainer}>
+        <View className="bg-surface rounded-[20px] mb-3 shadow-lg shadow-primary/5 elevation-2">
+          <View className="flex-row items-center py-3 pe-3 ps-4">
             <AgentAvatar name={item.name} size={48} color={color} />
-            <View style={styles.contentContainer}>
-              <View style={styles.headerRow}>
-                <AppText style={styles.nameText}>{item.name}</AppText>
+            <View className="flex-1 ms-3">
+              <View className="flex-row items-center gap-2 mb-0.5">
+                <AppText className="text-base font-bold text-text">{item.name}</AppText>
                 {item.mood && item.mood !== 'Neutral' && (
-                  <AppText style={styles.moodText}>{getMoodEmoji(item.mood)}</AppText>
+                  <AppText className="text-[13px]">{getMoodEmoji(item.mood)}</AppText>
                 )}
                 {isPinned && <Ionicons name="star" size={11} color={theme.colors.status.warning} />}
               </View>
-              <AppText style={styles.personalityText} numberOfLines={1}>
+              <AppText className="text-xs text-muted leading-tight" numberOfLines={1}>
                 {item.personality}
               </AppText>
-              <View style={styles.progressRow}>
-                <View style={styles.levelBadge}>
-                  <AppText style={styles.levelText}>Lv {level}</AppText>
+              <View className="flex-row items-center gap-2 mt-2">
+                <View className="rounded-sm px-2 py-0.5" style={{ backgroundColor: `${color}15` }}>
+                  <AppText className="text-[10px] font-bold" style={{ color }}>Lv {level}</AppText>
                 </View>
-                <View style={styles.progressBarContainer}>
-                  <View style={styles.progressBarFill} />
+                <View className="flex-1 h-[3px] rounded-sm overflow-hidden" style={{ backgroundColor: `${color}18` }}>
+                  <View className="h-[3px] rounded-sm" style={{ width: `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`, backgroundColor: `${color}70` }} />
                 </View>
               </View>
             </View>
-            <View style={styles.rightContainer}>
-              <AppText style={styles.messageCountText}>{item.message_count} msgs</AppText>
+            <View className="items-end ms-2">
+              <AppText className="text-[10px] text-faint mb-2">{item.message_count} msgs</AppText>
               <Ionicons name="chevron-forward" size={14} color={C.faint} />
             </View>
           </View>
@@ -176,92 +95,29 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
   const color = getAgentColor(item.name);
   const level = Math.floor(item.message_count / 10) + 1;
 
-  const styles = StyleSheet.create({
-    wrapper: {
-      flex: 1,
-      maxWidth: '50%',
-    },
-    cardContainer: {
-      backgroundColor: C.surface,
-      borderRadius: 20,
-      margin: theme.spacing.xs,
-      padding: theme.spacing.lg,
-      alignItems: 'center',
-      ...theme.elevation.lg,
-      shadowColor: theme.colors.primary.DEFAULT,
-
-
-
-    },
-    avatarWrapper: {
-      position: 'relative',
-      marginBottom: theme.spacing.md,
-    },
-    pinBadge: {
-      position: 'absolute',
-      top: -3,
-      right: -3,
-      backgroundColor: theme.colors.status.warning,
-      width: theme.spacing.lg,
-      height: theme.spacing.lg,
-      borderRadius: theme.borderRadius.sm,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: C.surface,
-    },
-    nameText: {
-      ...theme.typography.bodySm,
-      fontWeight: '700',
-      color: C.text,
-      textAlign: 'center',
-      marginBottom: theme.spacing.xxs,
-    },
-    moodText: {
-      fontSize: theme.typography.caption.fontSize,
-      marginBottom: theme.spacing.sm,
-    },
-    levelBadge: {
-      backgroundColor: `${color}18`,
-      borderRadius: theme.borderRadius.sm,
-      paddingHorizontal: theme.spacing.sm,
-      paddingVertical: theme.spacing.xxs,
-      marginBottom: theme.spacing.sm,
-    },
-    levelText: {
-      color,
-      fontSize: theme.typography.caption.fontSize - 2,
-      fontWeight: '700',
-    },
-    personalityText: {
-      color: C.muted,
-      fontSize: theme.typography.caption.fontSize - 1,
-      textAlign: 'center',
-    },
-  });
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 45).duration(300)} style={styles.wrapper}>
+    <Animated.View entering={FadeInDown.delay(index * 45).duration(300)} className="flex-1 max-w-[50%]">
       <ScalePressable onPress={onPress} onLongPress={onLongPress}>
-        <View style={styles.cardContainer}>
-          <View style={styles.avatarWrapper}>
+        <View className="bg-surface rounded-[20px] mb-3 shadow-lg shadow-primary/5 elevation-2">
+          <View className="relative mb-3">
             <AgentAvatar name={item.name} size={56} color={color} />
             {isPinned && (
-              <View style={styles.pinBadge}>
+              <View className="absolute -top-1 -right-1 bg-amber-500 w-4 h-4 rounded-sm items-center justify-center border-[1.5px] border-surface">
                 <Ionicons name="star" size={8} color="white" />
               </View>
             )}
           </View>
-          <AppText style={styles.nameText} numberOfLines={1}>
+          <AppText className="text-base font-bold text-text" numberOfLines={1}>
             {item.name}
           </AppText>
           {item.mood && item.mood !== 'Neutral' && (
-            <AppText style={styles.moodText}>{getMoodEmoji(item.mood)}</AppText>
+            <AppText className="text-[13px]">{getMoodEmoji(item.mood)}</AppText>
           )}
-          <View style={styles.levelBadge}>
-            <AppText style={styles.levelText}>Lv {level}</AppText>
+          <View className="rounded-sm px-2 py-0.5" style={{ backgroundColor: `${color}15` }}>
+            <AppText className="text-[10px] font-bold" style={{ color }}>Lv {level}</AppText>
           </View>
-          <AppText style={styles.personalityText} numberOfLines={2}>
+          <AppText className="text-xs text-muted leading-tight" numberOfLines={2}>
             {item.personality}
           </AppText>
         </View>
