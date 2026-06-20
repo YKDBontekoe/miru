@@ -27,6 +27,9 @@ import { useChatStore } from '../../src/store/useChatStore';
 import { haptic } from '../../src/utils/haptics';
 import { Agent } from '../../src/core/models';
 import { ScalePressable } from '@/components/ScalePressable';
+import { useTheme } from '../../src/hooks/useTheme';
+import { theme } from '../../src/core/theme';
+import { StyleSheet } from 'react-native';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 export default function AgentsScreen() {
@@ -179,6 +182,174 @@ export default function AgentsScreen() {
     [selectedAgent?.id]
   );
 
+
+  const styles = useMemo(() => StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: C.bg,
+    },
+    headerContainer: {
+      paddingHorizontal: theme.spacing.xl,
+      paddingTop: theme.spacing.sm,
+      paddingBottom: theme.spacing.md,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.md,
+    },
+    headerTitle: {
+      ...theme.typography.h1,
+       // Using base scale for h1
+      color: C.text,
+
+    },
+    headerSubtitle: {
+      ...theme.typography.caption,
+      color: C.muted,
+      marginTop: theme.spacing.none,
+      fontSize: theme.typography.caption.fontSize,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: theme.spacing.sm,
+      alignItems: 'center',
+    },
+    viewToggleContainer: {
+      flexDirection: 'row',
+      backgroundColor: C.surfaceHigh,
+      borderRadius: theme.borderRadius.md,
+      borderWidth: 1,
+      borderColor: C.border,
+      overflow: 'hidden',
+    },
+    viewToggleButton: {
+      padding: theme.spacing.sm,
+    },
+    templatesButton: {
+      width: theme.spacing.avatar,
+      height: theme.spacing.avatar,
+      borderRadius: theme.borderRadius.md,
+      backgroundColor: C.surfaceHigh,
+      borderWidth: 1,
+      borderColor: C.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    newButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.primary,
+      paddingHorizontal: theme.spacing.lg,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: theme.borderRadius.xl,
+      ...Platform.select({
+        ios: {
+          ...theme.elevation.md,
+          shadowColor: C.primary,
+        },
+        android: {
+          ...theme.elevation.md,
+          shadowColor: C.primary,
+        },
+      }),
+    },
+    newButtonIcon: {
+      marginEnd: theme.spacing.xs,
+    },
+    newButtonText: {
+      color: theme.colors.white,
+      fontWeight: '700',
+      fontSize: theme.typography.bodySm.fontSize,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.surface,
+      borderRadius: theme.borderRadius.md,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.md,
+    },
+    searchIcon: {
+      marginEnd: theme.spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      color: C.text,
+      fontSize: theme.typography.bodySm.fontSize,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      marginTop: theme.spacing.sm,
+    },
+    filterButton: {
+      borderRadius: theme.borderRadius.md,
+      borderWidth: 1,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      marginRight: theme.spacing.sm,
+    },
+    filterButtonText: {
+      fontWeight: '700',
+    },
+    sortRow: {
+      flexDirection: 'row',
+      marginTop: theme.spacing.sm,
+    },
+    templateRow: {
+      flexDirection: 'row',
+      marginTop: theme.spacing.sm,
+      flexWrap: 'wrap',
+    },
+    templateButton: {
+      borderRadius: theme.borderRadius.md,
+      borderWidth: 1,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      marginRight: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    pinnedStripContainer: {
+      marginBottom: theme.spacing.xs,
+    },
+    pinnedHeader: {
+      paddingHorizontal: theme.spacing.xl,
+      marginBottom: theme.spacing.xs,
+    },
+    pinnedHeaderText: {
+      color: C.muted,
+      fontSize: theme.typography.caption.fontSize,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    pinnedListContent: {
+      paddingHorizontal: theme.spacing.xl,
+    },
+    pinnedDivider: {
+      height: 1,
+      backgroundColor: C.border,
+      marginHorizontal: theme.spacing.xl,
+      marginTop: theme.spacing.lg,
+    },
+    skeletonContainer: {
+      paddingHorizontal: theme.spacing.xl,
+      paddingTop: theme.spacing.sm,
+    },
+    gridListContent: {
+      paddingHorizontal: theme.spacing.lg,
+      paddingBottom: theme.spacing.massive + (Platform.OS === 'ios' ? theme.spacing.xxxl : theme.spacing.lg) + theme.spacing.colossal,
+      paddingTop: theme.spacing.xs,
+    },
+    listContent: {
+      paddingHorizontal: theme.spacing.xl,
+      paddingBottom: theme.spacing.massive + (Platform.OS === 'ios' ? theme.spacing.xxxl : theme.spacing.lg) + theme.spacing.colossal,
+    },
+  }), [C, theme]);
+
   const SNACKBAR_DURATION = 4500;
 
   const handleArchive = useCallback(
@@ -306,42 +477,30 @@ export default function AgentsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={styles.safeArea}>
       {/* ── Header ── */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 }}>
+      <View style={styles.headerContainer}>
         <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
+          style={styles.headerRow}
         >
           <View>
             <AppText
-              style={{ fontSize: 28, fontWeight: '800', color: C.text, letterSpacing: -0.5 }}
+              style={styles.headerTitle}
             >
               Personas
             </AppText>
-            <AppText style={{ color: C.muted, fontSize: 13, marginTop: 1 }}>
+            <AppText style={styles.headerSubtitle}>
               {agents.length === 0
                 ? 'Your AI companions'
                 : `${agents.length} persona${agents.length !== 1 ? 's' : ''}`}
             </AppText>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View style={styles.headerActions}>
             {/* View toggle */}
             {agents.length > 0 && (
               <View
-                style={{
-                  flexDirection: 'row',
-                  backgroundColor: C.surfaceHigh,
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                  overflow: 'hidden',
-                }}
+                style={styles.viewToggleContainer}
               >
                 {(['list', 'grid'] as const).map((mode) => (
                   <ScalePressable
@@ -350,10 +509,7 @@ export default function AgentsScreen() {
                       haptic.selection();
                       setViewMode(mode);
                     }}
-                    style={{
-                      padding: 7,
-                      backgroundColor: viewMode === mode ? C.primary : 'transparent',
-                    }}
+                    style={[styles.viewToggleButton, { backgroundColor: viewMode === mode ? C.primary : 'transparent' }]}
                   >
                     <Ionicons
                       name={mode === 'list' ? 'list' : 'grid'}
@@ -372,16 +528,7 @@ export default function AgentsScreen() {
                   haptic.light();
                   setShowTemplates(true);
                 }}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  backgroundColor: C.surfaceHigh,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                style={styles.templatesButton}
               >
                 <Ionicons name="albums-outline" size={17} color={C.muted} />
               </ScalePressable>
@@ -401,7 +548,7 @@ export default function AgentsScreen() {
                   backgroundColor: C.primary,
                   borderRadius: 14,
                   paddingHorizontal: 16,
-                  paddingVertical: 10,
+                  paddingVertical: theme.spacing.md,
                   shadowColor: C.primary,
                   shadowOffset: { width: 0, height: 3 },
                   shadowOpacity: 0.25,
@@ -409,8 +556,8 @@ export default function AgentsScreen() {
                   elevation: 3,
                 }}
               >
-                <Ionicons name="add" size={18} color="white" style={{ marginEnd: 4 }} />
-                <AppText style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>New</AppText>
+                <Ionicons name="add" size={18} color="white" style={styles.newButtonIcon} />
+                <AppText style={styles.newButtonText}>New</AppText>
               </View>
             </ScalePressable>
           </View>
@@ -420,24 +567,15 @@ export default function AgentsScreen() {
         {agents.length > 0 && (
           <Animated.View entering={FadeIn.delay(200).duration(300)}>
             <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: C.surface,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: C.border,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-              }}
+              style={styles.searchContainer}
             >
-              <Ionicons name="search" size={15} color={C.faint} style={{ marginEnd: 8 }} />
+              <Ionicons name="search" size={15} color={C.faint} style={styles.searchIcon} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search personas…"
                 placeholderTextColor={C.faint}
-                style={{ flex: 1, color: C.text, fontSize: 14 }}
+                style={styles.searchInput}
               />
               {searchQuery.length > 0 && (
                 <ScalePressable onPress={() => setSearchQuery('')}>
@@ -446,7 +584,7 @@ export default function AgentsScreen() {
               )}
             </View>
 
-            <View style={{ flexDirection: 'row', marginTop: 10 }}>
+            <View style={styles.filterRow}>
               {(
                 [
                   { key: 'all', label: t('agents.filter.all') },
@@ -457,22 +595,11 @@ export default function AgentsScreen() {
                 <ScalePressable
                   key={option.key}
                   onPress={() => setFilterMode(option.key)}
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: filterMode === option.key ? C.primary : C.surfaceHigh,
-                    borderWidth: 1,
-                    borderColor: filterMode === option.key ? C.primary : C.border,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                  }}
+                  style={[styles.filterButton, { backgroundColor: filterMode === option.key ? C.primary : C.surfaceHigh, borderColor: filterMode === option.key ? C.primary : C.border }]}
                 >
                   <AppText
                     variant="caption"
-                    style={{
-                      color: filterMode === option.key ? 'white' : C.muted,
-                      fontWeight: '700',
-                    }}
+                    style={[styles.filterButtonText, { color: filterMode === option.key ? 'white' : C.muted }]}
                   >
                     {option.label}
                   </AppText>
@@ -480,7 +607,7 @@ export default function AgentsScreen() {
               ))}
             </View>
 
-            <View style={{ flexDirection: 'row', marginTop: 8 }}>
+            <View style={styles.sortRow}>
               {(
                 [
                   { key: 'recent', label: t('agents.sort.recent') },
@@ -491,22 +618,11 @@ export default function AgentsScreen() {
                 <ScalePressable
                   key={option.key}
                   onPress={() => setSortMode(option.key)}
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: sortMode === option.key ? C.primary : C.surface,
-                    borderWidth: 1,
-                    borderColor: sortMode === option.key ? C.primary : C.border,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                  }}
+                  style={[styles.filterButton, { backgroundColor: sortMode === option.key ? C.primary : C.surface, borderColor: sortMode === option.key ? C.primary : C.border }]}
                 >
                   <AppText
                     variant="caption"
-                    style={{
-                      color: sortMode === option.key ? 'white' : C.muted,
-                      fontWeight: '700',
-                    }}
+                    style={[styles.filterButtonText, { color: sortMode === option.key ? 'white' : C.muted }]}
                   >
                     {option.label}
                   </AppText>
@@ -514,7 +630,7 @@ export default function AgentsScreen() {
               ))}
             </View>
 
-            <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
+            <View style={styles.templateRow}>
               {(
                 [
                   {
@@ -541,23 +657,11 @@ export default function AgentsScreen() {
                     setTemplateCategory(option.key);
                     setShowTemplates(true);
                   }}
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: templateCategory === option.key ? C.primary : C.surface,
-                    borderWidth: 1,
-                    borderColor: templateCategory === option.key ? C.primary : C.border,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    marginRight: 8,
-                    marginBottom: 8,
-                  }}
+                  style={[styles.templateButton, { backgroundColor: templateCategory === option.key ? C.primary : C.surface, borderColor: templateCategory === option.key ? C.primary : C.border }]}
                 >
                   <AppText
                     variant="caption"
-                    style={{
-                      color: templateCategory === option.key ? 'white' : C.muted,
-                      fontWeight: '700',
-                    }}
+                    style={[styles.filterButtonText, { color: templateCategory === option.key ? 'white' : C.muted }]}
                   >
                     {option.label}
                   </AppText>
@@ -570,16 +674,10 @@ export default function AgentsScreen() {
 
       {/* ── Pinned strip ── */}
       {pinnedAgents.length > 0 && !debouncedQuery && filterMode === 'all' && (
-        <Animated.View entering={FadeIn.duration(300)} style={{ marginBottom: 6 }}>
-          <View style={{ paddingHorizontal: 20, marginBottom: 6 }}>
+        <Animated.View entering={FadeIn.duration(300)} style={styles.pinnedStripContainer}>
+          <View style={styles.pinnedHeader}>
             <AppText
-              style={{
-                color: C.muted,
-                fontSize: 11,
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: 0.8,
-              }}
+              style={styles.pinnedHeaderText}
             >
               Pinned
             </AppText>
@@ -587,20 +685,20 @@ export default function AgentsScreen() {
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
+            contentContainerStyle={styles.pinnedListContent}
             data={pinnedAgents}
             keyExtractor={(item) => item.id}
             renderItem={renderPinnedAgentItem}
           />
           <View
-            style={{ height: 1, backgroundColor: C.border, marginHorizontal: 20, marginTop: 14 }}
+            style={styles.pinnedDivider}
           />
         </Animated.View>
       )}
 
       {/* ── Agent list / grid / skeleton ── */}
       {isLoading && agents.length === 0 ? (
-        <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+        <View style={styles.skeletonContainer}>
           {[0, 1, 2].map((i) => (
             <SkeletonAgentCard key={i} index={i} />
           ))}
@@ -611,11 +709,7 @@ export default function AgentsScreen() {
           data={filteredAgents}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          contentContainerStyle={{
-            paddingHorizontal: 15,
-            paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 64,
-            paddingTop: 6,
-          }}
+          contentContainerStyle={styles.gridListContent}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={fetchAgents} tintColor={C.primary} />
           }
@@ -633,10 +727,7 @@ export default function AgentsScreen() {
           key="list"
           data={filteredAgents}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 64,
-          }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={fetchAgents} tintColor={C.primary} />
           }

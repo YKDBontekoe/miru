@@ -43,11 +43,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       backgroundColor: C.surface,
       borderRadius: 20,
       marginBottom: theme.spacing.md,
-      shadowColor: '#2563EB',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 14,
-      elevation: 2,
+      ...theme.elevation.lg,
+      shadowColor: theme.colors.primary.DEFAULT,
+
+
+
     },
     innerContainer: {
       flexDirection: 'row',
@@ -93,19 +93,19 @@ export const AgentCard: React.FC<AgentCardProps> = ({
     },
     levelText: {
       color,
-      fontSize: 10,
+      fontSize: theme.typography.caption.fontSize - 2,
       fontWeight: '700',
     },
     progressBarContainer: {
       flex: 1,
-      height: 3,
+      height: theme.spacing.xs - 1,
       backgroundColor: `${color}18`,
       borderRadius: theme.borderRadius.xs,
       overflow: 'hidden',
     },
     progressBarFill: {
       width: `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`,
-      height: 3,
+      height: theme.spacing.xs - 1,
       backgroundColor: `${color}70`,
       borderRadius: theme.borderRadius.xs,
     },
@@ -115,7 +115,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
     },
     messageCountText: {
       color: C.faint,
-      fontSize: 10,
+      fontSize: theme.typography.caption.fontSize - 2,
       marginBottom: theme.spacing.sm,
     },
   });
@@ -187,11 +187,11 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
       margin: theme.spacing.xs,
       padding: theme.spacing.lg,
       alignItems: 'center',
-      shadowColor: '#2563EB',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 14,
-      elevation: 2,
+      ...theme.elevation.lg,
+      shadowColor: theme.colors.primary.DEFAULT,
+
+
+
     },
     avatarWrapper: {
       position: 'relative',
@@ -202,12 +202,12 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
       top: -3,
       right: -3,
       backgroundColor: theme.colors.status.warning,
-      width: 16,
-      height: 16,
+      width: theme.spacing.lg,
+      height: theme.spacing.lg,
       borderRadius: theme.borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1.5,
+      borderWidth: 2,
       borderColor: C.surface,
     },
     nameText: {
@@ -230,12 +230,12 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
     },
     levelText: {
       color,
-      fontSize: 10,
+      fontSize: theme.typography.caption.fontSize - 2,
       fontWeight: '700',
     },
     personalityText: {
       color: C.muted,
-      fontSize: 11,
+      fontSize: theme.typography.caption.fontSize - 1,
       textAlign: 'center',
     },
   });
