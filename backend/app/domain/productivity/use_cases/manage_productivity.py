@@ -196,7 +196,7 @@ class ManageProductivityUseCase:
             raise InvalidTimeRangeError("end_time must be after start_time")
 
         updated_event = await self._repo.update_event(user_id, event_id, valid_keys)
-        if not updated_event:
+        if updated_event is None:
             raise CalendarEventNotFoundError("Calendar event not found")
         return updated_event
 
