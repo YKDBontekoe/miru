@@ -6,10 +6,13 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.core.config import get_settings
 from app.domain.agents.service import AgentService
+from app.domain.auth.interfaces import TokenVerifierProtocol
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
+from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
 from app.infrastructure.database.supabase import SupabaseClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
@@ -38,6 +41,18 @@ def get_auth_repo(db: SupabaseClient) -> AuthRepository:
     return AuthRepository(db)
 
 
+_jwt_verifier: TokenVerifierProtocol | None = None
+
+
+def get_jwt_verifier() -> TokenVerifierProtocol:
+    global _jwt_verifier
+    if _jwt_verifier is None:
+        settings = get_settings()
+        jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+        _jwt_verifier = SupabaseJWTVerifier(jwks_url=jwks_url, secret=settings.supabase_jwt_secret)
+    return _jwt_verifier
+
+
 # ---------------------------------------------------------------------------
 # Service factories
 # ---------------------------------------------------------------------------
@@ -62,5 +77,8 @@ def get_memory_service(
     return MemoryService(repo)
 
 
-def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo)
+def get_auth_service(
+    repo: Annotated[AuthRepository, Depends(get_auth_repo)],
+    token_verifier: Annotated[TokenVerifierProtocol, Depends(get_jwt_verifier)],
+) -> AuthService:
+    return AuthService(repo, token_verifier)
