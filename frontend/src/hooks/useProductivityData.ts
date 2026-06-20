@@ -6,7 +6,7 @@ import { useProductivityStore } from '@/store/useProductivityStore';
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
 
-export type RenderItemData = {
+export interface RenderItemData {
   date?: number;
   type: 'note' | 'task' | 'event';
   item: Note | Task | CalendarEvent;
@@ -25,6 +25,7 @@ export function useProductivityData() {
     notes,
     tasks,
     events,
+    error,
     fetchNotes,
     fetchTasks,
     fetchEvents,
@@ -252,6 +253,7 @@ export function useProductivityData() {
   }, [filteredEvents, i18n.language, prioritizedTasks, taskPriorityCounts.overdue]);
 
   return {
+    error,
     activeTab,
     setActiveTab,
     taskPriority,

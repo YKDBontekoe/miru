@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../../src/components/AppText';
-import { CreateNoteModal } from '../../src/components/productivity/CreateNoteModal';
-import { CreateTaskModal } from '../../src/components/productivity/CreateTaskModal';
-import { NoteCard } from '../../src/components/productivity/NoteCard';
-import { TaskCard } from '../../src/components/productivity/TaskCard';
-import { EventCard } from '../../src/components/productivity/EventCard';
-import { ProductivityHeader } from '../../src/components/productivity/ProductivityHeader';
-import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
-import { theme } from '../../src/core/theme';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { AppText } from '@/components/AppText';
+import { CreateNoteModal } from '@/components/productivity/CreateNoteModal';
+import { CreateTaskModal } from '@/components/productivity/CreateTaskModal';
+import { NoteCard } from '@/components/productivity/NoteCard';
+import { TaskCard } from '@/components/productivity/TaskCard';
+import { EventCard } from '@/components/productivity/EventCard';
+import { ProductivityHeader } from '@/components/productivity/ProductivityHeader';
+import { ProductivityEmptyState } from '@/components/productivity/ProductivityEmptyState';
+import { theme } from '@/core/theme';
+import { CalendarEvent, Note, Task } from '@/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { useProductivityData, RenderItemData } from '@/hooks/useProductivityData';
 
@@ -45,6 +45,7 @@ export default function ProductivityScreen() {
   const [showCreateTask, setShowCreateTask] = useState(false);
 
   const {
+    error,
     activeTab,
     setActiveTab,
     taskPriority,
@@ -166,7 +167,7 @@ export default function ProductivityScreen() {
       </View>
 
       {(activeTab === 'tasks' || activeTab === 'today') && (
-        <View style={styles.priorityFilterContainer}>
+        <View className="flex-row flex-wrap mx-6 mb-2">
           {(
             [
               { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
@@ -192,7 +193,7 @@ export default function ProductivityScreen() {
               key={option.key}
               onPress={() => setTaskPriority(option.key)}
               style={({ pressed }) => [
-                styles.priorityFilterButton,
+                { borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, marginRight: 8, marginBottom: 8 },
                 {
                   borderColor: taskPriority === option.key ? T.primary.DEFAULT : T.border.light,
                   backgroundColor:
@@ -218,7 +219,7 @@ export default function ProductivityScreen() {
       <FlatList
         data={dataToRender}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100, paddingTop: 12 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -230,24 +231,34 @@ export default function ProductivityScreen() {
         renderItem={renderItem}
         ListHeaderComponent={
           activeTab === 'today' && todayPlan ? (
-            <View style={styles.todayPlanContainer}>
-              <View style={styles.todayPlanHeader}>
-                <AppText style={styles.todayPlanTitle}>Today plan</AppText>
-                <Pressable onPress={() => setTodayPlan(null)}>
+            <View className="rounded-xl bg-[#ECF5F0] border border-[#DDE8E0] p-6 mb-4">
+              <View className="flex-row justify-between items-center">
+                <AppText className="text-[#13251C] font-bold text-[15px]">Today plan</AppText>
+                <Pressable onPress={() => setTodayPlan(null)} accessibilityLabel="Dismiss today plan" accessible={true} accessibilityRole="button">
                   <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
                 </Pressable>
               </View>
-              <AppText style={styles.todayPlanText}>{todayPlan}</AppText>
+              <AppText className="text-[#5A7467] mt-2 leading-5">{todayPlan}</AppText>
             </View>
           ) : null
         }
         ListEmptyComponent={
-          <ProductivityEmptyState
-            activeTab={activeTab}
-            searchQuery={searchQuery}
-            onAddNote={() => setShowCreateNote(true)}
-            onAddTask={() => setShowCreateTask(true)}
-          />
+          isLoading ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={T.primary.DEFAULT} />
+            </View>
+          ) : error ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+               <AppText style={{ color: DESIGN_TOKENS.colors.text, textAlign: 'center' }}>{error}</AppText>
+            </View>
+          ) : (
+            <ProductivityEmptyState
+              activeTab={activeTab}
+              searchQuery={searchQuery}
+              onAddNote={() => setShowCreateNote(true)}
+              onAddTask={() => setShowCreateTask(true)}
+            />
+          )
         }
       />
 
@@ -300,47 +311,5 @@ const styles = StyleSheet.create({
   tabTextActive: {
     fontWeight: '700',
     color: T.onSurface.light,
-  },
-  priorityFilterContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: S.xl,
-    marginBottom: S.sm,
-  },
-  priorityFilterButton: {
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  listContent: {
-    paddingHorizontal: S.xl,
-    paddingBottom: 100,
-    paddingTop: S.sm,
-  },
-  todayPlanContainer: {
-    borderRadius: R.xl,
-    backgroundColor: T.primary.surfaceLight,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    padding: S.lg,
-    marginBottom: S.md,
-  },
-  todayPlanHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  todayPlanTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  todayPlanText: {
-    color: T.onSurface.mutedLight,
-    marginTop: 8,
-    lineHeight: 20,
   },
 });

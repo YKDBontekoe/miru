@@ -4,9 +4,8 @@ import { AppText } from '../AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { CalendarEvent } from '@/core/models';
 import { useTranslation } from 'react-i18next';
-import { theme } from '@/core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 
 const T = {
   surface: { light: DESIGN_TOKENS.colors.surface },
@@ -21,8 +20,6 @@ const T = {
   },
 };
 
-const S = theme.spacing;
-const R = theme.borderRadius;
 
 interface EventCardProps {
   event: CalendarEvent;
@@ -32,13 +29,13 @@ export const EventCard = React.memo(({ event }: EventCardProps) => {
   const { i18n } = useTranslation();
 
   return (
-    <View style={styles.eventCard}>
-      <View style={styles.eventIcon}>
+    <View className="flex-row items-center bg-white border border-[#DDE8E0] rounded-xl p-4 mb-4 shadow-sm">
+      <View className="w-8 h-8 rounded-lg bg-[#ECF5F0] items-center justify-center mr-4">
         <Ionicons name="calendar-outline" size={16} color={T.primary.DEFAULT} />
       </View>
-      <View style={styles.eventBody}>
-        <AppText style={styles.eventTitle}>{event.title}</AppText>
-        <AppText style={styles.eventMeta}>
+      <View className="flex-1">
+        <AppText className="text-[#13251C] font-bold text-[15px]">{event.title}</AppText>
+        <AppText className="text-[#5A7467] mt-0.5 text-[13px]">
           {new Intl.DateTimeFormat(i18n.language, {
             weekday: 'short',
             month: 'short',
@@ -53,39 +50,3 @@ export const EventCard = React.memo(({ event }: EventCardProps) => {
 });
 
 EventCard.displayName = 'EventCard';
-
-const styles = StyleSheet.create({
-  eventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface.light,
-    borderWidth: 1,
-    borderColor: T.border.light,
-    borderRadius: R.xl,
-    padding: S.lg,
-    marginBottom: S.md,
-    ...theme.elevation.sm,
-  },
-  eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.lg,
-    backgroundColor: T.primary.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: S.md,
-  },
-  eventBody: {
-    flex: 1,
-  },
-  eventTitle: {
-    color: T.onSurface.light,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  eventMeta: {
-    color: T.onSurface.mutedLight,
-    marginTop: 2,
-    fontSize: 13,
-  },
-});
