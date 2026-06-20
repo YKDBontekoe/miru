@@ -21,11 +21,15 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
+    from app.core.config import get_settings
     from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
+    settings = get_settings()
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier(jwks_url="", secret=settings.supabase_jwt_secret)
+    service = AuthService(AuthRepository(MagicMock()), verifier)
     payload = await service.decode_jwt(token)
 
     assert isinstance(payload, JWTPayload)
@@ -35,11 +39,15 @@ async def test_decode_valid_jwt() -> None:
 @pytest.mark.asyncio
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
+    from app.core.config import get_settings
     from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
+    settings = get_settings()
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier(jwks_url="", secret=settings.supabase_jwt_secret)
+    service = AuthService(AuthRepository(MagicMock()), verifier)
 
     with pytest.raises(jwt.ExpiredSignatureError):
         await service.decode_jwt(token)
@@ -50,11 +58,15 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
     import logging
 
+    from app.core.config import get_settings
     from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
+    settings = get_settings()
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier(jwks_url="", secret=settings.supabase_jwt_secret)
+    service = AuthService(AuthRepository(MagicMock()), verifier)
 
     with (
         caplog.at_level(logging.WARNING),
