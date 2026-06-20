@@ -6,6 +6,7 @@ import { getAgentColor } from './agentUtils';
 import { Agent } from '../../core/models';
 import { ScalePressable } from '@/components/ScalePressable';
 import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 
 interface PinnedChipProps {
   agent: Agent;
@@ -16,44 +17,26 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
   const color = getAgentColor(agent.name);
   const { C } = useTheme();
 
+
+
   return (
-    <ScalePressable onPress={onPress} style={{ alignItems: 'center', marginEnd: 14, width: 64 }}>
+    <ScalePressable onPress={onPress} className="items-center mr-3 w-16">
       <View
-        style={{
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          backgroundColor: `${color}18`,
-          borderWidth: 2,
-          borderColor: `${color}45`,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 6,
-        }}
+        className="w-14 h-14 rounded-full border-2 items-center justify-center mb-1"
+        style={{ backgroundColor: `${color}18`, borderColor: `${color}45` }}
       >
-        <AppText style={{ color, fontSize: 22, fontWeight: '700' }}>
+        <AppText className="text-xl font-bold"
+          style={{ color }}>
           {agent.name?.[0]?.toUpperCase() ?? ''}
         </AppText>
         <View
-          style={{
-            position: 'absolute',
-            bottom: -2,
-            right: -2,
-            backgroundColor: '#F59E0B',
-            width: 14,
-            height: 14,
-            borderRadius: 7,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1.5,
-            borderColor: C.surface,
-          }}
+          className="absolute -bottom-0.5 -right-0.5 bg-amber-500 w-4 h-4 rounded-full items-center justify-center border-2 border-surface"
         >
           <Ionicons name="star" size={7} color="white" />
         </View>
       </View>
       <AppText
-        style={{ fontSize: 11, color: C.muted, textAlign: 'center' }}
+        className="text-[11px] text-muted text-center"
         numberOfLines={1}
       >
         {agent.name}
