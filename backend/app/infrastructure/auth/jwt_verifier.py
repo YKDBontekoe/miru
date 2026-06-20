@@ -46,9 +46,7 @@ class SupabaseJWTVerifier(TokenVerifierProtocol):
             else:
                 jwks_client = self._get_jwks_client()
                 # Run the blocking network call in a separate thread
-                signing_key = await asyncio.to_thread(
-                    jwks_client.get_signing_key_from_jwt, token
-                )
+                signing_key = await asyncio.to_thread(jwks_client.get_signing_key_from_jwt, token)
                 payload = jwt.decode(
                     token,
                     signing_key.key,
