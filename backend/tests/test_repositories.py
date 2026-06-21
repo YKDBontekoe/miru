@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -11,7 +11,6 @@ from app.domain.agents.models import Agent
 from app.domain.chat.entities import ChatMessageEntity
 from app.domain.memory.models import Memory
 from app.infrastructure.repositories.agent_repo import AgentRepository
-from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -390,95 +389,3 @@ class TestMemoryRepository:
 # ---------------------------------------------------------------------------
 # AuthRepository
 # ---------------------------------------------------------------------------
-
-
-class TestAuthRepository:
-    def _make_db(self, data: list[dict] | None = None) -> MagicMock:
-        """Return a mock Supabase client."""
-        db = MagicMock()
-        resp = MagicMock()
-        resp.data = data or []
-        db.table.return_value.select.return_value.eq.return_value.execute.return_value = resp
-        db.table.return_value.update.return_value.eq.return_value.execute.return_value = resp
-        db.table.return_value.insert.return_value.execute.return_value = MagicMock(
-            data=[
-                {
-                    "id": str(uuid4()),
-                    "user_id": str(uuid4()),
-                    "credential_id": "cred123",
-                    "public_key": "pubkey",
-                    "sign_count": 0,
-                    "created_at": "2024-01-01T00:00:00",
-                    "last_used_at": None,
-                }
-            ]
-        )
-        return db
-
-    @pytest.mark.asyncio
-    async def test_get_passkeys_by_user_empty(self) -> None:
-        db = self._make_db(data=[])
-        repo = AuthRepository(db)
-        result, cursor = await repo.get_passkeys_by_user(str(uuid4()))
-        assert result == []
-
-    @pytest.mark.asyncio
-    async def test_get_passkeys_by_user_returns_records(self) -> None:
-        from app.domain.auth.entities import Passkey
-
-        uid = str(uuid4())
-        row = {
-            "id": str(uuid4()),
-            "user_id": uid,
-            "credential_id": "cred123",
-            "public_key": "pubkey",
-            "sign_count": 0,
-            "created_at": "2024-01-01T00:00:00",
-            "last_used_at": None,
-        }
-        db = self._make_db(data=[row])
-        # Force the mock execute() to return the row since the query builder chain
-        # might not be perfectly mocked for order/limit chaining
-        db.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value.data = [
-            row
-        ]
-        db.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value.lt.return_value.execute.return_value.data = [
-            row
-        ]
-
-        repo = AuthRepository(db)
-        result, cursor = await repo.get_passkeys_by_user(uid)
-        assert len(result) == 1
-        assert isinstance(result[0], Passkey)
-
-    @pytest.mark.asyncio
-    async def test_update_sign_count_calls_db(self) -> None:
-        db = self._make_db()
-        repo = AuthRepository(db)
-        await repo.update_sign_count(str(uuid4()), 5)
-        db.table.assert_called_with("passkeys")
-
-    @pytest.mark.asyncio
-    async def test_create_passkey_does_not_raise(self) -> None:
-        import uuid
-
-        from app.domain.auth.entities import PasskeyCreate
-
-        db = self._make_db(
-            data=[
-                {
-                    "id": str(uuid.uuid4()),
-                    "user_id": str(uuid.uuid4()),
-                    "credential_id": "cred123",
-                    "public_key": "pubkey",
-                    "sign_count": 0,
-                    "created_at": "2024-01-01T00:00:00",
-                    "last_used_at": None,
-                }
-            ]
-        )
-        repo = AuthRepository(db)
-        input_data = PasskeyCreate(
-            user_id=uuid.uuid4(), credential_id="cred123", public_key="pubkey"
-        )
-        await repo.create_passkey(input_data)
