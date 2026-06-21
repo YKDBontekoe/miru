@@ -13,38 +13,6 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_chat_completion_uses_default_model() -> None:
-    mock_client = AsyncMock()
-    mock_client.chat_completion = AsyncMock(return_value="Hello!")
-    with (
-        patch("app.infrastructure.external.openrouter._client", mock_client),
-        patch(
-            "app.infrastructure.external.openrouter.get_settings",
-            return_value=MagicMock(default_chat_model="test-model", openrouter_api_key="k"),
-        ),
-    ):
-        from app.infrastructure.external.openrouter import chat_completion
-
-        result = await chat_completion([{"role": "user", "content": "Hi"}])
-    assert result == "Hello!"
-    mock_client.chat_completion.assert_awaited_once()
-
-
-@pytest.mark.asyncio
-async def test_chat_completion_uses_explicit_model() -> None:
-    mock_client = AsyncMock()
-    mock_client.chat_completion = AsyncMock(return_value="World!")
-    with patch("app.infrastructure.external.openrouter._client", mock_client):
-        from app.infrastructure.external.openrouter import chat_completion
-
-        result = await chat_completion([{"role": "user", "content": "Hi"}], model="custom/model")
-    assert result == "World!"
-    mock_client.chat_completion.assert_awaited_once_with(
-        [{"role": "user", "content": "Hi"}], "custom/model"
-    )
-
-
-@pytest.mark.asyncio
 async def test_embed_delegates_to_client() -> None:
     mock_client = AsyncMock()
     mock_client.embed = AsyncMock(return_value=[0.1, 0.2, 0.3])
@@ -87,22 +55,6 @@ async def test_structured_completion_delegates_to_client() -> None:
 # ---------------------------------------------------------------------------
 # OpenRouterClient methods
 # ---------------------------------------------------------------------------
-
-
-@pytest.mark.asyncio
-async def test_client_chat_completion_delegates_to_structured() -> None:
-    from app.infrastructure.external.openrouter import ChatResponse, OpenRouterClient
-
-    client = OpenRouterClient.__new__(OpenRouterClient)
-    client.structured_completion = AsyncMock(  # type: ignore[method-assign]
-        return_value=ChatResponse(message="hello from structured")
-    )
-
-    result = await client.chat_completion([{"role": "user", "content": "Hi"}], "model")
-    assert result == "hello from structured"
-    client.structured_completion.assert_called_once_with(
-        [{"role": "user", "content": "Hi"}], "model", ChatResponse
-    )
 
 
 @pytest.mark.asyncio

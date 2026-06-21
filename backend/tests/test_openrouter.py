@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 from app.infrastructure.external.openrouter import (
     OpenRouterClient,
-    chat_completion,
     embed,
     get_openrouter_client,
     structured_completion,
@@ -79,25 +78,6 @@ async def test_embed_success() -> None:
         assert result == [0.1, 0.2]
 
 
-@pytest.mark.asyncio
-async def test_chat_completion_success() -> None:
-    with (
-        patch("openai.AsyncOpenAI"),
-        patch("instructor.from_openai"),
-    ):
-        client = OpenRouterClient("test-key")
-
-        from app.infrastructure.external.openrouter import ChatResponse
-
-        mock_response = ChatResponse(message="hello")
-        cast("Any", client.instructor_client.chat.completions).create = AsyncMock(
-            return_value=mock_response
-        )
-
-        result = await client.chat_completion([{"role": "user", "content": "hi"}], "test-model")
-        assert result == "hello"
-
-
 class DummyModel(BaseModel):
     name: str
 
@@ -135,92 +115,6 @@ async def test_standalone_embed() -> None:
         result = await embed("test text")
         assert result == [0.1, 0.2]
         mock_client.embed.assert_called_once_with("test text", "test-embed-model")
-
-
-@pytest.mark.asyncio
-async def test_standalone_chat_completion_success() -> None:
-    with (
-        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
-        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
-    ):
-        mock_settings.return_value = MagicMock(default_chat_model="default-model")
-        mock_client = MagicMock()
-        mock_client.chat_completion = AsyncMock(return_value="hello")
-        mock_get_client.return_value = mock_client
-
-        result = await chat_completion([{"role": "user", "content": "hi"}])
-        assert result == "hello"
-        mock_client.chat_completion.assert_called_once_with(
-            [{"role": "user", "content": "hi"}], "default-model"
-        )
-
-
-@pytest.mark.asyncio
-async def test_standalone_chat_completion_fallback() -> None:
-    with (
-        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
-        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
-    ):
-        mock_settings.return_value = MagicMock(
-            default_chat_model="default-model", fallback_chat_model="fallback-model"
-        )
-        mock_client = MagicMock()
-
-        # First call fails, second call succeeds
-        mock_client.chat_completion = AsyncMock(
-            side_effect=[Exception("First error"), "fallback-hello"]
-        )
-        mock_get_client.return_value = mock_client
-
-        result = await chat_completion([{"role": "user", "content": "hi"}])
-        assert result == "fallback-hello"
-        assert mock_client.chat_completion.call_count == 2
-
-        # Check that it called with fallback model
-        mock_client.chat_completion.assert_called_with(
-            [{"role": "user", "content": "hi"}], "fallback-model"
-        )
-
-
-@pytest.mark.asyncio
-async def test_standalone_chat_completion_fallback_fails() -> None:
-    with (
-        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
-        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
-    ):
-        mock_settings.return_value = MagicMock(
-            default_chat_model="default-model", fallback_chat_model="fallback-model"
-        )
-        mock_client = MagicMock()
-
-        # Both calls fail
-        mock_client.chat_completion = AsyncMock(
-            side_effect=[Exception("First error"), Exception("Fallback error")]
-        )
-        mock_get_client.return_value = mock_client
-
-        with pytest.raises(Exception, match="Fallback error"):
-            await chat_completion([{"role": "user", "content": "hi"}])
-
-
-@pytest.mark.asyncio
-async def test_standalone_chat_completion_cancelled() -> None:
-    with (
-        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
-        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
-    ):
-        mock_settings.return_value = MagicMock(
-            default_chat_model="default-model", fallback_chat_model="fallback-model"
-        )
-        mock_client = MagicMock()
-
-        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())
-        mock_get_client.return_value = mock_client
-
-        with pytest.raises(asyncio.CancelledError):
-            await chat_completion([{"role": "user", "content": "hi"}])
-
-        assert mock_client.chat_completion.call_count == 1
 
 
 @pytest.mark.asyncio
