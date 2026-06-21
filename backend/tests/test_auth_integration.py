@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi.testclient import TestClient
+
+if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
 
 from app.domain.auth.entities import PasskeyCreate
 from app.infrastructure.database.models.auth_models import Passkey as PasskeyModel

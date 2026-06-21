@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -55,10 +56,9 @@ class AuthRepository(AuthRepositoryProtocol):
 
         # Update sign_count and set last_used_at
         # Using tortoise ORM directly
-        import datetime
 
         await PasskeyModel.filter(id=passkey_id).update(
-            sign_count=new_count, last_used_at=datetime.datetime.now(datetime.UTC)
+            sign_count=new_count, last_used_at=datetime.now(UTC)
         )
 
     async def create_passkey(self, input: PasskeyCreate) -> Passkey:

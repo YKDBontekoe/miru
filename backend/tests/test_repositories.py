@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -11,7 +11,6 @@ from app.domain.agents.models import Agent
 from app.domain.chat.entities import ChatMessageEntity
 from app.domain.memory.models import Memory
 from app.infrastructure.repositories.agent_repo import AgentRepository
-from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -390,6 +389,3 @@ class TestMemoryRepository:
 # ---------------------------------------------------------------------------
 # AuthRepository
 # ---------------------------------------------------------------------------
-
-
-
