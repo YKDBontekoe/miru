@@ -21,12 +21,6 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=BaseModel)
 
 
-class ChatResponse(BaseModel):
-    """Fallback generic Pydantic schema for non-structured chat outputs."""
-
-    message: str
-
-
 class OpenRouterClient:
     def __init__(self, api_key: str):
         # We defer imports to bypass Python 3.13 circular import bugs at startup
@@ -45,11 +39,6 @@ class OpenRouterClient:
             self.openai_client,
             mode=instructor.Mode.OPENROUTER_STRUCTURED_OUTPUTS,
         )
-
-    async def chat_completion(self, messages: list[ChatCompletionMessageParam], model: str) -> str:
-        # Internally enforce strict JSON structured output even for generic strings
-        structured_resp = await self.structured_completion(messages, model, ChatResponse)
-        return structured_resp.message
 
     @retry(
         stop=stop_after_attempt(3),
@@ -129,28 +118,6 @@ def get_openrouter_client() -> OpenRouterClient:
     if _client is None:
         _client = OpenRouterClient(get_settings().openrouter_api_key)
     return _client
-
-
-async def chat_completion(
-    messages: list[ChatCompletionMessageParam], model: str | None = None
-) -> str:
-    client = get_openrouter_client()
-    chosen_model = model or get_settings().default_chat_model
-    try:
-        return await client.chat_completion(messages, chosen_model)
-    except Exception as e:
-        if isinstance(e, asyncio.CancelledError):
-            raise
-        fallback = get_settings().fallback_chat_model
-        if fallback and fallback != chosen_model:
-            logger.warning(
-                "chat_completion failed with model %s, falling back to %s", chosen_model, fallback
-            )
-            try:
-                return await client.chat_completion(messages, fallback)
-            except Exception as fallback_e:
-                raise fallback_e from e
-        raise
 
 
 async def stream_chat(
