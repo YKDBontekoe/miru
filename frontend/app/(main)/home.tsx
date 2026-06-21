@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AppText } from '../../src/components/AppText';
+import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { SkeletonAgentCard } from '@/components/SkeletonCard';
 import {
@@ -15,7 +15,7 @@ import {
   HomeSectionHeader,
   HomeSurfaceCard,
   HomeTaskRow,
-} from '@/components/home/HomeDashboardParts';
+} from '@/components/home';
 import { HomeNewChatModal } from '@/components/home';
 import { HOME_COLORS } from '@/components/home/homeTheme';
 import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';

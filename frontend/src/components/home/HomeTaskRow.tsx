@@ -1,48 +1,63 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Task } from '@/core/models';
+import { HOME_COLORS } from '@/components/home/homeTheme';
 
-export const HomeTaskRow = React.memo(function HomeTaskRow({
+export const HomeTaskRow = ({
   task,
   onToggle,
 }: {
   task: Task;
   onToggle: () => void;
-}) {
-  const { i18n } = useTranslation();
-
-  let dateText = '';
-  if (task.due_date) {
-    const due = new Date(task.due_date);
-    if (!isNaN(due.getTime())) {
-      dateText = new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
-        due
-      );
-    }
-  }
+}) => {
+  const dueDate = task.due_date ? new Date(task.due_date) : null;
+  const dueText =
+    dueDate && !isNaN(dueDate.getTime())
+      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(dueDate)
+      : null;
 
   return (
-    <ScalePressable onPress={onToggle} className="flex-row items-center py-2">
+    <ScalePressable
+      onPress={onToggle}
+      className="flex-row items-center rounded-2xl px-3 py-[11px] mb-2"
+      style={{
+        backgroundColor: HOME_COLORS.softSurface,
+      }}
+    >
       <View
-        className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${task.completed ? 'border-primary bg-primary' : 'border-faint bg-transparent'}`}
+        className="w-6 h-6 rounded-xl border-2 items-center justify-center mr-2.5"
+        style={{
+          borderColor: task.completed ? HOME_COLORS.primary : '#8FB7A7',
+          backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
+        }}
       >
-        {task.completed && <Ionicons name="checkmark" size={13} color="white" />}
+        {task.completed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
       </View>
       <AppText
-        className={`flex-1 text-sm ${task.completed ? 'text-faint line-through' : 'text-text'}`}
+        variant="bodySm"
         numberOfLines={1}
+        className={`flex-1 font-semibold ${task.completed ? 'line-through' : 'no-underline'}`}
+        style={{
+          color: task.completed ? HOME_COLORS.muted : HOME_COLORS.text,
+        }}
       >
         {task.title}
       </AppText>
-      {!!dateText && (
-        <View className="bg-primaryFaint rounded-md px-2 py-1 ml-2">
-          <AppText className="text-xs text-primary font-semibold">{dateText}</AppText>
+      {dueText ? (
+        <View
+          className="rounded-xl px-2 py-1"
+          style={{
+            backgroundColor: HOME_COLORS.accentSoft,
+          }}
+        >
+          <AppText variant="caption" className="font-bold" style={{ color: '#9E5817' }}>
+            {dueText}
+          </AppText>
         </View>
-      )}
+      ) : null}
     </ScalePressable>
   );
-});
+};

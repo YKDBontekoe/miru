@@ -1,10 +1,10 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useColorScheme } from 'nativewind';
-import { AppText } from '../AppText';
-import { ScalePressable } from '../ScalePressable';
+import { AppText } from '@/components/AppText';
+import { ScalePressable } from '@/components/ScalePressable';
+import { HOME_COLORS } from '@/components/home/homeTheme';
 
-export function HomeSectionHeader({
+export const HomeSectionHeader = ({
   title,
   actionLabel,
   onAction,
@@ -12,22 +12,19 @@ export function HomeSectionHeader({
   title: string;
   actionLabel?: string;
   onAction?: () => void;
-}) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
+}) => {
   return (
-    <View className="flex-row justify-between items-center mb-6">
-      <AppText variant="h3" className={isDark ? 'text-onSurface-dark' : 'text-onSurface-light'}>
+    <View className="flex-row justify-between items-center mb-3">
+      <AppText variant="h3" className="font-bold" style={{ color: HOME_COLORS.text }}>
         {title}
       </AppText>
-      {actionLabel && onAction && (
+      {actionLabel && onAction ? (
         <ScalePressable onPress={onAction}>
-          <AppText variant="bodySm" className="text-primary-DEFAULT">
+          <AppText variant="bodySm" className="font-bold" style={{ color: HOME_COLORS.primary }}>
             {actionLabel}
           </AppText>
         </ScalePressable>
-      )}
+      ) : null}
     </View>
   );
-}
+};

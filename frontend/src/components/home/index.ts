@@ -5,3 +5,8 @@ export * from './HomeRecentChatRow';
 export * from './HomeTaskRow';
 export * from './HomeAgentChip';
 export * from './HomeNewChatModal';
+export * from './HomeSurfaceCard';
+export * from './HomeActionTile';
+export * from './HomeChatRow';
+export * from './HomeAgentBadge';
+export * from './HomeHeroCard';
