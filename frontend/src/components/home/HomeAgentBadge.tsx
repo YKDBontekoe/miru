@@ -3,46 +3,37 @@ import { View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
-import { HOME_COLORS } from './homeTheme';
+import { HOME_COLORS } from '@/components/home/homeTheme';
 
-export function HomeAgentBadge({
+export const HomeAgentBadge = ({
   agent,
   onPress,
 }: {
   agent: Agent;
   onPress: () => void;
-}) {
+}) => {
   return (
     <ScalePressable
       onPress={onPress}
+      className="rounded-[18px] border p-2.5 w-[48.5%] mb-2.5"
       style={{
-        borderRadius: 18,
-        borderWidth: 1,
         borderColor: HOME_COLORS.border,
         backgroundColor: HOME_COLORS.surface,
-        padding: 10,
-        width: '48.5%',
-        marginBottom: 10,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+      <View className="flex-row items-center mb-1.5">
         <View
+          className="w-[30px] h-[30px] rounded-md items-center justify-center mr-2"
           style={{
-            width: 30,
-            height: 30,
-            borderRadius: 10,
             backgroundColor: HOME_COLORS.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 8,
           }}
         >
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+          <AppText variant="bodySm" className="font-extrabold" style={{ color: HOME_COLORS.primary }}>
             {agent.name?.[0]?.toUpperCase() ?? '?'}
           </AppText>
         </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+        <View className="flex-1">
+          <AppText variant="bodySm" numberOfLines={1} className="font-bold" style={{ color: HOME_COLORS.text }}>
             {agent.name}
           </AppText>
         </View>
@@ -52,4 +43,4 @@ export function HomeAgentBadge({
       </AppText>
     </ScalePressable>
   );
-}
+};
