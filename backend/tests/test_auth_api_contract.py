@@ -12,15 +12,12 @@ from app.domain.auth.schemas import (
 
 
 def test_contract_passkey_register_options() -> None:
-    # Missing required field not present here, all fields optional or not missing? Let's check schemas
-    # PasskeyRegisterOptionsRequest device_name: str | None = None
     data = {"device_name": "My Device"}
     obj = PasskeyRegisterOptionsRequest(**data)
     assert obj.device_name == "My Device"
 
 
 def test_contract_passkey_register_verify() -> None:
-    # Missing required challenge_id
     with pytest.raises(ValidationError):
         PasskeyRegisterVerifyRequest(**{"credential": "{}"})
 
@@ -30,7 +27,6 @@ def test_contract_passkey_register_verify() -> None:
 
 
 def test_contract_passkey_login_options() -> None:
-    # Missing required email
     with pytest.raises(ValidationError):
         PasskeyLoginOptionsRequest(**{})
 
@@ -40,7 +36,6 @@ def test_contract_passkey_login_options() -> None:
 
 
 def test_contract_passkey_login_verify() -> None:
-    # Missing credential
     with pytest.raises(ValidationError):
         PasskeyLoginVerifyRequest(**{"challenge_id": "ch1"})
 
