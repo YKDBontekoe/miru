@@ -21,6 +21,8 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
+    from uuid import UUID
+
     from app.domain.auth.service import AuthService
     from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
@@ -28,7 +30,7 @@ async def test_decode_valid_jwt() -> None:
     token = make_jwt()
     mock_verifier = MagicMock(spec=SupabaseJWTVerifier)
     mock_payload = JWTPayload(
-        sub="00000000-0000-0000-0000-000000000000",
+        sub=UUID("00000000-0000-0000-0000-000000000000"),
         exp=1234567890,
         iat=1234567890,
         role="authenticated",
