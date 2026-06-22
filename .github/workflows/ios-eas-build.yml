@@ -23,7 +23,7 @@ jobs:
       run:
         working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -33,7 +33,7 @@ jobs:
           cache-dependency-path: ./frontend/package-lock.json
 
       - name: Setup EAS
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}

@@ -56,7 +56,7 @@ jobs:
       image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set lowercase owner
         run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
@@ -145,7 +145,7 @@ jobs:
       security-events: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set lowercase owner
         run: echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
@@ -162,7 +162,7 @@ jobs:
       # time and double-counts billable minutes.
       - name: Run Trivy vulnerability scanner
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ needs.build.outputs.image-tag }}
           format: 'sarif'
@@ -193,10 +193,10 @@ jobs:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
 
