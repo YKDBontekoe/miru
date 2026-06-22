@@ -109,6 +109,32 @@ async def test_update_event(async_client, mock_user_id, override_get_current_use
 
 
 @pytest.mark.asyncio
+async def test_update_event_internal_none(
+    async_client, mock_user_id, override_get_current_user, monkeypatch
+):
+    """Test that if the repository unexpectedly returns None on update, the use case handles it."""
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+    )
+
+    # Mock the repo to return None for update_event
+    from app.infrastructure.repositories.productivity_repo import ProductivityRepository
+
+    async def mock_update_event(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(ProductivityRepository, "update_event", mock_update_event)
+
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}", json={"title": "Updated Event"}
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_delete_event(async_client, mock_user_id, override_get_current_user):
     from datetime import UTC, datetime, timedelta
 
