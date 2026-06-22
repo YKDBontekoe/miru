@@ -33,10 +33,12 @@ class SupabaseJWTVerifier(TokenVerifierProtocol):
         try:
             try:
                 header = jwt.get_unverified_header(token)
-            except Exception as header_exc:
+            except jwt.DecodeError as header_exc:
                 raise jwt.DecodeError("Invalid token format") from header_exc
 
             alg = header.get("alg")
+            if alg is None:
+                raise jwt.InvalidTokenError("Missing 'alg' field in JWT header")
 
             if alg == "HS256":
                 payload = jwt.decode(
@@ -56,6 +58,11 @@ class SupabaseJWTVerifier(TokenVerifierProtocol):
                     audience="authenticated",
                 )
             return JWTPayload(**payload)
-        except Exception as exc:
+        except (
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.ExpiredSignatureError,
+            jwt.InvalidSignatureError,
+        ) as exc:
             logger.warning("JWT validation failed: %s", exc)
             raise
