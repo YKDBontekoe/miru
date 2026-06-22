@@ -21,11 +21,22 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
+    from uuid import UUID
+
     from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
+    mock_verifier = MagicMock(spec=SupabaseJWTVerifier)
+    mock_payload = JWTPayload(
+        sub=UUID("00000000-0000-0000-0000-000000000000"),
+        exp=1234567890,
+        iat=1234567890,
+        role="authenticated",
+    )
+    mock_verifier.verify_token.return_value = mock_payload
+    service = AuthService(AuthRepository(MagicMock()), mock_verifier)
     payload = await service.decode_jwt(token)
 
     assert isinstance(payload, JWTPayload)
@@ -36,10 +47,13 @@ async def test_decode_valid_jwt() -> None:
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
     from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+    mock_verifier = MagicMock(spec=SupabaseJWTVerifier)
+    mock_verifier.verify_token.side_effect = jwt.ExpiredSignatureError()
+    service = AuthService(AuthRepository(MagicMock()), mock_verifier)
 
     with pytest.raises(jwt.ExpiredSignatureError):
         await service.decode_jwt(token)
@@ -51,10 +65,12 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     import logging
 
     from app.domain.auth.service import AuthService
+    from app.infrastructure.auth.jwt_verifier import SupabaseJWTVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+    # Actually test the real SupabaseJWTVerifier's error handling for this specific test
+    service = AuthService(AuthRepository(MagicMock()), SupabaseJWTVerifier())
 
     with (
         caplog.at_level(logging.WARNING),
