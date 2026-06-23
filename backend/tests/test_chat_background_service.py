@@ -111,7 +111,7 @@ async def test_store_memories_background_exception(
 
     with (
         patch("app.infrastructure.external.openrouter.embed", new_callable=AsyncMock) as mock_embed,
-        patch("app.domain.chat.background_service.logger.warning") as mock_logger,
+        patch("app.domain.chat.background_service.logger.exception") as mock_logger,
     ):
         mock_embed.side_effect = Exception("Embed failed")
 

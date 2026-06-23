@@ -122,7 +122,7 @@ class ChatBackgroundService:
                         user_id=user_id,
                         agent_id=matched.id if matched else None,
                         room_id=room_id,
-                        content=f"{agent_name or \"Agent\"}: {content}",
+                        content=f"{agent_name or 'Agent'}: {content}",
                         embedding=agent_vectors[i],
                         meta={"role": "agent", "agent_name": agent_name or ""},
                     )
