@@ -284,8 +284,8 @@ export default function ProductivityScreen() {
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
+  const dataToRender: RenderItemData[] = useMemo(() => {
+    return activeTab === 'today'
       ? todayData.filter((entry) => {
           if (entry.type !== 'task') return true;
           if (taskPriority === 'all') return true;
@@ -296,6 +296,7 @@ export default function ProductivityScreen() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [activeTab, todayData, taskPriority, mixedData, filteredNotes, prioritizedTasks]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();

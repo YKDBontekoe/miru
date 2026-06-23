@@ -76,9 +76,23 @@ class ChatBackgroundService:
         from app.infrastructure.external.openrouter import embed
 
         try:
+            import asyncio
+
             # Store user message
-            user_vector = await embed(user_message)
-            await self.memory_repo.insert_memory(
+            user_vector_task = embed(user_message)
+
+            # Store each agent response segment individually
+            agent_by_name = {a.name.lower(): a for a in responded_agents}
+            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
+
+            agent_vector_tasks = [embed(content) for _, content in segments]
+
+            # Gather all embeddings concurrently
+            all_vectors = await asyncio.gather(user_vector_task, *agent_vector_tasks)
+            user_vector = all_vectors[0]
+            agent_vectors = all_vectors[1:]
+
+            memories_to_insert = [
                 Memory(
                     id=uuid.uuid4(),
                     user_id=user_id,
@@ -87,29 +101,27 @@ class ChatBackgroundService:
                     embedding=user_vector,
                     meta={"role": "user"},
                 )
-            )
+            ]
 
-            # Store each agent response segment individually
-            agent_by_name = {a.name.lower(): a for a in responded_agents}
-            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
-            for agent_name, content in segments:
+            for i, (agent_name, content) in enumerate(segments):
                 matched = (
                     agent_by_name.get(agent_name.lower())
                     if agent_name
                     else (responded_agents[0] if responded_agents else None)
                 )
-                agent_vector = await embed(content)
-                await self.memory_repo.insert_memory(
+                memories_to_insert.append(
                     Memory(
                         id=uuid.uuid4(),
                         user_id=user_id,
                         agent_id=matched.id if matched else None,
                         room_id=room_id,
                         content=f"{agent_name or 'Agent'}: {content}",
-                        embedding=agent_vector,
+                        embedding=agent_vectors[i],
                         meta={"role": "agent", "agent_name": agent_name or ""},
                     )
                 )
+
+            await self.memory_repo.insert_memories(memories_to_insert)
         except Exception:
             logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
 

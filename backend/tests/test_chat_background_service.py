@@ -97,8 +97,8 @@ async def test_store_memories_background_success(background_service: ChatBackgro
             agent_names,
         )
 
-        # 1 for user message, 1 for agent message
-        assert background_service.memory_repo.insert_memory.call_count == 2  # type: ignore
+        # Batch insert of 2 memories
+        assert background_service.memory_repo.insert_memories.call_count == 1  # type: ignore
         assert mock_embed.call_count == 2
 
 
