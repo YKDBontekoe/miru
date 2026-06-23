@@ -66,7 +66,8 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
-- Triggered automatically on every issue labeled event and only proceeds when the label equals `jules-fix-pending` (label checked in the job-level filter).
+- Triggered automatically on issue comment events, pull request review events, issues labeled events, workflow run events (PR Checks and Linting), and schedule. Only proceeds when the label equals `jules-fix-pending` (label checked in the job-level filter).
+- Triggered on workflow run ("PR Checks and Linting" completed).
 - Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
@@ -77,7 +78,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
-- Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
+- Invoked via GitHub script from the proxy workflow when triggered by workflow_run on "PR Checks and Linting".
 - Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 

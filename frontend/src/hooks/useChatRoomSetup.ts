@@ -6,6 +6,21 @@ import { ApiService } from '@/core/api/ApiService';
 import { getApiErrorMessage } from '@/core/api/errors';
 import { Agent } from '@/core/models';
 
+/**
+ * Hook that manages the initialization and lifecycle of a chat room.
+ *
+ * It manages fetching initial room messages and agent data, handling the SignalR WebSocket
+ * connection (`connectHub`, `joinRoom`, `leaveRoom`, `disconnectHub`), and provides state for
+ * agents specifically assigned to the room.
+ *
+ * @param {string | undefined} roomId - The UUID of the chat room to set up.
+ * @returns {{
+ *   roomAgents: Agent[],
+ *   setRoomAgents: React.Dispatch<React.SetStateAction<Agent[]>>,
+ *   roomAgentsError: string | null,
+ *   refetchRoomAgents: () => void
+ * }} An object containing the room's agents, a setter, any fetch errors, and a function to manually refetch.
+ */
 export function useChatRoomSetup(roomId: string | undefined) {
   const { t } = useTranslation();
   const fetchMessages = useChatStore((s) => s.fetchMessages);

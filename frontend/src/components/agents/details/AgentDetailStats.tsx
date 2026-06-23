@@ -4,12 +4,22 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { Agent } from '@/core/models';
 
-interface AgentDetailStatsProps {
+export interface AgentDetailStatsProps {
   agent: Agent;
   level: number;
   displayColor: string;
 }
 
+/**
+ * AgentDetailStats Component
+ * Displays a summary row of key statistics for an agent, such as message count, current level, and number of skills.
+ *
+ * @param {AgentDetailStatsProps} props - The component props.
+ * @param {Agent} props.agent - The agent whose stats are being displayed.
+ * @param {number} props.level - The calculated level of the agent.
+ * @param {string} props.displayColor - The primary accent color used for the text values.
+ * @returns {JSX.Element} The rendered statistics row.
+ */
 export function AgentDetailStats({ agent, level, displayColor }: AgentDetailStatsProps) {
   const { t } = useTranslation();
 
