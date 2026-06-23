@@ -52,10 +52,7 @@ export function PinnedChip({ agent, onPress }: PinnedChipProps) {
           <Ionicons name="star" size={7} color="white" />
         </View>
       </View>
-      <AppText
-        style={{ fontSize: 11, color: C.muted, textAlign: 'center' }}
-        numberOfLines={1}
-      >
+      <AppText style={{ fontSize: 11, color: C.muted, textAlign: 'center' }} numberOfLines={1}>
         {agent.name}
       </AppText>
     </ScalePressable>
