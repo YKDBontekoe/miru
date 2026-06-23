@@ -78,14 +78,21 @@ class ChatBackgroundService:
         try:
             import asyncio
 
+            # Limit concurrent embedding requests to avoid outbound spikes
+            semaphore = asyncio.Semaphore(5)
+
+            async def _limited_embed(text: str) -> list[float]:
+                async with semaphore:
+                    return await embed(text)
+
             # Store user message
-            user_vector_task = embed(user_message)
+            user_vector_task = _limited_embed(user_message)
 
             # Store each agent response segment individually
             agent_by_name = {a.name.lower(): a for a in responded_agents}
             segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
 
-            agent_vector_tasks = [embed(content) for _, content in segments]
+            agent_vector_tasks = [_limited_embed(content) for _, content in segments]
 
             # Gather all embeddings concurrently
             all_vectors = await asyncio.gather(user_vector_task, *agent_vector_tasks)
@@ -107,7 +114,7 @@ class ChatBackgroundService:
                 matched = (
                     agent_by_name.get(agent_name.lower())
                     if agent_name
-                    else (responded_agents[0] if responded_agents else None)
+                    else (responded_agents[0] if len(responded_agents) == 1 else None)
                 )
                 memories_to_insert.append(
                     Memory(
@@ -115,7 +122,7 @@ class ChatBackgroundService:
                         user_id=user_id,
                         agent_id=matched.id if matched else None,
                         room_id=room_id,
-                        content=f"{agent_name or 'Agent'}: {content}",
+                        content=f"{agent_name or \"Agent\"}: {content}",
                         embedding=agent_vectors[i],
                         meta={"role": "agent", "agent_name": agent_name or ""},
                     )
@@ -123,7 +130,7 @@ class ChatBackgroundService:
 
             await self.memory_repo.insert_memories(memories_to_insert)
         except Exception:
-            logger.warning("Background memory storage failed for room=%s", room_id, exc_info=True)
+            logger.exception("Background memory storage failed for room=%s", room_id)
 
     async def update_room_summary_background(
         self, room_id: UUID, conversation_history: list[dict]

@@ -296,7 +296,7 @@ export default function ProductivityScreen() {
         : activeTab === 'notes'
           ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
           : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
-  }, [activeTab, todayData, taskPriority, mixedData, filteredNotes, prioritizedTasks]);
+  }, [activeTab, todayData, taskPriority, mixedData, filteredNotes, prioritizedTasks, getTaskPriority]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();

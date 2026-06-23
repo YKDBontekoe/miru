@@ -19,7 +19,7 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { useChatStore } from '@/store/useChatStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { ApiService } from '@/core/api/ApiService';
-import { Agent, ChatMessage } from '@/core/models';
+import { Agent, ChatMessage, MessageStatus } from '@/core/models';
 import { QuickViewAgentSheet } from '@/components/agents/QuickViewAgentSheet';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
 import { ChatActionSheet, ChatActionSheetOption } from '@/components/chat/ChatActionSheet';
@@ -565,11 +565,11 @@ export default function ChatRoomScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: ChatMessage; index: number }) => {
       const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
-      const isLastUserMsg =
+      const isErroredAgentMsg =
         !item.user_id &&
-        item.status === 'error' &&
+        item.status === MessageStatus.error &&
         index > 0;
-      const prevUserMsg = isLastUserMsg
+      const prevUserMsg = isErroredAgentMsg
         ? roomMessages
             .slice(0, index)
             .reverse()
