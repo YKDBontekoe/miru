@@ -19,7 +19,7 @@ import { ScalePressable } from '@/components/ScalePressable';
 import { useChatStore } from '@/store/useChatStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { ApiService } from '@/core/api/ApiService';
-import { Agent, ChatMessage } from '@/core/models';
+import { Agent, ChatMessage, MessageStatus } from '@/core/models';
 import { QuickViewAgentSheet } from '@/components/agents/QuickViewAgentSheet';
 import { ChatRoomHeader } from '@/components/chat/ChatRoomHeader';
 import { ChatActionSheet, ChatActionSheetOption } from '@/components/chat/ChatActionSheet';
@@ -115,6 +115,8 @@ export default function ChatRoomScreen() {
 
   const room = React.useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
   const roomMessages = React.useMemo(() => messages[roomId ?? ''] ?? [], [messages, roomId]);
+
+  const keyExtractor = useCallback((item: ChatMessage) => item.id, []);
   const currentActivity = React.useMemo(
     () => (roomId ? agentActivity[roomId] : null),
     [agentActivity, roomId]
@@ -162,6 +164,7 @@ export default function ChatRoomScreen() {
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
     }
   }, [currentActivity]);
+
 
   const handleSend = useCallback(() => {
     if (!inputText.trim() || !roomId || isStreaming) return;
@@ -559,6 +562,39 @@ export default function ChatRoomScreen() {
     return [...topTasks, ...topEvents];
   }, [events, tasks]);
 
+  const renderItem = useCallback(
+    ({ item, index }: { item: ChatMessage; index: number }) => {
+      const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
+      const isErroredAgentMsg =
+        !item.user_id &&
+        item.status === MessageStatus.error &&
+        index > 0;
+      const prevUserMsg = isErroredAgentMsg
+        ? roomMessages
+            .slice(0, index)
+            .reverse()
+            .find((m) => !!m.user_id)
+        : undefined;
+
+      return (
+        <Pressable onLongPress={() => handleMessageLongPress(item)}>
+          <ChatBubble
+            text={item.content}
+            isUser={!!item.user_id}
+            status={item.status}
+            agentName={
+              agent?.name ??
+              (item.agent_id && item.agent_id !== 'assistant' ? 'Assistant' : undefined)
+            }
+            timestamp={item.created_at}
+            onRetry={prevUserMsg ? () => handleRetry(prevUserMsg.content) : undefined}
+          />
+        </Pressable>
+      );
+    },
+    [agentMap, handleMessageLongPress, handleRetry, roomMessages]
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-[#F2F7F2]" edges={['top', 'left', 'right']}>
       <ChatRoomHeader
@@ -601,7 +637,7 @@ export default function ChatRoomScreen() {
           <FlatList
             ref={flatListRef}
             data={roomMessages}
-            keyExtractor={(item) => item.id}
+            keyExtractor={keyExtractor}
             contentContainerClassName="px-[14px] pt-[14px] pb-[6px] grow"
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
@@ -611,38 +647,7 @@ export default function ChatRoomScreen() {
                 onSuggestionPress={handleQuickAction}
               />
             }
-            renderItem={({ item }) => {
-              const agent = item.agent_id ? agentMap[item.agent_id] : undefined;
-              const isLastUserMsg =
-                !item.user_id &&
-                item.status === 'error' &&
-                roomMessages.findIndex((m) => m.id === item.id) > 0;
-              const prevUserMsg = isLastUserMsg
-                ? roomMessages
-                    .slice(
-                      0,
-                      roomMessages.findIndex((m) => m.id === item.id)
-                    )
-                    .reverse()
-                    .find((m) => !!m.user_id)
-                : undefined;
-
-              return (
-                <Pressable onLongPress={() => handleMessageLongPress(item)}>
-                  <ChatBubble
-                    text={item.content}
-                    isUser={!!item.user_id}
-                    status={item.status}
-                    agentName={
-                      agent?.name ??
-                      (item.agent_id && item.agent_id !== 'assistant' ? 'Assistant' : undefined)
-                    }
-                    timestamp={item.created_at}
-                    onRetry={prevUserMsg ? () => handleRetry(prevUserMsg.content) : undefined}
-                  />
-                </Pressable>
-              );
-            }}
+            renderItem={renderItem}
             ListFooterComponent={
               currentActivity ? <AgentActivityIndicator activity={currentActivity} /> : null
             }
