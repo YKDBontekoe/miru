@@ -23,6 +23,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  ...(process.env.NODE_ENV === 'test'
+    ? { realtime: { transport: require('ws') } }
+    : {}),
 });
 
 AppState.addEventListener('change', (state) => {
