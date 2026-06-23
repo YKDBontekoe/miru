@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Modal, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Modal, ScrollView, TextInput, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInUp, SlideOutDown, FadeIn } from 'react-native-reanimated';
 import { AppText } from '@/components/AppText';
 import { TemplateGallerySheet } from './TemplateGallerySheet';
 import { useTheme } from '@/hooks/useTheme';
+import { theme } from '@/core/theme';
 import { useAgentStore, AgentTemplate } from '@/store/useAgentStore';
 import { haptic } from '@/utils/haptics';
 import { SURPRISE_KEYWORDS, getTonePrefix } from '@/components/agents/agentUtils';
@@ -23,7 +24,6 @@ interface CreateAgentSheetProps {
   visible: boolean;
   onClose: () => void;
   onCreated: () => void;
-  /** Optional pre-filled values (e.g. applied from a template). */
   prefill?: Prefill;
 }
 
@@ -155,74 +155,51 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
   return (
     <>
       <Modal visible={visible} animationType="slide" transparent>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+        <View style={styles.modalOverlay}>
           <Animated.View
             entering={SlideInUp.duration(300)}
             exiting={SlideOutDown.duration(200)}
-            style={{
-              backgroundColor: C.surface,
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              maxHeight: '96%',
-            }}
+            style={[styles.sheetContainer, { backgroundColor: C.surface }]}
           >
-            <View style={{ alignItems: 'center', paddingTop: 12 }}>
-              <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: C.faint }} />
+            <View style={styles.handleContainer}>
+              <View style={[styles.handle, { backgroundColor: C.faint }]} />
             </View>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: 22,
-                paddingBottom: 8,
-                paddingTop: 14,
-              }}
-            >
-              <AppText style={{ fontSize: 22, fontWeight: '700', color: C.text }}>
-                New Persona
-              </AppText>
+            <View style={styles.header}>
+              <AppText style={{ ...theme.typography.h2, color: C.text }}>New Persona</AppText>
               <ScalePressable
                 onPress={() => {
                   reset();
                   onClose();
                 }}
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  backgroundColor: C.surfaceHigh,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                style={[styles.closeButton, { backgroundColor: C.surfaceHigh }]}
               >
                 <Ionicons name="close" size={16} color={C.muted} />
               </ScalePressable>
             </View>
 
             <ScrollView
-              style={{ paddingHorizontal: 22 }}
+              style={styles.scrollContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
               {/* Templates shortcut */}
               <ScalePressable
                 onPress={() => setShowTemplates(true)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 16,
-                  padding: 12,
-                  backgroundColor: C.surfaceHigh,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                }}
+                style={[
+                  styles.templatesShortcut,
+                  { backgroundColor: C.surfaceHigh, borderColor: C.border },
+                ]}
               >
                 <Ionicons name="albums-outline" size={16} color={C.primary} />
-                <AppText style={{ color: C.primary, fontWeight: '600', fontSize: 13, flex: 1 }}>
+                <AppText
+                  style={{
+                    color: C.primary,
+                    fontWeight: theme.typography.h3.fontWeight,
+                    fontSize: theme.typography.caption.fontSize,
+                    flex: 1,
+                  }}
+                >
                   Browse persona templates
                 </AppText>
                 <Ionicons name="chevron-forward" size={14} color={C.faint} />
@@ -230,69 +207,61 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
 
               {/* AI Generation */}
               <View
-                style={{
-                  backgroundColor: C.primarySurface,
-                  borderRadius: 16,
-                  padding: 16,
-                  marginBottom: 20,
-                  borderWidth: 1,
-                  borderColor: `${C.primary}22`,
-                }}
+                style={[
+                  styles.aiContainer,
+                  { backgroundColor: C.primarySurface, borderColor: `${C.primary}22` },
+                ]}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                <View style={styles.aiHeader}>
                   <Ionicons name="sparkles" size={15} color={C.primary} style={{ marginEnd: 7 }} />
-                  <AppText style={{ color: C.primary, fontWeight: '700', fontSize: 14, flex: 1 }}>
+                  <AppText
+                    style={{
+                      color: C.primary,
+                      fontWeight: theme.typography.h2.fontWeight,
+                      fontSize: theme.typography.bodySm.fontSize,
+                      flex: 1,
+                    }}
+                  >
                     Generate with AI
                   </AppText>
                   <ScalePressable
                     onPress={handleSurprise}
                     disabled={isGenerating}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 4,
-                      backgroundColor: `${C.primary}15`,
-                      borderRadius: 8,
-                      paddingHorizontal: 10,
-                      paddingVertical: 4,
-                    }}
+                    style={[styles.surpriseButton, { backgroundColor: `${C.primary}15` }]}
                   >
-                    <AppText style={{ fontSize: 12 }}>🎲</AppText>
-                    <AppText style={{ color: C.primary, fontSize: 12, fontWeight: '600' }}>
+                    <AppText style={{ fontSize: theme.typography.caption.fontSize }}>🎲</AppText>
+                    <AppText
+                      style={{
+                        color: C.primary,
+                        fontSize: theme.typography.caption.fontSize,
+                        fontWeight: theme.typography.h3.fontWeight,
+                      }}
+                    >
                       Surprise me
                     </AppText>
                   </ScalePressable>
                 </View>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={styles.aiInputRow}>
                   <TextInput
                     value={keywords}
                     onChangeText={setKeywords}
                     placeholder="e.g. curious scientist, pirate chef…"
                     placeholderTextColor={C.faint}
-                    style={{
-                      flex: 1,
-                      backgroundColor: C.surface,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: C.border,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      color: C.text,
-                      fontSize: 14,
-                    }}
+                    style={[
+                      styles.aiInput,
+                      {
+                        backgroundColor: C.surface,
+                        borderColor: C.border,
+                        color: C.text,
+                      },
+                    ]}
                     onSubmitEditing={() => handleGenerate()}
                     returnKeyType="go"
                   />
                   <ScalePressable
                     onPress={() => handleGenerate()}
                     disabled={isGenerating}
-                    style={{
-                      backgroundColor: C.primary,
-                      borderRadius: 10,
-                      paddingHorizontal: 16,
-                      justifyContent: 'center',
-                      minWidth: 48,
-                    }}
+                    style={[styles.generateButton, { backgroundColor: C.primary }]}
                   >
                     {isGenerating ? (
                       <ActivityIndicator size="small" color="white" />
@@ -304,18 +273,15 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
               </View>
 
               {wasGenerated && (
-                <Animated.View
-                  entering={FadeIn.duration(300)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    marginBottom: 14,
-                    paddingHorizontal: 2,
-                  }}
-                >
+                <Animated.View entering={FadeIn.duration(300)} style={styles.generatedNotice}>
                   <Ionicons name="checkmark-circle" size={14} color={C.success} />
-                  <AppText style={{ color: C.success, fontSize: 12, fontWeight: '600' }}>
+                  <AppText
+                    style={{
+                      color: C.success,
+                      fontSize: theme.typography.caption.fontSize,
+                      fontWeight: theme.typography.h3.fontWeight,
+                    }}
+                  >
                     AI-generated · review and edit before saving
                   </AppText>
                 </Animated.View>
@@ -340,16 +306,19 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
           </Animated.View>
 
           {successVisible && (
-            <View style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              justifyContent: 'center', alignItems: 'center',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              zIndex: 1000
-            }}>
-              <View style={{ backgroundColor: C.surface, padding: 20, borderRadius: 16, alignItems: 'center' }}>
-                 <Ionicons name="checkmark-circle" size={48} color={C.success} />
-                 <AppText style={{ marginTop: 12, fontSize: 18, fontWeight: 'bold', color: C.text }}>Persona Created</AppText>
+            <View style={styles.successOverlay}>
+              <View style={[styles.successCard, { backgroundColor: C.surface }]}>
+                <Ionicons name="checkmark-circle" size={48} color={C.success} />
+                <AppText
+                  style={{
+                    marginTop: 12,
+                    ...theme.typography.h3,
+                    fontWeight: 'bold',
+                    color: C.text,
+                  }}
+                >
+                  Persona Created
+                </AppText>
               </View>
             </View>
           )}
@@ -367,3 +336,112 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: theme.colors.black + '66',
+  },
+  sheetContainer: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    maxHeight: '96%',
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: theme.spacing.md,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: theme.borderRadius.xs,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xxl,
+    paddingBottom: theme.spacing.sm,
+    paddingTop: theme.spacing.md,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: theme.borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: theme.spacing.xxl,
+  },
+  templatesShortcut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: theme.spacing.lg,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+  },
+  aiContainer: {
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+    borderWidth: 1,
+  },
+  aiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  surpriseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: theme.borderRadius.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  aiInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  aiInput: {
+    flex: 1,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    fontSize: theme.typography.bodySm.fontSize,
+  },
+  generateButton: {
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.lg,
+    justifyContent: 'center',
+    minWidth: 48,
+  },
+  generatedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xxs,
+  },
+  successOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.black + '80',
+    zIndex: 1000,
+  },
+  successCard: {
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center',
+  },
+});
