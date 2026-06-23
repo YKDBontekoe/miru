@@ -1,6 +1,8 @@
-import pytest
 import uuid
+
+import pytest
 from httpx import AsyncClient
+
 
 @pytest.mark.asyncio
 async def test_update_event_not_found(async_client: AsyncClient, override_get_current_user):
@@ -10,6 +12,7 @@ async def test_update_event_not_found(async_client: AsyncClient, override_get_cu
     )
     assert response.status_code == 404
 
+
 @pytest.mark.asyncio
 async def test_update_task_not_found(async_client: AsyncClient, override_get_current_user):
     non_existent_task_id = uuid.uuid4()
@@ -17,6 +20,7 @@ async def test_update_task_not_found(async_client: AsyncClient, override_get_cur
         f"/api/v1/productivity/tasks/{non_existent_task_id}", json={"title": "Updated Task"}
     )
     assert response.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_update_note_not_found(async_client: AsyncClient, override_get_current_user):
