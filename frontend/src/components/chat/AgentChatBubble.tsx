@@ -12,7 +12,7 @@ import { getAgentColor, formatTime } from '../../utils/chatUtils';
 import { getMarkdownStyles } from './markdownStyles';
 import { theme } from '../../core/theme';
 
-interface AgentChatBubbleProps {
+export interface AgentChatBubbleProps {
   text: string;
   status?: MessageStatus;
   agentName?: string;
@@ -20,6 +20,18 @@ interface AgentChatBubbleProps {
   onRetry?: () => void;
 }
 
+/**
+ * AgentChatBubble Component
+ * Renders a chat message bubble for an AI agent, supporting markdown content, typing indicators, and error states.
+ *
+ * @param {AgentChatBubbleProps} props - The component props.
+ * @param {string} props.text - The markdown text content of the message. If empty and status is streaming, shows typing indicator.
+ * @param {MessageStatus} [props.status=MessageStatus.sent] - The current status of the message (sent, streaming, or error).
+ * @param {string} [props.agentName] - The name of the agent, used for the avatar letter and dynamic accent color.
+ * @param {string} [props.timestamp] - The ISO timestamp string of the message, displayed below the bubble.
+ * @param {() => void} [props.onRetry] - Callback invoked when the retry button is pressed in an error state.
+ * @returns {JSX.Element} The rendered agent chat bubble.
+ */
 export const AgentChatBubble = ({
   text,
   status = MessageStatus.sent,

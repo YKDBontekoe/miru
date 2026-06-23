@@ -66,10 +66,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
-- Triggered automatically on every issue labeled event and only proceeds when the label equals `jules-fix-pending` (label checked in the job-level filter).
-- Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
-- Manual workflow dispatch on an issue labeled `jules-fix-pending`.
-- Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
+- Triggered automatically on `issues` events, `schedule` (6-hour and weekly intervals), and `workflow_dispatch` (manual triggering). The workflow uses the `jules-fix-pending` label to filter which issues are processed.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
 **Note on Prompt:** Jules is instructed to strictly follow project architecture and code style: 100-char lines, type hints/explicit types, double quotes for Python, single quotes for TypeScript, specific import orders (`stdlib` → `third-party` → `first-party`), use `str | None` not `Optional[str]`, use `const` for components/internal functions, include `from __future__ import annotations`, log errors with context (`logger.exception()`), and structure domains in `backend/app/domain/<domain>/` and routes in `backend/app/api/v1/`.
 
@@ -77,7 +74,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
-- Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
+- Invoked via GitHub script from the proxy workflow when triggered by workflow_run on "PR Checks and Linting".
 - Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 
