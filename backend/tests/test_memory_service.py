@@ -26,6 +26,7 @@ TEST_REL_ID_1 = UUID("55555555-5555-5555-5555-555555555555")
 async def test_store_document_memory(
     mock_chunk_text: MagicMock, mock_extract_text: MagicMock
 ) -> None:
+    """Validates that storing a document successfully extracts text, chunks it, and calls store_memory."""
     mock_repo = AsyncMock()
     service = MemoryService(mock_repo)
 
@@ -45,6 +46,7 @@ async def test_store_document_memory(
 @pytest.mark.asyncio
 @patch("app.domain.memory.document_service.DocumentService.extract_text")
 async def test_store_document_memory_empty(mock_extract_text: MagicMock) -> None:
+    """Validates that storing an empty document returns no memory IDs."""
     mock_repo = AsyncMock()
     service = MemoryService(mock_repo)
 
@@ -58,6 +60,7 @@ async def test_store_document_memory_empty(mock_extract_text: MagicMock) -> None
 
 @pytest.mark.asyncio
 async def test_delete_memory_ownership() -> None:
+    """Validates that memory deletion respects user ownership checks in the repository."""
     mock_repo = AsyncMock()
     service = MemoryService(mock_repo)
 
@@ -77,7 +80,8 @@ async def test_delete_memory_ownership() -> None:
 
 
 @pytest.mark.asyncio
-async def test_store_memory_empty_content():
+async def test_store_memory_empty_content() -> None:
+    """Validates that passing empty or whitespace-only content to store_memory returns None."""
     repo = MemoryRepository()
     service = MemoryService(repo)
     memory_id = await service.store_memory("   ")
@@ -90,7 +94,8 @@ async def test_store_memory_empty_content():
 @patch("asyncio.create_task")
 async def test_store_memory_success(
     mock_create_task: MagicMock, mock_match: AsyncMock, mock_embed: AsyncMock
-):
+) -> None:
+    """Validates that store_memory correctly embeds content, checks deduplication, inserts the memory, and triggers graph extraction."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -109,8 +114,8 @@ async def test_store_memory_success(
     assert db_mem.user_id == TEST_USER_ID
 
     mock_create_task.assert_called_once()
-    mock_match.assert_called_once()
-    mock_embed.assert_called_once_with("This is a test memory.")
+    mock_match.assert_awaited_once()
+    mock_embed.assert_awaited_once_with("This is a test memory.")
 
     coro = mock_create_task.call_args[0][0]
     coro.close()
@@ -122,7 +127,8 @@ async def test_store_memory_success(
 @patch("asyncio.create_task")
 async def test_store_memory_deduplication(
     mock_create_task: MagicMock, mock_match: AsyncMock, mock_embed: AsyncMock
-):
+) -> None:
+    """Validates that store_memory returns None early if the content is highly semantically similar to an existing memory."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -149,7 +155,8 @@ async def test_store_memory_relationship_error(
     mock_create_rel: AsyncMock,
     mock_match: AsyncMock,
     mock_embed: AsyncMock,
-):
+) -> None:
+    """Validates that a failure in relationship creation does not block the overall memory creation."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -166,7 +173,7 @@ async def test_store_memory_relationship_error(
     assert memory_id is not None
     db_mem = await Memory.get_or_none(id=memory_id)
     assert db_mem is not None
-    mock_create_rel.assert_called_once()
+    mock_create_rel.assert_awaited_once()
 
     coro = mock_create_task.call_args[0][0]
     coro.close()
@@ -178,7 +185,8 @@ async def test_store_memory_relationship_error(
 @patch("asyncio.create_task")
 async def test_store_memory_no_user(
     mock_create_task: MagicMock, mock_match: AsyncMock, mock_embed: AsyncMock
-):
+) -> None:
+    """Validates that graph extraction is not triggered when storing a memory without a user_id."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -202,7 +210,8 @@ async def test_store_memory_no_user(
 @patch("asyncio.create_task")
 async def test_store_memory_background_task_error(
     mock_create_task: MagicMock, mock_match: AsyncMock, mock_embed: AsyncMock
-):
+) -> None:
+    """Validates that a failure to trigger the background graph extraction task does not block memory creation."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -227,7 +236,8 @@ async def test_store_memory_background_task_error(
 
 
 @pytest.mark.asyncio
-async def test_get_memory_graph_success():
+async def test_get_memory_graph_success() -> None:
+    """Validates that fetching the memory graph returns correctly formatted nodes and edges for the user."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -250,7 +260,8 @@ async def test_get_memory_graph_success():
 
 
 @pytest.mark.asyncio
-async def test_get_memory_graph_empty():
+async def test_get_memory_graph_empty() -> None:
+    """Validates that fetching an empty memory graph returns empty lists for nodes and edges."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -266,7 +277,8 @@ async def test_get_memory_graph_empty():
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch.object(MemoryRepository, "match_memories", new_callable=AsyncMock)
-async def test_retrieve_memories_with_query(mock_match: AsyncMock, mock_embed: AsyncMock):
+async def test_retrieve_memories_with_query(mock_match: AsyncMock, mock_embed: AsyncMock) -> None:
+    """Validates that retrieving memories with a query embeds the query and matches against the repository."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -278,14 +290,15 @@ async def test_retrieve_memories_with_query(mock_match: AsyncMock, mock_embed: A
 
     assert len(results) == 1
     assert results[0].content == "Retrieved"
-    mock_embed.assert_called_once_with("Find this")
-    mock_match.assert_called_once()
+    mock_embed.assert_awaited_once_with("Find this")
+    mock_match.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch.object(MemoryRepository, "match_memories", new_callable=AsyncMock)
-async def test_retrieve_memories_empty_query(mock_match: AsyncMock, mock_embed: AsyncMock):
+async def test_retrieve_memories_empty_query(mock_match: AsyncMock, mock_embed: AsyncMock) -> None:
+    """Validates that retrieving memories with an empty query uses a default zero vector and skips embedding."""
     repo = MemoryRepository()
     service = MemoryService(repo)
 
