@@ -1,11 +1,24 @@
-import pytest
 import uuid
-from unittest.mock import AsyncMock, MagicMock
-from app.domain.productivity.use_cases.manage_productivity import ManageProductivityUseCase, TaskNotFoundError, NoteNotFoundError, CalendarEventNotFoundError, InvalidTimeRangeError
-from app.domain.productivity.schemas import TaskUpdate, NoteUpdate, CalendarEventUpdate
-from app.domain.productivity.interfaces.repository import IProductivityRepository
-from app.domain.productivity.schemas import CalendarEventCreate
 from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from app.domain.productivity.interfaces.repository import IProductivityRepository
+from app.domain.productivity.schemas import (
+    CalendarEventCreate,
+    CalendarEventUpdate,
+    NoteUpdate,
+    TaskUpdate,
+)
+from app.domain.productivity.use_cases.manage_productivity import (
+    CalendarEventNotFoundError,
+    InvalidTimeRangeError,
+    ManageProductivityUseCase,
+    NoteNotFoundError,
+    TaskNotFoundError,
+)
+
 
 @pytest.fixture
 def mock_repo():
@@ -33,6 +46,7 @@ def mock_repo():
 
     return repo
 
+
 @pytest.mark.asyncio
 async def test_manage_productivity_not_found_on_update(mock_repo):
     use_case = ManageProductivityUseCase(mock_repo)
@@ -47,6 +61,17 @@ async def test_manage_productivity_not_found_on_update(mock_repo):
     with pytest.raises(CalendarEventNotFoundError):
         await use_case.update_event(user_id, uuid.uuid4(), CalendarEventUpdate(title="New"))
 
+    # Test update with no valid fields returns the original entity
+    task_res = await use_case.update_task(user_id, uuid.uuid4(), TaskUpdate())
+    assert task_res == mock_repo.get_task.return_value
+
+    note_res = await use_case.update_note(user_id, uuid.uuid4(), NoteUpdate())
+    assert note_res == mock_repo.get_note.return_value
+
+    event_res = await use_case.update_event(user_id, uuid.uuid4(), CalendarEventUpdate())
+    assert event_res == mock_repo.get_event.return_value
+
+
 @pytest.mark.asyncio
 async def test_create_event_invalid_time(mock_repo):
     use_case = ManageProductivityUseCase(mock_repo)
@@ -57,3 +82,20 @@ async def test_create_event_invalid_time(mock_repo):
     event_data.end_time = now - timedelta(hours=1)
     with pytest.raises(InvalidTimeRangeError):
         await use_case.create_event(user_id, event_data)
+
+
+@pytest.mark.asyncio
+async def test_update_event_invalid_time(mock_repo):
+    use_case = ManageProductivityUseCase(mock_repo)
+    user_id = uuid.uuid4()
+    now = datetime.now(UTC)
+
+    mock_event = MagicMock()
+    mock_event.start_time = now
+    mock_event.end_time = now + timedelta(hours=1)
+    mock_repo.get_event = AsyncMock(return_value=mock_event)
+
+    with pytest.raises(InvalidTimeRangeError):
+        await use_case.update_event(
+            user_id, uuid.uuid4(), CalendarEventUpdate(end_time=now - timedelta(hours=1))
+        )
