@@ -12,6 +12,14 @@ interface XPBarProps {
   color: string;
 }
 
+/**
+ * An animated experience or progress bar.
+ *
+ * It visually represents a completion percentage and animates smoothly to new values.
+ *
+ * @param props.progress - The current progress percentage (0.0 to 1.0).
+ * @param props.color - The base hex color used for the filled portion and background.
+ */
 export function XPBar({ progress, color }: XPBarProps) {
   const width = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({ width: `${width.value}%` as `${number}%` }));

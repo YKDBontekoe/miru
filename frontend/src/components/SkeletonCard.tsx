@@ -54,6 +54,14 @@ function ShimmerBox({
   );
 }
 
+/**
+ * A placeholder skeleton card for an Agent list item.
+ *
+ * Displays a pulsing skeleton layout mirroring the structure of an actual
+ * agent card, used during loading states.
+ *
+ * @param props.index - The index of the item in the list, used to stagger the animation.
+ */
 export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
   const { C } = useTheme();
   const baseDelay = index * 120;
