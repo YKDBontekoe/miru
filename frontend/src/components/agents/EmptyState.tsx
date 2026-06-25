@@ -134,9 +134,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, o
       <View style={styles.emptyIconCircle}>
         <Ionicons name="people" size={36} color={`${C.primary}90`} />
       </View>
-      <AppText style={styles.emptyTitle}>No personas yet</AppText>
+      <AppText style={styles.emptyTitle}>{t('agents.no_agents_title', 'No personas yet')}</AppText>
       <AppText style={styles.emptySubtitle}>
-        Create your first AI persona or start from a template.
+        {t('agents.no_agents_desc', 'Create your first AI persona or start from a template.')}
       </AppText>
       <ScalePressable onPress={onCreate}>
         <View style={styles.createButtonContainer}>
@@ -146,13 +146,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, o
             color={theme.colors.white}
             style={styles.createButtonIcon}
           />
-          <AppText style={styles.createButtonText}>Create Persona</AppText>
+          <AppText style={styles.createButtonText}>
+            {t('agents.create_agent', 'Create Persona')}
+          </AppText>
         </View>
       </ScalePressable>
       <ScalePressable onPress={onBrowse}>
         <View style={styles.browseButton}>
           <Ionicons name="albums-outline" size={15} color={C.muted} />
-          <AppText style={styles.browseButtonText}>Browse templates</AppText>
+          <AppText style={styles.browseButtonText}>
+            {t('agents.browse_templates', 'Browse templates')}
+          </AppText>
         </View>
       </ScalePressable>
     </Animated.View>
