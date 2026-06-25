@@ -231,6 +231,9 @@
     "create_agent": "Agent aanmaken",
     "no_agents_title": "Nog geen agenten",
     "no_agents_desc": "Maak je eerste AI-persona aan om te beginnen.",
+    "no_matches": "Geen overeenkomsten",
+    "search_empty_subtitle": "Probeer een andere zoekterm.",
+    "browse_templates": "Blader door templates",
     "level": "Nv {{level}}",
     "msgs": "{{count}} berichten",
     "stats": {
@@ -282,8 +285,7 @@
       "work": "Werk",
       "planning": "Planning",
       "creative": "Creatief"
-    }
-    ,
+    },
     "templatesComingSoon": "Templates komen binnenkort",
     "templatesComingSoonDesc": "Vooraf gebouwde persona's verschijnen hier.",
     "noTemplatesInCategory": "Geen templates in deze categorie",

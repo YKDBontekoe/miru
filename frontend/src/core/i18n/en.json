@@ -231,6 +231,9 @@
     "create_agent": "Create Agent",
     "no_agents_title": "No agents yet",
     "no_agents_desc": "Create your first AI persona to get started.",
+    "no_matches": "No matches",
+    "search_empty_subtitle": "Try a different search term.",
+    "browse_templates": "Browse templates",
     "level": "Lv {{level}}",
     "msgs": "{{count}} msgs",
     "stats": {
@@ -282,8 +285,7 @@
       "work": "Work",
       "planning": "Planning",
       "creative": "Creative"
-    }
-    ,
+    },
     "templatesComingSoon": "Templates coming soon",
     "templatesComingSoonDesc": "Pre-built personas will be available here.",
     "noTemplatesInCategory": "No templates in this category",

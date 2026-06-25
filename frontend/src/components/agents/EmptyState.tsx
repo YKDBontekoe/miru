@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '../AppText';
 import { ScalePressable } from '../ScalePressable';
+import { useTranslation } from 'react-i18next';
 import { theme } from '@/core/theme';
 import { ThemeColors, useTheme } from '@/hooks/useTheme';
 
@@ -23,86 +24,86 @@ export interface EmptyStateProps {
  */
 const createStyles = (C: ThemeColors) =>
   StyleSheet.create({
-  searchContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive + theme.spacing.sm, // equivalent to 56
-  },
-  searchIconCircle: {
-    width: theme.spacing.colossal,
-    height: theme.spacing.colossal,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: C.surfaceHigh,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  searchTitle: {
-    color: C.text,
-    ...theme.typography.body,
-    fontWeight: '600',
-    marginBottom: theme.spacing.sm,
-  },
-  searchSubtitle: {
-    color: C.muted,
-    textAlign: 'center',
-    ...theme.typography.bodySm,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive + theme.spacing.sm,
-    paddingHorizontal: theme.spacing.xxl,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: `${C.primary}12`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.xl,
-    borderWidth: 1,
-    borderColor: `${C.primary}20`,
-  },
-  emptyTitle: {
-    color: C.text,
-    ...theme.typography.h3,
-    fontWeight: '700',
-    marginBottom: theme.spacing.sm,
-  },
-  emptySubtitle: {
-    color: C.muted,
-    textAlign: 'center',
-    ...theme.typography.bodySm,
-    lineHeight: theme.typography.bodySm.fontSize * 1.5,
-    marginBottom: theme.spacing.avatar,
-  },
-  createButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.primary,
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: theme.spacing.sm + theme.spacing.xs, // equivalent to 14
-    paddingHorizontal: theme.spacing.avatar, // equivalent to 28
-    marginBottom: theme.spacing.md,
-    ...theme.elevation.md,
-    shadowColor: C.primary,
-  },
-  createButtonIcon: {
-    marginEnd: theme.spacing.sm,
-  },
+    searchContainer: {
+      alignItems: 'center',
+      paddingVertical: theme.spacing.massive + theme.spacing.sm, // equivalent to 56
+    },
+    searchIconCircle: {
+      width: theme.spacing.colossal,
+      height: theme.spacing.colossal,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: C.surfaceHigh,
+      borderWidth: 1,
+      borderColor: C.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.md,
+    },
+    searchTitle: {
+      color: C.text,
+      ...theme.typography.body,
+      fontWeight: '600',
+      marginBottom: theme.spacing.sm,
+    },
+    searchSubtitle: {
+      color: C.muted,
+      textAlign: 'center',
+      ...theme.typography.bodySm,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      paddingVertical: theme.spacing.massive + theme.spacing.sm,
+      paddingHorizontal: theme.spacing.xxl,
+    },
+    emptyIconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: `${C.primary}12`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.xl,
+      borderWidth: 1,
+      borderColor: `${C.primary}20`,
+    },
+    emptyTitle: {
+      color: C.text,
+      ...theme.typography.h3,
+      fontWeight: '700',
+      marginBottom: theme.spacing.sm,
+    },
+    emptySubtitle: {
+      color: C.muted,
+      textAlign: 'center',
+      ...theme.typography.bodySm,
+      lineHeight: theme.typography.bodySm.fontSize * 1.5,
+      marginBottom: theme.spacing.avatar,
+    },
+    createButtonContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.primary,
+      borderRadius: theme.borderRadius.lg,
+      paddingVertical: theme.spacing.sm + theme.spacing.xs, // equivalent to 14
+      paddingHorizontal: theme.spacing.avatar, // equivalent to 28
+      marginBottom: theme.spacing.md,
+      ...theme.elevation.md,
+      shadowColor: C.primary,
+    },
+    createButtonIcon: {
+      marginEnd: theme.spacing.sm,
+    },
     createButtonText: {
       ...theme.typography.body,
       color: theme.colors.white,
       fontWeight: '700',
-  },
-  browseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    padding: theme.spacing.sm,
-  },
+    },
+    browseButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      padding: theme.spacing.sm,
+    },
     browseButtonText: {
       color: C.muted,
       ...theme.typography.bodySm,
@@ -112,6 +113,7 @@ const createStyles = (C: ThemeColors) =>
 export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, onBrowse }) => {
   const { C } = useTheme();
   const styles = React.useMemo(() => createStyles(C), [C]);
+  const { t } = useTranslation();
 
   if (searchQuery.trim()) {
     return (
@@ -119,8 +121,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, o
         <View style={styles.searchIconCircle}>
           <Ionicons name="search" size={26} color={C.faint} />
         </View>
-        <AppText style={styles.searchTitle}>No matches</AppText>
-        <AppText style={styles.searchSubtitle}>Try a different search term.</AppText>
+        <AppText style={styles.searchTitle}>{t('agents.no_matches', 'No matches')}</AppText>
+        <AppText style={styles.searchSubtitle}>
+          {t('agents.search_empty_subtitle', 'Try a different search term.')}
+        </AppText>
       </Animated.View>
     );
   }
@@ -130,9 +134,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, o
       <View style={styles.emptyIconCircle}>
         <Ionicons name="people" size={36} color={`${C.primary}90`} />
       </View>
-      <AppText style={styles.emptyTitle}>No personas yet</AppText>
+      <AppText style={styles.emptyTitle}>{t('agents.no_agents_title', 'No personas yet')}</AppText>
       <AppText style={styles.emptySubtitle}>
-        Create your first AI persona or start from a template.
+        {t('agents.no_agents_desc', 'Create your first AI persona or start from a template.')}
       </AppText>
       <ScalePressable onPress={onCreate}>
         <View style={styles.createButtonContainer}>
@@ -142,13 +146,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchQuery, onCreate, o
             color={theme.colors.white}
             style={styles.createButtonIcon}
           />
-          <AppText style={styles.createButtonText}>Create Persona</AppText>
+          <AppText style={styles.createButtonText}>
+            {t('agents.create_agent', 'Create Persona')}
+          </AppText>
         </View>
       </ScalePressable>
       <ScalePressable onPress={onBrowse}>
         <View style={styles.browseButton}>
           <Ionicons name="albums-outline" size={15} color={C.muted} />
-          <AppText style={styles.browseButtonText}>Browse templates</AppText>
+          <AppText style={styles.browseButtonText}>
+            {t('agents.browse_templates', 'Browse templates')}
+          </AppText>
         </View>
       </ScalePressable>
     </Animated.View>
