@@ -9,6 +9,17 @@ interface ScalePressableProps extends Omit<PressableProps, 'style'> {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+/**
+ * A pressable component that scales down slightly when pressed.
+ *
+ * Used for interactive elements to provide visual feedback upon user interaction.
+ *
+ * @param props.children - The content to render inside the pressable.
+ * @param props.style - Optional style to apply to the pressable.
+ * @param props.onPressIn - Optional callback invoked when the user presses down.
+ * @param props.onPressOut - Optional callback invoked when the user releases the press.
+ * @param props.disabled - Standard React Native disabled prop.
+ */
 export const ScalePressable = ({
   children,
   style,

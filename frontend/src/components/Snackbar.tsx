@@ -18,6 +18,16 @@ interface SnackbarProps {
   duration?: number;
 }
 
+/**
+ * A transient bottom sheet notification for displaying brief messages.
+ *
+ * @param props.visible - Controls the visibility of the snackbar.
+ * @param props.message - The text message to display.
+ * @param props.actionLabel - Optional label for an action button (e.g., "Undo").
+ * @param props.onAction - Callback invoked when the action button is pressed.
+ * @param props.onDismiss - Callback invoked when the snackbar times out or is dismissed.
+ * @param props.duration - The duration in milliseconds before auto-dismissing (defaults to 4500).
+ */
 export function Snackbar({
   visible,
   message,
