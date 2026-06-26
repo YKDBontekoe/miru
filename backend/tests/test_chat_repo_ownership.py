@@ -1,5 +1,6 @@
 """Integration tests for IDOR and ownership enforcement in ChatRepository."""
 
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -19,7 +20,7 @@ NON_EXISTENT_ID = UUID("66666666-6666-6666-6666-666666666666")
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def cleanup_test_data() -> None:
+async def cleanup_test_data() -> AsyncGenerator[None, None]:
     """Targeted cleanup of deterministic UUIDs before and after tests."""
 
     async def _clean() -> None:
