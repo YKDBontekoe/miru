@@ -67,11 +67,10 @@ class ChatBackgroundService:
         room_id: UUID,
         user_message: str,
         responded_agents: list[Agent],
-        result_text: str,
+        result: Any,
         agent_names: list[str],
     ) -> None:
         """Embed and store the conversation turn as memories for future retrieval."""
-        from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
         from app.domain.memory.models import Memory
         from app.infrastructure.external.openrouter import embed
 
@@ -91,8 +90,9 @@ class ChatBackgroundService:
 
             # Store each agent response segment individually
             agent_by_name = {a.name.lower(): a for a in responded_agents}
-            segments = ChatWebSocketBroadcaster.parse_transcript(result_text, agent_names)
-            for agent_name, content in segments:
+            for agent_msg in result.messages:
+                agent_name = agent_msg.agent_name
+                content = agent_msg.content
                 matched = (
                     agent_by_name.get(agent_name.lower())
                     if agent_name

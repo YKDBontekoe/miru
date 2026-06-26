@@ -134,58 +134,17 @@ class ChatWebSocketBroadcaster:
 
         return _step_callback
 
-    @staticmethod
-    def parse_transcript(result_text: str, agent_names: list[str]) -> list[tuple[str, str]]:
-        """Parse a multi-agent transcript into (agent_name, message) pairs.
-
-        Expected format: 'AgentName: message\\n\\nOtherAgent: message'
-        Falls back to a single unnamed entry when the format cannot be parsed.
-        """
-        if not agent_names or len(agent_names) == 1:
-            return [("", result_text.strip())]
-
-        # Build a set of known names (case-insensitive) for matching
-        name_set = {n.lower() for n in agent_names}
-        segments: list[tuple[str, str]] = []
-        current_name = ""
-        current_lines: list[str] = []
-
-        for line in result_text.splitlines():
-            # Detect "AgentName: ..." prefix
-            colon_pos = line.find(":")
-            if colon_pos > 0:
-                candidate = line[:colon_pos].strip()
-                if candidate.lower() in name_set:
-                    # Save previous segment
-                    if current_lines or current_name:
-                        segments.append((current_name, "\n".join(current_lines).strip()))
-                    current_name = candidate
-                    current_lines = [line[colon_pos + 1 :].strip()]
-                    continue
-            current_lines.append(line)
-
-        if current_lines or current_name:
-            segments.append((current_name, "\n".join(current_lines).strip()))
-
-        # Drop empty segments
-        segments = [(n, m) for n, m in segments if m]
-        return (
-            segments
-            if segments
-            else ([] if not result_text.strip() else [("", result_text.strip())])
-        )
-
     async def persist_and_broadcast_agent_response(
         self,
         room_id: UUID,
         room_agents: list[Agent],
-        result_text: str,
+        result: Any,
         agent_names: list[str],
     ) -> list[Agent]:
         """Save the agent response(s) and broadcast to room.
 
-        For multi-agent rooms the transcript is split into individual per-agent
-        messages so each agent's reply appears in its own bubble.
+        For multi-agent rooms the response is a structured object containing
+        individual per-agent messages so each agent's reply appears in its own bubble.
 
         Returns the list of agents who actually produced a response segment so
         that the caller can run per-agent post-processing (mood, affinity, etc.).
@@ -195,12 +154,14 @@ class ChatWebSocketBroadcaster:
         from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
 
         agent_by_name = {a.name.lower(): a for a in room_agents}
-        segments = self.parse_transcript(result_text, agent_names)
 
         responded: list[Agent] = []
 
         # Persist and broadcast each segment as a separate message
-        for agent_name, content in segments:
+        for agent_msg in result.messages:
+            agent_name = agent_msg.agent_name
+            content = agent_msg.content
+
             matched_agent = agent_by_name.get(agent_name.lower())
             # Single-agent fallback: attribute the message to the only agent in the room.
             effective_agent = matched_agent or (room_agents[0] if len(room_agents) == 1 else None)
