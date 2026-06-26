@@ -279,7 +279,7 @@ class CrewOrchestrator:
             )
 
         # Retry once on transient failures (e.g. output-parsing errors from the LLM).
-        result = None
+        result: Any = None
         for attempt in (0, 1):
             try:
                 result = await crew.kickoff_async()
