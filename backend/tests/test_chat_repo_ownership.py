@@ -1,6 +1,6 @@
 """Integration tests for IDOR and ownership enforcement in ChatRepository."""
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
