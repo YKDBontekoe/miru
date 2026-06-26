@@ -147,8 +147,15 @@ async def test_persist_and_broadcast_agent_response(chat_service: ChatService) -
         typing.cast(
             "AsyncMock", chat_service.agent_repo.increment_message_count
         ).return_value = None
+
+        from app.domain.chat.dtos import AgentMessage, RoomChatResponse
+
+        mock_result = RoomChatResponse(
+            messages=[AgentMessage(agent_name="Agent1", content="Done!")]
+        )
+
         responded = await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), mock_result, agent_names
         )
         assert len(responded) == 1
 
@@ -161,9 +168,14 @@ async def test_persist_and_broadcast_agent_response_error(chat_service: ChatServ
     typing.cast("typing.Any", chat_service.chat_repo).save_message = AsyncMock(
         side_effect=BaseORMException("DB error")
     )
+
+    from app.domain.chat.dtos import AgentMessage, RoomChatResponse
+
+    mock_result = RoomChatResponse(messages=[AgentMessage(agent_name="Agent1", content="Done!")])
+
     with pytest.raises(BaseORMException, match="DB error"):
         await chat_service.ws_broadcaster.persist_and_broadcast_agent_response(
-            room_id, typing.cast("list[typing.Any]", room_agents), "Done!", agent_names
+            room_id, typing.cast("list[typing.Any]", room_agents), mock_result, agent_names
         )
 
 
@@ -216,7 +228,14 @@ async def test_run_room_chat_ws_success(chat_service: ChatService) -> None:
     ):
         mock_hub.broadcast_to_room = AsyncMock()
         m_persist.return_value = MagicMock(id=uuid4())
-        m_exec.return_value = "Result"
+
+        from app.domain.chat.dtos import AgentMessage, RoomChatResponse
+
+        mock_result = RoomChatResponse(
+            messages=[AgentMessage(agent_name="Agent1", content="Result")]
+        )
+        m_exec.return_value = mock_result
+
         m_agent_resp.return_value = []
         m_create_task.return_value = MagicMock()
         typing.cast("typing.Any", chat_service.bg_service).store_memories_background = MagicMock()

@@ -53,6 +53,17 @@ class ChatMessageResponse(BaseModel):
     created_at: datetime
 
 
+class AgentMessage(BaseModel):
+    agent_name: str = Field(..., description="The name of the agent responding")
+    content: str = Field(..., description="The content of the agent's response")
+
+
+class RoomChatResponse(BaseModel):
+    messages: list[AgentMessage] = Field(
+        ..., description="The ordered list of messages sent by agents in response to the user"
+    )
+
+
 class ChatRequest(BaseModel):
     message: str | None = None
     content: str | None = None

@@ -21,6 +21,7 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.domain.chat.dtos import RoomChatResponse
 from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
@@ -197,7 +198,7 @@ class CrewOrchestrator:
         conversation_history: list[dict] | None = None,
         memory_context: str | None = None,
         room_summary: str | None = None,
-    ) -> str:
+    ) -> RoomChatResponse:
         """Build and execute the CrewAI task.
 
         ``conversation_history`` is a list of ``{"role": "user"|"agent", "name": str,
@@ -248,6 +249,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=MULTI_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=RoomChatResponse,
             )
             crew = Crew(
                 agents=cast("Any", crew_agents),
@@ -266,6 +268,7 @@ class CrewOrchestrator:
                     locale_instruction=locale_instruction,
                 ),
                 expected_output=SINGLE_AGENT_EXPECTED_OUTPUT,
+                output_pydantic=RoomChatResponse,
                 agent=crew_agents[0],
             )
             crew = Crew(
@@ -289,4 +292,7 @@ class CrewOrchestrator:
                 logger.warning("Crew kickoff failed on attempt 1, retrying in 2 s…")
                 await asyncio.sleep(2)
 
-        return str(result)
+        if not result or not result.pydantic:
+            raise ValueError("Failed to obtain structured response from CrewAI task")
+
+        return result.pydantic
