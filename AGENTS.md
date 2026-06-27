@@ -62,6 +62,7 @@ make fix-frontend    # Auto-fix frontend lint
 The following AI agents actively monitor and modify the Miru codebase. Their actions are automated via `.github/workflows/ai-agents.yml`.
 
 ### 1. Jules
+// DOCS(miru-agent): prompt mismatch
 
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
@@ -78,7 +79,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
 - Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
-- Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
+- Retries automatically every 30 minutes via a queue processor for all PRs labelled `coderabbit:queued` unconditionally.
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 
 ## Project Structure
