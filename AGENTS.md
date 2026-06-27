@@ -62,7 +62,6 @@ make fix-frontend    # Auto-fix frontend lint
 The following AI agents actively monitor and modify the Miru codebase. Their actions are automated via `.github/workflows/ai-agents.yml`.
 
 ### 1. Jules
-// DOCS(miru-agent): prompt mismatch
 
 **Mission:** Autonomous bug fixing, CodeRabbit review resolution, and Sentry issue remediation.
 **Trigger Conditions:**
