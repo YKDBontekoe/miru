@@ -227,3 +227,34 @@ def test_websocket_endpoint_exception_in_send_message(client: TestClient) -> Non
                 err = websocket.receive_json()
                 assert err["type"] == "error"
                 assert "Failed to process message" in err["data"]["message"]
+
+def test_websocket_endpoint_empty_message(client: TestClient) -> None:
+    user_id = uuid.uuid4()
+    room_id = "11111111-1111-1111-1111-111111111111"
+
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = user_id
+
+        mock_service = AsyncMock(spec=ChatService)
+
+        with patch("app.api.v1.websocket.ChatService", return_value=mock_service):
+            with client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket:
+                # discard connected
+                _ = websocket.receive_json()
+
+                websocket.send_json({"type": "send_message", "room_id": room_id, "content": " "})
+
+                # Verify that it didn't do anything because content was empty.
+                websocket.send_json({"type": "ping"})
+                pong = websocket.receive_json()
+                assert pong["type"] == "pong"
+                mock_service.run_room_chat_ws.assert_not_called()
+
+
+def test_websocket_endpoint_verify_token_exception() -> None:
+    from app.api.v1.websocket import _verify_token
+    import asyncio
+
+    with patch("app.api.v1.websocket.AuthService.decode_jwt", side_effect=Exception("error")):
+        res = asyncio.run(_verify_token("invalid_token_test"))
+        assert res is None
