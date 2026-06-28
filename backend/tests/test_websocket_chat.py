@@ -144,3 +144,81 @@ def test_websocket_endpoint_runtime_error_during_close() -> None:
             asyncio.run(websocket_chat_hub(mock_ws, token="invalid", lang="en-US"))
 
             mock_disconnect.assert_not_called()
+
+def test_websocket_endpoint_various_messages(client: TestClient) -> None:
+    user_id = uuid.uuid4()
+    room_id = "11111111-1111-1111-1111-111111111111"
+
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = user_id
+
+        mock_service = AsyncMock(spec=ChatService)
+        mock_service.user_in_room.return_value = False
+
+        with patch("app.api.v1.websocket.ChatService", return_value=mock_service):
+            with client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket:
+                # discard connected
+                _ = websocket.receive_json()
+
+                # Invalid JSON
+                websocket.send_text("this is not json")
+                err = websocket.receive_json()
+                assert err["type"] == "error"
+
+                # join_room success
+                websocket.send_json({"type": "join_room", "room_id": room_id})
+                joined = websocket.receive_json()
+                assert joined["type"] == "joined_room"
+                assert joined["room_id"] == room_id
+
+                # join_room invalid
+                websocket.send_json({"type": "join_room", "room_id": "invalid"})
+                err = websocket.receive_json()
+                assert err["type"] == "error"
+                assert err["action"] == "join_room"
+
+                # leave_room valid
+                websocket.send_json({"type": "leave_room", "room_id": room_id})
+
+                # leave_room invalid
+                websocket.send_json({"type": "leave_room", "room_id": "invalid"})
+                err = websocket.receive_json()
+                assert err["type"] == "error"
+                assert err["action"] == "leave_room"
+
+                # send_message invalid format
+                websocket.send_json({"type": "send_message", "room_id": "invalid"})
+                err = websocket.receive_json()
+                assert err["type"] == "error"
+                assert err["action"] == "send_message"
+
+                # send_message unauthorized
+                websocket.send_json({"type": "send_message", "room_id": room_id, "content": "hi"})
+                err = websocket.receive_json()
+                assert err["type"] == "error"
+                assert err["action"] == "send_message"
+                assert "not authorised" in err["data"]["message"]
+
+
+def test_websocket_endpoint_exception_in_send_message(client: TestClient) -> None:
+    user_id = uuid.uuid4()
+    room_id = "11111111-1111-1111-1111-111111111111"
+
+    with patch("app.api.v1.websocket._verify_token") as mock_verify:
+        mock_verify.return_value = user_id
+
+        mock_service = AsyncMock(spec=ChatService)
+        mock_service.user_in_room.return_value = True
+        mock_service.run_room_chat_ws.side_effect = Exception("test")
+
+        with patch("app.api.v1.websocket.ChatService", return_value=mock_service):
+            with client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket:
+                # discard connected
+                _ = websocket.receive_json()
+
+                websocket.send_json({"type": "send_message", "room_id": room_id, "content": "hi"})
+
+                # We expect an error back
+                err = websocket.receive_json()
+                assert err["type"] == "error"
+                assert "Failed to process message" in err["data"]["message"]
