@@ -67,7 +67,7 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 **Trigger Conditions:**
 - Mentioned by the CodeRabbit Bridge in a PR comment (loop limit: 3 rounds).
 - Triggered automatically on every issue labeled event and only proceeds when the label equals `jules-fix-pending` (label checked in the job-level filter).
-- Scheduled every 6 hours to pull up to 10 open issues labeled `jules-fix-pending`.
+- Scheduled every 6 hours to pull up to 5 open issues labeled `jules-fix-pending`.
 - Manual workflow dispatch on an issue labeled `jules-fix-pending`.
 - Scheduled weekly (Monday 9 AM UTC) or via manual dispatch to generate a performance report.
 **Scope:** Authorized to modify backend Python files, frontend React Native (TypeScript) files, and tests. Not authorized to restructure databases without human approval.
@@ -158,8 +158,9 @@ frontend/
     core/
       api/                 # API client (axios), domain services
       models.ts            # TypeScript interfaces/types for domain entities
-    features/              # Feature-specific components and logic
-    store/                 # Zustand store definitions (useChatStore, useAuthStore, etc.)
+    hooks/                   # Custom React hooks
+    store/                   # Zustand store definitions (useChatStore, useAuthStore, etc.)
+    utils/                   # Helper functions and utilities
   __tests__/               # Jest tests
   package.json
   tsconfig.json

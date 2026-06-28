@@ -177,8 +177,9 @@ miru/
 │   ├── src/
 │   │   ├── components/          # Reusable UI components
 │   │   ├── core/                # Models, API services, system services
-│   │   ├── features/            # Feature-specific logic
-│   │   └── store/               # Zustand state management
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── store/               # Zustand state management
+│   │   └── utils/               # Helper functions and utilities
 │   ├── __tests__/               # Jest test suite
 │   └── package.json
 │
