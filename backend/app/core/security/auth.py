@@ -8,9 +8,9 @@ from uuid import UUID
 from fastapi import Depends, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.api.dependencies import get_auth_service
+from app.api.dependencies import get_jwt_verifier
 from app.api.errors import raise_api_error
-from app.domain.auth.service import AuthService  # noqa: TCH001
+from app.domain.auth.interfaces import JWTVerifierProtocol
 
 # HTTPBearer extracts the Bearer token from the Authorization header.
 _bearer = HTTPBearer(auto_error=True)
@@ -18,11 +18,11 @@ _bearer = HTTPBearer(auto_error=True)
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(_bearer)],
-    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+    jwt_verifier: Annotated[JWTVerifierProtocol, Depends(get_jwt_verifier)],
 ) -> UUID:
     """FastAPI dependency that validates the Bearer token and returns the user UUID."""
     try:
-        payload = await auth_service.decode_jwt(credentials.credentials)
+        payload = await jwt_verifier.verify_token(credentials.credentials)
     except Exception:
         raise_api_error(
             status_code=status.HTTP_401_UNAUTHORIZED,

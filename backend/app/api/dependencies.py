@@ -7,10 +7,12 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.domain.agents.service import AgentService
+from app.domain.auth.interfaces import JWTVerifierProtocol
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
 from app.infrastructure.database.supabase import SupabaseClient
+from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -64,3 +66,11 @@ def get_memory_service(
 
 def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
     return AuthService(repo)
+
+
+_jwt_verifier_instance = SupabaseJWTVerifier()
+
+
+def get_jwt_verifier() -> JWTVerifierProtocol:
+    """Provide a singleton instance of the JWT verifier."""
+    return _jwt_verifier_instance
