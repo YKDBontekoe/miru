@@ -117,9 +117,12 @@ export function ChatListHeader({
               <ScalePressable
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
-                className={`me-2 rounded-full px-3 py-2 border ${
-                  selected ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
-                }`}
+                className={
+                  'me-2 rounded-full px-3 py-2 border ' +
+                  (selected
+                    ? 'bg-[#DDF4EB] border-[#147D6473]'
+                    : 'bg-[#ECF5F0] border-[#DDE8E0]')
+                }
               >
                 <AppText
                   variant="caption"

@@ -57,7 +57,7 @@
     },
     "data": "Gegevens",
     "deleteAllTitle": "Alle app-gegevens verwijderen?",
-    "deleteAllMessage": "Dit verwijdert alle herinneringen, notities en taken uit je account.",
+    "deleteAllMessage": "Dit verwijdert alle momenteel geladen herinneringen, notities en taken. Chatrooms, berichten en niet-geladen items blijven behouden.",
     "dailySummary": {
       "title": "Dagelijkse samenvatting",
       "desc": "Ochtendoverzicht van taken en gebeurtenissen"
