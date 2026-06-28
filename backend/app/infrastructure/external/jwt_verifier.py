@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import jwt
@@ -13,10 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 class SupabaseJWTVerifier:
+    """External JWT verifier for Supabase tokens.
+
+    Handles token validation using either HS256 (symmetric) or RS256/ES256 (asymmetric)
+    algorithms, managing the retrieval of JSON Web Key Sets (JWKS) automatically.
+    """
+
     def __init__(self) -> None:
         self._jwks_client: jwt.PyJWKClient | None = None
 
     def _get_jwks_client(self) -> jwt.PyJWKClient:
+        """Initialize or return the cached PyJWKClient."""
         if self._jwks_client is None:
             settings = get_settings()
             jwks_url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
@@ -24,7 +32,14 @@ class SupabaseJWTVerifier:
         return self._jwks_client
 
     async def verify_token(self, token: str) -> JWTPayload:
-        """Decode and verify a Supabase JWT."""
+        """Decode and verify a Supabase JWT.
+
+        Args:
+            token: The raw JSON Web Token string to verify.
+
+        Returns:
+            JWTPayload: The validated and decoded token payload.
+        """
         settings = get_settings()
         try:
             try:
@@ -43,7 +58,8 @@ class SupabaseJWTVerifier:
                 )
             else:
                 jwks_client = self._get_jwks_client()
-                signing_key = jwks_client.get_signing_key_from_jwt(token)
+                # Run the blocking JWKS fetch off the main event loop
+                signing_key = await asyncio.to_thread(jwks_client.get_signing_key_from_jwt, token)
                 payload = jwt.decode(
                     token,
                     signing_key.key,
@@ -51,6 +67,9 @@ class SupabaseJWTVerifier:
                     audience="authenticated",
                 )
             return JWTPayload(**payload)
-        except Exception as exc:
+        except jwt.PyJWTError as exc:
             logger.warning("JWT validation failed: %s", exc)
+            raise
+        except Exception:
+            logger.exception("Unexpected error during JWT validation")
             raise

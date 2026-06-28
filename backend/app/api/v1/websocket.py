@@ -25,12 +25,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
 from app.api.dependencies import get_jwt_verifier
 from app.domain.agents.service import AgentService
+from app.domain.auth.interfaces import JWTVerifierProtocol
 from app.domain.chat.service import ChatService
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -47,10 +49,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-async def _verify_token(token: str) -> UUID | None:
-    """Decode a Supabase JWT by delegating to get_jwt_verifier()."""
+async def _verify_token(token: str, jwt_verifier: JWTVerifierProtocol) -> UUID | None:
+    """Decode a Supabase JWT by delegating to the injected JWT verifier."""
     try:
-        jwt_verifier = get_jwt_verifier()
         payload = await jwt_verifier.verify_token(token)
         return payload.sub
     except Exception:
@@ -100,6 +101,7 @@ async def _handle_send_message(
 @router.websocket("/ws/chat")
 async def websocket_chat_hub(
     websocket: WebSocket,
+    jwt_verifier: Annotated[JWTVerifierProtocol, Depends(get_jwt_verifier)],
     token: str = Query(..., description="Supabase JWT access token"),
     lang: str | None = Query(
         None, description="Preferred language", pattern=r"^[a-zA-Z]{2}(?:-[a-zA-Z]{2})?$"
@@ -112,7 +114,7 @@ async def websocket_chat_hub(
     This endpoint allows clients to join/leave rooms and send messages within those rooms.
     Authentication is required via a Supabase JWT passed as a query parameter.
     """
-    user_id = await _verify_token(token)
+    user_id = await _verify_token(token, jwt_verifier)
     try:
         if user_id is None:
             await websocket.close(code=4001, reason="Unauthorized")

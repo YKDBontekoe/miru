@@ -72,5 +72,9 @@ _jwt_verifier_instance = SupabaseJWTVerifier()
 
 
 def get_jwt_verifier() -> JWTVerifierProtocol:
-    """Provide a singleton instance of the JWT verifier."""
+    """Provide a singleton instance of the JWT verifier.
+
+    Returns:
+        JWTVerifierProtocol: The global singleton used for verifying Supabase JWTs.
+    """
     return _jwt_verifier_instance
