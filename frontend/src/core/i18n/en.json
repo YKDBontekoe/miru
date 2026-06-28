@@ -57,7 +57,7 @@
     },
     "data": "Data",
     "deleteAllTitle": "Delete all app data?",
-    "deleteAllMessage": "This will delete all memories, notes, and tasks from your account.",
+    "deleteAllMessage": "This will delete all currently loaded memories, notes, and tasks. Chat rooms, messages, and unloaded items will remain.",
     "dailySummary": {
       "title": "Daily summary",
       "desc": "Morning overview of tasks and events"
@@ -282,8 +282,7 @@
       "work": "Work",
       "planning": "Planning",
       "creative": "Creative"
-    }
-    ,
+    },
     "templatesComingSoon": "Templates coming soon",
     "templatesComingSoonDesc": "Pre-built personas will be available here.",
     "noTemplatesInCategory": "No templates in this category",
