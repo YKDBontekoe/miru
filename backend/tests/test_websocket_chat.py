@@ -145,6 +145,7 @@ def test_websocket_endpoint_runtime_error_during_close() -> None:
 
             mock_disconnect.assert_not_called()
 
+
 def test_websocket_endpoint_various_messages(client: TestClient) -> None:
     user_id = uuid.uuid4()
     room_id = "11111111-1111-1111-1111-111111111111"
@@ -155,8 +156,10 @@ def test_websocket_endpoint_various_messages(client: TestClient) -> None:
         mock_service = AsyncMock(spec=ChatService)
         mock_service.user_in_room.return_value = False
 
-        with patch("app.api.v1.websocket.ChatService", return_value=mock_service):
-            with client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket:
+        with (
+            patch("app.api.v1.websocket.ChatService", return_value=mock_service),
+            client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket,
+        ):
                 # discard connected
                 _ = websocket.receive_json()
 
@@ -211,8 +214,10 @@ def test_websocket_endpoint_exception_in_send_message(client: TestClient) -> Non
         mock_service.user_in_room.return_value = True
         mock_service.run_room_chat_ws.side_effect = Exception("test")
 
-        with patch("app.api.v1.websocket.ChatService", return_value=mock_service):
-            with client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket:
+        with (
+            patch("app.api.v1.websocket.ChatService", return_value=mock_service),
+            client.websocket_connect("/api/v1/ws/chat?token=valid") as websocket,
+        ):
                 # discard connected
                 _ = websocket.receive_json()
 
