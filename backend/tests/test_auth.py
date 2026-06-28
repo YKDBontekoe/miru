@@ -21,12 +21,69 @@ from tests.conftest import make_jwt
 @pytest.mark.asyncio
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
 
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
-    payload = await service.decode_jwt(token)
+    verifier = SupabaseJWTVerifier()
+    payload = await verifier.verify_token(token)
+
+    assert isinstance(payload, JWTPayload)
+    assert payload.role == "authenticated"
+
+
+@pytest.mark.asyncio
+async def test_decode_jwks_rs256_jwt() -> None:
+    """A valid RS256 JWT fetches JWKS and decodes successfully."""
+    from unittest.mock import patch
+
+    from app.core.config import get_settings
+    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
+
+    # Mock signing key setup
+    mock_key = MagicMock()
+    mock_key.key = get_settings().supabase_jwt_secret
+
+    # Create token with RS256 alg in header but using HS256 for signing so the string is valid
+    token = jwt.encode(
+        {
+            "sub": "12345678-1234-5678-1234-567812345678",
+            "role": "authenticated",
+            "aud": "authenticated",
+        },
+        mock_key.key,
+        algorithm="HS256",
+        headers={"kid": "test_kid"},
+    )
+    # forcefully overwrite the header in the token string for testing
+    import base64
+    import json
+
+    header = {"alg": "RS256", "kid": "test_kid", "typ": "JWT"}
+    header_b64 = base64.urlsafe_b64encode(json.dumps(header).encode()).decode().rstrip("=")
+    parts = token.split(".")
+    token = f"{header_b64}.{parts[1]}.{parts[2]}"
+    # The jwt.decode logic requires the encoded string to match the decoded alg if we pass algorithms=["RS256"].
+    # For testing, we mock PyJWKClient to return a key, and we use a workaround by mocking jwt.decode
+    # to avoid needing a real RSA key pair in the test.
+
+    verifier = SupabaseJWTVerifier()
+
+    from time import time
+
+    current_time = int(time())
+    with (
+        patch("jwt.PyJWKClient.get_signing_key_from_jwt", return_value=mock_key),
+        patch(
+            "jwt.decode",
+            return_value={
+                "sub": "12345678-1234-5678-1234-567812345678",
+                "role": "authenticated",
+                "iat": current_time,
+                "exp": current_time + 3600,
+            },
+        ),
+    ):
+        payload = await verifier.verify_token(token)
 
     assert isinstance(payload, JWTPayload)
     assert payload.role == "authenticated"
@@ -35,14 +92,13 @@ async def test_decode_valid_jwt() -> None:
 @pytest.mark.asyncio
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
 
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier()
 
     with pytest.raises(jwt.ExpiredSignatureError):
-        await service.decode_jwt(token)
+        await verifier.verify_token(token)
 
 
 @pytest.mark.asyncio
@@ -50,17 +106,16 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     """An invalid JWT format raises a DecodeError and logs a warning instead of an error."""
     import logging
 
-    from app.domain.auth.service import AuthService
-    from app.infrastructure.repositories.auth_repo import AuthRepository
+    from app.infrastructure.external.jwt_verifier import SupabaseJWTVerifier
 
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+    verifier = SupabaseJWTVerifier()
 
     with (
         caplog.at_level(logging.WARNING),
         pytest.raises(jwt.DecodeError, match="Invalid token format"),
     ):
-        await service.decode_jwt(token)
+        await verifier.verify_token(token)
 
     assert any(
         record.levelname == "WARNING" and "JWT validation failed" in record.message

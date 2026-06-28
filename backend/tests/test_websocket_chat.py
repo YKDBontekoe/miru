@@ -118,8 +118,10 @@ def test_websocket_endpoint_runtime_error_during_connect() -> None:
             )
             with patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect:
                 import asyncio
+                from unittest.mock import MagicMock
 
-                asyncio.run(websocket_chat_hub(mock_ws, token="valid", lang="en-US"))
+                mock_verifier = MagicMock()
+                asyncio.run(websocket_chat_hub(mock_ws, jwt_verifier=mock_verifier, token="valid", lang="en-US"))
 
                 mock_disconnect.assert_called_once_with(user_id)
 
@@ -140,7 +142,9 @@ def test_websocket_endpoint_runtime_error_during_close() -> None:
         mock_verify.return_value = None
         with patch("app.api.v1.websocket.chat_hub.disconnect") as mock_disconnect:
             import asyncio
+            from unittest.mock import MagicMock
 
-            asyncio.run(websocket_chat_hub(mock_ws, token="invalid", lang="en-US"))
+            mock_verifier = MagicMock()
+            asyncio.run(websocket_chat_hub(mock_ws, jwt_verifier=mock_verifier, token="invalid", lang="en-US"))
 
             mock_disconnect.assert_not_called()
