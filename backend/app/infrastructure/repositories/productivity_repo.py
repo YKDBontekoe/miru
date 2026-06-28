@@ -139,9 +139,18 @@ class ProductivityRepository(IProductivityRepository):
             task = await Task.get_or_none(id=task_id, user_id=user_id)
             if not task:
                 return None
+
+            allowed_fields = {"title", "description", "is_completed", "due_date"}
+            update_fields = []
+
             for field, value in valid_keys.items():
-                setattr(task, field, value)
-            await task.save(update_fields=list(valid_keys.keys()))
+                if field in allowed_fields:
+                    setattr(task, field, value)
+                    update_fields.append(field)
+
+            if update_fields:
+                await task.save(update_fields=update_fields)
+
             return _map_task(task)
 
     async def delete_task(self, user_id: UUID, task_id: UUID) -> int:
@@ -190,9 +199,18 @@ class ProductivityRepository(IProductivityRepository):
             )
             if not note:
                 return None
+
+            allowed_fields = {"title", "content", "is_pinned"}
+            update_fields = []
+
             for field, value in valid_keys.items():
-                setattr(note, field, value)
-            await note.save(update_fields=list(valid_keys.keys()))
+                if field in allowed_fields:
+                    setattr(note, field, value)
+                    update_fields.append(field)
+
+            if update_fields:
+                await note.save(update_fields=update_fields)
+
             return _map_note(note)
 
     async def delete_note(self, user_id: UUID, note_id: UUID) -> int:
@@ -241,14 +259,32 @@ class ProductivityRepository(IProductivityRepository):
 
     async def update_event(
         self, user_id: UUID, event_id: UUID, valid_keys: dict
-    ) -> CalendarEventEntity:
+    ) -> CalendarEventEntity | None:
         async with handle_db_errors("update calendar event"):
-            event = await CalendarEvent.get(id=event_id, user_id=user_id).prefetch_related(
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
+            if not event:
+                return None
+
+            allowed_fields = {
+                "title",
+                "description",
+                "start_time",
+                "end_time",
+                "is_all_day",
+                "location",
+            }
+            update_fields = []
+
             for field, value in valid_keys.items():
-                setattr(event, field, value)
-            await event.save(update_fields=list(valid_keys.keys()))
+                if field in allowed_fields:
+                    setattr(event, field, value)
+                    update_fields.append(field)
+
+            if update_fields:
+                await event.save(update_fields=update_fields)
+
             return _map_event(event)
 
     async def delete_event(self, user_id: UUID, event_id: UUID) -> int:
