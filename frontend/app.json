@@ -16,7 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ykdbonte.miru.dev",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
       }
     },
     "android": {
@@ -27,7 +30,21 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.miru.app"
+      "package": "com.miru.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -42,6 +59,9 @@
           "ios": {
             "deploymentTarget": "15.1",
             "useFrameworks": "static"
+          },
+          "android": {
+            "usesCleartextTraffic": false
           }
         }
       ]
