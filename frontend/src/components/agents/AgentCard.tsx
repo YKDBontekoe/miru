@@ -41,13 +41,10 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   const styles = StyleSheet.create({
     cardContainer: {
       backgroundColor: C.surface,
-      borderRadius: 20,
+      borderRadius: theme.borderRadius.xl,
       marginBottom: theme.spacing.md,
-      shadowColor: '#2563EB',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 14,
-      elevation: 2,
+      ...theme.elevation.sm,
+      shadowColor: theme.colors.primary.DEFAULT,
     },
     innerContainer: {
       flexDirection: 'row',
@@ -89,23 +86,23 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       backgroundColor: `${color}15`,
       borderRadius: theme.borderRadius.sm,
       paddingHorizontal: theme.spacing.sm,
-      paddingVertical: 2,
+      paddingVertical: theme.spacing.xxs,
     },
     levelText: {
       color,
-      fontSize: 10,
-      fontWeight: '700',
+      ...theme.typography.caption,
+      fontSize: theme.typography.caption.fontSize - 2,
     },
     progressBarContainer: {
       flex: 1,
-      height: 3,
+      height: theme.spacing.xs - 1,
       backgroundColor: `${color}18`,
       borderRadius: theme.borderRadius.xs,
       overflow: 'hidden',
     },
     progressBarFill: {
       width: `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`,
-      height: 3,
+      height: theme.spacing.xs - 1,
       backgroundColor: `${color}70`,
       borderRadius: theme.borderRadius.xs,
     },
@@ -115,7 +112,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({
     },
     messageCountText: {
       color: C.faint,
-      fontSize: 10,
+      ...theme.typography.caption,
+      fontSize: theme.typography.caption.fontSize - 2,
       marginBottom: theme.spacing.sm,
     },
   });
@@ -125,14 +123,14 @@ export const AgentCard: React.FC<AgentCardProps> = ({
       <ScalePressable onPress={onPress} onLongPress={onLongPress}>
         <View style={styles.cardContainer}>
           <View style={styles.innerContainer}>
-            <AgentAvatar name={item.name} size={48} color={color} />
+            <AgentAvatar name={item.name} size={theme.spacing.massive} color={color} />
             <View style={styles.contentContainer}>
               <View style={styles.headerRow}>
                 <AppText style={styles.nameText}>{item.name}</AppText>
                 {item.mood && item.mood !== 'Neutral' && (
                   <AppText style={styles.moodText}>{getMoodEmoji(item.mood)}</AppText>
                 )}
-                {isPinned && <Ionicons name="star" size={11} color={theme.colors.status.warning} />}
+                {isPinned && <Ionicons name="star" size={theme.spacing.md} color={theme.colors.status.warning} />}
               </View>
               <AppText style={styles.personalityText} numberOfLines={1}>
                 {item.personality}
@@ -183,15 +181,12 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
     },
     cardContainer: {
       backgroundColor: C.surface,
-      borderRadius: 20,
+      borderRadius: theme.borderRadius.xl,
       margin: theme.spacing.xs,
       padding: theme.spacing.lg,
       alignItems: 'center',
-      shadowColor: '#2563EB',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 14,
-      elevation: 2,
+      ...theme.elevation.sm,
+      shadowColor: theme.colors.primary.DEFAULT,
     },
     avatarWrapper: {
       position: 'relative',
@@ -199,11 +194,11 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
     },
     pinBadge: {
       position: 'absolute',
-      top: -3,
-      right: -3,
+      top: -theme.spacing.xxs,
+      right: -theme.spacing.xxs,
       backgroundColor: theme.colors.status.warning,
-      width: 16,
-      height: 16,
+      width: theme.spacing.lg,
+      height: theme.spacing.lg,
       borderRadius: theme.borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
@@ -230,12 +225,12 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
     },
     levelText: {
       color,
-      fontSize: 10,
-      fontWeight: '700',
+      ...theme.typography.caption,
+      fontSize: theme.typography.caption.fontSize - 2,
     },
     personalityText: {
       color: C.muted,
-      fontSize: 11,
+      ...theme.typography.caption,
       textAlign: 'center',
     },
   });
@@ -245,10 +240,10 @@ export const AgentGridCard: React.FC<AgentCardProps> = ({
       <ScalePressable onPress={onPress} onLongPress={onLongPress}>
         <View style={styles.cardContainer}>
           <View style={styles.avatarWrapper}>
-            <AgentAvatar name={item.name} size={56} color={color} />
+            <AgentAvatar name={item.name} size={theme.spacing.bubbleIndent} color={color} />
             {isPinned && (
               <View style={styles.pinBadge}>
-                <Ionicons name="star" size={8} color="white" />
+                <Ionicons name="star" size={theme.spacing.sm} color={theme.colors.white} />
               </View>
             )}
           </View>
