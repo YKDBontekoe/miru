@@ -174,6 +174,29 @@ async def test_update_event_not_found_or_forbidden(
     )
     assert response.status_code == 404
 
+@pytest.mark.asyncio
+async def test_update_event_concurrent_delete(
+    async_client, mock_user_id, override_get_current_user, mocker
+):
+    from datetime import UTC, datetime, timedelta
+    from app.domain.productivity.schemas import CalendarEventUpdate
+
+    now = datetime.now(UTC)
+    event = await CalendarEvent.create(
+        user_id=mock_user_id, title="Event 1", start_time=now, end_time=now + timedelta(hours=1)
+    )
+
+    # Mock update_event to return None, simulating the event being deleted after the get check
+    mocker.patch(
+        "app.infrastructure.repositories.productivity_repo.ProductivityRepository.update_event",
+        return_value=None,
+    )
+
+    response = await async_client.patch(
+        f"/api/v1/productivity/events/{event.id}", json={"title": "Updated Event"}
+    )
+    assert response.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_delete_event_not_found_or_forbidden(
