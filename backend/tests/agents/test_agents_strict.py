@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 import uuid
 from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
+from tortoise.exceptions import IntegrityError
 
-from app.domain.agents.models import Agent, Capability
+from app.domain.agents.models import Agent, Capability, UserAgentAffinity
 from app.domain.agents.schemas import AgentResponse
 
-# Deterministic UUIDs
-TEST_AGENT_ID = uuid.UUID("22222222-2222-2222-2222-222222222222")
+if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -130,10 +133,6 @@ async def test_agent_creation_chaos_database_conflict(
     # or just force an integrity error natively.
     # Let's seed an affinity record, which HAS a unique constraint on (user_id, agent_id),
     # then attempt to create another one with the same constraint, which would throw an IntegrityError.
-
-    from tortoise.exceptions import IntegrityError
-
-    from app.domain.agents.models import UserAgentAffinity
 
     await UserAgentAffinity.create(user_id=user_uuid, agent_id=conflict_id)
 
