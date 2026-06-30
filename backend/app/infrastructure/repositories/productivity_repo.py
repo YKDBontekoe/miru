@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
+from tortoise.transactions import in_transaction
+
 from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
 from app.domain.productivity.interfaces.repository import IProductivityRepository
 from app.domain.productivity.models import CalendarEvent, Note, Task
@@ -105,7 +107,7 @@ class ProductivityRepository(IProductivityRepository):
     """Tortoise ORM implementation of the productivity repository."""
 
     async def create_task(self, user_id: UUID, task_data: TaskCreate) -> TaskEntity:
-        async with handle_db_errors("create task"):
+        async with handle_db_errors("create task"), in_transaction():
             task = await Task.create(
                 user_id=user_id,
                 title=task_data.title,
@@ -135,7 +137,7 @@ class ProductivityRepository(IProductivityRepository):
     async def update_task(
         self, user_id: UUID, task_id: UUID, valid_keys: dict
     ) -> TaskEntity | None:
-        async with handle_db_errors("update task"):
+        async with handle_db_errors("update task"), in_transaction():
             task = await Task.get_or_none(id=task_id, user_id=user_id)
             if not task:
                 return None
@@ -145,11 +147,11 @@ class ProductivityRepository(IProductivityRepository):
             return _map_task(task)
 
     async def delete_task(self, user_id: UUID, task_id: UUID) -> int:
-        async with handle_db_errors("delete task"):
+        async with handle_db_errors("delete task"), in_transaction():
             return await Task.filter(id=task_id, user_id=user_id).delete()
 
     async def create_note(self, user_id: UUID, note_data: NoteCreate) -> NoteEntity:
-        async with handle_db_errors("create note"):
+        async with handle_db_errors("create note"), in_transaction():
             note = await Note.create(
                 user_id=user_id,
                 agent_id=note_data.agent_id,
@@ -184,7 +186,7 @@ class ProductivityRepository(IProductivityRepository):
     async def update_note(
         self, user_id: UUID, note_id: UUID, valid_keys: dict
     ) -> NoteEntity | None:
-        async with handle_db_errors("update note"):
+        async with handle_db_errors("update note"), in_transaction():
             note = await Note.get_or_none(id=note_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
@@ -196,13 +198,13 @@ class ProductivityRepository(IProductivityRepository):
             return _map_note(note)
 
     async def delete_note(self, user_id: UUID, note_id: UUID) -> int:
-        async with handle_db_errors("delete note"):
+        async with handle_db_errors("delete note"), in_transaction():
             return await Note.filter(id=note_id, user_id=user_id).delete()
 
     async def create_event(
         self, user_id: UUID, event_data: CalendarEventCreate
     ) -> CalendarEventEntity:
-        async with handle_db_errors("create calendar event"):
+        async with handle_db_errors("create calendar event"), in_transaction():
             event = await CalendarEvent.create(
                 user_id=user_id,
                 agent_id=event_data.agent_id,
@@ -241,16 +243,18 @@ class ProductivityRepository(IProductivityRepository):
 
     async def update_event(
         self, user_id: UUID, event_id: UUID, valid_keys: dict
-    ) -> CalendarEventEntity:
-        async with handle_db_errors("update calendar event"):
-            event = await CalendarEvent.get(id=event_id, user_id=user_id).prefetch_related(
+    ) -> CalendarEventEntity | None:
+        async with handle_db_errors("update calendar event"), in_transaction():
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
                 "agent", "origin_message"
             )
+            if not event:
+                return None
             for field, value in valid_keys.items():
                 setattr(event, field, value)
             await event.save(update_fields=list(valid_keys.keys()))
             return _map_event(event)
 
     async def delete_event(self, user_id: UUID, event_id: UUID) -> int:
-        async with handle_db_errors("delete calendar event"):
+        async with handle_db_errors("delete calendar event"), in_transaction():
             return await CalendarEvent.filter(id=event_id, user_id=user_id).delete()

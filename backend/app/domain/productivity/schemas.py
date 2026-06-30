@@ -33,7 +33,7 @@ class TaskCreate(BaseModel):
     """
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: str | None = None
+    description: str | None = Field(None, max_length=2000)
     is_completed: bool = False
     due_date: datetime | None = None
 
@@ -49,7 +49,7 @@ class TaskUpdate(BaseModel):
     """
 
     title: str | None = Field(None, min_length=1, max_length=255)
-    description: str | None = None
+    description: str | None = Field(None, max_length=2000)
     is_completed: bool | None = None
     due_date: datetime | None = None
 
@@ -95,11 +95,11 @@ class NoteCreate(BaseModel):
     """
 
     title: str = Field(..., min_length=1, max_length=255)
-    content: str
+    content: str = Field(..., max_length=2000)
     is_pinned: bool = False
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
-    origin_context: str | None = None
+    origin_context: str | None = Field(None, max_length=2000)
 
 
 class NoteUpdate(BaseModel):
@@ -112,7 +112,7 @@ class NoteUpdate(BaseModel):
     """
 
     title: str | None = Field(None, min_length=1, max_length=255)
-    content: str | None = None
+    content: str | None = Field(None, max_length=2000)
     is_pinned: bool | None = None
 
 
@@ -160,14 +160,14 @@ class CalendarEventCreate(BaseModel):
     """Schema for creating a new Calendar Event."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: str | None = None
+    description: str | None = Field(None, max_length=2000)
     start_time: datetime
     end_time: datetime
     is_all_day: bool = False
     location: str | None = Field(None, max_length=255)
     agent_id: UUID | None = None
     origin_message_id: UUID | None = None
-    origin_context: str | None = None
+    origin_context: str | None = Field(None, max_length=2000)
 
     @model_validator(mode="after")
     def validate_time_range(self) -> CalendarEventCreate:
@@ -180,7 +180,7 @@ class CalendarEventUpdate(BaseModel):
     """Schema for updating an existing Calendar Event."""
 
     title: str | None = Field(None, min_length=1, max_length=255)
-    description: str | None = None
+    description: str | None = Field(None, max_length=2000)
     start_time: datetime | None = None
     end_time: datetime | None = None
     is_all_day: bool | None = None
