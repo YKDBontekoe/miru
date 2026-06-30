@@ -192,3 +192,19 @@ async def test_create_agent_chaos_db_error():
         mock_create.side_effect = Exception("Database constraint violation")
         with pytest.raises(Exception, match="Database constraint violation"):
             await service.create_agent(agent_data, user_id)
+
+
+@pytest.mark.asyncio
+async def test_list_integrations():
+    repo = AgentRepository()
+    service = AgentService(repo)
+    # create some integration to test
+    await Integration.create(
+        id="discord_test", display_name="Discord", description="desc", icon="icon", config_schema={}
+    )
+    res = await service.list_integrations()
+    assert len(res) > 0
+    assert any(i.id == "discord_test" for i in res)
+    # Calling it twice should return cached list
+    res2 = await service.list_integrations()
+    assert res2 is res
