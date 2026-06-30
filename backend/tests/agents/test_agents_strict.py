@@ -11,6 +11,7 @@ from app.domain.agents.schemas import AgentResponse
 # Deterministic UUIDs
 TEST_AGENT_ID = uuid.UUID("22222222-2222-2222-2222-222222222222")
 
+
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_test_data(test_user_id: str) -> AsyncGenerator[None, None]:
     """Clean up test records before and after tests to prevent conflicts."""
@@ -21,20 +22,25 @@ async def cleanup_test_data(test_user_id: str) -> AsyncGenerator[None, None]:
 
 
 @pytest.mark.asyncio
-async def test_agent_creation_saves_to_database_and_validates_contract(client: TestClient, authed_headers: dict[str, str], test_user_id: str) -> None:
+async def test_agent_creation_saves_to_database_and_validates_contract(
+    client: TestClient, authed_headers: dict[str, str], test_user_id: str
+) -> None:
     """
     Integration/Contract Test: Verify that the API correctly parses the request,
     creates the record in the database, and returns a schema-compliant response.
     """
     user_uuid = uuid.UUID(test_user_id)
     # Arrange
-    await Capability.get_or_create(id="web_search", defaults={"name": "Web Search", "description": "Search web", "icon": "search"})
+    await Capability.get_or_create(
+        id="web_search",
+        defaults={"name": "Web Search", "description": "Search web", "icon": "search"},
+    )
 
     payload = {
         "name": "Strict Test Agent",
         "personality": "Very strict and precise",
         "capabilities": ["web_search"],
-        "goals": ["Test all the things"]
+        "goals": ["Test all the things"],
     }
 
     # Act
@@ -50,7 +56,9 @@ async def test_agent_creation_saves_to_database_and_validates_contract(client: T
     assert "web_search" in validated.capabilities
 
     # Assert - Side Effect (Database Verification)
-    saved_agent = await Agent.get_or_none(name="Strict Test Agent", user_id=user_uuid).prefetch_related("capabilities")
+    saved_agent = await Agent.get_or_none(
+        name="Strict Test Agent", user_id=user_uuid
+    ).prefetch_related("capabilities")
     assert saved_agent is not None
     assert saved_agent.system_prompt is not None
     assert "You are Strict Test Agent." in saved_agent.system_prompt
@@ -63,14 +71,16 @@ async def test_agent_creation_saves_to_database_and_validates_contract(client: T
 
 
 @pytest.mark.asyncio
-async def test_agent_creation_fails_on_malformed_json_contract(client: TestClient, authed_headers: dict[str, str]) -> None:
+async def test_agent_creation_fails_on_malformed_json_contract(
+    client: TestClient, authed_headers: dict[str, str]
+) -> None:
     """
     Chaos Test 1: Malformed JSON. Verify schema validation blocks invalid inputs.
     """
     # Arrange
     payload = {
         "name": "",  # Invalid: Too short (min 1)
-        "personality": 123  # Invalid: Should be string
+        "personality": 123,  # Invalid: Should be string
     }
 
     # Act
@@ -83,7 +93,9 @@ async def test_agent_creation_fails_on_malformed_json_contract(client: TestClien
 
 
 @pytest.mark.asyncio
-async def test_agent_creation_chaos_database_conflict(client: TestClient, authed_headers: dict[str, str], test_user_id: str) -> None:
+async def test_agent_creation_chaos_database_conflict(
+    client: TestClient, authed_headers: dict[str, str], test_user_id: str
+) -> None:
     """
     Chaos Test 2: Database Conflict. Verify that database failures are handled or bubbled up cleanly.
     """
@@ -93,7 +105,6 @@ async def test_agent_creation_chaos_database_conflict(client: TestClient, authed
     # (assuming name + user_id or similar unique constraint could cause it, but to truly force a
     # conflict without mocks on an arbitrary field without altering schema, we'll manually
     # trigger a scenario that would break, e.g. a bad UUID).
-
 
     # Act / Assert
     # The payload will pass Pydantic validation if we bypass it, but since AgentCreate restricts it to 100,
@@ -111,10 +122,7 @@ async def test_agent_creation_chaos_database_conflict(client: TestClient, authed
     # We will generate a UUID and seed it.
     conflict_id = uuid.uuid4()
     await Agent.create(
-        id=conflict_id,
-        user_id=user_uuid,
-        name="Conflict Agent",
-        personality="Causes DB errors"
+        id=conflict_id, user_id=user_uuid, name="Conflict Agent", personality="Causes DB errors"
     )
 
     # To truly simulate a DB constraint conflict without mocking the ORM API itself,
@@ -127,13 +135,7 @@ async def test_agent_creation_chaos_database_conflict(client: TestClient, authed
 
     from app.domain.agents.models import UserAgentAffinity
 
-    await UserAgentAffinity.create(
-        user_id=user_uuid,
-        agent_id=conflict_id
-    )
+    await UserAgentAffinity.create(user_id=user_uuid, agent_id=conflict_id)
 
     with pytest.raises(IntegrityError):
-        await UserAgentAffinity.create(
-            user_id=user_uuid,
-            agent_id=conflict_id
-        )
+        await UserAgentAffinity.create(user_id=user_uuid, agent_id=conflict_id)
