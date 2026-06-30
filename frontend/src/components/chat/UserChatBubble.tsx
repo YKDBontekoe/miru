@@ -18,12 +18,7 @@ export const UserChatBubble = ({ text, timestamp }: UserChatBubbleProps) => {
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.bubble,
-          { backgroundColor: theme.colors.primary.DEFAULT },
-        ]}
-      >
+      <View style={[styles.bubble, { backgroundColor: theme.colors.primary.DEFAULT }]}>
         <AppText style={styles.text}>{text}</AppText>
       </View>
       {timestamp && (
