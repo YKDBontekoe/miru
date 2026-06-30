@@ -307,3 +307,204 @@ async def test_standalone_structured_completion_cancelled() -> None:
             await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
 
         assert mock_client.structured_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_stream_chat_success() -> None:
+    from app.infrastructure.external.openrouter import OpenRouterClient
+    with (
+        patch("openai.AsyncOpenAI"),
+        patch("instructor.from_openai"),
+    ):
+        client = OpenRouterClient("test-key")
+
+        async def mock_stream():
+            yield "chunk1"
+            yield "chunk2"
+
+        cast("Any", client.openai_client.chat.completions).create = AsyncMock(
+            return_value=mock_stream()
+        )
+
+        stream = await client.stream_chat([{"role": "user", "content": "hi"}], "test-model")
+        results = [chunk async for chunk in stream]
+        assert results == ["chunk1", "chunk2"]
+
+
+@pytest.mark.asyncio
+async def test_standalone_stream_chat() -> None:
+    from app.infrastructure.external.openrouter import stream_chat
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default-model")
+        mock_client = MagicMock()
+
+        async def mock_stream():
+            yield "chunk1"
+            yield "chunk2"
+
+        mock_client.stream_chat = AsyncMock(return_value=mock_stream())
+        mock_get_client.return_value = mock_client
+
+        stream = await stream_chat([{"role": "user", "content": "hi"}])
+        results = [chunk async for chunk in stream]
+        assert results == ["chunk1", "chunk2"]
+        mock_client.stream_chat.assert_called_once_with(
+            [{"role": "user", "content": "hi"}], "default-model"
+        )
+
+@pytest.mark.asyncio
+async def test_chat_completion_no_fallback_configured() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model=None)
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=Exception("Failed"))
+        mock_get_client.return_value = mock_client
+        with pytest.raises(Exception, match="Failed"):
+            await chat_completion([{"role": "user", "content": "hi"}])
+
+@pytest.mark.asyncio
+async def test_structured_completion_no_fallback_configured() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model=None)
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=Exception("Failed"))
+        mock_get_client.return_value = mock_client
+        with pytest.raises(Exception, match="Failed"):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+
+@pytest.mark.asyncio
+async def test_chat_completion_cancelled_in_fallback() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=[Exception("First"), asyncio.CancelledError()])
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await chat_completion([{"role": "user", "content": "hi"}])
+
+@pytest.mark.asyncio
+async def test_structured_completion_cancelled_in_fallback() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=[Exception("First"), asyncio.CancelledError()])
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+
+@pytest.mark.asyncio
+async def test_chat_completion_cancelled_error() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await chat_completion([{"role": "user", "content": "hi"}])
+        assert mock_client.chat_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_structured_completion_cancelled_error() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+        assert mock_client.structured_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_chat_completion_reraise_cancellation() -> None:
+    # Need to test lines 143 and 175 directly
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        # Raise Cancellation when it's caught
+        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await chat_completion([{"role": "user", "content": "hi"}])
+
+        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        with pytest.raises(asyncio.CancelledError):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+
+@pytest.mark.asyncio
+async def test_chat_completion_cancellation_direct() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model=None)
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await chat_completion([{"role": "user", "content": "hi"}])
+        assert mock_client.chat_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_structured_completion_cancellation_direct() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model=None)
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError())
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+        assert mock_client.structured_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_chat_completion_cancellation_real() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        mock_client.chat_completion = AsyncMock(side_effect=asyncio.CancelledError)
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await chat_completion([{"role": "user", "content": "hi"}])
+        assert mock_client.chat_completion.call_count == 1
+
+@pytest.mark.asyncio
+async def test_structured_completion_cancellation_real() -> None:
+    with (
+        patch("app.infrastructure.external.openrouter.get_openrouter_client") as mock_get_client,
+        patch("app.infrastructure.external.openrouter.get_settings") as mock_settings,
+    ):
+        mock_settings.return_value = MagicMock(default_chat_model="default", fallback_chat_model="fallback")
+        mock_client = MagicMock()
+        mock_client.structured_completion = AsyncMock(side_effect=asyncio.CancelledError)
+        mock_get_client.return_value = mock_client
+        with pytest.raises(asyncio.CancelledError):
+            await structured_completion([{"role": "user", "content": "hi"}], DummyModel)
+        assert mock_client.structured_completion.call_count == 1
