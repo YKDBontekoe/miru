@@ -193,16 +193,16 @@ export function TemplateGallerySheet({
 
     if (templates.length === 0) {
       return (
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-              <AppText style={{ fontSize: 40, marginBottom: 12 }}>🏗️</AppText>
-              <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
-                {t('agents.templatesComingSoon')}
-              </AppText>
-              <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
-                {t('agents.templatesComingSoonDesc')}
-              </AppText>
-            </View>
-          );
+        <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+          <AppText style={{ fontSize: 40, marginBottom: 12 }}>🏗️</AppText>
+          <AppText style={{ color: C.text, fontWeight: '600', fontSize: 16, marginBottom: 6 }}>
+            {t('agents.templatesComingSoon')}
+          </AppText>
+          <AppText style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
+            {t('agents.templatesComingSoonDesc')}
+          </AppText>
+        </View>
+      );
     }
 
     if (filteredTemplates.length === 0) {
@@ -211,7 +211,9 @@ export function TemplateGallerySheet({
           <AppText style={{ color: C.text, fontWeight: '600', fontSize: 15, marginBottom: 4 }}>
             {t('agents.noTemplatesInCategory')}
           </AppText>
-          <AppText style={{ color: C.muted, fontSize: 13 }}>{t('agents.tryAnotherCategory')}</AppText>
+          <AppText style={{ color: C.muted, fontSize: 13 }}>
+            {t('agents.tryAnotherCategory')}
+          </AppText>
         </View>
       );
     }

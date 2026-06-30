@@ -83,21 +83,24 @@ export function ChatListHeader({
     [selectedAgentId, onSelectAgent]
   );
 
-  const renderAllAgentsPill = React.useCallback(() => (
-    <ScalePressable
-      onPress={() => onSelectAgent(null)}
-      className={`me-2 rounded-full px-3 py-2 border ${
-        selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-      }`}
-    >
-      <AppText
-        variant="caption"
-        className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+  const renderAllAgentsPill = React.useCallback(
+    () => (
+      <ScalePressable
+        onPress={() => onSelectAgent(null)}
+        className={`me-2 rounded-full px-3 py-2 border ${
+          selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
+        }`}
       >
-        {t('chat.all_agents', 'All')}
-      </AppText>
-    </ScalePressable>
-  ), [selectedAgentId, onSelectAgent, t]);
+        <AppText
+          variant="caption"
+          className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+        >
+          {t('chat.all_agents', 'All')}
+        </AppText>
+      </ScalePressable>
+    ),
+    [selectedAgentId, onSelectAgent, t]
+  );
 
   return (
     <>
@@ -152,9 +155,7 @@ export function ChatListHeader({
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
                 className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
+                  selected ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
                 }`}
               >
                 <AppText
@@ -179,7 +180,10 @@ export function ChatListHeader({
                 active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
               }`}
             >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
+              <AppText
+                variant="caption"
+                className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+              >
                 {label}
               </AppText>
             </ScalePressable>
@@ -195,7 +199,10 @@ export function ChatListHeader({
             </AppText>
             <AppText variant="caption" className="text-[#5A7467] font-bold">
               {activeFilterCount > 0
-                ? t('chat.active_filters', { count: activeFilterCount, defaultValue: '{{count}} filters' })
+                ? t('chat.active_filters', {
+                    count: activeFilterCount,
+                    defaultValue: '{{count}} filters',
+                  })
                 : agents.length}
             </AppText>
           </View>

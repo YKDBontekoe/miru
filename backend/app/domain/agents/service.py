@@ -201,9 +201,7 @@ class AgentService:
                 await agent.capabilities.add(*caps)
             effective_cap_ids = new_capability_ids
         else:
-            effective_cap_ids = [
-                str(c.id) for c in agent.capabilities
-            ]
+            effective_cap_ids = [str(c.id) for c in agent.capabilities]
 
         # --- integrations ---
         new_integration_ids: list[str] | None = fields.pop("integrations", None)

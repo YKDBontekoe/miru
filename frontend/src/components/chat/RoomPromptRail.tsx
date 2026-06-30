@@ -25,11 +25,7 @@ const renderPromptItem = (
     } ${isStreaming ? 'opacity-60' : 'opacity-100'}`}
     disabled={isStreaming}
   >
-    <AppText
-      className={`text-xs font-bold ${
-        action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'
-      }`}
-    >
+    <AppText className={`text-xs font-bold ${action.pinned ? 'text-[#147D64]' : 'text-[#13251C]'}`}>
       {action.pinned ? '★ ' : ''}
       {action.text}
     </AppText>
