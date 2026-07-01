@@ -6,14 +6,24 @@ import { DESIGN_TOKENS } from '@/core/design/tokens';
 import { useTheme } from '@/hooks/useTheme';
 
 interface PageShellProps {
+  /** The primary title shown at the top of the page. */
   title: string;
+  /** An optional secondary subtitle shown below the title. */
   subtitle?: string;
+  /** An optional React node rendered on the right side of the header. */
   right?: React.ReactNode;
+  /** The content of the page. */
   children: React.ReactNode;
+  /** Whether the page content should be scrollable. Defaults to `true`. */
   scroll?: boolean;
+  /** Additional styles to apply to the content container. */
   contentStyle?: ViewStyle;
 }
 
+/**
+ * A reusable container component that renders a distinct visual block (card)
+ * within a page. Typically used with `PageSectionHeader`.
+ */
 export const PageSectionCard = ({
   children,
   style,
@@ -38,11 +48,17 @@ export const PageSectionCard = ({
   );
 };
 
+/**
+ * A reusable header component intended for use above `PageSectionCard` components
+ * to visually label a block of content.
+ */
 export const PageSectionHeader = ({
   title,
   action,
 }: {
+  /** The title of the section. */
   title: string;
+  /** An optional React node rendered on the right side of the section header. */
   action?: React.ReactNode;
 }) => {
   return (
@@ -55,6 +71,9 @@ export const PageSectionHeader = ({
   );
 };
 
+/**
+ * Internal header component for the `PageShell`.
+ */
 const PageHeader = ({
   title,
   subtitle,
@@ -79,6 +98,12 @@ const PageHeader = ({
   );
 };
 
+/**
+ * The standard layout container for top-level screens in the application.
+ *
+ * Provides consistent Safe Area handling, optional scrolling, and standard page-level
+ * typography headers. Automatically accounts for the bottom tab bar inset.
+ */
 export const PageShell = ({
   title,
   subtitle,
