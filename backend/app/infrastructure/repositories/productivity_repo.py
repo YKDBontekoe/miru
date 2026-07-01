@@ -5,13 +5,10 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from app.domain.productivity.entities import (CalendarEventEntity, NoteEntity,
-                                              TaskEntity)
-from app.domain.productivity.interfaces.repository import \
-    IProductivityRepository
+from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
+from app.domain.productivity.interfaces.repository import IProductivityRepository
 from app.domain.productivity.models import CalendarEvent, Note, Task
-from app.domain.productivity.schemas import (CalendarEventCreate, NoteCreate,
-                                             TaskCreate)
+from app.domain.productivity.schemas import CalendarEventCreate, NoteCreate, TaskCreate
 from app.infrastructure.database.utils import handle_db_errors
 
 
@@ -118,9 +115,7 @@ class ProductivityRepository(IProductivityRepository):
             )
             return _map_task(task)
 
-    async def list_tasks(
-        self, user_id: UUID, limit: int = 50, offset: int = 0
-    ) -> list[TaskEntity]:
+    async def list_tasks(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[TaskEntity]:
         async with handle_db_errors("list tasks"):
             tasks = (
                 await Task.filter(user_id=user_id)
@@ -166,9 +161,7 @@ class ProductivityRepository(IProductivityRepository):
             )
             return _map_note(note)
 
-    async def list_notes(
-        self, user_id: UUID, limit: int = 50, offset: int = 0
-    ) -> list[NoteEntity]:
+    async def list_notes(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[NoteEntity]:
         async with handle_db_errors("list notes"):
             notes = (
                 await Note.filter(user_id=user_id)
@@ -237,13 +230,11 @@ class ProductivityRepository(IProductivityRepository):
             )
             return [_map_event(e) for e in events]
 
-    async def get_event(
-        self, user_id: UUID, event_id: UUID
-    ) -> CalendarEventEntity | None:
+    async def get_event(self, user_id: UUID, event_id: UUID) -> CalendarEventEntity | None:
         async with handle_db_errors("get calendar event"):
-            event = await CalendarEvent.get_or_none(
-                id=event_id, user_id=user_id
-            ).prefetch_related("agent", "origin_message")
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
+                "agent", "origin_message"
+            )
             if event:
                 return _map_event(event)
             return None
@@ -252,9 +243,9 @@ class ProductivityRepository(IProductivityRepository):
         self, user_id: UUID, event_id: UUID, valid_keys: dict
     ) -> CalendarEventEntity | None:
         async with handle_db_errors("update calendar event"):
-            event = await CalendarEvent.get_or_none(
-                id=event_id, user_id=user_id
-            ).prefetch_related("agent", "origin_message")
+            event = await CalendarEvent.get_or_none(id=event_id, user_id=user_id).prefetch_related(
+                "agent", "origin_message"
+            )
             if not event:
                 return None
             for field, value in valid_keys.items():
