@@ -15,6 +15,14 @@ type QuickAction = {
   route: string;
 };
 
+/**
+ * A floating action button (FAB) component that provides quick access to core features
+ * from anywhere in the app (e.g. creating new chats, agents, or tasks).
+ *
+ * Behavior:
+ * - Hidden automatically on chat routes (`/chat/`) to prevent UI overlap.
+ * - Spawns an animated bottom modal with available action items when pressed.
+ */
 export function GlobalQuickActions() {
   const { t } = useTranslation();
   const router = useRouter();

@@ -6,6 +6,16 @@ import { ApiService } from '@/core/api/ApiService';
 import { getApiErrorMessage } from '@/core/api/errors';
 import { Agent } from '@/core/models';
 
+/**
+ * Custom hook to manage the lifecycle, state, and connections of a chat room.
+ *
+ * This hook handles connecting and disconnecting from the SignalR chat hub,
+ * fetching initial room messages and agent data, and explicitly joining/leaving
+ * the room channel based on component mount/unmount events.
+ *
+ * @param roomId - The UUID of the chat room to set up. If undefined, no action is taken.
+ * @returns An object containing the list of agents in the room, state setters, and a refetch function.
+ */
 export function useChatRoomSetup(roomId: string | undefined) {
   const { t } = useTranslation();
   const fetchMessages = useChatStore((s) => s.fetchMessages);
