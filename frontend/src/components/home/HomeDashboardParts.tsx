@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent, ChatRoom, Task } from '@/core/models';
-import { HOME_COLORS, HOME_SHADOW } from './homeTheme';
+import { theme } from '@/core/theme';
 import { relativeTimeFromNow } from './homeUtils';
+
+import { useColorScheme } from 'nativewind';
 
 export function HomeSectionHeader({
   title,
@@ -17,20 +19,13 @@ export function HomeSectionHeader({
   onAction?: () => void;
 }) {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-      }}
-    >
-      <AppText variant="h3" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+    <View className="flex-row justify-between items-center mb-md">
+      <AppText variant="h3" color="primary" className="font-bold">
         {title}
       </AppText>
       {actionLabel && onAction ? (
         <ScalePressable onPress={onAction}>
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '700' }}>
+          <AppText variant="bodySm" color="brand" className="font-bold">
             {actionLabel}
           </AppText>
         </ScalePressable>
@@ -48,18 +43,8 @@ export function HomeSurfaceCard({
 }) {
   return (
     <View
-      style={[
-        {
-          backgroundColor: HOME_COLORS.surface,
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: HOME_COLORS.border,
-          padding: 16,
-          marginBottom: 14,
-          ...HOME_SHADOW,
-        },
-        style,
-      ]}
+      className="bg-surface-light dark:bg-surface-dark rounded-xxl border border-border-light dark:border-border-dark p-lg mb-md shadow-md"
+      style={style}
     >
       {children}
     </View>
@@ -78,44 +63,24 @@ export function HomeActionTile({
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        width: '48.5%',
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        borderRadius: 18,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 10,
-      }}
+      className="w-[48%] border border-border-light dark:border-border-dark rounded-xl py-md px-md bg-surface-highLight dark:bg-surface-highDark mb-sm"
     >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 12,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
-        }}
-      >
-        <Ionicons name={icon} size={18} color={HOME_COLORS.primary} />
+      <View className="w-[34px] h-[34px] rounded-md bg-primary-surfaceLight dark:bg-primary-surface flex items-center justify-center mb-sm">
+        <Ionicons
+          name={icon}
+          size={18}
+          color={theme.colors.primary.DEFAULT}
+          className="text-primary-DEFAULT"
+        />
       </View>
-      <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+      <AppText variant="bodySm" color="primary" className="font-bold">
         {label}
       </AppText>
     </ScalePressable>
   );
 }
 
-export function HomeTaskRow({
-  task,
-  onToggle,
-}: {
-  task: Task;
-  onToggle: () => void;
-}) {
+export function HomeTaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const dueText =
     dueDate && !isNaN(dueDate.getTime())
@@ -125,53 +90,23 @@ export function HomeTaskRow({
   return (
     <ScalePressable
       onPress={onToggle}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        paddingHorizontal: 12,
-        paddingVertical: 11,
-        marginBottom: 8,
-      }}
+      className="flex-row items-center rounded-lg bg-surface-highLight dark:bg-surface-highDark px-md py-md mb-sm"
     >
       <View
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: task.completed ? HOME_COLORS.primary : '#8FB7A7',
-          backgroundColor: task.completed ? HOME_COLORS.primary : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
+        className={`w-[24px] h-[24px] rounded-md border-2 items-center justify-center mr-md ${task.completed ? 'border-primary-DEFAULT bg-primary-DEFAULT' : 'border-border-light dark:border-border-dark bg-transparent'}`}
       >
-        {task.completed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+        {task.completed ? <Ionicons name="checkmark" size={14} color={theme.colors.white} /> : null}
       </View>
       <AppText
         variant="bodySm"
         numberOfLines={1}
-        style={{
-          flex: 1,
-          color: task.completed ? HOME_COLORS.muted : HOME_COLORS.text,
-          textDecorationLine: task.completed ? 'line-through' : 'none',
-          fontWeight: '600',
-        }}
+        className={`flex-1 font-semibold ${task.completed ? 'text-onSurface-mutedLight dark:text-onSurface-mutedDark line-through' : 'text-onSurface-light dark:text-onSurface-dark'}`}
       >
         {task.title}
       </AppText>
       {dueText ? (
-        <View
-          style={{
-            borderRadius: 12,
-            backgroundColor: HOME_COLORS.accentSoft,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#9E5817', fontWeight: '700' }}>
+        <View className="rounded-md bg-status-warningSurfaceLight dark:bg-status-warningSurfaceDark px-sm py-xs">
+          <AppText variant="caption" color="warning" className="font-bold">
             {dueText}
           </AppText>
         </View>
@@ -189,95 +124,60 @@ export function HomeChatRow({
   onPress: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        borderRadius: 16,
-        backgroundColor: HOME_COLORS.softSurface,
-        marginBottom: 8,
-      }}
+      className="flex-row items-center px-md py-md rounded-lg bg-surface-highLight dark:bg-surface-highDark mb-sm"
     >
-      <View
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 11,
-          backgroundColor: HOME_COLORS.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
-      >
-        <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+      <View className="w-[34px] h-[34px] rounded-md bg-primary-surfaceLight dark:bg-primary-surface items-center justify-center mr-md">
+        <AppText variant="bodySm" color="brand" className="font-extrabold">
           {room.name[0]?.toUpperCase() ?? '?'}
         </AppText>
       </View>
-      <View style={{ flex: 1, paddingRight: 8 }}>
-        <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+      <View className="flex-1 pr-sm">
+        <AppText variant="bodySm" numberOfLines={1} color="primary" className="font-bold">
           {room.name}
         </AppText>
-        <AppText variant="caption" numberOfLines={1} style={{ color: HOME_COLORS.muted }}>
+        <AppText variant="caption" numberOfLines={1} color="muted">
           {t('home.actions.tap_to_continue')}
         </AppText>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginBottom: 2 }}>
+      <View className="items-end">
+        <AppText variant="caption" color="muted" className="mb-xxs">
           {relativeTimeFromNow(room.updated_at, t)}
         </AppText>
-        <Ionicons name="chevron-forward" size={14} color={HOME_COLORS.muted} />
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color={isDark ? theme.colors.onSurface.mutedDark : theme.colors.onSurface.mutedLight}
+        />
       </View>
     </ScalePressable>
   );
 }
 
-export function HomeAgentBadge({
-  agent,
-  onPress,
-}: {
-  agent: Agent;
-  onPress: () => void;
-}) {
+export function HomeAgentBadge({ agent, onPress }: { agent: Agent; onPress: () => void }) {
   return (
     <ScalePressable
       onPress={onPress}
-      style={{
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: HOME_COLORS.border,
-        backgroundColor: HOME_COLORS.surface,
-        padding: 10,
-        width: '48.5%',
-        marginBottom: 10,
-      }}
+      className="rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-sm w-[48%] mb-sm"
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-        <View
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 10,
-            backgroundColor: HOME_COLORS.primarySoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 8,
-          }}
-        >
-          <AppText variant="bodySm" style={{ color: HOME_COLORS.primary, fontWeight: '800' }}>
+      <View className="flex-row items-center mb-sm">
+        <View className="w-[30px] h-[30px] rounded-md bg-primary-surfaceLight dark:bg-primary-surface flex items-center justify-center mr-sm">
+          <AppText variant="bodySm" color="brand" className="font-extrabold">
             {agent.name?.[0]?.toUpperCase() ?? '?'}
           </AppText>
         </View>
-        <View style={{ flex: 1 }}>
-          <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
+        <View className="flex-1">
+          <AppText variant="bodySm" numberOfLines={1} color="primary" className="font-bold">
             {agent.name}
           </AppText>
         </View>
       </View>
-      <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
+      <AppText variant="caption" color="muted">
         {agent.message_count} {agent.message_count === 1 ? 'message' : 'messages'}
       </AppText>
     </ScalePressable>
@@ -304,25 +204,15 @@ export function HomeHeroCard({
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   return (
-    <View
-      style={{
-        borderRadius: 28,
-        backgroundColor: HOME_COLORS.deep,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        marginBottom: 14,
-        overflow: 'hidden',
-        ...HOME_SHADOW,
-      }}
-    >
+    <View className="rounded-xxl bg-primary-dark p-lg mb-md overflow-hidden shadow-lg">
       <View
         style={{
           position: 'absolute',
           width: 180,
           height: 180,
-          borderRadius: 999,
-          backgroundColor: '#2BA98A',
-          opacity: 0.26,
+          borderRadius: 90,
+          backgroundColor: theme.colors.status.success,
+          opacity: 0.25,
           top: -90,
           right: -40,
         }}
@@ -332,64 +222,42 @@ export function HomeHeroCard({
           position: 'absolute',
           width: 120,
           height: 120,
-          borderRadius: 999,
-          backgroundColor: '#F0B470',
-          opacity: 0.22,
+          borderRadius: 60,
+          backgroundColor: theme.colors.status.warning,
+          opacity: 0.25,
           bottom: -44,
           left: -24,
         }}
       />
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 16,
-        }}
-      >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <AppText variant="bodySm" style={{ color: '#CDE9DF', fontWeight: '600' }}>
+      <View className="flex-row justify-between items-start mb-lg">
+        <View className="flex-1 pr-sm">
+          <AppText variant="bodySm" color="primary-surfaceLight" className="font-semibold">
             {greeting}
           </AppText>
-          <AppText variant="h1" numberOfLines={1} style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="h1" numberOfLines={1} color="white" className="font-bold">
             {firstName}
           </AppText>
-          <AppText variant="caption" style={{ color: '#CDE9DF' }}>
+          <AppText variant="caption" color="primary-surfaceLight">
             {dateText}
           </AppText>
         </View>
         <ScalePressable
           onPress={onSettingsPress}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: '#2D6A58',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="w-[44px] h-[44px] rounded-[22px] bg-primary-DEFAULT flex items-center justify-center"
         >
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" color="white" className="font-bold">
             {initials}
           </AppText>
         </ScalePressable>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+      <View className="flex-row gap-sm">
+        <View className="flex-1 rounded-md bg-primary-DEFAULT py-sm px-sm">
+          <AppText variant="caption" color="primary-surfaceLight" className="mb-xxs">
             {t('home.hero.today_focus', { defaultValue: 'Today focus' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" color="white" className="font-bold">
             {todayTaskCount > 0
               ? t('home.hero.tasks_due_today', {
                   count: todayTaskCount,
@@ -398,19 +266,11 @@ export function HomeHeroCard({
               : t('home.hero.no_deadlines', { defaultValue: 'No deadlines today' })}
           </AppText>
         </View>
-        <View
-          style={{
-            flex: 1,
-            borderRadius: 14,
-            backgroundColor: '#215445',
-            paddingVertical: 10,
-            paddingHorizontal: 10,
-          }}
-        >
-          <AppText variant="caption" style={{ color: '#CDE9DF', marginBottom: 2 }}>
+        <View className="flex-1 rounded-md bg-primary-DEFAULT py-sm px-sm">
+          <AppText variant="caption" color="primary-surfaceLight" className="mb-xxs">
             {t('home.hero.completion', { defaultValue: 'Completion' })}
           </AppText>
-          <AppText variant="bodySm" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+          <AppText variant="bodySm" color="white" className="font-bold">
             {completionRate}% {t('home.hero.complete', { defaultValue: 'complete' })}
           </AppText>
         </View>

@@ -64,7 +64,11 @@ const PageHeader = ({
     <View className="px-4 pt-3 pb-2.5">
       <View className="flex-row justify-between items-center">
         <View className="flex-1 pe-2">
-          <AppText variant="h1" className="text-[28px] font-extrabold" style={{ color: DESIGN_TOKENS.colors.text }}>
+          <AppText
+            variant="h1"
+            className="text-[28px] font-extrabold"
+            style={{ color: DESIGN_TOKENS.colors.text }}
+          >
             {title}
           </AppText>
           {subtitle ? (

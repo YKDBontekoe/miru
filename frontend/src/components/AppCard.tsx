@@ -93,17 +93,14 @@ export const AppCard = ({
     Platform.select({
       ios: theme.elevation[elevation],
       android: {
-        elevation: theme.elevation[elevation].elevation,
+        ...theme.elevation[elevation],
         shadowColor: 'transparent',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0,
-        shadowRadius: 0,
       },
     }),
     style,
   ];
 
-  const fullClassName = `rounded-md p-lg ${className}`.trim();
+  const fullClassName = `rounded-lg p-lg ${className}`.trim();
 
   if (onTap) {
     return (

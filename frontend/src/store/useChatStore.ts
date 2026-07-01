@@ -155,7 +155,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         if (errData.room_id) {
           set((state) => {
             const list = [...(state.messages[errData.room_id ?? ''] ?? [])];
-            const pendingIndex = [...list].reverse().findIndex((m) => m.status === MessageStatus.streaming);
+            const pendingIndex = [...list]
+              .reverse()
+              .findIndex((m) => m.status === MessageStatus.streaming);
             if (pendingIndex >= 0) {
               const actualIndex = list.length - 1 - pendingIndex;
               const pendingMessage = list[actualIndex];
