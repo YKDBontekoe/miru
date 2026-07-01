@@ -118,3 +118,46 @@ def test_user_id() -> Any:
 def authed_headers(test_user_id: Any) -> dict[str, str]:
     """Authorization headers for the test user."""
     return auth_headers(user_id=test_user_id)
+
+@pytest_asyncio.fixture
+async def chat_service(
+    chat_repo: "ChatRepository",
+    agent_repo: "AgentRepository",
+    memory_repo: "MemoryRepository",
+    agent_service: "AgentService"
+) -> "ChatService":
+    from app.domain.chat.service import ChatService
+    return ChatService(
+        chat_repo=chat_repo,
+        agent_repo=agent_repo,
+        memory_repo=memory_repo,
+        agent_service=agent_service
+    )
+
+@pytest_asyncio.fixture
+async def chat_repo() -> "ChatRepository":
+    from app.infrastructure.repositories.chat_repo import ChatRepository
+    return ChatRepository()
+
+@pytest_asyncio.fixture
+async def agent_repo() -> "AgentRepository":
+    from app.infrastructure.repositories.agent_repo import AgentRepository
+    return AgentRepository()
+
+@pytest_asyncio.fixture
+async def memory_repo() -> "MemoryRepository":
+    from app.infrastructure.repositories.memory_repo import MemoryRepository
+    return MemoryRepository()
+
+@pytest_asyncio.fixture
+async def agent_service(agent_repo: "AgentRepository") -> "AgentService":
+    from app.domain.agents.service import AgentService
+    return AgentService(repo=agent_repo)
+
+@pytest_asyncio.fixture
+async def test_user(test_user_id: str) -> "Profile":
+    from app.infrastructure.database.models.auth_models import Profile
+    return await Profile.create(
+        id=test_user_id,
+        display_name="test user",
+    )
