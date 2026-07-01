@@ -5,8 +5,10 @@ from __future__ import annotations
 from typing import Protocol
 from uuid import UUID
 
-from app.domain.productivity.entities import CalendarEventEntity, NoteEntity, TaskEntity
-from app.domain.productivity.schemas import CalendarEventCreate, NoteCreate, TaskCreate
+from app.domain.productivity.entities import (CalendarEventEntity, NoteEntity,
+                                              TaskEntity)
+from app.domain.productivity.schemas import (CalendarEventCreate, NoteCreate,
+                                             TaskCreate)
 
 
 class IProductivityRepository(Protocol):
@@ -24,7 +26,9 @@ class IProductivityRepository(Protocol):
         """
         ...
 
-    async def list_tasks(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[TaskEntity]:
+    async def list_tasks(
+        self, user_id: UUID, limit: int = 50, offset: int = 0
+    ) -> list[TaskEntity]:
         """List tasks for a user.
 
         Args:
@@ -88,7 +92,9 @@ class IProductivityRepository(Protocol):
         """
         ...
 
-    async def list_notes(self, user_id: UUID, limit: int = 50, offset: int = 0) -> list[NoteEntity]:
+    async def list_notes(
+        self, user_id: UUID, limit: int = 50, offset: int = 0
+    ) -> list[NoteEntity]:
         """List notes for a user.
 
         Args:
@@ -169,7 +175,9 @@ class IProductivityRepository(Protocol):
         """
         ...
 
-    async def get_event(self, user_id: UUID, event_id: UUID) -> CalendarEventEntity | None:
+    async def get_event(
+        self, user_id: UUID, event_id: UUID
+    ) -> CalendarEventEntity | None:
         """Get a specific calendar event.
 
         Args:
