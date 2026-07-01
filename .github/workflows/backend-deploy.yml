@@ -291,6 +291,7 @@ jobs:
         uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+          allow-no-subscriptions: true
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
