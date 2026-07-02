@@ -17,6 +17,7 @@ TEST_ROOM_ID = UUID("33333333-3333-3333-3333-333333333333")
 MEMORY_ID_1 = UUID("44444444-4444-4444-4444-444444444444")
 MEMORY_ID_2 = UUID("55555555-5555-5555-5555-555555555555")
 
+
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_memories() -> None:
     await MemoryRelationship.filter(source_id__in=[MEMORY_ID_1, MEMORY_ID_2]).delete()
@@ -91,15 +92,17 @@ async def test_store_memory_success(mock_embed: AsyncMock) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
-    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task") as mock_create_task:
+    with (
+        patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match,
+        patch("asyncio.create_task") as mock_create_task,
+    ):
         mock_match.return_value = []
 
         memory_id = await service.store_memory(
             content="I love pizza",
             user_id=TEST_USER_ID,
             agent_id=TEST_AGENT_ID,
-            room_id=TEST_ROOM_ID
+            room_id=TEST_ROOM_ID,
         )
 
         assert memory_id is not None
@@ -130,15 +133,14 @@ async def test_store_memory_deduplication(mock_embed: AsyncMock) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
-    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task"):
+    with (
+        patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match,
+        patch("asyncio.create_task"),
+    ):
         # Mock finding an existing memory
         mock_match.return_value = [Memory(id=uuid4(), content="I love pizza")]
 
-        memory_id = await service.store_memory(
-            content="I love pizza",
-            user_id=TEST_USER_ID
-        )
+        memory_id = await service.store_memory(content="I love pizza", user_id=TEST_USER_ID)
         assert memory_id is None
 
 
@@ -151,14 +153,14 @@ async def test_store_memory_with_relationships(mock_embed: AsyncMock) -> None:
 
     await Memory.create(id=MEMORY_ID_1, content="I love Italian food", embedding=[0.2] * 1536)
 
-    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task"):
+    with (
+        patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match,
+        patch("asyncio.create_task"),
+    ):
         mock_match.return_value = []
 
         memory_id = await service.store_memory(
-            content="I love pizza",
-            user_id=TEST_USER_ID,
-            related_to=[MEMORY_ID_1]
+            content="I love pizza", user_id=TEST_USER_ID, related_to=[MEMORY_ID_1]
         )
 
         assert memory_id is not None
@@ -169,31 +171,32 @@ async def test_store_memory_with_relationships(mock_embed: AsyncMock) -> None:
         await Memory.filter(id=memory_id).delete()
 
 
-
-
-
-
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
-@patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph", new_callable=AsyncMock)
-async def test_store_memory_background_extraction_failure(mock_graph: AsyncMock, mock_embed: AsyncMock) -> None:
+@patch(
+    "app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph",
+    new_callable=AsyncMock,
+)
+async def test_store_memory_background_extraction_failure(
+    mock_graph: AsyncMock, mock_embed: AsyncMock
+) -> None:
     mock_embed.return_value = [0.1] * 1536
     repo = MemoryRepository()
     service = MemoryService(repo)
 
-    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task") as mock_create_task:
+    with (
+        patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match,
+        patch("asyncio.create_task") as mock_create_task,
+    ):
         mock_match.return_value = []
         mock_create_task.side_effect = Exception("Background task failure")
 
         # Should not raise exception, but log it and still return memory_id
-        memory_id = await service.store_memory(
-            content="I love pizza",
-            user_id=TEST_USER_ID
-        )
+        memory_id = await service.store_memory(content="I love pizza", user_id=TEST_USER_ID)
 
         assert memory_id is not None
         await Memory.filter(id=memory_id).delete()
+
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
@@ -202,17 +205,17 @@ async def test_store_memory_relationship_creation_failure(mock_embed: AsyncMock)
     repo = MemoryRepository()
     service = MemoryService(repo)
 
-    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task"), \
-         patch.object(repo, "create_relationship", new_callable=AsyncMock) as mock_create_rel:
+    with (
+        patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match,
+        patch("asyncio.create_task"),
+        patch.object(repo, "create_relationship", new_callable=AsyncMock) as mock_create_rel,
+    ):
         mock_match.return_value = []
         mock_create_rel.side_effect = Exception("DB error")
 
         # Should not raise exception, but log it and still return memory_id
         memory_id = await service.store_memory(
-            content="I love pizza",
-            user_id=TEST_USER_ID,
-            related_to=[MEMORY_ID_1]
+            content="I love pizza", user_id=TEST_USER_ID, related_to=[MEMORY_ID_1]
         )
 
         assert memory_id is not None
@@ -233,8 +236,12 @@ async def test_get_memory_graph_with_data() -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
-    await Memory.create(id=MEMORY_ID_1, user_id=TEST_USER_ID, content="Memory 1", embedding=[0.1] * 1536)
-    await Memory.create(id=MEMORY_ID_2, user_id=TEST_USER_ID, content="Memory 2", embedding=[0.2] * 1536)
+    await Memory.create(
+        id=MEMORY_ID_1, user_id=TEST_USER_ID, content="Memory 1", embedding=[0.1] * 1536
+    )
+    await Memory.create(
+        id=MEMORY_ID_2, user_id=TEST_USER_ID, content="Memory 2", embedding=[0.2] * 1536
+    )
     rel = await MemoryRelationship.create(source_id=MEMORY_ID_1, target_id=MEMORY_ID_2)
 
     graph = await service.get_memory_graph(user_id=TEST_USER_ID)
@@ -257,16 +264,15 @@ async def test_retrieve_memories(mock_embed: AsyncMock) -> None:
         mock_match.return_value = [mock_memory]
 
         results = await service.retrieve_memories(
-            query="test query",
-            user_id=TEST_USER_ID,
-            agent_id=TEST_AGENT_ID,
-            room_id=TEST_ROOM_ID
+            query="test query", user_id=TEST_USER_ID, agent_id=TEST_AGENT_ID, room_id=TEST_ROOM_ID
         )
 
         assert len(results) == 1
         assert results[0].id == MEMORY_ID_1
         mock_embed.assert_called_once_with("test query")
-        mock_match.assert_called_once_with([0.1] * 1536, 0.0, 5, TEST_USER_ID, TEST_AGENT_ID, TEST_ROOM_ID)
+        mock_match.assert_called_once_with(
+            [0.1] * 1536, 0.0, 5, TEST_USER_ID, TEST_AGENT_ID, TEST_ROOM_ID
+        )
 
 
 @pytest.mark.asyncio
