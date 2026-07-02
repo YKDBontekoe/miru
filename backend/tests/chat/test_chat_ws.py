@@ -16,7 +16,7 @@ async def test_stream_responses_timeout_error(chat_service: typing.Any) -> None:
     agent = MagicMock()
     agent.personality = "Helpful"
     chat_service.agent_repo.list_by_user.return_value = [agent]
-    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
+    with patch("app.domain.chat.streaming_orchestrator.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
         mock_stream_chat.side_effect = TimeoutError("Connection timed out")
         responses = []
         async for r in chat_service.stream_responses("Hi", user_id):
@@ -33,7 +33,7 @@ async def test_stream_responses_api_connection_error(chat_service: typing.Any) -
     agent = MagicMock()
     agent.personality = "Helpful"
     chat_service.agent_repo.list_by_user.return_value = [agent]
-    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
+    with patch("app.domain.chat.streaming_orchestrator.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
         request = httpx.Request("POST", "http://test")
         mock_stream_chat.side_effect = openai.APIConnectionError(request=request)
         responses = []
@@ -62,7 +62,7 @@ async def test_stream_responses(chat_service: typing.Any, monkeypatch: pytest.Mo
         yield chunk3
         yield chunk2
 
-    with patch("app.domain.chat.service.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
+    with patch("app.domain.chat.streaming_orchestrator.stream_chat", new_callable=AsyncMock) as mock_stream_chat:
         mock_stream_chat.return_value = mock_async_generator()
         responses = []
         async for r in chat_service.stream_responses("Hi", user_id, accept_language="fr-FR"):
