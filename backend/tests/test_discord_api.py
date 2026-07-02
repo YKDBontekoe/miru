@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-
 from app.infrastructure.external.discord import get_server_info, send_message
 
 

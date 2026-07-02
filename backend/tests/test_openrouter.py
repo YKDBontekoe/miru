@@ -5,15 +5,11 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from app.infrastructure.external.openrouter import (OpenRouterClient,
+                                                    chat_completion, embed,
+                                                    get_openrouter_client,
+                                                    structured_completion)
 from pydantic import BaseModel
-
-from app.infrastructure.external.openrouter import (
-    OpenRouterClient,
-    chat_completion,
-    embed,
-    get_openrouter_client,
-    structured_completion,
-)
 
 
 def test_get_openrouter_client() -> None:

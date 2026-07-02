@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
-
 from app.core.security.auth import CurrentUser
-from app.domain.notifications.interfaces.notification_client import INotificationClient
+from app.domain.notifications.interfaces.notification_client import \
+    INotificationClient
 from app.domain.notifications.schemas import NotificationRequest
-from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
-from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
+from app.domain.notifications.use_cases.send_notification import \
+    SendNotificationUseCase
+from app.infrastructure.notifications.azure_hubs import \
+    AzureNotificationHubClient
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter(tags=["notifications"])
 

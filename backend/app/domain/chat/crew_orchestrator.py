@@ -7,40 +7,29 @@ import logging
 from typing import TYPE_CHECKING, Any, cast
 
 import crewai
-from crewai import LLM, Crew, Process, Task
-
 from app.core.config import get_settings
-from app.domain.agent_tools.productivity_tools import (
-    CreateEventTool,
-    CreateNoteTool,
-    CreateTaskTool,
-    DeleteEventTool,
-    ListEventsTool,
-    ListNotesTool,
-    ListTasksTool,
-    UpdateEventTool,
-    UpdateTaskTool,
-)
+from app.domain.agent_tools.productivity_tools import (CreateEventTool,
+                                                       CreateNoteTool,
+                                                       CreateTaskTool,
+                                                       DeleteEventTool,
+                                                       ListEventsTool,
+                                                       ListNotesTool,
+                                                       ListTasksTool,
+                                                       UpdateEventTool,
+                                                       UpdateTaskTool)
 from app.domain.chat.language import resolve_language
-from app.domain.chat.prompts import (
-    HISTORY_PREFIX,
-    MEMORY_PREFIX,
-    MULTI_AGENT_EXPECTED_OUTPUT,
-    MULTI_AGENT_PROMPT,
-    SINGLE_AGENT_EXPECTED_OUTPUT,
-    SINGLE_AGENT_PROMPT,
-    SUMMARY_PREFIX,
-)
-from app.infrastructure.external.discord_tool import (
-    DiscordGetServerInfoTool,
-    DiscordSendMessageTool,
-)
+from app.domain.chat.prompts import (HISTORY_PREFIX, MEMORY_PREFIX,
+                                     MULTI_AGENT_EXPECTED_OUTPUT,
+                                     MULTI_AGENT_PROMPT,
+                                     SINGLE_AGENT_EXPECTED_OUTPUT,
+                                     SINGLE_AGENT_PROMPT, SUMMARY_PREFIX)
+from app.infrastructure.external.discord_tool import (DiscordGetServerInfoTool,
+                                                      DiscordSendMessageTool)
 from app.infrastructure.external.spotify_tool import (
-    SpotifyCurrentlyPlayingTool,
-    SpotifyRecentlyPlayedTool,
-    SpotifySearchTool,
-)
-from app.infrastructure.external.steam_tool import SteamOwnedGamesTool, SteamPlayerSummaryTool
+    SpotifyCurrentlyPlayingTool, SpotifyRecentlyPlayedTool, SpotifySearchTool)
+from app.infrastructure.external.steam_tool import (SteamOwnedGamesTool,
+                                                    SteamPlayerSummaryTool)
+from crewai import LLM, Crew, Process, Task
 
 if TYPE_CHECKING:
     from uuid import UUID

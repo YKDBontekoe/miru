@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-
 from app.domain.agents.models import Agent
 from app.domain.chat.entities import ChatMessageEntity
 from app.domain.memory.models import Memory

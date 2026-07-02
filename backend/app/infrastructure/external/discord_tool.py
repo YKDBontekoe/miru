@@ -7,10 +7,9 @@ import json
 import logging
 
 import nest_asyncio
+from app.infrastructure.external.discord import get_server_info, send_message
 from crewai.tools import BaseTool
 from pydantic import Field
-
-from app.infrastructure.external.discord import get_server_info, send_message
 
 logger = logging.getLogger(__name__)
 

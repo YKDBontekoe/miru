@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 

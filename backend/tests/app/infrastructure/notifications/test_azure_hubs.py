@@ -3,9 +3,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from app.core.config import Settings, get_settings
-from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
+from app.infrastructure.notifications.azure_hubs import \
+    AzureNotificationHubClient
 
 
 @pytest.fixture

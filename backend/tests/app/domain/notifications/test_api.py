@@ -4,11 +4,11 @@ from collections.abc import Sequence
 from typing import Any
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.api.v1.notifications import get_notification_client
-from app.domain.notifications.interfaces.notification_client import INotificationClient
+from app.domain.notifications.interfaces.notification_client import \
+    INotificationClient
 from app.main import app
+from fastapi.testclient import TestClient
 
 
 class MockNotificationClient(INotificationClient):
