@@ -6,12 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.api.dependencies import get_memory_service
 from app.core.security.auth import get_current_user
 from app.domain.memory.models import Memory
 from app.main import app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -197,10 +196,9 @@ def test_list_memories_route_oserror(client: TestClient) -> None:
 
 
 def test_upload_document_service_timeout(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
     from httpx import Request
     from openai import APITimeoutError
-
-    from app.core.security.auth import get_current_user
 
     user_id = uuid4()
     mock_service = AsyncMock()
@@ -305,10 +303,9 @@ def test_upload_document_unexpected_error(client: TestClient) -> None:
 
 
 def test_upload_document_service_unavailable(client: TestClient) -> None:
+    from app.core.security.auth import get_current_user
     from httpx import Request
     from openai import APIConnectionError
-
-    from app.core.security.auth import get_current_user
 
     user_id = uuid4()
     mock_service = AsyncMock()

@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.service import ChatService
 

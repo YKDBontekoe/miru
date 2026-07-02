@@ -5,14 +5,11 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from crewai.tools import BaseTool
-from pydantic import BaseModel, Field
-
 from app.domain.productivity.dependencies import get_productivity_use_case
 from app.domain.productivity.use_cases.manage_productivity import (
-    CalendarEventNotFoundError,
-    InvalidTimeRangeError,
-)
+    CalendarEventNotFoundError, InvalidTimeRangeError)
+from crewai.tools import BaseTool
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 

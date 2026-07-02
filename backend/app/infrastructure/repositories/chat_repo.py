@@ -6,12 +6,14 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from app.domain.agents.models import Agent
+from app.domain.chat.entities import (ChatMessageEntity, ChatRoomAgentEntity,
+                                      ChatRoomEntity)
+from app.infrastructure.database.models.chat_models import (ChatMessage,
+                                                            ChatRoom,
+                                                            ChatRoomAgent)
 from tortoise import Tortoise
 from tortoise.expressions import Q
-
-from app.domain.agents.models import Agent
-from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
-from app.infrastructure.database.models.chat_models import ChatMessage, ChatRoom, ChatRoomAgent
 
 
 def _map_room_to_entity(room: ChatRoom) -> ChatRoomEntity:

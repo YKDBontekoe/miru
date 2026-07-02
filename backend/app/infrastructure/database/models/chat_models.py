@@ -5,9 +5,8 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from tortoise import fields
-
 from app.infrastructure.database.base import SupabaseModel
+from tortoise import fields
 
 
 class ChatRoom(SupabaseModel):

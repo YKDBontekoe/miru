@@ -6,7 +6,6 @@ import logging
 from typing import TYPE_CHECKING
 
 import openai
-
 from app.core.config import get_settings
 from app.infrastructure.external.openrouter import stream_chat
 
@@ -14,9 +13,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
-    from openai.types.chat import ChatCompletionMessageParam
-
     from app.infrastructure.repositories.agent_repo import AgentRepository
+    from openai.types.chat import ChatCompletionMessageParam
 
 logger = logging.getLogger(__name__)
 

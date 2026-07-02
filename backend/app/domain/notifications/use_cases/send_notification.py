@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 
-from app.domain.notifications.interfaces.notification_client import INotificationClient
+from app.domain.notifications.interfaces.notification_client import \
+    INotificationClient
 
 logger = logging.getLogger(__name__)
 

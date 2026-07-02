@@ -5,23 +5,16 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-
 from app.api.dependencies import get_agent_service
 from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
 from app.domain.agents.models import Capability, Integration
-from app.domain.agents.schemas import (
-    AgentCreate,
-    AgentGenerate,
-    AgentGenerationResponse,
-    AgentResponse,
-    AgentTemplateResponse,
-    AgentUpdate,
-    CapabilityResponse,
-    IntegrationResponse,
-)
+from app.domain.agents.schemas import (AgentCreate, AgentGenerate,
+                                       AgentGenerationResponse, AgentResponse,
+                                       AgentTemplateResponse, AgentUpdate,
+                                       CapabilityResponse, IntegrationResponse)
 from app.domain.agents.service import AgentService  # noqa: TCH001
+from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(tags=["Agents"])
 

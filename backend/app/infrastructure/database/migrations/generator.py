@@ -9,12 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from app.infrastructure.database.migrations.constants import (
-    ALL_MODEL_MODULES,
-    CHECKSUM_FILE,
-    MIGRATIONS_DIR,
-    SEED_SQL,
-    SNAPSHOT_FILE,
-)
+    ALL_MODEL_MODULES, CHECKSUM_FILE, MIGRATIONS_DIR, SEED_SQL, SNAPSHOT_FILE)
 
 if TYPE_CHECKING:
     from tortoise.backends.asyncpg.client import AsyncpgDBClient
@@ -26,7 +21,8 @@ if TYPE_CHECKING:
 
 async def _generate_schema_sql() -> str:
     from tortoise import Tortoise
-    from tortoise.backends.asyncpg.schema_generator import AsyncpgSchemaGenerator
+    from tortoise.backends.asyncpg.schema_generator import \
+        AsyncpgSchemaGenerator
 
     await Tortoise.init(
         db_url="sqlite://:memory:",

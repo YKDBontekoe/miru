@@ -6,17 +6,11 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-import openai
-
-from app.core.config import get_settings
 from app.domain.chat.background_service import ChatBackgroundService
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
-from app.domain.chat.dtos import (
-    ChatMessageResponse,
-    RoomAgentSummaryResponse,
-    RoomResponse,
-    RoomSummaryResponse,
-)
+from app.domain.chat.dtos import (ChatMessageResponse,
+                                  RoomAgentSummaryResponse, RoomResponse,
+                                  RoomSummaryResponse)
 from app.domain.chat.streaming_orchestrator import StreamingOrchestrator
 from app.domain.chat.websocket_broadcaster import ChatWebSocketBroadcaster
 
@@ -24,11 +18,10 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from uuid import UUID
 
-    from openai.types.chat import ChatCompletionMessageParam
-
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
-    from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
+    from app.domain.chat.entities import (ChatMessageEntity,
+                                          ChatRoomAgentEntity, ChatRoomEntity)
     from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
@@ -260,7 +253,8 @@ class ChatService:
         accept_language: str | None = None,
     ) -> None:
         """Process a room message and push all updates via the WebSocket hub."""
-        from app.infrastructure.websocket.manager import chat_hub  # noqa: PLC0415
+        from app.infrastructure.websocket.manager import \
+            chat_hub  # noqa: PLC0415
 
         if not await self.user_in_room(user_id, room_id):
             await chat_hub.broadcast_to_room(
@@ -294,7 +288,8 @@ class ChatService:
         # 4. Retrieve relevant memories via vector similarity for extra context.
         memory_context: str | None = None
         try:
-            from app.infrastructure.external.openrouter import embed  # noqa: PLC0415
+            from app.infrastructure.external.openrouter import \
+                embed  # noqa: PLC0415
 
             query_vector = await embed(user_message)
             memories = await self.memory_repo.match_memories(

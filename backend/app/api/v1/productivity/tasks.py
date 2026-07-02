@@ -6,16 +6,14 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-
 from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser
 from app.domain.productivity.dependencies import get_productivity_use_case
-from app.domain.productivity.schemas import TaskCreate, TaskResponse, TaskUpdate
+from app.domain.productivity.schemas import (TaskCreate, TaskResponse,
+                                             TaskUpdate)
 from app.domain.productivity.use_cases.manage_productivity import (
-    ManageProductivityUseCase,
-    TaskNotFoundError,
-)
+    ManageProductivityUseCase, TaskNotFoundError)
+from fastapi import APIRouter, Depends, Query
 
 logger = logging.getLogger(__name__)
 

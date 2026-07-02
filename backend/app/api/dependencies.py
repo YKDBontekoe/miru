@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends
-
 from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
@@ -15,6 +13,7 @@ from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
 from app.infrastructure.repositories.memory_repo import MemoryRepository
+from fastapi import Depends
 
 # ---------------------------------------------------------------------------
 # Repository factories

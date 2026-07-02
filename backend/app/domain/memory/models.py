@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from tortoise import fields
-
 from app.infrastructure.database.base import SupabaseModel
+from tortoise import fields
 
 
 class MemoryCollection(SupabaseModel):

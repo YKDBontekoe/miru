@@ -6,15 +6,9 @@ import math
 from datetime import UTC, datetime
 from uuid import UUID
 
+from app.domain.agents.models import (Agent, AgentTemplate, Capability,
+                                      Integration, UserAgentAffinity)
 from tortoise.transactions import in_transaction
-
-from app.domain.agents.models import (
-    Agent,
-    AgentTemplate,
-    Capability,
-    Integration,
-    UserAgentAffinity,
-)
 
 
 class AgentRepository:

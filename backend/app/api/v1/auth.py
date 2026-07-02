@@ -4,19 +4,15 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.api.dependencies import get_auth_service
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.auth.schemas import (
-    PasskeyLoginOptionsRequest,
-    PasskeyLoginVerifyRequest,
-    PasskeyPaginatedResponse,
-    PasskeyRecord,
-    PasskeyRegisterOptionsRequest,
-    PasskeyRegisterVerifyRequest,
-)
+from app.domain.auth.schemas import (PasskeyLoginOptionsRequest,
+                                     PasskeyLoginVerifyRequest,
+                                     PasskeyPaginatedResponse, PasskeyRecord,
+                                     PasskeyRegisterOptionsRequest,
+                                     PasskeyRegisterVerifyRequest)
 from app.domain.auth.service import AuthService  # noqa: TCH001
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(tags=["Auth"])
 

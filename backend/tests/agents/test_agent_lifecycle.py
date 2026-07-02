@@ -4,7 +4,6 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from app.domain.agents.models import AgentTemplate, Capability, Integration
 from app.domain.agents.schemas import AgentCreate, AgentUpdate
 from app.domain.agents.service import AgentService

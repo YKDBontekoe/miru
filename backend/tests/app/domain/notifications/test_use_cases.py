@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
-from app.domain.notifications.interfaces.notification_client import INotificationClient
-from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
+from app.domain.notifications.interfaces.notification_client import \
+    INotificationClient
+from app.domain.notifications.use_cases.send_notification import \
+    SendNotificationUseCase
 
 
 class MockNotificationClient(INotificationClient):
