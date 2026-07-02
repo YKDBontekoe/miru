@@ -6,7 +6,6 @@ from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
-from tortoise.exceptions import IntegrityError
 
 from app.domain.memory.models import Memory, MemoryRelationship
 from app.domain.memory.service import MemoryService
@@ -132,7 +131,7 @@ async def test_store_memory_deduplication(mock_embed: AsyncMock) -> None:
     service = MemoryService(repo)
 
     with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task") as mock_create_task:
+         patch("asyncio.create_task"):
         # Mock finding an existing memory
         mock_match.return_value = [Memory(id=uuid4(), content="I love pizza")]
 
@@ -172,32 +171,6 @@ async def test_store_memory_with_relationships(mock_embed: AsyncMock) -> None:
 
 
 
-@pytest.mark.asyncio
-@patch("app.domain.memory.service.embed", new_callable=AsyncMock)
-@patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph", new_callable=AsyncMock)
-async def test_store_memory_with_relationships(mock_graph: AsyncMock, mock_embed: AsyncMock) -> None:
-    mock_embed.return_value = [0.1] * 1536
-    repo = MemoryRepository()
-    service = MemoryService(repo)
-
-    await Memory.create(id=MEMORY_ID_1, content="I love Italian food", embedding=[0.2] * 1536)
-
-    with patch.object(repo, "match_memories", new_callable=AsyncMock) as mock_match, \
-         patch("asyncio.create_task"):
-        mock_match.return_value = []
-
-        memory_id = await service.store_memory(
-            content="I love pizza",
-            user_id=TEST_USER_ID,
-            related_to=[MEMORY_ID_1]
-        )
-
-        assert memory_id is not None
-        rels = await MemoryRelationship.filter(source_id=memory_id).all()
-        assert len(rels) == 1
-        assert rels[0].target_id == MEMORY_ID_1
-
-        await Memory.filter(id=memory_id).delete()
 
 
 @pytest.mark.asyncio
