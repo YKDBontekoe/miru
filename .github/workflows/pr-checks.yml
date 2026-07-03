@@ -233,6 +233,7 @@ jobs:
   pr-backend-deploy:
     name: Deploy and Smoke-test PR Backend
     needs: [pr-backend-build]
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
