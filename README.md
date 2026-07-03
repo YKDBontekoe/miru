@@ -159,7 +159,7 @@ miru/
 │   │   │   ├── chat/            # ChatRoom, ChatMessage, streaming
 │   │   │   ├── memory/          # Memory, graph nodes/edges, embeddings
 │   │   │   ├── notifications/   # Push notification service
-│   │   │   └── productivity/    # Tasks, Notes, Calendar Events (entities, interfaces, use_cases, models, schemas)
+│   │   │   └── productivity/    # Tasks, Notes, Calendar Events (entities, interfaces, use_cases, models, schemas, dependencies.py)
 │   │   ├── api/v1/              # Route handlers per domain
 │   │   └── infrastructure/      # Database, external services, repositories
 │   │       ├── database/        # Supabase client, Tortoise ORM config
@@ -177,7 +177,8 @@ miru/
 │   ├── src/
 │   │   ├── components/          # Reusable UI components
 │   │   ├── core/                # Models, API services, system services
-│   │   ├── features/            # Feature-specific logic
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── utils/               # Helper functions
 │   │   └── store/               # Zustand state management
 │   ├── __tests__/               # Jest test suite
 │   └── package.json

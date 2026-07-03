@@ -77,8 +77,8 @@ The following AI agents actively monitor and modify the Miru codebase. Their act
 
 **Mission:** Continuous code review, enforcing style, finding bugs, and suggesting refactors.
 **Trigger Conditions:**
-- Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch.
-- Retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
+- Automatically invoked when the "PR Checks and Linting" CI workflow completes successfully on a PR branch. Posts "@coderabbitai full review" initially, or "@coderabbitai review" on subsequent passes.
+- Triggered via queued label from `coderabbit-detect-limit` and retries automatically every 30 minutes via a queue processor if rate-limited (label `coderabbit:queued`).
 **Scope:** Reviews all modified files in a PR. Posts actionable comments. When 0 actionable comments are found, it triggers the `ai-approved` label.
 
 ## Project Structure
@@ -120,6 +120,7 @@ backend/
         entities.py  # Pure python domain entities
         interfaces/  # Interface boundaries for dependencies
         use_cases/   # Application logic orchestrating productivity domain
+        dependencies.py # Dependency injection
       agent_tools/
         models.py    # AgentTool, AgentToolLink Tortoise ORM models
         productivity/ # Productivity-specific tool integrations
@@ -158,7 +159,8 @@ frontend/
     core/
       api/                 # API client (axios), domain services
       models.ts            # TypeScript interfaces/types for domain entities
-    features/              # Feature-specific components and logic
+    hooks/                 # Custom React hooks
+    utils/                 # Helper functions
     store/                 # Zustand store definitions (useChatStore, useAuthStore, etc.)
   __tests__/               # Jest tests
   package.json
