@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, Query
 from app.api.dependencies import get_agent_service
 from app.api.errors import raise_api_error
 from app.core.security.auth import CurrentUser  # noqa: TCH001
-from app.domain.agents.models import Capability, Integration
 from app.domain.agents.schemas import (
     AgentCreate,
     AgentGenerate,
@@ -77,9 +76,20 @@ async def list_agents(
 async def list_capabilities(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Capability]:
+) -> list[CapabilityResponse]:
     """List all available capabilities."""
-    return await service.list_capabilities()
+    caps = await service.list_capabilities()
+    return [
+        CapabilityResponse(
+            id=c.id,
+            name=c.name,
+            description=c.description,
+            icon=c.icon,
+            status=c.status,
+            created_at=c.created_at
+        )
+        for c in caps
+    ]
 
 
 @router.get(
@@ -95,9 +105,21 @@ async def list_capabilities(
 async def list_integrations(
     _user_id: CurrentUser,
     service: Annotated[AgentService, Depends(get_agent_service)],
-) -> list[Integration]:
+) -> list[IntegrationResponse]:
     """List all available integrations."""
-    return await service.list_integrations()
+    ints = await service.list_integrations()
+    return [
+        IntegrationResponse(
+            id=i.id,
+            display_name=i.display_name,
+            description=i.description,
+            icon=i.icon,
+            status=i.status,
+            config_schema=i.config_schema,
+            created_at=i.created_at
+        )
+        for i in ints
+    ]
 
 
 @router.get(
