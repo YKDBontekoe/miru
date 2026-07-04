@@ -1,7 +1,6 @@
 """Integration tests for the Memory Service."""
 
 import asyncio
-import os
 from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
@@ -10,13 +9,20 @@ import pytest_asyncio
 from tortoise import Tortoise
 from tortoise.exceptions import IntegrityError
 
+from app.domain.memory.models import (
+    Memory,
+    MemoryCollection,
+    MemoryGraphEdge,
+    MemoryGraphNode,
+    MemoryRelationship,
+)
 from app.domain.memory.service import MemoryService
 from app.infrastructure.repositories.memory_repo import MemoryRepository
-from app.domain.memory.models import Memory, MemoryRelationship, MemoryGraphNode, MemoryGraphEdge, MemoryCollection
 
 # Test variables
 TEST_USER_ID = UUID("11111111-1111-1111-1111-111111111111")
 TEST_AGENT_ID = UUID("22222222-2222-2222-2222-222222222222")
+
 
 @pytest_asyncio.fixture(autouse=True)
 async def initialize_tortoise_pg() -> None:
@@ -44,6 +50,7 @@ async def initialize_tortoise_pg() -> None:
 
     await Tortoise.close_connections()
 
+
 @pytest_asyncio.fixture(autouse=True)
 async def clean_db() -> None:
     """Clean the database before and after each test."""
@@ -65,14 +72,19 @@ async def clean_db() -> None:
     except Exception:
         pass
 
+
 @pytest.fixture
 def memory_service() -> MemoryService:
     repo = MemoryRepository()
     return MemoryService(repo)
 
+
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories",
+    new_callable=AsyncMock,
+)
 async def test_store_memory_inserts_into_db_and_creates_relationships(
     mock_match: AsyncMock, mock_embed: AsyncMock, memory_service: MemoryService
 ) -> None:
@@ -116,13 +128,19 @@ async def test_store_memory_inserts_into_db_and_creates_relationships(
     assert stored.agent_id == TEST_AGENT_ID
 
     # Verify relationship exists
-    rel = await MemoryRelationship.get_or_none(source_id=memory_id, target_id=related_memory.id)
+    rel = await MemoryRelationship.get_or_none(
+        source_id=memory_id, target_id=related_memory.id
+    )
     assert rel is not None
     assert rel.relationship_type == "RELATED_TO"
 
+
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories",
+    new_callable=AsyncMock,
+)
 async def test_store_memory_prevents_duplicates(
     mock_match: AsyncMock, mock_embed: AsyncMock, memory_service: MemoryService
 ) -> None:
@@ -152,9 +170,13 @@ async def test_store_memory_prevents_duplicates(
     count = await Memory.filter(user_id=TEST_USER_ID).count()
     assert count == 1
 
+
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed", new_callable=AsyncMock)
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories", new_callable=AsyncMock)
+@patch(
+    "app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories",
+    new_callable=AsyncMock,
+)
 async def test_retrieve_memories_filters_by_similarity_and_user(
     mock_match: AsyncMock, mock_embed: AsyncMock, memory_service: MemoryService
 ) -> None:
@@ -165,20 +187,25 @@ async def test_retrieve_memories_filters_by_similarity_and_user(
     """
     # Arrange
     # User's memory - close match
-    mem1 = Memory(content="I love ramen", embedding=[0.9] + [0.0] * 1535, user_id=TEST_USER_ID)
+    mem1 = Memory(
+        content="I love ramen", embedding=[0.9] + [0.0] * 1535, user_id=TEST_USER_ID
+    )
     mock_match.return_value = [mem1]
     mock_embed.return_value = [0.9] + [0.0] * 1535
 
     # Act
-    results = await memory_service.retrieve_memories(query="What food do I like?", user_id=TEST_USER_ID)
+    results = await memory_service.retrieve_memories(
+        query="What food do I like?", user_id=TEST_USER_ID
+    )
 
     # Assert
     assert len(results) == 1
     assert results[0].content == "I love ramen"
 
+
 @pytest.mark.asyncio
 async def test_store_memory_with_empty_content_returns_none(
-    memory_service: MemoryService
+    memory_service: MemoryService,
 ) -> None:
     """
     Chaos case: Empty string payload.
@@ -190,6 +217,7 @@ async def test_store_memory_with_empty_content_returns_none(
     count = await Memory.all().count()
     assert count == 0
 
+
 @pytest.mark.asyncio
 async def test_store_memory_database_conflict() -> None:
     """
@@ -197,10 +225,19 @@ async def test_store_memory_database_conflict() -> None:
     Action: Violate a unique_together constraint on a related model.
     Assert: IntegrityError is raised by Tortoise ORM.
     """
-    from tortoise.exceptions import IntegrityError
 
-    node1 = MemoryGraphNode(id=UUID("11111111-1111-1111-1111-111111111111"), name="n1", entity_type="e1", user_id=TEST_USER_ID)
-    node2 = MemoryGraphNode(id=UUID("22222222-2222-2222-2222-222222222222"), name="n2", entity_type="e2", user_id=TEST_USER_ID)
+    node1 = MemoryGraphNode(
+        id=UUID("11111111-1111-1111-1111-111111111111"),
+        name="n1",
+        entity_type="e1",
+        user_id=TEST_USER_ID,
+    )
+    node2 = MemoryGraphNode(
+        id=UUID("22222222-2222-2222-2222-222222222222"),
+        name="n2",
+        entity_type="e2",
+        user_id=TEST_USER_ID,
+    )
     await node1.save()
     await node2.save()
 
@@ -208,5 +245,7 @@ async def test_store_memory_database_conflict() -> None:
     await edge1.save()
 
     with pytest.raises(IntegrityError):
-        edge2 = MemoryGraphEdge(source_node=node1, target_node=node2, relationship="rel")
+        edge2 = MemoryGraphEdge(
+            source_node=node1, target_node=node2, relationship="rel"
+        )
         await edge2.save()
