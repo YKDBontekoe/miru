@@ -86,7 +86,7 @@ async def list_capabilities(
             description=c.description,
             icon=c.icon,
             status=c.status,
-            created_at=c.created_at
+            created_at=c.created_at,
         )
         for c in caps
     ]
@@ -116,7 +116,7 @@ async def list_integrations(
             icon=i.icon,
             status=i.status,
             config_schema=i.config_schema,
-            created_at=i.created_at
+            created_at=i.created_at,
         )
         for i in ints
     ]

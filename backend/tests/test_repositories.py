@@ -62,11 +62,16 @@ class TestAgentRepository:
         user_id = uuid4()
         created = await repo.create_agent(
             user_id=user_id,
-            agent_data={"name": "Test", "personality": "Friendly", "description": None, "goals": []},
+            agent_data={
+                "name": "Test",
+                "personality": "Friendly",
+                "description": None,
+                "goals": [],
+            },
             system_prompt="Hi",
             capabilities=[],
             integrations=[],
-            integration_configs={}
+            integration_configs={},
         )
         assert created.name == "Test"
         assert created.id is not None

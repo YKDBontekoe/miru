@@ -71,6 +71,7 @@ def test_build_agent_response_without_avatar() -> None:
     """Test that agent response is built correctly without an avatar_url field."""
     now = datetime(2025, 1, 1, 12, 0)
     from app.domain.agents.entities import AgentEntity
+
     agent = AgentEntity(
         id=UUID("12345678-1234-5678-1234-567812345678"),
         user_id=UUID("12345678-1234-5678-1234-567812345678"),
@@ -86,7 +87,7 @@ def test_build_agent_response_without_avatar() -> None:
         updated_at=now,
         capabilities=["cap1", "cap2"],
         integrations=["steam"],
-        integration_configs={"steam": {"steam_id": "123"}}
+        integration_configs={"steam": {"steam_id": "123"}},
     )
 
     response = _build_agent_response(agent)

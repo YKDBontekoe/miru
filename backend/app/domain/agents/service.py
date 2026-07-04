@@ -162,7 +162,9 @@ class AgentService:
         fields = data.model_dump(exclude_none=True)
 
         new_capability_ids: list[str] | None = fields.pop("capabilities", None)
-        effective_cap_ids = new_capability_ids if new_capability_ids is not None else agent.capabilities
+        effective_cap_ids = (
+            new_capability_ids if new_capability_ids is not None else agent.capabilities
+        )
 
         new_integration_ids: list[str] | None = fields.pop("integrations", None)
         new_integration_configs: dict | None = fields.pop("integration_configs", None)
@@ -209,7 +211,8 @@ class AgentService:
                 personality=t.personality,
                 goals=t.goals,
                 created_at=t.created_at,
-            ) for t in templates
+            )
+            for t in templates
         ]
 
     _VALID_MOODS = (

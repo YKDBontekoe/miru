@@ -73,8 +73,6 @@ def _extract_marker_flags(message: ChatMessageEntity | None) -> tuple[bool, bool
     return has_task, has_mention
 
 
-
-
 class ChatService:
     def __init__(
         self,
