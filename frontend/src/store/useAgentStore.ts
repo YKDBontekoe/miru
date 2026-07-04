@@ -144,23 +144,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         agents: state.agents.map((a) => (a.id === tempId ? realAgent : a)),
       }));
       return realAgent;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Rollback optimistic update
       set((state) => ({ agents: state.agents.filter((a) => a.id !== tempId) }));
 
-      let userMessage = 'Unable to create persona, please try again.';
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-        if (Array.isArray(detail)) {
-          // Pydantic validation error array
-          userMessage = 'Please fix the highlighted fields.';
-        } else if (typeof detail === 'string') {
-          userMessage = detail;
-        } else if (detail.message) {
-          userMessage = detail.message;
-        }
-      }
-
+      const userMessage = getApiErrorMessage(error, 'Unable to create persona, please try again.');
       throw new Error(userMessage);
     }
   },
@@ -170,11 +158,16 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   updateAgent: async (id, data) => {
-    const updated = await ApiService.updateAgent(id, data);
-    set((state) => ({
-      agents: state.agents.map((a) => (a.id === id ? updated : a)),
-    }));
-    return updated;
+    try {
+      const updated = await ApiService.updateAgent(id, data);
+      set((state) => ({
+        agents: state.agents.map((a) => (a.id === id ? updated : a)),
+      }));
+      return updated;
+    } catch (error: unknown) {
+      const userMessage = getApiErrorMessage(error, 'Failed to update persona.');
+      throw new Error(userMessage);
+    }
   },
 
   deleteAgent: (id) => {

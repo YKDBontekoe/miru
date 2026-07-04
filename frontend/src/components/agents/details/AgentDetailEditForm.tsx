@@ -33,6 +33,7 @@ interface AgentDetailEditFormProps {
   onSave: () => void;
   onClose: () => void;
   onDeleted: (agent: Agent) => Promise<void> | void;
+  errorMsg?: string;
 }
 
 export function AgentDetailEditForm({
@@ -47,6 +48,7 @@ export function AgentDetailEditForm({
   onSave,
   onClose,
   onDeleted,
+  errorMsg,
 }: AgentDetailEditFormProps) {
   const { C } = useTheme();
   const [goalInput, setGoalInput] = useState('');
@@ -65,6 +67,26 @@ export function AgentDetailEditForm({
 
   return (
     <Animated.View entering={FadeIn.duration(200)}>
+      {!!errorMsg && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          style={{
+            backgroundColor: `${C.danger}15`,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: `${C.danger}30`,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <Ionicons name="alert-circle" size={16} color={C.danger} />
+          <AppText style={{ color: C.danger, fontSize: 13, flex: 1 }}>{errorMsg}</AppText>
+        </Animated.View>
+      )}
+
       <AppText className="text-muted text-xs font-bold uppercase tracking-wider mb-1.5 mt-3.5">
         Personality
       </AppText>

@@ -6,6 +6,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { useAgentStore } from '../../store/useAgentStore';
 import { useChatStore } from '../../store/useChatStore';
 import { haptic } from '../../utils/haptics';
+import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '../../components/AppText';
 import { Agent } from '../../core/models';
 import { getAgentColor, getMoodEmoji, MILESTONES } from './agentUtils';
 import { AgentDetailHeader, AgentDetailView, AgentDetailEditForm } from './details';
@@ -37,6 +39,21 @@ export function AgentDetailSheet({
   const [editGoals, setEditGoals] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isStartingChat, setIsStartingChat] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (successVisible) {
+      timeoutId = setTimeout(() => {
+        setSuccessVisible(false);
+        setIsEditing(false);
+      }, 1500);
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [successVisible]);
 
   useEffect(() => {
     if (agent) {
@@ -58,31 +75,48 @@ export function AgentDetailSheet({
 
   const handleSaveEdit = async () => {
     if (!editName.trim() || !editPersonality.trim()) {
-      Alert.alert('Required Fields', 'Name and personality are required.');
+      setErrorMsg('Name and personality are required.');
       return;
     }
-    haptic.light();
-    setIsSaving(true);
-    try {
-      const updated = await updateAgent(agent.id, {
-        name: editName.trim(),
-        personality: editPersonality.trim(),
-        description: editDescription.trim(),
-        goals: editGoals,
-      });
-      if (updated) {
-        onUpdated(updated);
-        setIsEditing(false);
-      }
-    } catch (e: any) {
-      Alert.alert('Update Failed', e.message);
-    } finally {
-      setIsSaving(false);
-    }
+
+    Alert.alert(
+      `Save changes to "${agent.name}"?`,
+      'Are you sure you want to save these changes?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async () => {
+            setErrorMsg('');
+            haptic.light();
+            setIsSaving(true);
+            try {
+              const updated = await updateAgent(agent.id, {
+                name: editName.trim(),
+                personality: editPersonality.trim(),
+                description: editDescription.trim(),
+                goals: editGoals,
+              });
+              if (updated) {
+                onUpdated(updated);
+                haptic.success();
+                setSuccessVisible(true);
+              }
+            } catch (e: any) {
+              setErrorMsg(e.message);
+              haptic.error();
+            } finally {
+              setIsSaving(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const cancelEdit = () => {
     haptic.selection();
+    setErrorMsg('');
     setEditName(agent.name);
     setEditPersonality(agent.personality);
     setEditDescription(agent.description ?? '');
@@ -161,6 +195,7 @@ export function AgentDetailSheet({
                 onSave={handleSaveEdit}
                 onClose={onClose}
                 onDeleted={onDeleted}
+                errorMsg={errorMsg}
               />
             ) : (
               <AgentDetailView
@@ -176,6 +211,21 @@ export function AgentDetailSheet({
             )}
           </ScrollView>
         </Animated.View>
+
+        {successVisible && (
+          <View style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            justifyContent: 'center', alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 1000
+          }}>
+            <View style={{ backgroundColor: C.surface, padding: 20, borderRadius: 16, alignItems: 'center' }}>
+               <Ionicons name="checkmark-circle" size={48} color={C.success} />
+               <AppText style={{ marginTop: 12, fontSize: 18, fontWeight: 'bold', color: C.text }}>Persona updated</AppText>
+            </View>
+          </View>
+        )}
       </View>
     </Modal>
   );
