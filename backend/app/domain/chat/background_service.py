@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 
     from openai.types.chat import ChatCompletionMessageParam
 
+    from app.domain.agents.interfaces.repository import IAgentRepository
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
-    from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class ChatBackgroundService:
 
     def __init__(
         self,
-        agent_repo: AgentRepository,
+        agent_repo: IAgentRepository,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
         chat_repo: Any,

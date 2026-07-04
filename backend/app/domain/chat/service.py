@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import openai
 
 from app.core.config import get_settings
+from app.domain.agents.interfaces.repository import IAgentRepository
 from app.domain.chat.background_service import ChatBackgroundService
 from app.domain.chat.crew_orchestrator import CrewOrchestrator
 from app.domain.chat.dtos import (
@@ -29,7 +30,6 @@ if TYPE_CHECKING:
     from app.domain.agents.models import Agent
     from app.domain.agents.service import AgentService
     from app.domain.chat.entities import ChatMessageEntity, ChatRoomAgentEntity, ChatRoomEntity
-    from app.infrastructure.repositories.agent_repo import AgentRepository
     from app.infrastructure.repositories.chat_repo import ChatRepository
     from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -73,11 +73,13 @@ def _extract_marker_flags(message: ChatMessageEntity | None) -> tuple[bool, bool
     return has_task, has_mention
 
 
+
+
 class ChatService:
     def __init__(
         self,
         chat_repo: ChatRepository,
-        agent_repo: AgentRepository,
+        agent_repo: IAgentRepository,
         memory_repo: MemoryRepository,
         agent_service: AgentService,
         bg_service: ChatBackgroundService | None = None,

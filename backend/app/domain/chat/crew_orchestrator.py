@@ -21,6 +21,8 @@ from app.domain.agent_tools.productivity_tools import (
     UpdateEventTool,
     UpdateTaskTool,
 )
+from app.domain.agents.entities import AgentEntity
+from app.domain.agents.models import Agent
 from app.domain.chat.language import resolve_language
 from app.domain.chat.prompts import (
     HISTORY_PREFIX,
@@ -79,14 +81,25 @@ class CrewOrchestrator:
         )
 
     @staticmethod
-    def get_agent_tools(agent: Agent, user_id: UUID, origin_message_id: UUID | None = None) -> list:
-        """Build the tool list for an agent from its prefetched integrations."""
+    def get_agent_tools(agent: Agent | AgentEntity, user_id: UUID, origin_message_id: UUID | None = None) -> list:
+        """Build the tool list for an agent from its integrations."""
         tools = []
-        for ai in getattr(agent, "agent_integrations", []):
-            if not ai.enabled:
-                continue
-            if ai.integration_id == "steam":
-                steam_id = ai.config.get("steam_id")
+
+        integration_configs: dict[str, dict] = {}
+        integrations: list[str] = []
+        if isinstance(agent, AgentEntity):
+            integration_configs = agent.integration_configs
+            integrations = agent.integrations
+        else:
+            for ai in getattr(agent, "agent_integrations", []):
+                if getattr(ai, "enabled", True):
+                    integrations.append(ai.integration_id)
+                    integration_configs[ai.integration_id] = ai.config
+
+        for int_id in integrations:
+            config = integration_configs.get(int_id, {})
+            if int_id == "steam":
+                steam_id = config.get("steam_id")
                 if steam_id:
                     tools.extend(
                         [
@@ -94,27 +107,27 @@ class CrewOrchestrator:
                             SteamOwnedGamesTool(steam_id=steam_id),
                         ]
                     )
-            elif ai.integration_id == "spotify":
-                access_token = ai.config.get("access_token")
+            elif int_id == "spotify":
+                access_token = config.get("access_token")
                 if access_token:
                     tools.extend(
                         [
                             SpotifyCurrentlyPlayingTool(access_token=access_token),
                             SpotifyRecentlyPlayedTool(access_token=access_token),
+                            SpotifySearchTool(access_token=access_token),
                         ]
                     )
-                    tools.append(SpotifySearchTool(access_token=access_token))
-            elif ai.integration_id == "discord":
-                bot_token = ai.config.get("bot_token")
+            elif int_id == "discord":
+                bot_token = config.get("bot_token")
                 if bot_token:
-                    guild_id = ai.config.get("guild_id")
+                    guild_id = config.get("guild_id")
                     if guild_id:
                         tools.append(
                             DiscordGetServerInfoTool(bot_token=bot_token, guild_id=guild_id)
                         )
 
-                    channel_id = ai.config.get("channel_id")
-                    content_val = ai.config.get("content")
+                    channel_id = config.get("channel_id")
+                    content_val = config.get("content")
                     if channel_id and content_val:
                         tools.append(
                             DiscordSendMessageTool(
@@ -143,7 +156,7 @@ class CrewOrchestrator:
 
     @staticmethod
     def create_crew_agents(
-        db_agents: list[Agent],
+        db_agents: list[Agent] | list[AgentEntity],
         llm: LLM,
         user_id: UUID,
         allow_delegation: bool = False,
@@ -188,7 +201,7 @@ class CrewOrchestrator:
 
     @staticmethod
     async def execute_crew_task(
-        room_agents: list[Agent],
+        room_agents: list[Agent] | list[AgentEntity],
         user_message: str,
         user_id: UUID,
         user_msg_id: UUID | None = None,
