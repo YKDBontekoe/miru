@@ -9,6 +9,11 @@ interface PromptItem {
   pinned: boolean;
 }
 
+export interface ContextActionItem {
+  id: string;
+  text: string;
+}
+
 interface RoomPromptRailProps {
   prompts: PromptItem[];
   isStreaming: boolean;
@@ -19,7 +24,7 @@ interface RoomPromptRailProps {
   onSave: () => void;
   onPromptPress: (text: string) => void;
   onPromptLongPress: (prompt: PromptItem) => void;
-  contextActions?: string[];
+  contextActions?: ContextActionItem[];
   onContextPress?: (value: string) => void;
 }
 
@@ -74,18 +79,18 @@ export const RoomPromptRail = React.memo(function RoomPromptRail({
 
   const keyExtractorPrompt = useCallback((item: PromptItem) => item.id, []);
 
-  const renderContextActionItem: ListRenderItem<string> = useCallback(({ item: value }) => (
+  const renderContextActionItem: ListRenderItem<ContextActionItem> = useCallback(({ item }) => (
     <Pressable
-      onPress={() => onContextPress?.(value)}
+      onPress={() => onContextPress?.(item.text)}
       className="mr-2 rounded-xl px-2.5 py-[7px] bg-[#ECF5F0] border border-[#DDE8E0]"
     >
       <AppText variant="caption" className="text-[#5A7467] font-bold">
-        {value}
+        {item.text}
       </AppText>
     </Pressable>
   ), [onContextPress]);
 
-  const keyExtractorContext = useCallback((item: string) => item, []);
+  const keyExtractorContext = useCallback((item: ContextActionItem) => item.id, []);
 
   return (
     <View className="px-3 pb-2">

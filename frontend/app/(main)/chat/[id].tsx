@@ -551,11 +551,11 @@ export default function ChatRoomScreen() {
     const topTasks = tasks
       .filter((task) => !task.completed)
       .slice(0, 2)
-      .map((task) => `Task: ${task.title}`);
+      .map((task) => ({ id: task.id, text: `Task: ${task.title}` }));
     const topEvents = events
       .filter((event) => new Date(event.end_time).getTime() >= Date.now())
       .slice(0, 1)
-      .map((event) => `Event: ${event.title}`);
+      .map((event) => ({ id: event.id, text: `Event: ${event.title}` }));
     return [...topTasks, ...topEvents];
   }, [events, tasks]);
 
