@@ -76,8 +76,16 @@ def auth_headers(user_id: str | None = None) -> dict[str, str]:
 
 @pytest_asyncio.fixture(autouse=True)
 async def initialize_tortoise() -> AsyncGenerator[None, None]:
+
+    is_integration = "test_memory_service_integration.py" in os.environ.get("PYTEST_CURRENT_TEST", "")
+    is_ci = os.environ.get("GITHUB_ACTIONS") == "true"
+
+    # Only use real postgres if we're in CI and explicitly running the integration tests
+    # Otherwise fallback to in-memory sqlite
+    db_url = "sqlite://:memory:"
+
     config = {
-        "connections": {"default": "sqlite://:memory:"},
+        "connections": {"default": db_url},
         "apps": {
             "models": {
                 "models": [
