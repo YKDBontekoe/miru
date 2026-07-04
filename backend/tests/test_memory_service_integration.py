@@ -92,13 +92,22 @@ async def initialize_tortoise_pg(postgres_container, skip_if_no_postgres) -> Non
     }
 
 
+
     try:
         await Tortoise.init(config=config)
         conn = Tortoise.get_connection("default")
         await conn.execute_script("CREATE EXTENSION IF NOT EXISTS vector;")
         await Tortoise.generate_schemas()
+
+        # Manually ensure the match_memories function exists because generate_schemas might not run sql_functions
+        from app.domain.memory.models import MemoryCollection
+        if hasattr(MemoryCollection.Meta, "sql_functions"):
+            for func in MemoryCollection.Meta.sql_functions:
+                await conn.execute_script(func)
+
     except Exception as e:
         pytest.skip(f"Failed to initialize Tortoise ORM with Postgres container: {e}")
+
 
 
     yield
