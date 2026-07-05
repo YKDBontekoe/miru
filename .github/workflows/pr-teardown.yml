@@ -26,12 +26,25 @@ jobs:
       PR_RG: ${{ vars.PR_RESOURCE_GROUP || 'rg-miru' }}
 
     steps:
+      - name: Check for Azure credentials
+        id: check-creds
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+        run: |
+          if [ -n "$AZURE_CREDENTIALS" ]; then
+            echo "has_creds=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_creds=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Login to Azure
+        if: steps.check-creds.outputs.has_creds == 'true'
         uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Remove PR Label and Deactivate Revisions
+        if: steps.check-creds.outputs.has_creds == 'true'
         run: |
           LABEL="pr-${{ github.event.pull_request.number }}"
           echo "Cleaning up PR revisions for label: $LABEL"
