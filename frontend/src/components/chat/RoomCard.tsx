@@ -54,7 +54,9 @@ export const RoomCard = React.memo(
     const rawUpdatedDate = new Date(lastMessageAt ?? room.updated_at);
     const hasValidUpdatedDate = !Number.isNaN(rawUpdatedDate.getTime());
     const updatedLabel = hasValidUpdatedDate
-      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(rawUpdatedDate)
+      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(
+          rawUpdatedDate
+        )
       : '';
     const memberLabel = () => {
       if (agents.length === 0) return t('chat.no_agents_yet', 'No agents yet');
@@ -97,7 +99,11 @@ export const RoomCard = React.memo(
             </AppText>
             {pinned ? <Ionicons name="bookmark" size={14} color={C.primary} /> : null}
           </View>
-          <AppText variant="caption" className="text-[12px] mb-[3px] text-[#5A7467]" numberOfLines={2}>
+          <AppText
+            variant="caption"
+            className="text-[12px] mb-[3px] text-[#5A7467]"
+            numberOfLines={2}
+          >
             {preview}
           </AppText>
           <View className="flex-row items-center">
