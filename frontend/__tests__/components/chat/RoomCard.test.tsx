@@ -9,12 +9,15 @@ jest.mock('react-i18next', () => ({
       if (key === 'chat.you_and_one') return `You + ${params.name}`;
       if (key === 'chat.you_and_two') return `You, ${params.name1} & ${params.name2}`;
       if (key === 'chat.you_plus_n_agents') return `You + ${params.count} agents`;
+      if (key === 'chat.unread') return 'unread';
+      if (key === 'chat.unpin') return 'Unpin chat';
+      if (key === 'chat.pin') return 'Pin chat';
       return key;
     },
   }),
 }));
 
-const mockRoom = { id: 'r1', name: 'Test Room', created_at: '', updated_at: '' };
+const mockRoom = { id: 'r1', name: 'Test Room', created_at: '', updated_at: '2023-01-01T00:00:00Z' };
 const agent1 = { id: 'a1', name: 'Agent1' } as any;
 const agent2 = { id: 'a2', name: 'Agent2' } as any;
 const agent3 = { id: 'a3', name: 'Agent3' } as any;
@@ -60,5 +63,36 @@ describe('RoomCard', () => {
 
     fireEvent.press(getByText('Test Room'));
     expect(onPressMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('displays unread state properly', () => {
+    const { getByLabelText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={jest.fn()} unread={true} />
+    );
+    expect(getByLabelText('chat.room_accessibility')).toBeTruthy();
+  });
+
+  it('displays pinned state properly', () => {
+    const { getByLabelText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={jest.fn()} pinned={true} onTogglePin={jest.fn()} />
+    );
+    expect(getByLabelText('Unpin chat')).toBeTruthy();
+  });
+
+  it('toggles pin', () => {
+    const onToggleMock = jest.fn();
+    const { getByLabelText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={jest.fn()} onTogglePin={onToggleMock} pinned={false} />
+    );
+    fireEvent.press(getByLabelText('Pin chat'));
+    expect(onToggleMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('formats lastMessageAt and displays preview', () => {
+    const { getByText } = render(
+      <RoomCard room={mockRoom} agents={[]} onPress={jest.fn()} lastMessage="Hello World" lastMessageAt="2023-01-01T00:00:00Z" />
+    );
+    expect(getByText('Hello World')).toBeTruthy();
+    expect(getByText('Jan 1')).toBeTruthy(); // This is locale dependent but typically 'Jan 1' on English CI
   });
 });
