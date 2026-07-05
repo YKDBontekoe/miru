@@ -255,9 +255,9 @@ jobs:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
         run: |
           if [ -n "$AZURE_CREDENTIALS" ]; then
-            echo "has_creds=true" >> $GITHUB_OUTPUT
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_creds=false" >> $GITHUB_OUTPUT
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Login to Azure
