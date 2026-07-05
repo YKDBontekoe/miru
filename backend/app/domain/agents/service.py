@@ -170,7 +170,7 @@ class AgentService:
                     "Create a unique, high-quality persona based on the user's keywords."
                 ),
             },
-            {"role": "user", "content": f"Keywords: {keywords}"},
+            {"role": "user", "content": f"Keywords: <keywords>{keywords}</keywords>"},
         ]
 
         return await structured_completion(
