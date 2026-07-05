@@ -8,8 +8,9 @@ from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
+from tortoise.exceptions import IntegrityError
 
-from app.domain.memory.models import Memory
+from app.domain.memory.models import Memory, MemoryRelationship
 from app.domain.memory.service import MemoryService
 from app.infrastructure.repositories.memory_repo import MemoryRepository
 
@@ -24,15 +25,13 @@ def test_user_id() -> str:
 @pytest_asyncio.fixture(autouse=True)
 async def db_cleanup():
     yield
+    await MemoryRelationship.all().delete()
     await Memory.all().delete()
 
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.insert_memory")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.create_relationship")
-async def test_store_memory_empty(mock_create_rel, mock_insert, mock_match, mock_embed, test_user_id: str) -> None:
+async def test_store_memory_empty(mock_embed, test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -42,64 +41,55 @@ async def test_store_memory_empty(mock_create_rel, mock_insert, mock_match, mock
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.insert_memory")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.create_relationship")
-async def test_store_memory_relationship_exception(mock_create_rel, mock_insert, mock_match, mock_embed, test_user_id: str) -> None:
+async def test_store_memory_relationship_exception(mock_match, mock_embed, test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
     mock_embed.return_value = [0.1] * 1536
     mock_match.return_value = [] # No duplicate
 
-    mem_id = uuid4()
-    mock_insert.return_value = Memory(id=mem_id, content="fact", embedding=[0.1]*1536)
+    # We patch relationship create to simulate a DB constraint failure when saving a relationship
+    with patch("app.infrastructure.repositories.memory_repo.MemoryRelationship.create", side_effect=IntegrityError("DB constraint failed")):
+        res = await service.store_memory(
+            content="This is a test fact.",
+            user_id=test_user_id,
+            related_to=[uuid4()]
+        )
 
-    mock_create_rel.side_effect = Exception("DB constraint failed")
-
-    res = await service.store_memory(
-        content="This is a test fact.",
-        user_id=test_user_id,
-        related_to=[uuid4()]
-    )
-
-    assert res == mem_id
+    assert res is not None
+    # Verify memory was still stored despite relationship failure
+    db_mem = await Memory.get(id=res)
+    assert db_mem.content == "This is a test fact."
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.insert_memory")
 @patch("app.domain.memory.graph_service.GraphExtractionService.process_and_store_graph", side_effect=Exception("Failed graph extraction"))
-async def test_store_memory_graph_exception(mock_graph, mock_insert, mock_match, mock_embed, test_user_id: str) -> None:
+async def test_store_memory_graph_exception(mock_graph, mock_match, mock_embed, test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
     mock_embed.return_value = [0.1] * 1536
     mock_match.return_value = [] # No duplicate
-
-    mem_id = uuid4()
-    mock_insert.return_value = Memory(id=mem_id, content="fact", embedding=[0.1]*1536)
 
     res = await service.store_memory(
         content="This is a test fact.",
         user_id=test_user_id
     )
 
-    assert res == mem_id
+    assert res is not None
+    db_mem = await Memory.get(id=res)
+    assert db_mem.content == "This is a test fact."
 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.insert_memory")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.create_relationship")
-async def test_store_memory_deduplication(mock_create_rel, mock_insert, mock_match, mock_embed, test_user_id: str) -> None:
+async def test_store_memory_deduplication(mock_match, mock_embed, test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
     mock_embed.return_value = [0.1] * 1536
     mock_match.return_value = [] # No duplicate
-
-    mem_id = uuid4()
-    mock_insert.return_value = Memory(id=mem_id, content="fact", embedding=[0.1]*1536)
 
     res = await service.store_memory(
         content="This is a test fact.",
@@ -108,16 +98,10 @@ async def test_store_memory_deduplication(mock_create_rel, mock_insert, mock_mat
     )
 
     assert res is not None
+    db_mem = await Memory.get(id=res)
 
-    # Second time, mock match_memories to return a duplicate
-    mock_match.return_value = [
-        Memory(
-            id=res,
-            content="This is a test fact.",
-            embedding=[0.1]*1536,
-            user_id=test_user_id
-        )
-    ]
+    # Second time, mock match_memories to return a duplicate (since we mock pgvector function)
+    mock_match.return_value = [db_mem]
 
     dup_mem_id = await service.store_memory(
         content="This is a test fact.",
@@ -127,24 +111,15 @@ async def test_store_memory_deduplication(mock_create_rel, mock_insert, mock_mat
     assert dup_mem_id is None
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.list_all_memories")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.get_relationships_subgraph")
-async def test_get_memory_graph(mock_get_rel, mock_list_memories, test_user_id: str) -> None:
+async def test_get_memory_graph(test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
     user_uuid = UUID(test_user_id)
 
-    mem_id_1 = uuid4()
-    mem_id_2 = uuid4()
+    memory_1 = await repo.insert_memory(Memory(content="A", embedding=[0.0]*1536, user_id=user_uuid))
+    memory_2 = await repo.insert_memory(Memory(content="B", embedding=[0.0]*1536, user_id=user_uuid))
 
-    mock_list_memories.return_value = [
-        Memory(id=mem_id_1, content="A", embedding=[0.0]*1536, user_id=user_uuid),
-        Memory(id=mem_id_2, content="B", embedding=[0.0]*1536, user_id=user_uuid)
-    ]
-    mock_get_rel.return_value = [
-        # Normally returns MemoryRelationship
-        AsyncMock(source_id=mem_id_1, target_id=mem_id_2)
-    ]
+    await repo.create_relationship(memory_1.id, memory_2.id)
 
     graph = await service.get_memory_graph(user_uuid)
 
@@ -152,13 +127,10 @@ async def test_get_memory_graph(mock_get_rel, mock_list_memories, test_user_id: 
     assert len(graph["edges"]) == 1
 
 @pytest.mark.asyncio
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.list_all_memories")
-async def test_get_memory_graph_empty(mock_list_memories, test_user_id: str) -> None:
+async def test_get_memory_graph_empty(test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
     user_uuid = UUID(test_user_id)
-
-    mock_list_memories.return_value = []
 
     graph = await service.get_memory_graph(user_uuid)
 
@@ -174,9 +146,8 @@ async def test_retrieve_memories(mock_match, mock_embed, test_user_id: str) -> N
     user_uuid = UUID(test_user_id)
 
     mock_embed.return_value = [0.1]*1536
-    mock_match.return_value = [
-        Memory(content="Apples are red.", embedding=[0.1]*1536, user_id=user_uuid)
-    ]
+    db_mem = await repo.insert_memory(Memory(content="Apples are red.", embedding=[0.1]*1536, user_id=user_uuid))
+    mock_match.return_value = [db_mem]
 
     results = await service.retrieve_memories("red fruit", user_id=test_user_id)
     assert len(results) == 1
@@ -186,17 +157,13 @@ async def test_retrieve_memories(mock_match, mock_embed, test_user_id: str) -> N
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
-@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.insert_memory")
 @patch("app.domain.memory.service.logger")
-async def test_store_memory_graph_unhandled_exception(mock_logger, mock_insert, mock_match, mock_embed, test_user_id: str) -> None:
+async def test_store_memory_graph_unhandled_exception(mock_logger, mock_match, mock_embed, test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
     mock_embed.return_value = [0.1] * 1536
     mock_match.return_value = [] # No duplicate
-
-    mem_id = uuid4()
-    mock_insert.return_value = Memory(id=mem_id, content="fact", embedding=[0.1]*1536)
 
     # We can mock GraphExtractionService.process_and_store_graph.
     # To trigger the except Exception block on line 80, we need something inside the try block to throw.
@@ -213,8 +180,7 @@ async def test_store_memory_graph_unhandled_exception(mock_logger, mock_insert, 
 @pytest.mark.asyncio
 @patch("app.domain.memory.service.embed")
 @patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
-@patch("app.domain.memory.service.logger")
-async def test_chaos_match_memories_error(mock_logger, mock_match, mock_embed, test_user_id: str) -> None:
+async def test_chaos_match_memories_error(mock_match, mock_embed, test_user_id: str) -> None:
     repo = MemoryRepository()
     service = MemoryService(repo)
 
@@ -223,3 +189,17 @@ async def test_chaos_match_memories_error(mock_logger, mock_match, mock_embed, t
 
     with pytest.raises(Exception, match="Database is down"):
         await service.retrieve_memories("test", user_id=test_user_id)
+
+@pytest.mark.asyncio
+@patch("app.domain.memory.service.embed")
+@patch("app.infrastructure.repositories.memory_repo.MemoryRepository.match_memories")
+async def test_chaos_db_conflict(mock_match, mock_embed, test_user_id: str) -> None:
+    repo = MemoryRepository()
+    service = MemoryService(repo)
+
+    mock_embed.return_value = [0.1] * 1536
+    mock_match.return_value = []
+
+    with patch("app.infrastructure.repositories.memory_repo.Memory.save", side_effect=IntegrityError("Conflict!")):
+        with pytest.raises(IntegrityError):
+            await service.store_memory("will fail", user_id=test_user_id)
