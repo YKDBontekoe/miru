@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from tortoise.exceptions import IntegrityError
+
+if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_auth_repo
 from app.domain.auth.entities import Passkey as DomainPasskey
@@ -79,8 +82,10 @@ class TortoiseAuthRepository(AuthRepositoryProtocol):
 
 @pytest.fixture(autouse=True)
 def override_auth_repo(client: TestClient) -> AsyncGenerator[None, None]:
-    from app.infrastructure.database.supabase import get_supabase
     from unittest.mock import MagicMock
+
+    from app.infrastructure.database.supabase import get_supabase
+
     app.dependency_overrides[get_auth_repo] = lambda: TortoiseAuthRepository()
     app.dependency_overrides[get_supabase] = lambda: MagicMock()
     yield
@@ -220,6 +225,7 @@ def test_login_options_network_timeout(client: TestClient, authed_headers: dict[
 
     with pytest.MonkeyPatch.context() as m:
         from app.domain.auth.service import AuthService
+
         m.setattr(AuthService, "list_passkeys", mock_timeout)
 
         # Test client blocks until completion, raising the underlying error
