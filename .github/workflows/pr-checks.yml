@@ -254,7 +254,7 @@ jobs:
         env:
           AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
         run: |
-          if [ -n "$AZURE_CREDS" ]; then
+          if [ -n "$(echo "$AZURE_CREDS" | tr -d '\n ')" ]; then
             echo "has_creds=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_creds=false" >> "$GITHUB_OUTPUT"
