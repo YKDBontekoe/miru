@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
 import { theme } from '../../core/theme';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
@@ -27,13 +28,21 @@ interface Props {
  * Component to display the generated plan for today.
  */
 export function ProductivityTodayPlan({ todayPlan, onClearPlan }: Props) {
+  const { t } = useTranslation();
+
   if (!todayPlan) return null;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <AppText style={styles.title}>Today plan</AppText>
-        <Pressable onPress={onClearPlan}>
+        <AppText style={styles.title}>
+          {t('productivity.today_plan', { defaultValue: 'Today plan' })}
+        </AppText>
+        <Pressable
+          onPress={onClearPlan}
+          accessibilityRole="button"
+          accessibilityLabel="Clear today's plan"
+        >
           <Ionicons name="close" size={16} color={T.onSurface.mutedLight} />
         </Pressable>
       </View>

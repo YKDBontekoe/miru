@@ -3,7 +3,8 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { theme } from '@/core/theme';
+import { ProductivityTab } from '@/core/models';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -20,10 +21,8 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
-
 interface Props {
-  activeTab: Tab;
+  activeTab: ProductivityTab;
   searchQuery: string;
   onShowCreateNote: () => void;
   onShowCreateTask: () => void;
@@ -40,41 +39,48 @@ export function ProductivityEmptyState({
 }: Props) {
   const { t } = useTranslation();
 
+  const contentMap = {
+    notes: {
+      icon: 'document-text' as const,
+      title: t('productivity.no_notes') || 'No Notes',
+      subtitle:
+        t('productivity.capture_thoughts') ||
+        'Capture your thoughts and track what needs to get done.',
+    },
+    tasks: {
+      icon: 'checkbox' as const,
+      title: t('productivity.no_tasks') || 'No Tasks',
+      subtitle:
+        t('productivity.capture_thoughts') ||
+        'Capture your thoughts and track what needs to get done.',
+    },
+    today: {
+      icon: 'sunny-outline' as const,
+      title: t('productivity.nothing_urgent_today') || 'Nothing urgent today',
+      subtitle: t('productivity.today_empty_detail') || 'Enjoy your day!',
+    },
+    all: {
+      icon: 'planet' as const,
+      title: t('productivity.workspace_clear') || 'Your workspace is clear',
+      subtitle:
+        t('productivity.capture_thoughts') ||
+        'Capture your thoughts and track what needs to get done.',
+    },
+  };
+  const activeContent = contentMap[activeTab] || contentMap.all;
+
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
-        <Ionicons
-          name={
-            activeTab === 'notes'
-              ? 'document-text'
-              : activeTab === 'tasks'
-                ? 'checkbox'
-                : activeTab === 'today'
-                  ? 'sunny-outline'
-                  : 'planet'
-          }
-          size={42}
-          color={T.primary.DEFAULT}
-        />
+        <Ionicons name={activeContent.icon} size={42} color={T.primary.DEFAULT} />
       </View>
       <AppText variant="h3" style={styles.emptyTitle}>
-        {searchQuery
-          ? t('productivity.no_matches') || 'No matches found'
-          : activeTab === 'notes'
-            ? t('productivity.no_notes') || 'No Notes'
-            : activeTab === 'tasks'
-              ? t('productivity.no_tasks') || 'No Tasks'
-              : activeTab === 'today'
-                ? t('productivity.nothing_urgent_today') || 'Nothing urgent today'
-                : t('productivity.workspace_clear') || 'Your workspace is clear'}
+        {searchQuery ? t('productivity.no_matches') || 'No matches found' : activeContent.title}
       </AppText>
       <AppText style={styles.emptySubtitle}>
         {searchQuery
           ? t('productivity.try_adjust_search') || 'Try adjusting your search terms.'
-          : activeTab === 'today'
-            ? t('productivity.today_empty_detail') || 'Enjoy your day!'
-            : t('productivity.capture_thoughts') ||
-              'Capture your thoughts and track what needs to get done.'}
+          : activeContent.subtitle}
       </AppText>
 
       {!searchQuery && (

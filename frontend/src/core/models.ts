@@ -67,6 +67,8 @@ export interface Task {
   updated_at?: string;
 }
 
+export type ProductivityTab = 'today' | 'all' | 'notes' | 'tasks';
+
 export interface CalendarEvent {
   id: string;
   title: string;

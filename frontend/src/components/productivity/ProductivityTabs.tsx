@@ -2,7 +2,9 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '../AppText';
-import { theme } from '../../core/theme';
+import { theme } from '@/core/theme';
+import { ProductivityTab } from '@/core/models';
+
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
 const T = {
@@ -17,11 +19,9 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
-
 interface Props {
-  activeTab: Tab;
-  setActiveTab: (tab: Tab) => void;
+  activeTab: ProductivityTab;
+  setActiveTab: (tab: ProductivityTab) => void;
 }
 
 /**
@@ -36,6 +36,8 @@ export function ProductivityTabs({ activeTab, setActiveTab }: Props) {
         <Pressable
           key={tab}
           onPress={() => setActiveTab(tab)}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === tab }}
           style={({ pressed }) => [
             styles.tabButton,
             activeTab === tab && styles.tabButtonActive,

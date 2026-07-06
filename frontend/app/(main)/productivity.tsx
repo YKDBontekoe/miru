@@ -14,7 +14,7 @@ import { ProductivityTabs } from '../../src/components/productivity/Productivity
 import { ProductivityEmptyState } from '../../src/components/productivity/ProductivityEmptyState';
 import { ProductivityTodayPlan } from '../../src/components/productivity/ProductivityTodayPlan';
 import { theme } from '../../src/core/theme';
-import { CalendarEvent, Note, Task } from '../../src/core/models';
+import { CalendarEvent, Note, ProductivityTab, Task } from '../../src/core/models';
 import { useProductivityStore } from '../../src/store/useProductivityStore';
 import { DESIGN_TOKENS } from '@/core/design/tokens';
 
@@ -34,7 +34,6 @@ const T = {
 const S = theme.spacing;
 const R = theme.borderRadius;
 
-type Tab = 'today' | 'all' | 'notes' | 'tasks';
 type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
 
 type RenderItemData = {
@@ -51,7 +50,7 @@ export default function ProductivityScreen() {
   const params = useLocalSearchParams() as Record<string, string | string[] | undefined>;
   const openCreateTask = params.openCreateTask;
   const openCreateNote = params.openCreateNote;
-  const [activeTab, setActiveTab] = useState<Tab>('today');
+  const [activeTab, setActiveTab] = useState<ProductivityTab>('today');
   const [taskPriority, setTaskPriority] = useState<TaskPriority>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateNote, setShowCreateNote] = useState(false);
@@ -393,7 +392,10 @@ export default function ProductivityScreen() {
         >
           {(
             [
-              { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
+              {
+                key: 'all',
+                label: t('productivity.priority.all', { count: taskPriorityCounts.all }),
+              },
               {
                 key: 'overdue',
                 label: t('productivity.priority.overdue', { count: taskPriorityCounts.overdue }),
