@@ -388,7 +388,7 @@ jobs:
             - Log errors with context; use `logger.exception()` for unexpected errors (Python).
             - Backend domain packages live under `backend/app/domain/<domain>/`; route handlers under `backend/app/api/v1/`.
             - Frontend pages live under `frontend/app/` (Expo Router); state management uses Zustand (`frontend/src/store/`).
-            - Mock all external services (Supabase, OpenRouter, Neo4j) in tests — never call real APIs.
+            - Mock all external services (Supabase, OpenRouter) in tests — never call real APIs.
 
             ## Requirements
             1. Analyse the root cause thoroughly before making any changes.
