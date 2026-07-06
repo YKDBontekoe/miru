@@ -217,8 +217,8 @@ async def test_delete_passkey_db_conflict(
             client.delete(f"/api/v1/auth/passkey/{passkey_id}", headers=authed_headers)
 
 
-def test_login_options_network_timeout(client: TestClient, authed_headers: dict[str, str]) -> None:
-    """Chaos: Simulate a network/service timeout when fetching options."""
+def test_list_passkeys_network_timeout(client: TestClient, authed_headers: dict[str, str]) -> None:
+    """Chaos: Simulate a network/service timeout when fetching the passkey list."""
 
     async def mock_timeout(*args: object, **kwargs: object) -> dict[str, str]:
         raise TimeoutError("Simulated Timeout")
