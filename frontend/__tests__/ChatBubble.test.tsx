@@ -88,41 +88,32 @@ describe('ChatBubble', () => {
 
   it('renders user message with timestamp in light mode', () => {
     (useColorScheme as jest.Mock).mockReturnValue({ colorScheme: 'light' });
-    const { getByText } = render(
-      <ChatBubble text="Hello" isUser={true} timestamp="2024-01-01T12:00:00Z" />
-    );
+    const { getByText } = render(<ChatBubble text="Hello" isUser={true} timestamp="2024-01-01T12:00:00Z" />);
     expect(getByText('Hello')).toBeTruthy();
   });
 
   it('renders user message with timestamp in dark mode', () => {
     (useColorScheme as jest.Mock).mockReturnValue({ colorScheme: 'dark' });
-    const { getByText } = render(
-      <ChatBubble text="Hello" isUser={true} timestamp="2024-01-01T12:00:00Z" />
-    );
+    const { getByText } = render(<ChatBubble text="Hello" isUser={true} timestamp="2024-01-01T12:00:00Z" />);
     expect(getByText('Hello')).toBeTruthy();
   });
 
   it('renders agent message with timestamp in light mode', () => {
     (useColorScheme as jest.Mock).mockReturnValue({ colorScheme: 'light' });
-    const { getByText } = render(
-      <ChatBubble text="Hello Agent" isUser={false} timestamp="2024-01-01T12:00:00Z" />
-    );
+    const { getByText } = render(<ChatBubble text="Hello Agent" isUser={false} timestamp="2024-01-01T12:00:00Z" />);
     expect(getByText('Hello Agent')).toBeTruthy();
   });
 
   it('renders agent message with timestamp in dark mode', () => {
     (useColorScheme as jest.Mock).mockReturnValue({ colorScheme: 'dark' });
-    const { getByText } = render(
-      <ChatBubble text="Hello Agent" isUser={false} timestamp="2024-01-01T12:00:00Z" />
-    );
+    const { getByText } = render(<ChatBubble text="Hello Agent" isUser={false} timestamp="2024-01-01T12:00:00Z" />);
     expect(getByText('Hello Agent')).toBeTruthy();
   });
 
   it('renders error agent message in dark mode', () => {
     (useColorScheme as jest.Mock).mockReturnValue({ colorScheme: 'dark' });
-    const { getByText } = render(
-      <ChatBubble text="Error Agent" isUser={false} status={MessageStatus.error} />
-    );
+    const { getByText } = render(<ChatBubble text="Error Agent" isUser={false} status={MessageStatus.error} />);
     expect(getByText('Error Agent')).toBeTruthy();
   });
+
 });

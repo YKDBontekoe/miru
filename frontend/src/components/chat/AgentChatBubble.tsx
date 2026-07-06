@@ -83,10 +83,17 @@ export const AgentChatBubble = ({
 
         <View style={styles.content}>
           {agentName && (
-            <AppText style={[styles.agentName, { color: accentColor }]}>{agentName}</AppText>
+            <AppText style={[styles.agentName, { color: accentColor }]}>
+              {agentName}
+            </AppText>
           )}
 
-          <View style={[styles.bubble, isFailed ? errorBubbleStyle : agentBubbleStyle]}>
+          <View
+            style={[
+              styles.bubble,
+              isFailed ? errorBubbleStyle : agentBubbleStyle,
+            ]}
+          >
             {text === '' && isStreaming ? (
               <TypingIndicator dotColor={accentColor} />
             ) : (
@@ -98,7 +105,9 @@ export const AgentChatBubble = ({
           {isFailed && (
             <View style={styles.errorRow}>
               <Ionicons name="alert-circle-outline" size={13} color={theme.colors.status.error} />
-              <AppText style={[styles.errorText, { color: theme.colors.status.error }]}>
+              <AppText
+                style={[styles.errorText, { color: theme.colors.status.error }]}
+              >
                 {t('chat.failed_to_send')}
               </AppText>
               {onRetry && <ChatBubbleRetryButton onRetry={onRetry} />}

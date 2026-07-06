@@ -34,23 +34,17 @@ describe('RoomCard', () => {
   });
 
   it('displays 1 agent label', () => {
-    const { getByText } = render(
-      <RoomCard room={mockRoom} agents={[agent1]} onPress={jest.fn()} />
-    );
+    const { getByText } = render(<RoomCard room={mockRoom} agents={[agent1]} onPress={jest.fn()} />);
     expect(getByText('You + Agent1')).toBeTruthy();
   });
 
   it('displays 2 agents label', () => {
-    const { getByText } = render(
-      <RoomCard room={mockRoom} agents={[agent1, agent2]} onPress={jest.fn()} />
-    );
+    const { getByText } = render(<RoomCard room={mockRoom} agents={[agent1, agent2]} onPress={jest.fn()} />);
     expect(getByText('You, Agent1 & Agent2')).toBeTruthy();
   });
 
   it('displays 3+ agents label', () => {
-    const { getByText } = render(
-      <RoomCard room={mockRoom} agents={[agent1, agent2, agent3]} onPress={jest.fn()} />
-    );
+    const { getByText } = render(<RoomCard room={mockRoom} agents={[agent1, agent2, agent3]} onPress={jest.fn()} />);
     expect(getByText('You + 3 agents')).toBeTruthy();
   });
 

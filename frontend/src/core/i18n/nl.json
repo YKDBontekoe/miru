@@ -282,7 +282,8 @@
       "work": "Werk",
       "planning": "Planning",
       "creative": "Creatief"
-    },
+    }
+    ,
     "templatesComingSoon": "Templates komen binnenkort",
     "templatesComingSoonDesc": "Vooraf gebouwde persona's verschijnen hier.",
     "noTemplatesInCategory": "Geen templates in deze categorie",

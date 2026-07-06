@@ -18,15 +18,7 @@ import { haptic } from '@/utils/haptics';
 import { TONES, getTonePrefix } from '../agentUtils';
 
 const GoalBadge = React.memo(
-  ({
-    goal,
-    index,
-    onRemove,
-  }: {
-    goal: string;
-    index: number;
-    onRemove: (index: number) => void;
-  }) => (
+  ({ goal, index, onRemove }: { goal: string; index: number; onRemove: (index: number) => void }) => (
     <ScalePressable
       onPress={() => onRemove(index)}
       className="flex-row items-center gap-1.5 rounded-full px-2.5 py-1.5 border bg-primary/10 border-primary/25"
@@ -83,12 +75,9 @@ export function CreateAgentForm({
     }
   };
 
-  const removeGoal = useCallback(
-    (idx: number) => {
-      setGoals((gs) => gs.filter((_, gIdx) => gIdx !== idx));
-    },
-    [setGoals]
-  );
+  const removeGoal = useCallback((idx: number) => {
+    setGoals((gs) => gs.filter((_, gIdx) => gIdx !== idx));
+  }, [setGoals]);
 
   const handleNameChange = (val: string) => setName(val.trimStart());
   const handlePersonalityChange = (val: string) => setPersonality(val.trimStart());
@@ -266,7 +255,12 @@ export function CreateAgentForm({
       {goals.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
           {goals.map((g, i) => (
-            <GoalBadge key={i} goal={g} index={i} onRemove={removeGoal} />
+            <GoalBadge
+              key={i}
+              goal={g}
+              index={i}
+              onRemove={removeGoal}
+            />
           ))}
         </View>
       )}

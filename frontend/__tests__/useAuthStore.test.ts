@@ -21,9 +21,7 @@ describe('useAuthStore', () => {
     jest.clearAllMocks();
     (supabase.auth.signOut as jest.Mock).mockResolvedValue({ error: null });
     useAuthStore.setState({ user: null, session: null, isLoading: true });
-    useMemoryStore.setState({
-      memories: [{ id: '1', content: 'test', created_at: '', metadata: {} }],
-    });
+    useMemoryStore.setState({ memories: [{ id: '1', content: 'test', created_at: '', metadata: {} }] });
   });
 
   it('initializes with null user and loading true', () => {

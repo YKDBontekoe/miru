@@ -18,14 +18,7 @@ import {
 } from '@/components/home/HomeDashboardParts';
 import { HomeNewChatModal } from '@/components/home';
 import { HOME_COLORS } from '@/components/home/homeTheme';
-import {
-  formatDate,
-  formatTimeRange,
-  getFirstName,
-  getGreeting,
-  getInitials,
-  isSameDay,
-} from '@/components/home/homeUtils';
+import { formatDate, formatTimeRange, getFirstName, getGreeting, getInitials, isSameDay } from '@/components/home/homeUtils';
 import { useAgentStore } from '../../src/store/useAgentStore';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { useChatStore } from '../../src/store/useChatStore';
@@ -121,11 +114,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={HOME_COLORS.primary}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={HOME_COLORS.primary} />
         }
         contentContainerStyle={{
           paddingBottom: 48 + (Platform.OS === 'ios' ? 32 : 16) + 70,
@@ -149,9 +138,7 @@ export default function HomeScreen() {
               actionLabel={t('home.actions.see_all')}
               onAction={() => router.push('/(main)/productivity')}
             />
-            <View
-              style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}
-            >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
               <HomeActionTile
                 icon="chatbubble-ellipses"
                 label={t('home.actions.new_chat')}
@@ -202,10 +189,7 @@ export default function HomeScreen() {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
-                  {t('home.focus.completed', {
-                    count: completedCount,
-                    defaultValue: '{{count}} completed',
-                  })}
+                  {t('home.focus.completed', { count: completedCount, defaultValue: '{{count}} completed' })}
                 </AppText>
                 <AppText variant="caption" style={{ color: HOME_COLORS.muted }}>
                   {t('home.focus.remaining', {
@@ -237,9 +221,7 @@ export default function HomeScreen() {
             ) : (
               sortedPendingTasks
                 .slice(0, 4)
-                .map((task) => (
-                  <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />
-                ))
+                .map((task) => <HomeTaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} />)
             )}
           </HomeSurfaceCard>
 
@@ -260,10 +242,7 @@ export default function HomeScreen() {
                 }}
               >
                 <Ionicons name="sunny" size={18} color={HOME_COLORS.accent} />
-                <AppText
-                  variant="bodySm"
-                  style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}
-                >
+                <AppText variant="bodySm" style={{ marginLeft: 8, color: '#845127', fontWeight: '600' }}>
                   {t('home.events.none', { defaultValue: 'No upcoming events' })}
                 </AppText>
               </View>
@@ -278,11 +257,7 @@ export default function HomeScreen() {
                     marginBottom: 8,
                   }}
                 >
-                  <AppText
-                    variant="bodySm"
-                    style={{ color: HOME_COLORS.text, fontWeight: '700' }}
-                    numberOfLines={1}
-                  >
+                  <AppText variant="bodySm" style={{ color: HOME_COLORS.text, fontWeight: '700' }} numberOfLines={1}>
                     {event.title}
                   </AppText>
                   <AppText variant="caption" style={{ color: HOME_COLORS.muted, marginTop: 3 }}>
@@ -319,16 +294,16 @@ export default function HomeScreen() {
                 actionLabel={t('home.actions.manage')}
                 onAction={() => router.push('/(main)/agents')}
               />
-              <View
-                style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}
-              >
-                {agents.slice(0, 4).map((agent) => (
-                  <HomeAgentBadge
-                    key={agent.id}
-                    agent={agent}
-                    onPress={() => router.push('/(main)/agents')}
-                  />
-                ))}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                {agents
+                  .slice(0, 4)
+                  .map((agent) => (
+                    <HomeAgentBadge
+                      key={agent.id}
+                      agent={agent}
+                      onPress={() => router.push('/(main)/agents')}
+                    />
+                  ))}
               </View>
             </HomeSurfaceCard>
           ) : null}
@@ -349,20 +324,12 @@ export default function HomeScreen() {
                 >
                   <Ionicons name="sparkles" size={30} color={HOME_COLORS.primary} />
                 </View>
-                <AppText
-                  variant="h2"
-                  style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}
-                >
+                <AppText variant="h2" style={{ color: HOME_COLORS.text, marginBottom: 8, textAlign: 'center' }}>
                   {t('home.empty.title')}
                 </AppText>
                 <AppText
                   variant="bodySm"
-                  style={{
-                    color: HOME_COLORS.muted,
-                    textAlign: 'center',
-                    marginBottom: 16,
-                    lineHeight: 20,
-                  }}
+                  style={{ color: HOME_COLORS.muted, textAlign: 'center', marginBottom: 16, lineHeight: 20 }}
                 >
                   {t('home.empty.desc')}
                 </AppText>

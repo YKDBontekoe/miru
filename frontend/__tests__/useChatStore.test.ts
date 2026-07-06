@@ -258,21 +258,13 @@ it('can create a room', async () => {
 });
 
 it('can delete a room and rollback state', async () => {
-  const mockRoom = {
-    id: 'r1',
-    name: 'New Room',
-    created_at: '2023-01-01',
-    updated_at: '2023-01-01',
-  };
+  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01', updated_at: '2023-01-01' };
   (ApiService.deleteRoom as jest.Mock).mockResolvedValue(undefined);
 
   useChatStore.setState({
     rooms: [mockRoom],
-    joinedRooms: { r1: true, r2: true },
-    agentActivity: {
-      r1: { room_id: 'r1', agent_names: ['Agent'], activity: 'thinking', detail: '' },
-      r2: null,
-    },
+    joinedRooms: { 'r1': true, 'r2': true },
+    agentActivity: { 'r1': { room_id: 'r1', agent_names: ['Agent'], activity: 'thinking', detail: '' }, 'r2': null },
   });
 
   const { result } = renderHook(() => useChatStore());
@@ -290,20 +282,13 @@ it('can delete a room and rollback state', async () => {
 });
 
 it('deletes a room even if API throws', async () => {
-  const mockRoom = {
-    id: 'r1',
-    name: 'New Room',
-    created_at: '2023-01-01',
-    updated_at: '2023-01-01',
-  };
+  const mockRoom = { id: 'r1', name: 'New Room', created_at: '2023-01-01', updated_at: '2023-01-01' };
   (ApiService.deleteRoom as jest.Mock).mockRejectedValue(new Error('API error'));
 
   useChatStore.setState({
     rooms: [mockRoom],
-    joinedRooms: { r1: true },
-    agentActivity: {
-      r1: { room_id: 'r1', agent_names: ['Agent'], activity: 'thinking', detail: '' },
-    },
+    joinedRooms: { 'r1': true },
+    agentActivity: { 'r1': { room_id: 'r1', agent_names: ['Agent'], activity: 'thinking', detail: '' } },
   });
 
   const { result } = renderHook(() => useChatStore());

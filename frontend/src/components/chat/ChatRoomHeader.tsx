@@ -84,7 +84,9 @@ export const ChatRoomHeader = ({
             );
           })}
           {roomAgents.length > 3 && (
-            <View className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center -ms-[9px] z-0 bg-[#ECF5F0]">
+            <View
+              className="w-[30px] h-[30px] rounded-[15px] border-2 border-white items-center justify-center -ms-[9px] z-0 bg-[#ECF5F0]"
+            >
               <AppText className="text-[10px] font-bold" style={{ color: C.muted }}>
                 +{roomAgents.length - 3}
               </AppText>

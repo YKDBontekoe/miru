@@ -114,9 +114,7 @@ export function ChatInputBar({
           ]}
         >
           {/* Stop square */}
-          <View
-            style={[styles.stopSquare, { backgroundColor: DESIGN_TOKENS.colors.destructive }]}
-          />
+          <View style={[styles.stopSquare, { backgroundColor: DESIGN_TOKENS.colors.destructive }]} />
         </AnimatedPressable>
       ) : (
         <AnimatedPressable
