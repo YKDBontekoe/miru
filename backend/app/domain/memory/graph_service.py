@@ -52,7 +52,7 @@ class GraphExtractionService:
                     },
                     {
                         "role": "user",
-                        "content": text,
+                        "content": f"<text>{text}</text>",
                     },
                 ],
                 response_model=GraphExtractionSchema,

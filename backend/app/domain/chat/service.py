@@ -225,7 +225,7 @@ class ChatService:
                     "content": f"IMPORTANT: Please respond in the following language locale: {accept_language}",
                 }
             )
-        messages.append({"role": "user", "content": user_message})
+        messages.append({"role": "user", "content": f"<user_message>{user_message}</user_message>"})
 
         try:
             response = await stream_chat(
