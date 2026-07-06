@@ -281,7 +281,10 @@ class AgentService:
                             f"{mood_list}."
                         ),
                     },
-                    {"role": "user", "content": f"<recent_history>{recent_history}</recent_history>"},
+                    {
+                        "role": "user",
+                        "content": f"<recent_history>{recent_history}</recent_history>",
+                    },
                 ],
                 response_model=MoodResponse,
             )
