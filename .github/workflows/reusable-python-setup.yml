@@ -86,7 +86,7 @@ jobs:
         # -n auto runs tests in parallel across available CPUs (pytest-xdist).
         # Each worker gets its own in-memory SQLite DB via the autouse fixture,
         # so there is no shared-state between workers.
-        run: uv run pytest --cov=app --cov-report=xml --cov-report=term -v -n auto
+        run: uv run pytest --cov=app --cov-report=xml --cov-report=term -v
 
       - name: Upload coverage to Codecov
         if: inputs.run-tests
