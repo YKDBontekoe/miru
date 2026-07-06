@@ -62,7 +62,7 @@ body:
         - React Native frontend
         - FastAPI backend
         - Database (Supabase / PostgreSQL)
-        - AI / memory (OpenRouter / Neo4j)
+        - AI / memory (OpenRouter)
         - Authentication (passkeys / magic link)
         - Push notifications (Azure Notification Hub)
         - CI/CD pipeline

@@ -249,7 +249,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Check Azure Credentials
+        id: check_creds
+        env:
+          AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
+        run: |
+          if echo "$AZURE_CREDS" | grep -q 'clientId'; then
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Login to Azure
+        if: steps.check_creds.outputs.has_creds == 'true'
         uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -262,9 +274,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upgrade containerapp CLI extension
+        if: steps.check_creds.outputs.has_creds == 'true'
         run: az extension add --name containerapp --upgrade --yes
 
       - name: Deploy image to PR container app
+        if: steps.check_creds.outputs.has_creds == 'true'
         run: |
           IMAGE_TAG="${{ needs.pr-backend-build.outputs.image-tag }}"
           [ -z "$IMAGE_TAG" ] && { echo "::error::image-tag is empty"; exit 1; }
@@ -310,6 +324,7 @@ jobs:
 
           echo "Created revision: $NEW_REVISION with label pr-${{ github.event.pull_request.number }}"
       - name: Get app URL
+        if: steps.check_creds.outputs.has_creds == 'true'
         id: app-url
         run: |
           # Use the label's FQDN to ensure we are testing this PR's specific revision
@@ -328,6 +343,7 @@ jobs:
           echo "Testing PR URL: $TEST_URL"
 
       - name: Wait for PR deployment to become healthy
+        if: steps.check_creds.outputs.has_creds == 'true'
         # Scale-to-zero aware: --max-time 90 keeps the connection open through
         # a full ACA cold start rather than abandoning it mid-boot.
         run: |
@@ -366,6 +382,7 @@ jobs:
           exit 1
 
       - name: Run smoke tests
+        if: steps.check_creds.outputs.has_creds == 'true'
         run: |
           APP_URL="${{ steps.app-url.outputs.url }}"
           FAILURES=0
@@ -390,6 +407,7 @@ jobs:
           echo "All smoke tests passed."
 
       - name: Run Postman integration tests
+        if: steps.check_creds.outputs.has_creds == 'true'
         run: |
           npm install -g newman
           PIDS=()
