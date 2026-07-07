@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.v1.notifications import get_notification_client
+from app.api.dependencies import get_notification_client
 from app.domain.notifications.interfaces.notification_client import INotificationClient
 from app.main import app
 

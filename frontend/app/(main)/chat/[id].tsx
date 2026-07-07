@@ -133,14 +133,7 @@ export default function ChatRoomScreen() {
     if (tasks.length === 0 && !isLoadingTasks) fetchTasks(controller.signal);
     if (events.length === 0 && !isLoadingEvents) fetchEvents(controller.signal);
     return () => controller.abort();
-  }, [
-    events.length,
-    fetchEvents,
-    fetchTasks,
-    isLoadingEvents,
-    isLoadingTasks,
-    tasks.length,
-  ]);
+  }, [events.length, fetchEvents, fetchTasks, isLoadingEvents, isLoadingTasks, tasks.length]);
 
   useEffect(() => {
     if (!notice) return;
@@ -267,13 +260,15 @@ export default function ChatRoomScreen() {
           const normalizedParsed = parsed
             .map((entry, index) => {
               const entryText = typeof entry.text === 'string' ? entry.text : '';
-              const existingBuiltIn = defaultQuickActions.find((builtin) => builtin.text === entry.text);
+              const existingBuiltIn = defaultQuickActions.find(
+                (builtin) => builtin.text === entry.text
+              );
               const legacyBuiltInId = LEGACY_TEXT_TO_ID[entryText];
               return {
                 id:
                   typeof entry.id === 'string' && entry.id.length > 0
                     ? entry.id
-                    : legacyBuiltInId ?? existingBuiltIn?.id ?? `custom.legacy.${index}`,
+                    : (legacyBuiltInId ?? existingBuiltIn?.id ?? `custom.legacy.${index}`),
                 text: entryText,
                 pinned: Boolean(entry.pinned),
               };

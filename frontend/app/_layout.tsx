@@ -5,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Linking } from 'react-native';
 import i18n from 'i18next';
-import { supabase } from '../src/core/services/supabase';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { useAppStore } from '../src/store/useAppStore';
 import { waitForBackend } from '../src/core/api/client';
@@ -17,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScalePressable } from '@/components/ScalePressable';
 
 export default function RootLayout() {
-  const { initialize, user, isLoading } = useAuthStore();
+  const { initialize, user, isLoading, setSession, exchangeCodeForSession } = useAuthStore();
   const { isOnboardingComplete, language } = useAppStore();
   const segments = useSegments() as string[];
   const router = useRouter();
@@ -70,9 +69,9 @@ export default function RootLayout() {
       const code = params.get('code');
 
       if (accessToken && refreshToken) {
-        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        await setSession(accessToken, refreshToken);
       } else if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
+        await exchangeCodeForSession(code);
       }
     };
 
@@ -84,7 +83,7 @@ export default function RootLayout() {
     // App foregrounded via deep link
     const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
     return () => sub.remove();
-  }, []);
+  }, [setSession, exchangeCodeForSession]);
 
   useEffect(() => {
     if (language && i18n.language !== language) {

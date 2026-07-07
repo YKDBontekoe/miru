@@ -10,7 +10,10 @@ from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
+from app.domain.notifications.interfaces.notification_client import INotificationClient
+from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
 from app.infrastructure.database.supabase import SupabaseClient
+from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -64,3 +67,16 @@ def get_memory_service(
 
 def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
     return AuthService(repo)
+
+# ---------------------------------------------------------------------------
+# Notifications factories
+# ---------------------------------------------------------------------------
+
+
+def get_notification_client() -> INotificationClient:
+    return AzureNotificationHubClient()
+
+def get_send_notification_use_case(
+    client: Annotated[INotificationClient, Depends(get_notification_client)],
+) -> SendNotificationUseCase:
+    return SendNotificationUseCase(notification_client=client)
