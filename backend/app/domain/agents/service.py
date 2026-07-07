@@ -202,7 +202,7 @@ class AgentService:
             effective_cap_ids = new_capability_ids
         else:
             # Performance Optimization: Avoid N+1 query if capabilities are prefetched.
-            if getattr(agent.capabilities, "_fetched", False) or hasattr(agent.capabilities, "related_objects"):
+            if getattr(agent.capabilities, "_fetched", False):
                 effective_cap_ids = [str(c.id) for c in agent.capabilities.related_objects]
             else:
                 effective_cap_ids = [str(c_id) for c_id in await agent.capabilities.all().values_list("id", flat=True)]  # pragma: no cover
