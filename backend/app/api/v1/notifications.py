@@ -2,37 +2,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.api.dependencies import get_send_notification_use_case
 from app.core.security.auth import CurrentUser
-from app.domain.notifications.interfaces.notification_client import INotificationClient
 from app.domain.notifications.schemas import NotificationRequest
 from app.domain.notifications.use_cases.send_notification import SendNotificationUseCase
-from app.infrastructure.notifications.azure_hubs import AzureNotificationHubClient
 
 router = APIRouter(tags=["notifications"])
 
 
-def get_notification_client() -> INotificationClient:
-    """Dependency provider for the notification client.
 
-    Returns:
-        INotificationClient: A concrete implementation of the notification client,
-        such as AzureNotificationHubClient.
-    """
-    return AzureNotificationHubClient()
-
-
-def get_send_notification_use_case(
-    client: INotificationClient = Depends(get_notification_client),
-) -> SendNotificationUseCase:
-    """Dependency provider for the send notification use case.
-
-    Args:
-        client: The notification client implementation injected via Depends.
-
-    Returns:
-        SendNotificationUseCase: The use case configured with the provided client.
-    """
-    return SendNotificationUseCase(notification_client=client)
 
 
 @router.post(

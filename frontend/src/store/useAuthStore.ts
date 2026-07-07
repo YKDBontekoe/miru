@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase } from '../core/services/supabase';
+import { AuthService } from '../core/api/auth';
 import { Session, User } from '@supabase/supabase-js';
 import { apiClient } from '../core/api/client';
 import { useMemoryStore } from '@/store/useMemoryStore';
@@ -13,6 +13,8 @@ interface AuthState {
   signInWithPasskey: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   initialize: () => void;
+  setSession: (accessToken: string, refreshToken: string) => Promise<void>;
+  exchangeCodeForSession: (code: string) => Promise<void>;
 }
 
 /**
@@ -32,28 +34,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   initialize: () => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    AuthService.getSession().then(({ data: { session } }) => {
       set({ session, user: session?.user ?? null, isLoading: false });
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    AuthService.onAuthStateChange((_event, session) => {
       set({ session, user: session?.user ?? null });
     });
   },
 
   signInWithMagicLink: async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: 'miru://login-callback',
-      },
-    });
+    const { error } = await AuthService.signInWithOtp(email, 'miru://login-callback');
     if (error) throw error;
   },
 
   signInWithPassword: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await AuthService.signInWithPassword(email, password);
     if (error) throw error;
     // Explicitly update store — onAuthStateChange may fire after the routing
     // effect checks, so we set session/user immediately here too.
@@ -90,14 +86,24 @@ export const useAuthStore = create<AuthState>((set) => ({
       credential: JSON.parse(credentialJson),
     });
     const { access_token, refresh_token } = verifyRes.data;
-    const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+    const { error } = await AuthService.setSession(access_token, refresh_token);
     if (error) throw error;
   },
 
   signOut: async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await AuthService.signOut();
     if (error) throw error;
     useMemoryStore.setState({ memories: [] });
     set({ user: null, session: null });
+  },
+
+  setSession: async (accessToken: string, refreshToken: string) => {
+    const { error } = await AuthService.setSession(accessToken, refreshToken);
+    if (error) throw error;
+  },
+
+  exchangeCodeForSession: async (code: string) => {
+    const { error } = await AuthService.exchangeCodeForSession(code);
+    if (error) throw error;
   },
 }));

@@ -57,7 +57,10 @@ export function ChatActionSheet({
               </ScalePressable>
             ))}
           </View>
-          <ScalePressable onPress={onClose} className="rounded-xl px-3 py-3 mt-3 border border-[#DDE8E0]">
+          <ScalePressable
+            onPress={onClose}
+            className="rounded-xl px-3 py-3 mt-3 border border-[#DDE8E0]"
+          >
             <AppText className="text-[#5A7467] font-semibold text-center">Close</AppText>
           </ScalePressable>
         </View>

@@ -391,49 +391,45 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAllData = () => {
-    Alert.alert(
-      t('settings.deleteAllTitle'),
-      t('settings.deleteAllMessage'),
-      [
-        { text: t('settings.actions.cancel'), style: 'cancel' },
-        {
-          text: t('settings.actions.delete') || 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const results = await Promise.allSettled([
-                ...memories.map((memory) => deleteMemory(memory.id)),
-                ...notes.map((note) => deleteNote(note.id)),
-                ...tasks.map((task) => deleteTask(task.id)),
-              ]);
-              await Promise.all([fetchMemories(), fetchNotes(), fetchTasks()]);
-              const failed = results
-                .map((result, index) => ({ result, index }))
-                .filter((entry) => entry.result.status === 'rejected')
-                .map((entry) => {
-                  const memoryCount = memories.length;
-                  const noteCount = notes.length;
-                  if (entry.index < memoryCount) return memories[entry.index]?.id ?? 'memory';
-                  if (entry.index < memoryCount + noteCount) {
-                    return notes[entry.index - memoryCount]?.id ?? 'note';
-                  }
-                  return tasks[entry.index - memoryCount - noteCount]?.id ?? 'task';
-                });
-              if (failed.length === 0) {
-                Alert.alert(t('settings.actions.done'), t('settings.actions.removedAllData'));
-                return;
-              }
-              Alert.alert(
-                t('settings.actions.error'),
-                `${t('settings.actions.removeDataFailed')} (${failed.length})\n${failed.join(', ')}`
-              );
-            } catch {
-              Alert.alert(t('settings.actions.error'), t('settings.actions.removeDataFailed'));
+    Alert.alert(t('settings.deleteAllTitle'), t('settings.deleteAllMessage'), [
+      { text: t('settings.actions.cancel'), style: 'cancel' },
+      {
+        text: t('settings.actions.delete') || 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const results = await Promise.allSettled([
+              ...memories.map((memory) => deleteMemory(memory.id)),
+              ...notes.map((note) => deleteNote(note.id)),
+              ...tasks.map((task) => deleteTask(task.id)),
+            ]);
+            await Promise.all([fetchMemories(), fetchNotes(), fetchTasks()]);
+            const failed = results
+              .map((result, index) => ({ result, index }))
+              .filter((entry) => entry.result.status === 'rejected')
+              .map((entry) => {
+                const memoryCount = memories.length;
+                const noteCount = notes.length;
+                if (entry.index < memoryCount) return memories[entry.index]?.id ?? 'memory';
+                if (entry.index < memoryCount + noteCount) {
+                  return notes[entry.index - memoryCount]?.id ?? 'note';
+                }
+                return tasks[entry.index - memoryCount - noteCount]?.id ?? 'task';
+              });
+            if (failed.length === 0) {
+              Alert.alert(t('settings.actions.done'), t('settings.actions.removedAllData'));
+              return;
             }
-          },
+            Alert.alert(
+              t('settings.actions.error'),
+              `${t('settings.actions.removeDataFailed')} (${failed.length})\n${failed.join(', ')}`
+            );
+          } catch {
+            Alert.alert(t('settings.actions.error'), t('settings.actions.removeDataFailed'));
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
