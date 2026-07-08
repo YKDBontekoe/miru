@@ -9,7 +9,8 @@ import Animated, {
   withDelay,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { useTheme } from '../hooks/useTheme';
+import { useColorScheme } from 'nativewind';
+import { AppCard } from './AppCard';
 
 function ShimmerBox({
   width,
@@ -22,7 +23,8 @@ function ShimmerBox({
   borderRadius?: number;
   delay?: number;
 }) {
-  const { isDark } = useTheme();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -39,14 +41,18 @@ function ShimmerBox({
 
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
+  // We apply tailwind classes for colors mapped to the theme
+  // and inline styles for the explicit dynamic dimensions passed as props.
+  const bgClass = isDark ? 'bg-surface-highestDark' : 'bg-surface-highestLight';
+
   return (
     <Animated.View
+      className={bgClass}
       style={[
         {
           width,
           height,
           borderRadius,
-          backgroundColor: isDark ? '#2E2E48' : '#E4E4F0',
         },
         animStyle,
       ]}
@@ -55,41 +61,28 @@ function ShimmerBox({
 }
 
 export function SkeletonAgentCard({ index = 0 }: { index?: number }) {
-  const { C } = useTheme();
   const baseDelay = index * 120;
 
   return (
-    <View
-      style={{
-        backgroundColor: C.surface,
-        borderRadius: 20,
-        marginBottom: 10,
-        padding: 16,
-        shadowColor: '#2563EB',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 2,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <AppCard elevation="md" className="mb-md">
+      <View className="flex-row items-center">
         {/* Avatar */}
         <ShimmerBox width={48} height={48} borderRadius={24} delay={baseDelay} />
 
-        <View style={{ flex: 1, marginStart: 12, gap: 8 }}>
+        <View className="flex-1 ms-md gap-sm">
           <ShimmerBox width="55%" height={14} delay={baseDelay + 60} />
           <ShimmerBox width="85%" height={10} delay={baseDelay + 120} />
-          <View style={{ flexDirection: 'row', gap: 6 }}>
+          <View className="flex-row gap-xs">
             <ShimmerBox width={36} height={18} borderRadius={9} delay={baseDelay + 180} />
             <ShimmerBox width={60} height={18} borderRadius={9} delay={baseDelay + 200} />
           </View>
         </View>
 
-        <View style={{ alignItems: 'flex-end', gap: 8 }}>
+        <View className="items-end gap-sm">
           <ShimmerBox width={32} height={10} delay={baseDelay + 80} />
           <ShimmerBox width={14} height={14} borderRadius={7} delay={baseDelay + 140} />
         </View>
       </View>
-    </View>
+    </AppCard>
   );
 }
