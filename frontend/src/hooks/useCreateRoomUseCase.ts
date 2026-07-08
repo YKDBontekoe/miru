@@ -16,7 +16,8 @@ export function useCreateRoomUseCase({
 }: UseCreateRoomUseCaseProps) {
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = useState(false);
-  const { createRoom, addAgentToRoom } = useChatStore();
+  const createRoom = useChatStore((state) => state.createRoom);
+  const addAgentToRoom = useChatStore((state) => state.addAgentToRoom);
 
   const execute = async () => {
     if (!name.trim()) {
