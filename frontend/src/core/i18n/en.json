@@ -282,8 +282,7 @@
       "work": "Work",
       "planning": "Planning",
       "creative": "Creative"
-    }
-    ,
+    },
     "templatesComingSoon": "Templates coming soon",
     "templatesComingSoonDesc": "Pre-built personas will be available here.",
     "noTemplatesInCategory": "No templates in this category",
