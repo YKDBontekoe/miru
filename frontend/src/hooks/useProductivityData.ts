@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarEvent, Note, Task } from '../core/models';
-import { useProductivityStore } from '../store/useProductivityStore';
+import { CalendarEvent, Note, Task } from '@/core/models';
+import { useProductivityStore } from '@/store/useProductivityStore';
 
 export type Tab = 'today' | 'all' | 'notes' | 'tasks';
 export type TaskPriority = 'all' | 'overdue' | 'today' | 'upcoming' | 'no_due';
@@ -21,7 +21,9 @@ export function useProductivityData(
   setActiveTab: (tab: Tab) => void
 ) {
   const { i18n } = useTranslation();
-  const { notes, tasks, events } = useProductivityStore();
+  const notes = useProductivityStore((s) => s.notes);
+  const tasks = useProductivityStore((s) => s.tasks);
+  const events = useProductivityStore((s) => s.events);
 
   const filteredNotes = useMemo(() => {
     if (!searchQuery) return notes;
@@ -119,8 +121,16 @@ export function useProductivityData(
         date: new Date(task.created_at).getTime(),
       });
     });
+    filteredEvents.forEach((event) => {
+      data.push({
+        type: 'event',
+        item: event,
+        id: `event-${event.id}`,
+        date: new Date(event.start_time).getTime(),
+      });
+    });
     return data.sort((a, b) => (b.date || 0) - (a.date || 0));
-  }, [filteredNotes, filteredTasks]);
+  }, [filteredNotes, filteredTasks, filteredEvents]);
 
   const todayData = useMemo(() => {
     const now = new Date();
@@ -171,18 +181,28 @@ export function useProductivityData(
     return items.sort((a, b) => (a.date || 0) - (b.date || 0));
   }, [filteredEvents, filteredTasks]);
 
-  const dataToRender: RenderItemData[] =
-    activeTab === 'today'
-      ? todayData.filter((entry) => {
-          if (entry.type !== 'task') return true;
-          if (taskPriority === 'all') return true;
-          return getTaskPriority(entry.item as Task) === taskPriority;
-        })
-      : activeTab === 'all'
-        ? mixedData
-        : activeTab === 'notes'
-          ? filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }))
-          : prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  const dataToRender = useMemo(() => {
+    if (activeTab === 'today') {
+      return todayData.filter((entry) => {
+        if (entry.type !== 'task') return true;
+        if (taskPriority === 'all') return true;
+        return getTaskPriority(entry.item as Task) === taskPriority;
+      });
+    }
+    if (activeTab === 'all') return mixedData;
+    if (activeTab === 'notes') {
+      return filteredNotes.map((note) => ({ type: 'note' as const, item: note, id: note.id }));
+    }
+    return prioritizedTasks.map((task) => ({ type: 'task' as const, item: task, id: task.id }));
+  }, [
+    activeTab,
+    filteredNotes,
+    getTaskPriority,
+    mixedData,
+    prioritizedTasks,
+    taskPriority,
+    todayData,
+  ]);
 
   const generateTodayPlan = useCallback(() => {
     const now = new Date();

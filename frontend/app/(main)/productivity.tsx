@@ -63,15 +63,17 @@ export default function ProductivityScreen() {
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [todayPlan, setTodayPlan] = useState<string | null>(null);
 
-  const {
-    fetchNotes,
-    fetchTasks,
-    fetchEvents,
-    isLoading,
-    deleteNote,
-    deleteTask,
-    toggleTask,
-  } = useProductivityStore();
+  const fetchNotes = useProductivityStore((s) => s.fetchNotes);
+  const fetchTasks = useProductivityStore((s) => s.fetchTasks);
+  const fetchEvents = useProductivityStore((s) => s.fetchEvents);
+  const isLoading = useProductivityStore((s) => s.isLoading);
+  const deleteNote = useProductivityStore((s) => s.deleteNote);
+  const deleteTask = useProductivityStore((s) => s.deleteTask);
+  const toggleTask = useProductivityStore((s) => s.toggleTask);
+  const error = useProductivityStore((s) => s.error);
+  const errorNotes = useProductivityStore((s) => s.errorNotes);
+  const errorTasks = useProductivityStore((s) => s.errorTasks);
+  const errorEvents = useProductivityStore((s) => s.errorEvents);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -298,6 +300,41 @@ export default function ProductivityScreen() {
               </AppText>
             </Pressable>
           ))}
+        </View>
+      )}
+
+      {(error || errorNotes || errorTasks || errorEvents) && (
+        <View
+          style={{
+            backgroundColor: DESIGN_TOKENS.colors.surfaceSoft,
+            padding: S.md,
+            marginHorizontal: S.xl,
+            marginBottom: S.md,
+            borderRadius: R.md,
+            borderWidth: 1,
+            borderColor: DESIGN_TOKENS.colors.border,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <AppText style={{ color: DESIGN_TOKENS.colors.text, flex: 1 }}>
+            {error || errorNotes || errorTasks || errorEvents || 'Failed to load data.'}
+          </AppText>
+          <Pressable
+            onPress={handleRefresh}
+            style={({ pressed }) => [
+              {
+                paddingHorizontal: S.md,
+                paddingVertical: S.sm,
+                backgroundColor: DESIGN_TOKENS.colors.primary,
+                borderRadius: R.sm,
+              },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            <AppText style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>Retry</AppText>
+          </Pressable>
         </View>
       )}
 
