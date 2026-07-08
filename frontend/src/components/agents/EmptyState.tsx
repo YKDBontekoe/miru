@@ -23,86 +23,86 @@ export interface EmptyStateProps {
  */
 const createStyles = (C: ThemeColors) =>
   StyleSheet.create({
-  searchContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive + theme.spacing.sm, // equivalent to 56
-  },
-  searchIconCircle: {
-    width: theme.spacing.colossal,
-    height: theme.spacing.colossal,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: C.surfaceHigh,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  searchTitle: {
-    color: C.text,
-    ...theme.typography.body,
-    fontWeight: '600',
-    marginBottom: theme.spacing.sm,
-  },
-  searchSubtitle: {
-    color: C.muted,
-    textAlign: 'center',
-    ...theme.typography.bodySm,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.massive + theme.spacing.sm,
-    paddingHorizontal: theme.spacing.xxl,
-  },
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: `${C.primary}12`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.xl,
-    borderWidth: 1,
-    borderColor: `${C.primary}20`,
-  },
-  emptyTitle: {
-    color: C.text,
-    ...theme.typography.h3,
-    fontWeight: '700',
-    marginBottom: theme.spacing.sm,
-  },
-  emptySubtitle: {
-    color: C.muted,
-    textAlign: 'center',
-    ...theme.typography.bodySm,
-    lineHeight: theme.typography.bodySm.fontSize * 1.5,
-    marginBottom: theme.spacing.avatar,
-  },
-  createButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: C.primary,
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: theme.spacing.sm + theme.spacing.xs, // equivalent to 14
-    paddingHorizontal: theme.spacing.avatar, // equivalent to 28
-    marginBottom: theme.spacing.md,
-    ...theme.elevation.md,
-    shadowColor: C.primary,
-  },
-  createButtonIcon: {
-    marginEnd: theme.spacing.sm,
-  },
+    searchContainer: {
+      alignItems: 'center',
+      paddingVertical: theme.spacing.massive + theme.spacing.sm, // equivalent to 56
+    },
+    searchIconCircle: {
+      width: theme.spacing.colossal,
+      height: theme.spacing.colossal,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: C.surfaceHigh,
+      borderWidth: 1,
+      borderColor: C.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.md,
+    },
+    searchTitle: {
+      color: C.text,
+      ...theme.typography.body,
+      fontWeight: '600',
+      marginBottom: theme.spacing.sm,
+    },
+    searchSubtitle: {
+      color: C.muted,
+      textAlign: 'center',
+      ...theme.typography.bodySm,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      paddingVertical: theme.spacing.massive + theme.spacing.sm,
+      paddingHorizontal: theme.spacing.xxl,
+    },
+    emptyIconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: `${C.primary}12`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.xl,
+      borderWidth: 1,
+      borderColor: `${C.primary}20`,
+    },
+    emptyTitle: {
+      color: C.text,
+      ...theme.typography.h3,
+      fontWeight: '700',
+      marginBottom: theme.spacing.sm,
+    },
+    emptySubtitle: {
+      color: C.muted,
+      textAlign: 'center',
+      ...theme.typography.bodySm,
+      lineHeight: theme.typography.bodySm.fontSize * 1.5,
+      marginBottom: theme.spacing.avatar,
+    },
+    createButtonContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.primary,
+      borderRadius: theme.borderRadius.lg,
+      paddingVertical: theme.spacing.sm + theme.spacing.xs, // equivalent to 14
+      paddingHorizontal: theme.spacing.avatar, // equivalent to 28
+      marginBottom: theme.spacing.md,
+      ...theme.elevation.md,
+      shadowColor: C.primary,
+    },
+    createButtonIcon: {
+      marginEnd: theme.spacing.sm,
+    },
     createButtonText: {
       ...theme.typography.body,
       color: theme.colors.white,
       fontWeight: '700',
-  },
-  browseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    padding: theme.spacing.sm,
-  },
+    },
+    browseButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      padding: theme.spacing.sm,
+    },
     browseButtonText: {
       color: C.muted,
       ...theme.typography.bodySm,

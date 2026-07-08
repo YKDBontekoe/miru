@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, Modal, TextInput, Alert, ActivityIndicator, FlatList } from 'react-native';
+import { View, Modal, TextInput, ActivityIndicator, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { Agent } from '@/core/models';
-import { useChatStore } from '@/store/useChatStore';
 import { getAgentColor } from '@/utils/colors';
 import { useTheme } from '@/hooks/useTheme';
+import { useCreateRoomUseCase } from '@/hooks/useCreateRoomUseCase';
 
 export interface CreateRoomModalProps {
   /** Whether the modal is currently visible. */
@@ -28,9 +28,18 @@ export const CreateRoomModal = React.memo(
     const { t } = useTranslation();
     const { C } = useTheme();
     const [name, setName] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const { createRoom, addAgentToRoom } = useChatStore();
     const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+
+    const { execute: handleCreate, isSaving } = useCreateRoomUseCase({
+      name,
+      selectedAgentIds,
+      onCreated: () => {
+        setName('');
+        setSelectedAgentIds([]);
+        onCreated();
+        onClose();
+      },
+    });
 
     const toggleAgent = useCallback(
       (id: string) =>
@@ -74,49 +83,6 @@ export const CreateRoomModal = React.memo(
       },
       [selectedAgentIds, toggleAgent, C.surfaceHigh, C.text]
     );
-
-    const handleCreate = async () => {
-      if (!name.trim()) {
-        Alert.alert(
-          t('createRoom.nameRequired', 'Name required'),
-          t('createRoom.nameRequiredDesc', 'Please enter a name for this chat.')
-        );
-        return;
-      }
-      setIsSaving(true);
-      try {
-        const room = await createRoom(name.trim());
-        try {
-          const promises = selectedAgentIds.map((agentId) => addAgentToRoom(room.id, agentId));
-          await Promise.all(promises);
-          setName('');
-          setSelectedAgentIds([]);
-          onCreated();
-          onClose();
-        } catch (err) {
-          // Rollback room creation if agent additions fail
-          // Assuming a deleteRoom function exists on useChatStore, if not, this will need to be added to the store.
-          // For now, simulating the intent.
-          const { deleteRoom } = useChatStore.getState();
-          if (deleteRoom) {
-            await deleteRoom(room.id);
-          }
-          console.error('Failed to add agents to room, rolling back room creation', err);
-          Alert.alert(
-            t('createRoom.error', 'Error'),
-            t('createRoom.failedToAddAgents', 'Failed to link agents. Please try again.')
-          );
-        }
-      } catch (err) {
-        console.error('Failed to create room', err);
-        Alert.alert(
-          t('createRoom.error', 'Error'),
-          t('createRoom.failedToCreate', 'Failed to create chat. Please try again.')
-        );
-      } finally {
-        setIsSaving(false);
-      }
-    };
 
     return (
       <Modal visible={visible} animationType="slide" transparent>
