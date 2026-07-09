@@ -22,10 +22,11 @@ from tests.conftest import make_jwt
 async def test_decode_valid_jwt() -> None:
     """A valid JWT with a known secret decodes successfully."""
     from app.domain.auth.service import AuthService
+    from app.infrastructure.external.jwt import SupabaseTokenVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt()
-    service = AuthService(AuthRepository(MagicMock()))
+    service = AuthService(AuthRepository(MagicMock()), SupabaseTokenVerifier())
     payload = await service.decode_jwt(token)
 
     assert isinstance(payload, JWTPayload)
@@ -36,10 +37,11 @@ async def test_decode_valid_jwt() -> None:
 async def test_decode_expired_jwt_raises_401() -> None:
     """An expired JWT raises an error."""
     from app.domain.auth.service import AuthService
+    from app.infrastructure.external.jwt import SupabaseTokenVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = make_jwt(expired=True)
-    service = AuthService(AuthRepository(MagicMock()))
+    service = AuthService(AuthRepository(MagicMock()), SupabaseTokenVerifier())
 
     with pytest.raises(jwt.ExpiredSignatureError):
         await service.decode_jwt(token)
@@ -51,10 +53,11 @@ async def test_decode_invalid_jwt_format_logs_warning(caplog: pytest.LogCaptureF
     import logging
 
     from app.domain.auth.service import AuthService
+    from app.infrastructure.external.jwt import SupabaseTokenVerifier
     from app.infrastructure.repositories.auth_repo import AuthRepository
 
     token = "invalid.token.format"
-    service = AuthService(AuthRepository(MagicMock()))
+    service = AuthService(AuthRepository(MagicMock()), SupabaseTokenVerifier())
 
     with (
         caplog.at_level(logging.WARNING),
