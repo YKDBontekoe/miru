@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Platform, RefreshControl, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  RefreshControl,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -259,10 +264,8 @@ export default function ChatListScreen() {
       const meta = roomMeta[room.id];
       const searchableText = `${room.name} ${meta?.lastMessage ?? ''}`.toLowerCase();
       if (normalizedQuery && !searchableText.includes(normalizedQuery)) return false;
-      if (selectedAgentId && !meta?.agents.some((agent) => agent.id === selectedAgentId))
-        return false;
-      if (recentOnly && now - toEpoch(meta?.lastMessageAt ?? room.updated_at) > sevenDaysMs)
-        return false;
+      if (selectedAgentId && !meta?.agents.some((agent) => agent.id === selectedAgentId)) return false;
+      if (recentOnly && now - toEpoch(meta?.lastMessageAt ?? room.updated_at) > sevenDaysMs) return false;
       if (unreadOnly && !unreadByRoom[room.id]) return false;
       return true;
     });
@@ -285,10 +288,7 @@ export default function ChatListScreen() {
         if (taskDiff !== 0) return taskDiff;
       }
 
-      return (
-        toEpoch(bMeta?.lastMessageAt ?? b.updated_at) -
-        toEpoch(aMeta?.lastMessageAt ?? a.updated_at)
-      );
+      return toEpoch(bMeta?.lastMessageAt ?? b.updated_at) - toEpoch(aMeta?.lastMessageAt ?? a.updated_at);
     });
   }, [
     pinnedRoomIds,
@@ -324,8 +324,7 @@ export default function ChatListScreen() {
     [markRoomAsSeen, pinnedRoomIds, roomMeta, router, togglePinnedRoom, unreadByRoom]
   );
 
-  const activeFilterCount =
-    Number(Boolean(selectedAgentId)) + Number(recentOnly) + Number(unreadOnly);
+  const activeFilterCount = Number(Boolean(selectedAgentId)) + Number(recentOnly) + Number(unreadOnly);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -359,9 +358,7 @@ export default function ChatListScreen() {
         </ScalePressable>
       </View>
 
-      {metaError || hubError ? (
-        <ChatInlineBanner text={metaError ?? hubError ?? ''} tone="error" />
-      ) : null}
+      {metaError || hubError ? <ChatInlineBanner text={metaError ?? hubError ?? ''} tone="error" /> : null}
 
       <FlatList
         data={filteredRooms}

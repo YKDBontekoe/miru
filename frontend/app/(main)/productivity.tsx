@@ -468,10 +468,7 @@ export default function ProductivityScreen() {
         >
           {(
             [
-              {
-                key: 'all',
-                label: t('productivity.priority.all', { count: taskPriorityCounts.all }),
-              },
+              { key: 'all', label: t('productivity.priority.all', { count: taskPriorityCounts.all }) },
               {
                 key: 'overdue',
                 label: t('productivity.priority.overdue', { count: taskPriorityCounts.overdue }),

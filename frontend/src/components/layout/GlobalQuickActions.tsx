@@ -88,12 +88,7 @@ export function GlobalQuickActions() {
         </ScalePressable>
       </View>
 
-      <Modal
-        visible={visible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setVisible(false)}
-      >
+      <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
         <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.25)' }}>
           <Pressable onPress={() => setVisible(false)} style={{ flex: 1 }} />
           <View

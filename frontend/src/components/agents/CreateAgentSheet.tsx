@@ -340,31 +340,16 @@ export function CreateAgentSheet({ visible, onClose, onCreated, prefill }: Creat
           </Animated.View>
 
           {successVisible && (
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                zIndex: 1000,
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: C.surface,
-                  padding: 20,
-                  borderRadius: 16,
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="checkmark-circle" size={48} color={C.success} />
-                <AppText style={{ marginTop: 12, fontSize: 18, fontWeight: 'bold', color: C.text }}>
-                  Persona Created
-                </AppText>
+            <View style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              justifyContent: 'center', alignItems: 'center',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 1000
+            }}>
+              <View style={{ backgroundColor: C.surface, padding: 20, borderRadius: 16, alignItems: 'center' }}>
+                 <Ionicons name="checkmark-circle" size={48} color={C.success} />
+                 <AppText style={{ marginTop: 12, fontSize: 18, fontWeight: 'bold', color: C.text }}>Persona Created</AppText>
               </View>
             </View>
           )}

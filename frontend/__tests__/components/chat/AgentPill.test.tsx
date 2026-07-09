@@ -35,10 +35,8 @@ describe('AgentPill', () => {
   });
 
   it('handles missing agent name gracefully', () => {
-    const onPressMock = jest.fn();
-    const { getByText } = render(
-      <AgentPill agent={{ ...mockAgent, name: '' }} onPress={onPressMock} />
-    );
-    expect(getByText('?')).toBeTruthy();
+     const onPressMock = jest.fn();
+     const { getByText } = render(<AgentPill agent={{...mockAgent, name: ''}} onPress={onPressMock} />);
+     expect(getByText('?')).toBeTruthy();
   });
 });

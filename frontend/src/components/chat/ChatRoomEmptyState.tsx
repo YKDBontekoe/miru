@@ -50,11 +50,7 @@ export const ChatRoomEmptyState = ({
               key={`${suggestion}-${index}`}
               onPress={() => onSuggestionPress(suggestion)}
               className="rounded-xl px-2.5 py-2 mb-2"
-              style={{
-                borderWidth: 1,
-                borderColor: `${C.primary}4D`,
-                backgroundColor: C.primarySurface,
-              }}
+              style={{ borderWidth: 1, borderColor: `${C.primary}4D`, backgroundColor: C.primarySurface }}
               accessibilityRole="button"
               accessibilityLabel={suggestion}
             >

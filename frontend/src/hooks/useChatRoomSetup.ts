@@ -50,8 +50,7 @@ export function useChatRoomSetup(roomId: string | undefined) {
         if (currentRoomRef.current === roomId) {
           useChatStore.setState({
             hubError:
-              t('chat.failed_to_connect') ||
-              'Failed to connect to chat. Please go back and try again.',
+              t('chat.failed_to_connect') || 'Failed to connect to chat. Please go back and try again.',
           });
         }
       });

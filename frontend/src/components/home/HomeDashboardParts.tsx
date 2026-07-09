@@ -109,7 +109,13 @@ export function HomeActionTile({
   );
 }
 
-export function HomeTaskRow({ task, onToggle }: { task: Task; onToggle: () => void }) {
+export function HomeTaskRow({
+  task,
+  onToggle,
+}: {
+  task: Task;
+  onToggle: () => void;
+}) {
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const dueText =
     dueDate && !isNaN(dueDate.getTime())
@@ -212,11 +218,7 @@ export function HomeChatRow({
         </AppText>
       </View>
       <View style={{ flex: 1, paddingRight: 8 }}>
-        <AppText
-          variant="bodySm"
-          numberOfLines={1}
-          style={{ color: HOME_COLORS.text, fontWeight: '700' }}
-        >
+        <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
           {room.name}
         </AppText>
         <AppText variant="caption" numberOfLines={1} style={{ color: HOME_COLORS.muted }}>
@@ -233,7 +235,13 @@ export function HomeChatRow({
   );
 }
 
-export function HomeAgentBadge({ agent, onPress }: { agent: Agent; onPress: () => void }) {
+export function HomeAgentBadge({
+  agent,
+  onPress,
+}: {
+  agent: Agent;
+  onPress: () => void;
+}) {
   return (
     <ScalePressable
       onPress={onPress}
@@ -264,11 +272,7 @@ export function HomeAgentBadge({ agent, onPress }: { agent: Agent; onPress: () =
           </AppText>
         </View>
         <View style={{ flex: 1 }}>
-          <AppText
-            variant="bodySm"
-            numberOfLines={1}
-            style={{ color: HOME_COLORS.text, fontWeight: '700' }}
-          >
+          <AppText variant="bodySm" numberOfLines={1} style={{ color: HOME_COLORS.text, fontWeight: '700' }}>
             {agent.name}
           </AppText>
         </View>

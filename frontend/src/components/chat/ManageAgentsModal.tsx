@@ -179,7 +179,10 @@ export const ManageAgentsModal = ({
                       }}
                     >
                       <Ionicons name="remove" size={13} color={C.destructive} />
-                      <AppText className="text-xs font-semibold" style={{ color: C.destructive }}>
+                      <AppText
+                        className="text-xs font-semibold"
+                        style={{ color: C.destructive }}
+                      >
                         {t('manageAgents.remove', 'Remove')}
                       </AppText>
                     </ScalePressable>
