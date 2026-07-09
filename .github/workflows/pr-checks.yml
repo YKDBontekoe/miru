@@ -254,7 +254,9 @@ jobs:
         env:
           AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
         run: |
-          if echo "$AZURE_CREDS" | grep -q 'clientId'; then
+          # Strict check that AZURE_CREDS contains "clientId" and is longer than a few characters.
+          # Fork PRs get a blank or asterisks string.
+          if echo "$AZURE_CREDS" | grep -q '"clientId"'; then
             echo "has_creds=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_creds=false" >> "$GITHUB_OUTPUT"
