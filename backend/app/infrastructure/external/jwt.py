@@ -1,7 +1,6 @@
 """External service for JWT token verification."""
 
 import logging
-from typing import Optional
 
 import jwt
 
@@ -16,7 +15,7 @@ class SupabaseTokenVerifier(TokenVerificationProtocol):
     """Verifies Supabase JWT tokens."""
 
     def __init__(self) -> None:
-        self._jwks_client: Optional[jwt.PyJWKClient] = None
+        self._jwks_client: jwt.PyJWKClient | None = None
 
     def _get_jwks_client(self) -> jwt.PyJWKClient:
         if self._jwks_client is None:
