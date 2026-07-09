@@ -11,6 +11,7 @@ from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.domain.memory.service import MemoryService
 from app.infrastructure.database.supabase import SupabaseClient
+from app.infrastructure.external.jwt import SupabaseTokenVerifier
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -62,5 +63,12 @@ def get_memory_service(
     return MemoryService(repo)
 
 
-def get_auth_service(repo: Annotated[AuthRepository, Depends(get_auth_repo)]) -> AuthService:
-    return AuthService(repo)
+def get_token_verifier() -> SupabaseTokenVerifier:
+    return SupabaseTokenVerifier()
+
+
+def get_auth_service(
+    repo: Annotated[AuthRepository, Depends(get_auth_repo)],
+    token_verifier: Annotated[SupabaseTokenVerifier, Depends(get_token_verifier)],
+) -> AuthService:
+    return AuthService(repo, token_verifier)

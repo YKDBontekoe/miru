@@ -33,6 +33,7 @@ from app.domain.agents.service import AgentService
 from app.domain.auth.service import AuthService
 from app.domain.chat.service import ChatService
 from app.infrastructure.database.supabase import get_supabase
+from app.infrastructure.external.jwt import SupabaseTokenVerifier
 from app.infrastructure.repositories.agent_repo import AgentRepository
 from app.infrastructure.repositories.auth_repo import AuthRepository
 from app.infrastructure.repositories.chat_repo import ChatRepository
@@ -52,7 +53,7 @@ logger = logging.getLogger(__name__)
 async def _verify_token(token: str) -> UUID | None:
     """Decode a Supabase JWT by delegating to AuthService.decode_jwt."""
     try:
-        auth_service = AuthService(AuthRepository(get_supabase()))
+        auth_service = AuthService(AuthRepository(get_supabase()), SupabaseTokenVerifier())
         payload = await auth_service.decode_jwt(token)
         return payload.sub
     except Exception:
