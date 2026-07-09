@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, TextInput, View } from 'react-native';
+import { FlatList, ScrollView, TextInput, View } from 'react-native';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -20,6 +20,26 @@ const C = {
 };
 
 type SortMode = 'recent' | 'mentions' | 'tasks';
+
+const AgentItem = React.memo(
+  ({
+    item,
+    selectedAgentId,
+    onSelectAgent,
+  }: {
+    item: Agent;
+    selectedAgentId: string | null;
+    onSelectAgent: (agentId: string | null) => void;
+  }) => (
+    <View style={{ marginRight: 8 }}>
+      <AgentPill
+        agent={item}
+        onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
+      />
+    </View>
+  )
+);
+AgentItem.displayName = 'AgentItem';
 
 interface ChatListHeaderProps {
   t: (key: string, opts?: Record<string, unknown> | string) => string;
@@ -118,9 +138,7 @@ export function ChatListHeader({
                 key={mode}
                 onPress={() => onChangeSortMode(mode)}
                 className={`me-2 rounded-full px-3 py-2 border ${
-                  selected
-                    ? 'bg-[#DDF4EB] border-[#147D6473]'
-                    : 'bg-[#ECF5F0] border-[#DDE8E0]'
+                  selected ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
                 }`}
               >
                 <AppText
@@ -145,7 +163,10 @@ export function ChatListHeader({
                 active ? 'bg-[#DDF4EB] border-[#147D6473]' : 'bg-[#ECF5F0] border-[#DDE8E0]'
               }`}
             >
-              <AppText variant="caption" className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}>
+              <AppText
+                variant="caption"
+                className={`font-bold ${active ? 'text-[#147D64]' : 'text-[#5A7467]'}`}
+              >
                 {label}
               </AppText>
             </ScalePressable>
@@ -161,37 +182,45 @@ export function ChatListHeader({
             </AppText>
             <AppText variant="caption" className="text-[#5A7467] font-bold">
               {activeFilterCount > 0
-                ? t('chat.active_filters', { count: activeFilterCount, defaultValue: '{{count}} filters' })
+                ? t('chat.active_filters', {
+                    count: activeFilterCount,
+                    defaultValue: '{{count}} filters',
+                  })
                 : agents.length}
             </AppText>
           </View>
-          <ScrollView
+          <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="px-4"
-          >
-            <ScalePressable
-              onPress={() => onSelectAgent(null)}
-              className={`me-2 rounded-full px-3 py-2 border ${
-                selectedAgentId ? 'bg-[#ECF5F0] border-[#DDE8E0]' : 'bg-[#DDF4EB] border-[#147D6473]'
-              }`}
-            >
-              <AppText
-                variant="caption"
-                className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+            data={agents}
+            keyExtractor={(item) => item.id}
+            extraData={selectedAgentId}
+            renderItem={({ item }) => (
+              <AgentItem
+                item={item}
+                selectedAgentId={selectedAgentId}
+                onSelectAgent={onSelectAgent}
+              />
+            )}
+            ListHeaderComponent={
+              <ScalePressable
+                onPress={() => onSelectAgent(null)}
+                className={`me-2 rounded-full px-3 py-2 border ${
+                  selectedAgentId
+                    ? 'bg-[#ECF5F0] border-[#DDE8E0]'
+                    : 'bg-[#DDF4EB] border-[#147D6473]'
+                }`}
               >
-                {t('chat.all_agents', 'All')}
-              </AppText>
-            </ScalePressable>
-            {agents.map((item) => (
-              <View key={item.id} style={{ marginRight: 8 }}>
-                <AgentPill
-                  agent={item}
-                  onPress={() => onSelectAgent(selectedAgentId === item.id ? null : item.id)}
-                />
-              </View>
-            ))}
-          </ScrollView>
+                <AppText
+                  variant="caption"
+                  className={`font-bold ${selectedAgentId ? 'text-[#5A7467]' : 'text-[#147D64]'}`}
+                >
+                  {t('chat.all_agents', 'All')}
+                </AppText>
+              </ScalePressable>
+            }
+          />
         </View>
       ) : null}
 
