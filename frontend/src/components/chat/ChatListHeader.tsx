@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, memo } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import { TextInput, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/components/AppText';
 import { ScalePressable } from '@/components/ScalePressable';
 import { AgentPill } from '@/components/chat/AgentPill';
@@ -39,12 +39,16 @@ interface ChatListHeaderProps {
   roomCount: number;
 }
 
+type SortItem = { type: 'sort'; mode: SortMode; label: string };
+type FilterItem = { type: 'filter'; active: boolean; onToggle: () => void; label: string };
+type FilterSortItem = SortItem | FilterItem;
+
 const FilterSortRenderer = memo(function FilterSortRenderer({
   item,
   sortMode,
   onChangeSortMode,
 }: {
-  item: any;
+  item: FilterSortItem;
   sortMode: SortMode;
   onChangeSortMode: (mode: SortMode) => void;
 }) {
@@ -129,6 +133,14 @@ export const ChatListHeader = memo(function ChatListHeader({
     return () => clearTimeout(timer);
   }, [localQuery, onChangeQuery]);
 
+  const filterSortData: FilterSortItem[] = useMemo(() => [
+    { type: 'sort', mode: 'recent', label: t('chat.filter_recent', 'Recent') },
+    { type: 'sort', mode: 'mentions', label: t('chat.filter_mentions', 'Mentions') },
+    { type: 'sort', mode: 'tasks', label: t('chat.filter_tasks', 'Tasks') },
+    { type: 'filter', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
+    { type: 'filter', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
+  ], [t, recentOnly, onToggleRecentOnly, unreadOnly, onToggleUnreadOnly]);
+
   return (
     <>
       <View className="rounded-[28px] bg-[#0F3D31] p-[18px] mb-[14px] overflow-hidden shadow-md">
@@ -170,13 +182,7 @@ export const ChatListHeader = memo(function ChatListHeader({
 
         <View className="h-10">
           <FlashList
-            data={useMemo(() => [
-              { type: 'sort', mode: 'recent', label: t('chat.filter_recent', 'Recent') },
-              { type: 'sort', mode: 'mentions', label: t('chat.filter_mentions', 'Mentions') },
-              { type: 'sort', mode: 'tasks', label: t('chat.filter_tasks', 'Tasks') },
-              { type: 'filter', active: recentOnly, onToggle: onToggleRecentOnly, label: t('chat.recent_only', '7d') },
-              { type: 'filter', active: unreadOnly, onToggle: onToggleUnreadOnly, label: t('chat.unread_only', 'Unread') },
-            ], [t, recentOnly, onToggleRecentOnly, unreadOnly, onToggleUnreadOnly])}
+            data={filterSortData}
             horizontal
             showsHorizontalScrollIndicator={false}
             estimatedItemSize={80}
